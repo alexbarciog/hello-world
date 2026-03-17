@@ -597,27 +597,24 @@ export default function Settings() {
   }, []);
 
   async function loadData() {
-    // Get user
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setUserEmail(user.email || "");
-      setUserName(user.user_metadata?.full_name || user.email?.split("@")[0] || "User");
-    }
+    if (!user) return;
 
-    // Get campaign (onboarding data)
-    const sessionId = localStorage.getItem("goji_session_id");
-    if (sessionId) {
-      const { data } = await supabase
-        .from("campaigns")
-        .select("*")
-        .eq("session_id", sessionId)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .single();
-      if (data) {
-        setCampaignData(data);
-        setCampaignId(data.id);
-      }
+    setUserEmail(user.email || "");
+    setUserName(user.user_metadata?.full_name || user.email?.split("@")[0] || "User");
+
+    // Get the user's most recent campaign (created during onboarding)
+    const { data } = await supabase
+      .from("campaigns")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (data) {
+      setCampaignData(data);
+      setCampaignId(data.id);
     }
   }
 
