@@ -34,7 +34,43 @@ const saveBtnCls = "px-5 py-2 rounded-md text-sm font-semibold text-white transi
 // ─── Organization Tab ─────────────────────────────────────────────────────────
 function OrganizationTab({ userEmail, userName }: { userEmail: string; userName: string }) {
   const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentEmails, setSentEmails] = useState<string[]>([]);
   const initials = userName ? userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "U";
+
+  async function handleInvite() {
+    const trimmed = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmed || !emailRegex.test(trimmed)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    setSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const res = await fetch(
+        `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/send-invite`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ email: trimmed }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send invitation");
+      toast.success(`Invitation sent to ${trimmed} ✉️`);
+      setSentEmails((prev) => [...prev, trimmed]);
+      setEmail("");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to send invitation");
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <div>
@@ -46,10 +82,51 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
       <div className="mb-6">
         <p className="text-sm font-semibold text-gray-700 mb-2">Invite New Member</p>
         <div className="flex gap-2">
-          <input type="email" placeholder="Enter email address" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputCls} flex-1`} />
-          <button className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }} onClick={() => { toast.success("Invitation sent to " + email); setEmail(""); }}>Invite</button>
+          <input
+            type="email"
+            placeholder="colleague@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+            className={`${inputCls} flex-1`}
+            disabled={sending}
+          />
+          <button
+            className={saveBtnCls}
+            style={{ background: "hsl(var(--goji-coral))" }}
+            onClick={handleInvite}
+            disabled={sending}
+          >
+            {sending ? (
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+                  <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Sending...
+              </span>
+            ) : "Invite"}
+          </button>
         </div>
+        <p className="text-xs text-gray-400 mt-1.5">Invitation will be sent from noreply@intentsly.com with a signup link.</p>
       </div>
+
+      {sentEmails.length > 0 && (
+        <div className="mb-4 border border-green-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-2.5 bg-green-50 border-b border-green-200">
+            <p className="text-xs font-semibold text-green-700">Pending Invitations</p>
+          </div>
+          {sentEmails.map((e) => (
+            <div key={e} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">?</div>
+                <span className="text-sm text-gray-600">{e}</span>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Pending</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <table className="w-full">
