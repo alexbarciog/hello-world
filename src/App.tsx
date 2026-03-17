@@ -15,6 +15,7 @@ import HelpCenter from "./pages/HelpCenter.tsx";
 import Signals from "./pages/Signals.tsx";
 import Contacts from "./pages/Contacts.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import BillingPlans from "./pages/BillingPlans.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import { Navigate } from "react-router-dom";
@@ -85,6 +86,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/help" element={<HelpCenter />} />
+          <Route path="/billing" element={<AuthOnlyGuard><BillingPlans /></AuthOnlyGuard>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

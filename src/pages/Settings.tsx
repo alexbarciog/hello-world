@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -556,17 +557,32 @@ function AITemplatesTab() {
 
 // ─── Billing Tab ──────────────────────────────────────────────────────────────
 function BillingTab() {
+  const navigate = useNavigate();
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">Billing</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your billing information and payment methods</p>
+        <h2 className="text-base font-bold text-gray-900">Billing &amp; Plans</h2>
+        <p className="text-xs text-gray-500 mt-0.5">Manage your subscription and billing information</p>
       </div>
-      <div className="border border-gray-200 rounded-lg flex flex-col items-center justify-center py-20 gap-3">
-        <div className="w-12 h-12 rounded-lg border-2 border-gray-200 flex items-center justify-center"><CreditCard className="w-6 h-6 text-gray-300" /></div>
-        <p className="text-sm font-bold text-gray-800">No Active Subscription</p>
-        <p className="text-xs text-gray-400">Subscribe to a plan to unlock all features</p>
-        <button className={`${saveBtnCls} mt-1 flex items-center gap-2`} style={{ background: "hsl(var(--goji-coral))" }}><CreditCard className="w-3.5 h-3.5" />View Pricing Plans</button>
+      <div className="border border-gray-200 rounded-xl flex flex-col items-center justify-center py-20 gap-4 text-center px-8">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
+        >
+          <CreditCard className="w-7 h-7 text-white" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-gray-900 mb-1">No Active Subscription</p>
+          <p className="text-xs text-gray-400 max-w-xs">Start your 7-day free trial and unlock unlimited leads, AI campaigns, and more.</p>
+        </div>
+        <button
+          onClick={() => navigate("/billing")}
+          className={`${saveBtnCls} flex items-center gap-2 mt-2`}
+          style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          View Pricing &amp; Plans
+        </button>
       </div>
     </div>
   );
