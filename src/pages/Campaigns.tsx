@@ -34,7 +34,7 @@ export default function CampaignsPage() {
       const { data } = await supabase
         .from("campaigns")
         .select("id, company_name, status, created_at, campaign_goal")
-        .eq("status", "active")
+        .not("status", "eq", "draft")
         .order("created_at", { ascending: false });
 
       const rows = (data ?? []) as Campaign[];
@@ -274,6 +274,8 @@ export default function CampaignsPage() {
                           background:
                             c.status === "active"
                               ? "hsl(142 70% 45%)"
+                              : c.status === "pending_linkedin"
+                              ? "hsl(38 92% 50%)"
                               : "hsl(220 10% 65%)",
                         }}
                       />
@@ -283,10 +285,16 @@ export default function CampaignsPage() {
                           color:
                             c.status === "active"
                               ? "hsl(142 70% 35%)"
+                              : c.status === "pending_linkedin"
+                              ? "hsl(38 80% 35%)"
                               : "hsl(220 10% 50%)",
                         }}
                       >
-                        {c.status === "active" ? "Active" : c.status}
+                        {c.status === "active"
+                          ? "Active"
+                          : c.status === "pending_linkedin"
+                          ? "Pending LinkedIn"
+                          : c.status}
                       </span>
                     </div>
                   </TableCell>
