@@ -144,7 +144,7 @@ export const StepComplete = ({
             user_id: userId,
             name: `${data.companyName || "My"} Lead Agent`,
             agent_type: "signals",
-            status: "active",
+            status: initialStatus,
             keywords: signals.engagementKeywords || [],
             icp_job_titles: icp.jobTitles,
             icp_locations: icp.targetLocations,
