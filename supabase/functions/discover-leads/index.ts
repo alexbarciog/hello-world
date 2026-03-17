@@ -14,16 +14,14 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
   const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
   if (!UNIPILE_API_KEY) return errorResponse('UNIPILE_API_KEY not configured');
   if (!UNIPILE_DSN) return errorResponse('UNIPILE_DSN not configured');
-  if (!LOVABLE_API_KEY) return errorResponse('LOVABLE_API_KEY not configured');
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    // Load all active campaigns with their user's unipile_account_id
+    // Load all active campaigns
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
       .select('*')
@@ -53,24 +51,20 @@ Deno.serve(async (req) => {
 
         const accountId = profile.unipile_account_id;
 
-        // Step A: Generate keywords if not cached
-        let keywords: string[] = campaign.discovery_keywords || [];
+        // Use pre-generated keywords (generated once at campaign creation)
+        const keywords: string[] = campaign.discovery_keywords || [];
         if (keywords.length === 0) {
-          keywords = await generateKeywords(campaign, LOVABLE_API_KEY);
-          // Cache keywords on campaign
-          await supabase
-            .from('campaigns')
-            .update({ discovery_keywords: keywords })
-            .eq('id', campaign.id);
+          console.log(`Skipping campaign ${campaign.id}: no discovery keywords generated`);
+          continue;
         }
 
         console.log(`Campaign ${campaign.id}: keywords = ${keywords.join(', ')}`);
 
-        // Step B: Search LinkedIn posts via Unipile
+        // Search LinkedIn posts via Unipile
         const posts: any[] = [];
         for (const keyword of keywords.slice(0, 5)) {
           if (posts.length >= 5) break;
-          await delay(2000); // Rate limiting
+          await delay(2000);
 
           try {
             const searchUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${accountId}`;
@@ -107,8 +101,8 @@ Deno.serve(async (req) => {
 
         console.log(`Campaign ${campaign.id}: found ${posts.length} posts`);
 
-        // Step C: Extract post authors
-        const profiles: any[] = [];
+        // Extract post authors
+        const authorProfiles: any[] = [];
         for (const post of posts) {
           await delay(1500);
           try {
@@ -126,33 +120,25 @@ Deno.serve(async (req) => {
             }
 
             const profileData = await profileRes.json();
-            profiles.push({
-              ...profileData,
-              _post: post,
-            });
+            authorProfiles.push({ ...profileData, _post: post });
           } catch (e) {
             console.error('Profile fetch failed:', e);
           }
         }
 
-        console.log(`Campaign ${campaign.id}: extracted ${profiles.length} profiles`);
+        console.log(`Campaign ${campaign.id}: extracted ${authorProfiles.length} profiles`);
 
-        // Step D: Filter against ICP
-        const matchingLeads = profiles.filter((p) => {
+        // Filter against ICP
+        const matchingLeads = authorProfiles.filter((p) => {
           const title = (p.headline || p.title || '').toLowerCase();
           const industry = (p.industry || '').toLowerCase();
           const location = (p.location || p.country || '').toLowerCase();
 
-          // Job title match
-          const titleMatch = !campaign.icp_job_titles?.length || 
+          const titleMatch = !campaign.icp_job_titles?.length ||
             campaign.icp_job_titles.some((t: string) => title.includes(t.toLowerCase()));
-
-          // Industry match
-          const industryMatch = !campaign.icp_industries?.length || 
+          const industryMatch = !campaign.icp_industries?.length ||
             campaign.icp_industries.some((i: string) => industry.includes(i.toLowerCase()));
-
-          // Location match
-          const locationMatch = !campaign.icp_locations?.length || 
+          const locationMatch = !campaign.icp_locations?.length ||
             campaign.icp_locations.some((l: string) => location.includes(l.toLowerCase()));
 
           return titleMatch && industryMatch && locationMatch;
@@ -160,12 +146,12 @@ Deno.serve(async (req) => {
 
         console.log(`Campaign ${campaign.id}: ${matchingLeads.length} matching leads`);
 
-        // Step E: Score and insert
+        // Score and insert
         for (const lead of matchingLeads) {
           const linkedinProfileId = lead.public_id || lead.provider_id || lead.id;
           if (!linkedinProfileId) continue;
 
-          // Check for duplicates
+          // Deduplication check
           const { data: existing } = await supabase
             .from('contacts')
             .select('id')
@@ -175,13 +161,12 @@ Deno.serve(async (req) => {
 
           if (existing && existing.length > 0) continue;
 
-          // Calculate signals
           const post = lead._post;
           const postEngagement = (post?.likes_count || 0) + (post?.comments_count || 0);
           const isTopActive = postEngagement > 50;
           const isRecentJobChange = checkRecentJobChange(lead);
 
-          const signalAHit = true; // Found via keyword search (ICP match)
+          const signalAHit = true;
           const signalBHit = isTopActive;
           const signalCHit = isRecentJobChange;
           const aiScore = [signalAHit, signalBHit, signalCHit].filter(Boolean).length;
@@ -224,7 +209,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return jsonResponse({ 
+    return jsonResponse({
       message: `Processed ${campaigns.length} campaigns, inserted ${totalLeadsInserted} leads`,
       processed: campaigns.length,
       leads_inserted: totalLeadsInserted,
@@ -266,68 +251,4 @@ function checkRecentJobChange(profile: any): boolean {
   const start = new Date(startDate);
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   return start >= ninetyDaysAgo;
-}
-
-async function generateKeywords(campaign: any, apiKey: string): Promise<string[]> {
-  const prompt = `Company: ${campaign.company_name || 'Unknown'}
-Industry: ${campaign.industry || 'Unknown'}
-Description: ${campaign.description || 'No description'}
-Target Job Titles: ${(campaign.icp_job_titles || []).join(', ') || 'Unknown'}
-Target Industries: ${(campaign.icp_industries || []).join(', ') || 'Unknown'}
-
-Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that potential buyers of this company's product/service would engage with on LinkedIn. Return as JSON array of strings.`;
-
-  try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: 'You are a B2B sales intelligence expert. Generate LinkedIn search keywords.' },
-          { role: 'user', content: prompt },
-        ],
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'return_keywords',
-            description: 'Return LinkedIn search keywords',
-            parameters: {
-              type: 'object',
-              properties: {
-                keywords: { type: 'array', items: { type: 'string' }, description: '5 keyword phrases' },
-              },
-              required: ['keywords'],
-              additionalProperties: false,
-            },
-          },
-        }],
-        tool_choice: { type: 'function', function: { name: 'return_keywords' } },
-      }),
-    });
-
-    if (!response.ok) {
-      await response.text();
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error('No tool call returned');
-
-    const result = JSON.parse(toolCall.function.arguments);
-    return (result.keywords || []).slice(0, 5);
-  } catch (e) {
-    console.error('Keyword generation failed:', e);
-    // Fallback keywords from campaign data
-    const fallback = [
-      campaign.industry,
-      ...(campaign.icp_job_titles || []).slice(0, 2),
-      ...(campaign.icp_industries || []).slice(0, 2),
-    ].filter(Boolean).slice(0, 5);
-    return fallback.length > 0 ? fallback : ['business growth', 'digital transformation', 'industry trends', 'leadership', 'innovation'];
-  }
 }

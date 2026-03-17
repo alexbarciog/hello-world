@@ -124,6 +124,38 @@ export const StepComplete = ({
         console.error("Failed to save campaign:", err);
       }
 
+      // Create AI Signal Agent from the same onboarding data
+      try {
+        if (userId) {
+          const agentPayload = {
+            user_id: userId,
+            name: `${data.companyName || "My"} Lead Agent`,
+            agent_type: "signals",
+            status: "active",
+            keywords: signals.engagementKeywords || [],
+            icp_job_titles: icp.jobTitles,
+            icp_locations: icp.targetLocations,
+            icp_industries: icp.targetIndustries,
+            icp_company_types: icp.companyTypes,
+            icp_company_sizes: icp.companySizes,
+            icp_exclude_keywords: icp.excludeKeywords,
+            precision_mode: precision,
+            leads_list_name: `${data.companyName || "Campaign"} Leads`,
+            signals_config: {
+              triggerTopActive: signals.triggerTopActive,
+              triggerJobChanges: signals.triggerJobChanges,
+              triggerFundedCompanies: signals.triggerFundedCompanies,
+              influencerProfiles: signals.influencerProfiles,
+              competitorPages: signals.competitorPages,
+            },
+          };
+
+          await supabase.from("signal_agents").insert(agentPayload as any);
+        }
+      } catch (err) {
+        console.error("Failed to create signal agent:", err);
+      }
+
       // Mark onboarding complete in profile
       try {
         if (userId) {
@@ -134,6 +166,25 @@ export const StepComplete = ({
         }
       } catch (err) {
         console.warn("Failed to update profile onboarding status:", err);
+      }
+
+      // Generate discovery keywords for the campaign (one-time, fire-and-forget)
+      if (campaignId) {
+        try {
+          const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+          const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          const { data: sess } = await supabase.auth.getSession();
+          fetch(`${SUPABASE_URL}/functions/v1/generate-discovery-keywords`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${sess?.session?.access_token || ANON_KEY}`,
+            },
+            body: JSON.stringify({ campaign_id: campaignId }),
+          }).catch((err) => console.warn("generate-keywords fire-and-forget error:", err));
+        } catch (err) {
+          console.warn("generate-keywords trigger error:", err);
+        }
       }
 
       // Trigger lead scoring (fire-and-forget)
