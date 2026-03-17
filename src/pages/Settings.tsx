@@ -14,9 +14,7 @@ type Tab =
   | "account"
   | "linkedin"
   | "security"
-  | "ai-templates"
-  | "billing"
-  | "api";
+  | "billing";
 
 const tabsList: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "organization", label: "Organization", icon: <Users className="w-3.5 h-3.5" /> },
@@ -24,9 +22,7 @@ const tabsList: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "account", label: "Account", icon: <User className="w-3.5 h-3.5" /> },
   { id: "linkedin", label: "LinkedIn Accounts", icon: <Linkedin className="w-3.5 h-3.5" /> },
   { id: "security", label: "Security", icon: <Shield className="w-3.5 h-3.5" /> },
-  { id: "ai-templates", label: "AI LinkedIn Templates", icon: <MessageSquare className="w-3.5 h-3.5" /> },
   { id: "billing", label: "Billing", icon: <CreditCard className="w-3.5 h-3.5" /> },
-  { id: "api", label: "API", icon: <Key className="w-3.5 h-3.5" /> },
 ];
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
@@ -665,9 +661,7 @@ export default function Settings() {
         toast.success("Your campaigns and AI agents are now active!");
       }} />;
       case "security": return <SecurityTab />;
-      case "ai-templates": return <AITemplatesTab />;
       case "billing": return <BillingTab />;
-      case "api": return <APITab />;
     }
   };
 
