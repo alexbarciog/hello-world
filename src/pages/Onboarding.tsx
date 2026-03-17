@@ -257,9 +257,6 @@ function OnboardingInner() {
         </div>
       </div>
     </div>
-  );
-
-  );
 }
 
 // ─── Page Export (wraps with provider + entry guard) ──────────────────────────
