@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import gojiIcon from "@/assets/gojiberry-icon.png";
@@ -19,6 +19,8 @@ import {
   Bell,
   LogOut,
   AlertTriangle,
+  CreditCard,
+  ChevronDown,
 } from "lucide-react";
 
 const navItems = [
