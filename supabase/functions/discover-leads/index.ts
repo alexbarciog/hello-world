@@ -263,7 +263,6 @@ function checkRecentJobChange(profile: any): boolean {
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   return start >= ninetyDaysAgo;
 }
-Target Job Titles: ${(campaign.icp_job_titles || []).join(', ') || 'Unknown'}
 Target Industries: ${(campaign.icp_industries || []).join(', ') || 'Unknown'}
 
 Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that potential buyers of this company's product/service would engage with on LinkedIn. Return as JSON array of strings.`;
