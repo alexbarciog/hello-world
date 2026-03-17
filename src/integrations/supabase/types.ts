@@ -200,6 +200,42 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          inviter_name: string | null
+          organization_name: string | null
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          inviter_name?: string | null
+          organization_name?: string | null
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          inviter_name?: string | null
+          organization_name?: string | null
+          token?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           campaign_id: string
