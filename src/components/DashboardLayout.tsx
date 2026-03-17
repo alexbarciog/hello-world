@@ -53,15 +53,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setShowLinkedInBanner(!profile?.unipile_account_id);
 
       const email = user.email ?? "";
-      const fullName =
+      const firstName = user.user_metadata?.first_name || "";
+      const lastName = user.user_metadata?.last_name || "";
+      const fullName = [firstName, lastName].filter(Boolean).join(" ") ||
         user.user_metadata?.full_name ||
         user.user_metadata?.name ||
-        email.split("@")[0] ||
         "";
-      const parts = fullName.trim().split(" ");
-      const initials = parts.length >= 2
-        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-        : fullName.slice(0, 2).toUpperCase();
+      const initials = firstName && lastName
+        ? (firstName[0] + lastName[0]).toUpperCase()
+        : fullName.slice(0, 2).toUpperCase() || email.slice(0, 2).toUpperCase();
 
       setUserDisplay({ name: fullName, email, initials });
     }
