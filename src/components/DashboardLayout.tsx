@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import gojiIcon from "@/assets/gojiberry-icon.png";
@@ -19,6 +19,8 @@ import {
   Bell,
   LogOut,
   AlertTriangle,
+  CreditCard,
+  ChevronDown,
 } from "lucide-react";
 
 const navItems = [
@@ -39,6 +41,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     async function loadUser() {
@@ -196,29 +210,63 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </p>
           )}
 
-          {/* User + Sign out */}
-          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-white/8 transition-colors group">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
-              {userDisplay.initials || "?"}
-            </div>
-            {!collapsed && (
-              <div className="min-w-0 text-left flex-1">
-                <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.name || userDisplay.email}</p>
-                <p className="text-[10px] text-white/40 truncate">{userDisplay.email}</p>
+          {/* User dropdown */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setUserMenuOpen((o) => !o)}
+              className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-white/8 transition-colors"
+            >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
+                {userDisplay.initials || "?"}
+              </div>
+              {!collapsed && (
+                <>
+                  <div className="min-w-0 text-left flex-1">
+                    <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                    <p className="text-[10px] text-white/40 truncate">{userDisplay.email}</p>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                </>
+              )}
+            </button>
+
+            {/* Popup menu */}
+            {userMenuOpen && (
+              <div
+                className="absolute bottom-full left-0 mb-2 w-64 rounded-xl bg-white shadow-xl border border-gray-100 overflow-hidden z-50"
+              >
+                {/* User info header */}
+                <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
+                    {userDisplay.initials || "?"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{userDisplay.name || userDisplay.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{userDisplay.email}</p>
+                  </div>
+                </div>
+
+                {/* Menu items */}
+                <div className="py-1.5">
+                  <button
+                    onClick={() => { setUserMenuOpen(false); navigate("/settings?tab=billing"); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4 text-yellow-500" />
+                    Billing &amp; Plans
+                  </button>
+                  <button
+                    onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50"
+                    style={{ color: "hsl(var(--goji-coral))" }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign Out
+                  </button>
+                </div>
               </div>
             )}
-          </button>
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate("/login");
-            }}
-            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-white/50 hover:bg-white/8 hover:text-white/80 transition-colors"
-            title="Sign out"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="text-xs font-medium">Sign out</span>}
-          </button>
+          </div>
         </div>
       </aside>
 
