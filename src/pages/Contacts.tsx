@@ -61,16 +61,20 @@ export default function Contacts() {
   }
 
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
+    let result = contacts;
+    if (listFilter !== "all") {
+      result = result.filter((c) => c.list_name === listFilter);
+    }
+    if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
-    return contacts.filter(
+    return result.filter(
       (c) =>
         c.first_name.toLowerCase().includes(q) ||
         (c.last_name || "").toLowerCase().includes(q) ||
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery]);
+  }, [contacts, searchQuery, listFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
