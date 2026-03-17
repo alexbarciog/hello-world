@@ -152,8 +152,21 @@ export default function Contacts() {
           Add more filters
           <span className="text-orange-500">»</span>
         </button>
-        <div className="ml-auto flex items-center gap-2">
-          <button className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
+        {availableLists.length > 0 && (
+          <div className="relative">
+            <select
+              value={listFilter}
+              onChange={(e) => { setListFilter(e.target.value); setPage(1); }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none appearance-none pr-8"
+            >
+              <option value="all">All lists</option>
+              {availableLists.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+        )}
             Add to list
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
