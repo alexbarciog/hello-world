@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Users, Building2, User, Linkedin, MessageSquare,
-  CreditCard, Key, Plus, ChevronDown, Settings as SettingsIcon
+  Users, Building2, User, Linkedin, Shield, MessageSquare,
+  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
