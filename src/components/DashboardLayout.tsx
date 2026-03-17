@@ -37,6 +37,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
+
+  useEffect(() => {
+    async function checkLinkedIn() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("unipile_account_id")
+        .eq("user_id", user.id)
+        .single();
+      setShowLinkedInBanner(!profile?.unipile_account_id);
+    }
+    checkLinkedIn();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[hsl(220_20%_97%)]">
