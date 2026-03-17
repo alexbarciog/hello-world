@@ -14,7 +14,338 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaigns: {
+        Row: {
+          campaign_goal: string | null
+          company_name: string | null
+          competitor_pages: string[] | null
+          country: string | null
+          created_at: string
+          current_step: number | null
+          description: string | null
+          engagement_keywords: string[] | null
+          icp_company_sizes: string[] | null
+          icp_company_types: string[] | null
+          icp_exclude_keywords: string[] | null
+          icp_industries: string[] | null
+          icp_job_titles: string[] | null
+          icp_locations: string[] | null
+          id: string
+          industry: string | null
+          influencer_profiles: string[] | null
+          language: string | null
+          linkedin_connection_type: string | null
+          message_tone: string | null
+          pain_points: string[] | null
+          precision_mode: string | null
+          session_id: string | null
+          status: string
+          step_1_data: Json | null
+          step_2_data: Json | null
+          step_3_data: Json | null
+          step_4_data: Json | null
+          step_5_data: Json | null
+          step_6_data: Json | null
+          trigger_funded_companies: boolean | null
+          trigger_job_changes: boolean | null
+          trigger_top_active: boolean | null
+          updated_at: string
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          campaign_goal?: string | null
+          company_name?: string | null
+          competitor_pages?: string[] | null
+          country?: string | null
+          created_at?: string
+          current_step?: number | null
+          description?: string | null
+          engagement_keywords?: string[] | null
+          icp_company_sizes?: string[] | null
+          icp_company_types?: string[] | null
+          icp_exclude_keywords?: string[] | null
+          icp_industries?: string[] | null
+          icp_job_titles?: string[] | null
+          icp_locations?: string[] | null
+          id?: string
+          industry?: string | null
+          influencer_profiles?: string[] | null
+          language?: string | null
+          linkedin_connection_type?: string | null
+          message_tone?: string | null
+          pain_points?: string[] | null
+          precision_mode?: string | null
+          session_id?: string | null
+          status?: string
+          step_1_data?: Json | null
+          step_2_data?: Json | null
+          step_3_data?: Json | null
+          step_4_data?: Json | null
+          step_5_data?: Json | null
+          step_6_data?: Json | null
+          trigger_funded_companies?: boolean | null
+          trigger_job_changes?: boolean | null
+          trigger_top_active?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          campaign_goal?: string | null
+          company_name?: string | null
+          competitor_pages?: string[] | null
+          country?: string | null
+          created_at?: string
+          current_step?: number | null
+          description?: string | null
+          engagement_keywords?: string[] | null
+          icp_company_sizes?: string[] | null
+          icp_company_types?: string[] | null
+          icp_exclude_keywords?: string[] | null
+          icp_industries?: string[] | null
+          icp_job_titles?: string[] | null
+          icp_locations?: string[] | null
+          id?: string
+          industry?: string | null
+          influencer_profiles?: string[] | null
+          language?: string | null
+          linkedin_connection_type?: string | null
+          message_tone?: string | null
+          pain_points?: string[] | null
+          precision_mode?: string | null
+          session_id?: string | null
+          status?: string
+          step_1_data?: Json | null
+          step_2_data?: Json | null
+          step_3_data?: Json | null
+          step_4_data?: Json | null
+          step_5_data?: Json | null
+          step_6_data?: Json | null
+          trigger_funded_companies?: boolean | null
+          trigger_job_changes?: boolean | null
+          trigger_top_active?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          ai_score: number | null
+          company: string | null
+          company_icon_color: string | null
+          email: string | null
+          email_enriched: boolean | null
+          first_name: string
+          id: string
+          imported_at: string
+          last_name: string | null
+          linkedin_url: string | null
+          list_name: string | null
+          signal: string | null
+          signal_a_hit: boolean | null
+          signal_b_hit: boolean | null
+          signal_c_hit: boolean | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_score?: number | null
+          company?: string | null
+          company_icon_color?: string | null
+          email?: string | null
+          email_enriched?: boolean | null
+          first_name: string
+          id?: string
+          imported_at?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          list_name?: string | null
+          signal?: string | null
+          signal_a_hit?: boolean | null
+          signal_b_hit?: boolean | null
+          signal_c_hit?: boolean | null
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_score?: number | null
+          company?: string | null
+          company_icon_color?: string | null
+          email?: string | null
+          email_enriched?: boolean | null
+          first_name?: string
+          id?: string
+          imported_at?: string
+          last_name?: string | null
+          linkedin_url?: string | null
+          list_name?: string | null
+          signal?: string | null
+          signal_a_hit?: boolean | null
+          signal_b_hit?: boolean | null
+          signal_c_hit?: boolean | null
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          campaign_id: string
+          company: string | null
+          company_size: string | null
+          created_at: string
+          id: string
+          industry: string | null
+          location: string | null
+          name: string
+          precision_tier: string | null
+          reason: string | null
+          score: number | null
+          signal_a_hit: boolean | null
+          signal_b_hit: boolean | null
+          signal_c_hit: boolean | null
+          title: string | null
+        }
+        Insert: {
+          campaign_id: string
+          company?: string | null
+          company_size?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          location?: string | null
+          name: string
+          precision_tier?: string | null
+          reason?: string | null
+          score?: number | null
+          signal_a_hit?: boolean | null
+          signal_b_hit?: boolean | null
+          signal_c_hit?: boolean | null
+          title?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          company?: string | null
+          company_size?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          location?: string | null
+          name?: string
+          precision_tier?: string | null
+          reason?: string | null
+          score?: number | null
+          signal_a_hit?: boolean | null
+          signal_b_hit?: boolean | null
+          signal_c_hit?: boolean | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          onboarding_complete: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          onboarding_complete?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          onboarding_complete?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      signal_agents: {
+        Row: {
+          agent_type: string
+          created_at: string
+          icp_company_sizes: string[] | null
+          icp_company_types: string[] | null
+          icp_exclude_keywords: string[] | null
+          icp_industries: string[] | null
+          icp_job_titles: string[] | null
+          icp_locations: string[] | null
+          id: string
+          keywords: string[] | null
+          last_launched_at: string | null
+          leads_list_name: string | null
+          name: string
+          next_launch_at: string | null
+          precision_mode: string | null
+          results_count: number
+          signals_config: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_type?: string
+          created_at?: string
+          icp_company_sizes?: string[] | null
+          icp_company_types?: string[] | null
+          icp_exclude_keywords?: string[] | null
+          icp_industries?: string[] | null
+          icp_job_titles?: string[] | null
+          icp_locations?: string[] | null
+          id?: string
+          keywords?: string[] | null
+          last_launched_at?: string | null
+          leads_list_name?: string | null
+          name?: string
+          next_launch_at?: string | null
+          precision_mode?: string | null
+          results_count?: number
+          signals_config?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          created_at?: string
+          icp_company_sizes?: string[] | null
+          icp_company_types?: string[] | null
+          icp_exclude_keywords?: string[] | null
+          icp_industries?: string[] | null
+          icp_job_titles?: string[] | null
+          icp_locations?: string[] | null
+          id?: string
+          keywords?: string[] | null
+          last_launched_at?: string | null
+          leads_list_name?: string | null
+          name?: string
+          next_launch_at?: string | null
+          precision_mode?: string | null
+          results_count?: number
+          signals_config?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
