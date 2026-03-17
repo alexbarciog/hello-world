@@ -1,18 +1,59 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import gojiIcon from "@/assets/gojiberry-icon.png";
 
+interface InviteData {
+  email: string;
+  inviter_name: string | null;
+  organization_name: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+}
+
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("invite");
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [inviteData, setInviteData] = useState<InviteData | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!inviteToken) return;
+
+    async function loadInvite() {
+      setInviteLoading(true);
+      const { data, error } = await supabase
+        .from("invitations")
+        .select("email, inviter_name, organization_name, expires_at, accepted_at")
+        .eq("token", inviteToken)
+        .maybeSingle();
+
+      if (error || !data) {
+        setInviteError("This invitation link is invalid or has expired.");
+      } else if (data.accepted_at) {
+        setInviteError("This invitation has already been used.");
+      } else if (new Date(data.expires_at) < new Date()) {
+        setInviteError("This invitation has expired. Please ask for a new one.");
+      } else {
+        setInviteData(data as InviteData);
+        setEmail(data.email);
+      }
+      setInviteLoading(false);
+    }
+
+    loadInvite();
+  }, [inviteToken]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +66,7 @@ export default function Register() {
       return;
     }
     setLoading(true);
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -33,14 +75,24 @@ export default function Register() {
         emailRedirectTo: window.location.origin + "/dashboard",
       },
     });
-    setLoading(false);
+
     if (error) {
       toast.error(error.message);
-    } else {
-      toast.success("Account created! Let's set up your first campaign.");
-      // New users always go to onboarding
-      navigate("/onboarding");
+      setLoading(false);
+      return;
     }
+
+    // Mark invitation as accepted
+    if (inviteToken && inviteData) {
+      await supabase
+        .from("invitations")
+        .update({ accepted_at: new Date().toISOString() })
+        .eq("token", inviteToken);
+    }
+
+    setLoading(false);
+    toast.success("Account created! Let's set up your first campaign.");
+    navigate("/onboarding");
   };
 
   const handleGoogle = async () => {
@@ -60,7 +112,6 @@ export default function Register() {
     <div className="flex h-screen overflow-hidden">
       {/* Left – form */}
       <div className="w-[45%] relative flex flex-col bg-white">
-        {/* Top-right switch link */}
         <div className="absolute top-5 right-6 text-sm text-gray-500">
           Already have an account?{" "}
           <Link to="/login" className="font-semibold hover:underline" style={{ color: "hsl(var(--goji-coral))" }}>
@@ -68,19 +119,53 @@ export default function Register() {
           </Link>
         </div>
 
-        {/* Centered form */}
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           <div className="w-full max-w-sm">
             {/* Title */}
             <div className="flex items-center justify-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-gray-900">Welcome to</h1>
-              <img src={gojiIcon} alt="Gojiberry" className="w-7 h-7 object-contain" />
-              <span className="text-2xl font-bold text-gray-900 tracking-tight">gojiberry</span>
+              <img src={gojiIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
+              <span className="text-2xl font-bold text-gray-900 tracking-tight">intentsly</span>
             </div>
             <p className="text-sm text-center text-gray-700 font-semibold mt-1">
               Warm leads <span className="text-gray-400">→</span> Deals
             </p>
-            <p className="text-xs text-center text-gray-400 mb-6">As simple as it gets</p>
+            <p className="text-xs text-center text-gray-400 mb-5">As simple as it gets</p>
+
+            {/* Invite Banner */}
+            {inviteLoading && (
+              <div className="mb-5 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <svg className="w-4 h-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <span className="text-sm text-gray-500">Loading your invitation...</span>
+              </div>
+            )}
+
+            {inviteError && (
+              <div className="mb-5 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
+                ⚠️ {inviteError}
+              </div>
+            )}
+
+            {inviteData && !inviteError && (
+              <div className="mb-5 rounded-lg p-3.5 border" style={{ background: "hsl(5 85% 97%)", borderColor: "hsl(5 70% 88%)" }}>
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
+                    {(inviteData.inviter_name || "?")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {inviteData.inviter_name || "A teammate"} invited you
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Join <strong>{inviteData.organization_name || "the team"}</strong> on Intentsly
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -111,19 +196,23 @@ export default function Register() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Business Email</label>
                 <input
                   type="email"
-                  placeholder="frodo.baggins@bagend.com"
+                  placeholder="your@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={inputCls}
+                  className={`${inputCls} ${inviteData ? "bg-gray-50 text-gray-500" : ""}`}
+                  readOnly={!!inviteData}
                   required
                 />
+                {inviteData && (
+                  <p className="text-xs text-gray-400 mt-1">Email pre-filled from your invitation</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
                   type="password"
-                  placeholder="Create a strong password"
+                  placeholder="Create a strong password (min. 8 chars)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={inputCls}
@@ -133,7 +222,7 @@ export default function Register() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!inviteError}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ background: "hsl(5 80% 50%)" }}
               >
@@ -150,7 +239,7 @@ export default function Register() {
                     <line x1="22" y1="11" x2="16" y2="11" />
                   </svg>
                 )}
-                {loading ? "Creating account..." : "Start Trial"}
+                {loading ? "Creating account..." : inviteData ? "Accept Invitation & Create Account" : "Start Trial"}
               </button>
             </form>
 
@@ -189,7 +278,6 @@ export default function Register() {
               </button>
             </div>
 
-            {/* Benefits */}
             <div className="flex items-center justify-center gap-5 mt-5">
               <span className="flex items-center gap-1 text-xs text-gray-400">
                 <svg viewBox="0 0 24 24" fill="none" stroke="hsl(142 70% 45%)" strokeWidth="2.5" className="w-3.5 h-3.5">
@@ -230,7 +318,7 @@ export default function Register() {
             </div>
           </div>
           <p className="text-sm text-gray-700 leading-relaxed italic mb-4">
-            "We made our money back 6× already, and our week is now fully booked with leads GojiberryAI found for us."
+            "We made our money back 6× already, and our week is now fully booked with leads Intentsly found for us."
           </p>
           <div className="flex gap-1">
             {[...Array(5)].map((_, i) => (
