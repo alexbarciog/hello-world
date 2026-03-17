@@ -309,10 +309,42 @@ function LinkedInTab() {
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [checkpoint, setCheckpoint] = useState<{
+    type: string;
+    account_id: string;
+    message: string;
+  } | null>(null);
+  const [checkpointCode, setCheckpointCode] = useState("");
+  const [solvingCheckpoint, setSolvingCheckpoint] = useState(false);
+  const [pollingInApp, setPollingInApp] = useState(false);
 
   useEffect(() => {
     checkConnection();
   }, []);
+
+  async function getAuthToken() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    return session.access_token;
+  }
+
+  async function callConnectLinkedin(body: Record<string, unknown>) {
+    const token = await getAuthToken();
+    const res = await fetch(
+      `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/connect-linkedin`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok && data.status !== "checkpoint") throw new Error(data.error || "Request failed");
+    return data;
+  }
 
   async function checkConnection() {
     setLoadingStatus(true);
@@ -337,31 +369,94 @@ function LinkedInTab() {
     }
     setConnecting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      const data = await callConnectLinkedin({ li_at: liAtCookie.trim() });
 
-      const res = await fetch(
-        `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/connect-linkedin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ li_at: liAtCookie.trim() }),
+      if (data.status === "checkpoint") {
+        setCheckpoint({
+          type: data.checkpoint_type,
+          account_id: data.account_id,
+          message: data.message,
+        });
+        setLiAtCookie("");
+        if (data.checkpoint_type === "IN_APP_VALIDATION") {
+          startInAppPolling(data.account_id);
         }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Connection failed");
-
-      setAccountId(data.account_id);
-      setLiAtCookie("");
-      toast.success("LinkedIn account connected successfully!");
+      } else if (data.status === "connected") {
+        setAccountId(data.account_id);
+        setLiAtCookie("");
+        setCheckpoint(null);
+        toast.success("LinkedIn account connected successfully!");
+      }
     } catch (e: any) {
       toast.error(e.message || "Failed to connect LinkedIn account");
     } finally {
       setConnecting(false);
     }
+  }
+
+  async function handleSolveCheckpoint() {
+    if (!checkpoint || !checkpointCode.trim()) return;
+    setSolvingCheckpoint(true);
+    try {
+      const data = await callConnectLinkedin({
+        action: "solve_checkpoint",
+        account_id: checkpoint.account_id,
+        code: checkpointCode.trim(),
+      });
+
+      if (data.status === "checkpoint") {
+        setCheckpoint({
+          type: data.checkpoint_type,
+          account_id: data.account_id,
+          message: data.message || "Additional verification required",
+        });
+        setCheckpointCode("");
+        if (data.checkpoint_type === "IN_APP_VALIDATION") {
+          startInAppPolling(data.account_id);
+        }
+      } else if (data.status === "connected") {
+        setAccountId(data.account_id);
+        setCheckpoint(null);
+        setCheckpointCode("");
+        toast.success("LinkedIn account connected successfully!");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to verify code");
+    } finally {
+      setSolvingCheckpoint(false);
+    }
+  }
+
+  function startInAppPolling(pollAccountId: string) {
+    setPollingInApp(true);
+    let attempts = 0;
+    const maxAttempts = 30;
+
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        setPollingInApp(false);
+        toast.error("LinkedIn confirmation timed out. Please try again.");
+        setCheckpoint(null);
+        return;
+      }
+      try {
+        const data = await callConnectLinkedin({
+          action: "check_status",
+          account_id: pollAccountId,
+        });
+        if (data.status === "connected") {
+          clearInterval(interval);
+          setPollingInApp(false);
+          setAccountId(data.account_id);
+          setCheckpoint(null);
+          toast.success("LinkedIn account connected successfully!");
+        }
+      } catch {
+        // Keep polling
+      }
+    }, 2000);
   }
 
   async function handleDisconnect() {
@@ -404,6 +499,65 @@ function LinkedInTab() {
             </button>
           </div>
         </div>
+      ) : checkpoint ? (
+        <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-5 h-5 text-yellow-600" />
+            <span className="text-sm font-bold text-gray-900">Verification Required</span>
+          </div>
+          <p className="text-sm text-gray-700 mb-4">{checkpoint.message}</p>
+
+          {checkpoint.type === "IN_APP_VALIDATION" ? (
+            <div className="flex items-center gap-3">
+              {pollingInApp && (
+                <>
+                  <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-gray-500">Waiting for confirmation in your LinkedIn app…</span>
+                </>
+              )}
+            </div>
+          ) : checkpoint.type === "CAPTCHA" || checkpoint.type === "PHONE_REGISTER" ? (
+            <div>
+              <p className="text-xs text-gray-500 mb-3">This verification type cannot be completed here. Please resolve it on LinkedIn directly, then try connecting again.</p>
+              <button
+                onClick={() => setCheckpoint(null)}
+                className="text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-100 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-3">
+                <label className={labelCls}>Verification Code</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  placeholder="Enter your verification code..."
+                  value={checkpointCode}
+                  onChange={(e) => setCheckpointCode(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSolveCheckpoint()}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSolveCheckpoint}
+                  disabled={solvingCheckpoint || !checkpointCode.trim()}
+                  className={`${saveBtnCls} flex items-center gap-2 disabled:opacity-50`}
+                  style={{ background: "hsl(var(--goji-coral))" }}
+                >
+                  {solvingCheckpoint ? "Verifying..." : "Submit Code"}
+                </button>
+                <button
+                  onClick={() => { setCheckpoint(null); setCheckpointCode(""); }}
+                  className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="border border-gray-200 rounded-lg p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -420,7 +574,7 @@ function LinkedInTab() {
               <p className="font-semibold text-blue-600 mb-1">How to find your li_at cookie:</p>
               <ol className="list-decimal list-inside space-y-0.5">
                 <li>Open LinkedIn in Chrome and log in</li>
-                <li>Press F12 → Application tab → Cookies</li>
+                <li>Press F12 → Application tab → Cookies → linkedin.com</li>
                 <li>Find the <code className="bg-blue-100 px-1 rounded">li_at</code> cookie and copy its value</li>
               </ol>
             </div>
