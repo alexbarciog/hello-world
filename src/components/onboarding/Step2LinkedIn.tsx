@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -65,77 +65,119 @@ async function callConnectLinkedin(body: Record<string, unknown>) {
   return data;
 }
 
+function clearLinkedinQueryParam() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("linkedin");
+  window.history.replaceState({}, "", url.toString());
+}
+
 export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
   const [connecting, setConnecting] = useState(false);
   const [polling, setPolling] = useState(false);
   const [connected, setConnected] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
-  // Check if already connected on mount
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("unipile_account_id")
-          .eq("user_id", user.id)
-          .single();
-        if (profile?.unipile_account_id) {
-          setConnected(true);
-          onChange({ linkedinConnectionType: "direct" });
-        }
-      }
-      setLoadingStatus(false);
-    })();
-  }, []);
+  async function checkConnection(showLoader = true) {
+    if (showLoader) setLoadingStatus(true);
 
-  async function handleConnect() {
-    setConnecting(true);
     try {
-      const result = await callConnectLinkedin({ action: "create_link" });
-      if (result.status === "link_created" && result.url) {
-        window.open(result.url, "_blank", "noopener,noreferrer");
-        startPolling();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("unipile_account_id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profile?.unipile_account_id) {
+        setConnected(true);
+        onChange({ linkedinConnectionType: "direct" });
+        clearLinkedinQueryParam();
+        return true;
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to initiate LinkedIn connection");
+
+      return false;
     } finally {
-      setConnecting(false);
+      if (showLoader) setLoadingStatus(false);
     }
   }
 
   function startPolling() {
     setPolling(true);
     let attempts = 0;
-    const maxAttempts = 90;
+    const maxAttempts = 30;
 
-    const interval = setInterval(async () => {
-      attempts++;
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
-        setPolling(false);
-        toast.error("Connection timed out. Please try again.");
-        return;
-      }
+    const interval = window.setInterval(async () => {
+      attempts += 1;
+
       try {
         const result = await callConnectLinkedin({ action: "check_status" });
         if (result.status === "connected") {
-          clearInterval(interval);
+          window.clearInterval(interval);
           setPolling(false);
           setConnected(true);
           onChange({ linkedinConnectionType: "direct" });
+          clearLinkedinQueryParam();
           toast.success("LinkedIn account connected successfully!");
+          return;
         }
       } catch {
-        // Keep polling
+        // continue polling briefly after redirect
+      }
+
+      if (attempts >= maxAttempts) {
+        window.clearInterval(interval);
+        setPolling(false);
+        toast.error("Connection is still processing. Please try again in a few seconds.");
       }
     }, 2000);
   }
 
+  useEffect(() => {
+    const linkedinStatus = new URLSearchParams(window.location.search).get("linkedin");
+
+    void (async () => {
+      const isConnected = await checkConnection(true);
+
+      if (isConnected) return;
+
+      if (linkedinStatus === "success") {
+        toast.success("LinkedIn connected. Finalizing your session...");
+        startPolling();
+        return;
+      }
+
+      if (linkedinStatus === "failed") {
+        clearLinkedinQueryParam();
+        toast.error("LinkedIn connection was cancelled or failed.");
+      }
+    })();
+  }, []);
+
+  async function handleConnect() {
+    setConnecting(true);
+
+    try {
+      const result = await callConnectLinkedin({
+        action: "create_link",
+        return_url: `${window.location.origin}/onboarding`,
+      });
+
+      if (result.status === "link_created" && result.url) {
+        window.location.assign(result.url);
+        return;
+      }
+
+      throw new Error("Unable to open LinkedIn connection flow");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to initiate LinkedIn connection");
+      setConnecting(false);
+    }
+  }
+
   return (
     <div className="animate-fade-in">
-      {/* LinkedIn logo mark */}
       <div className="flex flex-col items-center mb-8">
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
@@ -161,7 +203,6 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
         </p>
       </div>
 
-      {/* Country selector */}
       <div className="mb-5">
         <Select value={data.country} onValueChange={(v) => onChange({ country: v })}>
           <SelectTrigger className="rounded-xl h-11 text-sm border-border w-full">
@@ -178,7 +219,6 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
         </p>
       </div>
 
-      {/* CTA */}
       {connected ? (
         <div
           className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 mb-5"
@@ -206,12 +246,12 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
           {polling ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Waiting for connection…
+              Finalizing LinkedIn connection…
             </>
           ) : connecting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Opening LinkedIn…
+              Redirecting to LinkedIn…
             </>
           ) : (
             <>
@@ -222,7 +262,6 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
         </Button>
       )}
 
-      {/* Trust indicators */}
       <div
         className="flex flex-col gap-2.5 rounded-xl px-4 py-3.5 mb-8"
         style={{ background: "hsl(var(--muted) / 0.5)" }}
@@ -241,7 +280,6 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex items-center justify-between border-t border-border pt-5">
         <button
           type="button"
