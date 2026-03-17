@@ -178,9 +178,8 @@ export async function scrapeWebsite(url: string): Promise<ScrapedSiteData> {
   const contentText = summary || markdown.slice(0, 2000);
 
   const companyName = extractCompanyName(title, url);
-  const description = summary
-    ? summary.slice(0, 400)
-    : ((metadata.ogDescription ?? metadata.description) as string | undefined ?? markdown.slice(0, 300));
+  const metaDesc = (metadata.ogDescription ?? metadata.description) as string | undefined;
+  const description = cleanDescription(summary, metaDesc, markdown);
   const industry = inferIndustry(contentText || title);
   const language = inferLanguage(contentText, locale);
 
