@@ -751,6 +751,12 @@ export default function Settings() {
 
   useEffect(() => {
     loadData();
+    // Check for ?tab=linkedin query param
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && tabsList.some((t) => t.id === tab)) {
+      setActiveTab(tab as Tab);
+    }
   }, []);
 
   async function loadData() {
