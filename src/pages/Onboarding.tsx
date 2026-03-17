@@ -257,17 +257,8 @@ function OnboardingInner() {
         </div>
       </div>
 
-      <p className="mt-6 text-xs" style={{ color: "hsl(var(--goji-text-muted))" }}>
-        Already have an account?{" "}
-        <a
-          href="/home"
-          className="font-medium underline underline-offset-2 hover:opacity-80 transition-opacity"
-          style={{ color: "hsl(var(--goji-berry))" }}
-        >
-          Log in
-        </a>
-      </p>
-    </div>
+
+
   );
 }
 
