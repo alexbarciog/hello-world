@@ -86,6 +86,7 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/help" element={<HelpCenter />} />
+          <Route path="/billing" element={<AuthOnlyGuard><BillingPlans /></AuthOnlyGuard>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -167,11 +167,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-xs font-bold text-white">Go Premium</p>
                   <p className="text-[10px] text-white/80">Unlock all features</p>
                 </div>
-                <button className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors">
+                <button onClick={() => navigate("/billing")} className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors">
                   <ChevronRight className="w-3 h-3 text-white" />
                 </button>
               </div>
               <button
+                onClick={() => navigate("/billing")}
                 className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-white/80 border border-white/30 rounded-md py-1 mb-1.5 hover:bg-white/10 transition-colors"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
@@ -182,7 +183,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </svg>
                 7 Days Trial
               </button>
-              <button className="w-full text-[11px] font-bold text-white bg-white/20 hover:bg-white/30 rounded-md py-1.5 transition-colors">
+              <button
+                onClick={() => navigate("/billing")}
+                className="w-full text-[11px] font-bold text-white bg-white/20 hover:bg-white/30 rounded-md py-1.5 transition-colors"
+              >
                 Start Trial ✦
               </button>
             </div>
