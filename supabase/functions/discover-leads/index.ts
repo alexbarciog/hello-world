@@ -264,7 +264,6 @@ function checkRecentJobChange(profile: any): boolean {
   return start >= ninetyDaysAgo;
 }
 
-async function generateKeywords(campaign: any, apiKey: string): Promise<string[]> {
   const prompt = `Company: ${campaign.company_name || 'Unknown'}
 Industry: ${campaign.industry || 'Unknown'}
 Description: ${campaign.description || 'No description'}
