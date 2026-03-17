@@ -38,19 +38,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
+  const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
 
   useEffect(() => {
-    async function checkLinkedIn() {
+    async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("unipile_account_id")
         .eq("user_id", user.id)
         .single();
       setShowLinkedInBanner(!profile?.unipile_account_id);
+
+      const email = user.email ?? "";
+      const fullName =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        email.split("@")[0] ||
+        "";
+      const parts = fullName.trim().split(" ");
+      const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : fullName.slice(0, 2).toUpperCase();
+
+      setUserDisplay({ name: fullName, email, initials });
     }
-    checkLinkedIn();
+    loadUser();
   }, []);
 
   return (
