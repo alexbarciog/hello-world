@@ -304,7 +304,7 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 }
 
 // ─── LinkedIn Accounts Tab ────────────────────────────────────────────────────
-function LinkedInTab() {
+function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [liAtCookie, setLiAtCookie] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -386,6 +386,7 @@ function LinkedInTab() {
         setLiAtCookie("");
         setCheckpoint(null);
         toast.success("LinkedIn account connected successfully!");
+        onConnected?.();
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to connect LinkedIn account");
@@ -419,6 +420,7 @@ function LinkedInTab() {
         setCheckpoint(null);
         setCheckpointCode("");
         toast.success("LinkedIn account connected successfully!");
+        onConnected?.();
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to verify code");
@@ -451,7 +453,8 @@ function LinkedInTab() {
           setPollingInApp(false);
           setAccountId(data.account_id);
           setCheckpoint(null);
-          toast.success("LinkedIn account connected successfully!");
+           toast.success("LinkedIn account connected successfully!");
+           onConnected?.();
         }
       } catch {
         // Keep polling
@@ -748,6 +751,12 @@ export default function Settings() {
 
   useEffect(() => {
     loadData();
+    // Check for ?tab=linkedin query param
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && tabsList.some((t) => t.id === tab)) {
+      setActiveTab(tab as Tab);
+    }
   }, []);
 
   async function loadData() {
@@ -783,7 +792,13 @@ export default function Settings() {
       case "organization": return <OrganizationTab userEmail={userEmail} userName={userName} />;
       case "company": return <CompanyTab campaignData={campaignData} onSave={saveCampaignFields} />;
       case "account": return <AccountTab userEmail={userEmail} campaignData={campaignData} onSave={saveCampaignFields} />;
-      case "linkedin": return <LinkedInTab />;
+      case "linkedin": return <LinkedInTab onConnected={async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        await supabase.from("campaigns").update({ status: "active" } as any).eq("user_id", user.id).eq("status", "pending_linkedin");
+        await supabase.from("signal_agents").update({ status: "active" } as any).eq("user_id", user.id).eq("status", "pending_linkedin");
+        toast.success("Your campaigns and AI agents are now active!");
+      }} />;
       case "security": return <SecurityTab />;
       case "ai-templates": return <AITemplatesTab />;
       case "billing": return <BillingTab />;

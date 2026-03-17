@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import gojiIcon from "@/assets/gojiberry-icon.png";
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Bell,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 
 const navItems = [
@@ -36,6 +37,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
+
+  useEffect(() => {
+    async function checkLinkedIn() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("unipile_account_id")
+        .eq("user_id", user.id)
+        .single();
+      setShowLinkedInBanner(!profile?.unipile_account_id);
+    }
+    checkLinkedIn();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[hsl(220_20%_97%)]">
@@ -193,6 +209,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto">
+        {showLinkedInBanner && (
+          <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: "hsl(25 95% 95%)", borderColor: "hsl(25 90% 85%)" }}>
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: "hsl(25 95% 53%)" }} />
+              <p className="text-sm font-medium" style={{ color: "hsl(25 60% 30%)" }}>
+                Connect your LinkedIn account to start discovering leads and running campaigns.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/settings?tab=linkedin")}
+              className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: "hsl(var(--goji-coral))" }}
+            >
+              Connect LinkedIn
+            </button>
+          </div>
+        )}
         {children}
       </main>
     </div>

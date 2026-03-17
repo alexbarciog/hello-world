@@ -73,6 +73,19 @@ export const StepComplete = ({
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
 
+      // Check if LinkedIn is already connected
+      let linkedinConnected = false;
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("unipile_account_id")
+          .eq("user_id", userId)
+          .single();
+        linkedinConnected = !!profile?.unipile_account_id;
+      }
+
+      const initialStatus = linkedinConnected ? "active" : "pending_linkedin";
+
       let campaignId: string | null = existingCampaignId ?? null;
 
       try {
@@ -101,7 +114,7 @@ export const StepComplete = ({
           pain_points: objectives.painPoints ? objectives.painPoints.split("\n").map(s => s.trim()).filter(Boolean) : [],
           campaign_goal: objectives.campaignGoal,
           message_tone: objectives.messageTone,
-          status: "active",
+          status: initialStatus,
           current_step: 6,
         };
 
@@ -131,7 +144,7 @@ export const StepComplete = ({
             user_id: userId,
             name: `${data.companyName || "My"} Lead Agent`,
             agent_type: "signals",
-            status: "active",
+            status: initialStatus,
             keywords: signals.engagementKeywords || [],
             icp_job_titles: icp.jobTitles,
             icp_locations: icp.targetLocations,
