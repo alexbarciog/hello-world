@@ -198,13 +198,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* User + Sign out */}
           <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-white/8 transition-colors group">
-            <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
-              AB
+            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
+              {userDisplay.initials || "?"}
             </div>
             {!collapsed && (
               <div className="min-w-0 text-left flex-1">
-                <p className="text-xs font-semibold text-white/80 truncate">Alex Barciog</p>
-                <p className="text-[10px] text-white/40 truncate">bogdanlucian016@g...</p>
+                <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                <p className="text-[10px] text-white/40 truncate">{userDisplay.email}</p>
               </div>
             )}
           </button>
