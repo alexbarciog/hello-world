@@ -237,7 +237,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         stepPayload.competitor_pages = si.competitorPages;
       } else if (step === 6) {
         stepPayload.step_6_data = ob;
-        stepPayload.pain_points = ob.painPoints;
+        stepPayload.pain_points = ob.painPoints ? ob.painPoints.split("\n").map(s => s.trim()).filter(Boolean) : [];
         stepPayload.campaign_goal = ob.campaignGoal;
         stepPayload.message_tone = ob.messageTone;
       }
