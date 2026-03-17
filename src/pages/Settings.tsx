@@ -661,9 +661,7 @@ export default function Settings() {
         toast.success("Your campaigns and AI agents are now active!");
       }} />;
       case "security": return <SecurityTab />;
-      case "ai-templates": return <AITemplatesTab />;
       case "billing": return <BillingTab />;
-      case "api": return <APITab />;
     }
   };
 
