@@ -203,8 +203,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             {!collapsed && (
               <div className="min-w-0 text-left flex-1">
-                <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.email}</p>
-                <p className="text-[10px] text-white/40 truncate">{userDisplay.name}</p>
+                <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                <p className="text-[10px] text-white/40 truncate">{userDisplay.email}</p>
               </div>
             )}
           </button>
