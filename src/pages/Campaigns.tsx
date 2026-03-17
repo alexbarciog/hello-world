@@ -34,7 +34,7 @@ export default function CampaignsPage() {
       const { data } = await supabase
         .from("campaigns")
         .select("id, company_name, status, created_at, campaign_goal")
-        .eq("status", "active")
+        .not("status", "eq", "draft")
         .order("created_at", { ascending: false });
 
       const rows = (data ?? []) as Campaign[];
