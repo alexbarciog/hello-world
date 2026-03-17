@@ -34,33 +34,17 @@ export default function Contacts() {
   const [perPage, setPerPage] = useState(100);
   const [page, setPage] = useState(1);
 
+  const [listFilter, setListFilter] = useState<string>("all");
+  const [availableLists, setAvailableLists] = useState<string[]>([]);
+
   useEffect(() => {
-    seedAndFetch();
+    fetchContacts();
   }, []);
 
-  async function seedAndFetch() {
+  async function fetchContacts() {
     setLoading(true);
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setLoading(false); return; }
-
-    // Check if contacts exist
-    const { data: existing } = await supabase
-      .from("contacts")
-      .select("id")
-      .eq("user_id", user.id)
-      .limit(1);
-
-    // Seed demo data if empty
-    if (!existing || existing.length === 0) {
-      const rows = DEMO_CONTACTS.map((c) => ({
-        ...c,
-        user_id: user.id,
-        email_enriched: false,
-        list_name: "My List",
-        imported_at: new Date(Date.now() - Math.random() * 900000).toISOString(),
-      }));
-      await supabase.from("contacts").insert(rows);
-    }
 
     const { data } = await supabase
       .from("contacts")
@@ -68,7 +52,11 @@ export default function Contacts() {
       .eq("user_id", user.id)
       .order("imported_at", { ascending: false });
 
-    if (data) setContacts(data as Contact[]);
+    if (data) {
+      setContacts(data as Contact[]);
+      const lists = [...new Set(data.map((c: any) => c.list_name).filter(Boolean))] as string[];
+      setAvailableLists(lists);
+    }
     setLoading(false);
   }
 

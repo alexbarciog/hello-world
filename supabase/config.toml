@@ -1,1 +1,7 @@
 project_id = "uwwajlezgeurnvvrvdvb"
+
+[functions.connect-linkedin]
+verify_jwt = false
+
+[functions.discover-leads]
+verify_jwt = false
