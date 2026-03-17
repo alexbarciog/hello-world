@@ -95,7 +95,7 @@ export const StepComplete = ({
           trigger_funded_companies: signals.triggerFundedCompanies,
           influencer_profiles: signals.influencerProfiles,
           competitor_pages: signals.competitorPages,
-          pain_points: objectives.painPoints,
+          pain_points: objectives.painPoints ? objectives.painPoints.split("\n").map(s => s.trim()).filter(Boolean) : [],
           campaign_goal: objectives.campaignGoal,
           message_tone: objectives.messageTone,
           status: "active",
