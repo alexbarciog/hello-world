@@ -263,8 +263,6 @@ function checkRecentJobChange(profile: any): boolean {
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   return start >= ninetyDaysAgo;
 }
-Industry: ${campaign.industry || 'Unknown'}
-Description: ${campaign.description || 'No description'}
 Target Job Titles: ${(campaign.icp_job_titles || []).join(', ') || 'Unknown'}
 Target Industries: ${(campaign.icp_industries || []).join(', ') || 'Unknown'}
 
