@@ -420,6 +420,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
         setCheckpoint(null);
         setCheckpointCode("");
         toast.success("LinkedIn account connected successfully!");
+        onConnected?.();
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to verify code");
