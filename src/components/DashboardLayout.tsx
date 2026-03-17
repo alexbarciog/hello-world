@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Bell,
   LogOut,
+  AlertTriangle,
 } from "lucide-react";
 
 const navItems = [
