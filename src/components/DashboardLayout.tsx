@@ -253,7 +253,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Menu items */}
                 <div className="py-1.5">
                   <button
-                    onClick={() => { setUserMenuOpen(false); navigate("/settings?tab=billing"); }}
+                    onClick={() => { setUserMenuOpen(false); navigate("/billing"); }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <CreditCard className="w-4 h-4 text-yellow-500" />
