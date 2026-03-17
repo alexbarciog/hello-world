@@ -23,6 +23,7 @@ export type Database = {
           created_at: string
           current_step: number | null
           description: string | null
+          discovery_keywords: string[] | null
           engagement_keywords: string[] | null
           icp_company_sizes: string[] | null
           icp_company_types: string[] | null
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string
           current_step?: number | null
           description?: string | null
+          discovery_keywords?: string[] | null
           engagement_keywords?: string[] | null
           icp_company_sizes?: string[] | null
           icp_company_types?: string[] | null
@@ -99,6 +101,7 @@ export type Database = {
           created_at?: string
           current_step?: number | null
           description?: string | null
+          discovery_keywords?: string[] | null
           engagement_keywords?: string[] | null
           icp_company_sizes?: string[] | null
           icp_company_types?: string[] | null
@@ -142,12 +145,14 @@ export type Database = {
           id: string
           imported_at: string
           last_name: string | null
+          linkedin_profile_id: string | null
           linkedin_url: string | null
           list_name: string | null
           signal: string | null
           signal_a_hit: boolean | null
           signal_b_hit: boolean | null
           signal_c_hit: boolean | null
+          source_campaign_id: string | null
           title: string | null
           user_id: string
         }
@@ -161,12 +166,14 @@ export type Database = {
           id?: string
           imported_at?: string
           last_name?: string | null
+          linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
           signal?: string | null
           signal_a_hit?: boolean | null
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
+          source_campaign_id?: string | null
           title?: string | null
           user_id: string
         }
@@ -180,12 +187,14 @@ export type Database = {
           id?: string
           imported_at?: string
           last_name?: string | null
+          linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
           signal?: string | null
           signal_a_hit?: boolean | null
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
+          source_campaign_id?: string | null
           title?: string | null
           user_id?: string
         }
@@ -258,6 +267,7 @@ export type Database = {
           created_at: string
           id: string
           onboarding_complete: boolean
+          unipile_account_id: string | null
           updated_at: string
           user_id: string
         }
@@ -265,6 +275,7 @@ export type Database = {
           created_at?: string
           id?: string
           onboarding_complete?: boolean
+          unipile_account_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -272,6 +283,7 @@ export type Database = {
           created_at?: string
           id?: string
           onboarding_complete?: boolean
+          unipile_account_id?: string | null
           updated_at?: string
           user_id?: string
         }
