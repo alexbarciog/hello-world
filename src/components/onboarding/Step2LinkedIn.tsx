@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -6,7 +7,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Shield, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { OnboardingData } from "./types";
 
 const COUNTRIES = [
@@ -38,11 +41,96 @@ type Props = {
   onPrev: () => void;
 };
 
-export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
-  const canProceed = true; // country is optional — user can proceed without selecting
+async function getAuthToken() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Not authenticated");
+  return session.access_token;
+}
 
-  function handleConnect() {
-    onChange({ linkedinConnectionType: "direct" });
+async function callConnectLinkedin(body: Record<string, unknown>) {
+  const token = await getAuthToken();
+  const res = await fetch(
+    `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/connect-linkedin`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
+  const [connecting, setConnecting] = useState(false);
+  const [polling, setPolling] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  // Check if already connected on mount
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("unipile_account_id")
+          .eq("user_id", user.id)
+          .single();
+        if (profile?.unipile_account_id) {
+          setConnected(true);
+          onChange({ linkedinConnectionType: "direct" });
+        }
+      }
+      setLoadingStatus(false);
+    })();
+  }, []);
+
+  async function handleConnect() {
+    setConnecting(true);
+    try {
+      const result = await callConnectLinkedin({ action: "create_link" });
+      if (result.status === "link_created" && result.url) {
+        window.open(result.url, "_blank", "noopener,noreferrer");
+        startPolling();
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to initiate LinkedIn connection");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  function startPolling() {
+    setPolling(true);
+    let attempts = 0;
+    const maxAttempts = 90;
+
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        setPolling(false);
+        toast.error("Connection timed out. Please try again.");
+        return;
+      }
+      try {
+        const result = await callConnectLinkedin({ action: "check_status" });
+        if (result.status === "connected") {
+          clearInterval(interval);
+          setPolling(false);
+          setConnected(true);
+          onChange({ linkedinConnectionType: "direct" });
+          toast.success("LinkedIn account connected successfully!");
+        }
+      } catch {
+        // Keep polling
+      }
+    }, 2000);
   }
 
   return (
@@ -91,19 +179,48 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
       </div>
 
       {/* CTA */}
-      <Button
-        type="button"
-        onClick={handleConnect}
-        className="w-full h-12 rounded-xl font-semibold text-sm gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mb-5"
-        style={{
-          background: "hsl(221 83% 53%)",
-          color: "hsl(0 0% 100%)",
-          boxShadow: "0 4px 20px hsl(221 83% 53% / 0.3)",
-        }}
-      >
-        <LinkedInIcon className="w-4 h-4" />
-        Connect LinkedIn
-      </Button>
+      {connected ? (
+        <div
+          className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 mb-5"
+          style={{
+            background: "hsl(142 71% 45% / 0.1)",
+            color: "hsl(142 71% 35%)",
+            border: "1px solid hsl(142 71% 45% / 0.3)",
+          }}
+        >
+          <CheckCircle2 className="w-5 h-5" />
+          LinkedIn Connected
+        </div>
+      ) : (
+        <Button
+          type="button"
+          onClick={handleConnect}
+          disabled={connecting || polling || loadingStatus}
+          className="w-full h-12 rounded-xl font-semibold text-sm gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mb-5 disabled:opacity-60"
+          style={{
+            background: "hsl(221 83% 53%)",
+            color: "hsl(0 0% 100%)",
+            boxShadow: "0 4px 20px hsl(221 83% 53% / 0.3)",
+          }}
+        >
+          {polling ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Waiting for connection…
+            </>
+          ) : connecting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Opening LinkedIn…
+            </>
+          ) : (
+            <>
+              <LinkedInIcon className="w-4 h-4" />
+              Connect LinkedIn
+            </>
+          )}
+        </Button>
+      )}
 
       {/* Trust indicators */}
       <div
@@ -139,12 +256,11 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
         <Button
           type="button"
           onClick={onNext}
-          disabled={!canProceed}
           className="h-11 px-8 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
           style={{
             background: "hsl(var(--goji-berry))",
             color: "hsl(0 0% 100%)",
-            boxShadow: canProceed ? "0 4px 20px 0 hsl(var(--goji-coral) / 0.3)" : "none",
+            boxShadow: "0 4px 20px 0 hsl(var(--goji-coral) / 0.3)",
           }}
         >
           Next Step
