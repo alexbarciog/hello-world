@@ -1,6 +1,6 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -96,26 +96,85 @@ Deno.serve(async (req) => {
         });
       }
 
-      // No account_id — list all accounts and find one tagged with this userId
+      // No account_id — list all accounts and find a LinkedIn one for this user
       const listRes = await fetch(`https://${UNIPILE_DSN}/api/v1/accounts`, {
         headers: { 'X-API-KEY': UNIPILE_API_KEY },
       });
       const listData = await listRes.json();
       const accounts = listData.items || listData || [];
 
-      // Find a LinkedIn account that was recently created (or tagged with user name)
-      const linkedinAccount = accounts.find((acc: any) =>
-        (acc.type === 'LINKEDIN' || acc.provider === 'LINKEDIN') &&
-        (acc.name === userId || acc.connection_params?.name === userId) &&
-        (acc.status === 'OK' || acc.status === 'CONNECTED')
-      );
+      console.log(`[check_status] userId=${userId}, total accounts=${accounts.length}`);
+
+      // Try to find a LinkedIn account that matches this user
+      // Check multiple possible fields where name/userId might be stored
+      let linkedinAccount = null;
+
+      for (const acc of accounts) {
+        const isLinkedIn = acc.type === 'LINKEDIN' || acc.provider === 'LINKEDIN';
+        const isOkStatus = acc.status === 'OK' || acc.status === 'CONNECTED' || acc.connection_status === 'OK';
+        
+        if (!isLinkedIn || !isOkStatus) continue;
+
+        // Check various name fields where userId might be stored
+        const nameMatch = 
+          acc.name === userId ||
+          acc.connection_params?.name === userId ||
+          acc.identifier === userId ||
+          acc.custom_name === userId;
+
+        if (nameMatch) {
+          linkedinAccount = acc;
+          break;
+        }
+      }
+
+      // If no match by name, check if there's any recently created LinkedIn account
+      // (within the last 5 minutes) that isn't already assigned to another user
+      if (!linkedinAccount) {
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        
+        for (const acc of accounts) {
+          const isLinkedIn = acc.type === 'LINKEDIN' || acc.provider === 'LINKEDIN';
+          const isOkStatus = acc.status === 'OK' || acc.status === 'CONNECTED' || acc.connection_status === 'OK';
+          const createdAt = acc.created_at || acc.createdAt || acc.created;
+          
+          if (!isLinkedIn || !isOkStatus) continue;
+          
+          if (createdAt && createdAt > fiveMinAgo) {
+            // Check if this account is already saved by another user
+            const serviceClient = createClient(
+              Deno.env.get('SUPABASE_URL')!,
+              Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+            );
+            const accId = acc.id || acc.account_id;
+            const { data: existingProfile } = await serviceClient
+              .from('profiles')
+              .select('user_id')
+              .eq('unipile_account_id', accId)
+              .single();
+
+            if (!existingProfile) {
+              linkedinAccount = acc;
+              console.log(`[check_status] Found recent unassigned LinkedIn account: ${accId}, created: ${createdAt}`);
+              break;
+            }
+          }
+        }
+      }
 
       if (linkedinAccount) {
         const accId = linkedinAccount.id || linkedinAccount.account_id;
+        console.log(`[check_status] Match found! accId=${accId}`);
         await saveAccountId(userId, accId);
         return new Response(JSON.stringify({ status: 'connected', account_id: accId }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      // Log first account for debugging if no match found
+      if (accounts.length > 0) {
+        const sample = accounts[0];
+        console.log(`[check_status] No match. Sample account keys: ${Object.keys(sample).join(', ')}, name: ${sample.name}, type: ${sample.type}, status: ${sample.status}`);
       }
 
       return new Response(JSON.stringify({ status: 'pending' }), {
