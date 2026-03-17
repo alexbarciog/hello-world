@@ -305,40 +305,149 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 
 // ─── LinkedIn Accounts Tab ────────────────────────────────────────────────────
 function LinkedInTab() {
-  const accounts = [{ label: "First account" }, { label: "Second account" }];
+  const [liAtCookie, setLiAtCookie] = useState("");
+  const [connecting, setConnecting] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  async function checkConnection() {
+    setLoadingStatus(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("unipile_account_id")
+        .eq("user_id", user.id)
+        .single();
+      if (profile?.unipile_account_id) {
+        setAccountId(profile.unipile_account_id);
+      }
+    }
+    setLoadingStatus(false);
+  }
+
+  async function handleConnect() {
+    if (!liAtCookie.trim() || liAtCookie.trim().length < 10) {
+      toast.error("Please enter a valid li_at cookie value");
+      return;
+    }
+    setConnecting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const res = await fetch(
+        `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/connect-linkedin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ li_at: liAtCookie.trim() }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Connection failed");
+
+      setAccountId(data.account_id);
+      setLiAtCookie("");
+      toast.success("LinkedIn account connected successfully!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to connect LinkedIn account");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from("profiles")
+      .update({ unipile_account_id: null } as any)
+      .eq("user_id", user.id);
+    setAccountId(null);
+    toast.success("LinkedIn account disconnected");
+  }
+
   return (
     <div>
       <div className="mb-6">
         <h2 className="text-base font-bold text-gray-900">LinkedIn Connection</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your LinkedIn connection and settings</p>
+        <p className="text-xs text-gray-500 mt-0.5">Connect your LinkedIn account to enable automated lead discovery</p>
       </div>
-      <div className="border border-gray-200 rounded-lg p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Linkedin className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-bold text-gray-900">LinkedIn Accounts ({accounts.length})</span>
-          </div>
-          <button className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }}><Plus className="w-3.5 h-3.5 inline mr-1" />Purchase seat</button>
-        </div>
-        <p className="text-xs text-gray-500 mb-4">Manage your LinkedIn account connections and monitor their status.</p>
-        <div className="space-y-3">
-          {accounts.map((acc) => (
-            <div key={acc.label} className="flex items-center justify-between border border-gray-100 rounded-lg px-4 py-3 bg-gray-50/50">
-              <div className="flex items-center gap-3">
-                <User className="w-4 h-4 text-gray-400" />
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"><User className="w-4 h-4 text-gray-400" /></div>
-                <span className="text-sm font-medium text-gray-700">{acc.label}</span>
-                <button className="text-xs text-gray-500 border border-gray-300 rounded px-2 py-0.5 hover:bg-gray-100 transition-colors">Settings &amp; Limits</button>
+
+      {loadingStatus ? (
+        <div className="text-sm text-gray-400 py-8 text-center">Checking connection status...</div>
+      ) : accountId ? (
+        <div className="border border-green-200 bg-green-50 rounded-lg p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <Linkedin className="w-5 h-5 text-green-600" />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-500">Not connected</span>
-                <button className="text-xs text-blue-500 hover:underline font-medium">Send connection email</button>
-                <button className="text-xs font-semibold text-white px-3 py-1.5 rounded-md" style={{ background: "hsl(var(--goji-coral))" }}>Connect account</button>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">LinkedIn Connected</p>
+                <p className="text-xs text-gray-500">Account ID: {accountId.slice(0, 12)}...</p>
               </div>
             </div>
-          ))}
+            <button
+              onClick={handleDisconnect}
+              className="text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="border border-gray-200 rounded-lg p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Linkedin className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-bold text-gray-900">Connect LinkedIn Account</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            To connect your LinkedIn, you need to provide your LinkedIn <code className="bg-gray-100 px-1 rounded text-xs">li_at</code> session cookie.
+          </p>
+
+          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 mb-4">
+            <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+            <div className="text-xs text-gray-600">
+              <p className="font-semibold text-blue-600 mb-1">How to find your li_at cookie:</p>
+              <ol className="list-decimal list-inside space-y-0.5">
+                <li>Open LinkedIn in Chrome and log in</li>
+                <li>Press F12 → Application tab → Cookies</li>
+                <li>Find the <code className="bg-blue-100 px-1 rounded">li_at</code> cookie and copy its value</li>
+              </ol>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className={labelCls}>li_at Cookie Value</label>
+            <input
+              type="password"
+              className={inputCls}
+              placeholder="Paste your li_at cookie value here..."
+              value={liAtCookie}
+              onChange={(e) => setLiAtCookie(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={handleConnect}
+            disabled={connecting || !liAtCookie.trim()}
+            className={`${saveBtnCls} flex items-center gap-2 disabled:opacity-50`}
+            style={{ background: "hsl(var(--goji-coral))" }}
+          >
+            <Linkedin className="w-3.5 h-3.5" />
+            {connecting ? "Connecting..." : "Connect LinkedIn"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

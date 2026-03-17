@@ -24,19 +24,6 @@ interface Contact {
   imported_at: string;
 }
 
-// Demo data to seed on first load
-const DEMO_CONTACTS = [
-  { first_name: "Cristina", last_name: "I.", title: "Duty Manager/Assistant General Manager", company: "Hospes Hotels | Infinite Places", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "orange" },
-  { first_name: "Jean-christophe", last_name: "Burlaud", title: "Directeur des Opérations Mercato Marr...", company: "Atlas Hospitality Morocco", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Regan", last_name: "Cramer", title: "General Manager", company: "Flat Iron", signal: "Strategic Window: Just hired (<90d)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Pierre-Antoine", last_name: "CHEVIGNY", title: "Directeur Supply Chain", company: "Le Petit Vapoteur", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Nicolas", last_name: "De Gols", title: "General Manager", company: "Shangri-La Paris", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Emmanuel", last_name: "Denninger 🚀", title: "Directeur e-commerce", company: "RETIF", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Adrien", last_name: "Fuchs", title: "Directeur Régional des Opérations", company: "ECG", signal: "Strategic Window: Just hired (<90d)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "green" },
-  { first_name: "Sophie", last_name: "Martin", title: "Head of Operations", company: "AccorHotels", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 3, signal_a_hit: true, signal_b_hit: true, signal_c_hit: true, company_icon_color: "blue" },
-  { first_name: "Marco", last_name: "Rossi", title: "VP of Procurement", company: "Melia Hotels", signal: "Strategic Window: Just hired (<90d)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "purple" },
-  { first_name: "Laura", last_name: "Chen", title: "Director of Strategy", company: "Mandarin Oriental", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 3, signal_a_hit: true, signal_b_hit: true, signal_c_hit: true, company_icon_color: "pink" },
-];
 
 export default function Contacts() {
   const [tab, setTab] = useState<"all" | "lists">("all");
@@ -47,33 +34,17 @@ export default function Contacts() {
   const [perPage, setPerPage] = useState(100);
   const [page, setPage] = useState(1);
 
+  const [listFilter, setListFilter] = useState<string>("all");
+  const [availableLists, setAvailableLists] = useState<string[]>([]);
+
   useEffect(() => {
-    seedAndFetch();
+    fetchContacts();
   }, []);
 
-  async function seedAndFetch() {
+  async function fetchContacts() {
     setLoading(true);
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setLoading(false); return; }
-
-    // Check if contacts exist
-    const { data: existing } = await supabase
-      .from("contacts")
-      .select("id")
-      .eq("user_id", user.id)
-      .limit(1);
-
-    // Seed demo data if empty
-    if (!existing || existing.length === 0) {
-      const rows = DEMO_CONTACTS.map((c) => ({
-        ...c,
-        user_id: user.id,
-        email_enriched: false,
-        list_name: "My List",
-        imported_at: new Date(Date.now() - Math.random() * 900000).toISOString(),
-      }));
-      await supabase.from("contacts").insert(rows);
-    }
 
     const { data } = await supabase
       .from("contacts")
@@ -81,21 +52,29 @@ export default function Contacts() {
       .eq("user_id", user.id)
       .order("imported_at", { ascending: false });
 
-    if (data) setContacts(data as Contact[]);
+    if (data) {
+      setContacts(data as Contact[]);
+      const lists = [...new Set(data.map((c: any) => c.list_name).filter(Boolean))] as string[];
+      setAvailableLists(lists);
+    }
     setLoading(false);
   }
 
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
+    let result = contacts;
+    if (listFilter !== "all") {
+      result = result.filter((c) => c.list_name === listFilter);
+    }
+    if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
-    return contacts.filter(
+    return result.filter(
       (c) =>
         c.first_name.toLowerCase().includes(q) ||
         (c.last_name || "").toLowerCase().includes(q) ||
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery]);
+  }, [contacts, searchQuery, listFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
@@ -173,6 +152,21 @@ export default function Contacts() {
           Add more filters
           <span className="text-orange-500">»</span>
         </button>
+        {availableLists.length > 0 && (
+          <div className="relative">
+            <select
+              value={listFilter}
+              onChange={(e) => { setListFilter(e.target.value); setPage(1); }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none appearance-none pr-8"
+            >
+              <option value="all">All lists</option>
+              {availableLists.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <button className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
             Add to list
