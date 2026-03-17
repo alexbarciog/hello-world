@@ -167,6 +167,8 @@ export default function Contacts() {
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
         )}
+        <div className="ml-auto flex items-center gap-2">
+          <button className="flex items-center gap-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
             Add to list
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
