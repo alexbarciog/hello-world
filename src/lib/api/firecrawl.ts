@@ -90,16 +90,51 @@ function inferLanguage(text: string, locale?: string): string {
   return 'English (US)';
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')       // **bold** → bold
+    .replace(/\*(.*?)\*/g, '$1')            // *italic* → italic
+    .replace(/#{1,6}\s+/g, '')              // ## headings → remove
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [link](url) → link
+    .replace(/`([^`]+)`/g, '$1')            // `code` → code
+    .replace(/^\s*[-*+]\s+/gm, '')          // list markers
+    .replace(/^\s*\d+\.\s+/gm, '')          // numbered lists
+    .replace(/\n{3,}/g, '\n\n')             // collapse multiple newlines
+    .trim();
+}
+
+function cleanDescription(summary: string, metaDesc: string | undefined, markdown: string): string {
+  // Prefer meta description if it's a decent length
+  if (metaDesc && metaDesc.length > 40 && metaDesc.length < 500) {
+    return stripMarkdown(metaDesc);
+  }
+
+  if (summary) {
+    let cleaned = stripMarkdown(summary);
+    // Remove "The webpage/page/site outlines/describes..." openers
+    cleaned = cleaned.replace(/^(The\s+)?(web\s*page|page|site|website)\s+(outlines?|describes?|provides?|presents?|details?|showcases?|features?|highlights?|explains?|offers?)\s+/i, '');
+    // Capitalize first letter after cleanup
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    // Truncate at sentence boundary near 400 chars
+    if (cleaned.length > 400) {
+      const cutoff = cleaned.lastIndexOf('.', 400);
+      cleaned = cutoff > 100 ? cleaned.slice(0, cutoff + 1) : cleaned.slice(0, 400).trim() + '…';
+    }
+    return cleaned;
+  }
+
+  // Fallback to markdown snippet
+  return stripMarkdown(markdown.slice(0, 300));
+}
+
 function extractCompanyName(title: string, url: string): string {
   if (title) {
-    // Remove common suffixes
     const cleaned = title
       .replace(/\s*[-|–—]\s*.+$/, '')
       .replace(/\s*(LLC|Inc|Ltd|GmbH|SRL|SA|AG)\s*$/i, '')
       .trim();
     if (cleaned.length > 0 && cleaned.length < 60) return cleaned;
   }
-  // Fall back to domain name
   try {
     const hostname = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
     const domain = hostname.replace(/^www\./, '').split('.')[0];
