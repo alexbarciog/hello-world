@@ -386,6 +386,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
         setLiAtCookie("");
         setCheckpoint(null);
         toast.success("LinkedIn account connected successfully!");
+        onConnected?.();
       }
     } catch (e: any) {
       toast.error(e.message || "Failed to connect LinkedIn account");
