@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.discover-leads]
 verify_jwt = false
+
+[functions.generate-discovery-keywords]
+verify_jwt = false

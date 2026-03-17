@@ -53,15 +53,11 @@ Deno.serve(async (req) => {
 
         const accountId = profile.unipile_account_id;
 
-        // Step A: Generate keywords if not cached
+        // Step A: Use pre-generated keywords (generated once at campaign creation)
         let keywords: string[] = campaign.discovery_keywords || [];
         if (keywords.length === 0) {
-          keywords = await generateKeywords(campaign, LOVABLE_API_KEY);
-          // Cache keywords on campaign
-          await supabase
-            .from('campaigns')
-            .update({ discovery_keywords: keywords })
-            .eq('id', campaign.id);
+          console.log(`Skipping campaign ${campaign.id}: no discovery keywords generated`);
+          continue;
         }
 
         console.log(`Campaign ${campaign.id}: keywords = ${keywords.join(', ')}`);
