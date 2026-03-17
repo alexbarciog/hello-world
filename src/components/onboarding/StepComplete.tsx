@@ -73,6 +73,19 @@ export const StepComplete = ({
       const { data: { session } } = await supabase.auth.getSession();
       const userId = session?.user?.id;
 
+      // Check if LinkedIn is already connected
+      let linkedinConnected = false;
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("unipile_account_id")
+          .eq("user_id", userId)
+          .single();
+        linkedinConnected = !!profile?.unipile_account_id;
+      }
+
+      const initialStatus = linkedinConnected ? "active" : "pending_linkedin";
+
       let campaignId: string | null = existingCampaignId ?? null;
 
       try {
