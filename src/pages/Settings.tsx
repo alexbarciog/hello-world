@@ -305,18 +305,10 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 
 // ─── LinkedIn Accounts Tab ────────────────────────────────────────────────────
 function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
-  const [liAtCookie, setLiAtCookie] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
-  const [checkpoint, setCheckpoint] = useState<{
-    type: string;
-    account_id: string;
-    message: string;
-  } | null>(null);
-  const [checkpointCode, setCheckpointCode] = useState("");
-  const [solvingCheckpoint, setSolvingCheckpoint] = useState(false);
-  const [pollingInApp, setPollingInApp] = useState(false);
+  const [polling, setPolling] = useState(false);
 
   useEffect(() => {
     checkConnection();
@@ -342,7 +334,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
       }
     );
     const data = await res.json();
-    if (!res.ok && data.status !== "checkpoint") throw new Error(data.error || "Request failed");
+    if (!res.ok) throw new Error(data.error || "Request failed");
     return data;
   }
 
@@ -363,98 +355,44 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   }
 
   async function handleConnect() {
-    if (!liAtCookie.trim() || liAtCookie.trim().length < 10) {
-      toast.error("Please enter a valid li_at cookie value");
-      return;
-    }
     setConnecting(true);
     try {
-      const data = await callConnectLinkedin({ li_at: liAtCookie.trim() });
+      const data = await callConnectLinkedin({ action: "create_link" });
 
-      if (data.status === "checkpoint") {
-        setCheckpoint({
-          type: data.checkpoint_type,
-          account_id: data.account_id,
-          message: data.message,
-        });
-        setLiAtCookie("");
-        if (data.checkpoint_type === "IN_APP_VALIDATION") {
-          startInAppPolling(data.account_id);
-        }
-      } else if (data.status === "connected") {
-        setAccountId(data.account_id);
-        setLiAtCookie("");
-        setCheckpoint(null);
-        toast.success("LinkedIn account connected successfully!");
-        onConnected?.();
+      if (data.status === "link_created" && data.url) {
+        // Open Unipile hosted auth in a new tab
+        window.open(data.url, "_blank", "noopener,noreferrer");
+        // Start polling for connection
+        startPolling();
       }
     } catch (e: any) {
-      toast.error(e.message || "Failed to connect LinkedIn account");
+      toast.error(e.message || "Failed to initiate LinkedIn connection");
     } finally {
       setConnecting(false);
     }
   }
 
-  async function handleSolveCheckpoint() {
-    if (!checkpoint || !checkpointCode.trim()) return;
-    setSolvingCheckpoint(true);
-    try {
-      const data = await callConnectLinkedin({
-        action: "solve_checkpoint",
-        account_id: checkpoint.account_id,
-        code: checkpointCode.trim(),
-      });
-
-      if (data.status === "checkpoint") {
-        setCheckpoint({
-          type: data.checkpoint_type,
-          account_id: data.account_id,
-          message: data.message || "Additional verification required",
-        });
-        setCheckpointCode("");
-        if (data.checkpoint_type === "IN_APP_VALIDATION") {
-          startInAppPolling(data.account_id);
-        }
-      } else if (data.status === "connected") {
-        setAccountId(data.account_id);
-        setCheckpoint(null);
-        setCheckpointCode("");
-        toast.success("LinkedIn account connected successfully!");
-        onConnected?.();
-      }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to verify code");
-    } finally {
-      setSolvingCheckpoint(false);
-    }
-  }
-
-  function startInAppPolling(pollAccountId: string) {
-    setPollingInApp(true);
+  function startPolling() {
+    setPolling(true);
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 90; // 3 minutes
 
     const interval = setInterval(async () => {
       attempts++;
       if (attempts >= maxAttempts) {
         clearInterval(interval);
-        setPollingInApp(false);
-        toast.error("LinkedIn confirmation timed out. Please try again.");
-        setCheckpoint(null);
+        setPolling(false);
+        toast.error("Connection timed out. Please try again.");
         return;
       }
       try {
-        const data = await callConnectLinkedin({
-          action: "check_status",
-          account_id: pollAccountId,
-        });
+        const data = await callConnectLinkedin({ action: "check_status" });
         if (data.status === "connected") {
           clearInterval(interval);
-          setPollingInApp(false);
+          setPolling(false);
           setAccountId(data.account_id);
-          setCheckpoint(null);
-           toast.success("LinkedIn account connected successfully!");
-           onConnected?.();
+          toast.success("LinkedIn account connected successfully!");
+          onConnected?.();
         }
       } catch {
         // Keep polling
@@ -502,107 +440,34 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
             </button>
           </div>
         </div>
-      ) : checkpoint ? (
-        <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Shield className="w-5 h-5 text-yellow-600" />
-            <span className="text-sm font-bold text-gray-900">Verification Required</span>
-          </div>
-          <p className="text-sm text-gray-700 mb-4">{checkpoint.message}</p>
-
-          {checkpoint.type === "IN_APP_VALIDATION" ? (
-            <div className="flex items-center gap-3">
-              {pollingInApp && (
-                <>
-                  <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-gray-500">Waiting for confirmation in your LinkedIn app…</span>
-                </>
-              )}
-            </div>
-          ) : checkpoint.type === "CAPTCHA" || checkpoint.type === "PHONE_REGISTER" ? (
-            <div>
-              <p className="text-xs text-gray-500 mb-3">This verification type cannot be completed here. Please resolve it on LinkedIn directly, then try connecting again.</p>
-              <button
-                onClick={() => setCheckpoint(null)}
-                className="text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-100 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-3">
-                <label className={labelCls}>Verification Code</label>
-                <input
-                  type="text"
-                  className={inputCls}
-                  placeholder="Enter your verification code..."
-                  value={checkpointCode}
-                  onChange={(e) => setCheckpointCode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSolveCheckpoint()}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSolveCheckpoint}
-                  disabled={solvingCheckpoint || !checkpointCode.trim()}
-                  className={`${saveBtnCls} flex items-center gap-2 disabled:opacity-50`}
-                  style={{ background: "hsl(var(--goji-coral))" }}
-                >
-                  {solvingCheckpoint ? "Verifying..." : "Submit Code"}
-                </button>
-                <button
-                  onClick={() => { setCheckpoint(null); setCheckpointCode(""); }}
-                  className="text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       ) : (
         <div className="border border-gray-200 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Linkedin className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-bold text-gray-900">Connect LinkedIn Account</span>
-          </div>
-          <p className="text-xs text-gray-500 mb-4">
-            To connect your LinkedIn, you need to provide your LinkedIn <code className="bg-gray-100 px-1 rounded text-xs">li_at</code> session cookie.
-          </p>
-
-          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 mb-4">
-            <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-gray-600">
-              <p className="font-semibold text-blue-600 mb-1">How to find your li_at cookie:</p>
-              <ol className="list-decimal list-inside space-y-0.5">
-                <li>Open LinkedIn in Chrome and log in</li>
-                <li>Press F12 → Application tab → Cookies → linkedin.com</li>
-                <li>Find the <code className="bg-blue-100 px-1 rounded">li_at</code> cookie and copy its value</li>
-              </ol>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+              <Linkedin className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Connect your LinkedIn</p>
+              <p className="text-xs text-gray-500">Securely link your account to start discovering and engaging leads</p>
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className={labelCls}>li_at Cookie Value</label>
-            <input
-              type="password"
-              className={inputCls}
-              placeholder="Paste your li_at cookie value here..."
-              value={liAtCookie}
-              onChange={(e) => setLiAtCookie(e.target.value)}
-            />
-          </div>
-
-          <button
-            onClick={handleConnect}
-            disabled={connecting || !liAtCookie.trim()}
-            className={`${saveBtnCls} flex items-center gap-2 disabled:opacity-50`}
-            style={{ background: "hsl(var(--goji-coral))" }}
-          >
-            <Linkedin className="w-3.5 h-3.5" />
-            {connecting ? "Connecting..." : "Connect LinkedIn"}
-          </button>
+          {polling ? (
+            <div className="flex items-center gap-3 py-4">
+              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "hsl(var(--goji-coral))", borderTopColor: "transparent" }} />
+              <span className="text-sm text-gray-600">Waiting for LinkedIn connection… Complete the process in the opened tab.</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleConnect}
+              disabled={connecting}
+              className={`${saveBtnCls} flex items-center gap-2 disabled:opacity-50`}
+              style={{ background: "hsl(var(--goji-coral))" }}
+            >
+              <Linkedin className="w-3.5 h-3.5" />
+              {connecting ? "Opening..." : "Connect LinkedIn"}
+            </button>
+          )}
         </div>
       )}
     </div>
