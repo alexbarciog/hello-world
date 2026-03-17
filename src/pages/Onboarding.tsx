@@ -256,8 +256,8 @@ function OnboardingInner() {
           </div>
         </div>
       </div>
-
-
+    </div>
+  );
 
   );
 }
