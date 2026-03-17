@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Gojiberry.ai Design System — All colors in HSL */
+
+@layer base {
+  :root {
+    /* Background */
+    --background: 0 0% 100%;
+    --foreground: 240 20% 14%;
+
+    /* Card */
+    --card: 0 0% 100%;
+    --card-foreground: 240 20% 14%;
+
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 20% 14%;
+
+    /* Brand - deep dark berry/brown (matches the CTA button) */
+    --primary: 340 30% 22%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 240 20% 14%;
+
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 50%;
+
+    /* Accent - coral/salmon hero background tint */
+    --accent: 5 90% 72%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 340 30% 22%;
+
+    --radius: 0.75rem;
+
+    /* Gojiberry custom tokens */
+    --goji-orange: 18 95% 58%;
+    --goji-coral: 5 90% 65%;
+    --goji-berry: 340 35% 25%;
+    --goji-dark: 240 20% 14%;
+    --goji-text-muted: 220 10% 50%;
+    --goji-bg-hero: 5 85% 96%;
+    --goji-bg-hero-2: 20 90% 94%;
+
+    /* Gradient */
+    --gradient-hero: linear-gradient(135deg, hsl(5 85% 96%) 0%, hsl(20 90% 94%) 50%, hsl(0 0% 100%) 100%);
+    --gradient-brand: linear-gradient(135deg, hsl(var(--goji-orange)), hsl(var(--goji-coral)));
+    --gradient-cta-bg: linear-gradient(135deg, hsl(5 80% 93%) 0%, hsl(350 60% 91%) 100%);
+
+    /* Shadows */
+    --shadow-card: 0 2px 16px 0 hsl(220 14% 10% / 0.06);
+    --shadow-button: 0 4px 24px 0 hsl(var(--goji-coral) / 0.35);
+
+    /* Sidebar (keeping default) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Marquee animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.animate-marquee-reverse {
+  animation: marquee 25s linear infinite reverse;
+  display: flex;
+  width: max-content;
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s ease forwards;
+}
+
+/* Hero background grid pattern */
+.hero-grid-bg {
+  background-image:
+    linear-gradient(to right, hsl(0 0% 0% / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(0 0% 0% / 0.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+}

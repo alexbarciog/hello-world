@@ -1,0 +1,339 @@
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import gojiIcon from "@/assets/gojiberry-icon.png";
+import { clearOnboardingSession } from "@/components/OnboardingGuard";
+
+type Campaign = {
+  id: string;
+  company_name: string | null;
+  status: string;
+  created_at: string;
+  campaign_goal: string | null;
+};
+
+type CampaignWithLeads = Campaign & { leadsCount: number };
+
+export default function CampaignsPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase
+        .from("campaigns")
+        .select("id, company_name, status, created_at, campaign_goal")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      const rows = (data ?? []) as Campaign[];
+
+      // Get lead counts
+      const withCounts: CampaignWithLeads[] = await Promise.all(
+        rows.map(async (c) => {
+          const { count } = await supabase
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("campaign_id", c.id);
+          return { ...c, leadsCount: count ?? 0 };
+        })
+      );
+
+      setCampaigns(withCounts);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const handleNewCampaign = () => {
+    clearOnboardingSession();
+    navigate("/");
+  };
+
+  return (
+    <div className="p-6 max-w-[1200px] mx-auto">
+      {/* Header card */}
+      <div
+        className="rounded-md bg-card p-4 mb-6 border border-border flex items-center justify-between"
+      >
+        <div>
+          <h1
+            className="text-base font-semibold flex items-center gap-2"
+            style={{ color: "hsl(var(--goji-dark))" }}
+          >
+            <span className="flex items-center gap-1.5">
+              <img src={gojiIcon} alt="" className="w-5 h-5 object-contain" />
+              Campaigns
+            </span>
+            <button
+              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide transition-colors hover:bg-muted/50"
+              style={{
+                color: "hsl(var(--goji-coral))",
+                borderColor: "hsl(var(--goji-coral) / 0.4)",
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-3.5 h-3.5"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              HOW IT WORKS?
+            </button>
+          </h1>
+          <p
+            className="text-xs mt-1 ml-7"
+            style={{ color: "hsl(var(--goji-text-muted))" }}
+          >
+            Create and manage your outreach campaigns
+          </p>
+        </div>
+        <button
+          onClick={handleNewCampaign}
+          className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+          style={{
+            background: "hsl(var(--goji-coral))",
+            color: "white",
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Start a campaign
+        </button>
+      </div>
+
+      {/* Table card */}
+      <div className="rounded-md border border-border bg-card overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Campaign Name
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider text-center"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Leads
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider text-center"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Connect
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider text-center"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Reply
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                LinkedIn Account
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Status
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Created
+              </TableHead>
+              <TableHead
+                className="text-[11px] font-semibold uppercase tracking-wider text-center"
+                style={{ color: "hsl(var(--goji-text-muted))" }}
+              >
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-8 mx-auto" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell className="text-center"><Skeleton className="h-4 w-10 mx-auto" /></TableCell>
+                </TableRow>
+              ))
+            ) : campaigns.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-16">
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+                      style={{ background: "hsl(220 20% 95%)" }}
+                    >
+                      📡
+                    </div>
+                    <p className="text-sm font-medium" style={{ color: "hsl(var(--goji-dark))" }}>
+                      No campaigns yet
+                    </p>
+                    <p className="text-xs" style={{ color: "hsl(var(--goji-text-muted))" }}>
+                      Create your first campaign to get started.
+                    </p>
+                    <button
+                      onClick={handleNewCampaign}
+                      className="mt-2 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                      style={{ background: "hsl(var(--goji-coral))", color: "white" }}
+                    >
+                      + Start a campaign
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              campaigns.map((c) => (
+                <TableRow key={c.id} className="group">
+                  {/* Campaign Name */}
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <img src={gojiIcon} alt="" className="w-5 h-5 object-contain shrink-0 opacity-70" />
+                      <span
+                        className="text-sm font-medium"
+                        style={{ color: "hsl(var(--goji-dark))" }}
+                      >
+                        {c.company_name || "My Campaign"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  {/* Leads */}
+                  <TableCell className="text-center">
+                    <span className="text-sm font-semibold" style={{ color: "hsl(var(--goji-dark))" }}>
+                      {c.leadsCount}
+                    </span>
+                  </TableCell>
+                  {/* Connect */}
+                  <TableCell className="text-center">
+                    <span className="text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>—</span>
+                  </TableCell>
+                  {/* Reply */}
+                  <TableCell className="text-center">
+                    <span className="text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>—</span>
+                  </TableCell>
+                  {/* LinkedIn Account */}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0"
+                        style={{ background: "hsl(220 14% 92%)", color: "hsl(var(--goji-text-muted))" }}
+                      >
+                        👤
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium truncate" style={{ color: "hsl(var(--goji-dark))" }}>
+                          First account
+                        </p>
+                        <p className="text-[10px] truncate" style={{ color: "hsl(var(--goji-text-muted))" }}>
+                          connected
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  {/* Status */}
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          background:
+                            c.status === "active"
+                              ? "hsl(142 70% 45%)"
+                              : "hsl(220 10% 65%)",
+                        }}
+                      />
+                      <span
+                        className="text-sm font-medium"
+                        style={{
+                          color:
+                            c.status === "active"
+                              ? "hsl(142 70% 35%)"
+                              : "hsl(220 10% 50%)",
+                        }}
+                      >
+                        {c.status === "active" ? "Active" : c.status}
+                      </span>
+                    </div>
+                  </TableCell>
+                  {/* Created */}
+                  <TableCell>
+                    <span className="text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>
+                      {new Date(c.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </TableCell>
+                  {/* Actions */}
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        className="p-1.5 rounded hover:bg-muted/60 transition-colors"
+                        style={{ color: "hsl(var(--goji-text-muted))" }}
+                        title="View details"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                          <rect x="3" y="3" width="7" height="7" />
+                          <rect x="14" y="3" width="7" height="7" />
+                          <rect x="3" y="14" width="7" height="7" />
+                          <rect x="14" y="14" width="7" height="7" />
+                        </svg>
+                      </button>
+                      <button
+                        className="p-1.5 rounded hover:bg-muted/60 transition-colors"
+                        style={{ color: "hsl(var(--goji-text-muted))" }}
+                        title="More"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                          <circle cx="12" cy="5" r="1.5" />
+                          <circle cx="12" cy="12" r="1.5" />
+                          <circle cx="12" cy="19" r="1.5" />
+                        </svg>
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

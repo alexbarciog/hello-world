@@ -1,0 +1,200 @@
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import gojiIcon from "@/assets/gojiberry-icon.png";
+import {
+  LayoutDashboard,
+  Sparkles,
+  Megaphone,
+  Users,
+  Radio,
+  Mail,
+  BarChart2,
+  Plug,
+  Settings,
+  HelpCircle,
+  Gift,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
+  LogOut,
+} from "lucide-react";
+
+const navItems = [
+  { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Copilot",        icon: Sparkles,         path: "/copilot",  badge: "New" },
+  { label: "Campaigns",      icon: Megaphone,         path: "/campaigns" },
+  { label: "Contacts",       icon: Users,             path: "/contacts" },
+  { label: "Signals Agents", icon: Radio,             path: "/signals" },
+  { label: "Unibox",         icon: Mail,              path: "/unibox" },
+  { label: "Insights",       icon: BarChart2,         path: "/insights" },
+  { label: "Integrations",   icon: Plug,              path: "/integrations" },
+  { label: "Settings",       icon: Settings,          path: "/settings" },
+];
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-[hsl(220_20%_97%)]">
+      {/* Sidebar */}
+      <aside
+        className={`flex flex-col shrink-0 transition-all duration-200 ${
+          collapsed ? "w-[64px]" : "w-[200px]"
+        }`}
+        style={{ background: "hsl(222 28% 12%)" }}
+      >
+        {/* Logo row */}
+        <div className="flex items-center justify-between px-3 py-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <img src={gojiIcon} alt="Gojiberry" className="w-7 h-7 object-contain shrink-0" />
+            {!collapsed && (
+              <span className="font-bold text-base tracking-tight text-white truncate">gojiberry</span>
+            )}
+          </div>
+          {!collapsed && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white">
+                <Bell className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCollapsed(true)}
+                className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          {collapsed && (
+            <button
+              onClick={() => setCollapsed(false)}
+              className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white mx-auto"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
+          {navItems.map((item) => {
+            const active = location.pathname === item.path;
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                title={collapsed ? item.label : undefined}
+                className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
+                  active
+                    ? "bg-white/10 text-white"
+                    : "text-white/60 hover:bg-white/8 hover:text-white/90"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {!collapsed && (
+                  <span className="flex-1 text-left truncate">{item.label}</span>
+                )}
+                {!collapsed && item.badge && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500 text-white">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom section */}
+        <div className="px-2 pb-3 space-y-1">
+          {/* Go Premium card */}
+          {!collapsed && (
+            <div
+              className="rounded-xl p-3 mb-2"
+              style={{
+                background: "linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(330 85% 55%) 100%)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-xs font-bold text-white">Go Premium</p>
+                  <p className="text-[10px] text-white/80">Unlock all features</p>
+                </div>
+                <button className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors">
+                  <ChevronRight className="w-3 h-3 text-white" />
+                </button>
+              </div>
+              <button
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-white/80 border border-white/30 rounded-md py-1 mb-1.5 hover:bg-white/10 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                7 Days Trial
+              </button>
+              <button className="w-full text-[11px] font-bold text-white bg-white/20 hover:bg-white/30 rounded-md py-1.5 transition-colors">
+                Start Trial ✦
+              </button>
+            </div>
+          )}
+
+          {/* Help Center */}
+          <button
+            onClick={() => navigate("/help")}
+            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-white/60 hover:bg-white/8 hover:text-white/90 transition-colors"
+          >
+            <HelpCircle className="w-4 h-4 shrink-0" />
+            {!collapsed && <span className="truncate">Help Center</span>}
+          </button>
+
+          {/* Referral */}
+          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-white/60 hover:bg-white/8 hover:text-white/90 transition-colors">
+            <Gift className="w-4 h-4 shrink-0" />
+            {!collapsed && <span className="truncate">Join Referral program</span>}
+          </button>
+
+          {/* Credits */}
+          {!collapsed && (
+            <p className="text-[10px] text-white/30 px-2.5 py-1">
+              0 Credits left &nbsp;·&nbsp; ∞ Leads / Mo
+            </p>
+          )}
+
+          {/* User + Sign out */}
+          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-white/8 transition-colors group">
+            <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
+              AB
+            </div>
+            {!collapsed && (
+              <div className="min-w-0 text-left flex-1">
+                <p className="text-xs font-semibold text-white/80 truncate">Alex Barciog</p>
+                <p className="text-[10px] text-white/40 truncate">bogdanlucian016@g...</p>
+              </div>
+            )}
+          </button>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate("/login");
+            }}
+            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-white/50 hover:bg-white/8 hover:text-white/80 transition-colors"
+            title="Sign out"
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            {!collapsed && <span className="text-xs font-medium">Sign out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        {children}
+      </main>
+    </div>
+  );
+}
