@@ -453,7 +453,8 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
           setPollingInApp(false);
           setAccountId(data.account_id);
           setCheckpoint(null);
-          toast.success("LinkedIn account connected successfully!");
+           toast.success("LinkedIn account connected successfully!");
+           onConnected?.();
         }
       } catch {
         // Keep polling
