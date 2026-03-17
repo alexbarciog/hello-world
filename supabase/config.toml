@@ -1,16 +1,1 @@
-project_id = "ohjakihpltwazxvanyak"
-
-[functions.firecrawl-scrape]
-verify_jwt = false
-
-[functions.generate-icp]
-verify_jwt = false
-
-[functions.generate-intent-signals]
-verify_jwt = false
-
-[functions.generate-pain-points]
-verify_jwt = false
-
-[functions.score-leads]
-verify_jwt = false
+project_id = "uwwajlezgeurnvvrvdvb"
