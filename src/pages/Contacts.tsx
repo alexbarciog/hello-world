@@ -24,19 +24,6 @@ interface Contact {
   imported_at: string;
 }
 
-// Demo data to seed on first load
-const DEMO_CONTACTS = [
-  { first_name: "Cristina", last_name: "I.", title: "Duty Manager/Assistant General Manager", company: "Hospes Hotels | Infinite Places", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "orange" },
-  { first_name: "Jean-christophe", last_name: "Burlaud", title: "Directeur des Opérations Mercato Marr...", company: "Atlas Hospitality Morocco", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Regan", last_name: "Cramer", title: "General Manager", company: "Flat Iron", signal: "Strategic Window: Just hired (<90d)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Pierre-Antoine", last_name: "CHEVIGNY", title: "Directeur Supply Chain", company: "Le Petit Vapoteur", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Nicolas", last_name: "De Gols", title: "General Manager", company: "Shangri-La Paris", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Emmanuel", last_name: "Denninger 🚀", title: "Directeur e-commerce", company: "RETIF", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "gray" },
-  { first_name: "Adrien", last_name: "Fuchs", title: "Directeur Régional des Opérations", company: "ECG", signal: "Strategic Window: Just hired (<90d)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "green" },
-  { first_name: "Sophie", last_name: "Martin", title: "Head of Operations", company: "AccorHotels", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 3, signal_a_hit: true, signal_b_hit: true, signal_c_hit: true, company_icon_color: "blue" },
-  { first_name: "Marco", last_name: "Rossi", title: "VP of Procurement", company: "Melia Hotels", signal: "Strategic Window: Just hired (<90d)", ai_score: 2, signal_a_hit: true, signal_b_hit: true, signal_c_hit: false, company_icon_color: "purple" },
-  { first_name: "Laura", last_name: "Chen", title: "Director of Strategy", company: "Mandarin Oriental", signal: "Top 5% most active in your ICP (LinkedIn)", ai_score: 3, signal_a_hit: true, signal_b_hit: true, signal_c_hit: true, company_icon_color: "pink" },
-];
 
 export default function Contacts() {
   const [tab, setTab] = useState<"all" | "lists">("all");
