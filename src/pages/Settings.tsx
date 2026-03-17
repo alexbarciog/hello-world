@@ -304,7 +304,7 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 }
 
 // ─── LinkedIn Accounts Tab ────────────────────────────────────────────────────
-function LinkedInTab() {
+function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [liAtCookie, setLiAtCookie] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
