@@ -8,8 +8,7 @@ import { Step4Precision } from "@/components/onboarding/Step4Precision";
 import { Step5IntentSignals } from "@/components/onboarding/Step5IntentSignals";
 import { Step6Objectives } from "@/components/onboarding/Step6Objectives";
 import { StepComplete } from "@/components/onboarding/StepComplete";
-import { markOnboardingComplete } from "@/components/OnboardingGuard";
-import { OnboardingEntryGuard } from "@/components/OnboardingGuard";
+import { markOnboardingComplete, OnboardingEntryGuard } from "@/components/OnboardingGuard";
 import { OnboardingProvider, useOnboarding } from "@/contexts/OnboardingContext";
 import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import type { OnboardingStep } from "@/contexts/OnboardingContext";
@@ -257,17 +256,6 @@ function OnboardingInner() {
           </div>
         </div>
       </div>
-
-      <p className="mt-6 text-xs" style={{ color: "hsl(var(--goji-text-muted))" }}>
-        Already have an account?{" "}
-        <a
-          href="/home"
-          className="font-medium underline underline-offset-2 hover:opacity-80 transition-opacity"
-          style={{ color: "hsl(var(--goji-berry))" }}
-        >
-          Log in
-        </a>
-      </p>
     </div>
   );
 }

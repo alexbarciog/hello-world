@@ -50,7 +50,6 @@ type Props = {
   precision: PrecisionMode;
   signals: IntentSignalsData;
   objectives: ObjectivesData;
-  /** If provided, update this existing draft campaign instead of inserting a new one */
   existingCampaignId?: string | null;
 };
 
@@ -71,10 +70,14 @@ export const StepComplete = ({
     hasSaved.current = true;
 
     async function saveAndRedirect() {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
       let campaignId: string | null = existingCampaignId ?? null;
 
       try {
         const fullPayload = {
+          user_id: userId,
           website: data.website,
           company_name: data.companyName,
           description: data.description,
@@ -103,21 +106,17 @@ export const StepComplete = ({
         };
 
         if (campaignId) {
-          // Update the existing draft campaign to active
           const { error } = await supabase
             .from("campaigns")
-            .update(fullPayload)
+            .update(fullPayload as any)
             .eq("id", campaignId);
-
           if (error) throw error;
         } else {
-          // Fallback: insert a new campaign
           const { data: inserted, error } = await supabase
             .from("campaigns")
-            .insert(fullPayload)
+            .insert(fullPayload as any)
             .select("id")
             .single();
-
           if (error) throw error;
           if (inserted) campaignId = inserted.id;
         }
@@ -127,18 +126,17 @@ export const StepComplete = ({
 
       // Mark onboarding complete in profile
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.id) {
+        if (userId) {
           await supabase
             .from("profiles")
             .update({ onboarding_complete: true })
-            .eq("user_id", session.user.id);
+            .eq("user_id", userId);
         }
       } catch (err) {
         console.warn("Failed to update profile onboarding status:", err);
       }
 
-      // 2. Trigger lead scoring (fire-and-forget)
+      // Trigger lead scoring (fire-and-forget)
       if (campaignId) {
         try {
           const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -156,11 +154,8 @@ export const StepComplete = ({
         }
       }
 
-      // 3. Minimum display time
       await new Promise((res) => setTimeout(res, 4000));
-
-      const dest = "/dashboard";
-      window.location.href = dest;
+      window.location.href = "/dashboard";
     }
 
     saveAndRedirect();
@@ -174,12 +169,10 @@ export const StepComplete = ({
           "radial-gradient(ellipse 90% 70% at 50% 0%, hsl(5 85% 95%) 0%, hsl(20 90% 96%) 40%, hsl(0 0% 100%) 80%)",
       }}
     >
-      {/* Card */}
       <div
         className="w-full max-w-[640px] rounded-2xl bg-card border border-border px-10 py-16 flex flex-col items-center text-center animate-fade-in"
         style={{ boxShadow: "var(--shadow-card)" }}
       >
-        {/* Brain icon */}
         <div
           className="w-20 h-20 rounded-full flex items-center justify-center mb-8"
           style={{
@@ -191,7 +184,6 @@ export const StepComplete = ({
           <BrainIcon />
         </div>
 
-        {/* Text */}
         <h1
           className="text-xl font-bold tracking-tight mb-3 max-w-xs"
           style={{ color: "hsl(var(--goji-dark))" }}
@@ -206,7 +198,6 @@ export const StepComplete = ({
           agent's ICP and campaign goals…
         </p>
 
-        {/* Loading dots */}
         <LoadingDots />
       </div>
     </div>

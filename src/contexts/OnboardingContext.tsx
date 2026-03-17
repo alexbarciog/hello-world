@@ -3,7 +3,6 @@ import {
   useContext,
   useState,
   useEffect,
-  useRef,
   useCallback,
   type ReactNode,
 } from "react";
@@ -23,19 +22,6 @@ import {
 } from "@/components/onboarding/Step6Objectives";
 import type { PrecisionMode } from "@/components/onboarding/Step4Precision";
 
-// ─── Session ID ───────────────────────────────────────────────────────────────
-
-const SESSION_KEY = "goji_session_id";
-
-function getOrCreateSessionId(): string {
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, id);
-  }
-  return id;
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -43,7 +29,6 @@ export type SaveStatus = "idle" | "saving" | "saved" | "error";
 export type OnboardingStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 type OnboardingContextValue = {
-  // State
   currentStep: OnboardingStep;
   data: OnboardingData;
   icp: ICPData;
@@ -54,7 +39,6 @@ type OnboardingContextValue = {
   saveStatus: SaveStatus;
   isLoadingDraft: boolean;
 
-  // Mutators
   setCurrentStep: (step: OnboardingStep) => void;
   patch: (p: Partial<OnboardingData>) => void;
   patchIcp: (p: Partial<ICPData>) => void;
@@ -62,7 +46,6 @@ type OnboardingContextValue = {
   patchSignals: (p: Partial<IntentSignalsData>) => void;
   patchObjectives: (p: Partial<ObjectivesData>) => void;
 
-  // Persistence
   saveCurrentStep: (
     step: OnboardingStep,
     nextStep: OnboardingStep,
@@ -89,8 +72,6 @@ export function useOnboarding() {
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const sessionId = useRef(getOrCreateSessionId());
-
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
   const [data, setData] = useState<OnboardingData>(INITIAL_ONBOARDING_DATA);
   const [icp, setIcp] = useState<ICPData>(INITIAL_ICP);
@@ -106,10 +87,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadDraft() {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user?.id) return;
+
         const { data: rows, error } = await supabase
           .from("campaigns")
           .select("*")
-          .eq("session_id", sessionId.current)
+          .eq("user_id", session.user.id)
           .eq("status", "draft")
           .order("updated_at", { ascending: false })
           .limit(1);
@@ -120,7 +104,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setCampaignId(row.id);
         setCurrentStep((row.current_step as OnboardingStep) ?? 1);
 
-        // Hydrate step data
         if (row.step_1_data) {
           const s1 = row.step_1_data as Partial<OnboardingData>;
           setData((prev) => ({ ...prev, ...s1 }));
@@ -187,13 +170,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     ) => {
       setSaveStatus("saving");
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        setSaveStatus("error");
+        return;
+      }
+
       const d = overrideData?.data ?? data;
       const i = overrideData?.icp ?? icp;
       const pr = overrideData?.precision ?? precision;
       const si = overrideData?.signals ?? signals;
       const ob = overrideData?.objectives ?? objectives;
 
-      // Build step-specific payload
       const stepPayload: Record<string, unknown> = {};
       if (step === 1) {
         stepPayload.step_1_data = {
@@ -203,7 +191,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           industry: d.industry,
           language: d.language,
         };
-        // Mirror into flat columns too (for StepComplete compatibility)
         stepPayload.website = d.website;
         stepPayload.company_name = d.companyName;
         stepPayload.description = d.description;
@@ -244,27 +231,25 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
       try {
         if (campaignId) {
-          // UPDATE existing draft
           const { error } = await supabase
             .from("campaigns")
             .update({
               current_step: nextStep,
               status: "draft",
               ...stepPayload,
-            })
+            } as any)
             .eq("id", campaignId);
 
           if (error) throw error;
         } else {
-          // INSERT new draft
           const { data: inserted, error } = await supabase
             .from("campaigns")
             .insert({
-              session_id: sessionId.current,
+              user_id: session.user.id,
               current_step: nextStep,
               status: "draft",
               ...stepPayload,
-            })
+            } as any)
             .select("id")
             .single();
 
