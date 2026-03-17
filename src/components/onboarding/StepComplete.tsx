@@ -114,7 +114,7 @@ export const StepComplete = ({
           pain_points: objectives.painPoints ? objectives.painPoints.split("\n").map(s => s.trim()).filter(Boolean) : [],
           campaign_goal: objectives.campaignGoal,
           message_tone: objectives.messageTone,
-          status: "active",
+          status: initialStatus,
           current_step: 6,
         };
 
