@@ -113,7 +113,7 @@ export default function Contacts() {
   }
 
   return (
-    <div className="min-h-full p-6 md:p-8">
+    <div className="min-h-full bg-card rounded-2xl m-4 p-6 md:p-8">
       {/* Tabs */}
       <div className="flex items-center gap-6 border-b border-gray-200 mb-5">
         <button

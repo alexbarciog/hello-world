@@ -97,7 +97,7 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[1200px] mx-auto">
+    <div className="min-h-full bg-card rounded-2xl m-4 p-6">
       {/* Header card */}
       <div className="rounded-md bg-card p-4 mb-6 border border-border flex items-center justify-between">
         <div>

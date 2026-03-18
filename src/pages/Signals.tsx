@@ -124,7 +124,7 @@ export default function Signals() {
   }
 
   return (
-    <div className="relative min-h-full p-6 md:p-8">
+    <div className="relative min-h-full bg-card rounded-2xl m-4 p-6 md:p-8">
       {/* Toast notification */}
       {toastAgent && (
         <div className="fixed top-6 right-6 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[320px] animate-in slide-in-from-right">
