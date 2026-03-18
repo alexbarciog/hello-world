@@ -2,48 +2,106 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users, Building2, User, Linkedin, Shield, MessageSquare,
-  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock
+  Users, Building2, User, Linkedin, Shield,
+  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock, Check,
 } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Animation variants ────────────────────────────────────────────────────────
+const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
-type Tab =
-  | "organization"
-  | "company"
-  | "account"
-  | "linkedin"
-  | "security"
-  | "billing";
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.38, ease: easing, delay: i * 0.07 },
+  }),
+};
+
+const tabContent = {
+  hidden: { opacity: 0, x: 10 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: easing } },
+  exit: { opacity: 0, x: -10, transition: { duration: 0.18 } },
+};
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Tab = "organization" | "company" | "account" | "linkedin" | "security" | "billing";
 
 const tabsList: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "organization", label: "Organization", icon: <Users className="w-3.5 h-3.5" /> },
-  { id: "company", label: "Company", icon: <Building2 className="w-3.5 h-3.5" /> },
-  { id: "account", label: "Account", icon: <User className="w-3.5 h-3.5" /> },
-  { id: "linkedin", label: "LinkedIn Accounts", icon: <Linkedin className="w-3.5 h-3.5" /> },
-  { id: "security", label: "Security", icon: <Shield className="w-3.5 h-3.5" /> },
-  { id: "billing", label: "Billing", icon: <CreditCard className="w-3.5 h-3.5" /> },
+  { id: "company",      label: "Company",      icon: <Building2 className="w-3.5 h-3.5" /> },
+  { id: "account",      label: "Account",      icon: <User className="w-3.5 h-3.5" /> },
+  { id: "linkedin",     label: "LinkedIn",     icon: <Linkedin className="w-3.5 h-3.5" /> },
+  { id: "security",     label: "Security",     icon: <Shield className="w-3.5 h-3.5" /> },
+  { id: "billing",      label: "Billing",      icon: <CreditCard className="w-3.5 h-3.5" /> },
 ];
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
-const inputCls = "w-full border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[hsl(var(--goji-coral))] focus:border-[hsl(var(--goji-coral))] bg-white";
-const labelCls = "block text-sm font-medium text-gray-700 mb-1";
-const saveBtnCls = "px-5 py-2 rounded-md text-sm font-semibold text-white transition-opacity hover:opacity-90";
+const inputCls =
+  "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--goji-coral))/30] focus:border-[hsl(var(--goji-coral))] bg-background transition-all";
+const labelCls = "block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider";
+
+function SectionCard({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  return (
+    <motion.div
+      custom={delay}
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
+      className={`rounded-2xl border border-border bg-card p-6 ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
+  return (
+    <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
+      <div className="flex items-center gap-2.5 mb-1">
+        <span style={{ color: "hsl(var(--goji-coral))" }}>{icon}</span>
+        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      </div>
+      <p className="text-sm text-muted-foreground ml-7">{subtitle}</p>
+    </motion.div>
+  );
+}
+
+function SaveButton({ saving, saved, onClick, label = "Save Settings" }: { saving: boolean; saved?: boolean; onClick: () => void; label?: string }) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      disabled={saving}
+      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
+      style={{ background: saved ? "hsl(142 70% 45%)" : "hsl(var(--goji-coral))" }}
+    >
+      {saving ? (
+        <>
+          <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+            <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Saving…
+        </>
+      ) : saved ? (
+        <><Check className="w-3.5 h-3.5" /> Saved!</>
+      ) : label}
+    </motion.button>
+  );
+}
 
 // ─── Invitation type ──────────────────────────────────────────────────────────
 type Invitation = {
-  id: string;
-  email: string;
-  accepted_at: string | null;
-  expires_at: string;
-  created_at: string;
-  inviter_name: string | null;
+  id: string; email: string; accepted_at: string | null;
+  expires_at: string; created_at: string; inviter_name: string | null;
 };
 
-// ─── Organization Tab ─────────────────────────────────────────────────────────
 const MAX_INVITATIONS = 2;
 
+// ─── Organization Tab ─────────────────────────────────────────────────────────
 function OrganizationTab({ userEmail, userName }: { userEmail: string; userName: string }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -51,10 +109,8 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
   const [loadingInvites, setLoadingInvites] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const initials = userName ? userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "U";
-
   const atLimit = invitations.length >= MAX_INVITATIONS;
 
-  // Load invitations from Supabase on mount
   useEffect(() => {
     async function load() {
       setLoadingInvites(true);
@@ -72,457 +128,291 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
   }, []);
 
   async function handleInvite() {
-    if (atLimit) {
-      toast.error(`You have reached the maximum of ${MAX_INVITATIONS} team member invitations.`);
-      return;
-    }
+    if (atLimit) { toast.error(`Max ${MAX_INVITATIONS} invitations.`); return; }
     const trimmed = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!trimmed || !emailRegex.test(trimmed)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { toast.error("Please enter a valid email"); return; }
     setSending(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-      const res = await fetch(
-        `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/send-invite`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ email: trimmed }),
-        }
-      );
+      const res = await fetch(`https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/send-invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ email: trimmed }),
+      });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to send invitation");
       toast.success(`Invitation sent to ${trimmed} ✉️`);
       setEmail("");
-      // Reload invitations to get the newly created one with its id
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: rows } = await supabase
-          .from("invitations")
+        const { data: rows } = await supabase.from("invitations")
           .select("id, email, accepted_at, expires_at, created_at, inviter_name")
-          .eq("invited_by", user.id)
-          .order("created_at", { ascending: false });
+          .eq("invited_by", user.id).order("created_at", { ascending: false });
         if (rows) setInvitations(rows as Invitation[]);
       }
-    } catch (e: any) {
-      toast.error(e.message || "Failed to send invitation");
-    } finally {
-      setSending(false);
-    }
+    } catch (e: any) { toast.error(e.message || "Failed to send invitation"); }
+    finally { setSending(false); }
   }
 
   async function handleDelete(inviteId: string, inviteEmail: string) {
     setDeletingId(inviteId);
-    try {
-      const { error } = await supabase
-        .from("invitations")
-        .delete()
-        .eq("id", inviteId);
-      if (error) throw error;
-      setInvitations((prev) => prev.filter((i) => i.id !== inviteId));
-      toast.success(`Invitation for ${inviteEmail} revoked`);
-    } catch (e: any) {
-      toast.error("Failed to revoke invitation");
-    } finally {
-      setDeletingId(null);
-    }
+    const { error } = await supabase.from("invitations").delete().eq("id", inviteId);
+    if (error) toast.error("Failed to revoke invitation");
+    else { setInvitations((prev) => prev.filter((i) => i.id !== inviteId)); toast.success(`Invitation for ${inviteEmail} revoked`); }
+    setDeletingId(null);
   }
 
-  const pendingInvites = invitations.filter(
-    (i) => !i.accepted_at && new Date(i.expires_at) > new Date()
-  );
-  const expiredInvites = invitations.filter(
-    (i) => !i.accepted_at && new Date(i.expires_at) <= new Date()
-  );
+  const pendingInvites = invitations.filter((i) => !i.accepted_at && new Date(i.expires_at) > new Date());
   const acceptedInvites = invitations.filter((i) => !!i.accepted_at);
 
   return (
-    <div>
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <SectionHeader icon={<Users className="w-4.5 h-4.5" />} title="Organization Members" subtitle="Manage who has access to your workspace and their roles" />
+
+      {/* Invite card */}
+      <SectionCard delay={1}>
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-bold text-gray-900">{userName || "Your Organization"} - Members</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Manage who has access to your organization and their roles</p>
+            <p className="text-sm font-semibold text-foreground">Invite New Member</p>
+            <p className="text-xs text-muted-foreground mt-0.5">An invitation link will be sent to their email</p>
           </div>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted rounded-full px-3 py-1">
             <Users className="w-3.5 h-3.5" />
-            <span>{invitations.length} / {MAX_INVITATIONS} invitations used</span>
+            {invitations.length} / {MAX_INVITATIONS} used
           </div>
         </div>
-      </div>
 
-      <div className="mb-6">
-        <p className="text-sm font-semibold text-gray-700 mb-2">Invite New Member</p>
         {atLimit ? (
-          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-700">
+          <div className="flex items-center gap-2 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
             <Info className="w-4 h-4 shrink-0" />
-            <span>You've reached the limit of <strong>{MAX_INVITATIONS} team member invitations</strong>. Delete an existing invitation to invite someone new.</span>
+            <span>Limit reached — delete an invitation to invite someone new.</span>
           </div>
         ) : (
           <>
             <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="colleague@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-                className={`${inputCls} flex-1`}
-                disabled={sending}
-              />
-              <button
-                className={saveBtnCls}
-                style={{ background: "hsl(var(--goji-coral))" }}
-                onClick={handleInvite}
-                disabled={sending}
-              >
-                {sending ? (
-                  <span className="flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                      <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Sending...
-                  </span>
-                ) : "Invite"}
-              </button>
+              <input type="email" placeholder="colleague@company.com" value={email}
+                onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                className={`${inputCls} flex-1`} disabled={sending} />
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
+                style={{ background: "hsl(var(--goji-coral))" }} onClick={handleInvite} disabled={sending}>
+                {sending ? "Sending…" : "Invite"}
+              </motion.button>
             </div>
-            <p className="text-xs text-gray-400 mt-1.5">An invitation with a signup link will be sent to this email.</p>
+            <p className="text-xs text-muted-foreground mt-2">They'll receive a signup link via email.</p>
           </>
         )}
-      </div>
+      </SectionCard>
 
-      {/* Pending Invitations */}
+      {/* Pending invitations */}
       {!loadingInvites && pendingInvites.length > 0 && (
-        <div className="mb-4 border border-yellow-200 rounded-lg overflow-hidden">
-          <div className="px-4 py-2.5 bg-yellow-50 border-b border-yellow-200 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-yellow-600" />
-            <p className="text-xs font-semibold text-yellow-700">Pending Invitations ({pendingInvites.length})</p>
+        <SectionCard delay={2}>
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <p className="text-sm font-semibold text-foreground">Pending ({pendingInvites.length})</p>
           </div>
-          {pendingInvites.map((inv) => (
-            <div key={inv.id} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 bg-white">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 font-medium">
-                  {inv.email[0].toUpperCase()}
+          <div className="space-y-2">
+            {pendingInvites.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-muted/40 border border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs text-amber-600 font-bold">{inv.email[0].toUpperCase()}</div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{inv.email}</p>
+                    <p className="text-xs text-muted-foreground">Expires {new Date(inv.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm text-gray-700">{inv.email}</span>
-                  <p className="text-xs text-gray-400">
-                    Expires {new Date(inv.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Pending</span>
-                <button
-                  onClick={() => handleDelete(inv.id, inv.email)}
-                  disabled={deletingId === inv.id}
-                  title="Revoke invitation"
-                  className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-                >
-                  {deletingId === inv.id ? (
-                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Pending</span>
+                  <button onClick={() => handleDelete(inv.id, inv.email)} disabled={deletingId === inv.id}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40">
                     <Trash2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </SectionCard>
       )}
 
-      {/* Accepted Invitations */}
+      {/* Accepted invitations */}
       {!loadingInvites && acceptedInvites.length > 0 && (
-        <div className="mb-4 border border-green-200 rounded-lg overflow-hidden">
-          <div className="px-4 py-2.5 bg-green-50 border-b border-green-200">
-            <p className="text-xs font-semibold text-green-700">Accepted ({acceptedInvites.length})</p>
+        <SectionCard delay={3}>
+          <div className="flex items-center gap-2 mb-4">
+            <Check className="w-4 h-4 text-green-500" />
+            <p className="text-sm font-semibold text-foreground">Accepted ({acceptedInvites.length})</p>
           </div>
-          {acceptedInvites.map((inv) => (
-            <div key={inv.id} className="flex items-center justify-between px-4 py-3 border-b border-gray-100 last:border-0 bg-white">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-600 font-medium">
-                  {inv.email[0].toUpperCase()}
+          <div className="space-y-2">
+            {acceptedInvites.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-green-50 border border-green-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-xs text-green-600 font-bold">{inv.email[0].toUpperCase()}</div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{inv.email}</p>
+                    <p className="text-xs text-muted-foreground">Joined {new Date(inv.accepted_at!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-sm text-gray-700">{inv.email}</span>
-                  <p className="text-xs text-gray-400">
-                    Joined {new Date(inv.accepted_at!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </p>
-                </div>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Accepted</span>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Accepted</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </SectionCard>
       )}
 
       {/* Members table */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Member</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Role</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Joined</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="px-4 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold text-white">{initials}</div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">{userName || "User"}</p>
-                    <p className="text-xs text-gray-500">{userEmail}</p>
+      <SectionCard delay={4}>
+        <p className="text-sm font-semibold text-foreground mb-4">Members</p>
+        <div className="rounded-xl border border-border overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                {["Member", "Role", "Joined", "Actions"].map((h) => (
+                  <th key={h} className="text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 py-3">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>{initials}</div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{userName || "User"}</p>
+                      <p className="text-xs text-muted-foreground">{userEmail}</p>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="px-4 py-4">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                  <Building2 className="w-3 h-3" /> Owner
-                </span>
-              </td>
-              <td className="px-4 py-4"><span className="text-sm text-gray-600">{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span></td>
-              <td className="px-4 py-4"><span className="text-sm text-gray-400">—</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                </td>
+                <td className="px-4 py-4">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                    <Building2 className="w-3 h-3" /> Owner
+                  </span>
+                </td>
+                <td className="px-4 py-4"><span className="text-sm text-muted-foreground">{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span></td>
+                <td className="px-4 py-4"><span className="text-sm text-muted-foreground">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
     </div>
   );
 }
 
 // ─── Company Tab ──────────────────────────────────────────────────────────────
 function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data: any) => Promise<void> }) {
-  const [form, setForm] = useState({
-    name: "",
-    website: "",
-    industry: "",
-    size: "",
-    description: "",
-    linkedin: "",
-    autoEnrich: false,
-    preventDuplication: false,
-  });
+  const [form, setForm] = useState({ name: "", website: "", industry: "", size: "", description: "", linkedin: "", autoEnrich: false, preventDuplication: false });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (campaignData) {
-      setForm((prev) => ({
-        ...prev,
-        name: campaignData.company_name || prev.name,
-        website: campaignData.website || prev.website,
-        industry: campaignData.industry || prev.industry,
-        description: campaignData.description || prev.description,
-      }));
-    }
+    if (campaignData) setForm((p) => ({ ...p, name: campaignData.company_name || p.name, website: campaignData.website || p.website, industry: campaignData.industry || p.industry, description: campaignData.description || p.description }));
   }, [campaignData]);
 
   async function handleSave() {
-    if (!form.name.trim()) {
-      toast.error("Company name is required");
-      return;
-    }
-    setSaving(true);
-    setSaved(false);
+    if (!form.name.trim()) { toast.error("Company name is required"); return; }
+    setSaving(true); setSaved(false);
     try {
-      await onSave({
-        company_name: form.name.trim(),
-        website: form.website.trim(),
-        industry: form.industry,
-        description: form.description.trim(),
-      });
-      setSaved(true);
-      toast.success("Company settings saved successfully!");
+      await onSave({ company_name: form.name.trim(), website: form.website.trim(), industry: form.industry, description: form.description.trim() });
+      setSaved(true); toast.success("Company settings saved!");
       setTimeout(() => setSaved(false), 3000);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to save company settings");
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { toast.error(e?.message || "Failed to save"); }
+    finally { setSaving(false); }
   }
 
+  const fields = [
+    { label: "Company Name *", key: "name", placeholder: "Your company name", type: "text" },
+    { label: "Website", key: "website", placeholder: "https://yourcompany.com", type: "text" },
+    { label: "LinkedIn Company Page", key: "linkedin", placeholder: "https://linkedin.com/company/...", type: "text" },
+  ];
+
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">Company Information</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Update your company details — changes are saved to your active campaign</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader icon={<Building2 className="w-4.5 h-4.5" />} title="Company Information" subtitle="Update your company details used across campaigns" />
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className={labelCls}>Company Name <span className="text-red-400">*</span></label>
-          <input
-            className={inputCls}
-            placeholder="Your company name"
-            value={form.name}
-            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-          />
+      <SectionCard delay={1}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {fields.slice(0, 2).map((f, i) => (
+            <motion.div key={f.key} custom={i + 1} variants={fadeUp} initial="hidden" animate="visible">
+              <label className={labelCls}>{f.label}</label>
+              <input className={inputCls} placeholder={f.placeholder} value={(form as any)[f.key]}
+                onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))} />
+            </motion.div>
+          ))}
         </div>
-        <div>
-          <label className={labelCls}>Website</label>
-          <input
-            className={inputCls}
-            placeholder="https://yourcompany.com"
-            value={form.website}
-            onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className={labelCls}>Industry <span className="text-red-400">*</span></label>
-          <div className="relative">
-            <select
-              className={`${inputCls} appearance-none`}
-              value={form.industry}
-              onChange={(e) => setForm((p) => ({ ...p, industry: e.target.value }))}
-            >
-              <option value="">Select your industry</option>
-              <option>Technology</option><option>SaaS</option><option>Marketing</option><option>Finance</option>
-              <option>Healthcare</option><option>E-commerce</option><option>Hospitality</option><option>Retail</option>
-              <option>Manufacturing</option><option>Education</option><option>Real Estate</option><option>Consulting</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-        <div>
-          <label className={labelCls}>Company Size</label>
-          <div className="relative">
-            <select
-              className={`${inputCls} appearance-none`}
-              value={form.size}
-              onChange={(e) => setForm((p) => ({ ...p, size: e.target.value }))}
-            >
-              <option value="">Select company size</option>
-              <option>1-10</option><option>11-50</option><option>51-200</option><option>201-500</option><option>500+</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <label className={labelCls}>Company Description</label>
-        <textarea
-          className={`${inputCls} resize-none`}
-          rows={4}
-          placeholder="Brief description of what your company does..."
-          value={form.description}
-          onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-        />
-      </div>
-
-      <div className="mb-8">
-        <label className={labelCls}>LinkedIn Company Page</label>
-        <input
-          className={inputCls}
-          placeholder="https://www.linkedin.com/company/yourcompany"
-          value={form.linkedin}
-          onChange={(e) => setForm((p) => ({ ...p, linkedin: e.target.value }))}
-        />
-      </div>
-
-      <div className="mb-6">
-        <h3 className="text-sm font-bold text-gray-900 mb-3">Company Preferences</h3>
-        <div className="space-y-4">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]"
-              checked={form.autoEnrich}
-              onChange={(e) => setForm((p) => ({ ...p, autoEnrich: e.target.checked }))}
-            />
-            <div>
-              <p className="text-sm font-medium text-gray-700">Auto-enrich email addresses</p>
-              <p className="text-xs text-gray-500">Automatically find and enrich email addresses for generated leads</p>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible">
+            <label className={labelCls}>Industry *</label>
+            <div className="relative">
+              <select className={`${inputCls} appearance-none`} value={form.industry} onChange={(e) => setForm((p) => ({ ...p, industry: e.target.value }))}>
+                <option value="">Select industry</option>
+                {["Technology","SaaS","Marketing","Finance","Healthcare","E-commerce","Retail","Manufacturing","Education","Consulting"].map((o) => <option key={o}>{o}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
-          </label>
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]"
-              checked={form.preventDuplication}
-              onChange={(e) => setForm((p) => ({ ...p, preventDuplication: e.target.checked }))}
-            />
-            <div>
-              <p className="text-sm font-medium text-gray-700">Prevent contact duplication across team members</p>
-              <p className="text-xs text-gray-500">When enabled, AI agents will ensure the same lead is not imported into multiple team members' contact lists</p>
+          </motion.div>
+          <motion.div custom={4} variants={fadeUp} initial="hidden" animate="visible">
+            <label className={labelCls}>Company Size</label>
+            <div className="relative">
+              <select className={`${inputCls} appearance-none`} value={form.size} onChange={(e) => setForm((p) => ({ ...p, size: e.target.value }))}>
+                <option value="">Select size</option>
+                {["1-10","11-50","51-200","201-500","500+"].map((o) => <option key={o}>{o}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             </div>
-          </label>
+          </motion.div>
         </div>
-      </div>
+        <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible" className="mb-4">
+          <label className={labelCls}>Description</label>
+          <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Brief description of what your company does…" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+        </motion.div>
+        <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible" className="mb-6">
+          <label className={labelCls}>LinkedIn Company Page</label>
+          <input className={inputCls} placeholder="https://linkedin.com/company/yourcompany" value={form.linkedin} onChange={(e) => setForm((p) => ({ ...p, linkedin: e.target.value }))} />
+        </motion.div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={`${saveBtnCls} flex items-center gap-2`}
-          style={{ background: saved ? "hsl(142 70% 45%)" : "hsl(var(--goji-coral))" }}
-        >
-          {saving ? (
-            <>
-              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Saving...
-            </>
-          ) : saved ? (
-            <>
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="w-3.5 h-3.5">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              Saved!
-            </>
-          ) : "Save Settings"}
-        </button>
-        {!campaignData && (
-          <p className="text-xs text-amber-600">No active campaign found — complete onboarding first to save company data.</p>
-        )}
-      </div>
+        <motion.div custom={7} variants={fadeUp} initial="hidden" animate="visible" className="mb-6 rounded-xl bg-muted/40 border border-border p-4 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Preferences</p>
+          {[
+            { key: "autoEnrich", label: "Auto-enrich email addresses", desc: "Automatically find emails for generated leads" },
+            { key: "preventDuplication", label: "Prevent contact duplication", desc: "AI agents won't import the same lead twice across team members" },
+          ].map((pref) => (
+            <label key={pref.key} className="flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" className="mt-0.5 w-4 h-4 rounded border-border accent-[hsl(var(--goji-coral))]"
+                checked={(form as any)[pref.key]} onChange={(e) => setForm((p) => ({ ...p, [pref.key]: e.target.checked }))} />
+              <div>
+                <p className="text-sm font-medium text-foreground">{pref.label}</p>
+                <p className="text-xs text-muted-foreground">{pref.desc}</p>
+              </div>
+            </label>
+          ))}
+        </motion.div>
+
+        <div className="flex items-center gap-3">
+          <SaveButton saving={saving} saved={saved} onClick={handleSave} />
+          {!campaignData && <p className="text-xs text-amber-600">No active campaign — complete onboarding first.</p>}
+        </div>
+      </SectionCard>
     </div>
   );
 }
 
 // ─── Account Tab ──────────────────────────────────────────────────────────────
 function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; campaignData: any; onSave: (data: any) => void }) {
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    language: "English (US)",
-    timezone: "Europe/Bucharest",
-    emailNotifications: true,
-  });
+  const [form, setForm] = useState({ firstName: "", lastName: "", language: "English (US)", timezone: "Europe/Bucharest", emailNotifications: true });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (campaignData) {
-      // Try to extract name from company_name or use defaults
       const lang = campaignData.language || "English (US)";
       const country = campaignData.country || "";
-      setForm((prev) => ({
-        ...prev,
-        language: lang,
-        timezone: country.toLowerCase().includes("romania") ? "Europe/Bucharest" :
-                  country.toLowerCase().includes("us") || country.toLowerCase().includes("united states") ? "America/New_York" :
-                  country.toLowerCase().includes("uk") || country.toLowerCase().includes("united kingdom") ? "Europe/London" :
-                  country.toLowerCase().includes("france") ? "Europe/Paris" :
-                  country.toLowerCase().includes("germany") ? "Europe/Berlin" : prev.timezone,
+      setForm((p) => ({
+        ...p, language: lang,
+        timezone: country.toLowerCase().includes("romania") ? "Europe/Bucharest"
+          : country.toLowerCase().includes("us") ? "America/New_York"
+          : country.toLowerCase().includes("uk") ? "Europe/London"
+          : country.toLowerCase().includes("france") ? "Europe/Paris"
+          : country.toLowerCase().includes("germany") ? "Europe/Berlin"
+          : p.timezone,
       }));
     }
   }, [campaignData]);
@@ -535,100 +425,81 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">Account Settings</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your personal account information and preferences</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader icon={<User className="w-4.5 h-4.5" />} title="Account Settings" subtitle="Manage your personal information and preferences" />
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className={labelCls}>First Name</label>
-          <input className={inputCls} value={form.firstName} onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))} />
+      <SectionCard delay={1}>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {[["First Name", "firstName", "John"], ["Last Name", "lastName", "Doe"]].map(([label, key, ph], i) => (
+            <motion.div key={key} custom={i + 1} variants={fadeUp} initial="hidden" animate="visible">
+              <label className={labelCls}>{label}</label>
+              <input className={inputCls} placeholder={ph} value={(form as any)[key]} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))} />
+            </motion.div>
+          ))}
         </div>
-        <div>
-          <label className={labelCls}>Last Name</label>
-          <input className={inputCls} value={form.lastName} onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))} />
+
+        <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible" className="mb-4">
+          <label className={labelCls}>Email</label>
+          <input className={`${inputCls} opacity-60 cursor-not-allowed`} value={userEmail} disabled />
+          <p className="text-xs text-muted-foreground mt-1">Email cannot be changed here</p>
+        </motion.div>
+
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {[
+            { label: "Preferred Language", key: "language", options: ["English (US)", "Romanian", "French", "Spanish", "German"] },
+            { label: "Timezone", key: "timezone", options: ["Europe/Bucharest", "America/New_York", "America/Los_Angeles", "Europe/London", "Europe/Paris", "Europe/Berlin", "Asia/Tokyo"] },
+          ].map((sel, i) => (
+            <motion.div key={sel.key} custom={i + 4} variants={fadeUp} initial="hidden" animate="visible">
+              <label className={labelCls}>{sel.label}</label>
+              <div className="relative">
+                <select className={`${inputCls} appearance-none`} value={(form as any)[sel.key]} onChange={(e) => setForm((p) => ({ ...p, [sel.key]: e.target.value }))}>
+                  {sel.options.map((o) => <option key={o}>{o}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </div>
 
-      <div className="mb-4">
-        <label className={labelCls}>Email</label>
-        <input className={inputCls} value={userEmail} disabled />
-        <p className="text-xs text-gray-400 mt-1">Email cannot be changed here</p>
-      </div>
+        <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible" className="mb-6 rounded-xl bg-muted/40 border border-border p-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded border-border accent-[hsl(var(--goji-coral))]"
+              checked={form.emailNotifications} onChange={(e) => setForm((p) => ({ ...p, emailNotifications: e.target.checked }))} />
+            <div>
+              <p className="text-sm font-medium text-foreground">Email Notifications</p>
+              <p className="text-xs text-muted-foreground">Receive a daily summary of newly imported leads</p>
+            </div>
+          </label>
+        </motion.div>
 
-      <div className="mb-4">
-        <label className={labelCls}>Preferred Language</label>
-        <div className="relative">
-          <select className={`${inputCls} appearance-none`} value={form.language} onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}>
-            <option>English (US)</option><option>Romanian</option><option>French</option><option>Spanish</option><option>German</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <div className="flex justify-end">
+          <SaveButton saving={saving} onClick={handleSave} />
         </div>
-        <p className="text-xs text-gray-400 mt-1">This language preference will be used for AI message generation</p>
-      </div>
-
-      <div className="mb-6">
-        <label className={labelCls}>Timezone</label>
-        <div className="relative">
-          <select className={`${inputCls} appearance-none`} value={form.timezone} onChange={(e) => setForm((p) => ({ ...p, timezone: e.target.value }))}>
-            <option>Europe/Bucharest</option><option>America/New_York</option><option>America/Los_Angeles</option><option>Europe/London</option><option>Europe/Paris</option><option>Europe/Berlin</option><option>Asia/Tokyo</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <p className="text-sm font-medium text-gray-700 mb-2">Email Notifications</p>
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" className="w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]" checked={form.emailNotifications} onChange={(e) => setForm((p) => ({ ...p, emailNotifications: e.target.checked }))} />
-          <span className="text-sm text-gray-700">Receive a daily email summary of newly imported leads</span>
-        </label>
-      </div>
-
-      <div className="flex justify-end">
-        <button onClick={handleSave} disabled={saving} className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }}>
-          {saving ? "Saving..." : "Save Settings"}
-        </button>
-      </div>
+      </SectionCard>
     </div>
   );
 }
 
-// ─── LinkedIn Accounts Tab ────────────────────────────────────────────────────
+// ─── LinkedIn Tab ─────────────────────────────────────────────────────────────
 function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [polling, setPolling] = useState(false);
 
-  function clearLinkedinQueryParam() {
+  function clearParam() {
     const url = new URL(window.location.href);
     url.searchParams.delete("linkedin");
     window.history.replaceState({}, "", url.toString());
   }
 
   useEffect(() => {
-    const linkedinStatus = new URLSearchParams(window.location.search).get("linkedin");
-
+    const status = new URLSearchParams(window.location.search).get("linkedin");
     void (async () => {
       const isConnected = await checkConnection();
-      if (isConnected) {
-        clearLinkedinQueryParam();
-        return;
-      }
-
-      if (linkedinStatus === "success") {
-        toast.success("LinkedIn connected. Finalizing your session...");
-        startPolling();
-        return;
-      }
-
-      if (linkedinStatus === "failed") {
-        clearLinkedinQueryParam();
-        toast.error("LinkedIn connection was cancelled or failed.");
-      }
+      if (isConnected) { clearParam(); return; }
+      if (status === "success") { toast.success("LinkedIn connected. Finalizing…"); startPolling(); return; }
+      if (status === "failed") { clearParam(); toast.error("LinkedIn connection cancelled or failed."); }
     })();
   }, []);
 
@@ -638,19 +509,11 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
     return session.access_token;
   }
 
-  async function callConnectLinkedin(body: Record<string, unknown>) {
+  async function callAPI(body: Record<string, unknown>) {
     const token = await getAuthToken();
-    const res = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      }
-    );
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body),
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Request failed");
     return data;
@@ -658,139 +521,90 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
 
   async function checkConnection(showLoader = true) {
     if (showLoader) setLoadingStatus(true);
-
     try {
-      const data = await callConnectLinkedin({ action: "check_status" });
+      const data = await callAPI({ action: "check_status" });
       const isConnected = data.status === "connected" && Boolean(data.account_id);
-
       setAccountId(isConnected ? data.account_id : null);
       return isConnected;
-    } catch {
-      return false;
-    } finally {
-      if (showLoader) setLoadingStatus(false);
-    }
+    } catch { return false; }
+    finally { if (showLoader) setLoadingStatus(false); }
   }
 
   async function handleConnect() {
     setConnecting(true);
     try {
-      const data = await callConnectLinkedin({
-        action: "create_link",
-        return_url: window.location.href,
-      });
-
-      if (data.status === "link_created" && data.url) {
-        window.open(data.url, "_blank", "noopener,noreferrer");
-        startPolling();
-        return;
-      }
-
+      const data = await callAPI({ action: "create_link", return_url: window.location.href });
+      if (data.status === "link_created" && data.url) { window.open(data.url, "_blank", "noopener,noreferrer"); startPolling(); return; }
       throw new Error("Unable to open LinkedIn connection flow");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to initiate LinkedIn connection");
-      setConnecting(false);
-    }
+    } catch (e: any) { toast.error(e.message || "Failed to initiate LinkedIn connection"); setConnecting(false); }
   }
 
   function startPolling() {
     setPolling(true);
     let attempts = 0;
-    const maxAttempts = 90;
-
     const interval = window.setInterval(async () => {
-      attempts += 1;
-
+      attempts++;
       const isConnected = await checkConnection(false);
-      if (isConnected) {
-        window.clearInterval(interval);
-        setPolling(false);
-        setConnecting(false);
-        clearLinkedinQueryParam();
-        toast.success("LinkedIn account connected successfully!");
-        onConnected?.();
-        return;
-      }
-
-      if (attempts >= maxAttempts) {
-        window.clearInterval(interval);
-        setPolling(false);
-        setConnecting(false);
-        toast.error("Connection timed out. Please try again.");
-      }
+      if (isConnected) { window.clearInterval(interval); setPolling(false); setConnecting(false); clearParam(); toast.success("LinkedIn connected!"); onConnected?.(); return; }
+      if (attempts >= 90) { window.clearInterval(interval); setPolling(false); setConnecting(false); toast.error("Connection timed out. Please try again."); }
     }, 2000);
   }
 
   async function handleDisconnect() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase
-      .from("profiles")
-      .update({ unipile_account_id: null } as any)
-      .eq("user_id", user.id);
+    await supabase.from("profiles").update({ unipile_account_id: null } as any).eq("user_id", user.id);
     setAccountId(null);
     toast.success("LinkedIn account disconnected");
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">LinkedIn Connection</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Connect your LinkedIn account to enable automated lead discovery</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader icon={<Linkedin className="w-4.5 h-4.5" />} title="LinkedIn Accounts" subtitle="Connect your LinkedIn to enable automated lead discovery and outreach" />
 
-      {loadingStatus ? (
-        <div className="text-sm text-gray-400 py-8 text-center">Checking connection status...</div>
-      ) : accountId ? (
-        <div className="border border-green-200 bg-green-50 rounded-lg p-5">
-          <div className="flex items-center justify-between">
+      <SectionCard delay={1}>
+        {loadingStatus ? (
+          <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "hsl(var(--goji-coral))", borderTopColor: "transparent" }} />
+            <span className="text-sm">Checking connection…</span>
+          </div>
+        ) : accountId ? (
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-between p-4 rounded-xl bg-green-50 border border-green-200">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                 <Linkedin className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">LinkedIn Connected</p>
-                <p className="text-xs text-gray-500">Account ID: {accountId.slice(0, 12)}...</p>
+                <p className="text-sm font-semibold text-foreground">LinkedIn Connected ✓</p>
+                <p className="text-xs text-muted-foreground">Account ID: {accountId.slice(0, 12)}…</p>
               </div>
             </div>
-            <button
-              onClick={handleDisconnect}
-              className="text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors"
-            >
+            <button onClick={handleDisconnect} className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors">
               Disconnect
             </button>
-          </div>
-        </div>
-      ) : (
-        <div className="border border-gray-200 rounded-lg p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-              <Linkedin className="w-5 h-5 text-blue-600" />
+          </motion.div>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-muted/40 border border-border">
+              <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: "hsl(211 100% 96%)" }}>
+                <Linkedin className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Connect your LinkedIn</p>
+                <p className="text-xs text-muted-foreground">Securely link your account to start discovering and engaging leads</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Connect your LinkedIn</p>
-              <p className="text-xs text-gray-500">Securely link your account to start discovering and engaging leads</p>
-            </div>
-          </div>
-
-          {polling ? (
-            <div className="flex items-center gap-3 py-4">
-              <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "hsl(var(--goji-coral))", borderTopColor: "transparent" }} />
-              <span className="text-sm text-gray-600">Waiting for LinkedIn connection… Complete the process in the opened tab.</span>
-            </div>
-          ) : (
-            <button
-              onClick={handleConnect}
-              disabled={connecting}
-              className={`${saveBtnCls} flex items-center gap-2 disabled:opacity-50`}
-              style={{ background: "hsl(var(--goji-coral))" }}
-            >
-              <Linkedin className="w-3.5 h-3.5" />
-              {connecting ? "Opening..." : "Connect LinkedIn"}
-            </button>
-          )}
-        </div>
-      )}
+            {polling ? (
+              <div className="flex items-center gap-3 py-2">
+                <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "hsl(var(--goji-coral))", borderTopColor: "transparent" }} />
+                <span className="text-sm text-muted-foreground">Waiting for LinkedIn… Complete the flow in the opened tab.</span>
+              </div>
+            ) : (
+              <SaveButton saving={connecting} onClick={handleConnect} label="Connect LinkedIn" />
+            )}
+          </motion.div>
+        )}
+      </SectionCard>
     </div>
   );
 }
@@ -807,74 +621,31 @@ function SecurityTab() {
     const { error } = await supabase.auth.updateUser({ password: form.newPw });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Password updated successfully!");
+    toast.success("Password updated!");
     setForm({ newPw: "", confirm: "" });
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">Account Security</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Update your password and security settings</p>
-      </div>
-      <div className="space-y-4 mb-8">
-        <div>
-          <label className={labelCls}>New Password <span className="text-red-400">*</span></label>
-          <input type="password" className={inputCls} placeholder="Enter your new password (min. 8 characters)" value={form.newPw} onChange={(e) => setForm((p) => ({ ...p, newPw: e.target.value }))} />
-        </div>
-        <div>
-          <label className={labelCls}>Confirm New Password <span className="text-red-400">*</span></label>
-          <input type="password" className={inputCls} placeholder="Confirm your new password" value={form.confirm} onChange={(e) => setForm((p) => ({ ...p, confirm: e.target.value }))} />
-        </div>
-      </div>
-      <div className="flex justify-end">
-        <button onClick={handleChangePassword} disabled={saving} className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }}>
-          {saving ? "Updating..." : "Change Password"}
-        </button>
-      </div>
-    </div>
-  );
-}
+    <div className="space-y-5">
+      <SectionHeader icon={<Shield className="w-4.5 h-4.5" />} title="Account Security" subtitle="Update your password and security settings" />
 
-// ─── AI LinkedIn Templates Tab ────────────────────────────────────────────────
-function AITemplatesTab() {
-  const [template, setTemplate] = useState("gojiberry-default");
-  return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">AI LinkedIn Templates</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Define how your AI writes LinkedIn messages</p>
-      </div>
-      <div className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Current Template</p>
-        <div className="relative">
-          <select className={`${inputCls} appearance-none`} value={template} onChange={(e) => setTemplate(e.target.value)}>
-            <option value="gojiberry-default">Gojiberry's default template</option>
-            <option value="custom">Custom template</option>
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      <SectionCard delay={1}>
+        <div className="space-y-4 mb-6">
+          {[
+            { key: "newPw", label: "New Password *", placeholder: "Enter your new password (min. 8 characters)" },
+            { key: "confirm", label: "Confirm New Password *", placeholder: "Confirm your new password" },
+          ].map((f, i) => (
+            <motion.div key={f.key} custom={i + 1} variants={fadeUp} initial="hidden" animate="visible">
+              <label className={labelCls}>{f.label}</label>
+              <input type="password" className={inputCls} placeholder={f.placeholder}
+                value={(form as any)[f.key]} onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))} />
+            </motion.div>
+          ))}
         </div>
-      </div>
-      <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 mb-6">
-        <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-        <p className="text-xs text-gray-600">The AI will use <span className="font-semibold text-blue-500">Gojiberry's default template</span> as a base and personalize it with the lead's profile, company info, and detected signals.</p>
-      </div>
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-bold text-gray-900">Your AI Templates</span>
-            <span className="w-5 h-5 rounded-full bg-gray-100 text-xs font-semibold text-gray-500 flex items-center justify-center">0</span>
-          </div>
-          <button className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }}><Plus className="w-3.5 h-3.5 inline mr-1" />Create New Template</button>
+        <div className="flex justify-end">
+          <SaveButton saving={saving} onClick={handleChangePassword} label="Change Password" />
         </div>
-        <p className="text-xs text-gray-400 px-5 py-2 border-b border-gray-50">Templates guide your AI. Messages are generated dynamically for each lead.</p>
-        <div className="flex flex-col items-center justify-center py-14 gap-3">
-          <p className="text-sm font-semibold text-gray-700">No custom templates yet</p>
-          <p className="text-xs text-gray-400">Create your first template to customize your AI-generated LinkedIn messages</p>
-          <button className={`${saveBtnCls} mt-1`} style={{ background: "hsl(var(--goji-coral))" }}><Plus className="w-3.5 h-3.5 inline mr-1" />Create Your First Template</button>
-        </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }
@@ -883,61 +654,35 @@ function AITemplatesTab() {
 function BillingTab() {
   const navigate = useNavigate();
   return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">Billing &amp; Plans</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your subscription and billing information</p>
-      </div>
-      <div className="border border-gray-200 rounded-xl flex flex-col items-center justify-center py-20 gap-4 text-center px-8">
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
-        >
-          <CreditCard className="w-7 h-7 text-white" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-gray-900 mb-1">No Active Subscription</p>
-          <p className="text-xs text-gray-400 max-w-xs">Start your 7-day free trial and unlock unlimited leads, AI campaigns, and more.</p>
-        </div>
-        <button
-          onClick={() => navigate("/billing")}
-          className={`${saveBtnCls} flex items-center gap-2 mt-2`}
-          style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
-        >
-          <CreditCard className="w-3.5 h-3.5" />
-          View Pricing &amp; Plans
-        </button>
-      </div>
-    </div>
-  );
-}
+    <div className="space-y-5">
+      <SectionHeader icon={<CreditCard className="w-4.5 h-4.5" />} title="Billing & Plans" subtitle="Manage your subscription and payment information" />
 
-// ─── API Tab ──────────────────────────────────────────────────────────────────
-function APITab() {
-  return (
-    <div>
-      <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">API Settings</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your API keys and external integrations</p>
-      </div>
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <div>
-            <p className="text-sm font-bold text-gray-900">API Keys</p>
-            <p className="text-xs text-gray-400 mt-0.5">Use these keys to authenticate with our external API</p>
-          </div>
-          <button className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }}><Plus className="w-3.5 h-3.5 inline mr-1" />Create API Key</button>
+      <SectionCard delay={1}>
+        <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
+            className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
+            style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
+          >
+            <CreditCard className="w-7 h-7 text-white" />
+          </motion.div>
+          <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
+            <p className="text-base font-bold text-foreground mb-1">No Active Subscription</p>
+            <p className="text-sm text-muted-foreground max-w-xs">Start your 7-day free trial and unlock unlimited leads, AI campaigns, and more.</p>
+          </motion.div>
+          <motion.button
+            custom={3} variants={fadeUp} initial="hidden" animate="visible"
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/billing")}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md"
+            style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
+          >
+            <CreditCard className="w-4 h-4" /> View Pricing & Plans
+          </motion.button>
         </div>
-        <div className="mx-5 my-4 flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3">
-          <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-gray-600">Need help getting started? Check out our comprehensive <button className="text-blue-500 font-semibold hover:underline">API documentation</button> for detailed guides and examples.</p>
-        </div>
-        <div className="flex flex-col items-center justify-center py-14 gap-3">
-          <Key className="w-8 h-8 text-gray-300" />
-          <p className="text-sm font-bold text-gray-700">No API Keys</p>
-          <p className="text-xs text-gray-400">Create your first API key to start using our external API</p>
-        </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }
@@ -952,34 +697,18 @@ export default function Settings() {
 
   useEffect(() => {
     loadData();
-    // Check for ?tab=linkedin query param
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab");
-    if (tab && tabsList.some((t) => t.id === tab)) {
-      setActiveTab(tab as Tab);
-    }
+    if (tab && tabsList.some((t) => t.id === tab)) setActiveTab(tab as Tab);
   }, []);
 
   async function loadData() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
     setUserEmail(user.email || "");
     setUserName(user.user_metadata?.full_name || user.email?.split("@")[0] || "User");
-
-    // Get the user's most recent campaign (created during onboarding)
-    const { data } = await supabase
-      .from("campaigns")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (data) {
-      setCampaignData(data);
-      setCampaignId(data.id);
-    }
+    const { data } = await supabase.from("campaigns").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1).single();
+    if (data) { setCampaignData(data); setCampaignId(data.id); }
   }
 
   const saveCampaignFields = useCallback(async (fields: Record<string, any>) => {
@@ -992,56 +721,80 @@ export default function Settings() {
   const renderContent = () => {
     switch (activeTab) {
       case "organization": return <OrganizationTab userEmail={userEmail} userName={userName} />;
-      case "company": return <CompanyTab campaignData={campaignData} onSave={saveCampaignFields} />;
-      case "account": return <AccountTab userEmail={userEmail} campaignData={campaignData} onSave={saveCampaignFields} />;
-      case "linkedin": return <LinkedInTab onConnected={async () => {
+      case "company":      return <CompanyTab campaignData={campaignData} onSave={saveCampaignFields} />;
+      case "account":      return <AccountTab userEmail={userEmail} campaignData={campaignData} onSave={saveCampaignFields} />;
+      case "linkedin":     return <LinkedInTab onConnected={async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         await supabase.from("campaigns").update({ status: "active" } as any).eq("user_id", user.id).eq("status", "pending_linkedin");
         await supabase.from("signal_agents").update({ status: "active" } as any).eq("user_id", user.id).eq("status", "pending_linkedin");
-        toast.success("Your campaigns and AI agents are now active!");
+        toast.success("Campaigns and AI agents are now active!");
       }} />;
       case "security": return <SecurityTab />;
-      case "billing": return <BillingTab />;
+      case "billing":  return <BillingTab />;
     }
   };
 
   return (
-    <div className="min-h-full bg-card rounded-2xl m-4">
+    <div className="min-h-full bg-card rounded-2xl m-4 overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border px-8 py-4">
-        <div className="flex items-center gap-2">
-          <SettingsIcon className="w-4 h-4" style={{ color: "hsl(var(--goji-coral))" }} />
-          <h1 className="text-base font-bold text-foreground">Account Settings</h1>
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="border-b border-border px-8 py-5"
+      >
+        <div className="flex items-center gap-2.5">
+          <SettingsIcon className="w-4.5 h-4.5 shrink-0" style={{ color: "hsl(var(--goji-coral))" }} />
+          <h1 className="text-lg font-bold text-foreground">Account Settings</h1>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5 ml-6">Manage your company information and profile settings</p>
-      </div>
+        <p className="text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
+      </motion.div>
 
-      <div className="px-8 py-6 max-w-5xl">
-        {/* Tabs strip */}
-        <div className="border border-border rounded-xl mb-4 px-2">
-          <div className="flex items-center overflow-x-auto">
-            {tabsList.map((tab) => {
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-3.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    active ? "border-[hsl(var(--goji-coral))] text-[hsl(var(--goji-coral))]" : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+      {/* Tabs strip */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+        className="border-b border-border px-8"
+      >
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {tabsList.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${active ? "text-[hsl(var(--goji-coral))]" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {tab.icon}
+                {tab.label}
+                {active && (
+                  <motion.div
+                    layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                    style={{ background: "hsl(var(--goji-coral))" }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
+      </motion.div>
 
-        <div className="border border-border rounded-xl p-6">
-          {renderContent()}
-        </div>
+      {/* Tab content */}
+      <div className="px-8 py-6 max-w-3xl">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            variants={tabContent}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
