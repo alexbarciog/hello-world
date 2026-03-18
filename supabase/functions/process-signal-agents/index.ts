@@ -324,27 +324,55 @@ async function handleKeywordPosts(
 
   for (const post of topPosts) {
     await delay(1500);
-    // Same profile fetch as discover-leads (verified working)
-    const authorId = post.author_id || post.author?.id || post.author?.provider_id || post.provider_id || post.actor_id || post.actor?.id;
-    if (!authorId) continue;
 
-    try {
-      const profileRes = await unipileGet(`/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`, apiKey, dsn);
-      if (!profileRes.ok) {
-        console.error(`Profile fetch for author ${authorId}: ${profileRes.status}`);
-        continue;
-      }
-      const profile = await profileRes.json();
+    // First try to use inline author data from search results
+    const authorData = post.author || post.actor || null;
+    const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
 
-      const match = scoreProfileAgainstICP(profile, icp);
-      if (!matchesTitleOrIndustry(match, icp)) continue;
-      if (isExcluded(profile, icp.excludeKeywords)) continue;
+    let profile: any = null;
 
-      const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-      const signal = `Posted about "${post._keyword}"`;
-      const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
-      if (ok) inserted++;
-    } catch (e) { console.error('Keyword post author fetch:', e); }
+    // If we have inline author data with name/headline, use it directly
+    if (authorData && (authorData.first_name || authorData.name || authorData.headline)) {
+      profile = {
+        first_name: authorData.first_name || authorData.name?.split(' ')[0] || null,
+        last_name: authorData.last_name || authorData.name?.split(' ').slice(1).join(' ') || null,
+        headline: authorData.headline || authorData.title || null,
+        industry: authorData.industry || null,
+        location: authorData.location || null,
+        company: authorData.company || authorData.current_company?.name || null,
+        public_id: authorData.public_identifier || authorData.public_id || authorId,
+        linkedin_url: authorData.profile_url || authorData.public_profile_url || null,
+        provider_id: authorData.provider_id || authorId,
+      };
+      console.log(`keyword_posts: using inline author data for ${profile.first_name} ${profile.last_name}`);
+    } else if (authorId) {
+      // Fallback: try multiple profile endpoints
+      try {
+        let profileRes = await unipileGet(`/api/v1/users/${authorId}?account_id=${accountId}`, apiKey, dsn);
+        if (!profileRes.ok) {
+          profileRes = await unipileGet(`/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`, apiKey, dsn);
+        }
+        if (profileRes.ok) {
+          profile = await profileRes.json();
+        } else {
+          console.error(`Profile fetch for author ${authorId}: ${profileRes.status}`);
+          continue;
+        }
+      } catch (e) { console.error('Keyword post author fetch:', e); continue; }
+    } else {
+      continue;
+    }
+
+    if (!profile) continue;
+
+    const match = scoreProfileAgainstICP(profile, icp);
+    if (!matchesTitleOrIndustry(match, icp)) continue;
+    if (isExcluded(profile, icp.excludeKeywords)) continue;
+
+    const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+    const signal = `Posted about "${post._keyword}"`;
+    const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
+    if (ok) inserted++;
   }
   return inserted;
 }
