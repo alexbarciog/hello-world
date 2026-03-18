@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 
 const features = [
   "30+ Intent Signals",
