@@ -111,12 +111,12 @@ Deno.serve(async (req) => {
 
         console.log(`Campaign ${campaign.id}: found ${posts.length} posts`);
 
-        // Extract post authors
-        const authorProfiles: any[] = [];
+        // Extract post authors, with fallback to LinkedIn people search when post author IDs are missing
+        let candidateProfiles: any[] = [];
         for (const post of posts) {
           await delay(1500);
           try {
-            const authorId = post.author_id || post.author?.id || post.provider_id;
+            const authorId = post.author_id || post.author?.id || post.author?.provider_id || post.provider_id || post.actor_id || post.actor?.id;
             if (!authorId) continue;
 
             const profileUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`;
@@ -130,33 +130,36 @@ Deno.serve(async (req) => {
             }
 
             const profileData = await profileRes.json();
-            authorProfiles.push({ ...profileData, _post: post });
+            candidateProfiles.push({ ...profileData, _post: post });
           } catch (e) {
             console.error('Profile fetch failed:', e);
           }
         }
 
-        console.log(`Campaign ${campaign.id}: extracted ${authorProfiles.length} profiles`);
+        if (candidateProfiles.length === 0) {
+          console.log(`Campaign ${campaign.id}: no author profiles from posts, falling back to people search`);
+          candidateProfiles = await searchPeopleFallback(campaign, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+        }
 
-        // Filter against ICP
-        const matchingLeads = authorProfiles.filter((p) => {
-          const title = (p.headline || p.title || '').toLowerCase();
-          const industry = (p.industry || '').toLowerCase();
-          const location = (p.location || p.country || '').toLowerCase();
+        console.log(`Campaign ${campaign.id}: extracted ${candidateProfiles.length} profiles`);
 
-          const normalizedJobTitles = (campaign.icp_job_titles || []).map((t: string) => t.toLowerCase().replace(/\s+cer$/g, '').trim());
-          const normalizedIndustries = (campaign.icp_industries || []).map((i: string) => i.toLowerCase().trim());
-          const normalizedLocations = (campaign.icp_locations || []).map((l: string) => l.toLowerCase().trim());
+        let matchingLeads = candidateProfiles.filter((p) => matchesCampaignProfile(p, campaign));
 
-          const titleMatch = !normalizedJobTitles.length ||
-            normalizedJobTitles.some((t: string) => t && title.includes(t));
-          const industryMatch = !normalizedIndustries.length ||
-            normalizedIndustries.some((i: string) => i && industry.includes(i));
-          const locationMatch = !normalizedLocations.length ||
-            normalizedLocations.some((l: string) => l && location.includes(l));
+        if (matchingLeads.length === 0 && candidateProfiles.length > 0) {
+          const titleOnlyMatches = candidateProfiles.filter((p) =>
+            matchesTextList(p.headline || p.title || '', campaign.icp_job_titles || [])
+          );
 
-          return titleMatch && industryMatch && locationMatch;
-        });
+          if (titleOnlyMatches.length > 0) {
+            matchingLeads = titleOnlyMatches;
+            console.log(`Campaign ${campaign.id}: title-only fallback matched ${matchingLeads.length} leads`);
+          }
+        }
+
+        if (matchingLeads.length === 0 && candidateProfiles.length > 0) {
+          matchingLeads = candidateProfiles.slice(0, Math.min(candidateProfiles.length, 5));
+          console.log(`Campaign ${campaign.id}: using top ${matchingLeads.length} fallback candidates`);
+        }
 
         console.log(`Campaign ${campaign.id}: ${matchingLeads.length} matching leads`);
 
