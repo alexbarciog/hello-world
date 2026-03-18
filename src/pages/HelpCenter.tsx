@@ -1536,7 +1536,7 @@ export default function HelpCenter() {
   }
 
   return (
-    <div className="min-h-screen font-sans" style={{ background: "hsl(var(--background))" }}>
+    <div className="min-h-full bg-card rounded-2xl m-4 font-sans overflow-hidden">
       {/* ── Hero header ── */}
       <div
         className="relative pb-16"
