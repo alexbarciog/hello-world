@@ -115,10 +115,7 @@ function OnboardingInner() {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{
-          background:
-            "radial-gradient(ellipse 90% 70% at 50% 0%, hsl(5 85% 95%) 0%, hsl(20 90% 96%) 40%, hsl(0 0% 100%) 80%)",
-        }}
+        style={{ background: "hsl(195 14% 95%)" }}
       >
         <div className="flex flex-col items-center gap-3">
           <Loader2
