@@ -77,14 +77,30 @@ function OutreachCard() {
 
       <div className="flex flex-col gap-3 mx-6 mt-2">
         {leads.map((lead, i) => (
-          <div key={i} className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
-            <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${lead.gradient} flex items-center justify-center text-[10px] font-bold text-background shrink-0 ring-2 ring-background`}>
-              {lead.initials}
+          <div key={i} className="bg-background rounded-xl p-3 shadow-sm space-y-2">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${lead.gradient} flex items-center justify-center text-[10px] font-bold text-background shrink-0 ring-2 ring-background`}>
+                {lead.initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-foreground">{lead.name}</div>
+                <div className="text-xs" style={{ color: '#4A4A4A' }}>{lead.title}</div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-foreground">{lead.name}</div>
-              <div className="text-xs" style={{ color: '#4A4A4A' }}>{lead.title}</div>
-            </div>
+            {/* Signal pill with animated gradient border on hover */}
+            <span className="group/pill relative inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm overflow-visible cursor-default">
+              <span
+                className="absolute inset-[-0.5px] rounded-full opacity-0 group-hover/pill:opacity-100 group-hover/pill:animate-[borderSpin_2s_linear_infinite] transition-opacity duration-300"
+                style={{
+                  background: "conic-gradient(from var(--border-angle), #7C93E6 0%, #F7C459 25%, transparent 50%, transparent 100%)",
+                  zIndex: 0,
+                }}
+              />
+              <span className="absolute inset-[1px] rounded-full bg-background" style={{ zIndex: 0 }} />
+              <span className="relative z-10 inline-flex items-center">
+                {lead.signalIcon}{lead.signal}
+              </span>
+            </span>
           </div>
         ))}
       </div>
