@@ -40,8 +40,20 @@ const HeroCards = () => {
             {/* Right connector: horizontal from "Followed you" */}
             <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="flex justify-between gap-2">
-              <span className="flex-1 inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-                <Heart className="w-3 h-3 mr-1.5 shrink-0" />Liked <span className="underline text-foreground mx-[3px]">this</span> post
+              <span className="relative flex-1 inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm overflow-visible">
+                {/* Animated gradient border */}
+                <span
+                  className="absolute inset-[-1.5px] rounded-full"
+                  style={{
+                    background: "conic-gradient(from var(--border-angle), #7C93E6 0%, #F7C459 25%, transparent 50%, transparent 100%)",
+                    animation: "borderSpin 3s linear infinite",
+                    zIndex: 0,
+                  }}
+                />
+                <span className="absolute inset-[1px] rounded-full bg-background" style={{ zIndex: 0 }} />
+                <span className="relative z-10 inline-flex items-center">
+                  <Heart className="w-3 h-3 mr-1.5 shrink-0" />Liked <span className="underline text-foreground mx-[3px]">this</span> post
+                </span>
               </span>
               <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
                 <UserPlus className="w-3 h-3" /> Followed you
