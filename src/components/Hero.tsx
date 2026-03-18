@@ -41,7 +41,7 @@ const Hero = () => {
         playsInline
       />
 
-      <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-7xl mx-auto">
+      <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-[96rem] mx-auto">
         <h1 className="text-5xl md:text-7xl font-light text-foreground leading-[1.1] tracking-tight mt-16 md:mt-24 mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
           Find People Looking For
           <br />
