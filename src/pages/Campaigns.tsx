@@ -64,6 +64,17 @@ export default function CampaignsPage() {
     load();
   }, []);
 
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const handleNewCampaign = () => {
     if (atLimit) {
       toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
@@ -71,6 +82,17 @@ export default function CampaignsPage() {
     }
     clearOnboardingSession();
     navigate("/");
+  };
+
+  const handleDeleteCampaign = async (id: string) => {
+    setMenuOpen(null);
+    const { error } = await supabase.from("campaigns").delete().eq("id", id);
+    if (error) {
+      toast.error("Failed to delete campaign");
+    } else {
+      setCampaigns((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Campaign deleted");
+    }
   };
 
   return (
