@@ -101,8 +101,11 @@ export default function NotificationsPanel() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+
   async function fetchNotifications(uid: string) {
-    const { data } = await supabase
+    const { data } = await db
       .from("notifications")
       .select("*")
       .eq("user_id", uid)
@@ -113,7 +116,7 @@ export default function NotificationsPanel() {
 
   async function markAllRead() {
     if (!userId) return;
-    await supabase
+    await db
       .from("notifications")
       .update({ read: true })
       .eq("user_id", userId)
@@ -122,13 +125,13 @@ export default function NotificationsPanel() {
   }
 
   async function markRead(id: string) {
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    await db.from("notifications").update({ read: true }).eq("id", id);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
   }
 
   async function deleteNotification(id: string, e: React.MouseEvent) {
     e.stopPropagation();
-    await supabase.from("notifications").delete().eq("id", id);
+    await db.from("notifications").delete().eq("id", id);
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }
 
