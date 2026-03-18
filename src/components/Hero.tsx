@@ -1,5 +1,6 @@
-import { ArrowUpRight, Radar, Globe, Zap, Users, Search, Activity } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import HeroCards from "./HeroCards";
 
 const platformLogos = [
   <svg key="linkedin" className="inline h-10 md:h-14 w-10 md:w-14" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
@@ -30,105 +31,36 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-20 pb-16">
-      {/* Background gradient */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 50% 30%, hsl(265 70% 75% / 0.5) 0%, hsl(230 80% 70% / 0.3) 35%, hsl(200 60% 85% / 0.15) 55%, hsl(0 0% 100%) 85%)",
-        }}
-      />
+      <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 30%, hsl(265 70% 75% / 0.5) 0%, hsl(230 80% 70% / 0.3) 35%, hsl(200 60% 85% / 0.15) 55%, hsl(0 0% 100%) 85%)" }} />
       <div className="absolute inset-0 z-0 hero-grid-bg opacity-60" />
       <div className="absolute top-20 left-10 w-80 h-80 rounded-full blur-3xl opacity-30 z-0" style={{ background: "hsl(270 65% 72%)" }} />
       <div className="absolute top-32 right-10 w-72 h-72 rounded-full blur-3xl opacity-25 z-0" style={{ background: "hsl(220 75% 65%)" }} />
       <div className="absolute top-48 left-1/3 w-64 h-64 rounded-full blur-3xl opacity-20 z-0" style={{ background: "hsl(250 80% 78%)" }} />
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto">
-        <h1
-          className="text-5xl md:text-7xl font-extrabold text-goji-dark leading-[1.1] tracking-tight mt-16 md:mt-24 mb-6 animate-fade-in-up"
-          style={{ animationDelay: "0ms" }}
-        >
+      <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl mx-auto">
+        <h1 className="text-5xl md:text-7xl font-extrabold text-goji-dark leading-[1.1] tracking-tight mt-16 md:mt-24 mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
           Find People Looking For
           <br />
           What You Offer on{" "}
           <span className="inline-flex items-center align-middle relative h-10 md:h-14 w-10 md:w-14 overflow-hidden">
-            <span
-              className="absolute inset-0 flex items-center justify-center"
-              style={{
-                transition: "transform 350ms ease-in-out, opacity 350ms ease-in-out",
-                transform: phase === "exit" ? "translateY(-100%)" : "translateY(0)",
-                opacity: phase === "exit" ? 0 : 1,
-              }}
-            >
+            <span className="absolute inset-0 flex items-center justify-center" style={{ transition: "transform 350ms ease-in-out, opacity 350ms ease-in-out", transform: phase === "exit" ? "translateY(-100%)" : "translateY(0)", opacity: phase === "exit" ? 0 : 1 }}>
               {platformLogos[currentLogo]}
             </span>
           </span>
         </h1>
 
-        <p
-          className="text-lg md:text-xl text-goji-text-muted max-w-2xl mb-10 leading-relaxed animate-fade-in-up"
-          style={{ animationDelay: "120ms" }}
-        >
+        <p className="text-lg md:text-xl text-goji-text-muted max-w-2xl mb-10 leading-relaxed animate-fade-in-up" style={{ animationDelay: "120ms" }}>
           Our AI detects intent signals, scores prospects based on your ideal customers,
           starts relevant conversations on LinkedIn, and books more demos, on autopilot.
         </p>
 
-        <a
-          href="https://app.gojiberry.ai/registration"
-          className="btn-cta text-base animate-fade-in-up"
-          style={{ animationDelay: "240ms" }}
-        >
+        <a href="https://app.gojiberry.ai/registration" className="btn-cta text-base animate-fade-in-up" style={{ animationDelay: "240ms" }}>
           Launch your AI Agent for free
           <ArrowUpRight className="w-4 h-4" />
         </a>
 
-        {/* Feature Cards */}
-        <div
-          className="mt-14 w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up"
-          style={{ animationDelay: "360ms" }}
-        >
-          {/* Card 1: Setup Your Signals */}
-          <div className="group relative rounded-2xl border border-white/30 bg-white/60 backdrop-blur-xl shadow-lg p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
-            <div className="relative">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 shadow-md">
-                <Radar className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Setup Your Signals</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Define your ideal customer profile, configure intent signals, and let our AI know exactly who to look for.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["ICP Criteria", "Intent Keywords", "Pain Points"].map((tag) => (
-                  <span key={tag} className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: We Spy The Internet */}
-          <div className="group relative rounded-2xl border border-white/30 bg-white/60 backdrop-blur-xl shadow-lg p-6 text-left transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
-            <div className="relative">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-primary flex items-center justify-center mb-4 shadow-md">
-                <Globe className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">We Spy The Internet For You</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Our AI scans LinkedIn, X, and Reddit 24/7 to find people actively looking for what you offer — then engages them.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {["LinkedIn", "X / Twitter", "Reddit"].map((tag) => (
-                  <span key={tag} className="text-xs font-medium px-2.5 py-1 rounded-full bg-accent/10 text-accent-foreground">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
+        <div className="mt-14 w-full animate-fade-in-up" style={{ animationDelay: "360ms" }}>
+          <HeroCards />
         </div>
       </div>
     </section>
