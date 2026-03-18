@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const { data: agents, error: agentErr } = await supabase
       .from('signal_agents')
       .select('*')
-      .eq('status', 'active')
+      .in('status', ['active', 'paused'])
       .limit(20);
 
     if (agentErr) throw new Error(`Failed to load agents: ${agentErr.message}`);
