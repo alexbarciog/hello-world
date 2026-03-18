@@ -187,8 +187,8 @@ function OnboardingInner() {
           {currentStep === 1 && (
             <div className="mb-8 mt-2">
               <h1
-                className="text-2xl font-bold tracking-tight mb-2"
-                style={{ color: "hsl(var(--goji-dark))" }}
+                className="text-2xl font-normal tracking-tight mb-2"
+                style={{ color: "hsl(var(--foreground))" }}
               >
                 Create your first AI campaign
               </h1>

@@ -7,9 +7,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, CheckCircle2, Shield, Loader2 } from "lucide-react";
+import { CheckCircle2, Shield, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CardShell } from "./CardShell";
+import { OnboardingNav } from "./OnboardingNav";
 import type { OnboardingData } from "./types";
 
 const COUNTRIES = [
@@ -79,18 +81,15 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
 
   async function checkConnection(showLoader = true) {
     if (showLoader) setLoadingStatus(true);
-
     try {
       const result = await callConnectLinkedin({ action: "check_status" });
       const isConnected = result.status === "connected" && Boolean(result.account_id);
-
       setConnected(isConnected);
       if (isConnected) {
         onChange({ linkedinConnectionType: "direct" });
         clearLinkedinQueryParam();
         return true;
       }
-
       return false;
     } catch {
       return false;
@@ -103,10 +102,8 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
     setPolling(true);
     let attempts = 0;
     const maxAttempts = 45;
-
     const interval = window.setInterval(async () => {
       attempts += 1;
-
       const isConnected = await checkConnection(false);
       if (isConnected) {
         window.clearInterval(interval);
@@ -115,7 +112,6 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
         toast.success("LinkedIn account connected successfully!");
         return;
       }
-
       if (attempts >= maxAttempts) {
         window.clearInterval(interval);
         setPolling(false);
@@ -127,18 +123,14 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
 
   useEffect(() => {
     const linkedinStatus = new URLSearchParams(window.location.search).get("linkedin");
-
     void (async () => {
       const isConnected = await checkConnection(true);
-
       if (isConnected) return;
-
       if (linkedinStatus === "success") {
         toast.success("LinkedIn connected. Finalizing your session...");
         startPolling();
         return;
       }
-
       if (linkedinStatus === "failed") {
         clearLinkedinQueryParam();
         toast.error("LinkedIn connection was cancelled or failed.");
@@ -148,18 +140,15 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
 
   async function handleConnect() {
     setConnecting(true);
-
     try {
       const result = await callConnectLinkedin({
         action: "create_link",
         return_url: `${window.location.origin}/onboarding`,
       });
-
       if (result.status === "link_created" && result.url) {
         window.location.assign(result.url);
         return;
       }
-
       throw new Error("Unable to open LinkedIn connection flow");
     } catch (e: any) {
       toast.error(e.message || "Failed to initiate LinkedIn connection");
@@ -169,6 +158,7 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
 
   return (
     <div className="animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col items-center mb-8">
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
@@ -180,122 +170,101 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
           <LinkedInIcon className="w-7 h-7 text-white" />
         </div>
         <h1
-          className="text-2xl font-bold tracking-tight mb-2 text-center"
-          style={{ color: "hsl(var(--goji-dark))" }}
+          className="text-2xl font-normal tracking-tight mb-2 text-center"
+          style={{ color: "hsl(var(--foreground))" }}
         >
           Connect Your LinkedIn
         </h1>
         <p
           className="text-sm leading-relaxed text-center max-w-sm"
-          style={{ color: "hsl(var(--goji-text-muted))" }}
+          style={{ color: "hsl(var(--muted-foreground))" }}
         >
-          Securely connect your account to automate outreach on your behalf. You can disconnect at
-          any time.
+          Securely connect your account to automate outreach on your behalf. You can disconnect at any time.
         </p>
       </div>
 
-      <div className="mb-5">
-        <Select value={data.country} onValueChange={(v) => onChange({ country: v })}>
-          <SelectTrigger className="rounded-xl h-11 text-sm border-border w-full">
-            <SelectValue placeholder="Select your country" />
-          </SelectTrigger>
-          <SelectContent className="max-h-64">
-            {COUNTRIES.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs mt-1.5 pl-0.5" style={{ color: "hsl(var(--goji-text-muted))" }}>
-          Helps us locate the optimal proxy server for your region
-        </p>
-      </div>
+      <CardShell className="mb-6 animate-fade-in-up">
+        <div className="space-y-4">
+          {/* Country */}
+          <div>
+            <Select value={data.country} onValueChange={(v) => onChange({ country: v })}>
+              <SelectTrigger className="rounded-xl h-11 text-sm border-border w-full">
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-64">
+                {COUNTRIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs mt-1.5 pl-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+              Helps us locate the optimal proxy server for your region
+            </p>
+          </div>
 
-      {connected ? (
-        <div
-          className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 mb-5"
-          style={{
-            background: "hsl(142 71% 45% / 0.1)",
-            color: "hsl(142 71% 35%)",
-            border: "1px solid hsl(142 71% 45% / 0.3)",
-          }}
-        >
-          <CheckCircle2 className="w-5 h-5" />
-          LinkedIn Connected
-        </div>
-      ) : (
-        <Button
-          type="button"
-          onClick={handleConnect}
-          disabled={connecting || polling || loadingStatus}
-          className="w-full h-12 rounded-xl font-semibold text-sm gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] mb-5 disabled:opacity-60"
-          style={{
-            background: "hsl(221 83% 53%)",
-            color: "hsl(0 0% 100%)",
-            boxShadow: "0 4px 20px hsl(221 83% 53% / 0.3)",
-          }}
-        >
-          {polling ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Finalizing LinkedIn connection…
-            </>
-          ) : connecting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Redirecting to LinkedIn…
-            </>
+          {/* Connect button or connected state */}
+          {connected ? (
+            <div
+              className="w-full h-12 rounded-xl font-medium text-sm flex items-center justify-center gap-2"
+              style={{
+                background: "hsl(142 71% 45% / 0.1)",
+                color: "hsl(142 71% 35%)",
+                border: "1px solid hsl(142 71% 45% / 0.3)",
+              }}
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              LinkedIn Connected
+            </div>
           ) : (
-            <>
-              <LinkedInIcon className="w-4 h-4" />
-              Connect LinkedIn
-            </>
+            <Button
+              type="button"
+              onClick={handleConnect}
+              disabled={connecting || polling || loadingStatus}
+              className="w-full h-12 rounded-xl font-medium text-sm gap-2 transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+              style={{
+                background: "hsl(221 83% 53%)",
+                color: "hsl(0 0% 100%)",
+                boxShadow: "0 4px 20px hsl(221 83% 53% / 0.3)",
+              }}
+            >
+              {polling ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Finalizing LinkedIn connection…
+                </>
+              ) : connecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Redirecting to LinkedIn…
+                </>
+              ) : (
+                <>
+                  <LinkedInIcon className="w-4 h-4" />
+                  Connect LinkedIn
+                </>
+              )}
+            </Button>
           )}
-        </Button>
-      )}
 
-      <div
-        className="flex flex-col gap-2.5 rounded-xl px-4 py-3.5 mb-8"
-        style={{ background: "hsl(var(--muted) / 0.5)" }}
-      >
-        <div className="flex items-center gap-2.5">
-          <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "hsl(142 71% 45%)" }} />
-          <span className="text-xs" style={{ color: "hsl(var(--goji-text-muted))" }}>
-            Your credentials are never stored on our servers
-          </span>
+          {/* Security info */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2.5">
+              <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "hsl(142 71% 45%)" }} />
+              <span className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+                Your credentials are never stored on our servers
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: "hsl(142 71% 45%)" }} />
+              <span className="text-xs" style={{ color: "hsl(var(--muted-foreground))" }}>
+                We only act on your behalf — invitations &amp; messages
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2.5">
-          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: "hsl(142 71% 45%)" }} />
-          <span className="text-xs" style={{ color: "hsl(var(--goji-text-muted))" }}>
-            We only act on your behalf — invitations &amp; messages
-          </span>
-        </div>
-      </div>
+      </CardShell>
 
-      <div className="flex items-center justify-between border-t border-border pt-5">
-        <button
-          type="button"
-          onClick={onPrev}
-          className="flex items-center gap-1.5 text-sm font-medium transition-opacity duration-200 hover:opacity-70"
-          style={{ color: "hsl(var(--goji-text-muted))" }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Previous
-        </button>
-
-        <Button
-          type="button"
-          onClick={onNext}
-          className="h-11 px-8 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
-          style={{
-            background: "hsl(var(--goji-berry))",
-            color: "hsl(0 0% 100%)",
-            boxShadow: "0 4px 20px 0 hsl(var(--goji-coral) / 0.3)",
-          }}
-        >
-          Next Step
-          <ArrowRight className="w-4 h-4 ml-1" />
-        </Button>
-      </div>
+      <OnboardingNav onPrev={onPrev} onNext={onNext} />
     </div>
   );
 };
