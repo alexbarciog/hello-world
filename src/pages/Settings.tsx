@@ -773,7 +773,7 @@ export default function Settings() {
                   <motion.div
                     layoutId="tab-underline"
                     className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                    style={{ background: "var(--gradient-cta)" }}
+                    style={{ background: "linear-gradient(90deg, #7C93E6, #F7C459)" }}
                   />
                 )}
               </button>
