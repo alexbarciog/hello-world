@@ -107,7 +107,7 @@ const Hero = () => {
 
         {/* Video / App Preview */}
         <div
-          className="mt-14 w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl animate-fade-in-up border border-border/30"
+          className="mt-14 w-full max-w-3xl rounded-2xl overflow-hidden animate-fade-in-up"
           style={{ animationDelay: "360ms" }}
         >
           <img src={appPreviewImg} alt="Intentsly AI Agent Dashboard" className="w-full h-auto" />
