@@ -120,7 +120,11 @@ export default function Signals() {
   const activeCount = agents.filter((a) => a.status === "active").length;
 
   if (showCreate) {
-    return <CreateAgentWizard onClose={() => setShowCreate(false)} onCreated={fetchAgents} />;
+    return (
+      <div className="relative min-h-full bg-card rounded-2xl m-4 overflow-hidden">
+        <CreateAgentWizard onClose={() => setShowCreate(false)} onCreated={fetchAgents} />
+      </div>
+    );
   }
 
   return (
