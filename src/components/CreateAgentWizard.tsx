@@ -407,10 +407,14 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                     <button
                       onClick={generateWithAI}
                       disabled={aiLoading}
-                      className="btn-cta text-sm disabled:opacity-60"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-white rounded-full px-5 py-2.5 disabled:opacity-60 transition-all hover:scale-[1.03] active:scale-[0.97]"
+                      style={{
+                        background: "linear-gradient(135deg, #7C3AED, #3B82F6, #06B6D4)",
+                        boxShadow: "0 4px 20px rgba(124,58,237,0.35)",
+                      }}
                     >
                       {aiLoading ? (
-                        <span className="animate-spin w-4 h-4 border-2 border-background border-t-transparent rounded-full" />
+                        <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                       ) : (
                         <Sparkles className="w-4 h-4" />
                       )}
