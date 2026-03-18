@@ -275,7 +275,7 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
               <tr>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>{initials}</div>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>{initials}</div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">{userName || "User"}</p>
                       <p className="text-xs text-muted-foreground">{userEmail}</p>
