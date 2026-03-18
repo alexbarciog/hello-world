@@ -11,31 +11,35 @@ const HeroCards = () => {
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
         </div>
 
-        {/* Profile sub-card */}
-        <div className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-background shrink-0 ring-2 ring-background">MC</div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-foreground">Michael Chang</div>
-            <div className="text-xs text-muted-foreground">VP of Sales at InnovateIQ</div>
-            <div className="text-xs text-muted-foreground">michael@innovateiq.com</div>
+        {/* Profile sub-card with left connector */}
+        <div className="relative pl-5">
+          {/* Dashed vertical line from profile to tags */}
+          <div className="absolute left-0 top-1/2 bottom-[-3.5rem] w-0 border-l-2 border-dashed border-primary/30" />
+          {/* Arrow dot at start */}
+          <div className="absolute left-[-3px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary/40" />
+          <div className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-background shrink-0 ring-2 ring-background">MC</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-foreground">Michael Chang</div>
+              <div className="text-xs text-muted-foreground">VP of Sales at InnovateIQ</div>
+              <div className="text-xs text-muted-foreground">michael@innovateiq.com</div>
+            </div>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
           </div>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
         </div>
 
-        {/* Dashed connector left-aligned */}
-        <div className="flex items-center gap-1.5 pl-6">
-          <span className="border-l border-dashed border-muted-foreground/40 h-4" />
-          <span className="text-[10px] text-muted-foreground/60">→</span>
-        </div>
-
-        {/* Signal tags */}
-        <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-            <Heart className="w-3 h-3" /> Liked your post
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-            <UserPlus className="w-3 h-3" /> Followed you
-          </span>
+        {/* Signal tags with left connector */}
+        <div className="relative pl-5">
+          {/* Arrow at end of connector */}
+          <div className="absolute left-[-3px] top-1/2 -translate-y-1/2 text-amber-400 text-[10px]">→</div>
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm border border-amber-400/50">
+              <Heart className="w-3 h-3" /> Liked your post
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
+              <UserPlus className="w-3 h-3" /> Followed you
+            </span>
+          </div>
         </div>
 
         {/* Dashed connector */}
