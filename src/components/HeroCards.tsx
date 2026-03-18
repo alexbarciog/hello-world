@@ -5,7 +5,7 @@ const HeroCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
       {/* Card 1: Engagement Signals */}
-      <div className="rounded-2xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background" style={{ background: "hsl(0 0% 96%)" }}>
+      <div className="rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background" style={{ background: "hsl(0 0% 96%)" }}>
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Engagement signals</h3>
