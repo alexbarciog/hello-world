@@ -6,6 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function checkUserExists(supabaseUrl: string, serviceRoleKey: string, email: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/admin/users?email=${encodeURIComponent(email)}&per_page=1`, {
+      headers: {
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'apikey': serviceRoleKey,
+      },
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return (data?.users?.length ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,6 +79,9 @@ serve(async (req) => {
     const inviterName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'A teammate';
     const orgName = campaign?.company_name || 'Intentsly';
 
+    // Check if invited email already has an account
+    const userExists = await checkUserExists(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, email);
+
     // Create invitation record
     const { data: invite, error: insertError } = await supabase
       .from('invitations')
@@ -80,7 +99,18 @@ serve(async (req) => {
       throw new Error('Failed to create invitation');
     }
 
-    const inviteUrl = `${req.headers.get('origin') || 'https://hello-tiny-word.lovable.app'}/register?invite=${invite.token}`;
+    const origin = req.headers.get('origin') || 'https://hello-tiny-word.lovable.app';
+    const inviteUrl = userExists
+      ? `${origin}/login?invite=${invite.token}`
+      : `${origin}/register?invite=${invite.token}`;
+
+    const ctaText = userExists
+      ? 'Accept Invitation &amp; Sign In'
+      : 'Accept Invitation &amp; Create Account';
+
+    const accountNote = userExists
+      ? `You already have an Intentsly account with <strong>${email}</strong>. Just sign in to accept the invitation.`
+      : `Create your free account to get started immediately — no credit card required during your 7-day trial.`;
 
     const htmlBody = `
 <!DOCTYPE html>
@@ -118,7 +148,7 @@ serve(async (req) => {
               <div style="background:#fef3f2;border:1px solid #fde8e4;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
                 <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#e8432d;text-transform:uppercase;letter-spacing:0.5px;">Your invitation</p>
                 <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">
-                  You've been added to <strong>${orgName}</strong>. Create your account below to get started immediately — no credit card required during your 7-day trial.
+                  You've been added to <strong>${orgName}</strong>. ${accountNote}
                 </p>
               </div>
 
@@ -156,7 +186,7 @@ serve(async (req) => {
               <div style="text-align:center;margin-bottom:32px;">
                 <a href="${inviteUrl}"
                    style="display:inline-block;background:linear-gradient(135deg,#e8432d,#f07048);color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:-0.2px;box-shadow:0 4px 12px rgba(232,67,45,0.35);">
-                  Accept Invitation &amp; Create Account
+                  ${ctaText}
                 </a>
               </div>
 
@@ -208,7 +238,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: `Invitation sent to ${email}` }),
+      JSON.stringify({ success: true, message: `Invitation sent to ${email}`, userExists }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
