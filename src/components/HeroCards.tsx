@@ -1,4 +1,5 @@
-import { ArrowRight, Heart, UserPlus, Users, Target, Sparkles, Building2, MapPin, TrendingUp, Download, MessageCircle, Search } from "lucide-react";
+import { ArrowRight, Heart, UserPlus, Users, Sparkles, Building2, MapPin, TrendingUp, Download, MessageCircle, Search } from "lucide-react";
+import intentslySmile from "@/assets/intentsly-smile.png";
 
 const HeroCards = () => {
   return (
