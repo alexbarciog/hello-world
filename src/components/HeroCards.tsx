@@ -129,7 +129,6 @@ const HeroCards = () => {
           <div className="relative pl-5">
             <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
             <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
-            <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="flex justify-between gap-2">
               <span className="relative flex-1 inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm overflow-visible">
                 <span
@@ -143,9 +142,6 @@ const HeroCards = () => {
                 <span className="relative z-10 inline-flex items-center gap-1.5">
                   <Users className="w-3 h-3" /> Is hiring
                 </span>
-              </span>
-              <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-                <Sparkles className="w-3 h-3" /> New role
               </span>
             </div>
           </div>
