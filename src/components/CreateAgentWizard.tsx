@@ -532,11 +532,17 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                         High Precision <Target className="w-4 h-4" />
                       </button>
                     </div>
-                    <div className="mt-2 bg-muted/50 border border-border rounded-xl px-3 py-2">
-                      <p className="text-xs font-semibold text-foreground">
+                    <div
+                      className="mt-2 border rounded-xl px-3 py-2 transition-colors"
+                      style={{
+                        background: precisionMode === "discovery" ? "rgba(59,130,246,0.08)" : "hsla(var(--goji-orange), 0.08)",
+                        borderColor: precisionMode === "discovery" ? "rgba(59,130,246,0.2)" : "hsla(var(--goji-orange), 0.2)",
+                      }}
+                    >
+                      <p className="text-xs font-semibold transition-colors" style={{ color: precisionMode === "discovery" ? "#3B82F6" : "hsl(var(--goji-orange))" }}>
                         {precisionMode === "discovery" ? "Broader ICP – More leads" : "Narrow ICP – Fewer, better leads"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs transition-colors" style={{ color: precisionMode === "discovery" ? "rgba(59,130,246,0.7)" : "hsla(var(--goji-orange), 0.7)" }}>
                         {precisionMode === "discovery"
                           ? "Finds opportunities you wouldn't normally target"
                           : "Only matches leads that closely fit your exact criteria"}
