@@ -8,8 +8,8 @@ const HeroCards = () => {
       <div className="rounded-2xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background" style={{ background: "hsl(0 0% 96%)" }}>
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-foreground">Engagement signals</h3>
-          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-lg font-bold text-foreground">Engagement signals</h3>
+          <ArrowRight className="w-5 h-5 text-muted-foreground" />
         </div>
 
         {/* Group 2: Lead flow */}
