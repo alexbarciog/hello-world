@@ -9,17 +9,19 @@ import {
 } from "lucide-react";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
+const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
+
 const fadeUp = {
   hidden: { opacity: 0, y: 18 },
   visible: (i = 0) => ({
     opacity: 1, y: 0,
-    transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1], delay: i * 0.07 },
+    transition: { duration: 0.38, ease: easing, delay: i * 0.07 },
   }),
 };
 
 const tabContent = {
   hidden: { opacity: 0, x: 10 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: easing } },
   exit: { opacity: 0, x: -10, transition: { duration: 0.18 } },
 };
 
