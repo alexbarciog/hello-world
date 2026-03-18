@@ -64,7 +64,7 @@ const Pricing = () => {
           {/* Right card — minimal/clean */}
           <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: "hsl(0 0% 96%)" }}>
             <div className="px-8 pt-8">
-              <h3 className="text-xl font-semibold">
+              <h3 className="text-2xl font-semibold">
                 <span className="text-foreground">P</span>
                 <span style={{ color: "hsl(var(--primary))" }}>l</span>
                 <span className="text-foreground">us</span>
