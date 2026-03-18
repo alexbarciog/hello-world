@@ -132,18 +132,18 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
             {/* Popup panel */}
             <motion.div
               key="menu"
-              className="fixed top-4 right-5 z-[70] md:hidden origin-top-right"
+              className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[260px] rounded-[22px]"
               style={{
-                background: "rgba(255,253,245,0.88)",
+                background: "rgba(255,253,245,0.92)",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
                 border: "1px solid rgba(255,255,255,0.7)",
                 boxShadow: "0 8px 40px rgba(0,0,0,0.14)",
               }}
-              initial={{ opacity: 0, scale: 0.35, borderRadius: "9999px", width: "44px", height: "44px" }}
-              animate={{ opacity: 1, scale: 1, borderRadius: "22px", width: "260px", height: "auto" }}
-              exit={{ opacity: 0, scale: 0.35, borderRadius: "9999px", width: "44px", height: "44px" }}
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}
             >
               <div className="flex justify-end px-4 pt-4">
                 <motion.button
