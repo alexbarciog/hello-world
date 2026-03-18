@@ -46,7 +46,7 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
         loop
         muted
         playsInline
-        className="w-full h-auto block rounded-[28px]"
+        className="w-full h-auto block rounded-[28px] overflow-hidden"
       />
     );
   }
