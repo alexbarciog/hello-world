@@ -40,8 +40,8 @@ interface VideoContainerProps {
 function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
   return (
     <div
-      className="rounded-[28px] overflow-hidden w-full h-full"
-      style={{ background: gradient, minHeight: 480 }}
+      className="rounded-[28px] overflow-hidden w-full"
+      style={{ background: gradient, minHeight: 320 }}
     >
       {videoSrc ? (
         <video
@@ -51,10 +51,10 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
           muted
           playsInline
           className="w-full h-full object-cover"
-          style={{ minHeight: 480 }}
+          style={{ minHeight: 320 }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 480 }}>
+        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 320 }}>
           <span className="text-white/50 text-sm">Video placeholder</span>
         </div>
       )}
@@ -147,7 +147,7 @@ const Features = () => {
           description="Scan and extract live data from 15+ platforms to capture niche signals, monitor real-time activity, and surface leads in context, not from stale databases."
           cta="See scraping automations"
           gradient="linear-gradient(145deg, #c7d2fe 0%, #a5b4fc 30%, #ddd6fe 60%, #fef9c3 100%)"
-          // videoSrc="/videos/feature-1.mp4"  ← attach your video here
+          videoSrc="/videos/feature-1.mp4"
           delay={0}
         />
 
