@@ -338,27 +338,58 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
   ];
 
   return (
-    <div className="min-h-full p-6 md:p-8" onClick={() => openDropdown && setOpenDropdown(null)}>
+    <div className="min-h-full p-4 md:p-8" onClick={() => openDropdown && setOpenDropdown(null)}>
       {/* Header */}
-      <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="flex items-center gap-4 mb-1">
-        <h1 className="text-2xl font-bold text-foreground">Create an AI Agent</h1>
+      <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="flex items-center gap-3 mb-1">
+        <h1 className="text-lg md:text-2xl font-bold text-foreground whitespace-nowrap">Create AI Agent</h1>
         <input
           value={agentName}
           onChange={(e) => setAgentName(e.target.value)}
           placeholder="Agent Name"
-          className="text-2xl font-light text-muted-foreground bg-transparent border-b border-border focus:border-foreground outline-none px-1 py-0.5 w-[200px] placeholder:text-muted-foreground/40 transition-colors"
+          className="text-base md:text-2xl font-light text-muted-foreground bg-transparent border-b border-border focus:border-foreground outline-none px-1 py-0.5 min-w-0 flex-1 placeholder:text-muted-foreground/40 transition-colors"
         />
-        <button onClick={onClose} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={onClose} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
           <X className="w-5 h-5" />
         </button>
       </motion.div>
-      <motion.p custom={1} variants={fadeUp} initial="hidden" animate="visible" className="text-sm text-muted-foreground mb-8">
+      <motion.p custom={1} variants={fadeUp} initial="hidden" animate="visible" className="text-xs md:text-sm text-muted-foreground mb-5 md:mb-8">
         The agent will browse the internet looking for leads
       </motion.p>
 
-      <div className="flex gap-8">
-        {/* Left sidebar - Steps */}
-        <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible" className="w-[260px] shrink-0">
+      {/* ── Progress bar (mobile) ────────────────────────────────────────── */}
+      <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible" className="md:hidden mb-5">
+        <div className="flex items-center gap-0 bg-muted/40 rounded-2xl p-1">
+          {steps.map((s, i) => {
+            const isActive = step === s.num;
+            const isDone = step > s.num;
+            return (
+              <button
+                key={s.num}
+                onClick={() => isDone && setStep(s.num)}
+                disabled={!isDone && !isActive}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  isActive
+                    ? "bg-foreground text-background shadow-sm"
+                    : isDone
+                    ? "text-foreground/60 cursor-pointer hover:bg-muted/60"
+                    : "text-muted-foreground/50 cursor-default"
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                  isDone ? "bg-foreground/20" : isActive ? "bg-background/20" : "bg-muted"
+                }`}>
+                  {isDone ? <Check className="w-3 h-3" /> : s.num}
+                </span>
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      <div className="flex gap-6 md:gap-8">
+        {/* Left sidebar - Steps (desktop only) */}
+        <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible" className="hidden md:block w-[220px] shrink-0">
           <div className="border border-border rounded-2xl p-3 space-y-1.5">
             {steps.map((s) => {
               const isActive = step === s.num;
@@ -373,19 +404,13 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                   style={isActive ? { background: "hsl(220 20% 96%)", border: "1px solid hsl(220 20% 90%)" } : undefined}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-colors ${
-                    isDone
-                      ? "bg-foreground text-background"
-                      : isActive
-                        ? "bg-foreground text-background"
-                        : "bg-muted text-muted-foreground"
+                    isDone ? "bg-foreground text-background" : isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
                   }`}>
                     {isDone ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${isActive ? "text-foreground" : isDone ? "text-foreground" : "text-muted-foreground"}`}>
-                      {s.label}
-                    </p>
-                    <p className={`text-xs ${isActive ? "text-muted-foreground" : "text-muted-foreground"}`}>{s.sub}</p>
+                    <p className={`text-sm font-semibold ${isActive || isDone ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</p>
+                    <p className="text-xs text-muted-foreground">{s.sub}</p>
                   </div>
                 </button>
               );
@@ -764,23 +789,23 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
         variants={fadeUp}
         initial="hidden"
         animate="visible"
-        className="flex items-center justify-between mt-8 pt-4 border-t border-border"
+        className="flex items-center justify-between mt-6 md:mt-8 pt-4 border-t border-border gap-3"
       >
         <div>
           {step > 1 && (
             <button
               onClick={() => { setStep(step - 1); setValidationError(""); }}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Previous
+              <span className="hidden sm:inline">Previous</span>
             </button>
           )}
         </div>
         <button
           onClick={handleNext}
           disabled={saving}
-          className="btn-cta text-sm disabled:opacity-60"
+          className="btn-cta text-sm disabled:opacity-60 flex-1 sm:flex-none justify-center"
         >
           {saving ? (
             <span className="animate-spin w-4 h-4 border-2 border-background border-t-transparent rounded-full" />
