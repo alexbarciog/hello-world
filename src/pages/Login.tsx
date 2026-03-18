@@ -132,8 +132,11 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60 mt-2 bg-secondary-foreground">
-              
+              className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-60 mt-2 ${
+                password
+                  ? "bg-foreground text-background hover:opacity-90"
+                  : "bg-muted text-muted-foreground"
+              }`}>
               {loading ?
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
