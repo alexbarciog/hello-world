@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import premiumBg from "@/assets/premium-gradient-bg.png";
+import NotificationsPanel from "@/components/NotificationsPanel";
 import {
   LayoutDashboard,
   Megaphone,
@@ -14,7 +15,6 @@ import {
   Gift,
   ChevronLeft,
   ChevronRight,
-  Bell,
   LogOut,
   AlertTriangle,
   CreditCard,
