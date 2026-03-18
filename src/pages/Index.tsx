@@ -4,7 +4,7 @@ import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
-import Testimonials from "@/components/Testimonials";
+
 import Integrations from "@/components/Integrations";
 import CampaignsSection from "@/components/CampaignsSection";
 import FAQ from "@/components/FAQ";
@@ -23,7 +23,7 @@ const Index = () => {
       <LogoMarquee />
       <Features />
       <HowItWorks />
-      <Testimonials />
+      
       <Integrations />
       {showCampaigns ? (
         <CampaignsSection campaignIdFromUrl={campaignId} />
