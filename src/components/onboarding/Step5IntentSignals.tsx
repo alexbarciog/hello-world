@@ -209,7 +209,7 @@ export const Step5IntentSignals = ({
           className="text-2xl font-normal tracking-tight mb-1.5"
           style={{ color: "hsl(var(--foreground))" }}
         >
-          What GojiberryAI will detect for you
+          What IntentslyAI will detect for you
         </h1>
         <p className="text-sm leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
           We've pre-selected the most relevant buying-intent signals for your business and ideal customer.
