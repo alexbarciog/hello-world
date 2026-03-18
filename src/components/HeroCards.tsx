@@ -82,6 +82,7 @@ const HeroCards = () => {
                 <UserPlus className="w-3 h-3" /> Connect
               </button>
             </div>
+           </div>
           </div>
         </div>
       </div>
