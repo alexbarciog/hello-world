@@ -43,13 +43,6 @@ const HeroCards = () => {
               </span>
             </div>
           </div>
-
-          {/* Dashed connector */}
-          <div className="flex items-center gap-1.5 px-2">
-            <span className="border-t border-dashed border-muted-foreground/40 flex-1" />
-            <span className="text-[10px] text-muted-foreground/60">→</span>
-          </div>
-
           {/* Why they fit sub-card */}
           <div className="bg-background rounded-xl p-3 shadow-sm border-l-2 border-amber-400 space-y-2">
             <div className="flex items-center gap-2">
