@@ -23,7 +23,7 @@ const Index = () => {
       <LogoMarquee />
       <Features />
       <HowItWorks />
-      <Testimonials />
+      
       <Integrations />
       {showCampaigns ? (
         <CampaignsSection campaignIdFromUrl={campaignId} />
