@@ -7,7 +7,7 @@ const HeroCards = () => {
       <div className="rounded-2xl p-5 text-left flex flex-col gap-3 relative overflow-hidden" style={{ background: "hsl(0 0% 96%)" }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-base font-bold text-background">Engagement signals</h3>
+          <h3 className="text-base font-bold text-foreground">Engagement signals</h3>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
         </div>
 
