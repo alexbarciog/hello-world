@@ -41,7 +41,7 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
   return (
     <div
       className="rounded-[28px] overflow-hidden w-full"
-      style={{ background: gradient, minHeight: 320 }}
+      style={{ background: gradient }}
     >
       {videoSrc ? (
         <video
@@ -50,11 +50,10 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
           loop
           muted
           playsInline
-          className="w-full h-full object-cover"
-          style={{ minHeight: 320 }}
+          className="w-full h-auto block"
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 320 }}>
+        <div className="w-full flex items-center justify-center" style={{ minHeight: 240 }}>
           <span className="text-white/50 text-sm">Video placeholder</span>
         </div>
       )}
