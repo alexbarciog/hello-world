@@ -14,7 +14,7 @@ const HeroCards = () => {
         {/* Profile sub-card with left connector */}
         <div className="relative pl-5">
           {/* Dashed vertical line from profile to tags */}
-          <div className="absolute left-0 top-1/2 bottom-[-3.5rem] w-0 border-l border-dashed border-primary/30" />
+          <div className="absolute left-0 top-1/2 bottom-0 w-0 border-l border-dashed border-primary/30" />
           {/* Horizontal dashed line from vertical line to profile card (corner effect) */}
           <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
           {/* Arrow dot at start */}
