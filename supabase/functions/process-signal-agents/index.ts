@@ -330,20 +330,20 @@ async function handleKeywordPosts(
     if (post.author) console.log(`keyword_posts: author keys = ${Object.keys(post.author).join(', ')}`);
     if (post.actor) console.log(`keyword_posts: actor keys = ${Object.keys(post.actor).join(', ')}`);
 
-    // Try multiple author field locations
+    // Try multiple author field locations, but do not fetch profiles by LinkedIn author ID.
+    // Unipile search often returns LinkedIn/provider IDs here that are not valid for /users/{id}.
     const authorData = post.author || post.actor || post.author_detail || null;
     const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
 
     let profile: any = null;
 
-    // Build profile from whatever data is available in the search result
     if (authorData) {
-      const name = authorData.first_name || authorData.name || authorData.title || authorData.headline || '';
-      const nameParts = name.split(' ');
+      const name = authorData.first_name || authorData.name || authorData.title || authorData.headline || post.author_name || post.actor_name || '';
+      const nameParts = name.split(' ').filter(Boolean);
       profile = {
         first_name: authorData.first_name || nameParts[0] || 'Unknown',
         last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
-        headline: authorData.headline || authorData.occupation || authorData.title || null,
+        headline: authorData.headline || authorData.occupation || authorData.title || post.author_headline || null,
         industry: authorData.industry || null,
         location: authorData.location || authorData.geo_location || null,
         company: authorData.company || authorData.current_company?.name || authorData.company_name || null,
@@ -352,20 +352,8 @@ async function handleKeywordPosts(
         provider_id: authorData.provider_id || authorId,
       };
       console.log(`keyword_posts: built profile from inline data: ${profile.first_name} ${profile.last_name || ''} — ${profile.headline || 'no headline'}`);
-    } else if (authorId) {
-      // Last resort: try fetching profile (may fail for LinkedIn IDs)
-      try {
-        const profileRes = await unipileGet(`/api/v1/users/${authorId}?account_id=${accountId}`, apiKey, dsn);
-        if (profileRes.ok) {
-          profile = await profileRes.json();
-        } else {
-          console.warn(`Profile fetch for ${authorId}: ${profileRes.status} — skipping`);
-          await profileRes.text(); // consume body
-          continue;
-        }
-      } catch (e) { console.error('Keyword post author fetch:', e); continue; }
     } else {
-      console.warn('keyword_posts: no author data or ID, skipping post');
+      console.log(`keyword_posts: skipping post without inline author data (${authorId || 'no author id'})`);
       continue;
     }
 
