@@ -369,7 +369,7 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                   className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
                     isActive ? "text-white" : isDone ? "hover:bg-muted/50 cursor-pointer" : "opacity-50"
                   }`}
-                  style={isActive ? { background: "linear-gradient(135deg, #7C93E6, #F7C459)" } : undefined}
+                  style={isActive ? { background: "linear-gradient(135deg, #FDC94B, #C8D9FF)" } : undefined}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-colors ${
                     isDone
