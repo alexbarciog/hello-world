@@ -78,7 +78,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
 
   const textCol = (
     <div
-      className="flex flex-col justify-center gap-6 py-16"
+      className="flex flex-col justify-center gap-5 py-6 md:py-16"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(28px)",
@@ -109,11 +109,16 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
   );
 
   return (
-    <div
-      ref={ref}
-      className="grid md:grid-cols-2 gap-12 md:gap-16 items-center py-16 md:py-24"
-    >
-      {reversed ? <>{visualCol}{textCol}</> : <>{textCol}{visualCol}</>}
+    <div ref={ref} className="py-12 md:py-24">
+      {/* Mobile: always text → video */}
+      <div className="flex flex-col gap-6 md:hidden">
+        {textCol}
+        {visualCol}
+      </div>
+      {/* Desktop: respect reversed prop */}
+      <div className="hidden md:grid md:grid-cols-2 md:gap-16 items-center">
+        {reversed ? <>{visualCol}{textCol}</> : <>{textCol}{visualCol}</>}
+      </div>
     </div>
   );
 }
