@@ -497,6 +497,8 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [polling, setPolling] = useState(false);
+  const [dailyMessages, setDailyMessages] = useState([15]);
+  const [dailyConnections, setDailyConnections] = useState([15]);
 
   function clearParam() {
     const url = new URL(window.location.href);
