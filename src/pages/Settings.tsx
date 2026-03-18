@@ -234,12 +234,12 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
           </div>
         ) : (
           <>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input type="email" placeholder="colleague@company.com" value={email}
                 onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 className={`${inputCls} flex-1`} disabled={sending} />
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                className="btn-cta text-sm !py-2.5 !px-5 disabled:opacity-60"
+                className="btn-cta text-sm !py-2.5 !px-5 disabled:opacity-60 w-full sm:w-auto"
                 onClick={handleInvite} disabled={sending}>
                 {sending ? "Sending…" : "Invite"}
               </motion.button>
