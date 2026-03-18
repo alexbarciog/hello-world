@@ -159,8 +159,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 title={collapsed ? item.label : undefined}
                 className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
                   active
-                    ? "bg-white/10 text-white"
-                    : "text-white/60 hover:bg-white/8 hover:text-white/90"
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
@@ -168,7 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span className="flex-1 text-left truncate">{item.label}</span>
                 )}
                 {!collapsed && item.badge && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500 text-white">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-foreground text-background">
                     {item.badge}
                   </span>
                 )}
