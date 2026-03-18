@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/table";
 import gojiIcon from "@/assets/gojiberry-icon.png";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
+import { toast } from "sonner";
+import { Info } from "lucide-react";
+
+const MAX_CAMPAIGNS = 2;
 
 type Campaign = {
   id: string;
@@ -28,6 +32,8 @@ export default function CampaignsPage() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
   useEffect(() => {
     async function load() {
@@ -57,6 +63,10 @@ export default function CampaignsPage() {
   }, []);
 
   const handleNewCampaign = () => {
+    if (atLimit) {
+      toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
+      return;
+    }
     clearOnboardingSession();
     navigate("/");
   };
@@ -64,62 +74,41 @@ export default function CampaignsPage() {
   return (
     <div className="p-6 max-w-[1200px] mx-auto">
       {/* Header card */}
-      <div
-        className="rounded-md bg-card p-4 mb-6 border border-border flex items-center justify-between"
-      >
+      <div className="rounded-md bg-card p-4 mb-6 border border-border flex items-center justify-between">
         <div>
-          <h1
-            className="text-base font-semibold flex items-center gap-2"
-            style={{ color: "hsl(var(--goji-dark))" }}
-          >
+          <h1 className="text-base font-semibold flex items-center gap-2" style={{ color: "hsl(var(--goji-dark))" }}>
             <span className="flex items-center gap-1.5">
               <img src={gojiIcon} alt="" className="w-5 h-5 object-contain" />
               Campaigns
             </span>
-            <button
-              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide transition-colors hover:bg-muted/50"
-              style={{
-                color: "hsl(var(--goji-coral))",
-                borderColor: "hsl(var(--goji-coral) / 0.4)",
-              }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-3.5 h-3.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-              HOW IT WORKS?
-            </button>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted" style={{ color: "hsl(var(--goji-text-muted))" }}>
+              {loading ? "..." : campaigns.length} / {MAX_CAMPAIGNS}
+            </span>
           </h1>
-          <p
-            className="text-xs mt-1 ml-7"
-            style={{ color: "hsl(var(--goji-text-muted))" }}
-          >
+          <p className="text-xs mt-1 ml-7" style={{ color: "hsl(var(--goji-text-muted))" }}>
             Create and manage your outreach campaigns
           </p>
         </div>
-        <button
-          onClick={handleNewCampaign}
-          className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-          style={{
-            background: "hsl(var(--goji-coral))",
-            color: "white",
-          }}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Start a campaign
-        </button>
+        <div className="flex items-center gap-2">
+          {atLimit && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              Limit reached ({MAX_CAMPAIGNS}/{MAX_CAMPAIGNS})
+            </div>
+          )}
+          <button
+            onClick={handleNewCampaign}
+            disabled={atLimit}
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: "hsl(var(--goji-coral))", color: "white" }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Start a campaign
+          </button>
+        </div>
       </div>
 
       {/* Table card */}
