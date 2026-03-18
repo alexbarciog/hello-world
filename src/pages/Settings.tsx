@@ -955,8 +955,9 @@ export default function Settings() {
   }
 
   const saveCampaignFields = useCallback(async (fields: Record<string, any>) => {
-    if (!campaignId) return;
-    await supabase.from("campaigns").update(fields).eq("id", campaignId);
+    if (!campaignId) throw new Error("No active campaign found. Please complete onboarding first.");
+    const { error } = await supabase.from("campaigns").update(fields).eq("id", campaignId);
+    if (error) throw new Error(error.message);
     setCampaignData((prev: any) => (prev ? { ...prev, ...fields } : prev));
   }, [campaignId]);
 
