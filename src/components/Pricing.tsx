@@ -24,9 +24,7 @@ const Pricing = () => {
               <h3 className="text-2xl font-semibold text-foreground">Plus</h3>
               <div className="flex items-baseline gap-2 mt-3">
                 <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
-                <div className="text-sm text-foreground/70 leading-tight">
-                  <div>per user / month</div>
-                </div>
+                <span className="text-sm text-foreground/70">/month</span>
               </div>
             </div>
 
