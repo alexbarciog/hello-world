@@ -12,16 +12,34 @@ const platformLogos = [
 
 const Hero = () => {
   const [currentLogo, setCurrentLogo] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [nextLogo, setNextLogo] = useState(1);
+  const [phase, setPhase] = useState<"visible" | "exit" | "enter">("visible");
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIsAnimating(true);
+    const DISPLAY_TIME = 2200;
+    const ANIM_TIME = 350;
+
+    const cycle = () => {
+      // Phase 1: slide current logo up & fade out
+      setPhase("exit");
+
       setTimeout(() => {
-        setCurrentLogo((prev) => (prev + 1) % platformLogos.length);
-        setIsAnimating(false);
-      }, 400);
-    }, 2500);
+        // Phase 2: swap to next logo, slide in from below
+        setCurrentLogo((prev) => {
+          const next = (prev + 1) % platformLogos.length;
+          setNextLogo((next + 1) % platformLogos.length);
+          return next;
+        });
+        setPhase("enter");
+
+        setTimeout(() => {
+          // Phase 3: settle
+          setPhase("visible");
+        }, ANIM_TIME);
+      }, ANIM_TIME);
+    };
+
+    const interval = setInterval(cycle, DISPLAY_TIME + ANIM_TIME * 2);
     return () => clearInterval(interval);
   }, []);
   return (
