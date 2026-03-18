@@ -33,7 +33,7 @@ const HeroCards = () => {
         {/* Signal tags with left connector */}
         <div className="relative pl-5">
           {/* Arrow at end of connector */}
-          <div className="absolute left-[-3px] top-1/2 -translate-y-1/2 text-amber-400 text-[10px]">→</div>
+          
           <div className="flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm border border-amber-400/50">
               <Heart className="w-3 h-3" /> Liked your post
