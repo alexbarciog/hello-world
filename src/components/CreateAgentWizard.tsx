@@ -789,23 +789,23 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
         variants={fadeUp}
         initial="hidden"
         animate="visible"
-        className="flex items-center justify-between mt-8 pt-4 border-t border-border"
+        className="flex items-center justify-between mt-6 md:mt-8 pt-4 border-t border-border gap-3"
       >
         <div>
           {step > 1 && (
             <button
               onClick={() => { setStep(step - 1); setValidationError(""); }}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Previous
+              <span className="hidden sm:inline">Previous</span>
             </button>
           )}
         </div>
         <button
           onClick={handleNext}
           disabled={saving}
-          className="btn-cta text-sm disabled:opacity-60"
+          className="btn-cta text-sm disabled:opacity-60 flex-1 sm:flex-none justify-center"
         >
           {saving ? (
             <span className="animate-spin w-4 h-4 border-2 border-background border-t-transparent rounded-full" />
