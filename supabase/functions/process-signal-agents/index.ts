@@ -516,7 +516,8 @@ async function handleCompetitorFollowers(
         };
 
         const match = scoreProfileAgainstICP(profile, icp);
-        if (!matchesTitleOrIndustry(match, icp)) continue;
+        const hl = profile.headline || profile.title || '';
+        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(profile, icp.excludeKeywords)) continue;
 
         const signal = `Follows ${companyName}`;
