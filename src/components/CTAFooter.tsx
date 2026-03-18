@@ -1,44 +1,37 @@
 import { ArrowUpRight } from "lucide-react";
 import gojiIcon from "@/assets/gojiberry-icon.png";
+import footerGradient from "@/assets/footer-gradient.svg";
 
 const CTASection = () => {
   return (
-    <section
-      className="py-28 px-4 relative overflow-hidden"
-      style={{
-        background: "linear-gradient(180deg, hsl(228 38% 8%) 0%, hsl(228 38% 14%) 100%)",
-      }}
-    >
-      {/* Animated orbs */}
-      <div
-        className="absolute -top-20 -left-20 w-[600px] h-[400px] rounded-full blur-[120px] opacity-100 animate-[float1_8s_ease-in-out_infinite]"
-        style={{ background: "hsl(5 90% 65% / 0.35)" }}
-      />
-      <div
-        className="absolute -bottom-20 -right-20 w-[500px] h-[350px] rounded-full blur-[100px] opacity-100 animate-[float2_10s_ease-in-out_infinite_1s]"
-        style={{ background: "hsl(18 95% 58% / 0.25)" }}
-      />
-
-      {/* Subtle grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, hsl(0 0% 100% / 0.5) 1px, transparent 1px), linear-gradient(to bottom, hsl(0 0% 100% / 0.5) 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-        }}
+    <section className="py-28 px-4 relative overflow-hidden bg-[#A0BBFF]">
+      {/* SVG gradient background */}
+      <img
+        src={footerGradient}
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
       />
 
       <div className="relative max-w-3xl mx-auto text-center z-10">
-        <h2 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-tight mb-6">
+        <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6"
+          style={{ color: "hsl(228 60% 18%)" }}>
           More High-Intent Leads = Your New Growth Engine.
         </h2>
-        <p className="text-base md:text-lg text-white/60 mb-10 max-w-xl mx-auto leading-relaxed">
+        <p className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed"
+          style={{ color: "hsl(228 40% 30%)" }}>
           Start Now and Get New High Intent Leads Delivered Straight to Slack or Your Inbox.
         </p>
         <a
           href="https://app.gojiberry.ai/registration"
-          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full backdrop-blur-md bg-white/10 border border-white/20 text-white font-medium text-base hover:bg-white/20 hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all duration-300 hover:scale-[1.02]"
+          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full backdrop-blur-md border font-medium text-base transition-all duration-300 hover:scale-[1.02]"
+          style={{
+            background: "rgba(255,255,255,0.25)",
+            borderColor: "rgba(255,255,255,0.5)",
+            color: "hsl(228 60% 18%)",
+            boxShadow: "0 4px 24px 0 rgba(61,71,238,0.15)",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.4)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
         >
           Launch your AI Agent for free
           <ArrowUpRight className="w-5 h-5" />
