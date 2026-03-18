@@ -31,11 +31,15 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-20 pb-16">
-      <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse 60% 50% at 50% 30%, hsl(265 70% 75% / 0.5) 0%, hsl(230 80% 70% / 0.3) 35%, hsl(200 60% 85% / 0.15) 55%, hsl(0 0% 100%) 85%)" }} />
-      <div className="absolute inset-0 z-0 hero-grid-bg opacity-60" />
-      <div className="absolute top-20 left-10 w-80 h-80 rounded-full blur-3xl opacity-30 z-0" style={{ background: "hsl(270 65% 72%)" }} />
-      <div className="absolute top-32 right-10 w-72 h-72 rounded-full blur-3xl opacity-25 z-0" style={{ background: "hsl(220 75% 65%)" }} />
-      <div className="absolute top-48 left-1/3 w-64 h-64 rounded-full blur-3xl opacity-20 z-0" style={{ background: "hsl(250 80% 78%)" }} />
+      {/* Video background */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        src="/videos/hero-gradient.webm"
+        autoPlay
+        loop
+        muted
+        playsInline
+      />
 
       <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl mx-auto">
         <h1 className="text-5xl md:text-7xl font-extrabold text-goji-dark leading-[1.1] tracking-tight mt-16 md:mt-24 mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
