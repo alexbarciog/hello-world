@@ -50,7 +50,7 @@ async function getAuthToken() {
 async function callConnectLinkedin(body: Record<string, unknown>) {
   const token = await getAuthToken();
   const res = await fetch(
-    `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/connect-linkedin`,
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`,
     {
       method: "POST",
       headers: {
@@ -81,22 +81,18 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
     if (showLoader) setLoadingStatus(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      const result = await callConnectLinkedin({ action: "check_status" });
+      const isConnected = result.status === "connected" && Boolean(result.account_id);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("unipile_account_id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile?.unipile_account_id) {
-        setConnected(true);
+      setConnected(isConnected);
+      if (isConnected) {
         onChange({ linkedinConnectionType: "direct" });
         clearLinkedinQueryParam();
         return true;
       }
 
+      return false;
+    } catch {
       return false;
     } finally {
       if (showLoader) setLoadingStatus(false);
@@ -106,29 +102,24 @@ export const Step2LinkedIn = ({ data, onChange, onNext, onPrev }: Props) => {
   function startPolling() {
     setPolling(true);
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 45;
 
     const interval = window.setInterval(async () => {
       attempts += 1;
 
-      try {
-        const result = await callConnectLinkedin({ action: "check_status" });
-        if (result.status === "connected") {
-          window.clearInterval(interval);
-          setPolling(false);
-          setConnected(true);
-          onChange({ linkedinConnectionType: "direct" });
-          clearLinkedinQueryParam();
-          toast.success("LinkedIn account connected successfully!");
-          return;
-        }
-      } catch {
-        // continue polling briefly after redirect
+      const isConnected = await checkConnection(false);
+      if (isConnected) {
+        window.clearInterval(interval);
+        setPolling(false);
+        setConnecting(false);
+        toast.success("LinkedIn account connected successfully!");
+        return;
       }
 
       if (attempts >= maxAttempts) {
         window.clearInterval(interval);
         setPolling(false);
+        setConnecting(false);
         toast.error("Connection is still processing. Please try again in a few seconds.");
       }
     }, 2000);

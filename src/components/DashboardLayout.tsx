@@ -56,15 +56,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("unipile_account_id")
-        .eq("user_id", user.id)
-        .single();
-      setShowLinkedInBanner(!profile?.unipile_account_id);
+      let linkedinConnected = false;
+
+      try {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ action: "check_status" }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          linkedinConnected = data.status === "connected" && Boolean(data.account_id);
+        }
+      } catch {
+        // fallback to direct profile check below
+      }
+
+      if (!linkedinConnected) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("unipile_account_id")
+          .eq("user_id", user.id)
+          .single();
+        linkedinConnected = Boolean(profile?.unipile_account_id);
+      }
+
+      setShowLinkedInBanner(!linkedinConnected);
 
       const email = user.email ?? "";
       const firstName = user.user_metadata?.first_name || "";

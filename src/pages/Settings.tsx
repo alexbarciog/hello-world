@@ -603,8 +603,33 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [polling, setPolling] = useState(false);
 
+  function clearLinkedinQueryParam() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("linkedin");
+    window.history.replaceState({}, "", url.toString());
+  }
+
   useEffect(() => {
-    checkConnection();
+    const linkedinStatus = new URLSearchParams(window.location.search).get("linkedin");
+
+    void (async () => {
+      const isConnected = await checkConnection();
+      if (isConnected) {
+        clearLinkedinQueryParam();
+        return;
+      }
+
+      if (linkedinStatus === "success") {
+        toast.success("LinkedIn connected. Finalizing your session...");
+        startPolling();
+        return;
+      }
+
+      if (linkedinStatus === "failed") {
+        clearLinkedinQueryParam();
+        toast.error("LinkedIn connection was cancelled or failed.");
+      }
+    })();
   }, []);
 
   async function getAuthToken() {
@@ -616,7 +641,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   async function callConnectLinkedin(body: Record<string, unknown>) {
     const token = await getAuthToken();
     const res = await fetch(
-      `https://uwwajlezgeurnvvrvdvb.supabase.co/functions/v1/connect-linkedin`,
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`,
       {
         method: "POST",
         headers: {
@@ -631,36 +656,39 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
     return data;
   }
 
-  async function checkConnection() {
-    setLoadingStatus(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("unipile_account_id")
-        .eq("user_id", user.id)
-        .single();
-      if (profile?.unipile_account_id) {
-        setAccountId(profile.unipile_account_id);
-      }
+  async function checkConnection(showLoader = true) {
+    if (showLoader) setLoadingStatus(true);
+
+    try {
+      const data = await callConnectLinkedin({ action: "check_status" });
+      const isConnected = data.status === "connected" && Boolean(data.account_id);
+
+      setAccountId(isConnected ? data.account_id : null);
+      return isConnected;
+    } catch {
+      return false;
+    } finally {
+      if (showLoader) setLoadingStatus(false);
     }
-    setLoadingStatus(false);
   }
 
   async function handleConnect() {
     setConnecting(true);
     try {
-      const data = await callConnectLinkedin({ action: "create_link" });
+      const data = await callConnectLinkedin({
+        action: "create_link",
+        return_url: window.location.href,
+      });
 
       if (data.status === "link_created" && data.url) {
-        // Open Unipile hosted auth in a new tab
         window.open(data.url, "_blank", "noopener,noreferrer");
-        // Start polling for connection
         startPolling();
+        return;
       }
+
+      throw new Error("Unable to open LinkedIn connection flow");
     } catch (e: any) {
       toast.error(e.message || "Failed to initiate LinkedIn connection");
-    } finally {
       setConnecting(false);
     }
   }
@@ -668,27 +696,27 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   function startPolling() {
     setPolling(true);
     let attempts = 0;
-    const maxAttempts = 90; // 3 minutes
+    const maxAttempts = 90;
 
-    const interval = setInterval(async () => {
-      attempts++;
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
+    const interval = window.setInterval(async () => {
+      attempts += 1;
+
+      const isConnected = await checkConnection(false);
+      if (isConnected) {
+        window.clearInterval(interval);
         setPolling(false);
-        toast.error("Connection timed out. Please try again.");
+        setConnecting(false);
+        clearLinkedinQueryParam();
+        toast.success("LinkedIn account connected successfully!");
+        onConnected?.();
         return;
       }
-      try {
-        const data = await callConnectLinkedin({ action: "check_status" });
-        if (data.status === "connected") {
-          clearInterval(interval);
-          setPolling(false);
-          setAccountId(data.account_id);
-          toast.success("LinkedIn account connected successfully!");
-          onConnected?.();
-        }
-      } catch {
-        // Keep polling
+
+      if (attempts >= maxAttempts) {
+        window.clearInterval(interval);
+        setPolling(false);
+        setConnecting(false);
+        toast.error("Connection timed out. Please try again.");
       }
     }, 2000);
   }
