@@ -125,17 +125,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           {!collapsed && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground">
-                <Bell className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setCollapsed(true)}
-                className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setCollapsed(true)}
+              className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
           )}
           {collapsed && (
             <button
@@ -300,26 +295,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">
-        {showLinkedInBanner && (
-          <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: "hsl(25 95% 95%)", borderColor: "hsl(25 90% 85%)" }}>
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: "hsl(25 95% 53%)" }} />
-              <p className="text-sm font-medium" style={{ color: "hsl(25 60% 30%)" }}>
-                Connect your LinkedIn account to start discovering leads and running campaigns.
-              </p>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top navbar */}
+        <header
+          className="flex items-center justify-between px-6 py-3 shrink-0"
+          style={{ background: "hsl(195 14% 95%)" }}
+        >
+          <div />
+          <button className="p-1.5 rounded-md hover:bg-foreground/10 transition-colors text-foreground/60 hover:text-foreground">
+            <Bell className="w-5 h-5" />
+          </button>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          {showLinkedInBanner && (
+            <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: "hsl(25 95% 95%)", borderColor: "hsl(25 90% 85%)" }}>
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: "hsl(25 95% 53%)" }} />
+                <p className="text-sm font-medium" style={{ color: "hsl(25 60% 30%)" }}>
+                  Connect your LinkedIn account to start discovering leads and running campaigns.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/settings?tab=linkedin")}
+                className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: "hsl(var(--goji-coral))" }}
+              >
+                Connect LinkedIn
+              </button>
             </div>
-            <button
-              onClick={() => navigate("/settings?tab=linkedin")}
-              className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: "hsl(var(--goji-coral))" }}
-            >
-              Connect LinkedIn
-            </button>
-          </div>
-        )}
-        {children}
-      </main>
+          )}
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
