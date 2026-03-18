@@ -40,8 +40,8 @@ interface VideoContainerProps {
 function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
   return (
     <div
-      className="rounded-[28px] overflow-hidden w-full"
-      style={{ background: gradient, minHeight: 280 }}
+      className="rounded-[28px] overflow-hidden w-full h-full"
+      style={{ background: gradient, minHeight: 480 }}
     >
       {videoSrc ? (
         <video
@@ -51,10 +51,10 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
           muted
           playsInline
           className="w-full h-full object-cover"
-          style={{ minHeight: 280 }}
+          style={{ minHeight: 480 }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 280 }}>
+        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 480 }}>
           <span className="text-white/50 text-sm">Video placeholder</span>
         </div>
       )}
@@ -78,7 +78,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
 
   const textCol = (
     <div
-      className="flex flex-col justify-center gap-6"
+      className="flex flex-col justify-center gap-6 py-16"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(28px)",
@@ -97,6 +97,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
 
   const visualCol = (
     <div
+      className="h-full flex items-stretch"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(28px)",
@@ -110,7 +111,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
   return (
     <div
       ref={ref}
-      className="grid md:grid-cols-2 gap-12 md:gap-16 items-center"
+      className="grid md:grid-cols-2 gap-12 md:gap-16 items-stretch min-h-screen"
     >
       {reversed ? <>{visualCol}{textCol}</> : <>{textCol}{visualCol}</>}
     </div>
@@ -122,20 +123,20 @@ const Features = () => {
   const { ref: headingRef, visible: headingVisible } = useInView(0.2);
 
   return (
-    <section id="features" className="py-24 px-4" style={{ background: "hsl(0 0% 100%)" }}>
-      <div className="max-w-5xl mx-auto space-y-28">
+    <section id="features" className="px-8 md:px-16" style={{ background: "hsl(0 0% 100%)" }}>
+      <div className="max-w-6xl mx-auto">
 
-        {/* Section heading */}
+        {/* Section heading — full viewport height centered */}
         <div
           ref={headingRef}
-          className="text-center"
+          className="flex items-center justify-center min-h-screen text-center"
           style={{
             opacity: headingVisible ? 1 : 0,
             transform: headingVisible ? "translateY(0)" : "translateY(24px)",
             transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
           }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight tracking-tight max-w-2xl mx-auto">
+          <h2 className="text-5xl md:text-6xl font-bold text-foreground leading-tight tracking-tight max-w-2xl mx-auto">
             A better way to build<br />your sales pipeline
           </h2>
         </div>
