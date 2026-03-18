@@ -151,14 +151,8 @@ function OnboardingInner() {
       }}
     >
       {/* Logo */}
-      <a href="/" className="flex items-center gap-2.5 mb-10">
-        <img src={gojiIcon} alt="Gojiberry" className="w-8 h-8 object-contain" />
-        <span
-          className="font-bold text-xl tracking-tight"
-          style={{ color: "hsl(var(--goji-dark))" }}
-        >
-          gojiberry
-        </span>
+      <a href="/" className="flex items-center gap-2 mb-10">
+        <img src={intentslyIcon} alt="Intentsly" className="h-11 object-contain" />
       </a>
 
       {/* Card */}
