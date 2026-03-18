@@ -773,7 +773,7 @@ export default function Settings() {
                   <motion.div
                     layoutId="tab-underline"
                     className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                    style={{ background: "hsl(var(--goji-coral))" }}
+                    style={{ background: "var(--gradient-cta)" }}
                   />
                 )}
               </button>
