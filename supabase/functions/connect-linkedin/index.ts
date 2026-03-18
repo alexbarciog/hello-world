@@ -180,6 +180,10 @@ async function handleUnipileNotify(
   }
 
   await saveAccountId(userId, accountId, supabaseUrl, serviceRoleKey);
+
+  // Activate pending campaigns & agents, then trigger lead discovery
+  await activatePendingAndDiscover(userId, supabaseUrl, serviceRoleKey);
+
   return jsonResponse({ status: 'saved', account_id: accountId });
 }
 
@@ -344,5 +348,55 @@ async function saveAccountId(
 
   if (error) {
     throw new Error(`Failed to save account: ${error.message}`);
+}
+
+async function activatePendingAndDiscover(
+  userId: string,
+  supabaseUrl: string,
+  serviceRoleKey: string
+) {
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+
+  try {
+    // Activate pending campaigns
+    const { data: activated, error: campErr } = await serviceClient
+      .from('campaigns')
+      .update({ status: 'active' })
+      .eq('user_id', userId)
+      .eq('status', 'pending_linkedin')
+      .select('id');
+
+    if (campErr) {
+      console.error('[activate] campaigns error:', campErr.message);
+    } else {
+      console.log(`[activate] activated ${activated?.length || 0} campaigns for user ${userId}`);
+    }
+
+    // Activate pending signal agents
+    const { error: agentErr } = await serviceClient
+      .from('signal_agents')
+      .update({ status: 'active' })
+      .eq('user_id', userId)
+      .eq('status', 'pending_linkedin');
+
+    if (agentErr) {
+      console.error('[activate] agents error:', agentErr.message);
+    }
+
+    // Trigger discover-leads (fire-and-forget)
+    if (activated && activated.length > 0) {
+      const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+      fetch(`${supabaseUrl}/functions/v1/discover-leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({}),
+      }).catch((err) => console.error('[activate] discover-leads trigger error:', err));
+    }
+  } catch (err) {
+    console.error('[activate] error:', err);
   }
+}
 }
