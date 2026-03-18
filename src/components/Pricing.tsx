@@ -64,11 +64,7 @@ const Pricing = () => {
           {/* Right card — minimal/clean */}
           <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: "hsl(0 0% 96%)" }}>
             <div className="px-8 pt-8">
-              <h3 className="text-2xl font-semibold">
-                <span className="text-foreground">P</span>
-                <span style={{ color: "hsl(var(--primary))" }}>l</span>
-                <span className="text-foreground">us</span>
-              </h3>
+              <h3 className="text-2xl font-semibold text-foreground">Custom</h3>
               <div className="flex items-baseline gap-2 mt-3">
                 <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
                 <div className="text-sm text-muted-foreground leading-tight">
