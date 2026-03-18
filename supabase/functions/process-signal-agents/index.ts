@@ -325,41 +325,47 @@ async function handleKeywordPosts(
   for (const post of topPosts) {
     await delay(1500);
 
-    // First try to use inline author data from search results
-    const authorData = post.author || post.actor || null;
+    // Log post structure to understand available fields
+    console.log(`keyword_posts: post keys = ${Object.keys(post).join(', ')}`);
+    if (post.author) console.log(`keyword_posts: author keys = ${Object.keys(post.author).join(', ')}`);
+    if (post.actor) console.log(`keyword_posts: actor keys = ${Object.keys(post.actor).join(', ')}`);
+
+    // Try multiple author field locations
+    const authorData = post.author || post.actor || post.author_detail || null;
     const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
 
     let profile: any = null;
 
-    // If we have inline author data with name/headline, use it directly
-    if (authorData && (authorData.first_name || authorData.name || authorData.headline)) {
+    // Build profile from whatever data is available in the search result
+    if (authorData) {
+      const name = authorData.first_name || authorData.name || authorData.title || authorData.headline || '';
+      const nameParts = name.split(' ');
       profile = {
-        first_name: authorData.first_name || authorData.name?.split(' ')[0] || null,
-        last_name: authorData.last_name || authorData.name?.split(' ').slice(1).join(' ') || null,
-        headline: authorData.headline || authorData.title || null,
+        first_name: authorData.first_name || nameParts[0] || 'Unknown',
+        last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
+        headline: authorData.headline || authorData.occupation || authorData.title || null,
         industry: authorData.industry || null,
-        location: authorData.location || null,
-        company: authorData.company || authorData.current_company?.name || null,
-        public_id: authorData.public_identifier || authorData.public_id || authorId,
-        linkedin_url: authorData.profile_url || authorData.public_profile_url || null,
+        location: authorData.location || authorData.geo_location || null,
+        company: authorData.company || authorData.current_company?.name || authorData.company_name || null,
+        public_id: authorData.public_identifier || authorData.public_id || authorData.vanity_name || authorId,
+        linkedin_url: authorData.profile_url || authorData.public_profile_url || authorData.url || (authorData.vanity_name ? `https://www.linkedin.com/in/${authorData.vanity_name}` : null),
         provider_id: authorData.provider_id || authorId,
       };
-      console.log(`keyword_posts: using inline author data for ${profile.first_name} ${profile.last_name}`);
+      console.log(`keyword_posts: built profile from inline data: ${profile.first_name} ${profile.last_name || ''} — ${profile.headline || 'no headline'}`);
     } else if (authorId) {
-      // Fallback: try multiple profile endpoints
+      // Last resort: try fetching profile (may fail for LinkedIn IDs)
       try {
-        let profileRes = await unipileGet(`/api/v1/users/${authorId}?account_id=${accountId}`, apiKey, dsn);
-        if (!profileRes.ok) {
-          profileRes = await unipileGet(`/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`, apiKey, dsn);
-        }
+        const profileRes = await unipileGet(`/api/v1/users/${authorId}?account_id=${accountId}`, apiKey, dsn);
         if (profileRes.ok) {
           profile = await profileRes.json();
         } else {
-          console.error(`Profile fetch for author ${authorId}: ${profileRes.status}`);
+          console.warn(`Profile fetch for ${authorId}: ${profileRes.status} — skipping`);
+          await profileRes.text(); // consume body
           continue;
         }
       } catch (e) { console.error('Keyword post author fetch:', e); continue; }
     } else {
+      console.warn('keyword_posts: no author data or ID, skipping post');
       continue;
     }
 
