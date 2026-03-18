@@ -53,7 +53,7 @@ const Hero = () => {
           </span>
         </h1>
 
-        <p className="text-lg md:text-xl text-goji-text-muted max-w-2xl mb-10 leading-relaxed animate-fade-in-up" style={{ animationDelay: "120ms" }}>
+        <p className="text-lg md:text-xl text-foreground max-w-2xl mb-10 leading-relaxed animate-fade-in-up" style={{ animationDelay: "120ms" }}>
           Our AI detects intent signals, scores prospects based on your ideal customers,
           starts relevant conversations on LinkedIn, and books more demos, on autopilot.
         </p>
