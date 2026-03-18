@@ -368,24 +368,24 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                   key={s.num}
                   onClick={() => isDone && setStep(s.num)}
                   className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
-                    isActive ? "" : isDone ? "hover:bg-muted/50 cursor-pointer" : "opacity-50"
+                    isActive ? "shadow-sm" : isDone ? "hover:bg-muted/50 cursor-pointer" : "opacity-50"
                   }`}
-                  style={isActive ? { background: "linear-gradient(135deg, #FDC94B, #C8D9FF)" } : undefined}
+                  style={isActive ? { background: "hsl(220 20% 96%)", border: "1px solid hsl(220 20% 90%)" } : undefined}
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 transition-colors ${
                     isDone
                       ? "bg-foreground text-background"
                       : isActive
-                        ? "bg-white/60 text-goji-dark"
+                        ? "bg-foreground text-background"
                         : "bg-muted text-muted-foreground"
                   }`}>
                     {isDone ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${isActive ? "text-goji-dark" : isDone ? "text-foreground" : "text-muted-foreground"}`}>
+                    <p className={`text-sm font-semibold ${isActive ? "text-foreground" : isDone ? "text-foreground" : "text-muted-foreground"}`}>
                       {s.label}
                     </p>
-                    <p className={`text-xs ${isActive ? "text-goji-dark/50" : "text-muted-foreground"}`}>{s.sub}</p>
+                    <p className={`text-xs ${isActive ? "text-muted-foreground" : "text-muted-foreground"}`}>{s.sub}</p>
                   </div>
                 </button>
               );
