@@ -303,10 +303,26 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
         </SectionCard>
       )}
 
-      {/* Members table */}
+      {/* Members — responsive card on mobile, table on desktop */}
       <SectionCard delay={4}>
         <p className="text-sm font-semibold text-foreground mb-4">Members</p>
-        <div className="rounded-xl border border-border overflow-hidden">
+
+        {/* Mobile member card */}
+        <div className="sm:hidden rounded-xl border border-border p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>{initials}</div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{userName || "User"}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+            <Building2 className="w-3 h-3" /> Owner
+          </span>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block rounded-xl border border-border overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
