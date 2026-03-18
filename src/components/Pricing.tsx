@@ -1,125 +1,115 @@
 import { Check } from "lucide-react";
-import { ArrowUpRight } from "lucide-react";
 
-const proFeatures = [
+const features = [
   "30+ Intent Signals",
   "2 LinkedIn senders",
   "Unlimited LinkedIn campaigns",
-  "Unlimited Warm lead",
-  "AI-powered outreach with smart lead scoring",
-  "Email Waterfall Enrichment (+15 data providers)",
-  "CRM & API integrations (HubSpot, Pipedrive...)",
-  "Chat & email support",
-];
-
-const customFeatures = [
-  "Everything in Pro",
-  "More LinkedIn Accounts",
-  "More Intent Signals",
-  "Dedicated Customer Success Manager",
-  "Deep & custom integrations",
+  "Unlimited Warm leads",
+  "AI-powered smart lead scoring",
 ];
 
 const Pricing = () => {
   return (
-    <section id="pricing" className="py-24 px-4 bg-background">
+    <section id="pricing" className="py-20 md:py-32 px-6 md:px-10 bg-background">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-col items-center text-center mb-16">
-          <span
-            className="text-xs font-semibold uppercase tracking-widest mb-4 inline-block border rounded-full px-4 py-1.5"
-            style={{
-              color: "hsl(var(--goji-orange))",
-              background: "hsl(var(--goji-orange) / 0.06)",
-              borderColor: "hsl(var(--goji-orange) / 0.2)",
-            }}
-          >
-            Pricing
-          </span>
-          <p className="text-sm font-medium text-goji-text-muted mb-3 mt-4">
-            Simple pricing for all your needs
-          </p>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-goji-dark tracking-tight leading-tight">
-            Warm Leads Found. Campaign Launched.
-            <br />
-            All in 10 Minutes
-          </h2>
-        </div>
-
         <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {/* Pro plan */}
-          <div className="relative rounded-3xl border-2 overflow-hidden"
-            style={{ borderColor: "hsl(var(--goji-orange))" }}>
-            {/* Popular badge */}
+          {/* Left card — featured with gradient */}
+          <div className="relative rounded-3xl bg-card overflow-hidden shadow-sm">
+            {/* Top gradient background */}
             <div
-              className="absolute top-0 left-0 right-0 text-center py-2 text-xs font-bold text-primary-foreground uppercase tracking-widest"
-              style={{ background: "hsl(var(--goji-orange))" }}
+              className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden"
+              style={{
+                background: "linear-gradient(180deg, hsl(220 60% 85%) 0%, hsl(30 90% 80%) 60%, hsl(15 90% 75%) 100%)",
+              }}
             >
-              Most Popular
-            </div>
-            <div className="pt-12 p-8">
-              <h3 className="text-xl font-bold text-goji-dark mb-1">Pro</h3>
-              <div className="flex items-end gap-1 mb-2">
-                <span className="text-5xl font-black text-goji-dark">$99</span>
-                <span className="text-goji-text-muted text-sm mb-2">/ month</span>
+              <h3 className="text-xl font-semibold text-foreground">Plus</h3>
+              <div className="flex items-baseline gap-2 mt-3">
+                <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
+                <div className="text-sm text-foreground/70 leading-tight">
+                  <div>per user / month</div>
+                  <div>billed annually</div>
+                </div>
               </div>
-              <p className="text-sm text-goji-text-muted mb-8 leading-relaxed">
-                For B2B founders, SDRs and solo operators or teams of 2.
-              </p>
+            </div>
+
+            {/* CTA button overlapping the gradient */}
+            <div className="px-8 -mt-6 relative z-10">
               <a
-                href="https://app.gojiberry.ai/registration"
-                className="btn-cta justify-center w-full text-sm mb-8"
+                href="/register"
+                className="btn-cta justify-center w-full text-sm"
               >
-                Try Gojiberry for Free
-                <ArrowUpRight className="w-4 h-4" />
+                Get started
               </a>
-              <ul className="space-y-3">
-                {proFeatures.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-goji-dark">
-                    <span
-                      className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ background: "hsl(var(--goji-orange) / 0.12)" }}
-                    >
-                      <Check className="w-3 h-3 text-goji-orange" />
-                    </span>
+            </div>
+
+            {/* Features */}
+            <div className="px-8 pt-8 pb-8">
+              <ul className="space-y-4">
+                {features.map((feat, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
+                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
                     {feat}
                   </li>
                 ))}
               </ul>
             </div>
+
+            {/* Bottom link */}
+            <div className="px-8 pb-8">
+              <a href="/billing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Need higher limits?
+              </a>
+            </div>
           </div>
 
-          {/* Custom plan */}
-          <div className="rounded-3xl border border-border bg-card overflow-hidden p-8 flex flex-col">
-            <h3 className="text-xl font-bold text-goji-dark mb-1">Custom</h3>
-            <p className="text-sm text-goji-text-muted mb-4 leading-relaxed">
-              For small sales teams (5+) looking to scale their outreach with AI.
-            </p>
-            <div className="mb-2">
-              <span className="text-3xl font-black text-goji-dark">Talk with us</span>
+          {/* Right card — minimal/clean */}
+          <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: "hsl(0 0% 96%)" }}>
+            <div className="px-8 pt-8">
+              <h3 className="text-xl font-semibold">
+                <span className="text-foreground">P</span>
+                <span style={{ color: "hsl(var(--primary))" }}>l</span>
+                <span className="text-foreground">us</span>
+              </h3>
+              <div className="flex items-baseline gap-2 mt-3">
+                <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
+                <div className="text-sm text-muted-foreground leading-tight">
+                  <div>per user / month</div>
+                  <div>billed annually</div>
+                </div>
+              </div>
             </div>
-            <a
-              href="https://calendly.com/d/cvbb-bf6-fth"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full text-sm font-semibold text-goji-berry border-2 rounded-full py-3.5 mb-8 mt-4 transition-all hover:bg-goji-berry hover:text-primary-foreground"
-              style={{ borderColor: "hsl(var(--goji-berry))" }}
-            >
-              Get Demo
-              <ArrowUpRight className="w-4 h-4" />
-            </a>
-            <ul className="space-y-3 mt-auto">
-              {customFeatures.map((feat, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm text-goji-dark">
-                  <span
-                    className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: "hsl(var(--goji-berry) / 0.1)" }}
-                  >
-                    <Check className="w-3 h-3 text-goji-berry" />
-                  </span>
-                  {feat}
-                </li>
-              ))}
-            </ul>
+
+            {/* CTA button */}
+            <div className="px-8 mt-6">
+              <a
+                href="/register"
+                className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-foreground/20 text-foreground/70 hover:bg-foreground/5 transition-colors"
+              >
+                Get started
+              </a>
+            </div>
+
+            {/* Divider */}
+            <div className="mx-8 mt-8 border-t border-foreground/10" />
+
+            {/* Features */}
+            <div className="px-8 pt-6 pb-8">
+              <ul className="space-y-4">
+                {features.map((feat, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
+                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Bottom link */}
+            <div className="px-8 pb-8">
+              <a href="/billing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Need higher limits?
+              </a>
+            </div>
           </div>
         </div>
       </div>
