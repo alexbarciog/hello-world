@@ -35,12 +35,9 @@ type Campaign = {
 type CampaignWithLeads = Campaign & { leadsCount: number };
 
 export default function CampaignsPage() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
@@ -49,12 +46,10 @@ export default function CampaignsPage() {
       const { data } = await supabase
         .from("campaigns")
         .select("id, company_name, status, created_at, campaign_goal")
-        
         .order("created_at", { ascending: false });
 
       const rows = (data ?? []) as Campaign[];
 
-      // Get lead counts
       const withCounts: CampaignWithLeads[] = await Promise.all(
         rows.map(async (c) => {
           const { count } = await supabase
@@ -71,17 +66,6 @@ export default function CampaignsPage() {
     load();
   }, []);
 
-  // Close menu on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
   const handleNewCampaign = () => {
     if (atLimit) {
       toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
@@ -92,13 +76,23 @@ export default function CampaignsPage() {
   };
 
   const handleDeleteCampaign = async (id: string) => {
-    setMenuOpen(null);
     const { error } = await supabase.from("campaigns").delete().eq("id", id);
     if (error) {
       toast.error("Failed to delete campaign");
     } else {
       setCampaigns((prev) => prev.filter((c) => c.id !== id));
       toast.success("Campaign deleted");
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "active" ? "paused" : "active";
+    const { error } = await supabase.from("campaigns").update({ status: newStatus }).eq("id", id);
+    if (error) {
+      toast.error("Failed to update campaign status");
+    } else {
+      setCampaigns((prev) => prev.map((c) => c.id === id ? { ...c, status: newStatus } : c));
+      toast.success(newStatus === "active" ? "Campaign activated" : "Campaign paused");
     }
   };
 
