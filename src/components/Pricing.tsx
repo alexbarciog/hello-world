@@ -15,7 +15,7 @@ const Pricing = () => {
       <div className="max-w-5xl mx-auto">
         <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           {/* Left card — featured with gradient */}
-          <div className="relative rounded-3xl bg-card overflow-hidden shadow-sm">
+          <div className="relative rounded-3xl bg-card overflow-hidden shadow-lg">
             {/* Top gradient background */}
             <div
               className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
