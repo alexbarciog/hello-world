@@ -13,13 +13,21 @@ export const clearOnboardingSession = () => {
 };
 
 // ─── Guard for the onboarding entry (/onboarding) ────────────────────────────
-// Redirects to /dashboard if the user already completed onboarding
+// Redirects to /dashboard if the user already completed onboarding.
+// Add ?preview=true to the URL to bypass the redirect (useful for testing).
 export function OnboardingEntryGuard({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<"checking" | "allow" | "redirect">("checking");
   const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
+
+    // ?preview=true bypasses the guard so you can always view the onboarding flow
+    const isPreview = new URLSearchParams(window.location.search).get("preview") === "true";
+    if (isPreview) {
+      setStatus("allow");
+      return;
+    }
 
     async function check() {
       const { data: { session } } = await supabase.auth.getSession();
