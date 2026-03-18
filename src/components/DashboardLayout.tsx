@@ -177,23 +177,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Go Premium card */}
           {!collapsed && (
             <div
-              className="rounded-xl p-3 mb-2"
+              className="rounded-xl p-3 mb-2 overflow-hidden relative"
               style={{
-                background: "linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(330 85% 55%) 100%)",
+                backgroundImage: `url(${premiumBg})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
               }}
             >
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <p className="text-xs font-bold text-white">Go Premium</p>
-                  <p className="text-[10px] text-white/80">Unlock all features</p>
+                  <p className="text-xs font-bold text-foreground">Go Premium</p>
+                  <p className="text-[10px] text-foreground/60">Unlock all features</p>
                 </div>
-                <button onClick={() => navigate("/billing")} className="bg-white/20 hover:bg-white/30 rounded-full p-1 transition-colors">
-                  <ChevronRight className="w-3 h-3 text-white" />
+                <button onClick={() => navigate("/billing")} className="bg-foreground/10 hover:bg-foreground/15 rounded-full p-1 transition-colors">
+                  <ChevronRight className="w-3 h-3 text-foreground" />
                 </button>
               </div>
               <button
                 onClick={() => navigate("/billing")}
-                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-white/80 border border-white/30 rounded-md py-1 mb-1.5 hover:bg-white/10 transition-colors"
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-foreground/70 border border-foreground/15 rounded-md py-1 mb-1.5 hover:bg-foreground/5 transition-colors"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -205,7 +207,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
               <button
                 onClick={() => navigate("/billing")}
-                className="w-full text-[11px] font-bold text-white bg-white/20 hover:bg-white/30 rounded-md py-1.5 transition-colors"
+                className="w-full text-[11px] font-bold text-foreground bg-foreground/10 hover:bg-foreground/15 rounded-md py-1.5 transition-colors"
               >
                 Start Trial ✦
               </button>
