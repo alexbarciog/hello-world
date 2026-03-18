@@ -46,7 +46,7 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
         loop
         muted
         playsInline
-        className="w-full h-auto block rounded-[28px]"
+        className="w-full h-auto block rounded-[28px] overflow-hidden"
       />
     );
   }
@@ -166,7 +166,7 @@ const Features = () => {
           description="Feed your AI writer unique data to craft personalized messages that convert. Then trigger outreach flows including DMs, connection requests, likes, or event invites, all based on the signals each lead has shown."
           cta="See outreach automations"
           gradient="linear-gradient(145deg, #fed7aa 0%, #fdba74 30%, #fb923c 65%, #f97316 100%)"
-          // videoSrc="/videos/feature-3.mp4"  ← attach your video here
+          videoSrc="/videos/feature-3.webm"
           delay={0}
         />
 
