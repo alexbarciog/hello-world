@@ -18,7 +18,7 @@ const backdrop = {
 
 const panel = {
   hidden: { opacity: 0, scale: 0.92, y: 30 },
-  visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 340, damping: 30, mass: 0.8 } },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { type: "spring" as const, stiffness: 340, damping: 30, mass: 0.8 } },
   exit: { opacity: 0, scale: 0.94, y: 20, transition: { duration: 0.2 } },
 };
 
@@ -28,7 +28,7 @@ const stagger = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
 /* ── Glassmorphism card ─────────────────────────────────────────────── */
