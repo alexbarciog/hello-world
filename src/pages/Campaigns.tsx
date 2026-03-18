@@ -325,50 +325,43 @@ export default function CampaignsPage() {
                   {/* Actions */}
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <button
-                        className="p-1.5 rounded hover:bg-muted/60 transition-colors"
-                        style={{ color: "hsl(var(--goji-text-muted))" }}
-                        title="View details"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                          <rect x="3" y="3" width="7" height="7" />
-                          <rect x="14" y="3" width="7" height="7" />
-                          <rect x="3" y="14" width="7" height="7" />
-                          <rect x="14" y="14" width="7" height="7" />
-                        </svg>
-                      </button>
-                      <div className="relative" ref={menuOpen === c.id ? menuRef : undefined}>
-                        <button
-                          className="p-1.5 rounded hover:bg-muted/60 transition-colors"
-                          style={{ color: "hsl(var(--goji-text-muted))" }}
-                          title="More"
-                          onClick={() => setMenuOpen(menuOpen === c.id ? null : c.id)}
-                        >
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                            <circle cx="12" cy="5" r="1.5" />
-                            <circle cx="12" cy="12" r="1.5" />
-                            <circle cx="12" cy="19" r="1.5" />
-                          </svg>
-                        </button>
-                        {menuOpen === c.id && (
-                          <div className="absolute right-0 bottom-full mb-1 w-40 rounded-lg bg-card border border-border shadow-lg z-50 py-1">
-                            <button
-                              onClick={() => { setMenuOpen(null); navigate(`/onboarding?campaign=${c.id}`); }}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCampaign(c.id)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="p-1.5 rounded hover:bg-muted/60 transition-colors"
+                            style={{ color: "hsl(var(--goji-text-muted))" }}
+                            title="More"
+                          >
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                              <circle cx="12" cy="5" r="1.5" />
+                              <circle cx="12" cy="12" r="1.5" />
+                              <circle cx="12" cy="19" r="1.5" />
+                            </svg>
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {c.status !== "active" ? (
+                            <DropdownMenuItem onClick={() => handleToggleStatus(c.id, c.status)} className="gap-2 text-sm">
+                              <Play className="w-3.5 h-3.5 text-green-600" />
+                              Activate campaign
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleToggleStatus(c.id, c.status)} className="gap-2 text-sm">
+                              <Pause className="w-3.5 h-3.5" />
+                              Pause campaign
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => navigate(`/onboarding?campaign=${c.id}`)} className="gap-2 text-sm">
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDeleteCampaign(c.id)} className="gap-2 text-sm text-destructive focus:text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
