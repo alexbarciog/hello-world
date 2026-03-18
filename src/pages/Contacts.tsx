@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
-  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal,
+  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, ExternalLink,
 } from "lucide-react";
 
 interface Contact {
