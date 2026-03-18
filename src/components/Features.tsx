@@ -109,7 +109,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
   return (
     <div
       ref={ref}
-      className="grid md:grid-cols-2 gap-12 md:gap-16 items-stretch min-h-screen"
+      className="grid md:grid-cols-2 gap-12 md:gap-16 items-center py-16 md:py-24"
     >
       {reversed ? <>{visualCol}{textCol}</> : <>{textCol}{visualCol}</>}
     </div>
