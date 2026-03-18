@@ -56,7 +56,7 @@ const Pricing = () => {
           </div>
 
           {/* Right card — minimal/clean */}
-          <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: "hsl(0 0% 96%)" }}>
+          <div className="rounded-3xl overflow-hidden shadow-sm h-fit" style={{ background: "hsl(0 0% 96%)" }}>
             <div className="px-8 pt-8">
               <h3 className="text-2xl font-semibold text-foreground">Custom</h3>
               <p className="text-3xl font-light text-foreground tracking-tight mt-3">Contact us</p>
