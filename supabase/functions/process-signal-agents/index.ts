@@ -361,13 +361,47 @@ async function handleKeywordPosts(
     if (!profile) continue;
 
     const match = scoreProfileAgainstICP(profile, icp);
-    if (!matchesTitleOrIndustry(match, icp)) continue;
+    const hl = profile.headline || profile.title || '';
+    if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`keyword_posts: REJECTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); continue; }
     if (isExcluded(profile, icp.excludeKeywords)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
     const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
-    if (ok) inserted++;
+    if (ok) { inserted++; console.log(`keyword_posts: ACCEPTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
+
+    // ── Also scan engagers (reactions) on this post ──
+    const postId = post.social_id || post.id || post.provider_id;
+    if (postId) {
+      try {
+        await delay(1500);
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
+        if (reactionsRes.ok) {
+          const reactionsData = await reactionsRes.json();
+          const engagers = (reactionsData.items || []).slice(0, 15);
+          console.log(`keyword_posts: post ${postId} has ${engagers.length} engagers to check`);
+
+          for (const engager of engagers) {
+            await delay(500);
+            const engagerProfile = engager.author || engager;
+            const fullEngager = await fetchProfileIfNeeded(engagerProfile, accountId, apiKey, dsn);
+            if (!fullEngager) continue;
+
+            const eMatch = scoreProfileAgainstICP(fullEngager, icp);
+            const eHl = fullEngager.headline || fullEngager.title || '';
+            if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
+            if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
+
+            const eSignal = `Engaged with post about "${post._keyword}"`;
+            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl);
+            if (eOk) { inserted++; console.log(`keyword_posts: ACCEPTED engager "${fullEngager.first_name || ''} ${fullEngager.last_name || ''}" (${eHl})`); }
+          }
+        } else {
+          console.log(`keyword_posts: reactions fetch for ${postId}: ${reactionsRes.status}`);
+          await reactionsRes.text();
+        }
+      } catch (e) { console.error('keyword_posts engager scan:', e); }
+    }
   }
   return inserted;
 }
