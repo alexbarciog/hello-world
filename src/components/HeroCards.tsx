@@ -43,7 +43,7 @@ const HeroCards = () => {
               <span className="relative flex-1 inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm overflow-visible">
                 {/* Animated gradient border */}
                 <span
-                  className="absolute inset-[-1px] rounded-full group-hover:animate-[borderSpin_2s_linear_infinite]"
+                  className="absolute inset-[-0.5px] rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-[borderSpin_2s_linear_infinite] transition-opacity duration-300"
                   style={{
                     background: "conic-gradient(from var(--border-angle), #7C93E6 0%, #F7C459 25%, transparent 50%, transparent 100%)",
                     zIndex: 0,
