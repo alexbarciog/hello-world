@@ -12,7 +12,7 @@ const HeroCards = () => {
         </div>
 
         {/* Group 2: Lead flow */}
-        <div className="flex flex-col gap-3 mx-3 mt-2">
+        <div className="flex flex-col gap-3 mx-6 mt-4">
           {/* Profile sub-card with left connector */}
           <div className="relative pl-5">
             <div className="absolute left-0 top-1/2 bottom-0 w-0 border-l border-dashed border-primary/30" />
