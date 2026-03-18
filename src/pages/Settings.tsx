@@ -305,7 +305,7 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
 }
 
 // ─── Company Tab ──────────────────────────────────────────────────────────────
-function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data: any) => void }) {
+function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data: any) => Promise<void> }) {
   const [form, setForm] = useState({
     name: "",
     website: "",
@@ -317,6 +317,7 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
     preventDuplication: false,
   });
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (campaignData) {
@@ -331,32 +332,54 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
   }, [campaignData]);
 
   async function handleSave() {
+    if (!form.name.trim()) {
+      toast.error("Company name is required");
+      return;
+    }
     setSaving(true);
-    await onSave({
-      company_name: form.name,
-      website: form.website,
-      industry: form.industry,
-      description: form.description,
-    });
-    setSaving(false);
-    toast.success("Company settings saved!");
+    setSaved(false);
+    try {
+      await onSave({
+        company_name: form.name.trim(),
+        website: form.website.trim(),
+        industry: form.industry,
+        description: form.description.trim(),
+      });
+      setSaved(true);
+      toast.success("Company settings saved successfully!");
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to save company settings");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div>
       <div className="mb-6">
         <h2 className="text-base font-bold text-gray-900">Company Information</h2>
-        <p className="text-xs text-blue-500 mt-0.5">Update your company details and business information</p>
+        <p className="text-xs text-gray-500 mt-0.5">Update your company details — changes are saved to your active campaign</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <label className={labelCls}>Company Name <span className="text-red-400">*</span></label>
-          <input className={inputCls} value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
+          <input
+            className={inputCls}
+            placeholder="Your company name"
+            value={form.name}
+            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+          />
         </div>
         <div>
           <label className={labelCls}>Website</label>
-          <input className={inputCls} placeholder="https://yourcompany.com" value={form.website} onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))} />
+          <input
+            className={inputCls}
+            placeholder="https://yourcompany.com"
+            value={form.website}
+            onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
+          />
         </div>
       </div>
 
@@ -364,17 +387,27 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
         <div>
           <label className={labelCls}>Industry <span className="text-red-400">*</span></label>
           <div className="relative">
-            <select className={`${inputCls} appearance-none`} value={form.industry} onChange={(e) => setForm((p) => ({ ...p, industry: e.target.value }))}>
+            <select
+              className={`${inputCls} appearance-none`}
+              value={form.industry}
+              onChange={(e) => setForm((p) => ({ ...p, industry: e.target.value }))}
+            >
               <option value="">Select your industry</option>
-              <option>Technology</option><option>SaaS</option><option>Marketing</option><option>Finance</option><option>Healthcare</option><option>E-commerce</option><option>Hospitality</option><option>Retail</option><option>Manufacturing</option><option>Education</option><option>Real Estate</option><option>Consulting</option>
+              <option>Technology</option><option>SaaS</option><option>Marketing</option><option>Finance</option>
+              <option>Healthcare</option><option>E-commerce</option><option>Hospitality</option><option>Retail</option>
+              <option>Manufacturing</option><option>Education</option><option>Real Estate</option><option>Consulting</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
         </div>
         <div>
-          <label className={labelCls}>Company Size <span className="text-red-400">*</span></label>
+          <label className={labelCls}>Company Size</label>
           <div className="relative">
-            <select className={`${inputCls} appearance-none`} value={form.size} onChange={(e) => setForm((p) => ({ ...p, size: e.target.value }))}>
+            <select
+              className={`${inputCls} appearance-none`}
+              value={form.size}
+              onChange={(e) => setForm((p) => ({ ...p, size: e.target.value }))}
+            >
               <option value="">Select company size</option>
               <option>1-10</option><option>11-50</option><option>51-200</option><option>201-500</option><option>500+</option>
             </select>
@@ -385,26 +418,47 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
 
       <div className="mb-4">
         <label className={labelCls}>Company Description</label>
-        <textarea className={`${inputCls} resize-none`} rows={4} placeholder="Brief description of what your company does..." value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
+        <textarea
+          className={`${inputCls} resize-none`}
+          rows={4}
+          placeholder="Brief description of what your company does..."
+          value={form.description}
+          onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+        />
       </div>
 
       <div className="mb-8">
         <label className={labelCls}>LinkedIn Company Page</label>
-        <input className={inputCls} placeholder="https://www.linkedin.com/company/yourcompany" value={form.linkedin} onChange={(e) => setForm((p) => ({ ...p, linkedin: e.target.value }))} />
+        <input
+          className={inputCls}
+          placeholder="https://www.linkedin.com/company/yourcompany"
+          value={form.linkedin}
+          onChange={(e) => setForm((p) => ({ ...p, linkedin: e.target.value }))}
+        />
       </div>
 
       <div className="mb-6">
         <h3 className="text-sm font-bold text-gray-900 mb-3">Company Preferences</h3>
         <div className="space-y-4">
           <label className="flex items-start gap-3 cursor-pointer">
-            <input type="checkbox" className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]" checked={form.autoEnrich} onChange={(e) => setForm((p) => ({ ...p, autoEnrich: e.target.checked }))} />
+            <input
+              type="checkbox"
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]"
+              checked={form.autoEnrich}
+              onChange={(e) => setForm((p) => ({ ...p, autoEnrich: e.target.checked }))}
+            />
             <div>
               <p className="text-sm font-medium text-gray-700">Auto-enrich email addresses</p>
               <p className="text-xs text-gray-500">Automatically find and enrich email addresses for generated leads</p>
             </div>
           </label>
           <label className="flex items-start gap-3 cursor-pointer">
-            <input type="checkbox" className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]" checked={form.preventDuplication} onChange={(e) => setForm((p) => ({ ...p, preventDuplication: e.target.checked }))} />
+            <input
+              type="checkbox"
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[hsl(var(--goji-coral))]"
+              checked={form.preventDuplication}
+              onChange={(e) => setForm((p) => ({ ...p, preventDuplication: e.target.checked }))}
+            />
             <div>
               <p className="text-sm font-medium text-gray-700">Prevent contact duplication across team members</p>
               <p className="text-xs text-gray-500">When enabled, AI agents will ensure the same lead is not imported into multiple team members' contact lists</p>
@@ -413,9 +467,34 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
         </div>
       </div>
 
-      <button onClick={handleSave} disabled={saving} className={saveBtnCls} style={{ background: "hsl(var(--goji-coral))" }}>
-        {saving ? "Saving..." : "Save Settings"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className={`${saveBtnCls} flex items-center gap-2`}
+          style={{ background: saved ? "hsl(142 70% 45%)" : "hsl(var(--goji-coral))" }}
+        >
+          {saving ? (
+            <>
+              <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+                <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Saving...
+            </>
+          ) : saved ? (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="w-3.5 h-3.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Saved!
+            </>
+          ) : "Save Settings"}
+        </button>
+        {!campaignData && (
+          <p className="text-xs text-amber-600">No active campaign found — complete onboarding first to save company data.</p>
+        )}
+      </div>
     </div>
   );
 }
