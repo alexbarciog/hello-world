@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, MapPin, Sparkles, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import { CardShell } from "./CardShell";
 import { OnboardingNav } from "./OnboardingNav";
 import type { OnboardingData } from "./types";
@@ -88,7 +88,7 @@ const SignalCardShell = ({
 }) => (
   <CardShell>
     <div className="flex items-start gap-3 mb-3">
-      <img src={gojiIcon} alt="" className="w-8 h-8 object-contain shrink-0 mt-0.5" />
+      <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain shrink-0 mt-0.5" />
       <div>
         <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>
           {title}
