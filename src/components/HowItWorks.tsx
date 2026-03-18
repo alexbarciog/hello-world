@@ -108,8 +108,8 @@ const steps = [
   },
   {
     num: "03",
-    title: "Launch your outreach",
-    description: "AI sends smart LinkedIn messages that convert.",
+    title: "Get qualified leads",
+    description: "Receive a curated list of leads that match your ICP, scored and ready to engage.",
     visual: <OutreachCard />,
   },
 ];
