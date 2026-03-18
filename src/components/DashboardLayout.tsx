@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import {
   LayoutDashboard,
   Sparkles,
