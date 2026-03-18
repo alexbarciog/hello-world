@@ -191,7 +191,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Intentsly <noreply@intentsly.com>',
+        from: 'Intentsly <onboarding@resend.dev>',
         to: [email],
         subject: `${inviterName} invited you to join ${orgName} on Intentsly`,
         html: htmlBody,
@@ -200,8 +200,11 @@ serve(async (req) => {
 
     const resendData = await resendRes.json();
     if (!resendRes.ok) {
-      console.error('Resend error:', resendData);
-      throw new Error(`Email send failed: ${JSON.stringify(resendData)}`);
+      console.error('Resend error:', JSON.stringify(resendData));
+      return new Response(
+        JSON.stringify({ success: false, error: `Email send failed: ${resendData?.message || JSON.stringify(resendData)}` }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
