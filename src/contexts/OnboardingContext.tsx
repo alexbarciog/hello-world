@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   useCallback,
   type ReactNode,
 } from "react";
@@ -82,6 +83,131 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [isLoadingDraft, setIsLoadingDraft] = useState(true);
 
+  // Refs to always have latest values in event handlers / timers
+  const stateRef = useRef({ currentStep, data, icp, precision, signals, objectives, campaignId });
+  useEffect(() => {
+    stateRef.current = { currentStep, data, icp, precision, signals, objectives, campaignId };
+  }, [currentStep, data, icp, precision, signals, objectives, campaignId]);
+
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLoadingRef = useRef(true);
+
+  // ── Core save fn (works with any state snapshot) ─────────────────────────
+
+  const persistStep = useCallback(async (
+    step: OnboardingStep,
+    nextStep: OnboardingStep,
+    d: OnboardingData,
+    i: ICPData,
+    pr: PrecisionMode,
+    si: IntentSignalsData,
+    ob: ObjectivesData,
+    existingCampaignId: string | null,
+    silent = false,
+  ): Promise<string | null> => {
+    if (!silent) setSaveStatus("saving");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      if (!silent) setSaveStatus("error");
+      return existingCampaignId;
+    }
+
+    const stepPayload: Record<string, unknown> = {};
+    if (step === 1) {
+      stepPayload.step_1_data = {
+        website: d.website,
+        companyName: d.companyName,
+        description: d.description,
+        industry: d.industry,
+        language: d.language,
+      };
+      stepPayload.website = d.website;
+      stepPayload.company_name = d.companyName;
+      stepPayload.description = d.description;
+      stepPayload.industry = d.industry;
+      stepPayload.language = d.language;
+    } else if (step === 2) {
+      stepPayload.step_2_data = {
+        country: d.country,
+        linkedinConnectionType: d.linkedinConnectionType,
+      };
+      stepPayload.country = d.country;
+      stepPayload.linkedin_connection_type = d.linkedinConnectionType || null;
+    } else if (step === 3) {
+      stepPayload.step_3_data = i;
+      stepPayload.icp_job_titles = i.jobTitles;
+      stepPayload.icp_locations = i.targetLocations;
+      stepPayload.icp_industries = i.targetIndustries;
+      stepPayload.icp_company_types = i.companyTypes;
+      stepPayload.icp_company_sizes = i.companySizes;
+      stepPayload.icp_exclude_keywords = i.excludeKeywords;
+    } else if (step === 4) {
+      stepPayload.step_4_data = { precision: pr };
+      stepPayload.precision_mode = pr;
+    } else if (step === 5) {
+      stepPayload.step_5_data = si;
+      stepPayload.engagement_keywords = si.engagementKeywords;
+      stepPayload.trigger_top_active = si.triggerTopActive;
+      stepPayload.trigger_job_changes = si.triggerJobChanges;
+      stepPayload.trigger_funded_companies = si.triggerFundedCompanies;
+      stepPayload.influencer_profiles = si.influencerProfiles;
+      stepPayload.competitor_pages = si.competitorPages;
+    } else if (step === 6) {
+      stepPayload.step_6_data = ob;
+      stepPayload.pain_points = ob.painPoints
+        ? ob.painPoints.split("\n").map((s) => s.trim()).filter(Boolean)
+        : [];
+      stepPayload.campaign_goal = ob.campaignGoal;
+      stepPayload.message_tone = ob.messageTone;
+    }
+
+    try {
+      let resultId = existingCampaignId;
+
+      if (existingCampaignId) {
+        const { error } = await supabase
+          .from("campaigns")
+          .update({
+            current_step: nextStep,
+            status: "draft",
+            ...stepPayload,
+          } as any)
+          .eq("id", existingCampaignId);
+        if (error) throw error;
+      } else {
+        const { data: inserted, error } = await supabase
+          .from("campaigns")
+          .insert({
+            user_id: session.user.id,
+            current_step: nextStep,
+            status: "draft",
+            ...stepPayload,
+          } as any)
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (inserted) {
+          resultId = inserted.id;
+          setCampaignId(inserted.id);
+        }
+      }
+
+      if (!silent) {
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2500);
+      }
+      return resultId;
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+      if (!silent) {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+      return existingCampaignId;
+    }
+  }, []);
+
   // ── Load draft on mount ───────────────────────────────────────────────────
 
   useEffect(() => {
@@ -102,7 +228,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
         const row = rows[0];
         setCampaignId(row.id);
-        setCurrentStep((row.current_step as OnboardingStep) ?? 1);
+        const savedStep = (row.current_step as OnboardingStep) ?? 1;
+        setCurrentStep(savedStep);
 
         if (row.step_1_data) {
           const s1 = row.step_1_data as Partial<OnboardingData>;
@@ -129,13 +256,82 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         console.warn("Failed to load draft:", err);
       } finally {
         setIsLoadingDraft(false);
+        isLoadingRef.current = false;
       }
     }
 
     loadDraft();
   }, []);
 
-  // ── Mutators ─────────────────────────────────────────────────────────────
+  // ── Debounced auto-save on any data change ────────────────────────────────
+
+  useEffect(() => {
+    if (isLoadingRef.current) return;
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    debounceTimer.current = setTimeout(() => {
+      const { currentStep: cs, data: d, icp: i, precision: pr, signals: si, objectives: ob, campaignId: cid } = stateRef.current;
+      // Silent save: no UI indicator to avoid distracting the user mid-typing
+      persistStep(cs, cs, d, i, pr, si, ob, cid, true);
+    }, 1500);
+
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, icp, precision, signals, objectives]);
+
+  // ── Save on page unload (beforeunload) ────────────────────────────────────
+
+  useEffect(() => {
+    function handleBeforeUnload() {
+      if (isLoadingRef.current) return;
+      // Cancel any pending debounce
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+      const { currentStep: cs, data: d, icp: i, precision: pr, signals: si, objectives: ob, campaignId: cid } = stateRef.current;
+
+      // Use sendBeacon for reliable fire-and-forget on page close
+      // We still call persistStep but the browser may or may not await it.
+      // As a best-effort, we also attempt a synchronous-ish save.
+      persistStep(cs, cs, d, i, pr, si, ob, cid, true);
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [persistStep]);
+
+  // ── Public saveCurrentStep (called on Next/Back) ──────────────────────────
+
+  const saveCurrentStep = useCallback(
+    async (
+      step: OnboardingStep,
+      nextStep: OnboardingStep,
+      overrideData?: {
+        data?: OnboardingData;
+        icp?: ICPData;
+        precision?: PrecisionMode;
+        signals?: IntentSignalsData;
+        objectives?: ObjectivesData;
+      }
+    ) => {
+      // Cancel pending debounce since we're saving now
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+      const d = overrideData?.data ?? data;
+      const i = overrideData?.icp ?? icp;
+      const pr = overrideData?.precision ?? precision;
+      const si = overrideData?.signals ?? signals;
+      const ob = overrideData?.objectives ?? objectives;
+
+      const newId = await persistStep(step, nextStep, d, i, pr, si, ob, campaignId, false);
+      if (newId && newId !== campaignId) setCampaignId(newId);
+    },
+    [campaignId, data, icp, precision, signals, objectives, persistStep]
+  );
+
+  // ── Mutators ──────────────────────────────────────────────────────────────
 
   const patch = useCallback(
     (p: Partial<OnboardingData>) => setData((prev) => ({ ...prev, ...p })),
@@ -152,120 +348,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const patchObjectives = useCallback(
     (p: Partial<ObjectivesData>) => setObjectives((prev) => ({ ...prev, ...p })),
     []
-  );
-
-  // ── Persistence ───────────────────────────────────────────────────────────
-
-  const saveCurrentStep = useCallback(
-    async (
-      step: OnboardingStep,
-      nextStep: OnboardingStep,
-      overrideData?: {
-        data?: OnboardingData;
-        icp?: ICPData;
-        precision?: PrecisionMode;
-        signals?: IntentSignalsData;
-        objectives?: ObjectivesData;
-      }
-    ) => {
-      setSaveStatus("saving");
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) {
-        setSaveStatus("error");
-        return;
-      }
-
-      const d = overrideData?.data ?? data;
-      const i = overrideData?.icp ?? icp;
-      const pr = overrideData?.precision ?? precision;
-      const si = overrideData?.signals ?? signals;
-      const ob = overrideData?.objectives ?? objectives;
-
-      const stepPayload: Record<string, unknown> = {};
-      if (step === 1) {
-        stepPayload.step_1_data = {
-          website: d.website,
-          companyName: d.companyName,
-          description: d.description,
-          industry: d.industry,
-          language: d.language,
-        };
-        stepPayload.website = d.website;
-        stepPayload.company_name = d.companyName;
-        stepPayload.description = d.description;
-        stepPayload.industry = d.industry;
-        stepPayload.language = d.language;
-      } else if (step === 2) {
-        stepPayload.step_2_data = {
-          country: d.country,
-          linkedinConnectionType: d.linkedinConnectionType,
-        };
-        stepPayload.country = d.country;
-        stepPayload.linkedin_connection_type = d.linkedinConnectionType || null;
-      } else if (step === 3) {
-        stepPayload.step_3_data = i;
-        stepPayload.icp_job_titles = i.jobTitles;
-        stepPayload.icp_locations = i.targetLocations;
-        stepPayload.icp_industries = i.targetIndustries;
-        stepPayload.icp_company_types = i.companyTypes;
-        stepPayload.icp_company_sizes = i.companySizes;
-        stepPayload.icp_exclude_keywords = i.excludeKeywords;
-      } else if (step === 4) {
-        stepPayload.step_4_data = { precision: pr };
-        stepPayload.precision_mode = pr;
-      } else if (step === 5) {
-        stepPayload.step_5_data = si;
-        stepPayload.engagement_keywords = si.engagementKeywords;
-        stepPayload.trigger_top_active = si.triggerTopActive;
-        stepPayload.trigger_job_changes = si.triggerJobChanges;
-        stepPayload.trigger_funded_companies = si.triggerFundedCompanies;
-        stepPayload.influencer_profiles = si.influencerProfiles;
-        stepPayload.competitor_pages = si.competitorPages;
-      } else if (step === 6) {
-        stepPayload.step_6_data = ob;
-        stepPayload.pain_points = ob.painPoints ? ob.painPoints.split("\n").map(s => s.trim()).filter(Boolean) : [];
-        stepPayload.campaign_goal = ob.campaignGoal;
-        stepPayload.message_tone = ob.messageTone;
-      }
-
-      try {
-        if (campaignId) {
-          const { error } = await supabase
-            .from("campaigns")
-            .update({
-              current_step: nextStep,
-              status: "draft",
-              ...stepPayload,
-            } as any)
-            .eq("id", campaignId);
-
-          if (error) throw error;
-        } else {
-          const { data: inserted, error } = await supabase
-            .from("campaigns")
-            .insert({
-              user_id: session.user.id,
-              current_step: nextStep,
-              status: "draft",
-              ...stepPayload,
-            } as any)
-            .select("id")
-            .single();
-
-          if (error) throw error;
-          if (inserted) setCampaignId(inserted.id);
-        }
-
-        setSaveStatus("saved");
-        setTimeout(() => setSaveStatus("idle"), 2500);
-      } catch (err) {
-        console.error("Auto-save failed:", err);
-        setSaveStatus("error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
-      }
-    },
-    [campaignId, data, icp, precision, signals, objectives]
   );
 
   return (
