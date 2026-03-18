@@ -14,7 +14,7 @@ const Pricing = () => {
     <section id="pricing" className="py-20 md:py-32 px-6 md:px-10 bg-background">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-semibold text-foreground tracking-tight">Simple, transparent pricing</h2>
+          <h2 className="text-4xl md:text-5xl font-normal text-foreground tracking-tight">Simple, transparent pricing</h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Choose the plan that fits your needs. Start generating warm leads today with no hidden fees.</p>
         </div>
         <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
