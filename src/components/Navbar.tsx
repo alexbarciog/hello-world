@@ -57,7 +57,7 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
           </button>
           <button
             onClick={() => navigate("/register")}
-            className="text-sm font-semibold text-primary-foreground bg-goji-berry rounded-full px-5 py-2 hover:opacity-90 transition-opacity"
+            className="btn-cta text-sm"
           >
             Start for Free
           </button>
