@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
+import HowItWorksModal from "@/components/HowItWorksModal";
 
 interface SignalAgent {
   id: string;
