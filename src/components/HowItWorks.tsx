@@ -142,11 +142,11 @@ const HowItWorks = () => {
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-5 items-stretch">
+        <div className="grid md:grid-cols-3 gap-5">
           {steps.map((step, i) => (
             <div key={i} className="flex flex-col gap-5">
-              <div className="flex-1 flex">{step.visual}</div>
-              <div className="px-2 md:min-h-[120px]">
+              <div className="flex-1">{step.visual}</div>
+              <div className="px-2">
                 <div className="flex items-start gap-3 mb-2">
                   <span className="text-[40px] font-normal text-foreground leading-none" style={{ letterSpacing: '-2px' }}>
                     {step.num}
