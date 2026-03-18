@@ -604,48 +604,8 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
               transition={{ delay: 0.15, duration: 0.35, ease: easing }}
               className="mt-4 space-y-4"
             >
-              {(() => {
-                const lerpColor = (val: number, min: number, max: number) => {
-                  const t = (val - min) / (max - min);
-                  const r = Math.round(34 + t * (245 - 34));
-                  const g = Math.round(197 + t * (158 - 197));
-                  const b = Math.round(94 + t * (11 - 94));
-                  return `rgb(${r},${g},${b})`;
-                };
-                const msgColor = lerpColor(dailyMessages[0], 5, 30);
-                const connColor = lerpColor(dailyConnections[0], 5, 30);
-                return (
-                  <>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Messages / day</span>
-                        <span className="text-xs font-semibold tabular-nums" style={{ color: msgColor }}>{dailyMessages[0]}</span>
-                      </div>
-                      <Slider
-                        value={dailyMessages} onValueChange={setDailyMessages} min={5} max={30} step={1}
-                        className="w-full [&_[data-radix-slider-range]]:transition-colors [&_[data-radix-slider-range]]:duration-200 [&_[data-radix-slider-thumb]]:transition-[border-color] [&_[data-radix-slider-thumb]]:duration-200"
-                        style={{ "--slider-color": msgColor, "--tw-ring-color": msgColor } as React.CSSProperties & Record<string, string>}
-                      />
-                      <style>{`
-                        .slider-msg [data-radix-slider-range] { background: ${msgColor} !important; }
-                        .slider-msg [data-radix-slider-thumb] { border-color: ${msgColor} !important; }
-                      `}</style>
-                      <script dangerouslySetInnerHTML={{ __html: "" }} />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Connections / day</span>
-                        <span className="text-xs font-semibold tabular-nums" style={{ color: connColor }}>{dailyConnections[0]}</span>
-                      </div>
-                      <Slider
-                        value={dailyConnections} onValueChange={setDailyConnections} min={5} max={30} step={1}
-                        className="w-full [&_[data-radix-slider-range]]:transition-colors [&_[data-radix-slider-range]]:duration-200 [&_[data-radix-slider-thumb]]:transition-[border-color] [&_[data-radix-slider-thumb]]:duration-200"
-                      />
-                    </div>
-                  </>
-                );
-              })()}
+              <LinkedInSlider label="Messages / day" value={dailyMessages} onChange={setDailyMessages} />
+              <LinkedInSlider label="Connections / day" value={dailyConnections} onChange={setDailyConnections} />
             </motion.div>
           </>
         ) : (
