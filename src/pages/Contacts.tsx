@@ -289,8 +289,15 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[180px]">
-                        <span className="text-xs text-muted-foreground">{c.signal}</span>
+                      <td className="px-3 py-3 max-w-[220px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground truncate">{c.signal}</span>
+                          {c.signal_post_url && (
+                            <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-blue-500 hover:text-blue-600 transition-colors" title="View LinkedIn post">
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-0.5">
