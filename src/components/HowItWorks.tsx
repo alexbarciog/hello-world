@@ -17,7 +17,7 @@ function SignupCard() {
         ))}
         <div className="mt-1">
           <button className="w-full btn-cta !rounded-lg inline-flex items-center justify-center gap-1.5 text-xs px-3 py-2.5">
-            <UserPlus className="w-3 h-3" /> Sign Up
+            <UserPlus className="w-3 h-3" /> Save ICP
           </button>
         </div>
       </div>
