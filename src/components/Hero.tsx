@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import appPreviewImg from "@/assets/trustiew_buying_signals_1.avif";
 
 const platformLogos = [
   // LinkedIn
