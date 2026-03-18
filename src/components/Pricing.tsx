@@ -62,13 +62,7 @@ const Pricing = () => {
           <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: "hsl(0 0% 96%)" }}>
             <div className="px-8 pt-8">
               <h3 className="text-2xl font-semibold text-foreground">Custom</h3>
-              <div className="flex items-baseline gap-2 mt-3">
-                <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
-                <div className="text-sm text-muted-foreground leading-tight">
-                  <div>per user / month</div>
-                  <div>billed annually</div>
-                </div>
-              </div>
+              <p className="text-3xl font-bold text-foreground tracking-tight mt-3">Contact us</p>
             </div>
 
             {/* CTA button */}
