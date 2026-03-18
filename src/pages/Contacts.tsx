@@ -14,6 +14,7 @@ interface Contact {
   company: string | null;
   company_icon_color: string | null;
   signal: string | null;
+  signal_post_url: string | null;
   ai_score: number;
   signal_a_hit: boolean;
   signal_b_hit: boolean;
