@@ -307,7 +307,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto" style={{ background: "hsl(195 14% 95%)" }}>
           {showLinkedInBanner && (
             <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: "hsl(25 95% 95%)", borderColor: "hsl(25 90% 85%)" }}>
               <div className="flex items-center gap-2.5">
