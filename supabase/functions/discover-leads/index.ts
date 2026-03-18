@@ -144,12 +144,16 @@ Deno.serve(async (req) => {
           const industry = (p.industry || '').toLowerCase();
           const location = (p.location || p.country || '').toLowerCase();
 
-          const titleMatch = !campaign.icp_job_titles?.length ||
-            campaign.icp_job_titles.some((t: string) => title.includes(t.toLowerCase()));
-          const industryMatch = !campaign.icp_industries?.length ||
-            campaign.icp_industries.some((i: string) => industry.includes(i.toLowerCase()));
-          const locationMatch = !campaign.icp_locations?.length ||
-            campaign.icp_locations.some((l: string) => location.includes(l.toLowerCase()));
+          const normalizedJobTitles = (campaign.icp_job_titles || []).map((t: string) => t.toLowerCase().replace(/\s+cer$/g, '').trim());
+          const normalizedIndustries = (campaign.icp_industries || []).map((i: string) => i.toLowerCase().trim());
+          const normalizedLocations = (campaign.icp_locations || []).map((l: string) => l.toLowerCase().trim());
+
+          const titleMatch = !normalizedJobTitles.length ||
+            normalizedJobTitles.some((t: string) => t && title.includes(t));
+          const industryMatch = !normalizedIndustries.length ||
+            normalizedIndustries.some((i: string) => i && industry.includes(i));
+          const locationMatch = !normalizedLocations.length ||
+            normalizedLocations.some((l: string) => l && location.includes(l));
 
           return titleMatch && industryMatch && locationMatch;
         });
