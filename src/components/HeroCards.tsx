@@ -53,7 +53,7 @@ const HeroCards = () => {
             <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="bg-background rounded-xl p-3 shadow-sm space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ backgroundColor: '#75A3FE' }}>
                   <Target className="w-3.5 h-3.5 text-primary" />
                 </div>
                 <span className="text-sm font-semibold text-foreground">Why they fit</span>
