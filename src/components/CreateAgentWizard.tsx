@@ -235,6 +235,7 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
   // ── Final agent creation ──────────────────────────────────────────────────
   async function handleCreate() {
     setSaving(true);
+    if (!agentName.trim()) { setSaving(false); toast.error("Please enter an agent name"); return; }
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setSaving(false); toast.error("Not authenticated"); return; }
 
