@@ -22,8 +22,8 @@ function useInView(threshold = 0.15) {
 function CtaButton({ children }: { children: React.ReactNode }) {
   return (
     <button
-      className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground transition-all duration-200 hover:brightness-95"
-      style={{ background: "linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 13% 95%) 100%)" }}
+      className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground transition-all duration-200 hover:brightness-95 w-fit"
+      style={{ background: "linear-gradient(90deg, hsl(0 0% 100%) 0%, hsl(220 13% 95%) 100%)" }}
     >
       {children}
       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
@@ -41,7 +41,7 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
   return (
     <div
       className="rounded-[28px] overflow-hidden w-full"
-      style={{ background: gradient, minHeight: 400 }}
+      style={{ background: gradient, minHeight: 280 }}
     >
       {videoSrc ? (
         <video
@@ -51,11 +51,10 @@ function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
           muted
           playsInline
           className="w-full h-full object-cover"
-          style={{ minHeight: 400 }}
+          style={{ minHeight: 280 }}
         />
       ) : (
-        // Placeholder until video is attached
-        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 400 }}>
+        <div className="w-full h-full flex items-center justify-center" style={{ minHeight: 280 }}>
           <span className="text-white/50 text-sm">Video placeholder</span>
         </div>
       )}
