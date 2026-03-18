@@ -243,18 +243,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen((o) => !o)}
-              className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-white/8 transition-colors"
+              className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-foreground/5 transition-colors"
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--foreground))" }}>
                 {userDisplay.initials || "?"}
               </div>
               {!collapsed && (
                 <>
                   <div className="min-w-0 text-left flex-1">
-                    <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.name || userDisplay.email}</p>
-                    <p className="text-[10px] text-white/40 truncate">{userDisplay.email}</p>
+                    <p className="text-xs font-semibold text-foreground/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                    <p className="text-[10px] text-foreground/40 truncate">{userDisplay.email}</p>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
                 </>
               )}
             </button>
