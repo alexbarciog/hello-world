@@ -5,7 +5,7 @@ import LogoMarquee from "@/components/LogoMarquee";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 
-import Integrations from "@/components/Integrations";
+
 import CampaignsSection from "@/components/CampaignsSection";
 import FAQ from "@/components/FAQ";
 import { CTASection, Footer } from "@/components/CTAFooter";
