@@ -10,7 +10,7 @@ function SignupCard() {
       </div>
 
       <div className="flex flex-col gap-3 mx-6 mt-2">
-        {["Job titles", "Industries", "Company size"].map((placeholder, i) => (
+        {["Job titles", "Industries", "Company size", "Locations", "Keywords"].map((placeholder, i) => (
           <div key={i} className="bg-background rounded-xl px-4 py-3 text-xs text-muted-foreground shadow-sm">
             {placeholder}
           </div>
