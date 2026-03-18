@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Users, Building2, User, Linkedin, Shield, MessageSquare,
-  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon
+  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
