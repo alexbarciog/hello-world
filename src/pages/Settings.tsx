@@ -602,36 +602,22 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.35, ease: easing }}
-              className="mt-5 space-y-6"
+              className="mt-4 space-y-4"
             >
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">Messages per day</span>
-                  </div>
-                  <span className="text-sm font-bold text-foreground tabular-nums">{dailyMessages[0]}</span>
+                  <span className="text-xs text-muted-foreground">Messages / day</span>
+                  <span className="text-xs font-semibold text-foreground tabular-nums">{dailyMessages[0]}</span>
                 </div>
                 <Slider value={dailyMessages} onValueChange={setDailyMessages} min={5} max={30} step={1} className="w-full" />
-                <div className="flex justify-between text-[11px] text-muted-foreground">
-                  <span>5</span>
-                  <span>30</span>
-                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">Connection requests per day</span>
-                  </div>
-                  <span className="text-sm font-bold text-foreground tabular-nums">{dailyConnections[0]}</span>
+                  <span className="text-xs text-muted-foreground">Connections / day</span>
+                  <span className="text-xs font-semibold text-foreground tabular-nums">{dailyConnections[0]}</span>
                 </div>
                 <Slider value={dailyConnections} onValueChange={setDailyConnections} min={5} max={30} step={1} className="w-full" />
-                <div className="flex justify-between text-[11px] text-muted-foreground">
-                  <span>5</span>
-                  <span>30</span>
-                </div>
               </div>
             </motion.div>
           </>
