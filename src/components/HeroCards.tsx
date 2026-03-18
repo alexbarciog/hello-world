@@ -146,10 +146,8 @@ const HeroCards = () => {
             </div>
           </div>
 
-          {/* Why they fit sub-card with right connector */}
+          {/* Why they fit sub-card */}
           <div className="relative pl-5">
-            <div className="absolute right-[-1.25rem] -top-[1.625rem] h-[calc(50%+1.625rem)] w-0 border-l border-dashed border-primary/30" />
-            <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="bg-background rounded-xl p-3 shadow-sm space-y-2">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: '#75A3FE' }}>
