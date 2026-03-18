@@ -57,7 +57,7 @@ const HeroCards = () => {
                 <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: '#75A3FE' }}>
                   <img src={intentslySmile} alt="" className="w-4 h-4 object-contain" />
                 </div>
-                <span className="text-sm font-semibold text-foreground">Why they fit</span>
+                <span className="text-sm font-medium text-foreground">Why they fit</span>
               </div>
               <div className="space-y-1.5 pl-8">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
