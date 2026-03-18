@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import {
   LayoutDashboard,
   Sparkles,
@@ -114,24 +114,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className={`flex flex-col shrink-0 transition-all duration-200 ${
           collapsed ? "w-[64px]" : "w-[200px]"
         }`}
-        style={{ background: "hsl(222 28% 12%)" }}
+        style={{ background: "hsl(195 14% 95%)" }}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-3 py-4">
           <div className="flex items-center gap-2 min-w-0">
-            <img src={gojiIcon} alt="Gojiberry" className="w-7 h-7 object-contain shrink-0" />
+            <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
             {!collapsed && (
-              <span className="font-bold text-base tracking-tight text-white truncate">gojiberry</span>
+              <span className="font-bold text-base tracking-tight text-foreground truncate">Intentsly</span>
             )}
           </div>
           {!collapsed && (
             <div className="flex items-center gap-1.5 shrink-0">
-              <button className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white">
+              <button className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground">
                 <Bell className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setCollapsed(true)}
-                className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -140,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {collapsed && (
             <button
               onClick={() => setCollapsed(false)}
-              className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white mx-auto"
+              className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground mx-auto"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -159,8 +159,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 title={collapsed ? item.label : undefined}
                 className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
                   active
-                    ? "bg-white/10 text-white"
-                    : "text-white/60 hover:bg-white/8 hover:text-white/90"
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
@@ -168,7 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span className="flex-1 text-left truncate">{item.label}</span>
                 )}
                 {!collapsed && item.badge && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-500 text-white">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-foreground text-background">
                     {item.badge}
                   </span>
                 )}
@@ -220,21 +220,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Help Center */}
           <button
             onClick={() => navigate("/help")}
-            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-white/60 hover:bg-white/8 hover:text-white/90 transition-colors"
+            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors"
           >
             <HelpCircle className="w-4 h-4 shrink-0" />
             {!collapsed && <span className="truncate">Help Center</span>}
           </button>
 
           {/* Referral */}
-          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-white/60 hover:bg-white/8 hover:text-white/90 transition-colors">
+          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
             <Gift className="w-4 h-4 shrink-0" />
             {!collapsed && <span className="truncate">Join Referral program</span>}
           </button>
 
           {/* Credits */}
           {!collapsed && (
-            <p className="text-[10px] text-white/30 px-2.5 py-1">
+            <p className="text-[10px] text-foreground/30 px-2.5 py-1">
               0 Credits left &nbsp;·&nbsp; ∞ Leads / Mo
             </p>
           )}
@@ -243,18 +243,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen((o) => !o)}
-              className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-white/8 transition-colors"
+              className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-foreground/5 transition-colors"
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--foreground))" }}>
                 {userDisplay.initials || "?"}
               </div>
               {!collapsed && (
                 <>
                   <div className="min-w-0 text-left flex-1">
-                    <p className="text-xs font-semibold text-white/80 truncate">{userDisplay.name || userDisplay.email}</p>
-                    <p className="text-[10px] text-white/40 truncate">{userDisplay.email}</p>
+                    <p className="text-xs font-semibold text-foreground/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                    <p className="text-[10px] text-foreground/40 truncate">{userDisplay.email}</p>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
                 </>
               )}
             </button>
