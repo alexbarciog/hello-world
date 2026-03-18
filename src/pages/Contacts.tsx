@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
-  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal,
+  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, ExternalLink,
 } from "lucide-react";
 
 interface Contact {
@@ -14,6 +14,7 @@ interface Contact {
   company: string | null;
   company_icon_color: string | null;
   signal: string | null;
+  signal_post_url: string | null;
   ai_score: number;
   signal_a_hit: boolean;
   signal_b_hit: boolean;
@@ -288,8 +289,15 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[180px]">
-                        <span className="text-xs text-muted-foreground">{c.signal}</span>
+                      <td className="px-3 py-3 max-w-[220px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground truncate">{c.signal}</span>
+                          {c.signal_post_url && (
+                            <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-blue-500 hover:text-blue-600 transition-colors" title="View LinkedIn post">
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-0.5">
@@ -378,9 +386,16 @@ export default function Contacts() {
                       </div>
                       {/* Signal label */}
                       {c.signal && (
-                        <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[160px]">
-                          {c.signal}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[160px]">
+                            {c.signal}
+                          </span>
+                          {c.signal_post_url && (
+                            <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-blue-500 hover:text-blue-600 transition-colors shrink-0">
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
                       )}
                       {/* Time */}
                       <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo(c.imported_at)}</span>

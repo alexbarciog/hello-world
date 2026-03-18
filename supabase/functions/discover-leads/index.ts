@@ -176,12 +176,24 @@ Deno.serve(async (req) => {
           const isTopActive = postEngagement > 50;
           const isRecentJobChange = checkRecentJobChange(lead);
 
-          const signalAHit = true; // Found via search = intent signal
+          // Extract post URL if available
+          const postUrl = post?.url || post?.share_url || post?.permalink || (post?.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+
+          const signalAHit = true;
           const signalBHit = isTopActive || isRecentJobChange;
           const signalCHit = match.score >= 60;
           const aiScore = Math.min(3, [signalAHit, signalBHit, signalCHit].filter(Boolean).length);
 
-          let signal = `ICP match (${match.matchedFields.join(', ') || 'keyword'})`;
+          // Build descriptive signal text
+          let signal: string;
+          if (postUrl) {
+            // Extract a snippet from the post text for context
+            const postText = post?.text || post?.commentary || post?.content || '';
+            const snippet = postText.length > 60 ? postText.slice(0, 57) + '...' : postText;
+            signal = snippet ? `Engaged with: "${snippet}"` : 'Engaged with a relevant LinkedIn post';
+          } else {
+            signal = `ICP match (${match.matchedFields.join(', ') || 'keyword'})`;
+          }
           if (isTopActive) signal = 'Top 5% most active in your ICP (LinkedIn)';
           if (isRecentJobChange) signal = 'Strategic Window: Just hired (<90d)';
 
@@ -198,6 +210,7 @@ Deno.serve(async (req) => {
             linkedin_profile_id: linkedinProfileId,
             source_campaign_id: campaign.id,
             signal,
+            signal_post_url: postUrl || null,
             ai_score: aiScore,
             signal_a_hit: signalAHit,
             signal_b_hit: signalBHit,

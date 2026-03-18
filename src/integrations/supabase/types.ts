@@ -152,6 +152,7 @@ export type Database = {
           signal_a_hit: boolean | null
           signal_b_hit: boolean | null
           signal_c_hit: boolean | null
+          signal_post_url: string | null
           source_campaign_id: string | null
           title: string | null
           user_id: string
@@ -173,6 +174,7 @@ export type Database = {
           signal_a_hit?: boolean | null
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
+          signal_post_url?: string | null
           source_campaign_id?: string | null
           title?: string | null
           user_id: string
@@ -194,6 +196,7 @@ export type Database = {
           signal_a_hit?: boolean | null
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
+          signal_post_url?: string | null
           source_campaign_id?: string | null
           title?: string | null
           user_id?: string
