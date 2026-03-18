@@ -25,13 +25,10 @@ import {
 
 const navItems = [
   { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Copilot",        icon: Sparkles,         path: "/copilot",  badge: "New" },
   { label: "Campaigns",      icon: Megaphone,         path: "/campaigns" },
   { label: "Contacts",       icon: Users,             path: "/contacts" },
   { label: "Signals Agents", icon: Radio,             path: "/signals" },
   { label: "Unibox",         icon: Mail,              path: "/unibox" },
-  { label: "Insights",       icon: BarChart2,         path: "/insights" },
-  { label: "Integrations",   icon: Plug,              path: "/integrations" },
   { label: "Settings",       icon: Settings,          path: "/settings" },
 ];
 
