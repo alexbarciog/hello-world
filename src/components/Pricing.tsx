@@ -29,8 +29,7 @@ const Pricing = () => {
               <div className="mt-auto pb-8">
                 <a
                   href="/register"
-                  className="btn-cta justify-center text-sm"
-                  style={{ width: "100%" }}
+                  className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
                 >
                   Get started
                 </a>
