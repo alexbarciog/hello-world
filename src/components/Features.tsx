@@ -157,7 +157,7 @@ const Features = () => {
           description="Segment and enrich lists with 1,000+ live data points, from job changes to profile activity. Each lead matches your ICP and comes with a clear reason to engage."
           cta="See enrichment solutions"
           gradient="linear-gradient(145deg, #fef9c3 0%, #fef08a 35%, #fde68a 70%, #fcd34d 100%)"
-          // videoSrc="/videos/feature-2.mp4"  ← attach your video here
+          videoSrc="/videos/feature-2.webm"
           reversed
           delay={60}
         />
