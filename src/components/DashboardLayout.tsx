@@ -239,7 +239,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={() => setUserMenuOpen((o) => !o)}
               className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-foreground/5 transition-colors"
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "hsl(var(--foreground))" }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>
                 {userDisplay.initials || "?"}
               </div>
               {!collapsed && (
