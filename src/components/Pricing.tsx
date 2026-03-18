@@ -26,7 +26,6 @@ const Pricing = () => {
                 <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
                 <div className="text-sm text-foreground/70 leading-tight">
                   <div>per user / month</div>
-                  <div>billed annually</div>
                 </div>
               </div>
             </div>
