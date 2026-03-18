@@ -828,10 +828,33 @@ export default function Settings() {
         <p className="text-xs md:text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
       </motion.div>
 
-      {/* Body: sidebar nav + content */}
+      {/* ── Mobile nav: pill grid (above content) ── */}
+      <div className="md:hidden border-b border-border px-3 py-3">
+        <div className="grid grid-cols-3 gap-1.5">
+          {tabsList.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[10px] font-semibold transition-all ${
+                  active
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground bg-muted/40 hover:bg-muted"
+                }`}
+              >
+                <span className="[&_svg]:w-4 [&_svg]:h-4">{tab.icon}</span>
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Body: sidebar nav (desktop) + content */}
       <div className="flex min-h-0">
 
-        {/* ── Sidebar nav (desktop) ── */}
+        {/* ── Sidebar nav (desktop only) ── */}
         <motion.aside
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
@@ -857,31 +880,8 @@ export default function Settings() {
           })}
         </motion.aside>
 
-        {/* ── Mobile nav: pill grid ── */}
-        <div className="md:hidden border-b border-border w-full px-3 py-3">
-          <div className="grid grid-cols-3 gap-1.5">
-            {tabsList.map((tab) => {
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[10px] font-semibold transition-all ${
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground bg-muted/40 hover:bg-muted"
-                  }`}
-                >
-                  <span className="[&_svg]:w-4 [&_svg]:h-4">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* ── Tab content ── */}
-        <div className="flex-1 min-w-0 px-4 md:px-8 py-4 md:py-6 overflow-y-auto max-w-2xl">
+        <div className="flex-1 min-w-0 w-full px-4 md:px-8 py-4 md:py-6 max-w-2xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
