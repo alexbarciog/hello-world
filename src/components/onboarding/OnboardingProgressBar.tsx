@@ -12,10 +12,16 @@ export const OnboardingProgressBar = ({ step }: Props) => (
         <div key={label} className="flex items-center gap-1 flex-1 last:flex-none">
           <div className="flex items-center gap-1.5 shrink-0">
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300 shrink-0"
+              className="flex items-center justify-center shrink-0 transition-all duration-300"
               style={{
-                background: done || active ? "hsl(var(--goji-berry))" : "hsl(var(--border))",
+                width: active ? 36 : 24,
+                height: active ? 36 : 24,
+                borderRadius: "50%",
+                background: done || active ? "hsl(0 0% 0%)" : "hsl(var(--border))",
                 color: done || active ? "hsl(0 0% 100%)" : "hsl(var(--muted-foreground))",
+                fontSize: active ? 18 : 11,
+                fontWeight: active ? 400 : 600,
+                letterSpacing: active ? "-1px" : "0",
               }}
             >
               {done ? (
@@ -29,7 +35,8 @@ export const OnboardingProgressBar = ({ step }: Props) => (
             <span
               className="text-[10px] font-medium transition-colors duration-300 hidden md:inline"
               style={{
-                color: done || active ? "hsl(var(--goji-berry))" : "hsl(var(--muted-foreground))",
+                color: active ? "hsl(0 0% 0%)" : done ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                fontWeight: active ? 500 : 400,
               }}
             >
               {label}
@@ -40,7 +47,7 @@ export const OnboardingProgressBar = ({ step }: Props) => (
             <div
               className="flex-1 h-px mx-1 transition-all duration-500"
               style={{
-                background: done ? "hsl(var(--goji-berry))" : "hsl(var(--border))",
+                background: done ? "hsl(0 0% 0%)" : "hsl(var(--border))",
               }}
             />
           )}
