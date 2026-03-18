@@ -35,7 +35,7 @@ const Pricing = () => {
                   Get started
                 </a>
               </div>
-
+            </div>
             {/* Features */}
             <div className="px-8 pt-8 pb-8">
               <ul className="space-y-4">
