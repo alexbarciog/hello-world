@@ -24,7 +24,7 @@ const Index = () => {
       <Features />
       <HowItWorks />
       
-      <Integrations />
+      
       {showCampaigns ? (
         <CampaignsSection campaignIdFromUrl={campaignId} />
       ) : null}
