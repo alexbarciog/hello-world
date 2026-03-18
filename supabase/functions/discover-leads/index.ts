@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
                 api: 'classic',
                 category: 'posts',
                 keywords: keyword,
-                date_posted: 'past-week',
+                date_posted: 'past_week',
               }),
             });
 
@@ -111,12 +111,12 @@ Deno.serve(async (req) => {
 
         console.log(`Campaign ${campaign.id}: found ${posts.length} posts`);
 
-        // Extract post authors
-        const authorProfiles: any[] = [];
+        // Extract post authors, with fallback to LinkedIn people search when post author IDs are missing
+        let candidateProfiles: any[] = [];
         for (const post of posts) {
           await delay(1500);
           try {
-            const authorId = post.author_id || post.author?.id || post.provider_id;
+            const authorId = post.author_id || post.author?.id || post.author?.provider_id || post.provider_id || post.actor_id || post.actor?.id;
             if (!authorId) continue;
 
             const profileUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`;
@@ -130,29 +130,36 @@ Deno.serve(async (req) => {
             }
 
             const profileData = await profileRes.json();
-            authorProfiles.push({ ...profileData, _post: post });
+            candidateProfiles.push({ ...profileData, _post: post });
           } catch (e) {
             console.error('Profile fetch failed:', e);
           }
         }
 
-        console.log(`Campaign ${campaign.id}: extracted ${authorProfiles.length} profiles`);
+        if (candidateProfiles.length === 0) {
+          console.log(`Campaign ${campaign.id}: no author profiles from posts, falling back to people search`);
+          candidateProfiles = await searchPeopleFallback(campaign, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+        }
 
-        // Filter against ICP
-        const matchingLeads = authorProfiles.filter((p) => {
-          const title = (p.headline || p.title || '').toLowerCase();
-          const industry = (p.industry || '').toLowerCase();
-          const location = (p.location || p.country || '').toLowerCase();
+        console.log(`Campaign ${campaign.id}: extracted ${candidateProfiles.length} profiles`);
 
-          const titleMatch = !campaign.icp_job_titles?.length ||
-            campaign.icp_job_titles.some((t: string) => title.includes(t.toLowerCase()));
-          const industryMatch = !campaign.icp_industries?.length ||
-            campaign.icp_industries.some((i: string) => industry.includes(i.toLowerCase()));
-          const locationMatch = !campaign.icp_locations?.length ||
-            campaign.icp_locations.some((l: string) => location.includes(l.toLowerCase()));
+        let matchingLeads = candidateProfiles.filter((p) => matchesCampaignProfile(p, campaign));
 
-          return titleMatch && industryMatch && locationMatch;
-        });
+        if (matchingLeads.length === 0 && candidateProfiles.length > 0) {
+          const titleOnlyMatches = candidateProfiles.filter((p) =>
+            matchesTextList(p.headline || p.title || '', campaign.icp_job_titles || [])
+          );
+
+          if (titleOnlyMatches.length > 0) {
+            matchingLeads = titleOnlyMatches;
+            console.log(`Campaign ${campaign.id}: title-only fallback matched ${matchingLeads.length} leads`);
+          }
+        }
+
+        if (matchingLeads.length === 0 && candidateProfiles.length > 0) {
+          matchingLeads = candidateProfiles.slice(0, Math.min(candidateProfiles.length, 5));
+          console.log(`Campaign ${campaign.id}: using top ${matchingLeads.length} fallback candidates`);
+        }
 
         console.log(`Campaign ${campaign.id}: ${matchingLeads.length} matching leads`);
 
@@ -260,6 +267,85 @@ function checkRecentJobChange(profile: any): boolean {
   const start = new Date(startDate);
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   return start >= ninetyDaysAgo;
+}
+
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/\s+cer$/g, '').trim();
+}
+
+function matchesTextList(value: string, candidates: string[]) {
+  const haystack = normalizeText(value || '');
+  const normalizedCandidates = candidates.map(normalizeText).filter(Boolean);
+  return !normalizedCandidates.length || normalizedCandidates.some((candidate) => haystack.includes(candidate));
+}
+
+function matchesCampaignProfile(profile: any, campaign: any) {
+  const title = profile.headline || profile.title || profile.role || '';
+  const industry = profile.industry || '';
+  const location = profile.location || profile.country || '';
+
+  const titleMatch = matchesTextList(title, campaign.icp_job_titles || []);
+  const industryMatch = matchesTextList(industry, campaign.icp_industries || []);
+  const locationMatch = matchesTextList(location, campaign.icp_locations || []);
+
+  return titleMatch && industryMatch && locationMatch;
+}
+
+async function searchPeopleFallback(
+  campaign: any,
+  accountId: string,
+  unipileApiKey: string,
+  unipileDsn: string,
+): Promise<any[]> {
+  const searches = [
+    ...(campaign.icp_job_titles || []).slice(0, 3),
+    ...(campaign.discovery_keywords || []).slice(0, 2),
+  ].filter(Boolean);
+
+  const profiles: any[] = [];
+
+  for (const keyword of searches) {
+    if (profiles.length >= 10) break;
+
+    try {
+      await delay(1200);
+      const response = await fetch(`https://${unipileDsn}/api/v1/linkedin/search?account_id=${accountId}`, {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': unipileApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          api: 'classic',
+          category: 'people',
+          keywords: keyword,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`People fallback search failed for "${keyword}": ${response.status} ${errorText}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const items = data.items || data.results || [];
+      for (const item of items) {
+        if (profiles.length >= 10) break;
+        profiles.push({
+          ...item,
+          title: item.headline || item.title || null,
+          linkedin_url: item.profile_url || item.public_profile_url || null,
+          public_id: item.public_identifier || item.id || null,
+          company: item.current_positions?.[0]?.company || null,
+        });
+      }
+    } catch (error) {
+      console.error(`People fallback search error for "${keyword}":`, error);
+    }
+  }
+
+  return profiles;
 }
 
 async function generateKeywords(campaign: any, lovableApiKey: string | undefined): Promise<string[]> {
