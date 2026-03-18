@@ -375,16 +375,16 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                     isDone
                       ? "bg-foreground text-background"
                       : isActive
-                        ? "bg-foreground text-background"
+                        ? "bg-white/25 text-white"
                         : "bg-muted text-muted-foreground"
                   }`}>
                     {isDone ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${isActive || isDone ? "text-foreground" : "text-muted-foreground"}`}>
+                    <p className={`text-sm font-semibold ${isActive ? "text-white" : isDone ? "text-foreground" : "text-muted-foreground"}`}>
                       {s.label}
                     </p>
-                    <p className="text-xs text-muted-foreground">{s.sub}</p>
+                    <p className={`text-xs ${isActive ? "text-white/70" : "text-muted-foreground"}`}>{s.sub}</p>
                   </div>
                 </button>
               );
