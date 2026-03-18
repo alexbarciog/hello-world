@@ -147,7 +147,7 @@ const Features = () => {
           description="Scan and extract live data from 15+ platforms to capture niche signals, monitor real-time activity, and surface leads in context, not from stale databases."
           cta="See scraping automations"
           gradient="linear-gradient(145deg, #c7d2fe 0%, #a5b4fc 30%, #ddd6fe 60%, #fef9c3 100%)"
-          // videoSrc="/videos/feature-1.mp4"  ← attach your video here
+          videoSrc="/videos/feature-1.mp4"
           delay={0}
         />
 
