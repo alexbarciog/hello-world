@@ -18,10 +18,8 @@ const Pricing = () => {
           <div className="relative rounded-3xl bg-card overflow-hidden shadow-sm">
             {/* Top gradient background */}
             <div
-              className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden"
-              style={{
-                background: "linear-gradient(180deg, hsl(220 60% 85%) 0%, hsl(30 90% 80%) 60%, hsl(15 90% 75%) 100%)",
-              }}
+              className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
+              style={{ backgroundImage: `url(${pricingGradientBg})` }}
             >
               <h3 className="text-xl font-semibold text-foreground">Plus</h3>
               <div className="flex items-baseline gap-2 mt-3">
