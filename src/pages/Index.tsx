@@ -4,8 +4,7 @@ import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
-
-
+import Pricing from "@/components/Pricing";
 
 import FAQ from "@/components/FAQ";
 import { CTASection, Footer } from "@/components/CTAFooter";
@@ -26,6 +25,7 @@ const Index = () => {
       
       
       <FAQ />
+      <Pricing />
       <CTASection />
       <Footer />
     </div>
