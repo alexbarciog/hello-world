@@ -60,7 +60,17 @@ function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title
   return (
     <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
       <div className="flex items-center gap-2.5 mb-1">
-        <span style={{ color: "hsl(var(--goji-coral))" }}>{icon}</span>
+        <span className="[&_svg]:fill-[url(#section-icon-gradient)] [&_svg]:stroke-[url(#section-icon-gradient)]">
+          <svg width="0" height="0" className="absolute">
+            <defs>
+              <linearGradient id="section-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#5C92FF" />
+                <stop offset="100%" stopColor="#9FBDFB" />
+              </linearGradient>
+            </defs>
+          </svg>
+          {icon}
+        </span>
         <h2 className="text-lg font-bold text-foreground">{title}</h2>
       </div>
       <p className="text-sm text-muted-foreground ml-7">{subtitle}</p>
