@@ -6,7 +6,7 @@ import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 
 
-import CampaignsSection from "@/components/CampaignsSection";
+
 import FAQ from "@/components/FAQ";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { isOnboardingComplete } from "@/components/OnboardingGuard";
@@ -25,9 +25,6 @@ const Index = () => {
       <HowItWorks />
       
       
-      {showCampaigns ? (
-        <CampaignsSection campaignIdFromUrl={campaignId} />
-      ) : null}
       <FAQ />
       <CTASection />
       <Footer />
