@@ -78,7 +78,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
 
   const textCol = (
     <div
-      className="flex flex-col justify-center gap-6 py-16"
+      className="flex flex-col justify-center gap-5 py-6 md:py-16"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(28px)",
