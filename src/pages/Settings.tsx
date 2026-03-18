@@ -828,50 +828,72 @@ export default function Settings() {
         <p className="text-xs md:text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
       </motion.div>
 
-      {/* Tabs strip — scrollable on mobile */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
-        className="border-b border-border px-2 md:px-8"
-      >
-        <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none -mb-px">
+      {/* Body: sidebar nav + content */}
+      <div className="flex min-h-0">
+
+        {/* ── Sidebar nav (desktop) ── */}
+        <motion.aside
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.08, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+          className="hidden md:flex flex-col w-52 shrink-0 border-r border-border py-4 px-3 gap-0.5"
+        >
           {tabsList.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-3 md:px-4 py-3 md:py-3.5 text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left w-full ${
+                  active
+                    ? "bg-foreground text-background shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                }`}
               >
-                {tab.icon}
+                <span className="shrink-0">{tab.icon}</span>
                 {tab.label}
-                {active && (
-                  <motion.div
-                    layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                    style={{ background: "linear-gradient(90deg, #7C93E6, #F7C459)" }}
-                  />
-                )}
               </button>
             );
           })}
-        </div>
-      </motion.div>
+        </motion.aside>
 
-      {/* Tab content */}
-      <div className="px-3 md:px-8 py-4 md:py-6 max-w-3xl">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            variants={tabContent}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-          >
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
+        {/* ── Mobile nav: pill grid ── */}
+        <div className="md:hidden border-b border-border w-full px-3 py-3">
+          <div className="grid grid-cols-3 gap-1.5">
+            {tabsList.map((tab) => {
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[10px] font-semibold transition-all ${
+                    active
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground bg-muted/40 hover:bg-muted"
+                  }`}
+                >
+                  <span className="[&_svg]:w-4 [&_svg]:h-4">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Tab content ── */}
+        <div className="flex-1 min-w-0 px-4 md:px-8 py-4 md:py-6 overflow-y-auto max-w-2xl">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              variants={tabContent}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
