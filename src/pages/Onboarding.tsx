@@ -145,40 +145,39 @@ function OnboardingInner() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4 py-12"
-      style={{
-        background: "hsl(195 14% 95%)",
-      }}
+      className="min-h-screen flex flex-col items-center px-3 py-6 md:py-12 md:px-4"
+      style={{ background: "hsl(195 14% 95%)" }}
     >
       {/* Logo */}
-      <a href="/" className="flex items-center gap-2 mb-10">
-        <img src={intentslyIcon} alt="Intentsly" className="h-8 object-contain" />
-        <span className="text-xl font-bold tracking-tight text-foreground">Intentsly</span>
+      <a href="/" className="flex items-center gap-2 mb-6 md:mb-10 shrink-0">
+        <img src={intentslyIcon} alt="Intentsly" className="h-7 md:h-8 object-contain" />
+        <span className="text-lg md:text-xl font-bold tracking-tight text-foreground">Intentsly</span>
       </a>
 
       {/* Card */}
       <div
-        className="w-full rounded-3xl bg-card border-2 border-background overflow-hidden transition-all duration-500"
+        className="w-full rounded-2xl md:rounded-3xl bg-card border-2 border-background overflow-hidden transition-all duration-500 flex flex-col"
         style={{
           maxWidth: isWide ? "780px" : "600px",
           boxShadow: "0 8px 40px hsl(220 14% 10% / 0.08)",
         }}
       >
-        <div className="p-8 md:p-10">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 pt-5 pb-2 md:px-10 md:pt-10 md:pb-4">
           {/* Progress + Draft indicator row */}
           <div className="flex items-center justify-between mb-1">
             <div className="flex-1">
               <OnboardingProgressBar step={currentStep} />
             </div>
-            <div className="ml-4 min-w-[90px] flex justify-end">
+            <div className="ml-3 min-w-[80px] flex justify-end">
               <DraftIndicator />
             </div>
           </div>
 
           {currentStep === 1 && (
-            <div className="mb-8 mt-2">
+            <div className="mb-6 mt-2">
               <h1
-                className="text-2xl font-normal tracking-tight mb-2"
+                className="text-xl md:text-2xl font-normal tracking-tight mb-2"
                 style={{ color: "hsl(var(--foreground))" }}
               >
                 Create your first AI campaign
@@ -247,6 +246,9 @@ function OnboardingInner() {
           </div>
         </div>
       </div>
+
+      {/* Safe area spacer for mobile */}
+      <div className="h-4 md:hidden shrink-0" />
     </div>
   );
 }
