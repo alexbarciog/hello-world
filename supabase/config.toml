@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-discovery-keywords]
 verify_jwt = false
+
+[functions.process-signal-agents]
+verify_jwt = false
