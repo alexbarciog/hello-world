@@ -63,9 +63,9 @@ function SignalsCard() {
 
 function OutreachCard() {
   const leads = [
-    { initials: "MC", name: "Michael Chang", title: "VP of Sales at InnovateIQ", gradient: "from-amber-300 to-amber-600" },
-    { initials: "SL", name: "Sarah Lin", title: "Head of Growth at Nexora", gradient: "from-blue-300 to-blue-600" },
-    { initials: "JR", name: "James Rivera", title: "CRO at ScalePoint", gradient: "from-emerald-300 to-emerald-600" },
+    { initials: "MC", name: "Michael Chang", title: "VP of Sales at InnovateIQ", gradient: "from-amber-300 to-amber-600", signal: "Liked this post", signalIcon: <Heart className="w-3 h-3 mr-1.5 shrink-0" /> },
+    { initials: "SL", name: "Sarah Lin", title: "Head of Growth at Nexora", gradient: "from-blue-300 to-blue-600", signal: "Followed your competitor", signalIcon: <Eye className="w-3 h-3 mr-1.5 shrink-0" /> },
+    { initials: "JR", name: "James Rivera", title: "CRO at ScalePoint", gradient: "from-emerald-300 to-emerald-600", signal: "Posted about software dev", signalIcon: <PenLine className="w-3 h-3 mr-1.5 shrink-0" /> },
   ];
 
   return (
