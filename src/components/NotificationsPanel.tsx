@@ -65,7 +65,7 @@ export default function NotificationsPanel() {
 
   // Load user & notifications
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (supabase as any).auth.getSession().then(({ data: { session } }: any) => {
       if (!session?.user) return;
       setUserId(session.user.id);
       fetchNotifications(session.user.id);
@@ -76,19 +76,20 @@ export default function NotificationsPanel() {
   useEffect(() => {
     if (!userId) return;
 
-    const channel = supabase
+    const channel = (supabase as any)
       .channel("notifications-realtime")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-        (payload) => {
+        (payload: any) => {
           setNotifications((prev) => [payload.new as Notification, ...prev]);
         }
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { (supabase as any).removeChannel(channel); };
   }, [userId]);
+
 
   // Close on outside click
   useEffect(() => {
