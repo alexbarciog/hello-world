@@ -17,7 +17,7 @@ export const OnboardingNav = ({
   loading = false,
   isLast = false,
 }: Props) => (
-  <div className="flex items-center justify-between border-t border-border pt-5 mt-6">
+  <div className="flex items-center justify-between border-t border-border pt-4 mt-5 sticky bottom-0 bg-card pb-4 md:pb-0 md:static md:bg-transparent">
     {onPrev ? (
       <button
         type="button"
@@ -36,7 +36,7 @@ export const OnboardingNav = ({
       type="button"
       onClick={onNext}
       disabled={nextDisabled || loading}
-      className="btn-cta h-11 px-8 text-sm disabled:opacity-40 disabled:pointer-events-none"
+      className="btn-cta h-11 px-6 md:px-8 text-sm disabled:opacity-40 disabled:pointer-events-none"
     >
       {loading ? (
         <span className="flex items-center gap-2">

@@ -104,18 +104,20 @@ export const Step1Website = ({ data, onChange, onNext }: Props) => {
         <Label htmlFor="website" className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
           Website
         </Label>
-        <div className="relative flex items-center">
-          <Globe className="absolute left-3 w-4 h-4 pointer-events-none" style={{ color: "hsl(var(--muted-foreground))" }} />
-          <Input
-            id="website"
-            type="url"
-            value={data.website}
-            onChange={(e) => onChange({ website: e.target.value })}
-            placeholder="https://yourwebsite.com"
-            disabled={scrapeStep === "loading"}
-            required
-            className="pl-9 pr-28 rounded-xl h-11 text-sm border-border"
-          />
+        <div className="relative flex flex-col sm:flex-row items-stretch gap-2">
+          <div className="relative flex-1">
+            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "hsl(var(--muted-foreground))" }} />
+            <Input
+              id="website"
+              type="url"
+              value={data.website}
+              onChange={(e) => onChange({ website: e.target.value })}
+              placeholder="https://yourwebsite.com"
+              disabled={scrapeStep === "loading"}
+              required
+              className="pl-9 rounded-xl h-11 text-sm border-border w-full"
+            />
+          </div>
           <button
             type={isExpanded && scrapeStep !== "loading" ? "button" : "submit"}
             onClick={
@@ -124,7 +126,7 @@ export const Step1Website = ({ data, onChange, onNext }: Props) => {
                 : undefined
             }
             disabled={scrapeStep === "loading" || !data.website.trim()}
-            className="absolute right-1.5 h-8 px-4 rounded-full text-xs font-normal transition-all duration-200 disabled:opacity-50"
+            className="h-11 sm:h-auto px-5 rounded-xl sm:rounded-full text-sm font-normal transition-all duration-200 disabled:opacity-50 shrink-0"
             style={{
               background: "hsl(0 0% 0%)",
               color: "hsl(0 0% 100%)",
@@ -132,7 +134,7 @@ export const Step1Website = ({ data, onChange, onNext }: Props) => {
             }}
           >
             {scrapeStep === "loading" ? (
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center justify-center gap-1.5">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Analyzing…
               </span>
