@@ -62,40 +62,31 @@ function SignalsCard() {
 }
 
 function OutreachCard() {
-  const campaigns = [
-    { name: "Campaign A", rate: 18 },
-    { name: "Campaign B", rate: 27 },
-    { name: "Campaign C", rate: 31 },
+  const leads = [
+    { initials: "MC", name: "Michael Chang", title: "VP of Sales at InnovateIQ", gradient: "from-amber-300 to-amber-600" },
+    { initials: "SL", name: "Sarah Lin", title: "Head of Growth at Nexora", gradient: "from-blue-300 to-blue-600" },
+    { initials: "JR", name: "James Rivera", title: "CRO at ScalePoint", gradient: "from-emerald-300 to-emerald-600" },
   ];
 
   return (
     <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300 h-full" style={{ background: "hsl(0 0% 96%)" }}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-foreground">Campaign Performance</h3>
+        <h3 className="text-lg font-bold text-foreground">Qualified leads</h3>
         <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
       </div>
 
       <div className="flex flex-col gap-3 mx-6 mt-2">
-        {campaigns.map((c, i) => (
-          <div key={i} className="bg-background rounded-xl px-4 py-3 shadow-sm flex items-center gap-3">
-            <span className="text-xs font-medium text-foreground w-24 shrink-0">{c.name}</span>
-            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#F5F5F5' }}>
-              <div
-                className="h-full rounded-full bg-foreground"
-                style={{ width: `${c.rate * 3}%` }}
-              />
+        {leads.map((lead, i) => (
+          <div key={i} className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
+            <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${lead.gradient} flex items-center justify-center text-[10px] font-bold text-background shrink-0 ring-2 ring-background`}>
+              {lead.initials}
             </div>
-            <span className="text-xs font-semibold text-foreground w-14 text-right">
-              {c.rate}% Reply
-            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-foreground">{lead.name}</div>
+              <div className="text-xs" style={{ color: '#4A4A4A' }}>{lead.title}</div>
+            </div>
           </div>
         ))}
-
-        <div className="mt-1">
-          <button className="w-full btn-cta !rounded-lg inline-flex items-center justify-center gap-1.5 text-xs px-3 py-2.5">
-            <MessageCircle className="w-3 h-3" /> Launch Campaign
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -117,8 +108,8 @@ const steps = [
   },
   {
     num: "03",
-    title: "Launch your outreach",
-    description: "AI sends smart LinkedIn messages that convert.",
+    title: "Get qualified leads",
+    description: "Receive a curated list of leads that match your ICP, scored and ready to engage.",
     visual: <OutreachCard />,
   },
 ];
