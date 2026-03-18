@@ -22,7 +22,7 @@ const HeroCards = () => {
           <div className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
             <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-background shrink-0 ring-2 ring-background">MC</div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-semibold text-foreground">Michael Chang</div>
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
               </div>
