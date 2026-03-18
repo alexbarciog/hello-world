@@ -40,7 +40,7 @@ function SignalsCard() {
         <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
       </div>
 
-      <div className="flex flex-col gap-3 mx-6 mt-2">
+      <div className="flex flex-col gap-3 mx-6 mt-2 flex-1 justify-center">
         <div className="bg-background rounded-xl p-3 shadow-sm space-y-2">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-6 h-6 rounded flex items-center justify-center" style={{ backgroundColor: '#75A3FE' }}>
