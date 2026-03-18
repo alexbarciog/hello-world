@@ -32,12 +32,12 @@ const HeroCards = () => {
 
           {/* Signal tags with left connector */}
           {/* Signal tags with left and right connectors */}
-          <div className="relative pl-5 pr-5">
+          <div className="relative pl-5">
             {/* Left connector: vertical from profile */}
             <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
             <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             {/* Right connector: horizontal from "Followed you" */}
-            <div className="absolute right-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
+            <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="flex justify-between gap-2">
               <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
                 <Heart className="w-3 h-3" /> Liked your post
