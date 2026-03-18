@@ -114,24 +114,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         className={`flex flex-col shrink-0 transition-all duration-200 ${
           collapsed ? "w-[64px]" : "w-[200px]"
         }`}
-        style={{ background: "hsl(222 28% 12%)" }}
+        style={{ background: "hsl(195 14% 95%)" }}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-3 py-4">
           <div className="flex items-center gap-2 min-w-0">
-            <img src={gojiIcon} alt="Gojiberry" className="w-7 h-7 object-contain shrink-0" />
+            <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
             {!collapsed && (
-              <span className="font-bold text-base tracking-tight text-white truncate">gojiberry</span>
+              <span className="font-bold text-base tracking-tight text-foreground truncate">Intentsly</span>
             )}
           </div>
           {!collapsed && (
             <div className="flex items-center gap-1.5 shrink-0">
-              <button className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white">
+              <button className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground">
                 <Bell className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setCollapsed(true)}
-                className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+                className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -140,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {collapsed && (
             <button
               onClick={() => setCollapsed(false)}
-              className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white mx-auto"
+              className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground mx-auto"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
