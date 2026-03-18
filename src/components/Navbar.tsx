@@ -14,12 +14,8 @@ const Navbar = ({ showCampaigns = false }: {showCampaigns?: boolean;}) => {
   }, []);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? "bg-background/95 backdrop-blur-md shadow-sm" : "bg-transparent"}`
-      }>
-      
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 px-6 pt-4">
+      <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between rounded-full bg-white/50 backdrop-blur-md border border-border/40 shadow-sm">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
           <img alt="Intentsly" className="h-11 object-contain" src="/lovable-uploads/1fd30da9-31ed-4636-91ac-da7561d61aa6.png" />
