@@ -64,10 +64,11 @@ const Pricing = () => {
             <div className="px-8 pt-8">
               <h3 className="text-2xl font-semibold text-foreground">Custom</h3>
               <p className="text-3xl font-light text-foreground tracking-tight mt-3">Contact us</p>
+              <p className="text-sm text-muted-foreground mt-3">Tailored for teams with advanced needs and higher volume.</p>
             </div>
 
             {/* CTA button */}
-            <div className="px-8 mt-6 pb-8">
+            <div className="px-8 mt-6">
               <a
                 href="/register"
                 className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
@@ -76,6 +77,17 @@ const Pricing = () => {
               </a>
             </div>
 
+            {/* Custom features */}
+            <div className="px-8 pt-6 pb-8">
+              <ul className="space-y-3">
+                {["Everything in Plus", "Unlimited LinkedIn senders", "Dedicated account manager", "Custom integrations"].map((feat, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
+                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
