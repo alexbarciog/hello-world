@@ -456,12 +456,12 @@ export default function Register() {
             }
 
             {/* Terms */}
-            <p className="text-center text-xs text-muted-foreground mt-8">
-              By continuing, you agree to our{" "}
-              <span className="underline cursor-pointer hover:text-foreground transition-colors">Terms and Conditions</span>
-              {" "}and{" "}
-              <span className="underline cursor-pointer hover:text-foreground transition-colors">Privacy Policy</span>.
-            </p>
+            
+
+
+
+
+            
           </div>
         </div>
       </div>
