@@ -49,7 +49,7 @@ const Hero = () => {
         className="absolute inset-0 z-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 70% at 50% 30%, hsl(265 70% 75% / 0.6) 0%, hsl(230 80% 70% / 0.4) 40%, hsl(200 60% 85% / 0.2) 65%, hsl(0 0% 100%) 100%)",
+            "radial-gradient(ellipse 60% 50% at 50% 30%, hsl(265 70% 75% / 0.5) 0%, hsl(230 80% 70% / 0.3) 35%, hsl(200 60% 85% / 0.15) 55%, hsl(0 0% 100%) 85%)",
         }}
       />
 
