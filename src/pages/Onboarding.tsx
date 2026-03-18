@@ -152,7 +152,7 @@ function OnboardingInner() {
     >
       {/* Logo */}
       <a href="/" className="flex items-center gap-2 mb-10">
-        <img src={intentslyIcon} alt="Intentsly" className="h-11 object-contain" />
+        <img src={intentslyIcon} alt="Intentsly" className="h-8 object-contain" />
         <span className="text-xl font-bold tracking-tight text-foreground">Intentsly</span>
       </a>
 
