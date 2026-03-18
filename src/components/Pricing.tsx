@@ -69,7 +69,7 @@ const Pricing = () => {
             <div className="px-8 mt-6">
               <a
                 href="/register"
-                className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-foreground/20 text-foreground/70 hover:bg-foreground/5 transition-colors"
+                className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
               >
                 Get started
               </a>
