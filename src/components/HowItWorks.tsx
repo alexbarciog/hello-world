@@ -9,7 +9,7 @@ function SignupCard() {
         <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
       </div>
 
-      <div className="flex flex-col gap-3 mx-6 mt-2">
+      <div className="flex flex-col gap-3 mx-6 mt-2 flex-1 justify-center">
         {["Job titles", "Industries", "Company size", "Locations", "Keywords"].map((placeholder, i) => (
           <div key={i} className="bg-background rounded-xl px-4 py-3 text-xs text-muted-foreground shadow-sm">
             {placeholder}
