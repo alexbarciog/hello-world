@@ -125,17 +125,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
           </div>
           {!collapsed && (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground">
-                <Bell className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setCollapsed(true)}
-                className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setCollapsed(true)}
+              className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
           )}
           {collapsed && (
             <button
