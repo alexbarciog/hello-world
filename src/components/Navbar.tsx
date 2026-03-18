@@ -18,7 +18,7 @@ const Navbar = ({ showCampaigns = false }: {showCampaigns?: boolean;}) => {
       <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between rounded-full bg-white/50 backdrop-blur-md border border-border/40 shadow-sm">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2">
-          <img alt="Intentsly" className="h-11 object-contain" src="/lovable-uploads/1fd30da9-31ed-4636-91ac-da7561d61aa6.png" />
+          <img alt="Intentsly" className="h-11 object-contain" src={intentslyIcon} />
         </a>
 
         {/* Desktop Nav */}
