@@ -59,6 +59,7 @@
     /* Gradient */
     --gradient-hero: linear-gradient(135deg, hsl(5 85% 96%) 0%, hsl(20 90% 94%) 50%, hsl(0 0% 100%) 100%);
     --gradient-brand: linear-gradient(135deg, hsl(var(--goji-orange)), hsl(var(--goji-coral)));
+    --gradient-cta: linear-gradient(90deg, #311EDB 0%, #3C70EA 100%);
     --gradient-cta-bg: linear-gradient(135deg, hsl(5 80% 93%) 0%, hsl(350 60% 91%) 100%);
 
     /* Shadows */
@@ -92,6 +93,28 @@
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+}
+
+/* CTA Button */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--gradient-cta);
+  color: hsl(0 0% 100%);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 4px 16px 0 rgba(49, 30, 219, 0.25);
+  transition: all 0.2s;
+  width: fit-content;
+}
+.btn-cta:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+.btn-cta:active {
+  transform: scale(0.98);
 }
 
 /* Marquee animation */

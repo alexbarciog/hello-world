@@ -22,11 +22,7 @@ const CTASection = () => {
         </p>
         <a
           href="https://app.gojiberry.ai/registration"
-          className="inline-flex items-center gap-2 text-base font-semibold text-primary-foreground rounded-full px-10 py-4 transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
-          style={{
-            background: "hsl(var(--goji-berry))",
-            boxShadow: "0 8px 40px 0 hsl(var(--goji-coral) / 0.35)",
-          }}
+          className="btn-cta text-base"
         >
           Launch your AI Agent for free
           <ArrowUpRight className="w-5 h-5" />

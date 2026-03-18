@@ -45,12 +45,8 @@ const Hero = () => {
 
         <a
           href="https://app.gojiberry.ai/registration"
-          className="inline-flex items-center gap-2 text-base font-semibold text-primary-foreground rounded-full px-8 py-4 animate-fade-in-up transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
-          style={{
-            background: "hsl(var(--goji-berry))",
-            boxShadow: "0 8px 32px 0 hsl(var(--goji-coral) / 0.3)",
-            animationDelay: "240ms",
-          }}
+          className="btn-cta text-base animate-fade-in-up"
+          style={{ animationDelay: "240ms" }}
         >
           Launch your AI Agent for free
           <ArrowUpRight className="w-4 h-4" />

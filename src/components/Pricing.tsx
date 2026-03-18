@@ -67,8 +67,7 @@ const Pricing = () => {
               </p>
               <a
                 href="https://app.gojiberry.ai/registration"
-                className="flex items-center justify-center gap-2 w-full text-sm font-semibold text-primary-foreground rounded-full py-3.5 mb-8 transition-all hover:opacity-90"
-                style={{ background: "hsl(var(--goji-berry))" }}
+                className="btn-cta justify-center w-full text-sm mb-8"
               >
                 Try Gojiberry for Free
                 <ArrowUpRight className="w-4 h-4" />
