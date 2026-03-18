@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyLogo from "@/assets/intentsly-logo.png";
 
 const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
   const [scrolled, setScrolled] = useState(false);
