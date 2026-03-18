@@ -75,22 +75,14 @@ const Hero = () => {
           What You Offer on{" "}
           <span className="inline-flex items-center align-middle relative h-10 md:h-14 w-10 md:w-14 overflow-hidden">
             <span
-              className="absolute inset-0 flex items-center justify-center transition-all duration-400 ease-in-out"
+              className="absolute inset-0 flex items-center justify-center"
               style={{
-                transform: isAnimating ? "translateY(-100%)" : "translateY(0)",
-                opacity: isAnimating ? 0 : 1,
+                transition: "transform 350ms ease-in-out, opacity 350ms ease-in-out",
+                transform: phase === "exit" ? "translateY(-100%)" : "translateY(0)",
+                opacity: phase === "exit" ? 0 : 1,
               }}
             >
               {platformLogos[currentLogo]}
-            </span>
-            <span
-              className="absolute inset-0 flex items-center justify-center transition-all duration-400 ease-in-out"
-              style={{
-                transform: isAnimating ? "translateY(0)" : "translateY(100%)",
-                opacity: isAnimating ? 1 : 0,
-              }}
-            >
-              {platformLogos[(currentLogo + 1) % platformLogos.length]}
             </span>
           </span>
         </h1>
