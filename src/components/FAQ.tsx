@@ -49,7 +49,7 @@ const FAQ = () => {
             transition={{ duration: 0.5, ease: "easeOut" }}
           >
             <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">FAQs</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-4 text-foreground">
+            <h2 className="text-3xl md:text-4xl font-normal mt-4 text-foreground">
               Got a question? We've got the answer
             </h2>
           </motion.div>
