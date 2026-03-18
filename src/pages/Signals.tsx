@@ -234,7 +234,8 @@ export default function Signals() {
         </div>
         <button
           onClick={() => setShowHowItWorks(!showHowItWorks)}
-          className="self-start sm:self-auto flex items-center gap-1.5 text-xs font-semibold text-red-500 border border-red-200 rounded-full px-3 py-1.5 hover:bg-red-50 transition-colors"
+          className="self-start sm:self-auto flex items-center gap-1.5 text-xs font-semibold text-white rounded-full px-3.5 py-1.5 transition-opacity hover:opacity-90"
+          style={{ background: "linear-gradient(135deg, #5F93FF, #9CBCFB)" }}
         >
           <HelpCircle className="w-3.5 h-3.5" />
           HOW IT WORKS?
