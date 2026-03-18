@@ -234,12 +234,12 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
           </div>
         ) : (
           <>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input type="email" placeholder="colleague@company.com" value={email}
                 onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 className={`${inputCls} flex-1`} disabled={sending} />
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                className="btn-cta text-sm !py-2.5 !px-5 disabled:opacity-60"
+                className="btn-cta text-sm !py-2.5 !px-5 disabled:opacity-60 w-full sm:w-auto"
                 onClick={handleInvite} disabled={sending}>
                 {sending ? "Sending…" : "Invite"}
               </motion.button>
@@ -303,10 +303,26 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
         </SectionCard>
       )}
 
-      {/* Members table */}
+      {/* Members — responsive card on mobile, table on desktop */}
       <SectionCard delay={4}>
         <p className="text-sm font-semibold text-foreground mb-4">Members</p>
-        <div className="rounded-xl border border-border overflow-hidden">
+
+        {/* Mobile member card */}
+        <div className="sm:hidden rounded-xl border border-border p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>{initials}</div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{userName || "User"}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+            <Building2 className="w-3 h-3" /> Owner
+          </span>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block rounded-xl border border-border overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -795,45 +811,45 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-full bg-card rounded-2xl m-4 overflow-hidden">
+    <div className="min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="border-b border-border px-8 py-5"
+        className="border-b border-border px-4 md:px-8 py-4 md:py-5"
       >
         <div className="flex items-center gap-2.5">
           <span className="[&_svg]:stroke-[url(#section-icon-gradient)]">
             <SettingsIcon className="w-4.5 h-4.5 shrink-0" />
           </span>
-          <h1 className="text-lg font-bold text-foreground">Account Settings</h1>
+          <h1 className="text-base md:text-lg font-bold text-foreground">Account Settings</h1>
         </div>
-        <p className="text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
       </motion.div>
 
-      {/* Tabs strip */}
+      {/* Tabs strip — scrollable on mobile */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.3 }}
-        className="border-b border-border px-8"
+        className="border-b border-border px-2 md:px-8"
       >
-        <div className="flex items-center gap-1 overflow-x-auto">
+        <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none -mb-px">
           {tabsList.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`relative flex items-center gap-1.5 px-3 md:px-4 py-3 md:py-3.5 text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {tab.icon}
                 {tab.label}
                 {active && (
                   <motion.div
                     layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-px rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
                     style={{ background: "linear-gradient(90deg, #7C93E6, #F7C459)" }}
                   />
                 )}
@@ -844,7 +860,7 @@ export default function Settings() {
       </motion.div>
 
       {/* Tab content */}
-      <div className="px-8 py-6 max-w-3xl">
+      <div className="px-3 md:px-8 py-4 md:py-6 max-w-3xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
