@@ -5,19 +5,19 @@ function SignupCard() {
   return (
     <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300 h-full" style={{ background: "hsl(0 0% 96%)" }}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-foreground">Create your account</h3>
+        <h3 className="text-lg font-bold text-foreground">Add your ICP</h3>
         <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
       </div>
 
       <div className="flex flex-col gap-3 mx-6 mt-2">
-        {["Your name", "Email address", "Password"].map((placeholder, i) => (
+        {["Job titles", "Industries", "Company size"].map((placeholder, i) => (
           <div key={i} className="bg-background rounded-xl px-4 py-3 text-xs text-muted-foreground shadow-sm">
             {placeholder}
           </div>
         ))}
         <div className="mt-1">
           <button className="w-full btn-cta !rounded-lg inline-flex items-center justify-center gap-1.5 text-xs px-3 py-2.5">
-            <UserPlus className="w-3 h-3" /> Sign Up
+            <UserPlus className="w-3 h-3" /> Save ICP
           </button>
         </div>
       </div>
@@ -106,8 +106,8 @@ function OutreachCard() {
 const steps = [
   {
     num: "01",
-    title: "Sign up in seconds",
-    description: "Create your Gojiberry account and you're in.",
+    title: "Define your ICP",
+    description: "Set your ideal customer profile — job titles, industries, and company size.",
     visual: <SignupCard />,
   },
   {
