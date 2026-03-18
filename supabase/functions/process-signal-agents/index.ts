@@ -92,15 +92,27 @@ Deno.serve(async (req) => {
 
         console.log(`Agent ${agent.id}: enabled signals = [${enabled.join(', ')}]`);
 
+        // Resolve user's own LinkedIn identifier for post_engagers / profile_viewers
+        let userLinkedInId: string | null = null;
+        if (enabled.includes('post_engagers') || enabled.includes('profile_viewers')) {
+          userLinkedInId = await resolveUserLinkedInId(accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+          if (userLinkedInId) {
+            console.log(`Resolved user LinkedIn ID: ${userLinkedInId}`);
+          } else {
+            console.log(`Could not resolve user LinkedIn ID for account ${accountId}`);
+          }
+        }
+
         // ── 1. Profile Viewers ──
+        // Note: Unipile does not have a dedicated "profile viewers" endpoint.
+        // We skip this signal type as it's not supported by the API.
         if (enabled.includes('profile_viewers')) {
-          const count = await handleProfileViewers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id);
-          agentLeads += count;
+          console.log('profile_viewers: skipped (not supported by Unipile API)');
         }
 
         // ── 2. Post Engagers ──
-        if (enabled.includes('post_engagers')) {
-          const count = await handlePostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id);
+        if (enabled.includes('post_engagers') && userLinkedInId) {
+          const count = await handlePostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, userLinkedInId);
           agentLeads += count;
         }
 
@@ -123,6 +135,8 @@ Deno.serve(async (req) => {
         }
 
         // ── 5. Competitor Followers ──
+        // Unipile doesn't have a company followers endpoint directly.
+        // We use people search with company name as a workaround.
         if (enabled.includes('competitor_followers')) {
           const urls = signalKeywords['competitor_followers'] || [];
           if (urls.length > 0) {
@@ -140,7 +154,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── 7. Profile Engagers (people engaging with specific profiles) ──
+        // ── 7. Profile Engagers ──
         if (enabled.includes('profile_engagers')) {
           const urls = signalKeywords['profile_engagers'] || [];
           if (urls.length > 0) {
@@ -184,73 +198,87 @@ Deno.serve(async (req) => {
   }
 });
 
-// ─── Signal Handlers ──────────────────────────────────────────────────────────
+// ─── Resolve User's Own LinkedIn Identifier ───────────────────────────────────
 
-async function handleProfileViewers(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string,
-): Promise<number> {
+async function resolveUserLinkedInId(accountId: string, apiKey: string, dsn: string): Promise<string | null> {
   try {
-    const res = await unipileGet(`/api/v1/linkedin/profile/me/viewers?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { console.error(`Profile viewers: ${res.status}`); return 0; }
-    const data = await res.json();
-    const viewers = data.items || data.viewers || data.results || [];
-
-    let inserted = 0;
-    for (const viewer of viewers.slice(0, 20)) {
-      await delay(500);
-      const profile = await fetchProfileSafe(viewer, accountId, apiKey, dsn);
-      if (!profile) continue;
-
-      const match = scoreProfileAgainstICP(profile, icp);
-      if (!matchesTitleOrIndustry(match, icp)) continue;
-      if (isExcluded(profile, icp.excludeKeywords)) continue;
-
-      const ok = await insertContact(supabase, profile, userId, agentId, listName, match, 'Viewed your profile', null);
-      if (ok) inserted++;
+    // Use the "own profile" endpoint: GET /api/v1/users/me
+    const res = await unipileGet(`/api/v1/users/me?account_id=${accountId}`, apiKey, dsn);
+    if (!res.ok) {
+      console.error(`Resolve user ID: /api/v1/users/me returned ${res.status}`);
+      // Fallback: try the LinkedIn-specific endpoint
+      const res2 = await unipileGet(`/api/v1/linkedin/profile/me?account_id=${accountId}`, apiKey, dsn);
+      if (!res2.ok) {
+        console.error(`Resolve user ID fallback: ${res2.status}`);
+        return null;
+      }
+      const data2 = await res2.json();
+      return data2.provider_id || data2.public_id || data2.id || null;
     }
-    return inserted;
-  } catch (e) { console.error('handleProfileViewers:', e); return 0; }
+    const data = await res.json();
+    return data.provider_id || data.public_id || data.id || null;
+  } catch (e) {
+    console.error('resolveUserLinkedInId error:', e);
+    return null;
+  }
 }
+
+// ─── Signal Handlers ──────────────────────────────────────────────────────────
 
 async function handlePostEngagers(
   supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string,
+  icp: ICPFilters, userId: string, listName: string, agentId: string, userLinkedInId: string,
 ): Promise<number> {
   try {
-    // Get user's recent posts
-    const postsRes = await unipileGet(`/api/v1/linkedin/profile/me/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
-    if (!postsRes.ok) { console.error(`My posts: ${postsRes.status}`); return 0; }
+    // Correct Unipile endpoint: GET /api/v1/users/{identifier}/posts
+    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
+    if (!postsRes.ok) {
+      console.error(`User posts (${userLinkedInId}): ${postsRes.status}`);
+      return 0;
+    }
     const postsData = await postsRes.json();
     const posts = (postsData.items || postsData.posts || []).slice(0, 5);
+
+    console.log(`post_engagers: found ${posts.length} user posts`);
 
     let inserted = 0;
     for (const post of posts) {
       await delay(1500);
-      const postId = post.id || post.provider_id;
+      // Use social_id for reactions endpoint (more reliable per Unipile docs)
+      const postId = post.social_id || post.id || post.provider_id;
       if (!postId) continue;
 
-      // Get reactions/comments on each post
-      const reactionsRes = await unipileGet(`/api/v1/linkedin/post/${postId}/reactions?account_id=${accountId}`, apiKey, dsn);
-      if (!reactionsRes.ok) continue;
+      // Correct Unipile endpoint: GET /api/v1/posts/{post_id}/reactions
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
+      if (!reactionsRes.ok) {
+        console.error(`Post reactions for ${postId}: ${reactionsRes.status}`);
+        continue;
+      }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || reactionsData.reactions || []).slice(0, 15);
+      const engagers = (reactionsData.items || []).slice(0, 15);
 
-      const postUrl = post.url || post.share_url || post.permalink || (postId ? `https://www.linkedin.com/feed/update/${postId}` : null);
+      console.log(`post_engagers: post ${postId} has ${engagers.length} reactions`);
+
+      const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
       const postText = post.text || post.commentary || '';
       const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
 
       for (const engager of engagers) {
         await delay(500);
-        const profile = await fetchProfileSafe(engager, accountId, apiKey, dsn);
+        // Reactions return author object with profile data
+        const profile = engager.author || engager;
         if (!profile) continue;
 
-        const match = scoreProfileAgainstICP(profile, icp);
+        // If we need more profile data, fetch it
+        const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
+        if (!fullProfile) continue;
+
+        const match = scoreProfileAgainstICP(fullProfile, icp);
         if (!matchesTitleOrIndustry(match, icp)) continue;
-        if (isExcluded(profile, icp.excludeKeywords)) continue;
+        if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, postUrl);
+        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
         if (ok) inserted++;
       }
     }
@@ -268,14 +296,20 @@ async function handleKeywordPosts(
   for (const keyword of keywords.slice(0, 5)) {
     await delay(2000);
     try {
+      // Same search endpoint as discover-leads (verified working)
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
         headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week' }),
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        console.error(`Keyword search "${keyword}": ${res.status}`);
+        continue;
+      }
       const data = await res.json();
-      for (const item of (data.items || data.results || []).slice(0, 10)) {
+      const items = (data.items || data.results || []).slice(0, 10);
+      console.log(`keyword_posts "${keyword}": found ${items.length} posts`);
+      for (const item of items) {
         allPosts.push({ ...item, _keyword: keyword });
       }
     } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
@@ -286,25 +320,59 @@ async function handleKeywordPosts(
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
     .slice(0, 10);
 
+  console.log(`keyword_posts: top ${topPosts.length} posts to process`);
+
   for (const post of topPosts) {
     await delay(1500);
-    const authorId = post.author_id || post.author?.id || post.author?.provider_id || post.provider_id;
-    if (!authorId) continue;
 
-    try {
-      const profileRes = await unipileGet(`/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`, apiKey, dsn);
-      if (!profileRes.ok) continue;
-      const profile = await profileRes.json();
+    // First try to use inline author data from search results
+    const authorData = post.author || post.actor || null;
+    const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
 
-      const match = scoreProfileAgainstICP(profile, icp);
-      if (!matchesTitleOrIndustry(match, icp)) continue;
-      if (isExcluded(profile, icp.excludeKeywords)) continue;
+    let profile: any = null;
 
-      const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-      const signal = `Posted about "${post._keyword}"`;
-      const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
-      if (ok) inserted++;
-    } catch (e) { console.error('Keyword post author fetch:', e); }
+    // If we have inline author data with name/headline, use it directly
+    if (authorData && (authorData.first_name || authorData.name || authorData.headline)) {
+      profile = {
+        first_name: authorData.first_name || authorData.name?.split(' ')[0] || null,
+        last_name: authorData.last_name || authorData.name?.split(' ').slice(1).join(' ') || null,
+        headline: authorData.headline || authorData.title || null,
+        industry: authorData.industry || null,
+        location: authorData.location || null,
+        company: authorData.company || authorData.current_company?.name || null,
+        public_id: authorData.public_identifier || authorData.public_id || authorId,
+        linkedin_url: authorData.profile_url || authorData.public_profile_url || null,
+        provider_id: authorData.provider_id || authorId,
+      };
+      console.log(`keyword_posts: using inline author data for ${profile.first_name} ${profile.last_name}`);
+    } else if (authorId) {
+      // Fallback: try multiple profile endpoints
+      try {
+        let profileRes = await unipileGet(`/api/v1/users/${authorId}?account_id=${accountId}`, apiKey, dsn);
+        if (!profileRes.ok) {
+          profileRes = await unipileGet(`/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`, apiKey, dsn);
+        }
+        if (profileRes.ok) {
+          profile = await profileRes.json();
+        } else {
+          console.error(`Profile fetch for author ${authorId}: ${profileRes.status}`);
+          continue;
+        }
+      } catch (e) { console.error('Keyword post author fetch:', e); continue; }
+    } else {
+      continue;
+    }
+
+    if (!profile) continue;
+
+    const match = scoreProfileAgainstICP(profile, icp);
+    if (!matchesTitleOrIndustry(match, icp)) continue;
+    if (isExcluded(profile, icp.excludeKeywords)) continue;
+
+    const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+    const signal = `Posted about "${post._keyword}"`;
+    const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
+    if (ok) inserted++;
   }
   return inserted;
 }
@@ -327,7 +395,9 @@ async function handleHashtagEngagement(
       });
       if (!res.ok) continue;
       const data = await res.json();
-      for (const item of (data.items || data.results || []).slice(0, 10)) {
+      const items = (data.items || data.results || []).slice(0, 10);
+      console.log(`hashtag "${tag}": found ${items.length} posts`);
+      for (const item of items) {
         allPosts.push({ ...item, _hashtag: tag });
       }
     } catch (e) { console.error(`Hashtag search "${tag}":`, e); }
@@ -337,31 +407,36 @@ async function handleHashtagEngagement(
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
     .slice(0, 10);
 
-  // For hashtag, get engagers (commenters/reactors) not just authors
+  // For hashtag, get engagers (reactors) not just authors
   for (const post of topPosts) {
     await delay(1500);
-    const postId = post.id || post.provider_id;
+    const postId = post.social_id || post.id || post.provider_id;
     if (!postId) continue;
 
     try {
-      const reactionsRes = await unipileGet(`/api/v1/linkedin/post/${postId}/reactions?account_id=${accountId}`, apiKey, dsn);
-      if (!reactionsRes.ok) continue;
+      // Correct endpoint: /api/v1/posts/{post_id}/reactions
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
+      if (!reactionsRes.ok) {
+        console.error(`Hashtag reactions for ${postId}: ${reactionsRes.status}`);
+        continue;
+      }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || reactionsData.reactions || []).slice(0, 10);
+      const engagers = (reactionsData.items || []).slice(0, 10);
 
-      const postUrl = post.url || post.share_url || post.permalink || (postId ? `https://www.linkedin.com/feed/update/${postId}` : null);
+      const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
       for (const engager of engagers) {
         await delay(500);
-        const profile = await fetchProfileSafe(engager, accountId, apiKey, dsn);
-        if (!profile) continue;
+        const profile = engager.author || engager;
+        const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
+        if (!fullProfile) continue;
 
-        const match = scoreProfileAgainstICP(profile, icp);
+        const match = scoreProfileAgainstICP(fullProfile, icp);
         if (!matchesTitleOrIndustry(match, icp)) continue;
-        if (isExcluded(profile, icp.excludeKeywords)) continue;
+        if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
-        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, postUrl);
+        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
         if (ok) inserted++;
       }
     } catch (e) { console.error('Hashtag engager fetch:', e); }
@@ -375,31 +450,40 @@ async function handleCompetitorFollowers(
 ): Promise<number> {
   let inserted = 0;
 
+  // Unipile doesn't have a direct "company followers" endpoint.
+  // Workaround: search for people who work at / are associated with the competitor company.
   for (const url of urls.slice(0, 3)) {
     await delay(2000);
-    const companyId = extractLinkedInId(url);
-    if (!companyId) continue;
+    const companyName = extractCompanyName(url);
+    if (!companyName) continue;
+
+    console.log(`competitor_followers: searching people associated with "${companyName}"`);
 
     try {
-      // Try to get company name for the signal text
-      let companyName = companyId;
-      try {
-        const compRes = await unipileGet(`/api/v1/linkedin/company/${companyId}?account_id=${accountId}`, apiKey, dsn);
-        if (compRes.ok) {
-          const compData = await compRes.json();
-          companyName = compData.name || compData.company_name || companyId;
-        }
-      } catch (_) { /* use ID as fallback */ }
+      // Use people search with company name as keyword
+      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
+        method: 'POST',
+        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName }),
+      });
+      if (!res.ok) {
+        console.error(`Competitor people search "${companyName}": ${res.status}`);
+        continue;
+      }
+      const data = await res.json();
+      const people = (data.items || data.results || []).slice(0, 20);
 
-      const followersRes = await unipileGet(`/api/v1/linkedin/company/${companyId}/followers?account_id=${accountId}&limit=30`, apiKey, dsn);
-      if (!followersRes.ok) { console.error(`Competitor followers ${companyId}: ${followersRes.status}`); continue; }
-      const followersData = await followersRes.json();
-      const followers = (followersData.items || followersData.followers || followersData.results || []).slice(0, 20);
+      console.log(`competitor_followers "${companyName}": found ${people.length} people`);
 
-      for (const follower of followers) {
+      for (const person of people) {
         await delay(500);
-        const profile = await fetchProfileSafe(follower, accountId, apiKey, dsn);
-        if (!profile) continue;
+        const profile = {
+          ...person,
+          title: person.headline || person.title || null,
+          linkedin_url: person.profile_url || person.public_profile_url || null,
+          public_id: person.public_identifier || person.id || null,
+          company: person.current_positions?.[0]?.company || null,
+        };
 
         const match = scoreProfileAgainstICP(profile, icp);
         if (!matchesTitleOrIndustry(match, icp)) continue;
@@ -423,47 +507,46 @@ async function handleCompetitorPostEngagers(
   for (const url of urls.slice(0, 3)) {
     await delay(2000);
     const companyId = extractLinkedInId(url);
+    const companyName = extractCompanyName(url);
     if (!companyId) continue;
 
     try {
-      let companyName = companyId;
-      try {
-        const compRes = await unipileGet(`/api/v1/linkedin/company/${companyId}?account_id=${accountId}`, apiKey, dsn);
-        if (compRes.ok) {
-          const compData = await compRes.json();
-          companyName = compData.name || compData.company_name || companyId;
-        }
-      } catch (_) { /* fallback */ }
-
-      // Get competitor's recent posts
-      const postsRes = await unipileGet(`/api/v1/linkedin/company/${companyId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
-      if (!postsRes.ok) continue;
+      // Correct Unipile endpoint: GET /api/v1/users/{identifier}/posts?is_company=true
+      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=5`, apiKey, dsn);
+      if (!postsRes.ok) {
+        console.error(`Competitor posts for ${companyId}: ${postsRes.status}`);
+        continue;
+      }
       const postsData = await postsRes.json();
       const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
+      console.log(`competitor_engagers "${companyName}": found ${posts.length} posts`);
+
       for (const post of posts) {
         await delay(1500);
-        const postId = post.id || post.provider_id;
+        const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        const reactionsRes = await unipileGet(`/api/v1/linkedin/post/${postId}/reactions?account_id=${accountId}`, apiKey, dsn);
+        // Correct endpoint: /api/v1/posts/{post_id}/reactions
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
         if (!reactionsRes.ok) continue;
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || reactionsData.reactions || []).slice(0, 10);
+        const engagers = (reactionsData.items || []).slice(0, 10);
 
-        const postUrl = post.url || post.share_url || post.permalink || (postId ? `https://www.linkedin.com/feed/update/${postId}` : null);
+        const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
         for (const engager of engagers) {
           await delay(500);
-          const profile = await fetchProfileSafe(engager, accountId, apiKey, dsn);
-          if (!profile) continue;
+          const profile = engager.author || engager;
+          const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
+          if (!fullProfile) continue;
 
-          const match = scoreProfileAgainstICP(profile, icp);
+          const match = scoreProfileAgainstICP(fullProfile, icp);
           if (!matchesTitleOrIndustry(match, icp)) continue;
-          if (isExcluded(profile, icp.excludeKeywords)) continue;
+          if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
-          const signal = `Engaged with ${companyName}'s post`;
-          const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, postUrl);
+          const signal = `Engaged with ${companyName || companyId}'s post`;
+          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
           if (ok) inserted++;
         }
       }
@@ -484,14 +567,16 @@ async function handleProfileEngagers(
     if (!profileId) continue;
 
     try {
-      // Get the target profile's recent posts
-      const postsRes = await unipileGet(`/api/v1/linkedin/profile/${profileId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
-      if (!postsRes.ok) continue;
+      // Correct Unipile endpoint: GET /api/v1/users/{identifier}/posts
+      const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
+      if (!postsRes.ok) {
+        console.error(`Profile engagers posts for ${profileId}: ${postsRes.status}`);
+        continue;
+      }
       const postsData = await postsRes.json();
       const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
       let profileName = profileId;
-      // Try to get name from first post author or profile
       try {
         const profRes = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${accountId}`, apiKey, dsn);
         if (profRes.ok) {
@@ -500,29 +585,33 @@ async function handleProfileEngagers(
         }
       } catch (_) { /* fallback */ }
 
+      console.log(`profile_engagers "${profileName}": found ${posts.length} posts`);
+
       for (const post of posts) {
         await delay(1500);
-        const postId = post.id || post.provider_id;
+        const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        const reactionsRes = await unipileGet(`/api/v1/linkedin/post/${postId}/reactions?account_id=${accountId}`, apiKey, dsn);
+        // Correct endpoint: /api/v1/posts/{post_id}/reactions
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
         if (!reactionsRes.ok) continue;
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || reactionsData.reactions || []).slice(0, 10);
+        const engagers = (reactionsData.items || []).slice(0, 10);
 
-        const postUrl = post.url || post.share_url || post.permalink || (postId ? `https://www.linkedin.com/feed/update/${postId}` : null);
+        const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
         for (const engager of engagers) {
           await delay(500);
-          const profile = await fetchProfileSafe(engager, accountId, apiKey, dsn);
-          if (!profile) continue;
+          const profile = engager.author || engager;
+          const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
+          if (!fullProfile) continue;
 
-          const match = scoreProfileAgainstICP(profile, icp);
+          const match = scoreProfileAgainstICP(fullProfile, icp);
           if (!matchesTitleOrIndustry(match, icp)) continue;
-          if (isExcluded(profile, icp.excludeKeywords)) continue;
+          if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${profileName}'s post`;
-          const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, postUrl);
+          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
           if (ok) inserted++;
         }
       }
@@ -531,7 +620,7 @@ async function handleProfileEngagers(
   return inserted;
 }
 
-// ─── ICP Scoring (shared with discover-leads) ─────────────────────────────────
+// ─── ICP Scoring ──────────────────────────────────────────────────────────────
 
 function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
   const title = profile.headline || profile.title || profile.role || '';
@@ -565,10 +654,8 @@ function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
 }
 
 function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters): boolean {
-  // At least title OR industry must match (if defined)
   if (icp.jobTitles.length > 0 && match.titleMatch) return true;
   if (icp.industries.length > 0 && match.industryMatch) return true;
-  // If neither is defined in ICP, accept all
   if (icp.jobTitles.length === 0 && icp.industries.length === 0) return true;
   return false;
 }
@@ -600,7 +687,7 @@ async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null,
 ): Promise<boolean> {
-  const linkedinProfileId = profile.public_id || profile.provider_id || profile.id;
+  const linkedinProfileId = profile.public_id || profile.public_identifier || profile.provider_id || profile.id;
   if (!linkedinProfileId) return false;
 
   // Dedup check
@@ -627,7 +714,7 @@ async function insertContact(
     last_name: lastName,
     title: profile.headline || profile.title || null,
     company: profile.company || profile.current_company?.name || null,
-    linkedin_url: profile.linkedin_url || profile.public_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
+    linkedin_url: profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId,
     source_campaign_id: null,
     signal,
@@ -651,27 +738,35 @@ function unipileGet(path: string, apiKey: string, dsn: string) {
   return fetch(`https://${dsn}${path}`, { headers: { 'X-API-KEY': apiKey } });
 }
 
-async function fetchProfileSafe(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
-  // If item already has profile data, use it
-  if (item.first_name || item.headline) return item;
+async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
+  // If item already has sufficient profile data, use it directly
+  if (item.first_name && (item.headline || item.title)) return item;
 
-  const id = item.author_id || item.provider_id || item.id || item.public_id;
-  if (!id) return null;
+  // Try to get identifier from various fields
+  const id = item.provider_id || item.id || item.public_id || item.public_identifier || item.author_id;
+  if (!id) return item.first_name ? item : null; // Return partial data if we have at least a name
 
   try {
+    // Use the same profile endpoint that works in discover-leads
     const res = await unipileGet(`/api/v1/linkedin/profile/${id}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) return null;
+    if (!res.ok) return item.first_name ? item : null;
     return await res.json();
-  } catch { return null; }
+  } catch { return item.first_name ? item : null; }
 }
 
 function extractLinkedInId(url: string): string | null {
   if (!url) return null;
-  // Handle /company/name/ or /in/name/ patterns
   const match = url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/);
   if (match) return match[1];
-  // If it's just a plain ID/name
   return url.replace(/^https?:\/\//, '').replace(/\/$/, '') || null;
+}
+
+function extractCompanyName(url: string): string | null {
+  if (!url) return null;
+  const id = extractLinkedInId(url);
+  if (!id) return null;
+  // Convert URL slug to readable name: "my-company-name" → "My Company Name"
+  return id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
