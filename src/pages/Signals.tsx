@@ -1,8 +1,15 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X } from "lucide-react";
+import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import HowItWorksModal from "@/components/HowItWorksModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SignalAgent {
   id: string;
@@ -23,6 +30,74 @@ const AGENT_TYPE_LABELS: Record<string, string> = {
   funding: "Funding",
 };
 
+// ── Mobile agent card ────────────────────────────────────────────────────────
+function AgentCard({
+  agent,
+  onToggle,
+  onDelete,
+}: {
+  agent: SignalAgent;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const isActive = agent.status === "active";
+
+  return (
+    <div className={`rounded-xl border p-4 space-y-3 ${isActive ? "border-green-200 bg-green-50/40" : "border-border bg-background"}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <Radio className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{agent.name}</p>
+            <span className={`inline-block text-[10px] font-semibold rounded px-1.5 py-0.5 mt-0.5 ${isActive ? "text-green-600 bg-green-50 border border-green-200" : "text-muted-foreground bg-muted border border-border"}`}>
+              {isActive ? "Active" : "Paused"}
+            </span>
+          </div>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
+              {isActive ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="gap-2 text-sm text-destructive focus:text-destructive">
+              <Trash2 className="w-3.5 h-3.5" />Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg bg-muted/40 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Type</p>
+          <p className="text-xs font-medium text-foreground mt-0.5 truncate">{AGENT_TYPE_LABELS[agent.agent_type] || "Signals"}</p>
+        </div>
+        <div className="rounded-lg bg-muted/40 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Results</p>
+          <p className="text-sm font-bold text-green-600 mt-0.5">{agent.results_count}</p>
+        </div>
+      </div>
+
+      {isActive && (
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" style={{ animationDelay: "150ms" }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" style={{ animationDelay: "300ms" }} />
+          <span className="text-xs text-muted-foreground ml-1">Hunting for leads...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Signals() {
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +107,6 @@ export default function Signals() {
   const [activeAgent, setActiveAgent] = useState<SignalAgent | null>(null);
   const [toastAgent, setToastAgent] = useState<SignalAgent | null>(null);
 
-  // Create agent form
   const [newName, setNewName] = useState("My Agent");
   const [newType, setNewType] = useState("recently_changed_jobs");
   const [newKeywords, setNewKeywords] = useState("");
@@ -51,7 +125,6 @@ export default function Signals() {
       .order("created_at", { ascending: false });
     if (!error && data) {
       setAgents(data as SignalAgent[]);
-      // Set first active agent as the "running" one
       const active = data.find((a: any) => a.status === "active");
       if (active) setActiveAgent(active as SignalAgent);
     }
@@ -61,24 +134,12 @@ export default function Signals() {
   async function createAgent() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
-    const keywords = newKeywords
-      .split(",")
-      .map((k) => k.trim())
-      .filter(Boolean);
-
+    const keywords = newKeywords.split(",").map((k) => k.trim()).filter(Boolean);
     const { data, error } = await supabase
       .from("signal_agents")
-      .insert({
-        user_id: user.id,
-        name: newName,
-        agent_type: newType,
-        keywords,
-        status: "active",
-        last_launched_at: new Date().toISOString(),
-      })
+      .insert({ user_id: user.id, name: newName, agent_type: newType, keywords, status: "active", last_launched_at: new Date().toISOString() })
       .select()
       .single();
-
     if (!error && data) {
       setShowCreate(false);
       setNewName("My Agent");
@@ -93,10 +154,7 @@ export default function Signals() {
     const newStatus = agent.status === "active" ? "paused" : "active";
     await supabase
       .from("signal_agents")
-      .update({
-        status: newStatus,
-        ...(newStatus === "active" ? { last_launched_at: new Date().toISOString() } : {}),
-      })
+      .update({ status: newStatus, ...(newStatus === "active" ? { last_launched_at: new Date().toISOString() } : {}) })
       .eq("id", agent.id);
     if (newStatus === "active") {
       setToastAgent({ ...agent, status: "active" });
@@ -122,27 +180,25 @@ export default function Signals() {
 
   if (showCreate) {
     return (
-      <div className="relative min-h-full bg-card rounded-2xl m-4 overflow-hidden">
+      <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
         <CreateAgentWizard onClose={() => setShowCreate(false)} onCreated={fetchAgents} />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-full bg-card rounded-2xl m-4 p-6 md:p-8">
+    <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 p-4 md:p-8">
       {/* Toast notification */}
       {toastAgent && (
-        <div className="fixed top-6 right-6 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[320px] animate-in slide-in-from-right">
+        <div className="fixed top-4 right-4 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[min(320px,calc(100vw-2rem))] animate-in slide-in-from-right">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
               <Radio className="w-4 h-4 text-gray-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-gray-900">{toastAgent.name}</span>
-                <span className="text-[11px] font-semibold text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
-                  Active
-                </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-sm text-gray-900 truncate">{toastAgent.name}</span>
+                <span className="text-[11px] font-semibold text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">Active</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">{timeAgo(toastAgent.last_launched_at || toastAgent.created_at)}</p>
               <div className="flex items-center gap-1.5 mt-2">
@@ -152,7 +208,7 @@ export default function Signals() {
                 <span className="text-xs text-gray-500 ml-1">Hunting for high-intent leads...</span>
               </div>
             </div>
-            <button onClick={() => setToastAgent(null)} className="text-gray-400 hover:text-gray-600">
+            <button onClick={() => setToastAgent(null)} className="text-gray-400 hover:text-gray-600 shrink-0">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -160,61 +216,53 @@ export default function Signals() {
       )}
 
       {/* Header */}
-      <div className="flex items-center gap-3 mb-1">
-        <div className="flex items-center gap-2">
-          <Radio className="w-5 h-5 text-green-500" />
-          <h1 className="text-xl font-bold text-gray-900">Signals Agents</h1>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-            {activeCount}
-          </span>
-          <span className="text-gray-400">|</span>
-          <span>{maxAgents} max</span>
-          <Settings className="w-4 h-4 text-gray-400" />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Radio className="w-5 h-5 text-green-500" />
+            <h1 className="text-xl font-bold text-gray-900">Signals Agents</h1>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+              {activeCount}
+            </span>
+            <span className="text-gray-400">|</span>
+            <span>{maxAgents} max</span>
+            <Settings className="w-4 h-4 text-gray-400" />
+          </div>
         </div>
         <button
           onClick={() => setShowHowItWorks(!showHowItWorks)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-red-500 border border-red-200 rounded-full px-3 py-1 hover:bg-red-50 transition-colors"
+          className="self-start sm:self-auto flex items-center gap-1.5 text-xs font-semibold text-red-500 border border-red-200 rounded-full px-3 py-1.5 hover:bg-red-50 transition-colors"
         >
           <HelpCircle className="w-3.5 h-3.5" />
           HOW IT WORKS?
         </button>
       </div>
-      <p className="text-sm text-gray-500 mb-6">Manage your automated lead generation agents & signals</p>
+      <p className="text-sm text-gray-500 mb-5">Manage your automated lead generation agents & signals</p>
 
-      {/* How it works modal */}
       <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
 
       {/* Active Agent Card */}
       {activeAgent && (
-        <div className="border border-gray-200 rounded-xl p-5 mb-6 max-w-md">
+        <div className="border border-gray-200 rounded-xl p-4 md:p-5 mb-5 max-w-md">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
               <Radio className="w-4 h-4 text-gray-500" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
                 <span className="font-semibold text-sm text-gray-900">{activeAgent.name}</span>
-                <span className="text-[11px] font-semibold text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
-                  Active
-                </span>
+                <span className="text-[11px] font-semibold text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">Active</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">{timeAgo(activeAgent.last_launched_at || activeAgent.created_at)}</p>
             </div>
           </div>
           <div className="space-y-1 text-sm text-gray-700 mb-3">
-            <p>
-              <span className="font-medium">Type:</span> {AGENT_TYPE_LABELS[activeAgent.agent_type] || activeAgent.agent_type}
-            </p>
-            <p>
-              <span className="font-medium">Keyword:</span>{" "}
-              {activeAgent.keywords?.length
-                ? activeAgent.keywords.map((k) => `"${k}"`).join(" OR ")
-                : "No keywords set"}
-            </p>
+            <p><span className="font-medium">Type:</span> {AGENT_TYPE_LABELS[activeAgent.agent_type] || activeAgent.agent_type}</p>
+            <p><span className="font-medium">Keyword:</span>{" "}{activeAgent.keywords?.length ? activeAgent.keywords.map((k) => `"${k}"`).join(" OR ") : "No keywords set"}</p>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
@@ -225,59 +273,58 @@ export default function Signals() {
         </div>
       )}
 
-      {/* Agents Table */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3 mb-4">
+        {loading ? (
+          <p className="text-center py-10 text-sm text-muted-foreground">Loading agents...</p>
+        ) : agents.length === 0 ? (
+          <p className="text-center py-10 text-sm text-muted-foreground">No agents yet. Create your first one below.</p>
+        ) : (
+          agents.map((agent) => (
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              onToggle={() => toggleAgentStatus(agent)}
+              onDelete={() => deleteAgent(agent.id)}
+            />
+          ))
+        )}
+        <button
+          onClick={() => setShowCreate(true)}
+          disabled={agents.length >= maxAgents}
+          className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-orange-500 bg-orange-50/50 border border-dashed border-orange-200 rounded-xl hover:bg-orange-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Plus className="w-4 h-4" />
+          Create Agent
+        </button>
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block border border-gray-200 rounded-xl overflow-hidden mb-4">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">
-                Agent Name
-              </th>
-              <th className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">
-                Type
-              </th>
-              <th className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">
-                Results
-              </th>
-              <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">
-                Actions
-              </th>
+              <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Agent Name</th>
+              <th className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Type</th>
+              <th className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Results</th>
+              <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={4} className="text-center py-10 text-sm text-gray-400">
-                  Loading agents...
-                </td>
-              </tr>
+              <tr><td colSpan={4} className="text-center py-10 text-sm text-gray-400">Loading agents...</td></tr>
             ) : agents.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="text-center py-10 text-sm text-gray-400">
-                  No agents yet. Create your first one below.
-                </td>
-              </tr>
+              <tr><td colSpan={4} className="text-center py-10 text-sm text-gray-400">No agents yet. Create your first one below.</td></tr>
             ) : (
               agents.map((agent) => (
-                <tr
-                  key={agent.id}
-                  className={`border-b border-gray-50 ${
-                    agent.status === "active" ? "bg-green-50/40" : ""
-                  }`}
-                >
+                <tr key={agent.id} className={`border-b border-gray-50 ${agent.status === "active" ? "bg-green-50/40" : ""}`}>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                         <Radio className="w-3.5 h-3.5 text-gray-400" />
                       </div>
                       <span className="font-medium text-sm text-gray-900">{agent.name}</span>
-                      <span
-                        className={`text-[11px] font-semibold rounded px-1.5 py-0.5 ${
-                          agent.status === "active"
-                            ? "text-green-600 bg-green-50 border border-green-200"
-                            : "text-gray-500 bg-gray-100 border border-gray-200"
-                        }`}
-                      >
+                      <span className={`text-[11px] font-semibold rounded px-1.5 py-0.5 ${agent.status === "active" ? "text-green-600 bg-green-50 border border-green-200" : "text-gray-500 bg-gray-100 border border-gray-200"}`}>
                         {agent.status === "active" ? "Active" : "Paused"}
                       </span>
                     </div>
@@ -296,20 +343,12 @@ export default function Signals() {
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
                       <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors">
-                        <Calendar className="w-3.5 h-3.5" />
-                        Next launches
+                        <Calendar className="w-3.5 h-3.5" />Next launches
                       </button>
-                      <button
-                        onClick={() => toggleAgentStatus(agent)}
-                        className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Edit
+                      <button onClick={() => toggleAgentStatus(agent)} className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors">
+                        <Pencil className="w-3.5 h-3.5" />Edit
                       </button>
-                      <button
-                        onClick={() => deleteAgent(agent.id)}
-                        className="text-gray-400 hover:text-gray-600 p-1"
-                      >
+                      <button onClick={() => deleteAgent(agent.id)} className="text-gray-400 hover:text-gray-600 p-1">
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
                     </div>
@@ -319,17 +358,13 @@ export default function Signals() {
             )}
           </tbody>
         </table>
-
-        {/* Create Agent row */}
         <div className="bg-orange-50/50 border-t border-dashed border-orange-200">
           <button
             onClick={() => setShowCreate(true)}
             disabled={agents.length >= maxAgents}
             className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-orange-500 hover:text-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="w-4 h-4" />
-            Create Agent
-            <ChevronDown className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />Create Agent<ChevronDown className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -344,7 +379,7 @@ export default function Signals() {
       </button>
 
       {showPreviousLaunches && (
-        <div className="mt-4 border border-gray-200 rounded-xl p-5">
+        <div className="mt-4 border border-gray-200 rounded-xl p-4 md:p-5">
           {agents.filter((a) => a.last_launched_at).length === 0 ? (
             <p className="text-sm text-gray-400 text-center">No previous launches yet.</p>
           ) : (
@@ -352,15 +387,15 @@ export default function Signals() {
               {agents
                 .filter((a) => a.last_launched_at)
                 .map((a) => (
-                  <div key={a.id} className="flex items-center justify-between text-sm">
+                  <div key={a.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm border-b border-gray-100 last:border-0 pb-2 last:pb-0">
                     <div className="flex items-center gap-2">
-                      <Radio className="w-3.5 h-3.5 text-gray-400" />
+                      <Radio className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       <span className="font-medium text-gray-700">{a.name}</span>
                     </div>
-                    <span className="text-xs text-gray-400">
-                      {a.last_launched_at ? new Date(a.last_launched_at).toLocaleString() : "—"}
-                    </span>
-                    <span className="text-xs text-green-600">{a.results_count} results</span>
+                    <div className="flex items-center gap-3 pl-5 sm:pl-0">
+                      <span className="text-xs text-gray-400">{a.last_launched_at ? new Date(a.last_launched_at).toLocaleString() : "—"}</span>
+                      <span className="text-xs text-green-600">{a.results_count} results</span>
+                    </div>
                   </div>
                 ))}
             </div>
