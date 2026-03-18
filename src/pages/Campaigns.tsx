@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/table";
 import gojiIcon from "@/assets/gojiberry-icon.png";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
+import { toast } from "sonner";
+import { Info } from "lucide-react";
+
+const MAX_CAMPAIGNS = 2;
 
 type Campaign = {
   id: string;
@@ -28,6 +32,8 @@ export default function CampaignsPage() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
   useEffect(() => {
     async function load() {
