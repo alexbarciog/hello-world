@@ -9,7 +9,7 @@ const HeroCards = () => {
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Engagement signals</h3>
-          <ArrowRight className="w-5 h-5 text-muted-foreground" />
+          <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
         </div>
 
         {/* Group 2: Lead flow */}
