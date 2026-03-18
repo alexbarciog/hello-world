@@ -25,7 +25,7 @@ const HeroCards = () => {
                   <div className="text-sm font-semibold text-foreground">Michael Chang</div>
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
                 </div>
-                <div className="text-xs text-muted-foreground">VP of Sales at InnovateIQ</div>
+                <div className="text-xs" style={{ color: '#4A4A4A' }}>VP of Sales at InnovateIQ</div>
                 <div className="text-xs text-muted-foreground">michael@innovateiq.com</div>
               </div>
             </div>
