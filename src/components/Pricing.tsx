@@ -72,20 +72,6 @@ const Pricing = () => {
               </a>
             </div>
 
-            {/* Divider */}
-            <div className="mx-8 mt-8 border-t border-foreground/10" />
-
-            {/* Features */}
-            <div className="px-8 pt-6 pb-8">
-              <ul className="space-y-4">
-                {features.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-            </div>
 
             {/* Bottom link */}
             <div className="px-8 pb-8">
