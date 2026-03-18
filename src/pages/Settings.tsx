@@ -755,7 +755,9 @@ export default function Settings() {
         className="border-b border-border px-8 py-5"
       >
         <div className="flex items-center gap-2.5">
-          <SettingsIcon className="w-4.5 h-4.5 shrink-0" style={{ color: "hsl(var(--goji-coral))" }} />
+          <span className="[&_svg]:stroke-[url(#section-icon-gradient)]">
+            <SettingsIcon className="w-4.5 h-4.5 shrink-0" />
+          </span>
           <h1 className="text-lg font-bold text-foreground">Account Settings</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
