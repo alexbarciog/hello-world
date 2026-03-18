@@ -41,7 +41,7 @@ const HeroCards = () => {
             <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="flex justify-between gap-2">
               <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-                <Heart className="w-3 h-3" /> Liked your post
+                <Heart className="w-3 h-3" /> Liked <span className="underline text-foreground">this</span> post
               </span>
               <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
                 <UserPlus className="w-3 h-3" /> Followed you
