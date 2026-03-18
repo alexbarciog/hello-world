@@ -180,6 +180,10 @@ async function handleUnipileNotify(
   }
 
   await saveAccountId(userId, accountId, supabaseUrl, serviceRoleKey);
+
+  // Activate pending campaigns & agents, then trigger lead discovery
+  await activatePendingAndDiscover(userId, supabaseUrl, serviceRoleKey);
+
   return jsonResponse({ status: 'saved', account_id: accountId });
 }
 
