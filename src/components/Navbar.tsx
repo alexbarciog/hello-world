@@ -27,21 +27,21 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm font-medium text-goji-text-muted hover:text-goji-dark transition-colors">
+          <a href="#features" className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">
             Solution
           </a>
-          <a href="#features" className="text-sm font-medium text-goji-text-muted hover:text-goji-dark transition-colors">
+          <a href="#features" className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">
             Features
           </a>
-          <a href="#pricing" className="text-sm font-medium text-goji-text-muted hover:text-goji-dark transition-colors">
+          <a href="#pricing" className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">
             Pricing
           </a>
-          <button onClick={() => navigate("/dashboard")} className="text-sm font-semibold hover:opacity-80 transition-opacity" style={{ color: "hsl(var(--goji-coral))" }}>
+          <button onClick={() => navigate("/dashboard")} className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">
             Dashboard
           </button>
           <button
             onClick={(e) => { e.preventDefault(); navigate("/help"); }}
-            className="text-sm font-medium text-goji-text-muted hover:text-goji-dark transition-colors"
+            className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity"
           >
             Help Center
           </button>
