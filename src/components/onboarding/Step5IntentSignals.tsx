@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, MapPin, Sparkles, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import { CardShell } from "./CardShell";
 import { OnboardingNav } from "./OnboardingNav";
 import type { OnboardingData } from "./types";
