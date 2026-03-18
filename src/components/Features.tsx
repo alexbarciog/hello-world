@@ -38,25 +38,24 @@ interface VideoContainerProps {
 }
 
 function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
+  if (videoSrc) {
+    return (
+      <video
+        src={videoSrc}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="w-full h-auto block rounded-[28px]"
+      />
+    );
+  }
   return (
     <div
-      className="rounded-[28px] overflow-hidden w-full"
-      style={{ background: gradient }}
+      className="rounded-[28px] w-full flex items-center justify-center"
+      style={{ background: gradient, minHeight: 240 }}
     >
-      {videoSrc ? (
-        <video
-          src={videoSrc}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-auto block"
-        />
-      ) : (
-        <div className="w-full flex items-center justify-center" style={{ minHeight: 240 }}>
-          <span className="text-white/50 text-sm">Video placeholder</span>
-        </div>
-      )}
+      <span className="text-white/50 text-sm">Video placeholder</span>
     </div>
   );
 }
