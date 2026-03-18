@@ -40,14 +40,16 @@ interface VideoContainerProps {
 function VideoContainer({ gradient, videoSrc }: VideoContainerProps) {
   if (videoSrc) {
     return (
-      <video
-        src={videoSrc}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="w-full h-auto block rounded-[28px] overflow-hidden"
-      />
+      <div className="rounded-[28px] overflow-hidden">
+        <video
+          src={videoSrc}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover scale-[1.02]"
+        />
+      </div>
     );
   }
   return (
