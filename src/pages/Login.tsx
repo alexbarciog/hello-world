@@ -27,11 +27,11 @@ export default function Login() {
       toast.error(error.message);
     } else {
       toast.success("Welcome back!");
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_complete")
-        .eq("user_id", authData.user.id)
-        .maybeSingle();
+      const { data: profile } = await supabase.
+      from("profiles").
+      select("onboarding_complete").
+      eq("user_id", authData.user.id).
+      maybeSingle();
       if (profile?.onboarding_complete) {
         navigate("/dashboard");
       } else {
@@ -43,7 +43,7 @@ export default function Login() {
   const handleGoogle = async () => {
     setGoogleLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/dashboard",
+      redirect_uri: window.location.origin + "/dashboard"
     });
     if (result?.error) {
       toast.error("Google sign-in failed. Please try again.");
@@ -52,7 +52,7 @@ export default function Login() {
   };
 
   const inputCls =
-    "w-full border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring bg-background transition-colors";
+  "w-full border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring bg-background transition-colors";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -60,7 +60,7 @@ export default function Login() {
       <div className="px-8 py-5">
         <Link to="/" className="flex items-center gap-2">
           <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
-          <img src={intentslyLogo} alt="Intentsly" className="h-5 object-contain" />
+          
         </Link>
       </div>
 
@@ -83,8 +83,8 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputCls}
-                required
-              />
+                required />
+              
             </div>
 
             {/* Password */}
@@ -93,8 +93,8 @@ export default function Login() {
                 <label className="text-sm font-medium text-foreground">Password</label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  
                   Forgot password?
                 </Link>
               </div>
@@ -105,25 +105,25 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={`${inputCls} pr-11`}
-                  required
-                />
+                  required />
+                
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                  
+                  {showPassword ?
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
                       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                       <line x1="1" y1="1" x2="23" y2="23" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                    </svg> :
+
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                  )}
+                  }
                 </button>
               </div>
             </div>
@@ -132,14 +132,14 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 transition-opacity disabled:opacity-60 mt-2"
-            >
-              {loading ? (
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-60 mt-2 bg-secondary-foreground">
+              
+              {loading ?
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : null}
+                </svg> :
+              null}
               {loading ? "Signing in..." : "Log in"}
             </button>
           </form>
@@ -155,8 +155,8 @@ export default function Login() {
           <button
             onClick={handleGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2 border border-border rounded-lg py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-60"
-          >
+            className="w-full flex items-center justify-center gap-2 border border-border rounded-lg py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-60">
+            
             <svg viewBox="0 0 24 24" className="w-4 h-4">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -175,6 +175,6 @@ export default function Login() {
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
