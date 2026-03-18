@@ -88,7 +88,7 @@ const HeroCards = () => {
       </div>
 
       {/* Card 2: Lead Insights */}
-      <div className="rounded-3xl bg-foreground p-5 text-left flex flex-col gap-3 relative overflow-hidden opacity-80 hover:opacity-100 transition-opacity duration-300">
+      <div className="group rounded-3xl bg-foreground p-5 text-left flex flex-col gap-3 relative overflow-hidden opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-base font-bold text-background">Lead insights</h3>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
