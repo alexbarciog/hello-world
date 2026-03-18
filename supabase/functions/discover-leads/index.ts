@@ -269,6 +269,85 @@ function checkRecentJobChange(profile: any): boolean {
   return start >= ninetyDaysAgo;
 }
 
+function normalizeText(value: string) {
+  return value.toLowerCase().replace(/\s+cer$/g, '').trim();
+}
+
+function matchesTextList(value: string, candidates: string[]) {
+  const haystack = normalizeText(value || '');
+  const normalizedCandidates = candidates.map(normalizeText).filter(Boolean);
+  return !normalizedCandidates.length || normalizedCandidates.some((candidate) => haystack.includes(candidate));
+}
+
+function matchesCampaignProfile(profile: any, campaign: any) {
+  const title = profile.headline || profile.title || profile.role || '';
+  const industry = profile.industry || '';
+  const location = profile.location || profile.country || '';
+
+  const titleMatch = matchesTextList(title, campaign.icp_job_titles || []);
+  const industryMatch = matchesTextList(industry, campaign.icp_industries || []);
+  const locationMatch = matchesTextList(location, campaign.icp_locations || []);
+
+  return titleMatch && industryMatch && locationMatch;
+}
+
+async function searchPeopleFallback(
+  campaign: any,
+  accountId: string,
+  unipileApiKey: string,
+  unipileDsn: string,
+): Promise<any[]> {
+  const searches = [
+    ...(campaign.icp_job_titles || []).slice(0, 3),
+    ...(campaign.discovery_keywords || []).slice(0, 2),
+  ].filter(Boolean);
+
+  const profiles: any[] = [];
+
+  for (const keyword of searches) {
+    if (profiles.length >= 10) break;
+
+    try {
+      await delay(1200);
+      const response = await fetch(`https://${unipileDsn}/api/v1/linkedin/search?account_id=${accountId}`, {
+        method: 'POST',
+        headers: {
+          'X-API-KEY': unipileApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          api: 'classic',
+          category: 'people',
+          keywords: keyword,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`People fallback search failed for "${keyword}": ${response.status} ${errorText}`);
+        continue;
+      }
+
+      const data = await response.json();
+      const items = data.items || data.results || [];
+      for (const item of items) {
+        if (profiles.length >= 10) break;
+        profiles.push({
+          ...item,
+          title: item.headline || item.title || null,
+          linkedin_url: item.profile_url || item.public_profile_url || null,
+          public_id: item.public_identifier || item.id || null,
+          company: item.current_positions?.[0]?.company || null,
+        });
+      }
+    } catch (error) {
+      console.error(`People fallback search error for "${keyword}":`, error);
+    }
+  }
+
+  return profiles;
+}
+
 async function generateKeywords(campaign: any, lovableApiKey: string | undefined): Promise<string[]> {
   if (!lovableApiKey) {
     console.error('LOVABLE_API_KEY not configured, cannot generate keywords');
