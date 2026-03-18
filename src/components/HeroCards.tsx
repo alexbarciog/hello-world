@@ -174,9 +174,6 @@ const HeroCards = () => {
               <button className="flex-1 btn-cta !rounded-lg inline-flex items-center justify-center gap-1.5 text-xs px-3 py-2.5">
                 <Download className="w-3 h-3" /> Save
               </button>
-              <button className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-lg border border-border text-foreground">
-                <UserPlus className="w-3 h-3" /> Connect
-              </button>
             </div>
            </div>
           </div>
