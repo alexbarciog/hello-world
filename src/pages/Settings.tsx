@@ -1007,17 +1007,19 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-full bg-[hsl(220_20%_97%)]">
-      <div className="bg-white border-b border-gray-100 px-8 py-4">
+    <div className="min-h-full bg-card rounded-2xl m-4">
+      {/* Header */}
+      <div className="border-b border-border px-8 py-4">
         <div className="flex items-center gap-2">
           <SettingsIcon className="w-4 h-4" style={{ color: "hsl(var(--goji-coral))" }} />
-          <h1 className="text-base font-bold text-gray-900">Account Settings</h1>
+          <h1 className="text-base font-bold text-foreground">Account Settings</h1>
         </div>
-        <p className="text-xs text-gray-400 mt-0.5 ml-6">Manage your company information and profile settings</p>
+        <p className="text-xs text-muted-foreground mt-0.5 ml-6">Manage your company information and profile settings</p>
       </div>
 
       <div className="px-8 py-6 max-w-5xl">
-        <div className="bg-white border border-gray-200 rounded-xl mb-4 px-2">
+        {/* Tabs strip */}
+        <div className="border border-border rounded-xl mb-4 px-2">
           <div className="flex items-center overflow-x-auto">
             {tabsList.map((tab) => {
               const active = activeTab === tab.id;
@@ -1026,7 +1028,7 @@ export default function Settings() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-3.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    active ? "border-[hsl(var(--goji-coral))] text-[hsl(var(--goji-coral))]" : "border-transparent text-gray-500 hover:text-gray-700"
+                    active ? "border-[hsl(var(--goji-coral))] text-[hsl(var(--goji-coral))]" : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {tab.icon}
@@ -1037,7 +1039,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="border border-border rounded-xl p-6">
           {renderContent()}
         </div>
       </div>
