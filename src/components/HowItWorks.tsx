@@ -147,13 +147,15 @@ const HowItWorks = () => {
             <div key={i} className="flex flex-col gap-5">
               <div className="flex-1">{step.visual}</div>
               <div className="px-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-foreground text-background text-[10px] font-bold shrink-0">
+                <div className="flex items-start gap-3 mb-2">
+                  <span className="text-[40px] font-bold text-foreground leading-none" style={{ letterSpacing: '-0.5px' }}>
                     {step.num}
                   </span>
-                  <h3 className="text-base font-bold text-foreground">{step.title}</h3>
+                  <div className="pt-2">
+                    <h3 className="text-base font-bold text-foreground">{step.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed pl-9">{step.description}</p>
               </div>
             </div>
           ))}
