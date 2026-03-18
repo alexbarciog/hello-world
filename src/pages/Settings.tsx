@@ -596,6 +596,60 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
               Disconnect
             </button>
           </motion.div>
+
+          {/* Daily limits sliders */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.35, ease: easing }}
+            className="mt-5 space-y-6"
+          >
+            {/* Messages per day */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Messages per day</span>
+                </div>
+                <span className="text-sm font-bold text-foreground tabular-nums">{dailyMessages[0]}</span>
+              </div>
+              <Slider
+                value={dailyMessages}
+                onValueChange={setDailyMessages}
+                min={5}
+                max={30}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-[11px] text-muted-foreground">
+                <span>5</span>
+                <span>30</span>
+              </div>
+            </div>
+
+            {/* Connection requests per day */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">Connection requests per day</span>
+                </div>
+                <span className="text-sm font-bold text-foreground tabular-nums">{dailyConnections[0]}</span>
+              </div>
+              <Slider
+                value={dailyConnections}
+                onValueChange={setDailyConnections}
+                min={5}
+                max={30}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-[11px] text-muted-foreground">
+                <span>5</span>
+                <span>30</span>
+              </div>
+            </div>
+          </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-4 mb-6 p-4 rounded-xl bg-muted/40 border border-border">
