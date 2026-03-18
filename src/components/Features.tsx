@@ -83,7 +83,7 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
         transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${delay}ms`,
       }}
     >
-      <h3 className="text-3xl md:text-4xl font-light text-foreground leading-tight tracking-tight">
+      <h3 className="text-3xl md:text-4xl font-normal text-foreground leading-tight tracking-tight">
         {title}
       </h3>
       <p className="text-base text-muted-foreground leading-relaxed max-w-md">
