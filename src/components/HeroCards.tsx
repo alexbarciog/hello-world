@@ -16,7 +16,7 @@ const HeroCards = () => {
           {/* Dashed vertical line from profile to tags */}
           <div className="absolute left-0 top-1/2 bottom-[-3.5rem] w-0 border-l-2 border-dashed border-primary/30" />
           {/* Arrow dot at start */}
-          <div className="absolute left-[-3px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary/40" />
+          
           <div className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
             <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-background shrink-0 ring-2 ring-background">MC</div>
             <div className="flex-1 min-w-0">
