@@ -134,7 +134,7 @@ const Features = () => {
             transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
           }}
         >
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground leading-tight tracking-tight max-w-2xl mx-auto">
+          <h2 className="text-5xl md:text-6xl font-normal text-foreground leading-tight tracking-tight max-w-2xl mx-auto">
             A better way to build<br />your sales pipeline
           </h2>
         </div>
