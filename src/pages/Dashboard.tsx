@@ -72,7 +72,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-full bg-[hsl(220_20%_97%)] px-8 py-6 relative">
+    <div className="min-h-full bg-card rounded-2xl px-8 py-6 relative m-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">
