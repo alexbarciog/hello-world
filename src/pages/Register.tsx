@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
+import intentslyLogo from "@/assets/intentsly-logo.png";
 
 interface InviteData {
   email: string;
@@ -13,24 +14,67 @@ interface InviteData {
   accepted_at: string | null;
 }
 
+const testimonials = [
+  {
+    quote: "We made our money back 6× already, and our week is now fully booked with leads Intentsly found for us.",
+    author: "Stuart Brent, Founder @ SaasyDB",
+  },
+  {
+    quote: "Intentsly changed the way we approach outreach. The signal detection is incredibly accurate.",
+    author: "Maria T, Head of Growth @ Scalify",
+  },
+  {
+    quote: "Best investment for our sales team. We went from 3 meetings a week to 15 in the first month.",
+    author: "James R, VP Sales @ CloudPeak",
+  },
+  {
+    quote: "Finally a tool that actually finds people who want to buy, not just anyone with a LinkedIn profile.",
+    author: "Anna K, Co-Founder @ Nestly",
+  },
+];
+
+const passwordRules = [
+  { label: "8+ characters", test: (p: string) => p.length >= 8 },
+  { label: "1 uppercase and 1 lowercase letter", test: (p: string) => /[A-Z]/.test(p) && /[a-z]/.test(p) },
+  { label: "1 number", test: (p: string) => /\d/.test(p) },
+];
+
 export default function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get("invite");
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  // Step state
+  const [step, setStep] = useState(1);
+
+  // Step 1
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Step 2
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [company, setCompany] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [inviteData, setInviteData] = useState<InviteData | null>(null);
   const [inviteLoading, setInviteLoading] = useState(!!inviteToken);
   const [inviteError, setInviteError] = useState<string | null>(null);
 
+  // Testimonial carousel
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     if (!inviteToken) return;
-
     async function loadInvite() {
       setInviteLoading(true);
       const { data, error } = await supabase
@@ -38,7 +82,6 @@ export default function Register() {
         .select("email, inviter_name, organization_name, expires_at, accepted_at")
         .eq("token", inviteToken)
         .maybeSingle();
-
       if (error || !data) {
         setInviteError("This invitation link is invalid or has expired.");
       } else if (data.accepted_at) {
@@ -51,18 +94,28 @@ export default function Register() {
       }
       setInviteLoading(false);
     }
-
     loadInvite();
   }, [inviteToken]);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const allRulesPassed = passwordRules.every((r) => r.test(password));
+
+  const handleStep1 = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !email || !password) {
-      toast.error("Please fill in all required fields");
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
       return;
     }
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    if (!allRulesPassed) {
+      toast.error("Password doesn't meet requirements");
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firstName) {
+      toast.error("Please enter your first name");
       return;
     }
     setLoading(true);
@@ -82,7 +135,6 @@ export default function Register() {
       return;
     }
 
-    // Mark invitation as accepted
     if (inviteToken && inviteData) {
       await supabase
         .from("invitations")
@@ -106,226 +158,387 @@ export default function Register() {
     setGoogleLoading(false);
   };
 
-  const inputCls = "w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:border-[hsl(var(--goji-coral))] focus:ring-[hsl(var(--goji-coral))] bg-white";
+  const inputCls =
+    "w-full border border-border rounded-lg px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring bg-background transition-colors";
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Left – form */}
-      <div className="w-[45%] relative flex flex-col bg-white">
-        <div className="absolute top-5 right-6 text-sm text-gray-500">
-          Already have an account?{" "}
-          <Link to="/login" className="font-semibold hover:underline" style={{ color: "hsl(var(--goji-coral))" }}>
-            Sign in here
+      {/* LEFT — form */}
+      <div className="w-full md:w-[55%] flex flex-col bg-background">
+        {/* Logo */}
+        <div className="px-8 py-5">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
+            <img src={intentslyLogo} alt="Intentsly" className="h-5 object-contain" />
           </Link>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center px-8">
+        {/* Form area */}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 pb-10">
           <div className="w-full max-w-sm">
-            {/* Title */}
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold text-gray-900">Welcome to</h1>
-              <img src={gojiIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
-              <span className="text-2xl font-bold text-gray-900 tracking-tight">intentsly</span>
+            {/* Step progress */}
+            <div className="flex flex-col items-center mb-8">
+              <p className="text-sm text-muted-foreground mb-2">Step {step} of 2</p>
+              <div className="flex gap-1 w-48">
+                <div className="h-0.5 flex-1 rounded-full bg-foreground transition-all duration-300" />
+                <div className={`h-0.5 flex-1 rounded-full transition-all duration-300 ${step === 2 ? "bg-foreground" : "bg-border"}`} />
+              </div>
             </div>
-            <p className="text-sm text-center text-gray-700 font-semibold mt-1">
-              Warm leads <span className="text-gray-400">→</span> Deals
-            </p>
-            <p className="text-xs text-center text-gray-400 mb-5">As simple as it gets</p>
 
-            {/* Invite Banner */}
-            {inviteLoading && (
-              <div className="mb-5 flex items-center justify-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <svg className="w-4 h-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="text-sm text-gray-500">Loading your invitation...</span>
-              </div>
-            )}
+            {step === 1 ? (
+              <>
+                <h1 className="text-3xl font-normal text-foreground tracking-tight mb-6 text-center">
+                  Create your account
+                </h1>
 
-            {inviteError && (
-              <div className="mb-5 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
-                ⚠️ {inviteError}
-              </div>
-            )}
-
-            {inviteData && !inviteError && (
-              <div className="mb-5 rounded-lg p-3.5 border" style={{ background: "hsl(5 85% 97%)", borderColor: "hsl(5 70% 88%)" }}>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
-                    {(inviteData.inviter_name || "?")[0].toUpperCase()}
+                {/* Invite banners */}
+                {inviteLoading && (
+                  <div className="mb-5 flex items-center justify-center gap-2 bg-muted border border-border rounded-lg p-3">
+                    <svg className="w-4 h-4 animate-spin text-muted-foreground" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-sm text-muted-foreground">Loading your invitation...</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                )}
+                {inviteError && (
+                  <div className="mb-5 bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
+                    ⚠️ {inviteError}
+                  </div>
+                )}
+                {inviteData && !inviteError && (
+                  <div className="mb-5 rounded-lg p-3.5 bg-muted border border-border">
+                    <p className="text-sm font-semibold text-foreground">
                       {inviteData.inviter_name || "A teammate"} invited you
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Join <strong>{inviteData.organization_name || "the team"}</strong> on Intentsly
                     </p>
                   </div>
+                )}
+
+                <form onSubmit={handleStep1} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`${inputCls} ${inviteData ? "opacity-60" : ""}`}
+                      readOnly={!!inviteData}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`${inputCls} pr-11`}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Password rules */}
+                    {password.length > 0 && (
+                      <div className="mt-2.5 space-y-1.5">
+                        <p className="text-xs text-muted-foreground">Your password must contain:</p>
+                        {passwordRules.map((rule) => {
+                          const passed = rule.test(password);
+                          return (
+                            <div key={rule.label} className="flex items-center gap-2">
+                              <svg viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 shrink-0">
+                                <circle cx="12" cy="12" r="10" stroke={passed ? "hsl(142 70% 45%)" : "hsl(var(--muted-foreground))"} strokeWidth="2" />
+                                {passed && <polyline points="9 12 11 14 15 10" stroke="hsl(142 70% 45%)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+                              </svg>
+                              <span className={`text-xs ${passed ? "text-foreground" : "text-muted-foreground"}`}>{rule.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!!inviteError}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-60 mt-2 ${
+                      email && allRulesPassed
+                        ? "bg-foreground text-background hover:opacity-90"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    Continue
+                  </button>
+                </form>
+
+                {/* Divider */}
+                <div className="flex items-center gap-3 my-5">
+                  <div className="flex-1 border-t border-border" />
+                  <span className="text-xs text-muted-foreground">Or</span>
+                  <div className="flex-1 border-t border-border" />
                 </div>
-              </div>
+
+                {/* Google */}
+                <button
+                  onClick={handleGoogle}
+                  disabled={googleLoading}
+                  className="w-full flex items-center justify-center gap-2 border border-border rounded-lg py-2.5 text-sm font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  </svg>
+                  {googleLoading ? "Connecting..." : "Continue with Google"}
+                </button>
+
+                {/* Trust badges */}
+                <div className="flex items-center justify-center gap-6 mt-5">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                      <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    No credit card required
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    7-day free trial
+                  </span>
+                </div>
+
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                  Already have an account?{" "}
+                  <Link to="/login" className="font-medium text-foreground hover:underline">
+                    Log in
+                  </Link>
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-3xl font-normal text-foreground tracking-tight mb-6 text-center">
+                  One last step
+                </h1>
+
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">First name</label>
+                      <input
+                        type="text"
+                        placeholder="Enter your first name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1.5">Last name</label>
+                      <input
+                        type="text"
+                        placeholder="Enter your last name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">
+                      Company <span className="text-muted-foreground font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter your company name"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors py-2.5 px-1"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
+                      </svg>
+                      Previous
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-60 ${
+                        firstName
+                          ? "bg-foreground text-background hover:opacity-90"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {loading ? (
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                      ) : null}
+                      {loading ? "Creating account..." : inviteData ? "Accept & Create Account" : "Start my free trial"}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Trust badges */}
+                <div className="flex items-center justify-center gap-6 mt-5">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                      <line x1="1" y1="10" x2="23" y2="10" />
+                    </svg>
+                    No credit card required
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    7-day free trial
+                  </span>
+                </div>
+
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                  Already have an account?{" "}
+                  <Link to="/login" className="font-medium text-foreground hover:underline">
+                    Log in
+                  </Link>
+                </p>
+              </>
             )}
 
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                  <input
-                    type="text"
-                    placeholder="First name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className={inputCls}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                  <input
-                    type="text"
-                    placeholder="Last name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Email</label>
-                <input
-                  type="email"
-                  placeholder="your@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`${inputCls} ${inviteData ? "bg-gray-50 text-gray-500" : ""}`}
-                  readOnly={!!inviteData}
-                  required
-                />
-                {inviteData && (
-                  <p className="text-xs text-gray-400 mt-1">Email pre-filled from your invitation</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  placeholder="Create a strong password (min. 8 chars)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputCls}
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !!inviteError}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-                style={{ background: "hsl(5 80% 50%)" }}
-              >
-                {loading ? (
-                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                    <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-4 h-4">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" />
-                    <line x1="22" y1="11" x2="16" y2="11" />
-                  </svg>
-                )}
-                {loading ? "Creating account..." : inviteData ? "Accept Invitation & Create Account" : "Start Trial"}
-              </button>
-            </form>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 border-t border-gray-200" />
-              <span className="text-xs text-gray-400">Or continue with</span>
-              <div className="flex-1 border-t border-gray-200" />
-            </div>
-
-            {/* Social buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={handleGoogle}
-                disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-md py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                {googleLoading ? "Connecting..." : "Register with Google"}
-              </button>
-
-              <button
-                className="w-full flex items-center justify-center gap-2 border border-gray-200 rounded-md py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors opacity-60 cursor-not-allowed"
-                title="Coming soon"
-                disabled
-              >
-                <svg viewBox="0 0 24 24" fill="#0A66C2" className="w-4 h-4">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-                </svg>
-                Register with LinkedIn
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center gap-5 mt-5">
-              <span className="flex items-center gap-1 text-xs text-gray-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="hsl(142 70% 45%)" strokeWidth="2.5" className="w-3.5 h-3.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Cancel anytime
-              </span>
-              <span className="flex items-center gap-1 text-xs text-gray-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="hsl(142 70% 45%)" strokeWidth="2.5" className="w-3.5 h-3.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                7 Days Trial
-              </span>
-            </div>
+            {/* Terms */}
+            <p className="text-center text-xs text-muted-foreground mt-8">
+              By continuing, you agree to our{" "}
+              <span className="underline cursor-pointer hover:text-foreground transition-colors">Terms and Conditions</span>
+              {" "}and{" "}
+              <span className="underline cursor-pointer hover:text-foreground transition-colors">Privacy Policy</span>.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Right – testimonial panel */}
+      {/* RIGHT — gradient + testimonials */}
       <div
-        className="flex-1 flex items-center justify-center relative overflow-hidden"
+        className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden"
         style={{
-          background: "radial-gradient(ellipse 100% 100% at 60% 50%, hsl(5 85% 88%) 0%, hsl(20 80% 92%) 40%, hsl(30 70% 95%) 70%, hsl(0 0% 100%) 100%)",
+          background: "linear-gradient(160deg, hsl(220 30% 88%) 0%, hsl(230 25% 82%) 30%, hsl(40 60% 75%) 70%, hsl(35 70% 65%) 100%)",
         }}
       >
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full opacity-20" style={{ background: "hsl(5 85% 75%)", filter: "blur(80px)" }} />
-        <div className="absolute bottom-1/3 right-1/3 w-48 h-48 rounded-full opacity-15" style={{ background: "hsl(20 80% 70%)", filter: "blur(60px)" }} />
+        {/* Blur blobs */}
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full opacity-30" style={{ background: "hsl(220 40% 75%)", filter: "blur(80px)" }} />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full opacity-40" style={{ background: "hsl(35 80% 65%)", filter: "blur(70px)" }} />
 
-        <div className="relative bg-white rounded-2xl shadow-xl p-7 max-w-xs w-full mx-8">
-          <div className="text-5xl font-serif leading-none mb-4" style={{ color: "hsl(var(--goji-coral) / 0.3)" }}>"</div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-white text-sm font-bold shrink-0">
-              SB
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Stuart Brent</p>
-              <p className="text-xs text-gray-500">Founder @ SaasyDB (B2B SaaS)</p>
-            </div>
-          </div>
-          <p className="text-sm text-gray-700 leading-relaxed italic mb-4">
-            "We made our money back 6× already, and our week is now fully booked with leads Intentsly found for us."
-          </p>
-          <div className="flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <svg key={i} viewBox="0 0 24 24" fill="hsl(45 93% 57%)" className="w-4 h-4">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center px-12 max-w-md w-full">
+          {/* Rating badges */}
+          <div className="flex gap-8 mb-10">
+            {["G2", "Capterra"].map((platform) => (
+              <div key={platform} className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center gap-1">
+                  {/* Laurel left */}
+                  <svg viewBox="0 0 40 60" className="w-5 h-7 opacity-80" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5">
+                    <path d="M20 55 C10 45, 2 35, 5 20 C8 10, 15 5, 20 5" />
+                    <path d="M20 45 C13 38, 7 30, 9 18" />
+                    <path d="M20 35 C15 30, 11 24, 13 15" />
+                  </svg>
+                  <div className="flex items-center gap-0.5">
+                    {[1,2,3,4].map(i => (
+                      <svg key={i} viewBox="0 0 24 24" fill="hsl(var(--foreground))" className="w-3.5 h-3.5">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
+                      <path d="M12 2 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 Z" fill="hsl(var(--foreground))" />
+                    </svg>
+                    <span className="text-xs font-semibold text-foreground ml-0.5">4.5</span>
+                  </div>
+                  {/* Laurel right */}
+                  <svg viewBox="0 0 40 60" className="w-5 h-7 opacity-80 scale-x-[-1]" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5">
+                    <path d="M20 55 C10 45, 2 35, 5 20 C8 10, 15 5, 20 5" />
+                    <path d="M20 45 C13 38, 7 30, 9 18" />
+                    <path d="M20 35 C15 30, 11 24, 13 15" />
+                  </svg>
+                </div>
+                <span className="text-xs text-foreground/70">100+ reviews on <span className="underline">{platform}</span></span>
+              </div>
             ))}
+          </div>
+
+          {/* Testimonial */}
+          <div className="text-center min-h-[100px] flex flex-col items-center justify-center">
+            <p className="text-lg text-foreground leading-relaxed font-normal mb-4 transition-all duration-500">
+              "{testimonials[activeTestimonial].quote}"
+            </p>
+            <p className="text-sm font-semibold text-foreground">
+              {testimonials[activeTestimonial].author}
+            </p>
+          </div>
+
+          {/* Dots + arrows */}
+          <div className="flex items-center gap-3 mt-8">
+            <button
+              onClick={() => setActiveTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
+              className="text-foreground/60 hover:text-foreground transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            {testimonials.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveTestimonial(i)}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${i === activeTestimonial ? "bg-foreground w-3" : "bg-foreground/30"}`}
+              />
+            ))}
+            <button
+              onClick={() => setActiveTestimonial((prev) => (prev + 1) % testimonials.length)}
+              className="border border-foreground/30 rounded p-1 text-foreground/60 hover:text-foreground hover:border-foreground transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
