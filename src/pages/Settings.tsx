@@ -772,7 +772,7 @@ export default function Settings() {
                 {active && (
                   <motion.div
                     layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-px rounded-full"
                     style={{ background: "linear-gradient(90deg, #7C93E6, #F7C459)" }}
                   />
                 )}
