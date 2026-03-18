@@ -106,8 +106,8 @@ function OutreachCard() {
 const steps = [
   {
     num: "01",
-    title: "Sign up in seconds",
-    description: "Create your Gojiberry account and you're in.",
+    title: "Define your ICP",
+    description: "Set your ideal customer profile — job titles, industries, and company size.",
     visual: <SignupCard />,
   },
   {
