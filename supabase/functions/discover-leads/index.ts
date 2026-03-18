@@ -14,6 +14,7 @@ Deno.serve(async (req) => {
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
   const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
   if (!UNIPILE_API_KEY) return errorResponse('UNIPILE_API_KEY not configured');
   if (!UNIPILE_DSN) return errorResponse('UNIPILE_DSN not configured');
@@ -21,7 +22,6 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    // Load all active campaigns
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
       .select('*')
@@ -51,11 +51,21 @@ Deno.serve(async (req) => {
 
         const accountId = profile.unipile_account_id;
 
-        // Use pre-generated keywords (generated once at campaign creation)
-        const keywords: string[] = campaign.discovery_keywords || [];
+        // Auto-generate keywords if missing
+        let keywords: string[] = campaign.discovery_keywords || [];
         if (keywords.length === 0) {
-          console.log(`Skipping campaign ${campaign.id}: no discovery keywords generated`);
-          continue;
+          console.log(`Campaign ${campaign.id}: no keywords, generating...`);
+          keywords = await generateKeywords(campaign, LOVABLE_API_KEY);
+          if (keywords.length > 0) {
+            await supabase
+              .from('campaigns')
+              .update({ discovery_keywords: keywords })
+              .eq('id', campaign.id);
+            console.log(`Campaign ${campaign.id}: generated keywords = ${keywords.join(', ')}`);
+          } else {
+            console.log(`Campaign ${campaign.id}: keyword generation failed, skipping`);
+            continue;
+          }
         }
 
         console.log(`Campaign ${campaign.id}: keywords = ${keywords.join(', ')}`);
@@ -151,7 +161,6 @@ Deno.serve(async (req) => {
           const linkedinProfileId = lead.public_id || lead.provider_id || lead.id;
           if (!linkedinProfileId) continue;
 
-          // Deduplication check
           const { data: existing } = await supabase
             .from('contacts')
             .select('id')
@@ -251,4 +260,69 @@ function checkRecentJobChange(profile: any): boolean {
   const start = new Date(startDate);
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   return start >= ninetyDaysAgo;
+}
+
+async function generateKeywords(campaign: any, lovableApiKey: string | undefined): Promise<string[]> {
+  if (!lovableApiKey) {
+    console.error('LOVABLE_API_KEY not configured, cannot generate keywords');
+    return [];
+  }
+
+  try {
+    const prompt = `Company: ${campaign.company_name || 'Unknown'}
+Industry: ${campaign.industry || 'Unknown'}
+Description: ${campaign.description || 'No description'}
+Target Job Titles: ${(campaign.icp_job_titles || []).join(', ') || 'Unknown'}
+Target Industries: ${(campaign.icp_industries || []).join(', ') || 'Unknown'}
+Pain Points: ${(campaign.pain_points || []).join(', ') || 'Unknown'}
+
+Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that potential buyers of this company's product/service would engage with on LinkedIn. Return only the keywords array.`;
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: 'You are a B2B sales intelligence expert. Generate LinkedIn search keywords for finding potential buyers.' },
+          { role: 'user', content: prompt },
+        ],
+        tools: [{
+          type: 'function',
+          function: {
+            name: 'return_keywords',
+            description: 'Return LinkedIn search keywords',
+            parameters: {
+              type: 'object',
+              properties: {
+                keywords: { type: 'array', items: { type: 'string' }, description: '5 keyword phrases' },
+              },
+              required: ['keywords'],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: 'function', function: { name: 'return_keywords' } },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('AI gateway error during keyword generation:', response.status, errText);
+      return [];
+    }
+
+    const aiData = await response.json();
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) return [];
+
+    const result = JSON.parse(toolCall.function.arguments);
+    return (result.keywords || []).slice(0, 5);
+  } catch (e) {
+    console.error('Keyword generation failed:', e);
+    return [];
+  }
 }
