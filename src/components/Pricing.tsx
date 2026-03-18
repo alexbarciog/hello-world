@@ -35,7 +35,7 @@ const Pricing = () => {
             <div className="px-8 -mt-6 relative z-10">
               <a
                 href="/register"
-                className="btn-cta justify-center w-full text-sm"
+                className="btn-cta justify-center text-sm"
               >
                 Get started
               </a>
