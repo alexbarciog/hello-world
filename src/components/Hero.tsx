@@ -8,7 +8,7 @@ const Hero = () => {
         className="absolute inset-0 z-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% -10%, hsl(5 85% 93%) 0%, hsl(20 90% 95%) 40%, hsl(0 0% 100%) 80%)",
+            "radial-gradient(ellipse 80% 70% at 50% 30%, hsl(265 70% 75% / 0.6) 0%, hsl(230 80% 70% / 0.4) 40%, hsl(200 60% 85% / 0.2) 65%, hsl(0 0% 100%) 100%)",
         }}
       />
 
@@ -16,10 +16,12 @@ const Hero = () => {
       <div className="absolute inset-0 z-0 hero-grid-bg opacity-60" />
 
       {/* Soft blobs */}
-      <div className="absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl opacity-20 z-0"
-        style={{ background: "hsl(5 90% 75%)" }} />
-      <div className="absolute top-32 right-10 w-64 h-64 rounded-full blur-3xl opacity-15 z-0"
-        style={{ background: "hsl(20 90% 78%)" }} />
+      <div className="absolute top-20 left-10 w-80 h-80 rounded-full blur-3xl opacity-30 z-0"
+        style={{ background: "hsl(270 65% 72%)" }} />
+      <div className="absolute top-32 right-10 w-72 h-72 rounded-full blur-3xl opacity-25 z-0"
+        style={{ background: "hsl(220 75% 65%)" }} />
+      <div className="absolute top-48 left-1/3 w-64 h-64 rounded-full blur-3xl opacity-20 z-0"
+        style={{ background: "hsl(250 80% 78%)" }} />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto">
