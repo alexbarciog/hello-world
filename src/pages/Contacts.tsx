@@ -265,10 +265,20 @@ export default function Contacts() {
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-semibold text-blue-600 hover:underline cursor-pointer truncate">
-                                {c.first_name} {c.last_name || ""}
-                              </span>
-                              {c.linkedin_url && <LinkedInIcon />}
+                              {c.linkedin_url ? (
+                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-blue-600 hover:underline cursor-pointer truncate">
+                                  {c.first_name} {c.last_name || ""}
+                                </a>
+                              ) : (
+                                <span className="text-sm font-semibold text-foreground truncate">
+                                  {c.first_name} {c.last_name || ""}
+                                </span>
+                              )}
+                              {c.linkedin_url && (
+                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                  <LinkedInIcon />
+                                </a>
+                              )}
                             </div>
                             <p className="text-xs text-muted-foreground truncate max-w-[180px]">{c.title}</p>
                             <div className="flex items-center gap-1 mt-0.5">
