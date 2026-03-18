@@ -518,16 +518,17 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                       <Info className="w-3.5 h-3.5 text-muted-foreground" />
                     </label>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => setPrecisionMode("discovery")} className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${precisionMode === "discovery" ? "text-foreground" : "text-muted-foreground"}`}>
+                      <button onClick={() => setPrecisionMode("discovery")} className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${precisionMode === "discovery" ? "text-blue-600" : "text-muted-foreground"}`}>
                         <Search className="w-4 h-4" /> Discovery
                       </button>
                       <div
                         onClick={() => setPrecisionMode(precisionMode === "discovery" ? "high_precision" : "discovery")}
-                        className={`w-10 h-5 rounded-full cursor-pointer transition-colors relative ${precisionMode === "high_precision" ? "bg-foreground" : "bg-border"}`}
+                        className="w-10 h-5 rounded-full cursor-pointer transition-colors relative"
+                        style={{ background: precisionMode === "high_precision" ? "hsl(var(--goji-orange))" : "#3B82F6" }}
                       >
-                        <div className={`absolute top-0.5 w-4 h-4 bg-background rounded-full shadow transition-transform ${precisionMode === "high_precision" ? "translate-x-5" : "translate-x-0.5"}`} />
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${precisionMode === "high_precision" ? "translate-x-5" : "translate-x-0.5"}`} />
                       </div>
-                      <button onClick={() => setPrecisionMode("high_precision")} className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${precisionMode === "high_precision" ? "text-foreground" : "text-muted-foreground"}`}>
+                      <button onClick={() => setPrecisionMode("high_precision")} className="flex items-center gap-1.5 text-sm font-medium transition-colors" style={{ color: precisionMode === "high_precision" ? "hsl(var(--goji-orange))" : "hsl(var(--muted-foreground))" }}>
                         High Precision <Target className="w-4 h-4" />
                       </button>
                     </div>
