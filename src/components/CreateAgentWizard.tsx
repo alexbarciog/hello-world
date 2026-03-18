@@ -409,7 +409,7 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
                       disabled={aiLoading}
                       className="inline-flex items-center gap-2 text-sm font-medium text-white rounded-full px-5 py-2.5 disabled:opacity-60 transition-all hover:scale-[1.03] active:scale-[0.97]"
                       style={{
-                        background: "linear-gradient(135deg, hsl(var(--goji-berry)), hsl(var(--goji-coral)), hsl(var(--goji-orange)), #FDC94B, hsl(var(--goji-dark)))",
+                        background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(var(--goji-orange)), #FDC94B, #C8D9FF)",
                         boxShadow: "0 4px 20px hsla(var(--goji-coral), 0.4)",
                       }}
                     >
