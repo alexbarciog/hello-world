@@ -31,9 +31,13 @@ const HeroCards = () => {
           </div>
 
           {/* Signal tags with left connector */}
+          {/* Signal tags with left and right connectors */}
           <div className="relative pl-5">
+            {/* Left connector: vertical from profile */}
             <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
             <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
+            {/* Right connector: vertical from "Followed you" down */}
+            <div className="absolute right-[25%] top-1/2 bottom-[-3.75rem] w-0 border-l border-dashed border-amber-400/40" />
             <div className="flex justify-between gap-2">
               <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
                 <Heart className="w-3 h-3" /> Liked your post
@@ -43,20 +47,24 @@ const HeroCards = () => {
               </span>
             </div>
           </div>
-          {/* Why they fit sub-card */}
-          <div className="bg-background rounded-xl p-3 shadow-sm border-l-2 border-amber-400 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-                <Target className="w-3.5 h-3.5 text-primary" />
+          {/* Why they fit sub-card with right connector */}
+          <div className="relative">
+            {/* Horizontal line from right vertical to "Why they fit" right edge */}
+            <div className="absolute right-[25%] top-1/2 w-[25%] h-0 border-t border-dashed border-amber-400/40" />
+            <div className="bg-background rounded-xl p-3 shadow-sm border-l-2 border-amber-400 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                  <Target className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Why they fit</span>
               </div>
-              <span className="text-sm font-semibold text-foreground">Why they fit</span>
-            </div>
-            <div className="space-y-1.5 pl-8">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Users className="w-3 h-3 shrink-0" /> Is a decision-maker
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Sparkles className="w-3 h-3 shrink-0" /> Posts about sales software
+              <div className="space-y-1.5 pl-8">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Users className="w-3 h-3 shrink-0" /> Is a decision-maker
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Sparkles className="w-3 h-3 shrink-0" /> Posts about sales software
+                </div>
               </div>
             </div>
           </div>
