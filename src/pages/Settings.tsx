@@ -42,6 +42,8 @@ type Invitation = {
 };
 
 // ─── Organization Tab ─────────────────────────────────────────────────────────
+const MAX_INVITATIONS = 2;
+
 function OrganizationTab({ userEmail, userName }: { userEmail: string; userName: string }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
@@ -49,6 +51,8 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
   const [loadingInvites, setLoadingInvites] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const initials = userName ? userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "U";
+
+  const atLimit = invitations.length >= MAX_INVITATIONS;
 
   // Load invitations from Supabase on mount
   useEffect(() => {
@@ -68,6 +72,10 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
   }, []);
 
   async function handleInvite() {
+    if (atLimit) {
+      toast.error(`You have reached the maximum of ${MAX_INVITATIONS} team member invitations.`);
+      return;
+    }
     const trimmed = email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmed || !emailRegex.test(trimmed)) {
@@ -138,40 +146,57 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-base font-bold text-gray-900">{userName || "Your Organization"} - Members</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Manage who has access to your organization and their roles</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">{userName || "Your Organization"} - Members</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Manage who has access to your organization and their roles</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+            <Users className="w-3.5 h-3.5" />
+            <span>{invitations.length} / {MAX_INVITATIONS} invitations used</span>
+          </div>
+        </div>
       </div>
 
       <div className="mb-6">
         <p className="text-sm font-semibold text-gray-700 mb-2">Invite New Member</p>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            placeholder="colleague@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-            className={`${inputCls} flex-1`}
-            disabled={sending}
-          />
-          <button
-            className={saveBtnCls}
-            style={{ background: "hsl(var(--goji-coral))" }}
-            onClick={handleInvite}
-            disabled={sending}
-          >
-            {sending ? (
-              <span className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
-                  <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                Sending...
-              </span>
-            ) : "Invite"}
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 mt-1.5">An invitation with a signup link will be sent to this email.</p>
+        {atLimit ? (
+          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-700">
+            <Info className="w-4 h-4 shrink-0" />
+            <span>You've reached the limit of <strong>{MAX_INVITATIONS} team member invitations</strong>. Delete an existing invitation to invite someone new.</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="colleague@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                className={`${inputCls} flex-1`}
+                disabled={sending}
+              />
+              <button
+                className={saveBtnCls}
+                style={{ background: "hsl(var(--goji-coral))" }}
+                onClick={handleInvite}
+                disabled={sending}
+              >
+                {sending ? (
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
+                      <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Sending...
+                  </span>
+                ) : "Invite"}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">An invitation with a signup link will be sent to this email.</p>
+          </>
+        )}
       </div>
 
       {/* Pending Invitations */}
