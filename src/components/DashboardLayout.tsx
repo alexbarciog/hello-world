@@ -234,7 +234,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Credits */}
           {!collapsed && (
-            <p className="text-[10px] text-white/30 px-2.5 py-1">
+            <p className="text-[10px] text-foreground/30 px-2.5 py-1">
               0 Credits left &nbsp;·&nbsp; ∞ Leads / Mo
             </p>
           )}
