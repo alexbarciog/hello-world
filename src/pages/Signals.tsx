@@ -184,21 +184,8 @@ export default function Signals() {
       </div>
       <p className="text-sm text-gray-500 mb-6">Manage your automated lead generation agents & signals</p>
 
-      {/* How it works panel */}
-      {showHowItWorks && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 text-sm text-gray-700">
-          <p className="font-semibold mb-2">How Signal Agents Work</p>
-          <ol className="list-decimal list-inside space-y-1 text-gray-600">
-            <li>Create an agent with specific keywords and signal type</li>
-            <li>The agent monitors LinkedIn and other sources for matching signals</li>
-            <li>High-intent leads are automatically captured and scored</li>
-            <li>Review results and add leads directly to your campaigns</li>
-          </ol>
-          <button onClick={() => setShowHowItWorks(false)} className="mt-2 text-xs text-orange-600 font-medium hover:underline">
-            Close
-          </button>
-        </div>
-      )}
+      {/* How it works modal */}
+      <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
 
       {/* Active Agent Card */}
       {activeAgent && (
