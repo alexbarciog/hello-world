@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +13,7 @@ import {
 import gojiIcon from "@/assets/gojiberry-icon.png";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 import { toast } from "sonner";
-import { Info } from "lucide-react";
+import { Info, Trash2, Pencil } from "lucide-react";
 
 const MAX_CAMPAIGNS = 2;
 
