@@ -60,11 +60,11 @@ const HeroCards = () => {
                 <span className="text-xs font-semibold text-foreground">Why they fit</span>
               </div>
               <div className="space-y-1.5 pl-8">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Users className="w-3 h-3 shrink-0" /> Is a decision-maker
+                <div className="w-full rounded-lg px-3 py-2 flex items-center gap-2 text-xs text-foreground" style={{ backgroundColor: '#F5F5F5' }}>
+                  <Users className="w-3 h-3 shrink-0 text-foreground" /> Is a decision-maker
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Sparkles className="w-3 h-3 shrink-0" /> Posts about sales software
+                <div className="w-full rounded-lg px-3 py-2 flex items-center gap-2 text-xs text-foreground" style={{ backgroundColor: '#F5F5F5' }}>
+                  <Sparkles className="w-3 h-3 shrink-0 text-foreground" /> Posts about sales software
                 </div>
               </div>
             </div>
