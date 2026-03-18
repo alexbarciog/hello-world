@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import type { OnboardingData } from "./types";
 import type { ICPData } from "./Step3ICP";
 import type { PrecisionMode } from "./Step4Precision";
@@ -9,7 +10,7 @@ import type { ObjectivesData } from "./Step6Objectives";
 // ─── Brain SVG ────────────────────────────────────────────────────────────────
 
 const BrainIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
     <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
   </svg>
@@ -22,9 +23,8 @@ const LoadingDots = () => (
     {[0, 1, 2].map((i) => (
       <span
         key={i}
-        className="w-2 h-2 rounded-full"
+        className="w-2 h-2 rounded-full bg-foreground/30"
         style={{
-          background: "hsl(var(--goji-coral) / 0.5)",
           animation: `dot-bounce 1.4s ease-in-out ${i * 0.22}s infinite`,
         }}
       />
@@ -36,7 +36,7 @@ const LoadingDots = () => (
       }
       @keyframes brain-breathe {
         0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
+        50% { transform: scale(1.08); }
       }
     `}</style>
   </div>
@@ -228,20 +228,25 @@ export const StepComplete = ({
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4"
-      style={{
-        background:
-          "radial-gradient(ellipse 90% 70% at 50% 0%, hsl(5 85% 95%) 0%, hsl(20 90% 96%) 40%, hsl(0 0% 100%) 80%)",
-      }}
+      style={{ background: "hsl(195 14% 95%)" }}
     >
+      {/* Logo */}
+      <a href="/" className="flex items-center gap-2 mb-10">
+        <img src={intentslyIcon} alt="Intentsly" className="h-8 object-contain" />
+        <span className="text-xl font-bold tracking-tight text-foreground">Intentsly</span>
+      </a>
+
+      {/* Card */}
       <div
-        className="w-full max-w-[640px] rounded-2xl bg-card border border-border px-10 py-16 flex flex-col items-center text-center animate-fade-in"
-        style={{ boxShadow: "var(--shadow-card)" }}
+        className="w-full max-w-[600px] rounded-3xl bg-card border-2 border-background px-10 py-16 flex flex-col items-center text-center animate-fade-in"
+        style={{ boxShadow: "0 8px 40px hsl(220 14% 10% / 0.08)" }}
       >
+        {/* Brain icon */}
         <div
-          className="w-20 h-20 rounded-full flex items-center justify-center mb-8"
+          className="w-20 h-20 rounded-full flex items-center justify-center mb-8 text-foreground"
           style={{
-            background: "linear-gradient(135deg, hsl(340 85% 68%), hsl(5 90% 62%))",
-            boxShadow: "0 8px 32px hsl(5 90% 62% / 0.35)",
+            background: "hsl(0 0% 96%)",
+            border: "2px solid hsl(0 0% 100%)",
             animation: "brain-breathe 2.2s ease-in-out infinite",
           }}
         >
@@ -249,14 +254,14 @@ export const StepComplete = ({
         </div>
 
         <h1
-          className="text-xl font-bold tracking-tight mb-3 max-w-xs"
-          style={{ color: "hsl(var(--goji-dark))" }}
+          className="text-xl font-normal tracking-tight mb-3 max-w-xs"
+          style={{ color: "hsl(var(--foreground))" }}
         >
           Your Campaign and Leads Agent are getting ready
         </h1>
         <p
           className="text-sm leading-relaxed mb-8 max-w-sm"
-          style={{ color: "hsl(var(--goji-text-muted))" }}
+          style={{ color: "hsl(var(--muted-foreground))" }}
         >
           AI is crafting personalized messages and sequences based on your
           agent's ICP and campaign goals…
