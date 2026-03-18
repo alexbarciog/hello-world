@@ -306,9 +306,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="font-bold text-sm text-foreground">Intentsly</span>
           </div>
           <div className="hidden md:block" />
-          <button className="p-1.5 rounded-md hover:bg-foreground/10 transition-colors text-foreground/60 hover:text-foreground">
-            <Bell className="w-5 h-5" />
-          </button>
+          <NotificationsPanel />
         </header>
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0" style={{ background: "hsl(195 14% 95%)" }}>
