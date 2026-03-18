@@ -25,13 +25,10 @@ import {
 
 const navItems = [
   { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Copilot",        icon: Sparkles,         path: "/copilot",  badge: "New" },
   { label: "Campaigns",      icon: Megaphone,         path: "/campaigns" },
   { label: "Contacts",       icon: Users,             path: "/contacts" },
   { label: "Signals Agents", icon: Radio,             path: "/signals" },
   { label: "Unibox",         icon: Mail,              path: "/unibox" },
-  { label: "Insights",       icon: BarChart2,         path: "/insights" },
-  { label: "Integrations",   icon: Plug,              path: "/integrations" },
   { label: "Settings",       icon: Settings,          path: "/settings" },
 ];
 
@@ -164,9 +161,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {!collapsed && (
                   <span className="flex-1 text-left truncate">{item.label}</span>
                 )}
-                {!collapsed && item.badge && (
+                {!collapsed && (item as any).badge && (
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-foreground text-background">
-                    {item.badge}
+                    {(item as any).badge}
                   </span>
                 )}
               </button>
