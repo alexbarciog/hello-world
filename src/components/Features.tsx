@@ -127,7 +127,7 @@ const Features = () => {
         {/* Section heading — full viewport height centered */}
         <div
           ref={headingRef}
-          className="flex items-center justify-center min-h-screen text-center"
+          className="flex items-center justify-center py-24 md:py-32 text-center"
           style={{
             opacity: headingVisible ? 1 : 0,
             transform: headingVisible ? "translateY(0)" : "translateY(24px)",
