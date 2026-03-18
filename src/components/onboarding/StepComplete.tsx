@@ -218,7 +218,26 @@ export const StepComplete = ({
         }
       }
 
-      await new Promise((res) => setTimeout(res, 4000));
+      // Trigger lead discovery (fire-and-forget) — only if campaign is active
+      if (campaignId && initialStatus === "active") {
+        try {
+          const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+          const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+          const { data: sess } = await supabase.auth.getSession();
+          fetch(`${SUPABASE_URL}/functions/v1/discover-leads`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${sess?.session?.access_token || ANON_KEY}`,
+            },
+            body: JSON.stringify({}),
+          }).catch((err) => console.warn("discover-leads fire-and-forget error:", err));
+        } catch (err) {
+          console.warn("discover-leads trigger error:", err);
+        }
+      }
+
+      await new Promise((res) => setTimeout(res, 5000));
       window.location.href = "/dashboard";
     }
 
