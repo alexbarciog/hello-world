@@ -144,7 +144,7 @@ const HeroCards = () => {
       </div>
 
       {/* Card 3: Company Intel */}
-      <div className="rounded-2xl bg-foreground p-5 text-left flex flex-col gap-3 relative overflow-hidden">
+      <div className="rounded-3xl bg-foreground p-5 text-left flex flex-col gap-3 relative overflow-hidden">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-base font-bold text-background">Company intel</h3>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
