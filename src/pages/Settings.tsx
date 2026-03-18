@@ -86,8 +86,7 @@ function SaveButton({ saving, saved, onClick, label = "Save Settings" }: { savin
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       disabled={saving}
-      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60"
-      style={{ background: saved ? "hsl(142 70% 45%)" : "hsl(var(--goji-coral))" }}
+      className={`btn-cta text-sm disabled:opacity-60 ${saved ? "!bg-[hsl(142,70%,45%)]" : ""}`}
     >
       {saving ? (
         <>
