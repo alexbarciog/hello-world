@@ -88,7 +88,7 @@ const SignalCardShell = ({
 }) => (
   <CardShell>
     <div className="flex items-start gap-3 mb-3">
-      <img src={gojiIcon} alt="" className="w-8 h-8 object-contain shrink-0 mt-0.5" />
+      <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain shrink-0 mt-0.5" />
       <div>
         <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>
           {title}
