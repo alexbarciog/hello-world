@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import { OnboardingProgressBar } from "@/components/onboarding/OnboardingProgressBar";
 import { Step1Website } from "@/components/onboarding/Step1Website";
 import { Step2LinkedIn } from "@/components/onboarding/Step2LinkedIn";
