@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +13,7 @@ import {
 import gojiIcon from "@/assets/gojiberry-icon.png";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 import { toast } from "sonner";
-import { Info } from "lucide-react";
+import { Info, Trash2, Pencil } from "lucide-react";
 
 const MAX_CAMPAIGNS = 2;
 
@@ -32,6 +32,8 @@ export default function CampaignsPage() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
@@ -62,6 +64,17 @@ export default function CampaignsPage() {
     load();
   }, []);
 
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const handleNewCampaign = () => {
     if (atLimit) {
       toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
@@ -69,6 +82,17 @@ export default function CampaignsPage() {
     }
     clearOnboardingSession();
     navigate("/");
+  };
+
+  const handleDeleteCampaign = async (id: string) => {
+    setMenuOpen(null);
+    const { error } = await supabase.from("campaigns").delete().eq("id", id);
+    if (error) {
+      toast.error("Failed to delete campaign");
+    } else {
+      setCampaigns((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Campaign deleted");
+    }
   };
 
   return (
@@ -312,17 +336,38 @@ export default function CampaignsPage() {
                           <rect x="14" y="14" width="7" height="7" />
                         </svg>
                       </button>
-                      <button
-                        className="p-1.5 rounded hover:bg-muted/60 transition-colors"
-                        style={{ color: "hsl(var(--goji-text-muted))" }}
-                        title="More"
-                      >
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                          <circle cx="12" cy="5" r="1.5" />
-                          <circle cx="12" cy="12" r="1.5" />
-                          <circle cx="12" cy="19" r="1.5" />
-                        </svg>
-                      </button>
+                      <div className="relative" ref={menuOpen === c.id ? menuRef : undefined}>
+                        <button
+                          className="p-1.5 rounded hover:bg-muted/60 transition-colors"
+                          style={{ color: "hsl(var(--goji-text-muted))" }}
+                          title="More"
+                          onClick={() => setMenuOpen(menuOpen === c.id ? null : c.id)}
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                            <circle cx="12" cy="5" r="1.5" />
+                            <circle cx="12" cy="12" r="1.5" />
+                            <circle cx="12" cy="19" r="1.5" />
+                          </svg>
+                        </button>
+                        {menuOpen === c.id && (
+                          <div className="absolute right-0 top-full mt-1 w-40 rounded-lg bg-card border border-border shadow-lg z-50 py-1">
+                            <button
+                              onClick={() => { setMenuOpen(null); navigate(`/onboarding?campaign=${c.id}`); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCampaign(c.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
