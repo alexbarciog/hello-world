@@ -342,6 +342,12 @@ export default function Register() {
                     Log in
                   </Link>
                 </p>
+                <p className="text-center text-xs text-muted-foreground mt-3">
+                  By creating an account, you agree to our{" "}
+                  <Link to="/privacy" className="underline hover:text-foreground transition-colors">
+                    Privacy Policy
+                  </Link>
+                </p>
               </> :
 
             <>
