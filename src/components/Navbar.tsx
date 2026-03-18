@@ -183,28 +183,37 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
 
               <motion.div className="mx-4 h-px" style={{ background: "rgba(0,0,0,0.07)" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} />
 
-              <div className="px-4 pt-3 pb-5 flex flex-col gap-2.5">
+              <div className="px-4 pt-3 pb-5 flex flex-col gap-2">
                 <motion.button
                   onClick={() => { close(); navigate("/login"); }}
-                  className="w-full text-sm font-medium text-goji-dark border border-border/60 rounded-full hover:bg-muted transition-colors"
-                  style={{ minHeight: "44px" }}
+                  className="w-full text-sm font-medium rounded-2xl transition-colors"
+                  style={{
+                    minHeight: "44px",
+                    background: "rgba(0,0,0,0.05)",
+                    color: "hsl(var(--goji-dark))",
+                  }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.33, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ background: "rgba(0,0,0,0.09)" } as never}
                   whileTap={{ scale: 0.97 }}
                 >
                   Log in
                 </motion.button>
                 <motion.button
                   onClick={() => { close(); navigate("/register"); }}
-                  className="btn-cta w-full justify-center text-sm"
-                  style={{ minHeight: "44px" }}
+                  className="w-full text-sm font-medium rounded-2xl text-white transition-all"
+                  style={{
+                    minHeight: "44px",
+                    background: "linear-gradient(135deg, #7C93E6 0%, #F7C459 100%)",
+                    boxShadow: "0 4px 16px rgba(124,147,230,0.35)",
+                  }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.39, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  Start for Free
+                  Start for Free →
                 </motion.button>
               </div>
             </motion.div>
