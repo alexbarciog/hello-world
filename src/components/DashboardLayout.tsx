@@ -155,7 +155,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                 }`}
               >
-                <span className="w-7 h-7 flex items-center justify-center rounded-md bg-card shrink-0">
+                <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
                   <Icon className="w-4 h-4" />
                 </span>
                 {!collapsed && (
