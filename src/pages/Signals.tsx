@@ -293,7 +293,7 @@ export default function Signals() {
         <button
           onClick={() => setShowCreate(true)}
           disabled={agents.length >= maxAgents}
-          className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-orange-500 bg-orange-50/50 border border-dashed border-orange-200 rounded-xl hover:bg-orange-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 bg-blue-50/50 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           Create Agent
@@ -359,11 +359,11 @@ export default function Signals() {
             )}
           </tbody>
         </table>
-        <div className="bg-orange-50/50 border-t border-dashed border-orange-200">
+        <div className="bg-blue-50/50 border-t border-dashed border-blue-200">
           <button
             onClick={() => setShowCreate(true)}
             disabled={agents.length >= maxAgents}
-            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-orange-500 hover:text-orange-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />Create Agent<ChevronDown className="w-3.5 h-3.5" />
           </button>
