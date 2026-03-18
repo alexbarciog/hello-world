@@ -26,7 +26,7 @@ const Pricing = () => {
                 <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
-              <div className="mt-6">
+              <div className="mt-4">
                 <a
                   href="/register"
                   className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
