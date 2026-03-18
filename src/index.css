@@ -164,3 +164,15 @@
   from { --border-angle: 0deg; }
   to { --border-angle: 360deg; }
 }
+
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, -20px); }
+  66% { transform: translate(-20px, 15px); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-25px, 20px); }
+  66% { transform: translate(20px, -15px); }
+}
