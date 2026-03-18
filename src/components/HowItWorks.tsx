@@ -140,7 +140,7 @@ const HowItWorks = () => {
         <div className="grid md:grid-cols-3 gap-5">
           {steps.map((step, i) => (
             <div key={i} className="flex flex-col gap-5">
-              {step.visual}
+              <div className="flex-1">{step.visual}</div>
               <div className="px-2">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-foreground text-background text-[10px] font-bold shrink-0">
