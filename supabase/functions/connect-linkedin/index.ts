@@ -6,6 +6,7 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 type RequestPayload = Record<string, unknown>;
+type UnipileAccount = Record<string, unknown>;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -90,21 +91,18 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'check_status') {
-      const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const { data: profile, error: profileError } = await serviceClient
-        .from('profiles')
-        .select('unipile_account_id')
-        .eq('user_id', userId)
-        .single();
+      const accountId = await resolveConnectedAccountId({
+        userId,
+        supabaseUrl: SUPABASE_URL,
+        serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
+        unipileApiKey: UNIPILE_API_KEY,
+        unipileDsn: UNIPILE_DSN,
+      });
 
-      if (profileError) {
-        console.error('[check_status] profile lookup error:', profileError.message);
-      }
-
-      if (profile?.unipile_account_id) {
+      if (accountId) {
         return jsonResponse({
           status: 'connected',
-          account_id: profile.unipile_account_id,
+          account_id: accountId,
         });
       }
 
@@ -179,7 +177,7 @@ async function handleUnipileNotify(
     return jsonResponse({ status: 'ignored', reason: 'missing_fields' });
   }
 
-  if (!['CREATION_SUCCESS', 'RECONNECTED', 'OK', 'SYNC_SUCCESS'].includes(status)) {
+  if (!['CREATION_SUCCESS', 'RECONNECTED', 'OK', 'SYNC_SUCCESS'].includes(status.toUpperCase())) {
     return jsonResponse({ status: 'ignored', reason: 'unsupported_status' });
   }
 
@@ -198,6 +196,141 @@ function buildRedirectUrl(returnUrl: string | undefined, linkedinStatus: 'succes
   } catch {
     return undefined;
   }
+}
+
+async function resolveConnectedAccountId({
+  userId,
+  supabaseUrl,
+  serviceRoleKey,
+  unipileApiKey,
+  unipileDsn,
+}: {
+  userId: string;
+  supabaseUrl: string;
+  serviceRoleKey: string;
+  unipileApiKey: string;
+  unipileDsn: string;
+}) {
+  const storedAccountId = await getStoredAccountId(userId, supabaseUrl, serviceRoleKey);
+  if (storedAccountId) return storedAccountId;
+
+  const remoteAccountId = await findRemoteLinkedinAccountId(userId, unipileApiKey, unipileDsn);
+  if (!remoteAccountId) return null;
+
+  await saveAccountId(userId, remoteAccountId, supabaseUrl, serviceRoleKey);
+  return remoteAccountId;
+}
+
+async function getStoredAccountId(userId: string, supabaseUrl: string, serviceRoleKey: string) {
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+  const { data: profile, error } = await serviceClient
+    .from('profiles')
+    .select('unipile_account_id')
+    .eq('user_id', userId)
+    .single();
+
+  if (error) {
+    console.error('[check_status] profile lookup error:', error.message);
+    return null;
+  }
+
+  return profile?.unipile_account_id || null;
+}
+
+async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string, unipileDsn: string) {
+  try {
+    const response = await fetch(`https://${unipileDsn}/api/v1/accounts`, {
+      headers: {
+        'X-API-KEY': unipileApiKey,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[check_status] failed to list Unipile accounts:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    const accounts = extractAccounts(data);
+    const matchedAccount = accounts.find((account) => isMatchingLinkedinAccount(account, userId));
+    const accountId = matchedAccount ? getAccountId(matchedAccount) : null;
+
+    console.log('[check_status] remote lookup', JSON.stringify({
+      userId,
+      accountsFound: accounts.length,
+      matched: Boolean(accountId),
+    }));
+
+    return accountId;
+  } catch (error) {
+    console.error('[check_status] remote lookup error:', error);
+    return null;
+  }
+}
+
+function extractAccounts(payload: unknown): UnipileAccount[] {
+  if (Array.isArray(payload)) return payload.filter(isRecord);
+  if (!isRecord(payload)) return [];
+
+  const collections = [payload.items, payload.results, payload.accounts, payload.data];
+  for (const candidate of collections) {
+    if (Array.isArray(candidate)) {
+      return candidate.filter(isRecord);
+    }
+  }
+
+  return [];
+}
+
+function isMatchingLinkedinAccount(account: UnipileAccount, userId: string) {
+  const provider = getString(
+    account.account_type,
+    account.provider,
+    account.type,
+    isRecord(account.account) ? account.account.account_type : undefined,
+    isRecord(account.account) ? account.account.provider : undefined,
+  ).toUpperCase();
+
+  const owner = getString(
+    account.name,
+    account.source,
+    account.user_id,
+    isRecord(account.metadata) ? account.metadata.name : undefined,
+    isRecord(account.metadata) ? account.metadata.source : undefined,
+    isRecord(account.account) ? account.account.name : undefined,
+  );
+
+  const status = getString(account.status, account.message).toUpperCase();
+  const isLinkedin = provider ? provider.includes('LINKEDIN') : true;
+  const isSameUser = owner === userId;
+  const isUsable = !['DELETED', 'CREATION_FAIL', 'ERROR'].includes(status);
+
+  return isLinkedin && isSameUser && isUsable;
+}
+
+function getAccountId(account: UnipileAccount) {
+  return getString(
+    account.account_id,
+    account.id,
+    account.accountId,
+    isRecord(account.account) ? account.account.account_id : undefined,
+    isRecord(account.account) ? account.account.id : undefined,
+  ) || null;
+}
+
+function getString(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 async function saveAccountId(
