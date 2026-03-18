@@ -26,19 +26,16 @@ const Pricing = () => {
                 <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
+              <div className="mt-auto pb-8">
+                <a
+                  href="/register"
+                  className="btn-cta justify-center text-sm"
+                  style={{ width: "100%" }}
+                >
+                  Get started
+                </a>
+              </div>
             </div>
-
-            {/* CTA button overlapping the gradient */}
-            <div className="px-8 -mt-6 relative z-10">
-              <a
-                href="/register"
-                className="btn-cta justify-center text-sm"
-                style={{ width: "100%" }}
-              >
-                Get started
-              </a>
-            </div>
-
             {/* Features */}
             <div className="px-8 pt-8 pb-8">
               <ul className="space-y-4">
