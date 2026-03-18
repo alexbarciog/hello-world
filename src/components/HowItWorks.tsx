@@ -3,7 +3,7 @@ import intentslySmile from "@/assets/intentsly-smile.png";
 
 function SignupCard() {
   return (
-    <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
+    <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300 h-full" style={{ background: "hsl(0 0% 96%)" }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-foreground">Create your account</h3>
         <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
