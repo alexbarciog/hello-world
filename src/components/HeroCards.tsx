@@ -36,8 +36,6 @@ const HeroCards = () => {
             {/* Left connector: vertical from profile */}
             <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
             <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
-            {/* Right connector: vertical from "Followed you" down */}
-            <div className="absolute right-[25%] top-1/2 bottom-[-3.75rem] w-0 border-l border-dashed border-amber-400/40" />
             <div className="flex justify-between gap-2">
               <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
                 <Heart className="w-3 h-3" /> Liked your post
