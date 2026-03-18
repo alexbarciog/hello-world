@@ -100,12 +100,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--gradient-cta);
+  background: hsl(0 0% 0%);
   color: hsl(0 0% 100%);
-  font-weight: 600;
-  border-radius: 8px;
+  font-weight: 400;
+  border-radius: 500px;
   padding: 0.75rem 1.25rem;
-  box-shadow: 0 4px 16px 0 rgba(49, 30, 219, 0.25);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
   transition: all 0.2s;
   width: fit-content;
 }
