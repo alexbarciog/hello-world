@@ -386,9 +386,16 @@ export default function Contacts() {
                       </div>
                       {/* Signal label */}
                       {c.signal && (
-                        <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[160px]">
-                          {c.signal}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[160px]">
+                            {c.signal}
+                          </span>
+                          {c.signal_post_url && (
+                            <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-blue-500 hover:text-blue-600 transition-colors shrink-0">
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
                       )}
                       {/* Time */}
                       <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo(c.imported_at)}</span>
