@@ -21,7 +21,10 @@ function useInView(threshold = 0.15) {
 // ── CTA button ──────────────────────────────────────────────────────────────
 function CtaButton({ children }: { children: React.ReactNode }) {
   return (
-    <button className="group inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-secondary text-sm font-medium text-foreground hover:bg-muted transition-colors duration-200">
+    <button
+      className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground transition-all duration-200 hover:brightness-95"
+      style={{ background: "linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 13% 95%) 100%)" }}
+    >
       {children}
       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
     </button>
