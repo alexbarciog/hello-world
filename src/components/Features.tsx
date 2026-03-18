@@ -111,9 +111,18 @@ function FeatureRow({ title, description, cta, gradient, videoSrc, reversed = fa
   return (
     <div
       ref={ref}
-      className="grid md:grid-cols-2 gap-12 md:gap-16 items-center py-16 md:py-24"
+      className="grid md:grid-cols-2 gap-8 md:gap-16 items-center py-12 md:py-24"
     >
-      {reversed ? <>{visualCol}{textCol}</> : <>{textCol}{visualCol}</>}
+      {/* On mobile: always text first, video second. On desktop: respect reversed prop */}
+      <div className={`md:contents ${reversed ? "flex flex-col" : "flex flex-col"}`}>
+        <div className="md:hidden flex flex-col gap-8">
+          {textCol}
+          {visualCol}
+        </div>
+        <div className="hidden md:contents">
+          {reversed ? <>{visualCol}{textCol}</> : <>{textCol}{visualCol}</>}
+        </div>
+      </div>
     </div>
   );
 }
