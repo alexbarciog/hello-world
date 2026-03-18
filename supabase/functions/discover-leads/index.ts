@@ -5,6 +5,29 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ICPFilters {
+  jobTitles: string[];
+  industries: string[];
+  locations: string[];
+  companySizes: string[];
+  companyTypes: string[];
+  excludeKeywords: string[];
+}
+
+interface MatchResult {
+  titleMatch: boolean;
+  industryMatch: boolean;
+  locationMatch: boolean;
+  score: number; // 0-100
+  matchedFields: string[];
+}
+
+type PrecisionMode = 'discovery' | 'high_precision';
+
+// ─── Main Handler ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -37,7 +60,6 @@ Deno.serve(async (req) => {
 
     for (const campaign of campaigns) {
       try {
-        // Get user's unipile_account_id
         const { data: profile } = await supabase
           .from('profiles')
           .select('unipile_account_id')
@@ -50,121 +72,93 @@ Deno.serve(async (req) => {
         }
 
         const accountId = profile.unipile_account_id;
+        const precisionMode: PrecisionMode = (campaign.precision_mode === 'high_precision') ? 'high_precision' : 'discovery';
+
+        // Build structured ICP filters
+        const icp: ICPFilters = {
+          jobTitles: (campaign.icp_job_titles || []).map((s: string) => s.trim()).filter(Boolean),
+          industries: (campaign.icp_industries || []).map((s: string) => s.trim()).filter(Boolean),
+          locations: (campaign.icp_locations || []).map((s: string) => s.trim()).filter(Boolean),
+          companySizes: (campaign.icp_company_sizes || []).map((s: string) => s.trim()).filter(Boolean),
+          companyTypes: (campaign.icp_company_types || []).map((s: string) => s.trim()).filter(Boolean),
+          excludeKeywords: (campaign.icp_exclude_keywords || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+        };
+
+        console.log(`Campaign ${campaign.id} [${precisionMode}]: ICP = titles:${icp.jobTitles.length}, industries:${icp.industries.length}, locations:${icp.locations.length}`);
 
         // Auto-generate keywords if missing
         let keywords: string[] = campaign.discovery_keywords || [];
         if (keywords.length === 0) {
-          console.log(`Campaign ${campaign.id}: no keywords, generating...`);
           keywords = await generateKeywords(campaign, LOVABLE_API_KEY);
           if (keywords.length > 0) {
-            await supabase
-              .from('campaigns')
-              .update({ discovery_keywords: keywords })
-              .eq('id', campaign.id);
-            console.log(`Campaign ${campaign.id}: generated keywords = ${keywords.join(', ')}`);
+            await supabase.from('campaigns').update({ discovery_keywords: keywords }).eq('id', campaign.id);
           } else {
             console.log(`Campaign ${campaign.id}: keyword generation failed, skipping`);
             continue;
           }
         }
 
-        console.log(`Campaign ${campaign.id}: keywords = ${keywords.join(', ')}`);
+        // ── Collect candidates from Unipile ──
+        let candidateProfiles = await searchPostAuthors(keywords, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
 
-        // Search LinkedIn posts via Unipile
-        const posts: any[] = [];
-        for (const keyword of keywords.slice(0, 5)) {
-          if (posts.length >= 5) break;
-          await delay(2000);
+        if (candidateProfiles.length < 3) {
+          console.log(`Campaign ${campaign.id}: only ${candidateProfiles.length} from posts, trying people search`);
+          const peopleFallback = await searchPeopleFallback(campaign, icp, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+          candidateProfiles = deduplicateProfiles([...candidateProfiles, ...peopleFallback]);
+        }
 
-          try {
-            const searchUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${accountId}`;
-            const searchRes = await fetch(searchUrl, {
-              method: 'POST',
-              headers: {
-                'X-API-KEY': UNIPILE_API_KEY,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                api: 'classic',
-                category: 'posts',
-                keywords: keyword,
-                date_posted: 'past_week',
-              }),
-            });
+        console.log(`Campaign ${campaign.id}: ${candidateProfiles.length} total candidates`);
 
-            if (!searchRes.ok) {
-              const errText = await searchRes.text();
-              console.error(`Unipile search error for "${keyword}": ${searchRes.status} ${errText}`);
-              continue;
-            }
+        // ── Score & filter with precision mode ──
+        const scoredCandidates = candidateProfiles
+          .map((p) => ({ profile: p, match: scoreProfileAgainstICP(p, icp) }))
+          .filter((c) => !isExcluded(c.profile, icp.excludeKeywords))
+          .sort((a, b) => b.match.score - a.match.score);
 
-            const searchData = await searchRes.json();
-            const items = searchData.items || searchData.results || [];
-            for (const item of items) {
-              if (posts.length >= 5) break;
-              posts.push(item);
-            }
-          } catch (e) {
-            console.error(`Search failed for keyword "${keyword}":`, e);
+        let matchingLeads: typeof scoredCandidates;
+
+        if (precisionMode === 'high_precision') {
+          // ── HIGH PRECISION: Only leads that match ALL available ICP criteria ──
+          matchingLeads = scoredCandidates.filter((c) => {
+            // Must match title if titles are defined
+            if (icp.jobTitles.length > 0 && !c.match.titleMatch) return false;
+            // Must match industry if industries are defined
+            if (icp.industries.length > 0 && !c.match.industryMatch) return false;
+            // Must match location if locations are defined
+            if (icp.locations.length > 0 && !c.match.locationMatch) return false;
+            return true;
+          });
+
+          console.log(`Campaign ${campaign.id} [high_precision]: ${matchingLeads.length} strict matches from ${scoredCandidates.length} candidates`);
+
+        } else {
+          // ── DISCOVERY: Progressive relaxation ──
+          // Tier 1: Full ICP match (score >= 80)
+          matchingLeads = scoredCandidates.filter((c) => c.match.score >= 80);
+
+          if (matchingLeads.length < 3) {
+            // Tier 2: At least title match (score >= 50)
+            matchingLeads = scoredCandidates.filter((c) => c.match.score >= 50);
+            console.log(`Campaign ${campaign.id} [discovery]: relaxed to score>=50, got ${matchingLeads.length}`);
+          }
+
+          if (matchingLeads.length < 3) {
+            // Tier 3: Any partial match (score >= 25)
+            matchingLeads = scoredCandidates.filter((c) => c.match.score >= 25);
+            console.log(`Campaign ${campaign.id} [discovery]: relaxed to score>=25, got ${matchingLeads.length}`);
+          }
+
+          if (matchingLeads.length < 3 && scoredCandidates.length > 0) {
+            // Tier 4: Take best available candidates regardless of score
+            matchingLeads = scoredCandidates.slice(0, Math.min(scoredCandidates.length, 8));
+            console.log(`Campaign ${campaign.id} [discovery]: using top ${matchingLeads.length} by score`);
           }
         }
 
-        console.log(`Campaign ${campaign.id}: found ${posts.length} posts`);
+        console.log(`Campaign ${campaign.id}: ${matchingLeads.length} leads to insert`);
 
-        // Extract post authors, with fallback to LinkedIn people search when post author IDs are missing
-        let candidateProfiles: any[] = [];
-        for (const post of posts) {
-          await delay(1500);
-          try {
-            const authorId = post.author_id || post.author?.id || post.author?.provider_id || post.provider_id || post.actor_id || post.actor?.id;
-            if (!authorId) continue;
-
-            const profileUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`;
-            const profileRes = await fetch(profileUrl, {
-              headers: { 'X-API-KEY': UNIPILE_API_KEY },
-            });
-
-            if (!profileRes.ok) {
-              await profileRes.text();
-              continue;
-            }
-
-            const profileData = await profileRes.json();
-            candidateProfiles.push({ ...profileData, _post: post });
-          } catch (e) {
-            console.error('Profile fetch failed:', e);
-          }
-        }
-
-        if (candidateProfiles.length === 0) {
-          console.log(`Campaign ${campaign.id}: no author profiles from posts, falling back to people search`);
-          candidateProfiles = await searchPeopleFallback(campaign, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
-        }
-
-        console.log(`Campaign ${campaign.id}: extracted ${candidateProfiles.length} profiles`);
-
-        let matchingLeads = candidateProfiles.filter((p) => matchesCampaignProfile(p, campaign));
-
-        if (matchingLeads.length === 0 && candidateProfiles.length > 0) {
-          const titleOnlyMatches = candidateProfiles.filter((p) =>
-            matchesTextList(p.headline || p.title || '', campaign.icp_job_titles || [])
-          );
-
-          if (titleOnlyMatches.length > 0) {
-            matchingLeads = titleOnlyMatches;
-            console.log(`Campaign ${campaign.id}: title-only fallback matched ${matchingLeads.length} leads`);
-          }
-        }
-
-        if (matchingLeads.length === 0 && candidateProfiles.length > 0) {
-          matchingLeads = candidateProfiles.slice(0, Math.min(candidateProfiles.length, 5));
-          console.log(`Campaign ${campaign.id}: using top ${matchingLeads.length} fallback candidates`);
-        }
-
-        console.log(`Campaign ${campaign.id}: ${matchingLeads.length} matching leads`);
-
-        // Score and insert
-        for (const lead of matchingLeads) {
+        // ── Insert contacts ──
+        for (const { profile: lead, match } of matchingLeads) {
           const linkedinProfileId = lead.public_id || lead.provider_id || lead.id;
           if (!linkedinProfileId) continue;
 
@@ -182,12 +176,12 @@ Deno.serve(async (req) => {
           const isTopActive = postEngagement > 50;
           const isRecentJobChange = checkRecentJobChange(lead);
 
-          const signalAHit = true;
-          const signalBHit = isTopActive;
-          const signalCHit = isRecentJobChange;
-          const aiScore = [signalAHit, signalBHit, signalCHit].filter(Boolean).length;
+          const signalAHit = true; // Found via search = intent signal
+          const signalBHit = isTopActive || isRecentJobChange;
+          const signalCHit = match.score >= 60;
+          const aiScore = Math.min(3, [signalAHit, signalBHit, signalCHit].filter(Boolean).length);
 
-          let signal = 'Matched your ICP criteria';
+          let signal = `ICP match (${match.matchedFields.join(', ') || 'keyword'})`;
           if (isTopActive) signal = 'Top 5% most active in your ICP (LinkedIn)';
           if (isRecentJobChange) signal = 'Strategic Window: Just hired (<90d)';
 
@@ -236,7 +230,225 @@ Deno.serve(async (req) => {
   }
 });
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── ICP Scoring ──────────────────────────────────────────────────────────────
+
+function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
+  const title = profile.headline || profile.title || profile.role || '';
+  const industry = profile.industry || '';
+  const location = profile.location || profile.country || '';
+  const company = profile.company || profile.current_company?.name || '';
+
+  const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(title, icp.jobTitles);
+  const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries);
+  const locationMatch = icp.locations.length === 0 || fuzzyMatchList(location, icp.locations);
+
+  const matchedFields: string[] = [];
+  let score = 0;
+
+  // Title is the most important signal (40 pts)
+  if (icp.jobTitles.length > 0 && titleMatch) {
+    score += 40;
+    matchedFields.push('title');
+  } else if (icp.jobTitles.length === 0) {
+    score += 20; // No criteria = partial credit
+  }
+
+  // Industry (30 pts)
+  if (icp.industries.length > 0 && industryMatch) {
+    score += 30;
+    matchedFields.push('industry');
+  } else if (icp.industries.length === 0) {
+    score += 15;
+  }
+
+  // Location (20 pts)
+  if (icp.locations.length > 0 && locationMatch) {
+    score += 20;
+    matchedFields.push('location');
+  } else if (icp.locations.length === 0) {
+    score += 10;
+  }
+
+  // Company size bonus (10 pts) — can only check if we have data
+  if (icp.companySizes.length > 0) {
+    const companySize = profile.company_size || profile.current_company?.employee_count || '';
+    if (companySize && fuzzyMatchList(String(companySize), icp.companySizes)) {
+      score += 10;
+      matchedFields.push('company_size');
+    }
+  } else {
+    score += 5;
+  }
+
+  return { titleMatch, industryMatch, locationMatch, score: Math.min(100, score), matchedFields };
+}
+
+function isExcluded(profile: any, excludeKeywords: string[]): boolean {
+  if (excludeKeywords.length === 0) return false;
+  const text = [
+    profile.headline, profile.title, profile.company,
+    profile.current_company?.name, profile.industry,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  return excludeKeywords.some((kw) => text.includes(kw));
+}
+
+function fuzzyMatchList(value: string, candidates: string[]): boolean {
+  const haystack = normalizeText(value);
+  if (!haystack) return false;
+  return candidates.some((candidate) => {
+    const needle = normalizeText(candidate);
+    if (!needle) return false;
+    // Bidirectional contains for flexibility
+    return haystack.includes(needle) || needle.includes(haystack);
+  });
+}
+
+function normalizeText(value: string): string {
+  return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+}
+
+// ─── Unipile Search ───────────────────────────────────────────────────────────
+
+async function searchPostAuthors(
+  keywords: string[],
+  accountId: string,
+  apiKey: string,
+  dsn: string,
+): Promise<any[]> {
+  const posts: any[] = [];
+
+  for (const keyword of keywords.slice(0, 5)) {
+    if (posts.length >= 5) break;
+    await delay(2000);
+
+    try {
+      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
+        method: 'POST',
+        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week' }),
+      });
+
+      if (!res.ok) {
+        console.error(`Post search error for "${keyword}": ${res.status}`);
+        continue;
+      }
+
+      const data = await res.json();
+      for (const item of (data.items || data.results || [])) {
+        if (posts.length >= 5) break;
+        posts.push(item);
+      }
+    } catch (e) {
+      console.error(`Search failed for "${keyword}":`, e);
+    }
+  }
+
+  // Extract author profiles
+  const profiles: any[] = [];
+  for (const post of posts) {
+    await delay(1500);
+    try {
+      const authorId = post.author_id || post.author?.id || post.author?.provider_id || post.provider_id || post.actor_id || post.actor?.id;
+      if (!authorId) continue;
+
+      const res = await fetch(`https://${dsn}/api/v1/linkedin/profile/${authorId}?account_id=${accountId}`, {
+        headers: { 'X-API-KEY': apiKey },
+      });
+      if (!res.ok) continue;
+
+      const profileData = await res.json();
+      profiles.push({ ...profileData, _post: post });
+    } catch (e) {
+      console.error('Profile fetch failed:', e);
+    }
+  }
+
+  return profiles;
+}
+
+async function searchPeopleFallback(
+  campaign: any,
+  icp: ICPFilters,
+  accountId: string,
+  apiKey: string,
+  dsn: string,
+): Promise<any[]> {
+  // Build search queries from ICP — prioritize job titles, then keywords
+  const searches = [
+    ...icp.jobTitles.slice(0, 3),
+    ...(campaign.discovery_keywords || []).slice(0, 2),
+  ].filter(Boolean);
+
+  const profiles: any[] = [];
+
+  for (const keyword of searches) {
+    if (profiles.length >= 10) break;
+    await delay(1200);
+
+    try {
+      // Build the search body with available Unipile filters
+      const searchBody: any = {
+        api: 'classic',
+        category: 'people',
+        keywords: keyword,
+      };
+
+      // Unipile accepts location as text in classic people search
+      // We pass the first location as a location hint
+      if (icp.locations.length > 0) {
+        searchBody.keywords = `${keyword} ${icp.locations[0]}`;
+      }
+
+      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
+        method: 'POST',
+        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify(searchBody),
+      });
+
+      if (!res.ok) {
+        console.error(`People search failed for "${keyword}": ${res.status}`);
+        continue;
+      }
+
+      const data = await res.json();
+      for (const item of (data.items || data.results || [])) {
+        if (profiles.length >= 10) break;
+        profiles.push({
+          ...item,
+          title: item.headline || item.title || null,
+          linkedin_url: item.profile_url || item.public_profile_url || null,
+          public_id: item.public_identifier || item.id || null,
+          company: item.current_positions?.[0]?.company || null,
+        });
+      }
+    } catch (e) {
+      console.error(`People search error for "${keyword}":`, e);
+    }
+  }
+
+  return profiles;
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function deduplicateProfiles(profiles: any[]): any[] {
+  const seen = new Set<string>();
+  return profiles.filter((p) => {
+    const id = p.public_id || p.provider_id || p.id || '';
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+function checkRecentJobChange(profile: any): boolean {
+  const experience = profile.experience || profile.positions || [];
+  if (!Array.isArray(experience) || experience.length === 0) return false;
+  const startDate = experience[0]?.start_date || experience[0]?.started_at;
+  if (!startDate) return false;
+  return new Date(startDate) >= new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+}
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -256,103 +468,8 @@ function errorResponse(message: string) {
   });
 }
 
-function checkRecentJobChange(profile: any): boolean {
-  const experience = profile.experience || profile.positions || [];
-  if (!Array.isArray(experience) || experience.length === 0) return false;
-
-  const current = experience[0];
-  const startDate = current?.start_date || current?.started_at;
-  if (!startDate) return false;
-
-  const start = new Date(startDate);
-  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-  return start >= ninetyDaysAgo;
-}
-
-function normalizeText(value: string) {
-  return value.toLowerCase().replace(/\s+cer$/g, '').trim();
-}
-
-function matchesTextList(value: string, candidates: string[]) {
-  const haystack = normalizeText(value || '');
-  const normalizedCandidates = candidates.map(normalizeText).filter(Boolean);
-  return !normalizedCandidates.length || normalizedCandidates.some((candidate) => haystack.includes(candidate));
-}
-
-function matchesCampaignProfile(profile: any, campaign: any) {
-  const title = profile.headline || profile.title || profile.role || '';
-  const industry = profile.industry || '';
-  const location = profile.location || profile.country || '';
-
-  const titleMatch = matchesTextList(title, campaign.icp_job_titles || []);
-  const industryMatch = matchesTextList(industry, campaign.icp_industries || []);
-  const locationMatch = matchesTextList(location, campaign.icp_locations || []);
-
-  return titleMatch && industryMatch && locationMatch;
-}
-
-async function searchPeopleFallback(
-  campaign: any,
-  accountId: string,
-  unipileApiKey: string,
-  unipileDsn: string,
-): Promise<any[]> {
-  const searches = [
-    ...(campaign.icp_job_titles || []).slice(0, 3),
-    ...(campaign.discovery_keywords || []).slice(0, 2),
-  ].filter(Boolean);
-
-  const profiles: any[] = [];
-
-  for (const keyword of searches) {
-    if (profiles.length >= 10) break;
-
-    try {
-      await delay(1200);
-      const response = await fetch(`https://${unipileDsn}/api/v1/linkedin/search?account_id=${accountId}`, {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': unipileApiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          api: 'classic',
-          category: 'people',
-          keywords: keyword,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`People fallback search failed for "${keyword}": ${response.status} ${errorText}`);
-        continue;
-      }
-
-      const data = await response.json();
-      const items = data.items || data.results || [];
-      for (const item of items) {
-        if (profiles.length >= 10) break;
-        profiles.push({
-          ...item,
-          title: item.headline || item.title || null,
-          linkedin_url: item.profile_url || item.public_profile_url || null,
-          public_id: item.public_identifier || item.id || null,
-          company: item.current_positions?.[0]?.company || null,
-        });
-      }
-    } catch (error) {
-      console.error(`People fallback search error for "${keyword}":`, error);
-    }
-  }
-
-  return profiles;
-}
-
 async function generateKeywords(campaign: any, lovableApiKey: string | undefined): Promise<string[]> {
-  if (!lovableApiKey) {
-    console.error('LOVABLE_API_KEY not configured, cannot generate keywords');
-    return [];
-  }
+  if (!lovableApiKey) return [];
 
   try {
     const prompt = `Company: ${campaign.company_name || 'Unknown'}
@@ -384,7 +501,7 @@ Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that p
             parameters: {
               type: 'object',
               properties: {
-                keywords: { type: 'array', items: { type: 'string' }, description: '5 keyword phrases' },
+                keywords: { type: 'array', items: { type: 'string' } },
               },
               required: ['keywords'],
               additionalProperties: false,
@@ -395,18 +512,11 @@ Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that p
       }),
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('AI gateway error during keyword generation:', response.status, errText);
-      return [];
-    }
-
+    if (!response.ok) return [];
     const aiData = await response.json();
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) return [];
-
-    const result = JSON.parse(toolCall.function.arguments);
-    return (result.keywords || []).slice(0, 5);
+    return (JSON.parse(toolCall.function.arguments).keywords || []).slice(0, 5);
   } catch (e) {
     console.error('Keyword generation failed:', e);
     return [];
