@@ -63,6 +63,10 @@ export default function CampaignsPage() {
   }, []);
 
   const handleNewCampaign = () => {
+    if (atLimit) {
+      toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
+      return;
+    }
     clearOnboardingSession();
     navigate("/");
   };
