@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const { data: agents, error: agentErr } = await supabase
       .from('signal_agents')
       .select('*')
-      .eq('status', 'active')
+      .in('status', ['active', 'paused'])
       .limit(20);
 
     if (agentErr) throw new Error(`Failed to load agents: ${agentErr.message}`);
@@ -274,7 +274,8 @@ async function handlePostEngagers(
         if (!fullProfile) continue;
 
         const match = scoreProfileAgainstICP(fullProfile, icp);
-        if (!matchesTitleOrIndustry(match, icp)) continue;
+        const hl = fullProfile.headline || fullProfile.title || '';
+        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
@@ -360,13 +361,47 @@ async function handleKeywordPosts(
     if (!profile) continue;
 
     const match = scoreProfileAgainstICP(profile, icp);
-    if (!matchesTitleOrIndustry(match, icp)) continue;
+    const hl = profile.headline || profile.title || '';
+    if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`keyword_posts: REJECTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); continue; }
     if (isExcluded(profile, icp.excludeKeywords)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
     const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
-    if (ok) inserted++;
+    if (ok) { inserted++; console.log(`keyword_posts: ACCEPTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
+
+    // ── Also scan engagers (reactions) on this post ──
+    const postId = post.social_id || post.id || post.provider_id;
+    if (postId) {
+      try {
+        await delay(1500);
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
+        if (reactionsRes.ok) {
+          const reactionsData = await reactionsRes.json();
+          const engagers = (reactionsData.items || []).slice(0, 15);
+          console.log(`keyword_posts: post ${postId} has ${engagers.length} engagers to check`);
+
+          for (const engager of engagers) {
+            await delay(500);
+            const engagerProfile = engager.author || engager;
+            const fullEngager = await fetchProfileIfNeeded(engagerProfile, accountId, apiKey, dsn);
+            if (!fullEngager) continue;
+
+            const eMatch = scoreProfileAgainstICP(fullEngager, icp);
+            const eHl = fullEngager.headline || fullEngager.title || '';
+            if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
+            if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
+
+            const eSignal = `Engaged with post about "${post._keyword}"`;
+            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl);
+            if (eOk) { inserted++; console.log(`keyword_posts: ACCEPTED engager "${fullEngager.first_name || ''} ${fullEngager.last_name || ''}" (${eHl})`); }
+          }
+        } else {
+          console.log(`keyword_posts: reactions fetch for ${postId}: ${reactionsRes.status}`);
+          await reactionsRes.text();
+        }
+      } catch (e) { console.error('keyword_posts engager scan:', e); }
+    }
   }
   return inserted;
 }
@@ -426,7 +461,8 @@ async function handleHashtagEngagement(
         if (!fullProfile) continue;
 
         const match = scoreProfileAgainstICP(fullProfile, icp);
-        if (!matchesTitleOrIndustry(match, icp)) continue;
+        const hl = fullProfile.headline || fullProfile.title || '';
+        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
@@ -480,7 +516,8 @@ async function handleCompetitorFollowers(
         };
 
         const match = scoreProfileAgainstICP(profile, icp);
-        if (!matchesTitleOrIndustry(match, icp)) continue;
+        const hl = profile.headline || profile.title || '';
+        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(profile, icp.excludeKeywords)) continue;
 
         const signal = `Follows ${companyName}`;
@@ -536,7 +573,8 @@ async function handleCompetitorPostEngagers(
           if (!fullProfile) continue;
 
           const match = scoreProfileAgainstICP(fullProfile, icp);
-          if (!matchesTitleOrIndustry(match, icp)) continue;
+          const hl = fullProfile.headline || fullProfile.title || '';
+          if (!matchesTitleOrIndustry(match, icp, hl)) continue;
           if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${companyName || companyId}'s post`;
@@ -601,7 +639,8 @@ async function handleProfileEngagers(
           if (!fullProfile) continue;
 
           const match = scoreProfileAgainstICP(fullProfile, icp);
-          if (!matchesTitleOrIndustry(match, icp)) continue;
+          const hl = fullProfile.headline || fullProfile.title || '';
+          if (!matchesTitleOrIndustry(match, icp, hl)) continue;
           if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${profileName}'s post`;
@@ -647,10 +686,56 @@ function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
   return { titleMatch, industryMatch, locationMatch, score: Math.min(100, score), matchedFields };
 }
 
-function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters): boolean {
+// Buying-intent titles: decision makers, budget holders, founders
+const BUYING_INTENT_KEYWORDS = [
+  'ceo', 'cto', 'coo', 'cfo', 'cmo', 'cro', 'cpo', 'cio',
+  'founder', 'co-founder', 'cofounder', 'owner', 'partner',
+  'president', 'principal',
+  'vp', 'vice president',
+  'director', 'head of', 'chief',
+  'general manager', 'managing director',
+  'svp', 'evp', 'avp',
+];
+
+// Clearly irrelevant individual contributor titles to reject
+const REJECT_TITLES = [
+  'software developer', 'software engineer', 'frontend developer', 'backend developer',
+  'full stack developer', 'fullstack developer', 'web developer', 'mobile developer',
+  'junior developer', 'senior developer', 'staff engineer', 'intern',
+  'data analyst', 'qa engineer', 'test engineer', 'devops engineer',
+  'graphic designer', 'ui designer', 'ux designer',
+  'student', 'fresher', 'trainee', 'apprentice',
+  'accountant', 'bookkeeper', 'cashier', 'clerk',
+  'receptionist', 'administrative assistant', 'office assistant',
+];
+
+function hasBuyingIntent(headline: string): boolean {
+  const h = (headline || '').toLowerCase();
+  return BUYING_INTENT_KEYWORDS.some((kw) => h.includes(kw));
+}
+
+function isClearlyIrrelevant(headline: string): boolean {
+  const h = (headline || '').toLowerCase();
+  return REJECT_TITLES.some((kw) => h.includes(kw));
+}
+
+function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: string): boolean {
+  // If exact ICP title match, always accept
   if (icp.jobTitles.length > 0 && match.titleMatch) return true;
-  if (icp.industries.length > 0 && match.industryMatch) return true;
+  // If no title filter set, accept
   if (icp.jobTitles.length === 0 && icp.industries.length === 0) return true;
+  // If industry matches, accept unless clearly irrelevant
+  if (icp.industries.length > 0 && match.industryMatch) {
+    if (headline && isClearlyIrrelevant(headline)) return false;
+    return true;
+  }
+  // Buying intent titles pass even without exact ICP match
+  if (headline && hasBuyingIntent(headline) && !isClearlyIrrelevant(headline)) return true;
+  // Reject clearly irrelevant
+  if (headline && isClearlyIrrelevant(headline)) return false;
+  // If we have a headline but it's not clearly irrelevant and not buying intent,
+  // accept with lower confidence (the score will reflect this)
+  if (headline && headline.length > 5) return true;
   return false;
 }
 
