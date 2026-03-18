@@ -274,7 +274,8 @@ async function handlePostEngagers(
         if (!fullProfile) continue;
 
         const match = scoreProfileAgainstICP(fullProfile, icp);
-        if (!matchesTitleOrIndustry(match, icp)) continue;
+        const hl = fullProfile.headline || fullProfile.title || '';
+        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
