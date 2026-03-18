@@ -795,45 +795,45 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-full bg-card rounded-2xl m-4 overflow-hidden">
+    <div className="min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="border-b border-border px-8 py-5"
+        className="border-b border-border px-4 md:px-8 py-4 md:py-5"
       >
         <div className="flex items-center gap-2.5">
           <span className="[&_svg]:stroke-[url(#section-icon-gradient)]">
             <SettingsIcon className="w-4.5 h-4.5 shrink-0" />
           </span>
-          <h1 className="text-lg font-bold text-foreground">Account Settings</h1>
+          <h1 className="text-base md:text-lg font-bold text-foreground">Account Settings</h1>
         </div>
-        <p className="text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
       </motion.div>
 
-      {/* Tabs strip */}
+      {/* Tabs strip — scrollable on mobile */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.3 }}
-        className="border-b border-border px-8"
+        className="border-b border-border px-2 md:px-8"
       >
-        <div className="flex items-center gap-1 overflow-x-auto">
+        <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none -mb-px">
           {tabsList.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                className={`relative flex items-center gap-1.5 px-3 md:px-4 py-3 md:py-3.5 text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {tab.icon}
                 {tab.label}
                 {active && (
                   <motion.div
                     layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-px rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
                     style={{ background: "linear-gradient(90deg, #7C93E6, #F7C459)" }}
                   />
                 )}
@@ -844,7 +844,7 @@ export default function Settings() {
       </motion.div>
 
       {/* Tab content */}
-      <div className="px-8 py-6 max-w-3xl">
+      <div className="px-3 md:px-8 py-4 md:py-6 max-w-3xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
