@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
+import registerBg from "@/assets/register-bg.png";
 
 interface InviteData {
   email: string;
@@ -458,14 +459,10 @@ export default function Register() {
 
       {/* RIGHT — gradient + testimonials */}
       <div
-        className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden"
+        className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-cover bg-center"
         style={{
-          background: "linear-gradient(160deg, hsl(220 30% 88%) 0%, hsl(230 25% 82%) 30%, hsl(40 60% 75%) 70%, hsl(35 70% 65%) 100%)"
+          backgroundImage: `url(${registerBg})`
         }}>
-        
-        {/* Blur blobs */}
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full opacity-30" style={{ background: "hsl(220 40% 75%)", filter: "blur(80px)" }} />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full opacity-40" style={{ background: "hsl(35 80% 65%)", filter: "blur(70px)" }} />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center px-12 max-w-md w-full">
