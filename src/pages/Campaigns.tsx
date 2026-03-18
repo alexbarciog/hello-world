@@ -136,7 +136,7 @@ export default function CampaignsPage() {
       </div>
 
       {/* Table card */}
-      <div className="rounded-md border border-border bg-card overflow-hidden">
+      <div className="rounded-md border border-border bg-card overflow-visible">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
