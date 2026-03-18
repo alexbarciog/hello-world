@@ -95,6 +95,28 @@
   }
 }
 
+/* CTA Button */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--gradient-cta);
+  color: hsl(0 0% 100%);
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  box-shadow: 0 4px 16px 0 rgba(49, 30, 219, 0.25);
+  transition: all 0.2s;
+  width: fit-content;
+}
+.btn-cta:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+.btn-cta:active {
+  transform: scale(0.98);
+}
+
 /* Marquee animation */
 @keyframes marquee {
   0% { transform: translateX(0); }
