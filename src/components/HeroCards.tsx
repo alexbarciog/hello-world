@@ -4,83 +4,81 @@ const HeroCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
       {/* Card 1: Engagement Signals */}
-      <div className="rounded-2xl p-5 text-left flex flex-col gap-3 relative overflow-hidden border-2 border-background" style={{ background: "hsl(0 0% 96%)" }}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-1">
+      <div className="rounded-2xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background" style={{ background: "hsl(0 0% 96%)" }}>
+        {/* Group 1: Header */}
+        <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold text-foreground">Engagement signals</h3>
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
         </div>
 
-        {/* Profile sub-card with left connector */}
-        <div className="relative pl-5">
-          {/* Dashed vertical line from profile to tags */}
-          <div className="absolute left-0 top-1/2 bottom-0 w-0 border-l border-dashed border-primary/30" />
-          {/* Horizontal dashed line from vertical line to profile card (corner effect) */}
-          <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
-          {/* Arrow dot at start */}
-          
-          <div className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-background shrink-0 ring-2 ring-background">MC</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-semibold text-foreground">Michael Chang</div>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
+        {/* Group 2: Lead flow */}
+        <div className="flex flex-col gap-3">
+          {/* Profile sub-card with left connector */}
+          <div className="relative pl-5">
+            <div className="absolute left-0 top-1/2 bottom-0 w-0 border-l border-dashed border-primary/30" />
+            <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
+            <div className="bg-background rounded-xl p-3 flex items-center gap-3 shadow-sm">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-xs font-bold text-background shrink-0 ring-2 ring-background">MC</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold text-foreground">Michael Chang</div>
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
+                </div>
+                <div className="text-xs text-muted-foreground">VP of Sales at InnovateIQ</div>
+                <div className="text-xs text-muted-foreground">michael@innovateiq.com</div>
               </div>
-              <div className="text-xs text-muted-foreground">VP of Sales at InnovateIQ</div>
-              <div className="text-xs text-muted-foreground">michael@innovateiq.com</div>
             </div>
           </div>
-        </div>
 
-        {/* Signal tags with left connector */}
-        <div className="relative pl-5">
-          {/* Vertical line ending here + horizontal connector to tag */}
-          <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
-          <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
-          <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-              <Heart className="w-3 h-3" /> Liked your post
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
-              <UserPlus className="w-3 h-3" /> Followed you
-            </span>
-          </div>
-        </div>
-
-        {/* Dashed connector */}
-        <div className="flex items-center gap-1.5 px-2">
-          <span className="border-t border-dashed border-muted-foreground/40 flex-1" />
-          <span className="text-[10px] text-muted-foreground/60">→</span>
-        </div>
-
-        {/* Why they fit sub-card */}
-        <div className="bg-background rounded-xl p-3 shadow-sm border-l-2 border-amber-400 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-              <Target className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Why they fit</span>
-          </div>
-          <div className="space-y-1.5 pl-8">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Users className="w-3 h-3 shrink-0" /> Is a decision-maker
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Sparkles className="w-3 h-3 shrink-0" /> Posts about sales software
+          {/* Signal tags with left connector */}
+          <div className="relative pl-5">
+            <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
+            <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
+                <Heart className="w-3 h-3" /> Liked your post
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-background text-foreground shadow-sm">
+                <UserPlus className="w-3 h-3" /> Followed you
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Actions sub-card */}
-        <div className="bg-background rounded-xl p-3 shadow-sm space-y-2 mt-auto">
-          <p className="text-sm font-semibold text-foreground">Move this lead forward</p>
-          <div className="flex gap-2">
-            <button className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2.5 rounded-lg bg-foreground text-background">
-              <Download className="w-3 h-3" /> Save to CRM
-            </button>
-            <button className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-lg border border-border text-foreground">
-              <UserPlus className="w-3 h-3" /> Connect
-            </button>
+          {/* Dashed connector */}
+          <div className="flex items-center gap-1.5 px-2">
+            <span className="border-t border-dashed border-muted-foreground/40 flex-1" />
+            <span className="text-[10px] text-muted-foreground/60">→</span>
+          </div>
+
+          {/* Why they fit sub-card */}
+          <div className="bg-background rounded-xl p-3 shadow-sm border-l-2 border-amber-400 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
+                <Target className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Why they fit</span>
+            </div>
+            <div className="space-y-1.5 pl-8">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Users className="w-3 h-3 shrink-0" /> Is a decision-maker
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles className="w-3 h-3 shrink-0" /> Posts about sales software
+              </div>
+            </div>
+          </div>
+
+          {/* Actions sub-card */}
+          <div className="bg-background rounded-xl p-3 shadow-sm space-y-2 mt-auto">
+            <p className="text-sm font-semibold text-foreground">Move this lead forward</p>
+            <div className="flex gap-2">
+              <button className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2.5 rounded-lg bg-foreground text-background">
+                <Download className="w-3 h-3" /> Save to CRM
+              </button>
+              <button className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2.5 rounded-lg border border-border text-foreground">
+                <UserPlus className="w-3 h-3" /> Connect
+              </button>
+            </div>
           </div>
         </div>
       </div>
