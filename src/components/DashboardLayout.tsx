@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 title={collapsed ? item.label : undefined}
                 className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
                   active
-                    ? "bg-foreground/10 text-foreground"
+                    ? "bg-white text-foreground shadow-sm"
                     : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                 }`}
               >
