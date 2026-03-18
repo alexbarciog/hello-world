@@ -72,13 +72,13 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-full bg-card rounded-2xl px-8 py-6 relative m-4">
+    <div className="min-h-full bg-card rounded-2xl px-4 md:px-8 py-6 relative m-2 md:m-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">
           Welcome Alex 🚀
         </h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-red-500 border-red-200 bg-white hover:bg-red-50 transition-colors">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
             0 Active Signal(s)
@@ -93,7 +93,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         {/* Ready to outreach */}
         <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col items-center justify-center gap-3 shadow-sm">
           <p className="text-sm font-semibold text-[hsl(222_28%_18%)]">Ready to outreach?</p>
