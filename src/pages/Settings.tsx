@@ -765,7 +765,7 @@ export default function Settings() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${active ? "text-[hsl(var(--goji-coral))]" : "text-muted-foreground hover:text-foreground"}`}
+                className={`relative flex items-center gap-1.5 px-4 py-3.5 text-xs font-semibold whitespace-nowrap transition-colors ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 {tab.icon}
                 {tab.label}
@@ -773,7 +773,7 @@ export default function Settings() {
                   <motion.div
                     layoutId="tab-underline"
                     className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                    style={{ background: "hsl(var(--goji-coral))" }}
+                    style={{ background: "var(--gradient-cta)" }}
                   />
                 )}
               </button>
