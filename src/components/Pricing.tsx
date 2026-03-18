@@ -72,13 +72,6 @@ const Pricing = () => {
               </a>
             </div>
 
-
-            {/* Bottom link */}
-            <div className="px-8 pb-8">
-              <a href="/billing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Need higher limits?
-              </a>
-            </div>
           </div>
         </div>
       </div>
