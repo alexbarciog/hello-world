@@ -47,7 +47,7 @@ const HeroCards = () => {
           </div>
           {/* Why they fit sub-card with right connector */}
           <div className="relative pl-5">
-            <div className="absolute right-[-1.25rem] top-0 h-1/2 w-0 border-l border-dashed border-primary/30" />
+            <div className="absolute right-[-1.25rem] -top-[calc(0.75rem+50%)] h-[calc(100%+0.75rem)] w-0 border-l border-dashed border-primary/30" />
             <div className="absolute right-[-1.25rem] top-1/2 w-5 h-0 border-t border-dashed border-primary/30" />
             <div className="bg-background rounded-xl p-3 shadow-sm border-l-2 border-amber-400 space-y-2">
               <div className="flex items-center gap-2">
