@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+
 import {
   INITIAL_ONBOARDING_DATA,
   type OnboardingData,
