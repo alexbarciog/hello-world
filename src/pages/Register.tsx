@@ -344,6 +344,9 @@ export default function Register() {
                 </p>
                 <p className="text-center text-xs text-muted-foreground mt-3">
                   By creating an account, you agree to our{" "}
+                  <Link to="/terms" className="underline hover:text-foreground transition-colors">
+                    Terms of Service
+                  </Link>{" "}and{" "}
                   <Link to="/privacy" className="underline hover:text-foreground transition-colors">
                     Privacy Policy
                   </Link>
