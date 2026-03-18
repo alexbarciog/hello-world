@@ -103,6 +103,40 @@ function SaveButton({ saving, saved, onClick, label = "Save Settings" }: { savin
   );
 }
 
+function lerpColor(val: number, min: number, max: number) {
+  const t = Math.min(1, Math.max(0, (val - min) / (max - min)));
+  // green (34,197,94) → orange (245,158,11)
+  const r = Math.round(34 + t * (245 - 34));
+  const g = Math.round(197 + t * (158 - 197));
+  const b = Math.round(94 + t * (11 - 94));
+  return `rgb(${r},${g},${b})`;
+}
+
+function LinkedInSlider({ label, value, onChange }: { label: string; value: number[]; onChange: (v: number[]) => void }) {
+  const color = lerpColor(value[0], 5, 30);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold tabular-nums transition-colors duration-200" style={{ color }}>{value[0]}</span>
+      </div>
+      <div
+        className="[&_[data-radix-slider-range]]:transition-[background-color] [&_[data-radix-slider-range]]:duration-200 [&_[data-radix-slider-thumb]]:transition-[border-color] [&_[data-radix-slider-thumb]]:duration-200"
+        style={{ "--sc": color } as React.CSSProperties}
+      >
+        <Slider
+          value={value}
+          onValueChange={onChange}
+          min={5}
+          max={30}
+          step={1}
+          className="w-full [&_[data-radix-slider-range]]:!bg-[var(--sc)] [&_[data-radix-slider-thumb]]:!border-[var(--sc)]"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Invitation type ──────────────────────────────────────────────────────────
 type Invitation = {
   id: string; email: string; accepted_at: string | null;
