@@ -148,7 +148,7 @@ const HowItWorks = () => {
               <div className="flex-1">{step.visual}</div>
               <div className="px-2">
                 <div className="flex items-start gap-3 mb-2">
-                  <span className="text-[40px] font-bold text-foreground leading-none" style={{ letterSpacing: '-0.5px' }}>
+                  <span className="text-[40px] font-normal text-foreground leading-none" style={{ letterSpacing: '-2px' }}>
                     {step.num}
                   </span>
                   <div className="pt-2">
