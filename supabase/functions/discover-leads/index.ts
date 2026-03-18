@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
                 api: 'classic',
                 category: 'posts',
                 keywords: keyword,
-                date_posted: 'past-week',
+                date_posted: 'past_week',
               }),
             });
 
