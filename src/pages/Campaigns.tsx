@@ -350,7 +350,7 @@ export default function CampaignsPage() {
                           </svg>
                         </button>
                         {menuOpen === c.id && (
-                          <div className="absolute right-0 top-full mt-1 w-40 rounded-lg bg-card border border-border shadow-lg z-50 py-1">
+                          <div className="absolute right-0 bottom-full mb-1 w-40 rounded-lg bg-card border border-border shadow-lg z-50 py-1">
                             <button
                               onClick={() => { setMenuOpen(null); navigate(`/onboarding?campaign=${c.id}`); }}
                               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
