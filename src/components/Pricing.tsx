@@ -63,7 +63,7 @@ const Pricing = () => {
             </div>
 
             {/* CTA button */}
-            <div className="px-8 mt-6">
+            <div className="px-8 mt-6 pb-8">
               <a
                 href="/register"
                 className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
