@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,8 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Loader2, MapPin, Plus, Sparkles, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, MapPin, Sparkles, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { CardShell } from "./CardShell";
+import { OnboardingNav } from "./OnboardingNav";
 import type { OnboardingData } from "./types";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -64,19 +65,13 @@ export const INITIAL_ICP: ICPData = {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const Tag = ({
-  label,
-  onRemove,
-}: {
-  label: string;
-  onRemove: () => void;
-}) => (
+const Tag = ({ label, onRemove }: { label: string; onRemove: () => void }) => (
   <span
-    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-150 hover:opacity-80"
+    className="group/tag inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all duration-200 relative"
     style={{
-      background: "hsl(var(--goji-coral) / 0.10)",
-      color: "hsl(var(--goji-berry))",
-      border: "1px solid hsl(var(--goji-coral) / 0.25)",
+      background: "hsl(0 0% 96%)",
+      color: "hsl(var(--foreground))",
+      border: "1px solid hsl(var(--border))",
     }}
   >
     {label}
@@ -91,20 +86,11 @@ const Tag = ({
   </span>
 );
 
-const TagInput = ({
-  placeholder,
-  onAdd,
-}: {
-  placeholder: string;
-  onAdd: (val: string) => void;
-}) => {
+const TagInput = ({ placeholder, onAdd }: { placeholder: string; onAdd: (val: string) => void }) => {
   const [val, setVal] = useState("");
   function submit() {
     const trimmed = val.trim();
-    if (trimmed) {
-      onAdd(trimmed);
-      setVal("");
-    }
+    if (trimmed) { onAdd(trimmed); setVal(""); }
   }
   return (
     <div className="flex gap-2 mt-2">
@@ -115,18 +101,14 @@ const TagInput = ({
         placeholder={placeholder}
         className="rounded-xl h-10 text-sm border-border flex-1"
       />
-      <Button
+      <button
         type="button"
         onClick={submit}
         disabled={!val.trim()}
-        className="h-10 px-4 rounded-xl text-sm font-semibold disabled:opacity-40"
-        style={{
-          background: "hsl(var(--goji-berry))",
-          color: "hsl(0 0% 100%)",
-        }}
+        className="btn-cta h-10 px-4 text-xs disabled:opacity-40 disabled:pointer-events-none"
       >
         Add
-      </Button>
+      </button>
     </div>
   );
 };
@@ -149,17 +131,11 @@ const MultiSelectDropdown = ({
     <div>
       <Select onValueChange={onAdd}>
         <SelectTrigger className="rounded-xl h-10 text-sm border-border w-full">
-          <SelectValue
-            placeholder={
-              selected.length > 0 ? `${selected.length} selected` : label
-            }
-          />
+          <SelectValue placeholder={selected.length > 0 ? `${selected.length} selected` : label} />
         </SelectTrigger>
         <SelectContent className="max-h-56">
           {available.map((opt) => (
-            <SelectItem key={opt} value={opt}>
-              {opt}
-            </SelectItem>
+            <SelectItem key={opt} value={opt}>{opt}</SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -208,8 +184,6 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const hasFetched = useRef(false);
 
-  // ── helpers ────────────────────────────────────────────────────────────────
-
   function addTag(field: keyof ICPData, val: string) {
     const current = icp[field] as string[];
     if (!current.includes(val)) {
@@ -220,8 +194,6 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
   function removeTag(field: keyof ICPData, val: string) {
     onICPChange({ [field]: (icp[field] as string[]).filter((v) => v !== val) });
   }
-
-  // ── AI generation ──────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (hasFetched.current) return;
@@ -234,20 +206,15 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
   async function generateICP() {
     setLoading(true);
     try {
-      const { data: fnData, error } = await supabase.functions.invoke(
-        "generate-icp",
-        {
-          body: {
-            companyName: data.companyName,
-            industry: data.industry,
-            description: data.description,
-            language: data.language,
-          },
-        }
-      );
-
+      const { data: fnData, error } = await supabase.functions.invoke("generate-icp", {
+        body: {
+          companyName: data.companyName,
+          industry: data.industry,
+          description: data.description,
+          language: data.language,
+        },
+      });
       if (error) throw error;
-
       const result = fnData as {
         jobTitles?: string[];
         targetLocations?: string[];
@@ -255,7 +222,6 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
         companyTypes?: string[];
         companySizes?: string[];
       };
-
       onICPChange({
         jobTitles: result.jobTitles ?? [],
         targetLocations: result.targetLocations ?? ["Europe"],
@@ -263,11 +229,9 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
         companyTypes: result.companyTypes ?? ["Private Company"],
         companySizes: result.companySizes ?? [],
       });
-
       setAiGenerated(true);
     } catch (err) {
       console.error("ICP generation failed:", err);
-      // Graceful fallback — pre-fill industry at least
       onICPChange({
         targetLocations: ["Europe"],
         targetIndustries: data.industry ? [data.industry] : [],
@@ -279,10 +243,7 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
     }
   }
 
-  const canProceed =
-    icp.jobTitles.length > 0 || icp.targetIndustries.length > 0;
-
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const canProceed = icp.jobTitles.length > 0 || icp.targetIndustries.length > 0;
 
   return (
     <div>
@@ -290,29 +251,23 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
       <div className="relative mb-7">
         <div>
           <h1
-            className="text-2xl font-bold tracking-tight mb-1.5"
-            style={{ color: "hsl(var(--goji-dark))" }}
+            className="text-2xl font-normal tracking-tight mb-1.5"
+            style={{ color: "hsl(var(--foreground))" }}
           >
             Define your Ideal Customer
           </h1>
-          <p
-            className="text-sm leading-relaxed max-w-md"
-            style={{ color: "hsl(var(--goji-text-muted))" }}
-          >
-            Your AI Agents will use this Profile to detect and surface
-            high-intent leads. Fine-tune it to control lead quality.
+          <p className="text-sm leading-relaxed max-w-md" style={{ color: "hsl(var(--muted-foreground))" }}>
+            Your AI Agents will use this Profile to detect and surface high-intent leads. Fine-tune it to control lead quality.
           </p>
         </div>
 
-        {/* AI-generated badge */}
         {aiGenerated && !loading && (
           <div
             className="absolute top-0 right-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
             style={{
-              background:
-                "linear-gradient(135deg, hsl(var(--goji-orange)), hsl(var(--goji-coral)))",
+              background: "hsl(0 0% 0%)",
               color: "hsl(0 0% 100%)",
-              boxShadow: "0 2px 12px hsl(var(--goji-coral) / 0.35)",
+              boxShadow: "0 2px 12px hsl(0 0% 0% / 0.2)",
             }}
           >
             <Sparkles className="w-3 h-3" />
@@ -325,102 +280,77 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
       {loading ? (
         <ICPSkeleton />
       ) : (
-        <div className="space-y-5">
-          {/* Two-column grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Left — Job Titles */}
-            <div className="space-y-1.5">
-              <Label
-                className="text-sm font-medium"
-                style={{ color: "hsl(var(--goji-dark))" }}
-              >
-                Target Job Titles
-              </Label>
-              <TagInput
-                placeholder="e.g., Sales Manager"
-                onAdd={(v) => addTag("jobTitles", v)}
-              />
-              {icp.jobTitles.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {icp.jobTitles.map((t) => (
-                    <Tag
-                      key={t}
-                      label={t}
-                      onRemove={() => removeTag("jobTitles", t)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="space-y-4">
+          {/* Two-column grid wrapped in CardShell */}
+          <CardShell className="animate-fade-in-up">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                  Target Job Titles
+                </Label>
+                <TagInput placeholder="e.g., Sales Manager" onAdd={(v) => addTag("jobTitles", v)} />
+                {icp.jobTitles.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {icp.jobTitles.map((t) => (
+                      <Tag key={t} label={t} onRemove={() => removeTag("jobTitles", t)} />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Right — Locations */}
-            <div className="space-y-1.5">
-              <Label
-                className="text-sm font-medium"
-                style={{ color: "hsl(var(--goji-dark))" }}
-              >
-                Target Locations
-              </Label>
-              <MultiSelectDropdown
-                label="Select location"
-                options={TARGET_LOCATIONS}
-                selected={icp.targetLocations}
-                onAdd={(v) => addTag("targetLocations", v)}
-                onRemove={(v) => removeTag("targetLocations", v)}
-              />
-            </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                  Target Locations
+                </Label>
+                <MultiSelectDropdown
+                  label="Select location"
+                  options={TARGET_LOCATIONS}
+                  selected={icp.targetLocations}
+                  onAdd={(v) => addTag("targetLocations", v)}
+                  onRemove={(v) => removeTag("targetLocations", v)}
+                />
+              </div>
 
-            {/* Left — Industries */}
-            <div className="space-y-1.5">
-              <Label
-                className="text-sm font-medium"
-                style={{ color: "hsl(var(--goji-dark))" }}
-              >
-                Target Industries
-              </Label>
-              <MultiSelectDropdown
-                label="Select industry"
-                options={INDUSTRIES_LIST}
-                selected={icp.targetIndustries}
-                onAdd={(v) => addTag("targetIndustries", v)}
-                onRemove={(v) => removeTag("targetIndustries", v)}
-              />
-            </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                  Target Industries
+                </Label>
+                <MultiSelectDropdown
+                  label="Select industry"
+                  options={INDUSTRIES_LIST}
+                  selected={icp.targetIndustries}
+                  onAdd={(v) => addTag("targetIndustries", v)}
+                  onRemove={(v) => removeTag("targetIndustries", v)}
+                />
+              </div>
 
-            {/* Right — Company Types */}
-            <div className="space-y-1.5">
-              <Label
-                className="text-sm font-medium"
-                style={{ color: "hsl(var(--goji-dark))" }}
-              >
-                Company Types
-              </Label>
-              <MultiSelectDropdown
-                label="Select type"
-                options={COMPANY_TYPES}
-                selected={icp.companyTypes}
-                onAdd={(v) => addTag("companyTypes", v)}
-                onRemove={(v) => removeTag("companyTypes", v)}
-              />
-            </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                  Company Types
+                </Label>
+                <MultiSelectDropdown
+                  label="Select type"
+                  options={COMPANY_TYPES}
+                  selected={icp.companyTypes}
+                  onAdd={(v) => addTag("companyTypes", v)}
+                  onRemove={(v) => removeTag("companyTypes", v)}
+                />
+              </div>
 
-            {/* Left — Company Sizes */}
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label
-                className="text-sm font-medium"
-                style={{ color: "hsl(var(--goji-dark))" }}
-              >
-                Company Sizes
-              </Label>
-              <MultiSelectDropdown
-                label="Select size"
-                options={COMPANY_SIZES}
-                selected={icp.companySizes}
-                onAdd={(v) => addTag("companySizes", v)}
-                onRemove={(v) => removeTag("companySizes", v)}
-              />
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-sm font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                  Company Sizes
+                </Label>
+                <MultiSelectDropdown
+                  label="Select size"
+                  options={COMPANY_SIZES}
+                  selected={icp.companySizes}
+                  onAdd={(v) => addTag("companySizes", v)}
+                  onRemove={(v) => removeTag("companySizes", v)}
+                />
+              </div>
             </div>
-          </div>
+          </CardShell>
 
           {/* Advanced filters */}
           <div>
@@ -428,106 +358,50 @@ export const Step3ICP = ({ data, icp, onICPChange, onNext, onPrev }: Props) => {
               type="button"
               onClick={() => setShowAdvanced((p) => !p)}
               className="flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-70"
-              style={{ color: "hsl(var(--goji-coral))" }}
+              style={{ color: "hsl(var(--foreground))" }}
             >
               Advanced filters
-              {showAdvanced ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
+              {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
 
             {showAdvanced && (
-              <div className="mt-4 space-y-1.5">
-                <Label
-                  className="text-sm font-medium flex items-center gap-1"
-                  style={{ color: "hsl(var(--goji-dark))" }}
-                >
-                  Companies &amp; Keywords to exclude
-                  <span
-                    className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ml-0.5 cursor-default"
-                    style={{
-                      background: "hsl(var(--muted))",
-                      color: "hsl(var(--goji-text-muted))",
-                    }}
-                    title="Leads matching these keywords will be filtered out"
-                  >
-                    i
-                  </span>
-                </Label>
-                <TagInput
-                  placeholder="e.g., Google"
-                  onAdd={(v) => addTag("excludeKeywords", v)}
-                />
-                {icp.excludeKeywords.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {icp.excludeKeywords.map((t) => (
-                      <Tag
-                        key={t}
-                        label={t}
-                        onRemove={() => removeTag("excludeKeywords", t)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CardShell className="mt-3 animate-fade-in-up">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium flex items-center gap-1" style={{ color: "hsl(var(--foreground))" }}>
+                    Companies &amp; Keywords to exclude
+                    <span
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold ml-0.5 cursor-default"
+                      style={{ background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }}
+                      title="Leads matching these keywords will be filtered out"
+                    >
+                      i
+                    </span>
+                  </Label>
+                  <TagInput placeholder="e.g., Google" onAdd={(v) => addTag("excludeKeywords", v)} />
+                  {icp.excludeKeywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {icp.excludeKeywords.map((t) => (
+                        <Tag key={t} label={t} onRemove={() => removeTag("excludeKeywords", t)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardShell>
             )}
           </div>
 
           {/* Footer note */}
           <div
             className="flex items-start gap-2 rounded-xl px-4 py-3 text-xs"
-            style={{
-              background: "hsl(var(--muted) / 0.5)",
-              color: "hsl(var(--goji-text-muted))",
-            }}
+            style={{ background: "hsl(0 0% 96%)", color: "hsl(var(--muted-foreground))" }}
           >
             <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "hsl(var(--goji-orange))" }} />
-            Think of this ICP as your starting point. You'll be able to fine-tune
-            it and stack extra filters later.
+            Think of this ICP as your starting point. You'll be able to fine-tune it and stack extra filters later.
           </div>
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between border-t border-border pt-5 mt-6">
-        <button
-          type="button"
-          onClick={onPrev}
-          className="flex items-center gap-1.5 text-sm font-medium transition-opacity hover:opacity-70"
-          style={{ color: "hsl(var(--goji-text-muted))" }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Previous
-        </button>
-
-        <Button
-          type="button"
-          onClick={onNext}
-          disabled={loading || !canProceed}
-          className="h-11 px-8 rounded-xl font-semibold text-sm transition-all duration-200 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
-          style={{
-            background: "hsl(var(--goji-berry))",
-            color: "hsl(0 0% 100%)",
-            boxShadow: canProceed
-              ? "0 4px 20px 0 hsl(var(--goji-coral) / 0.3)"
-              : "none",
-          }}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Generating…
-            </span>
-          ) : (
-            <>
-              Next Step
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </>
-          )}
-        </Button>
-      </div>
+      <OnboardingNav onPrev={onPrev} onNext={onNext} nextDisabled={loading || !canProceed} loading={loading} />
     </div>
   );
 };
