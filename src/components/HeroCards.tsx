@@ -22,9 +22,9 @@ const HeroCards = () => {
           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-border text-muted-foreground shrink-0">2nd degree</span>
         </div>
 
-        {/* Dashed connector */}
-        <div className="flex items-center gap-1.5 px-2">
-          <span className="border-t border-dashed border-muted-foreground/40 flex-1" />
+        {/* Dashed connector left-aligned */}
+        <div className="flex items-center gap-1.5 pl-6">
+          <span className="border-l border-dashed border-muted-foreground/40 h-4" />
           <span className="text-[10px] text-muted-foreground/60">→</span>
         </div>
 
