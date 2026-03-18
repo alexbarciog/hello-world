@@ -207,7 +207,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
               <button
                 onClick={() => navigate("/billing")}
-                className="w-full text-[11px] font-bold text-foreground bg-foreground/10 hover:bg-foreground/15 rounded-md py-1.5 transition-colors"
+                className="w-full text-[11px] font-bold text-primary-foreground bg-foreground hover:bg-foreground/90 rounded-md py-1.5 transition-colors"
               >
                 Start Trial ✦
               </button>
