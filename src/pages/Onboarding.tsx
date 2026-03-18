@@ -167,10 +167,10 @@ function OnboardingInner() {
 
       {/* Card */}
       <div
-        className="w-full rounded-2xl bg-card border border-border overflow-hidden transition-all duration-500"
+        className="w-full rounded-3xl bg-card border-2 border-background overflow-hidden transition-all duration-500"
         style={{
           maxWidth: isWide ? "780px" : "600px",
-          boxShadow: "var(--shadow-card)",
+          boxShadow: "0 8px 40px hsl(220 14% 10% / 0.08)",
         }}
       >
         <div className="p-8 md:p-10">
@@ -187,8 +187,8 @@ function OnboardingInner() {
           {currentStep === 1 && (
             <div className="mb-8 mt-2">
               <h1
-                className="text-2xl font-bold tracking-tight mb-2"
-                style={{ color: "hsl(var(--goji-dark))" }}
+                className="text-2xl font-normal tracking-tight mb-2"
+                style={{ color: "hsl(var(--foreground))" }}
               >
                 Create your first AI campaign
               </h1>
