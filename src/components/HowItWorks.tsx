@@ -1,4 +1,4 @@
-import { ArrowRight, UserPlus, Zap, TrendingUp, Users, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowRight, UserPlus, Zap, TrendingUp, Users, MessageCircle, Sparkles, Heart, Eye, PenLine } from "lucide-react";
 import intentslySmile from "@/assets/intentsly-smile.png";
 
 function SignupCard() {
