@@ -8,8 +8,11 @@ import {
   ChevronLeft, Play, Pause, Pencil, Settings as SettingsIcon,
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
-  AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp,
+  AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { Contact, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import {
@@ -99,7 +102,15 @@ export default function CampaignDetail() {
   const [showAgentRunning, setShowAgentRunning] = useState(false);
   const [editingStep, setEditingStep] = useState<number | null>(null);
 
-  // Settings state
+  // Add step dialog state
+  const [addStepOpen, setAddStepOpen] = useState(false);
+  const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile">("message");
+  const [newStepMessage, setNewStepMessage] = useState("");
+  const [newStepDelay, setNewStepDelay] = useState(1);
+  const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
+
+  
   const [settingsGoal, setSettingsGoal] = useState("");
   const [settingsTone, setSettingsTone] = useState("");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
@@ -163,6 +174,34 @@ export default function CampaignDetail() {
       toast.success("Settings saved!");
     }
     setSavingSettings(false);
+  }
+  function openAddStep() {
+    setNewStepType("message");
+    setNewStepMessage("");
+    setNewStepDelay(1);
+    setNewStepMessageMode("manual");
+    setAddStepPhase("choose");
+    setAddStepOpen(true);
+  }
+
+  function insertVariable(v: string) {
+    setNewStepMessage(prev => prev + `{{${v}}}`);
+  }
+
+  async function saveNewStep() {
+    if (!campaign) return;
+    const newStep: any = {
+      type: newStepType === "visit_profile" ? "visit_profile" : "message",
+      message: newStepMessageMode === "ai" ? "" : newStepMessage,
+      delay_days: newStepDelay,
+      ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
+    };
+    const updated = [...workflowSteps, newStep];
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to add step"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setAddStepOpen(false);
+    toast.success("Step added!");
   }
 
   const filteredContacts = useMemo(() => {
@@ -466,13 +505,154 @@ export default function CampaignDetail() {
                     {/* Add Step */}
                     <div className="flex flex-col items-center self-start pt-10 px-2">
                       <div className="w-6 border-t-2 border-dashed border-muted-foreground/20" />
-                      <button className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2">
+                      <button
+                        onClick={openAddStep}
+                        className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2"
+                      >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 </div>
               </div>
+
+              {/* Add Step Dialog */}
+              <Dialog open={addStepOpen} onOpenChange={setAddStepOpen}>
+                <DialogContent className="sm:max-w-[560px] p-0 gap-0">
+                  <AnimatePresence mode="wait">
+                    {addStepPhase === "choose" ? (
+                      <motion.div key="choose" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
+                        <DialogHeader className="mb-5">
+                          <DialogTitle className="text-lg font-bold">Choose step</DialogTitle>
+                          <p className="text-sm text-muted-foreground">Select the type of step to add</p>
+                        </DialogHeader>
+                        <div className="space-y-3">
+                          {[
+                            { type: "message" as const, icon: Send, label: "Send Message", desc: "Send messages, PDF and GIFs to connected leads", color: "hsl(210 80% 50%)" },
+                            { type: "message" as const, icon: Mic, label: "Send Voice Message", desc: "Record and send a voice message to connected leads", color: "hsl(142 70% 45%)", badge: "Coming soon" },
+                            { type: "visit_profile" as const, icon: User, label: "Visit Profile", desc: "Visit the LinkedIn profile of your leads", color: "hsl(0 60% 50%)" },
+                          ].map((opt) => (
+                            <button
+                              key={opt.label}
+                              disabled={!!opt.badge}
+                              onClick={() => { setNewStepType(opt.type); setAddStepPhase("edit"); }}
+                              className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/30 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed group"
+                            >
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${opt.color}15` }}>
+                                <opt.icon className="w-5 h-5" style={{ color: opt.color }} />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                                  {opt.label}
+                                  {opt.badge && <span className="text-[10px] font-medium text-muted-foreground bg-muted rounded-full px-2 py-0.5">{opt.badge}</span>}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div key="edit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-6">
+                        <DialogHeader className="mb-5">
+                          <DialogTitle className="text-lg font-bold">Edit Campaign Step</DialogTitle>
+                        </DialogHeader>
+
+                        {/* Message mode toggle */}
+                        <div className="grid grid-cols-2 gap-3 mb-5">
+                          <button
+                            onClick={() => setNewStepMessageMode("manual")}
+                            className={`p-3.5 rounded-xl border-2 text-left transition-all ${newStepMessageMode === "manual" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
+                          >
+                            <p className="text-sm font-bold text-foreground">Same message for everyone</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Use variables to craft your message</p>
+                          </button>
+                          <button
+                            onClick={() => setNewStepMessageMode("ai")}
+                            className={`p-3.5 rounded-xl border-2 text-left transition-all relative ${newStepMessageMode === "ai" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
+                          >
+                            <p className="text-sm font-bold text-foreground flex items-center gap-1.5">AI Follow-up <Sparkles className="w-3.5 h-3.5 text-amber-500" /></p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Personalized follow-up, generated by AI for each lead</p>
+                          </button>
+                        </div>
+
+                        {/* Message content */}
+                        {newStepMessageMode === "manual" && (
+                          <div className="mb-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-sm font-bold text-foreground">Message Content</label>
+                              <button className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                                <Sparkles className="w-3 h-3" /> Generate with AI
+                              </button>
+                            </div>
+                            <textarea
+                              value={newStepMessage}
+                              onChange={(e) => setNewStepMessage(e.target.value)}
+                              className="w-full min-h-[140px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                              placeholder="Type your message..."
+                              maxLength={1900}
+                            />
+                            <div className="flex items-center justify-between mt-2 px-1">
+                              <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-1.5">
+                                <span className="text-xs text-muted-foreground">Insert:</span>
+                                {["FirstName", "LastName", "Company"].map((v) => (
+                                  <button
+                                    key={v}
+                                    onClick={() => insertVariable(v)}
+                                    className="text-xs font-medium text-primary bg-primary/10 rounded px-2 py-0.5 hover:bg-primary/20 transition-colors"
+                                  >
+                                    {v}
+                                  </button>
+                                ))}
+                              </div>
+                              <span className="text-xs text-muted-foreground">{newStepMessage.length}/1900</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {newStepMessageMode === "ai" && (
+                          <div className="mb-4 rounded-xl border border-border bg-muted/20 p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Sparkles className="w-4 h-4 text-amber-500" />
+                              <span className="text-sm font-bold text-foreground">AI-Personalized Message</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Each lead will receive a unique, personalized message generated by AI based on their profile, company, and signal data.</p>
+                          </div>
+                        )}
+
+                        {/* Delay */}
+                        <div className="flex items-center gap-3 mb-6 pt-3 border-t border-border">
+                          <span className="text-sm text-foreground font-medium">Wait</span>
+                          <input
+                            type="number"
+                            value={newStepDelay}
+                            onChange={(e) => setNewStepDelay(Math.max(1, parseInt(e.target.value) || 1))}
+                            className="w-16 text-sm text-center border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            min={1}
+                          />
+                          <span className="text-sm text-muted-foreground">days after previous step</span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                          <button
+                            onClick={() => setAddStepPhase("choose")}
+                            className="text-sm font-medium text-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors"
+                          >
+                            Back
+                          </button>
+                          <button
+                            onClick={saveNewStep}
+                            className="text-sm font-bold text-white bg-primary rounded-lg px-5 py-2 hover:bg-primary/90 transition-colors"
+                          >
+                            Save Step
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </DialogContent>
+              </Dialog>
             </motion.div>
           )}
 
