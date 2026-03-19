@@ -425,7 +425,7 @@ export default function CampaignDetail() {
                                   <p className="text-xs text-muted-foreground">Invitation without message</p>
                                 ) : ws.ai_icebreaker ? (
                                   <div className="flex items-center gap-1.5 text-xs">
-                                    <Sparkles className="w-3 h-3 text-[hsl(var(--goji-coral))]" />
+                                    <Sparkles className="w-3 h-3 text-foreground" />
                                     <span className="text-foreground font-bold">AI Icebreaker</span>
                                   </div>
                                 ) : (
