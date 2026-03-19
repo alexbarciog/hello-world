@@ -105,6 +105,7 @@ export default function CampaignDetail() {
   const [assigningList, setAssigningList] = useState(false);
   const [showAgentRunning, setShowAgentRunning] = useState(false);
   const [editingStep, setEditingStep] = useState<number | null>(null);
+  const [editingDelayStep, setEditingDelayStep] = useState<number | null>(null);
   const [step1Sent, setStep1Sent] = useState(0);
   const [step1Accepted, setStep1Accepted] = useState(0);
   const [settingsDailyLimit, setSettingsDailyLimit] = useState(25);
