@@ -1301,7 +1301,7 @@ function renderMarkdown(text: string) {
     // Heading 2
     if (line.startsWith("## ")) {
       elements.push(
-        <h2 key={i} className="text-base font-bold mt-6 mb-2" style={{ color: "hsl(var(--goji-dark))" }}>
+        <h2 key={i} className="text-lg font-bold mt-8 mb-3 pb-2 border-b border-border/40" style={{ color: "hsl(var(--md-on-surface))" }}>
           {renderInline(line.slice(3))}
         </h2>
       );
@@ -1312,7 +1312,7 @@ function renderMarkdown(text: string) {
     // Heading 3
     if (line.startsWith("### ")) {
       elements.push(
-        <h3 key={i} className="text-sm font-bold mt-4 mb-1" style={{ color: "hsl(var(--goji-dark))" }}>
+        <h3 key={i} className="text-base font-semibold mt-6 mb-2" style={{ color: "hsl(var(--md-on-surface))" }}>
           {renderInline(line.slice(4))}
         </h3>
       );
@@ -1361,10 +1361,10 @@ function renderMarkdown(text: string) {
         i++;
       }
       elements.push(
-        <ul key={`ul-${i}`} className="list-none my-2 space-y-1">
+        <ul key={`ul-${i}`} className="list-none my-3 space-y-2 pl-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-2 text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>
-              <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "hsl(var(--goji-coral))" }} />
+            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
+              <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "hsl(var(--md-primary))" }} />
               <span>{renderInline(item)}</span>
             </li>
           ))}
@@ -1381,16 +1381,16 @@ function renderMarkdown(text: string) {
         i++;
       }
       elements.push(
-        <ol key={`ol-${i}`} className="my-2 space-y-1 pl-1">
+        <ol key={`ol-${i}`} className="my-3 space-y-2.5 pl-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-2 text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>
+            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
               <span
-                className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: "hsl(var(--goji-coral) / 0.15)", color: "hsl(var(--goji-coral))" }}
+                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5"
+                style={{ background: "hsl(var(--md-primary) / 0.1)", color: "hsl(var(--md-primary))" }}
               >
                 {ii + 1}
               </span>
-              <span className="mt-0.5">{renderInline(item)}</span>
+              <span>{renderInline(item)}</span>
             </li>
           ))}
         </ol>
@@ -1424,7 +1424,7 @@ function renderMarkdown(text: string) {
 
     // Paragraph
     elements.push(
-      <p key={i} className="text-sm leading-relaxed my-1.5" style={{ color: "hsl(var(--goji-text-muted))" }}>
+      <p key={i} className="text-[15px] leading-[1.75] my-2.5" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
         {renderInline(line)}
       </p>
     );
@@ -1440,7 +1440,7 @@ function renderInline(text: string): React.ReactNode {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} style={{ color: "hsl(var(--goji-dark))", fontWeight: 600 }}>
+        <strong key={i} className="font-semibold" style={{ color: "hsl(var(--md-on-surface))" }}>
           {part.slice(2, -2)}
         </strong>
       );
@@ -1613,11 +1613,12 @@ export default function HelpCenter() {
                   <button
                     key={a.id}
                     onClick={() => openArticle(a.categoryId, a.id)}
-                    className="w-full text-left flex items-center justify-between p-4 rounded-xl transition-all duration-200 group hover:bg-white/60"
+                    className="w-full text-left flex items-center justify-between p-5 rounded-xl transition-all duration-200 group hover:-translate-y-0.5"
                     style={{
-                      background: "rgba(255,255,255,0.4)",
+                      background: "rgba(255,255,255,0.65)",
                       backdropFilter: "blur(20px)",
-                      border: "1px solid rgba(255,255,255,0.3)",
+                      border: "1px solid rgba(255,255,255,0.5)",
+                      boxShadow: "0 2px 12px -2px rgba(0,0,0,0.06), 0 4px 20px -4px rgba(0,0,0,0.05)",
                     }}
                   >
                     <div>
@@ -1642,12 +1643,13 @@ export default function HelpCenter() {
                 <button
                   key={cat.id}
                   onClick={() => openCategory(cat.id)}
-                  className="flex flex-col items-start text-left p-8 rounded-xl transition-all duration-500 group cursor-pointer hover:bg-white/60 shadow-card hover:shadow-lg"
+                  className="flex flex-col items-start text-left p-8 rounded-2xl transition-all duration-300 group cursor-pointer hover:-translate-y-1"
                   style={{
-                    background: "rgba(255,255,255,0.4)",
+                    background: "rgba(255,255,255,0.65)",
                     backdropFilter: "blur(20px)",
                     WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.3)",
+                    border: "1px solid rgba(255,255,255,0.5)",
+                    boxShadow: "0 4px 24px -4px rgba(0,0,0,0.08), 0 12px 40px -8px rgba(0,0,0,0.06)",
                   }}
                 >
                   <div className={`w-12 h-12 rounded-xl ${iconConfig.gradient} flex items-center justify-center mb-6 shadow-lg ${iconConfig.shadow}`}>
@@ -1698,11 +1700,12 @@ export default function HelpCenter() {
                 <button
                   key={article.id}
                   onClick={() => openArticle(activeCategory.id, article.id)}
-                  className="w-full text-left flex items-center justify-between p-4 rounded-xl transition-all duration-200 group hover:bg-white/60"
+                  className="w-full text-left flex items-center justify-between p-5 rounded-xl transition-all duration-200 group hover:-translate-y-0.5"
                   style={{
-                    background: "rgba(255,255,255,0.4)",
+                    background: "rgba(255,255,255,0.65)",
                     backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.3)",
+                    border: "1px solid rgba(255,255,255,0.5)",
+                    boxShadow: "0 2px 12px -2px rgba(0,0,0,0.06), 0 4px 20px -4px rgba(0,0,0,0.05)",
                   }}
                 >
                   <span className="text-sm font-medium text-md-on-surface">{article.title}</span>
@@ -1734,16 +1737,17 @@ export default function HelpCenter() {
               Back to {activeCategory.title}
             </button>
 
-            <h1 className="text-2xl font-bold mb-6 text-md-on-surface">
+            <h1 className="text-3xl font-bold mb-8 text-md-on-surface leading-tight">
               {activeArticle.title}
             </h1>
 
             <div
-              className="p-8 rounded-xl"
+              className="p-10 rounded-2xl"
               style={{
-                background: "rgba(255,255,255,0.4)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(255,255,255,0.3)",
+                background: "rgba(255,255,255,0.7)",
+                backdropFilter: "blur(24px)",
+                border: "1px solid rgba(255,255,255,0.5)",
+                boxShadow: "0 4px 24px -4px rgba(0,0,0,0.08), 0 12px 40px -8px rgba(0,0,0,0.06)",
               }}
             >
               {renderMarkdown(activeArticle.content)}
