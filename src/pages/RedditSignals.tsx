@@ -45,6 +45,23 @@ function timeAgo(dateStr: string | null) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function cleanRedditText(raw: string | null): string {
+  if (!raw) return "";
+  return raw
+    .replace(/<!-- SC_OFF -->|<!-- SC_ON -->/g, "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#32;/g, " ")
+    .replace(/submitted by\s*\/u\/\S+/gi, "")
+    .replace(/\[link\]|\[comments\]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 const DEFAULT_SUBREDDITS = ["SaaS", "startups", "Entrepreneur", "smallbusiness", "marketing", "sales"];
 
 /* ── Page component ──────────────────────────────────────────────────── */
@@ -498,9 +515,9 @@ export default function RedditSignals() {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-sm font-semibold text-foreground mb-1.5 line-clamp-2">{mention.title}</h3>
-                {mention.body && (
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-4">{mention.body}</p>
+                <h3 className="text-sm font-semibold text-foreground mb-1.5 line-clamp-2">{cleanRedditText(mention.title)}</h3>
+                {mention.body && cleanRedditText(mention.body) && (
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-4">{cleanRedditText(mention.body)}</p>
                 )}
 
                 {/* Actions */}
