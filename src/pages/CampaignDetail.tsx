@@ -281,7 +281,7 @@ export default function CampaignDetail() {
               onClick={() => setTab(t.key)}
               className={`relative flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap z-10 ${
                 tab === t.key
-                  ? "text-[hsl(var(--goji-coral))] shadow-sm"
+                  ? "text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
