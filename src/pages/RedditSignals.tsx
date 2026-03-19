@@ -515,9 +515,9 @@ export default function RedditSignals() {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-sm font-semibold text-foreground mb-1.5 line-clamp-2">{mention.title}</h3>
-                {mention.body && (
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-4">{mention.body}</p>
+                <h3 className="text-sm font-semibold text-foreground mb-1.5 line-clamp-2">{cleanRedditText(mention.title)}</h3>
+                {mention.body && cleanRedditText(mention.body) && (
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-4">{cleanRedditText(mention.body)}</p>
                 )}
 
                 {/* Actions */}
