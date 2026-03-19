@@ -368,8 +368,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                     <button
                       onClick={handleAnalyzeWebsite}
                       disabled={!website.trim() || analyzingWebsite}
-                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40 hover:scale-[1.02] flex items-center gap-1.5"
-                      style={{ background: "hsl(var(--goji-coral))", color: "white" }}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-white rounded-full px-5 py-2.5 disabled:opacity-40 transition-all hover:scale-[1.03] active:scale-[0.97]"
+                      style={{
+                        background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(var(--goji-orange)), #FDC94B, #C8D9FF)",
+                        boxShadow: "0 4px 20px hsla(var(--goji-coral), 0.4)",
+                      }}
                     >
                       {analyzingWebsite ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
