@@ -558,7 +558,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
           {step < totalSteps ? (
             <button
               onClick={() => setStep(step + 1)}
-              disabled={step === 1 && !canNext1}
+              disabled={(step === 1 && !canNext1) || (step === 2 && (!website.trim() || !valueProposition.trim() || !painPoints.trim()))}
               className="btn-cta text-sm disabled:opacity-40"
             >
               Next <ChevronRight className="w-4 h-4" />
