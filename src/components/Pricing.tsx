@@ -18,6 +18,20 @@ const PLUS_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [hadSubscription, setHadSubscription] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkSub = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setHadSubscription(false); return; }
+        const { data, error } = await supabase.functions.invoke("check-subscription");
+        if (error) { setHadSubscription(false); return; }
+        setHadSubscription(data?.had_subscription ?? false);
+      } catch { setHadSubscription(false); }
+    };
+    checkSub();
+  }, []);
 
   const handleCheckout = async () => {
     setLoading(true);
