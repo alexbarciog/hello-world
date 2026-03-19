@@ -381,7 +381,7 @@ export default function Signals() {
         </table>
         <div className="bg-blue-50/50 border-t border-dashed border-blue-200">
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={() => { setEditAgentId(null); setShowCreate(true); }}
             disabled={agents.length >= maxAgents}
             className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
