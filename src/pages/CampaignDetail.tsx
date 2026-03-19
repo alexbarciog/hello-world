@@ -92,6 +92,13 @@ function MetricChip({ label, value, icon: Icon, color }: { label: string; value:
   );
 }
 
+// Convert a UTC hour (e.g. 8) to the user's local time string like "10:00"
+function utcHourToLocal(utcHour: number): string {
+  const d = new Date();
+  d.setUTCHours(utcHour, 0, 0, 0);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
