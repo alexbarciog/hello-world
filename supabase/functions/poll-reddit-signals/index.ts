@@ -147,6 +147,12 @@ Deno.serve(async (req) => {
             requestCount++;
           }
 
+          // Apify fallback when both RSS and JSON fail
+          if (inserted === 0) {
+            await randomDelay(1000, 2500);
+            inserted = await pollViaApify(supabase, kw.user_id, kw.id, keyword, sub);
+          }
+
           totalInserted += inserted;
           if (inserted > 0) {
             userInsertions[kw.user_id] = (userInsertions[kw.user_id] || 0) + inserted;
