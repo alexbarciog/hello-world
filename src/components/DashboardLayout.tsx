@@ -230,7 +230,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
 
           {!collapsed && (
-            <p className="text-[10px] text-foreground/30 px-2.5 py-1">{sub.credits} Credits left &nbsp;·&nbsp; ∞ Leads / Mo</p>
+            <p className="text-xs text-foreground/50 px-2.5 py-1 font-medium">{sub.credits} Credits left &nbsp;·&nbsp; ∞ Leads / Mo</p>
           )}
 
           <div className="relative" ref={userMenuRef}>
