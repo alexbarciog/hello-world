@@ -5,6 +5,86 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+/* ── Anti-detection utilities ──────────────────────────────────────── */
+
+const BROWSER_USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0',
+  'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
+];
+
+const ACCEPT_LANGUAGES = [
+  'en-US,en;q=0.9',
+  'en-GB,en;q=0.9,en-US;q=0.8',
+  'en-US,en;q=0.9,fr;q=0.8',
+  'en,en-US;q=0.9,de;q=0.7',
+  'en-US,en;q=0.8',
+];
+
+function pick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function randInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomDelay(minMs: number, maxMs: number): Promise<void> {
+  return new Promise(r => setTimeout(r, randInt(minMs, maxMs)));
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getRandomHeaders(accept: string): Record<string, string> {
+  return {
+    'User-Agent': pick(BROWSER_USER_AGENTS),
+    'Accept': accept,
+    'Accept-Language': pick(ACCEPT_LANGUAGES),
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': pick(['no-cache', 'max-age=0']),
+    'Connection': 'keep-alive',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1',
+  };
+}
+
+function randomRedditDomain(): string {
+  return pick(['www.reddit.com', 'old.reddit.com']);
+}
+
+function randomTimeRange(): string {
+  return pick(['week', 'month']);
+}
+
+function randomSort(): string {
+  return pick(['new', 'relevance']);
+}
+
+function randomLimit(): number {
+  return pick([25, 50, 75, 100]);
+}
+
+/* ── Main handler ──────────────────────────────────────────────────── */
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -13,16 +93,13 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Missing server configuration');
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Determine scope: specific user or all users (cron)
     let userFilter: string | null = null;
-
     const authHeader = req.headers.get('Authorization');
     if (authHeader?.startsWith('Bearer ')) {
       const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -36,37 +113,38 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch active keywords
     let query = supabase.from('reddit_keywords').select('*').eq('active', true);
-    if (userFilter) {
-      query = query.eq('user_id', userFilter);
-    }
+    if (userFilter) query = query.eq('user_id', userFilter);
     const { data: keywords, error: kwErr } = await query;
     if (kwErr) throw kwErr;
     if (!keywords || keywords.length === 0) {
       return json({ message: 'No active keywords to poll', processed: 0 });
     }
 
-    console.log(`[poll-reddit] Processing ${keywords.length} keyword(s) via RSS feeds`);
+    // Shuffle keywords to randomize order across users
+    const shuffledKeywords = shuffle(keywords);
+
+    console.log(`[poll-reddit] Processing ${shuffledKeywords.length} keyword(s)`);
 
     let totalInserted = 0;
+    let requestCount = 0;
     const DEFAULT_SUBREDDITS = ['SaaS', 'startups', 'Entrepreneur', 'smallbusiness', 'marketing', 'sales'];
-
-    // Track insertions per user for notifications
     const userInsertions: Record<string, number> = {};
 
-    for (const kw of keywords) {
-      const subreddits = kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS;
+    for (const kw of shuffledKeywords) {
+      // Shuffle subreddits per keyword
+      const subreddits = shuffle(kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS);
       const keyword = kw.keyword;
 
       for (const sub of subreddits) {
         try {
-          // Primary: RSS feed search
           let inserted = await pollViaRSS(supabase, kw.user_id, kw.id, keyword, sub);
+          requestCount++;
 
-          // Fallback: JSON API if RSS returns 0 (some subreddits block RSS search)
           if (inserted === 0) {
+            await randomDelay(1500, 3500);
             inserted = await pollViaJSON(supabase, kw.user_id, kw.id, keyword, sub);
+            requestCount++;
           }
 
           totalInserted += inserted;
@@ -77,12 +155,19 @@ Deno.serve(async (req) => {
           console.error(`[poll-reddit] Error polling r/${sub} for "${keyword}":`, err);
         }
 
-        // Small delay between requests to be polite
-        await new Promise(r => setTimeout(r, 500));
+        // Variable delay between requests; longer pause every 5-8 requests
+        if (requestCount % randInt(5, 8) === 0) {
+          await randomDelay(5000, 15000);
+        } else {
+          await randomDelay(1500, 4500);
+        }
       }
+
+      // Inter-keyword delay
+      await randomDelay(2000, 8000);
     }
 
-    // Send in-app notifications for users with new mentions
+    // Notifications
     for (const [userId, count] of Object.entries(userInsertions)) {
       try {
         await supabase.from('notifications').insert({
@@ -92,21 +177,20 @@ Deno.serve(async (req) => {
           type: 'reddit_signal',
           link: '/reddit-signals',
         });
-        console.log(`[poll-reddit] Notification sent to user ${userId}: ${count} mentions`);
       } catch (err) {
-        console.error(`[poll-reddit] Failed to send notification to ${userId}:`, err);
+        console.error(`[poll-reddit] Notification error for ${userId}:`, err);
       }
     }
 
     console.log(`[poll-reddit] Done. Inserted ${totalInserted} new mention(s).`);
-    return json({ message: 'Polling complete', processed: keywords.length, inserted: totalInserted });
+    return json({ message: 'Polling complete', processed: shuffledKeywords.length, inserted: totalInserted });
   } catch (error) {
     console.error('[poll-reddit] Fatal error:', error);
     return json({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
   }
 });
 
-/* ── Poll via RSS feed (primary, lightweight, no API key needed) ────── */
+/* ── Poll via RSS feed ─────────────────────────────────────────────── */
 
 async function pollViaRSS(
   supabase: ReturnType<typeof createClient>,
@@ -115,38 +199,32 @@ async function pollViaRSS(
   keyword: string,
   subreddit: string
 ): Promise<number> {
-  // Reddit RSS search: reddit.com/r/{sub}/search.rss?q={keyword}&restrict_sr=on&sort=new&t=week
-  const rssUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=month&limit=100`;
+  const domain = randomRedditDomain();
+  const timeRange = randomTimeRange();
+  const sort = randomSort();
+  const limit = randomLimit();
 
-  console.log(`[poll-reddit] RSS: r/${subreddit} for "${keyword}"`);
+  const rssUrl = `https://${domain}/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=${sort}&t=${timeRange}&limit=${limit}`;
 
   const res = await fetch(rssUrl, {
-    headers: {
-      'User-Agent': 'Intentsly:v1.0.0 (intent-monitoring-bot)',
-      'Accept': 'application/rss+xml, application/xml, text/xml',
-    },
+    headers: getRandomHeaders('application/rss+xml, application/xml, text/xml, */*'),
   });
 
   if (!res.ok) {
-    console.warn(`[poll-reddit] RSS returned ${res.status} for r/${subreddit} "${keyword}"`);
+    console.warn(`[poll-reddit] RSS ${res.status} for r/${subreddit} "${keyword}"`);
     return 0;
   }
 
   const xml = await res.text();
   if (!xml || xml.length < 100) return 0;
 
-  // Parse RSS/Atom feed entries
   const entries = parseAtomFeed(xml);
-  if (entries.length === 0) {
-    console.log(`[poll-reddit] RSS: No entries in r/${subreddit} for "${keyword}"`);
-    return 0;
-  }
+  if (entries.length === 0) return 0;
 
-  console.log(`[poll-reddit] RSS: Found ${entries.length} entries in r/${subreddit} for "${keyword}"`);
+  console.log(`[poll-reddit] RSS: ${entries.length} entries in r/${subreddit} for "${keyword}"`);
 
   let inserted = 0;
   for (const entry of entries) {
-    // Extract reddit post ID from the URL (e.g., /r/SaaS/comments/abc123/...)
     const postIdMatch = entry.link.match(/\/comments\/([a-z0-9]+)/i);
     const redditPostId = postIdMatch ? `t3_${postIdMatch[1]}` : `rss_${hashString(entry.link)}`;
 
@@ -166,73 +244,12 @@ async function pollViaRSS(
       },
       { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
     );
-
     if (!error) inserted++;
   }
-
   return inserted;
 }
 
-/* ── Parse Atom/RSS XML without external deps ──────────────────────── */
-
-interface FeedEntry {
-  title: string;
-  link: string;
-  author: string;
-  body: string;
-  published: string | null;
-  subreddit: string;
-}
-
-function parseAtomFeed(xml: string): FeedEntry[] {
-  const entries: FeedEntry[] = [];
-
-  // Reddit returns Atom format. Match <entry>...</entry> blocks
-  const entryBlocks = xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || [];
-
-  for (const block of entryBlocks) {
-    const title = extractTag(block, 'title') || '';
-    const link = extractAttr(block, 'link', 'href') || extractTag(block, 'link') || '';
-    const author = extractTag(block, 'name') || '[unknown]';
-    const published = extractTag(block, 'published') || extractTag(block, 'updated') || null;
-    const content = extractTag(block, 'content') || '';
-
-    // Strip HTML tags from content to get plain text body
-    const body = content.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
-
-    // Extract subreddit from link
-    const subMatch = link.match(/\/r\/([^/]+)/);
-    const subreddit = subMatch ? subMatch[1] : '';
-
-    if (link) {
-      entries.push({ title, link, author, body, published, subreddit });
-    }
-  }
-
-  return entries;
-}
-
-function extractTag(xml: string, tag: string): string {
-  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
-  return match ? match[1].trim() : '';
-}
-
-function extractAttr(xml: string, tag: string, attr: string): string {
-  const match = xml.match(new RegExp(`<${tag}[^>]*${attr}="([^"]*)"`, 'i'));
-  return match ? match[1] : '';
-}
-
-function hashString(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const chr = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-}
-
-/* ── Fallback: JSON API (if RSS fails or returns empty) ────────────── */
+/* ── Poll via JSON API (fallback) ──────────────────────────────────── */
 
 async function pollViaJSON(
   supabase: ReturnType<typeof createClient>,
@@ -241,17 +258,19 @@ async function pollViaJSON(
   keyword: string,
   subreddit: string
 ): Promise<number> {
-  const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=month&limit=100`;
+  const domain = randomRedditDomain();
+  const timeRange = randomTimeRange();
+  const sort = randomSort();
+  const limit = randomLimit();
+
+  const searchUrl = `https://${domain}/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=${sort}&t=${timeRange}&limit=${limit}`;
 
   const res = await fetch(searchUrl, {
-    headers: {
-      'User-Agent': 'Intentsly:v1.0.0 (intent-monitoring-bot)',
-      'Accept': 'application/json',
-    },
+    headers: getRandomHeaders('application/json, text/plain, */*'),
   });
 
   if (!res.ok) {
-    console.warn(`[poll-reddit] JSON fallback returned ${res.status} for r/${subreddit} "${keyword}"`);
+    console.warn(`[poll-reddit] JSON ${res.status} for r/${subreddit} "${keyword}"`);
     return 0;
   }
 
@@ -259,7 +278,7 @@ async function pollViaJSON(
   const posts = data?.data?.children ?? [];
   if (posts.length === 0) return 0;
 
-  console.log(`[poll-reddit] JSON fallback: ${posts.length} posts in r/${subreddit} for "${keyword}"`);
+  console.log(`[poll-reddit] JSON: ${posts.length} posts in r/${subreddit} for "${keyword}"`);
 
   let inserted = 0;
   for (const post of posts) {
@@ -282,11 +301,61 @@ async function pollViaJSON(
       },
       { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
     );
-
     if (!error) inserted++;
   }
-
   return inserted;
+}
+
+/* ── XML parsing helpers ───────────────────────────────────────────── */
+
+interface FeedEntry {
+  title: string;
+  link: string;
+  author: string;
+  body: string;
+  published: string | null;
+  subreddit: string;
+}
+
+function parseAtomFeed(xml: string): FeedEntry[] {
+  const entries: FeedEntry[] = [];
+  const entryBlocks = xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || [];
+
+  for (const block of entryBlocks) {
+    const title = extractTag(block, 'title') || '';
+    const link = extractAttr(block, 'link', 'href') || extractTag(block, 'link') || '';
+    const author = extractTag(block, 'name') || '[unknown]';
+    const published = extractTag(block, 'published') || extractTag(block, 'updated') || null;
+    const content = extractTag(block, 'content') || '';
+    const body = content.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+    const subMatch = link.match(/\/r\/([^/]+)/);
+    const subreddit = subMatch ? subMatch[1] : '';
+
+    if (link) {
+      entries.push({ title, link, author, body, published, subreddit });
+    }
+  }
+  return entries;
+}
+
+function extractTag(xml: string, tag: string): string {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  return match ? match[1].trim() : '';
+}
+
+function extractAttr(xml: string, tag: string, attr: string): string {
+  const match = xml.match(new RegExp(`<${tag}[^>]*${attr}="([^"]*)"`, 'i'));
+  return match ? match[1] : '';
+}
+
+function hashString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const chr = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
 }
 
 function json(payload: unknown, status = 200) {
