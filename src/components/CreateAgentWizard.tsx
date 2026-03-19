@@ -128,6 +128,33 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Load existing agent data when editing
+  useEffect(() => {
+    if (!editAgentId) return;
+    async function loadAgent() {
+      const { data } = await supabase.from("signal_agents").select("*").eq("id", editAgentId!).single();
+      if (data) {
+        setAgentName(data.name || "");
+        setJobTitles(data.icp_job_titles || []);
+        setSelectedLocations(data.icp_locations || []);
+        setSelectedIndustries(data.icp_industries || []);
+        setSelectedCompanyTypes(data.icp_company_types || []);
+        setSelectedCompanySizes(data.icp_company_sizes || []);
+        setExcludeKeywords(data.icp_exclude_keywords || []);
+        setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
+        setLeadsListName(data.leads_list_name || "");
+        const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
+        if (config?.enabled) {
+          const map: Record<string, boolean> = {};
+          config.enabled.forEach((s: string) => { map[s] = true; });
+          setEnabledSignals(map);
+        }
+        if (config?.keywords) setSignalKeywords(config.keywords);
+      }
+    }
+    loadAgent();
+  }, [editAgentId]);
+
   // Load existing lists from contacts
   useEffect(() => {
     async function loadLists() {
