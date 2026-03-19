@@ -124,12 +124,37 @@ export default function RedditSignals() {
     },
   });
 
-  // ── Manual poll ──
-  const handlePoll = async () => {
+  // ── Agent state ──
+  const [agentRunning, setAgentRunning] = useState(false);
+
+  // Check if agent is "running" (has keywords)
+  useEffect(() => {
+    if (keywords.length > 0) setAgentRunning(true);
+  }, [keywords]);
+
+  // ── Start AI Agent (initial scan + enable auto-polling) ──
+  const handleStartAgent = async () => {
     if (keywords.length === 0) {
       toast.error("Add at least one keyword first");
       return;
     }
+    setPolling(true);
+    setAgentRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
+      if (error) throw error;
+      toast.success(`🤖 AI Agent started! Found ${data?.inserted ?? 0} new mention(s). Auto-scanning runs twice daily.`);
+      queryClient.invalidateQueries({ queryKey: ["reddit-mentions"] });
+    } catch (err) {
+      toast.error("Failed to start agent. Try again.");
+      console.error(err);
+    } finally {
+      setPolling(false);
+    }
+  };
+
+  // ── Manual re-scan ──
+  const handleRescan = async () => {
     setPolling(true);
     try {
       const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
