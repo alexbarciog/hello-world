@@ -64,6 +64,9 @@ function AgentCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={onEdit} className="gap-2 text-sm">
+              <Pencil className="w-3.5 h-3.5" />Edit agent
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
               {isActive ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
             </DropdownMenuItem>
