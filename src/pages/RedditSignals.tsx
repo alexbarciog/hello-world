@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Search, ExternalLink, UserPlus, X, Plus, Loader2, Trash2,
-  RefreshCw, Sparkles, Hash, AlertCircle,
+  RefreshCw, Sparkles, Hash, AlertCircle, Bot, Power,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -124,12 +124,37 @@ export default function RedditSignals() {
     },
   });
 
-  // ── Manual poll ──
-  const handlePoll = async () => {
+  // ── Agent state ──
+  const [agentRunning, setAgentRunning] = useState(false);
+
+  // Check if agent is "running" (has keywords)
+  useEffect(() => {
+    if (keywords.length > 0) setAgentRunning(true);
+  }, [keywords]);
+
+  // ── Start AI Agent (initial scan + enable auto-polling) ──
+  const handleStartAgent = async () => {
     if (keywords.length === 0) {
       toast.error("Add at least one keyword first");
       return;
     }
+    setPolling(true);
+    setAgentRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
+      if (error) throw error;
+      toast.success(`🤖 AI Agent started! Found ${data?.inserted ?? 0} new mention(s). Auto-scanning runs twice daily.`);
+      queryClient.invalidateQueries({ queryKey: ["reddit-mentions"] });
+    } catch (err) {
+      toast.error("Failed to start agent. Try again.");
+      console.error(err);
+    } finally {
+      setPolling(false);
+    }
+  };
+
+  // ── Manual re-scan ──
+  const handleRescan = async () => {
     setPolling(true);
     try {
       const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
@@ -157,8 +182,17 @@ export default function RedditSignals() {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reddit Signals</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Monitor Reddit for buying intent signals using keyword-based RSS tracking
+          AI-powered Reddit monitoring — automatically scans for buying intent signals twice daily
         </p>
+        {agentRunning && keywords.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            </span>
+            <span className="text-xs font-medium text-green-600">AI Agent active — auto-scanning twice daily</span>
+          </div>
+        )}
       </div>
 
       {/* ── Keywords Management Card ── */}
@@ -168,15 +202,27 @@ export default function RedditSignals() {
             <Hash className="w-5 h-5 text-foreground/60" />
             <h2 className="text-lg font-semibold text-foreground">Intent Keywords</h2>
           </div>
-          <button
-            onClick={handlePoll}
-            disabled={polling || keywords.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-            style={{ background: "hsl(var(--goji-dark))" }}
-          >
-            {polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            {polling ? "Scanning..." : "Scan Now"}
-          </button>
+          <div className="flex items-center gap-2">
+            {agentRunning && keywords.length > 0 && (
+              <button
+                onClick={handleRescan}
+                disabled={polling}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-border text-foreground/70 hover:bg-muted transition-all disabled:opacity-50"
+              >
+                {polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {polling ? "Scanning..." : "Re-scan"}
+              </button>
+            )}
+            <button
+              onClick={handleStartAgent}
+              disabled={polling || keywords.length === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
+              style={{ background: agentRunning && keywords.length > 0 ? "hsl(var(--goji-dark))" : "hsl(var(--goji-coral))" }}
+            >
+              {polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
+              {polling ? "Starting..." : agentRunning && keywords.length > 0 ? "Agent Running" : "Start AI Agent"}
+            </button>
+          </div>
         </div>
 
         {/* Existing keywords */}

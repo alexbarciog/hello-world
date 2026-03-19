@@ -52,6 +52,9 @@ Deno.serve(async (req) => {
     let totalInserted = 0;
     const DEFAULT_SUBREDDITS = ['SaaS', 'startups', 'Entrepreneur', 'smallbusiness', 'marketing', 'sales'];
 
+    // Track insertions per user for notifications
+    const userInsertions: Record<string, number> = {};
+
     for (const kw of keywords) {
       const subreddits = kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS;
       const keyword = kw.keyword;
@@ -67,12 +70,31 @@ Deno.serve(async (req) => {
           }
 
           totalInserted += inserted;
+          if (inserted > 0) {
+            userInsertions[kw.user_id] = (userInsertions[kw.user_id] || 0) + inserted;
+          }
         } catch (err) {
           console.error(`[poll-reddit] Error polling r/${sub} for "${keyword}":`, err);
         }
 
         // Small delay between requests to be polite
         await new Promise(r => setTimeout(r, 500));
+      }
+    }
+
+    // Send in-app notifications for users with new mentions
+    for (const [userId, count] of Object.entries(userInsertions)) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: userId,
+          title: `🔴 ${count} new Reddit signal${count > 1 ? 's' : ''} found`,
+          body: `Your Reddit AI Agent discovered ${count} new post${count > 1 ? 's' : ''} matching your intent keywords.`,
+          type: 'reddit_signal',
+          link: '/reddit-signals',
+        });
+        console.log(`[poll-reddit] Notification sent to user ${userId}: ${count} mentions`);
+      } catch (err) {
+        console.error(`[poll-reddit] Failed to send notification to ${userId}:`, err);
       }
     }
 
