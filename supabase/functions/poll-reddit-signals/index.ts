@@ -5,12 +5,6 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-/**
- * Poll Reddit RSS feeds for user-defined intent keywords.
- * Can be called:
- *   - By cron (no auth needed, processes ALL active keywords)
- *   - By user (auth required, processes only their keywords — or manual trigger)
- */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -56,8 +50,6 @@ Deno.serve(async (req) => {
     console.log(`[poll-reddit] Processing ${keywords.length} keyword(s)`);
 
     let totalInserted = 0;
-
-    // Default subreddits to search if none specified
     const DEFAULT_SUBREDDITS = ['SaaS', 'startups', 'Entrepreneur', 'smallbusiness', 'marketing', 'sales'];
 
     for (const kw of keywords) {
@@ -82,7 +74,7 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── Poll a single subreddit search for a keyword via RSS ── */
+/* ── Poll a single subreddit search for a keyword via Reddit JSON API ── */
 
 async function pollSubredditForKeyword(
   supabase: ReturnType<typeof createClient>,
@@ -91,44 +83,90 @@ async function pollSubredditForKeyword(
   keyword: string,
   subreddit: string
 ): Promise<number> {
-  // Use Reddit search RSS: searches within a subreddit for the keyword
-  const searchUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
+  // Use Reddit's JSON API (old.reddit.com is more lenient with server requests)
+  const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
 
   const res = await fetch(searchUrl, {
     headers: {
-      'User-Agent': 'Intentsly/1.0 (Reddit Signal Monitor)',
-      'Accept': 'application/rss+xml, text/xml, application/xml',
+      'User-Agent': 'Intentsly:v1.0.0 (by /u/intentsly_bot)',
+      'Accept': 'application/json',
     },
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    console.warn(`[poll-reddit] Reddit returned ${res.status} for r/${subreddit} "${keyword}": ${text.slice(0, 200)}`);
+    // Try fallback: global Reddit search
+    const fallbackUrl = `https://old.reddit.com/search.json?q=${encodeURIComponent(keyword + ' subreddit:' + subreddit)}&sort=new&t=week&limit=25`;
+    const fallbackRes = await fetch(fallbackUrl, {
+      headers: {
+        'User-Agent': 'Intentsly:v1.0.0 (by /u/intentsly_bot)',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!fallbackRes.ok) {
+      const text = await fallbackRes.text();
+      console.warn(`[poll-reddit] Reddit returned ${fallbackRes.status} for r/${subreddit} "${keyword}": ${text.slice(0, 200)}`);
+      return 0;
+    }
+
+    return await processJsonResponse(supabase, await fallbackRes.json(), userId, keywordId, keyword, subreddit);
+  }
+
+  return await processJsonResponse(supabase, await res.json(), userId, keywordId, keyword, subreddit);
+}
+
+/* ── Process Reddit JSON API response ── */
+
+interface RedditPost {
+  kind: string;
+  data: {
+    id: string;
+    title: string;
+    selftext: string;
+    author: string;
+    permalink: string;
+    subreddit: string;
+    created_utc: number;
+    score: number;
+    url: string;
+  };
+}
+
+async function processJsonResponse(
+  supabase: ReturnType<typeof createClient>,
+  data: { data?: { children?: RedditPost[] } },
+  userId: string,
+  keywordId: string,
+  keyword: string,
+  subreddit: string
+): Promise<number> {
+  const posts = data?.data?.children ?? [];
+
+  if (posts.length === 0) {
+    console.log(`[poll-reddit] No results in r/${subreddit} for "${keyword}"`);
     return 0;
   }
 
-  const xml = await res.text();
-  const entries = parseAtomEntries(xml);
+  console.log(`[poll-reddit] Found ${posts.length} posts in r/${subreddit} for "${keyword}"`);
 
-  if (entries.length === 0) return 0;
-
-  console.log(`[poll-reddit] Found ${entries.length} entries in r/${subreddit} for "${keyword}"`);
-
-  // Upsert mentions (ignore duplicates via unique constraint)
   let inserted = 0;
-  for (const entry of entries) {
+  for (const post of posts) {
+    const p = post.data;
+    if (!p || !p.id) continue;
+
     const { error } = await supabase.from('reddit_mentions').upsert(
       {
         user_id: userId,
         keyword_id: keywordId,
         keyword_matched: keyword,
-        subreddit,
-        author: entry.author || 'unknown',
-        title: entry.title,
-        body: entry.content?.slice(0, 1000) || null,
-        url: entry.link,
-        reddit_post_id: entry.id,
-        posted_at: entry.published || null,
+        subreddit: p.subreddit || subreddit,
+        author: p.author || '[deleted]',
+        title: p.title || 'No title',
+        body: (p.selftext || '').slice(0, 1000) || null,
+        url: `https://www.reddit.com${p.permalink}`,
+        reddit_post_id: `t3_${p.id}`,
+        score: p.score ?? 0,
+        posted_at: p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null,
       },
       { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
     );
@@ -137,62 +175,6 @@ async function pollSubredditForKeyword(
   }
 
   return inserted;
-}
-
-/* ── Simple Atom XML parser (Reddit RSS uses Atom format) ── */
-
-interface AtomEntry {
-  id: string;
-  title: string;
-  link: string;
-  author: string | null;
-  content: string | null;
-  published: string | null;
-}
-
-function parseAtomEntries(xml: string): AtomEntry[] {
-  const entries: AtomEntry[] = [];
-  const entryRegex = /<entry>([\s\S]*?)<\/entry>/gi;
-  let match: RegExpExecArray | null;
-
-  while ((match = entryRegex.exec(xml)) !== null) {
-    const block = match[1];
-
-    const id = extractTag(block, 'id') || `unknown-${Math.random()}`;
-    const title = decodeHtmlEntities(extractTag(block, 'title') || 'No title');
-    const link = extractAttr(block, 'link', 'href') || '';
-    const author = extractTag(block, 'name');
-    const content = decodeHtmlEntities(extractTag(block, 'content') || extractTag(block, 'summary') || '');
-    const published = extractTag(block, 'published') || extractTag(block, 'updated');
-
-    if (link) {
-      entries.push({ id, title, link, author, content, published });
-    }
-  }
-
-  return entries;
-}
-
-function extractTag(xml: string, tag: string): string | null {
-  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
-  const m = regex.exec(xml);
-  return m ? m[1].trim() : null;
-}
-
-function extractAttr(xml: string, tag: string, attr: string): string | null {
-  const regex = new RegExp(`<${tag}[^>]*${attr}="([^"]*)"`, 'i');
-  const m = regex.exec(xml);
-  return m ? m[1] : null;
-}
-
-function decodeHtmlEntities(str: string): string {
-  return str
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/<[^>]*>/g, ''); // Strip HTML tags from content
 }
 
 function json(payload: unknown, status = 200) {
