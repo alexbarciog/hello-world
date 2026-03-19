@@ -525,7 +525,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                   <div className="rounded-xl border-2 border-foreground/20 p-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</div>
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-foreground">First account</p>
+                      <p className="text-sm font-bold text-foreground">{linkedInName}</p>
                       <p className="text-xs text-green-600 font-medium">Connected</p>
                     </div>
                     <div className="w-5 h-5 rounded-full border-2 border-foreground flex items-center justify-center">
