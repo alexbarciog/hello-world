@@ -187,7 +187,7 @@ export default function Signals() {
   if (showCreate) {
     return (
       <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
-        <CreateAgentWizard onClose={() => setShowCreate(false)} onCreated={fetchAgents} />
+        <CreateAgentWizard onClose={() => { setShowCreate(false); setEditAgentId(null); }} onCreated={fetchAgents} editAgentId={editAgentId} />
       </div>
     );
   }
