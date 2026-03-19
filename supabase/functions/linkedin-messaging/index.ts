@@ -196,18 +196,29 @@ async function enrichChat(
   apiKey: string,
   dsn: string
 ): Promise<Record<string, unknown>> {
-  const chatId = chat.id as string;
   const attendeeProviderId = chat.attendee_provider_id as string | undefined;
 
-  // Run both lookups in parallel
-  const [participantInfo, lastMessage] = await Promise.all([
-    attendeeProviderId ? fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn) : null,
-    chatId ? fetchLastMessage(chatId, apiKey, dsn) : null,
-  ]);
+  // Try to extract name from chat data first (avoid extra API call)
+  const existingAttendees = chat.attendees as Array<Record<string, unknown>> | undefined;
+  const chatName = chat.name as string | undefined;
+
+  let participantInfo: { name: string; avatar_url: string | null } | null = null;
+
+  // Check if chat already has attendee info
+  if (existingAttendees?.length && existingAttendees[0]?.display_name) {
+    participantInfo = {
+      name: existingAttendees[0].display_name as string,
+      avatar_url: (existingAttendees[0].profile_picture_url as string) || null,
+    };
+  } else if (chatName && chatName !== 'LinkedIn User') {
+    participantInfo = { name: chatName, avatar_url: null };
+  } else if (attendeeProviderId) {
+    // Only call API if we don't have name from chat data
+    participantInfo = await fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn);
+  }
 
   return {
     ...chat,
-    // Inject enriched attendees array so frontend can use existing helpers
     attendees: participantInfo
       ? [
           {
@@ -217,8 +228,6 @@ async function enrichChat(
           },
         ]
       : [],
-    // Inject last_message so frontend can show preview
-    last_message: lastMessage ?? undefined,
   };
 }
 
