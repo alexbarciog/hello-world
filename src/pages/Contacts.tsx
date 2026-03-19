@@ -23,6 +23,7 @@ interface Contact {
   email_enriched: boolean;
   list_name: string | null;
   imported_at: string;
+  relevance_tier: 'hot' | 'warm' | 'cold';
 }
 
 const AVATAR_COLORS = [
