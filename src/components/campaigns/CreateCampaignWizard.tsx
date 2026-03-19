@@ -213,12 +213,12 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                 <div className="flex items-center gap-2">
                   <motion.div
                     animate={{
-                      background: step > s.num ? "hsl(var(--foreground))" : step === s.num ? "hsl(var(--foreground))" : "hsl(var(--muted))",
+                      background: step >= s.num ? "hsl(var(--foreground))" : "hsl(var(--muted))",
                       scale: step === s.num ? 1.1 : 1,
                     }}
                     transition={{ duration: 0.2 }}
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                    style={{ color: step >= s.num ? "white" : "hsl(var(--muted-foreground))" }}
+                    style={{ color: step >= s.num ? "hsl(var(--background))" : "hsl(var(--muted-foreground))" }}
                   >
                     {step > s.num ? <Check className="w-4 h-4" /> : s.num}
                   </motion.div>
@@ -263,14 +263,14 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                         onClick={() => setSourceType(opt.type)}
                         className={`flex items-center gap-3 py-4 px-4 rounded-xl border-2 text-left transition-all ${
                           sourceType === opt.type
-                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                            ? "border-foreground bg-foreground/5 shadow-sm"
                             : "border-border hover:bg-muted/50"
                         }`}
                       >
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
-                          sourceType === opt.type ? "bg-[hsl(var(--goji-coral))]/15" : "bg-muted"
+                          sourceType === opt.type ? "bg-foreground/10" : "bg-muted"
                         }`}>
-                          <opt.icon className={`w-5 h-5 transition-colors ${sourceType === opt.type ? "text-[hsl(var(--goji-coral))]" : "text-muted-foreground"}`} />
+                          <opt.icon className={`w-5 h-5 transition-colors ${sourceType === opt.type ? "text-foreground" : "text-muted-foreground"}`} />
                         </div>
                         <div>
                           <p className="text-sm font-bold text-foreground">{opt.label}</p>
@@ -288,7 +288,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                       <select
                         value={selectedAgentId}
                         onChange={(e) => setSelectedAgentId(e.target.value)}
-                        className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground"
+                        className="w-full border-2 border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-foreground appearance-none text-foreground transition-colors"
                       >
                         <option value="">Select an agent...</option>
                         {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -300,11 +300,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className="mt-4 rounded-xl border border-[hsl(var(--goji-coral))]/20 bg-[hsl(var(--goji-coral))]/5 p-4 space-y-3 overflow-hidden"
+                        className="mt-4 rounded-xl border border-border bg-muted/30 p-4 space-y-3 overflow-hidden"
                       >
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-[hsl(var(--goji-coral))]/20 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-[hsl(var(--goji-coral))]" />
+                          <div className="w-8 h-8 rounded-lg bg-foreground/10 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-foreground" />
                           </div>
                           <div>
                             <p className="text-sm font-black text-foreground">Ideal Customer Profile</p>
@@ -321,7 +321,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                             <p className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-1"><group.icon className="w-3 h-3" /> {group.label}</p>
                             <div className="flex flex-wrap gap-1.5">
                               {group.items.map((t) => (
-                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-[hsl(var(--goji-coral))]/30 text-[hsl(var(--goji-coral))] bg-background font-medium">{t}</span>
+                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-border text-foreground bg-background font-medium">{t}</span>
                               ))}
                             </div>
                           </div>
@@ -338,7 +338,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                       <select
                         value={selectedListId}
                         onChange={(e) => setSelectedListId(e.target.value)}
-                        className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground"
+                        className="w-full border-2 border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-foreground appearance-none text-foreground transition-colors"
                       >
                         <option value="">Select a list...</option>
                         {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -403,7 +403,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                         onClick={() => setCampaignGoal(g.value)}
                         className={`w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all ${
                           campaignGoal === g.value
-                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                            ? "border-foreground bg-foreground/5 shadow-sm"
                             : "border-border hover:bg-muted/50"
                         }`}
                       >
@@ -429,11 +429,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                         onClick={() => setMessageTone(t.value)}
                         className={`text-center px-3 py-3.5 rounded-xl border-2 transition-all ${
                           messageTone === t.value
-                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                            ? "border-foreground bg-foreground/5 shadow-sm"
                             : "border-border hover:bg-muted/50"
                         }`}
                       >
-                        <t.icon className={`w-5 h-5 mx-auto mb-1.5 ${messageTone === t.value ? "text-[hsl(var(--goji-coral))]" : "text-muted-foreground"}`} />
+                        <t.icon className={`w-5 h-5 mx-auto mb-1.5 ${messageTone === t.value ? "text-foreground" : "text-muted-foreground"}`} />
                         <p className="text-sm font-bold text-foreground">{t.label}</p>
                         <p className="text-[10px] text-muted-foreground">{t.desc}</p>
                       </motion.button>
@@ -452,14 +452,14 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
 
                 <div className="rounded-xl border border-border p-5">
                   <p className="text-sm font-bold text-foreground mb-3">LinkedIn Accounts</p>
-                  <div className="rounded-xl border-2 border-[hsl(var(--goji-coral))]/30 p-4 flex items-center gap-3">
+                  <div className="rounded-xl border-2 border-foreground/20 p-4 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</div>
                     <div className="flex-1">
                       <p className="text-sm font-bold text-foreground">First account</p>
                       <p className="text-xs text-green-600 font-medium">Connected</p>
                     </div>
-                    <div className="w-5 h-5 rounded-full border-2 border-[hsl(var(--goji-coral))] flex items-center justify-center">
-                      <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--goji-coral))]" />
+                    <div className="w-5 h-5 rounded-full border-2 border-foreground flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 rounded-full bg-foreground" />
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">Cannot be modified after campaign creation</p>
@@ -503,14 +503,14 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex items-center gap-1.5 text-sm font-bold text-foreground border border-border rounded-xl px-4 py-2 hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-bold text-foreground border border-border rounded-full px-4 py-2 hover:bg-muted/50 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" /> Previous
             </button>
           ) : (
             <button
               onClick={() => onOpenChange(false)}
-              className="flex items-center gap-1.5 text-sm font-bold text-foreground border border-border rounded-xl px-4 py-2 hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-bold text-foreground border border-border rounded-full px-4 py-2 hover:bg-muted/50 transition-colors"
             >
               Cancel
             </button>

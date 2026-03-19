@@ -258,7 +258,7 @@ export default function CampaignDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* Inline metrics */}
             <div className="hidden md:flex items-center gap-2">
-              <MetricChip label="Leads" value={contactsCount} icon={Users} color="hsl(var(--goji-coral))" />
+              <MetricChip label="Leads" value={contactsCount} icon={Users} color="hsl(var(--foreground))" />
               <MetricChip label="Sent" value={campaign.invitations_sent} icon={Send} color="hsl(217 91% 60%)" />
               <MetricChip label="Reply" value={`${replyRate}%`} icon={MessageSquare} color="hsl(142 70% 45%)" />
             </div>
@@ -425,7 +425,7 @@ export default function CampaignDetail() {
                                   <p className="text-xs text-muted-foreground">Invitation without message</p>
                                 ) : ws.ai_icebreaker ? (
                                   <div className="flex items-center gap-1.5 text-xs">
-                                    <Sparkles className="w-3 h-3 text-[hsl(var(--goji-coral))]" />
+                                    <Sparkles className="w-3 h-3 text-foreground" />
                                     <span className="text-foreground font-bold">AI Icebreaker</span>
                                   </div>
                                 ) : (
@@ -754,13 +754,13 @@ export default function CampaignDetail() {
                               onClick={() => setSettingsGoal(g.value)}
                               className={`text-left px-4 py-3.5 rounded-xl border-2 transition-all hover:scale-[1.01] ${
                                 settingsGoal === g.value
-                                  ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                                  ? "border-foreground bg-foreground/5 shadow-sm"
                                   : "border-border hover:bg-muted/50"
                               }`}
                             >
                               <div className="flex items-center gap-2.5">
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${settingsGoal === g.value ? "border-[hsl(var(--goji-coral))]" : "border-muted-foreground/40"}`}>
-                                  {settingsGoal === g.value && <div className="w-2 h-2 rounded-full bg-[hsl(var(--goji-coral))]" />}
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${settingsGoal === g.value ? "border-foreground" : "border-muted-foreground/40"}`}>
+                                  {settingsGoal === g.value && <div className="w-2 h-2 rounded-full bg-foreground" />}
                                 </div>
                                 <div>
                                   <p className="text-sm font-bold text-foreground">{g.label}</p>
@@ -781,13 +781,13 @@ export default function CampaignDetail() {
                               onClick={() => setSettingsTone(t.value)}
                               className={`text-left px-4 py-3.5 rounded-xl border-2 transition-all hover:scale-[1.01] ${
                                 settingsTone === t.value
-                                  ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                                  ? "border-foreground bg-foreground/5 shadow-sm"
                                   : "border-border hover:bg-muted/50"
                               }`}
                             >
                               <div className="flex items-center gap-2.5">
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${settingsTone === t.value ? "border-[hsl(var(--goji-coral))]" : "border-muted-foreground/40"}`}>
-                                  {settingsTone === t.value && <div className="w-2 h-2 rounded-full bg-[hsl(var(--goji-coral))]" />}
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${settingsTone === t.value ? "border-foreground" : "border-muted-foreground/40"}`}>
+                                  {settingsTone === t.value && <div className="w-2 h-2 rounded-full bg-foreground" />}
                                 </div>
                                 <div>
                                   <p className="text-sm font-bold text-foreground">{t.label}</p>
