@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const features = [
   "30+ Intent Signals",
@@ -12,26 +13,12 @@ const features = [
   "AI-powered smart lead scoring",
 ];
 
-// TODO: Replace with your actual Stripe Price ID for the $99/mo Plus plan
 const PLUS_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
 
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [hadSubscription, setHadSubscription] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const checkSub = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setHadSubscription(false); return; }
-        const { data, error } = await supabase.functions.invoke("check-subscription");
-        if (error) { setHadSubscription(false); return; }
-        setHadSubscription(data?.had_subscription ?? false);
-      } catch { setHadSubscription(false); }
-    };
-    checkSub();
-  }, []);
+  const sub = useSubscription();
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -39,7 +26,6 @@ const Pricing = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        // Not logged in — redirect to register
         window.location.href = "/register";
         return;
       }
@@ -67,6 +53,26 @@ const Pricing = () => {
     }
   };
 
+  const renderButton = () => {
+    if (sub.subscribed) {
+      return (
+        <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
+          <Check className="w-4 h-4 mr-2" />
+          Active
+        </div>
+      );
+    }
+    return (
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
+      >
+        {loading ? "Redirecting..." : sub.hadSubscription === false ? "Start 7 Days Free Trial" : "Get started"}
+      </button>
+    );
+  };
+
   return (
     <section id="pricing" className="py-20 md:py-32 px-6 md:px-10 bg-background">
       <div className="max-w-5xl mx-auto">
@@ -82,19 +88,20 @@ const Pricing = () => {
               className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
               style={{ backgroundImage: `url(${pricingGradientBg})` }}
             >
-              <h3 className="text-2xl font-semibold text-foreground">Plus</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-semibold text-foreground">Plus</h3>
+                {sub.subscribed && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
+                    Your Plan
+                  </span>
+                )}
+              </div>
               <div className="flex items-baseline gap-2 mt-3">
                 <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                <button
-                  onClick={handleCheckout}
-                  disabled={loading}
-                  className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
-                >
-                  {loading ? "Redirecting..." : hadSubscription === false ? "Start 7 Days Free Trial" : "Get started"}
-                </button>
+                {renderButton()}
               </div>
             </div>
             {/* Features */}

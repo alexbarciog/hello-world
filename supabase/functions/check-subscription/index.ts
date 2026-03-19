@@ -15,7 +15,8 @@ serve(async (req) => {
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
   );
 
   try {
@@ -35,7 +36,17 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
-      return new Response(JSON.stringify({ subscribed: false, had_subscription: false }), {
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("credits")
+        .eq("user_id", user.id)
+        .single();
+
+      return new Response(JSON.stringify({
+        subscribed: false,
+        had_subscription: false,
+        credits: profile?.credits ?? 0,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -43,29 +54,53 @@ serve(async (req) => {
 
     const customerId = customers.data[0].id;
 
-    // Check active subscriptions
     const activeSubs = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
 
-    // Check if they ever had any subscription (including canceled, past_due, trialing)
+    const trialingSubs = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 1,
+    });
+
     const allSubs = await stripe.subscriptions.list({
       customer: customerId,
       limit: 1,
     });
 
-    const hasActiveSub = activeSubs.data.length > 0;
+    const activeSub = activeSubs.data[0] || trialingSubs.data[0];
+    const hasActiveSub = Boolean(activeSub);
     const hadSubscription = allSubs.data.length > 0;
 
     let subscriptionEnd = null;
     let productId = null;
+    let trialEnd = null;
 
     if (hasActiveSub) {
-      const sub = activeSubs.data[0];
-      subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-      productId = sub.items.data[0].price.product;
+      subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
+      productId = activeSub.items.data[0].price.product;
+      if (activeSub.trial_end) {
+        trialEnd = new Date(activeSub.trial_end * 1000).toISOString();
+      }
+    }
+
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("credits")
+      .eq("user_id", user.id)
+      .single();
+
+    let credits = profile?.credits ?? 0;
+
+    if (hasActiveSub && credits === 0) {
+      await supabaseClient
+        .from("profiles")
+        .update({ credits: 100 })
+        .eq("user_id", user.id);
+      credits = 100;
     }
 
     return new Response(JSON.stringify({
@@ -73,6 +108,8 @@ serve(async (req) => {
       had_subscription: hadSubscription,
       product_id: productId,
       subscription_end: subscriptionEnd,
+      trial_end: trialEnd,
+      credits,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -82,7 +119,7 @@ serve(async (req) => {
     console.error("[CHECK-SUBSCRIPTION] Error:", errorMessage);
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200,
     });
   }
 });
