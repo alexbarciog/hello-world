@@ -89,9 +89,9 @@ Deno.serve(async (req) => {
       for (let i = 0; i < rawItems.length; i++) {
         const enrichedChat = await enrichChat(rawItems[i], accountId, UNIPILE_API_KEY, UNIPILE_DSN);
         enriched.push(enrichedChat);
-        // 500ms delay between lookups to respect rate limits
+        // 1s delay between profile lookups to respect Unipile rate limits
         if (i < rawItems.length - 1) {
-          await new Promise((r) => setTimeout(r, 500));
+          await new Promise((r) => setTimeout(r, 1000));
         }
       }
 
