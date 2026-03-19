@@ -279,7 +279,7 @@ async function handlePostEngagers(
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
         if (ok) inserted++;
       }
     }
@@ -367,7 +367,7 @@ async function handleKeywordPosts(
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
-    const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl);
+    const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl, icp);
     if (ok) { inserted++; console.log(`keyword_posts: ACCEPTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
 
     // ── Also scan engagers (reactions) on this post ──
@@ -393,7 +393,7 @@ async function handleKeywordPosts(
             if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
 
             const eSignal = `Engaged with post about "${post._keyword}"`;
-            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl);
+            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
             if (eOk) { inserted++; console.log(`keyword_posts: ACCEPTED engager "${fullEngager.first_name || ''} ${fullEngager.last_name || ''}" (${eHl})`); }
           }
         } else {
@@ -466,7 +466,7 @@ async function handleHashtagEngagement(
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
-        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
         if (ok) inserted++;
       }
     } catch (e) { console.error('Hashtag engager fetch:', e); }
@@ -521,7 +521,7 @@ async function handleCompetitorFollowers(
         if (isExcluded(profile, icp.excludeKeywords)) continue;
 
         const signal = `Follows ${companyName}`;
-        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url);
+        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
         if (ok) inserted++;
       }
     } catch (e) { console.error(`Competitor followers ${url}:`, e); }
@@ -578,7 +578,7 @@ async function handleCompetitorPostEngagers(
           if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${companyName || companyId}'s post`;
-          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
           if (ok) inserted++;
         }
       }
@@ -644,7 +644,7 @@ async function handleProfileEngagers(
           if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${profileName}'s post`;
-          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
           if (ok) inserted++;
         }
       }
@@ -719,24 +719,32 @@ function isClearlyIrrelevant(headline: string): boolean {
   return REJECT_TITLES.some((kw) => h.includes(kw));
 }
 
+// Returns relevance tier: 'hot' | 'warm' | 'cold' | null (null = reject)
+function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
+  const hl = headline || '';
+  
+  // Always reject clearly irrelevant individual contributors
+  if (isClearlyIrrelevant(hl)) return null;
+  
+  // HOT: exact ICP title match OR buying intent + industry match
+  if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
+  if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
+  
+  // WARM: buying intent but no industry match, OR industry match with non-trivial title
+  if (hasBuyingIntent(hl)) return 'warm';
+  if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
+  
+  // COLD: has a title that's not rejected — just engagement signal, no clear ICP fit
+  if (hl.length > 5) return 'cold';
+  
+  // No title info at all — accept as cold if we have no filters, otherwise reject
+  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
+  return null;
+}
+
+// Backward compat wrapper used by all signal handlers
 function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: string): boolean {
-  // If exact ICP title match, always accept
-  if (icp.jobTitles.length > 0 && match.titleMatch) return true;
-  // If no title filter set, accept
-  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return true;
-  // If industry matches, accept unless clearly irrelevant
-  if (icp.industries.length > 0 && match.industryMatch) {
-    if (headline && isClearlyIrrelevant(headline)) return false;
-    return true;
-  }
-  // Buying intent titles pass even without exact ICP match
-  if (headline && hasBuyingIntent(headline) && !isClearlyIrrelevant(headline)) return true;
-  // Reject clearly irrelevant
-  if (headline && isClearlyIrrelevant(headline)) return false;
-  // If we have a headline but it's not clearly irrelevant and not buying intent,
-  // accept with lower confidence (the score will reflect this)
-  if (headline && headline.length > 5) return true;
-  return false;
+  return classifyContact(match, icp, headline) !== null;
 }
 
 function isExcluded(profile: any, excludeKeywords: string[]): boolean {
@@ -765,6 +773,7 @@ function normalizeText(value: string): string {
 async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null,
+  icp?: ICPFilters,
 ): Promise<boolean> {
   const linkedinProfileId = profile.public_id || profile.public_identifier || profile.provider_id || profile.id;
   if (!linkedinProfileId) return false;
@@ -781,6 +790,11 @@ async function insertContact(
 
   const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
+  const hl = profile.headline || profile.title || '';
+
+  // Determine relevance tier using actual ICP
+  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] };
+  const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
 
   const signalAHit = true;
   const signalBHit = match.score >= 60;
@@ -805,6 +819,7 @@ async function insertContact(
     email_enriched: false,
     list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
+    relevance_tier: relevanceTier,
   });
 
   if (error) { console.error(`Insert contact error: ${error.message}`); return false; }

@@ -1,0 +1,1 @@
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS relevance_tier text NOT NULL DEFAULT 'warm' CHECK (relevance_tier IN ('hot', 'warm', 'cold'));

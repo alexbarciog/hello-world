@@ -23,6 +23,7 @@ interface Contact {
   email_enriched: boolean;
   list_name: string | null;
   imported_at: string;
+  relevance_tier: 'hot' | 'warm' | 'cold';
 }
 
 const AVATAR_COLORS = [
@@ -64,7 +65,7 @@ const LinkedInIcon = () => (
 );
 
 export default function Contacts() {
-  const [tab, setTab] = useState<"all" | "lists">("all");
+  const [tab, setTab] = useState<"all" | "hot" | "warm" | "cold">("all");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,8 +94,15 @@ export default function Contacts() {
     setLoading(false);
   }
 
+  const tierCounts = useMemo(() => {
+    const counts = { hot: 0, warm: 0, cold: 0 };
+    contacts.forEach((c) => { if (c.relevance_tier in counts) counts[c.relevance_tier]++; });
+    return counts;
+  }, [contacts]);
+
   const filtered = useMemo(() => {
     let result = contacts;
+    if (tab !== "all") result = result.filter((c) => c.relevance_tier === tab);
     if (listFilter !== "all") result = result.filter((c) => c.list_name === listFilter);
     if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
@@ -105,7 +113,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter]);
+  }, [contacts, searchQuery, listFilter, tab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
@@ -159,16 +167,26 @@ export default function Contacts() {
 
         {/* Tabs */}
         <div className="flex items-center gap-5 mt-3">
-          {(["all", "lists"] as const).map((t) => (
+          {([
+            { key: "all", label: "All contacts", count: contacts.length },
+            { key: "hot", label: "🔥 Hot", count: tierCounts.hot },
+            { key: "warm", label: "☀️ Warm", count: tierCounts.warm },
+            { key: "cold", label: "❄️ Cold", count: tierCounts.cold },
+          ] as const).map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`pb-2 text-sm font-semibold transition-colors relative capitalize ${
-                tab === t ? "text-blue-500" : "text-muted-foreground hover:text-foreground"
+              key={t.key}
+              onClick={() => { setTab(t.key as any); setPage(1); }}
+              className={`pb-2 text-sm font-semibold transition-colors relative flex items-center gap-1.5 ${
+                tab === t.key ? "text-blue-500" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "all" ? "All contacts" : "Lists"}
-              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />}
+              {t.label}
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                tab === t.key ? "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400" : "bg-muted text-muted-foreground"
+              }`}>
+                {t.count}
+              </span>
+              {tab === t.key && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />}
             </button>
           ))}
         </div>
