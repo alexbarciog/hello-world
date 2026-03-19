@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Search, ArrowLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 
 // ─────────────────────────────────────────
 // DATA
@@ -10,19 +10,19 @@ const helpData = [
   {
     id: "getting-started",
     title: "Getting Started",
-    description: "Anything you need to know about how to start on Gojiberry AI",
+    description: "Anything you need to know about how to start on intentsly AI",
     icon: "folder",
     articles: [
       {
-        id: "what-is-gojiberry",
-        title: "What is Gojiberry & How Does It Work?",
-        content: `Gojiberry is an AI-powered sales engine that turns intent signals into real sales opportunities.
+        id: "what-is-intentsly",
+        title: "What is intentsly & How Does It Work?",
+        content: `intentsly is an AI-powered sales engine that turns intent signals into real sales opportunities.
 
-Instead of guessing who might be interested in your service, Gojiberry **detects intent signals** (profile visits, competitor interactions, job changes, content engagement, etc.) and automatically turns them into **warm prospects you can reach out to**.
+Instead of guessing who might be interested in your service, intentsly **detects intent signals** (profile visits, competitor interactions, job changes, content engagement, etc.) and automatically turns them into **warm prospects you can reach out to**.
 
-## The Gojiberry workflow (simple version)
+## The intentsly workflow (simple version)
 
-Gojiberry works in 4 steps:
+intentsly works in 4 steps:
 
 **1. Your AI Agent monitors intent signals**
 
@@ -42,11 +42,11 @@ These are people already showing interest in your space.
 
 You decide who to contact — no spam, no guesswork.
 
-**4. Gojiberry launches personalized campaigns**
+**4. intentsly launches personalized campaigns**
 
 AI-generated messages are sent automatically from your LinkedIn account.
 
-## Why people use Gojiberry
+## Why people use intentsly
 
 - They're tired of cold outreach with 0% reply rates
 - They want to reach warm leads — people who are already showing interest
@@ -55,12 +55,12 @@ AI-generated messages are sent automatically from your LinkedIn account.
       },
       {
         id: "quick-start-guide",
-        title: "Your First 15 Minutes with Gojiberry (Quick Start Guide)",
-        content: `This is the fastest way to see value from Gojiberry.
+        title: "Your First 15 Minutes with intentsly (Quick Start Guide)",
+        content: `This is the fastest way to see value from intentsly.
 
 ## Step 1 — Connect your LinkedIn account (5 min)
 
-Gojiberry uses your LinkedIn account to send automated campaigns.
+intentsly uses your LinkedIn account to send automated campaigns.
 
 1. Go to **Settings → LinkedIn Accounts**
 2. Click "Connect account"
@@ -69,7 +69,7 @@ Gojiberry uses your LinkedIn account to send automated campaigns.
 
 ## Step 2 — Define ICP and choose your signals (5 min)
 
-Your ICP (Ideal Customer Profile) tells Gojiberry who to target.
+Your ICP (Ideal Customer Profile) tells intentsly who to target.
 
 1. Go to **AI Agents → Create Agent**
 2. Enter your website URL — the AI will analyze it and suggest your ICP
@@ -79,7 +79,7 @@ Your ICP (Ideal Customer Profile) tells Gojiberry who to target.
 ## Step 3 — Create your first campaign (3 min)
 
 1. Go to **Campaigns → Start a campaign**
-2. Choose "AI Campaign" — Gojiberry builds it for you automatically
+2. Choose "AI Campaign" — intentsly builds it for you automatically
 3. Connect it to a List (your agent will fill this)
 4. Launch the campaign
 
@@ -114,7 +114,7 @@ It can be 3–5 per day or 100+ per day depending on your criteria.
 
 **Common mistake:** expecting instant demos.
 
-Gojiberry doesn't magically replace your sales skills or your offer. It gets you more warm conversations — but you still need to close deals yourself.
+intentsly doesn't magically replace your sales skills or your offer. It gets you more warm conversations — but you still need to close deals yourself.
 
 ## If you see no leads or if the targeting isn't right after 48h
 
@@ -124,11 +124,11 @@ Gojiberry doesn't magically replace your sales skills or your offer. It gets you
 - Contact support if you're still stuck`,
       },
       {
-        id: "gojiberry-vs-tools",
-        title: "Gojiberry vs Traditional Prospecting Tools",
+        id: "intentsly-vs-tools",
+        title: "intentsly vs Traditional Prospecting Tools",
         content: `Here's the difference:
 
-| Traditional tools | Gojiberry |
+| Traditional tools | intentsly |
 |---|---|
 | Static contact lists | Live buying signals |
 | Cold emails | Warm LinkedIn conversations |
@@ -136,7 +136,7 @@ Gojiberry doesn't magically replace your sales skills or your offer. It gets you
 | Low reply rate | Higher reply rate |
 | Manual scraping | AI-powered detection |
 
-Gojiberry does **not** replace your CRM.
+intentsly does **not** replace your CRM.
 
 It replaces the boring, ineffective "prospecting grind".
 
@@ -149,7 +149,7 @@ Think of it as: **An AI SDR watching LinkedIn for you 24/7**.`,
       },
       {
         id: "glossary",
-        title: "Gojiberry Glossary (Key Terms)",
+        title: "intentsly Glossary (Key Terms)",
         content: `**Signals Agent**
 Your automated assistant that tracks prospects showing buying intent.
 
@@ -183,7 +183,7 @@ Adding email / extra data to a lead.`,
       {
         id: "connect-linkedin-steps",
         title: "How to connect your LinkedIn account (step-by-step)",
-        content: `Connecting your LinkedIn account is required to send campaigns directly from Gojiberry.
+        content: `Connecting your LinkedIn account is required to send campaigns directly from intentsly.
 
 Here's how to do it safely and correctly in under 2 minutes:
 
@@ -201,10 +201,10 @@ Here's how to do it safely and correctly in under 2 minutes:
 ## If "Infinite Login":
 - Click the link provided
 - Log into LinkedIn in the new window
-- Copy the token shown and paste it in Gojiberry
+- Copy the token shown and paste it in intentsly
 
 ## What this allows
-Once connected, Gojiberry can:
+Once connected, intentsly can:
 - Send connection requests
 - Send messages
 - Run follow-up sequences
@@ -224,7 +224,7 @@ Sometimes the LinkedIn email or password entered is slightly incorrect.
 
 **How to fix it:**
 - Try again with the right credentials
-- If it fails again: try logging in directly on LinkedIn to make sure the credentials are working, then retry connecting inside Gojiberry
+- If it fails again: try logging in directly on LinkedIn to make sure the credentials are working, then retry connecting inside intentsly
 
 ## 2. LinkedIn triggered a verification
 
@@ -238,7 +238,7 @@ This is a normal process.
 **How to fix it:**
 - Check your email for a message from LinkedIn with a code
 - Check your LinkedIn app for a notification
-- Enter the code in Gojiberry when prompted
+- Enter the code in intentsly when prompted
 
 ## 3. You're using a VPN
 
@@ -295,14 +295,14 @@ Too many active LinkedIn sessions can cause errors.
       },
       {
         id: "why-linkedin-access",
-        title: "Why does Gojiberry need access to my LinkedIn account?",
-        content: `Gojiberry uses your LinkedIn account to:
+        title: "Why does intentsly need access to my LinkedIn account?",
+        content: `intentsly uses your LinkedIn account to:
 - Send connection requests
 - Send messages
 - Launch automated campaigns
 - Follow up with leads found by your AI Agent
 
-Without LinkedIn connection, Gojiberry can still detect leads — but it **cannot start conversations or run campaigns**.
+Without LinkedIn connection, intentsly can still detect leads — but it **cannot start conversations or run campaigns**.
 
 Your data is secure:
 - Passwords are not stored
@@ -311,8 +311,8 @@ Your data is secure:
       },
       {
         id: "is-linkedin-safe",
-        title: "Is connecting LinkedIn to Gojiberry safe?",
-        content: `Yes. Gojiberry is built with account safety in mind.
+        title: "Is connecting LinkedIn to intentsly safe?",
+        content: `Yes. intentsly is built with account safety in mind.
 
 It uses:
 - Human-like delays
@@ -321,7 +321,7 @@ It uses:
 - Randomized timing
 - Proxy with IPs in your country
 
-Gojiberry does **not**:
+intentsly does **not**:
 - Share your LinkedIn data
 - Perform aggressive or unsafe actions
 
@@ -338,7 +338,7 @@ Most LinkedIn restrictions happen when:
 - Using unsafe automation
 - Using several automation tools at the same time
 
-Gojiberry is specifically designed to prevent that by:
+intentsly is specifically designed to prevent that by:
 - Limiting activity
 - Adding delays
 - Simulating real human behavior
@@ -368,7 +368,7 @@ If it shows "Disconnected":
       {
         id: "safety-limits",
         title: "Safety & Limits on LinkedIn",
-        content: `## How to keep your LinkedIn account safe while using Gojiberry
+        content: `## How to keep your LinkedIn account safe while using intentsly
 
 ## Overview
 
@@ -404,13 +404,13 @@ Using automation on LinkedIn requires following certain safety practices to prot
 - Have a complete LinkedIn profile
 - Be active naturally (like posts, comment occasionally)
 - Start slowly and increase volume gradually
-- Use only one automation tool (Gojiberry)
+- Use only one automation tool (intentsly)
 
 ## 4. What Happens if LinkedIn Flags You?
 
 LinkedIn may send a warning, temporarily restrict actions, or in rare cases, suspend the account. This is usually reversible.
 
-## 5. How Gojiberry Helps Protect Your Account
+## 5. How intentsly Helps Protect Your Account
 
 ### Built-in protections:
 - Randomized timing between actions
@@ -438,7 +438,7 @@ LinkedIn may send a warning, temporarily restrict actions, or in rare cases, sus
       {
         id: "ai-agent-finds-leads",
         title: "How your AI Agent finds leads automatically",
-        content: `Gojiberry's AI Agent works in the background to detect **high-intent prospects** on LinkedIn, based on the signals you selected.
+        content: `intentsly's AI Agent works in the background to detect **high-intent prospects** on LinkedIn, based on the signals you selected.
 
 These signals include:
 - People interacting with competitors
@@ -466,9 +466,9 @@ Once a lead appears in the Inbox, you can:
       {
         id: "manually-add-leads",
         title: "How to manually add warm leads (step-by-step)",
-        content: `To manually add leads to Gojiberry, you need to use the **Gojiberry Chrome Extension**.
+        content: `To manually add leads to intentsly, you need to use the **intentsly Chrome Extension**.
 
-If you don't have it yet, install it first from the Chrome Web Store and log in with your Gojiberry account.
+If you don't have it yet, install it first from the Chrome Web Store and log in with your intentsly account.
 
 Once installed, you can add leads directly from LinkedIn in one click.
 
@@ -477,14 +477,14 @@ Go to: **Leads → Leads Inbox → Add Leads** to see the installation link and 
 ## Add leads via LinkedIn Search
 
 1. Go to LinkedIn and run a people search
-2. Open the Gojiberry extension
+2. Open the intentsly extension
 3. Click "Add all" or click on individual profiles
 4. Leads are added to your Leads Inbox
 
 ## Add leads via Sales Navigator
 
 1. Open Sales Navigator and run a search
-2. Activate the Gojiberry extension
+2. Activate the intentsly extension
 3. Use the bulk-add option to import the list
 
 ## Add leads from LinkedIn Events
@@ -538,7 +538,7 @@ Your CSV should ideally include:
       },
       {
         id: "export-leads",
-        title: "How to export leads from Gojiberry",
+        title: "How to export leads from intentsly",
         content: `You can download your leads at any time.
 
 ## Steps
@@ -592,10 +592,10 @@ This is where you can:
       },
       {
         id: "how-campaigns-work",
-        title: "How campaigns work in Gojiberry",
+        title: "How campaigns work in intentsly",
         content: `A campaign is what turns leads into real conversations on LinkedIn.
 
-In Gojiberry, the real flow is:
+In intentsly, the real flow is:
 
 **Signals Agent → List → Campaign → LinkedIn actions**
 
@@ -607,7 +607,7 @@ Here's how it works:
 
 A campaign never pulls leads directly from LinkedIn.
 
-It always pulls from a **List** inside Gojiberry.`,
+It always pulls from a **List** inside intentsly.`,
       },
       {
         id: "best-automated-workflow",
@@ -615,12 +615,12 @@ It always pulls from a **List** inside Gojiberry.`,
         content: `This is the most powerful and scalable setup:
 
 1. Your **Signals Agent** finds warm leads based on your ICP
-2. Gojiberry **scores each lead automatically** using AI
+2. intentsly **scores each lead automatically** using AI
 3. Leads are **sent into a List automatically**
 4. That List is **connected to a Campaign**
 5. The Campaign automatically contacts the best leads
 
-Inside a campaign, Gojiberry will **prioritize**:
+Inside a campaign, intentsly will **prioritize**:
 - Leads with **recent activity**
 - Leads with the **highest AI score**
 
@@ -635,7 +635,7 @@ You will see two options:
 
 ## 🤖 AI Campaign (recommended)
 
-Choose this if you want Gojiberry to build the campaign for you.
+Choose this if you want intentsly to build the campaign for you.
 
 The AI will:
 - Analyze your website
@@ -700,7 +700,7 @@ When adding leads manually from LinkedIn:
         title: "How AI Messages work (very important)",
         content: `AI Messages are unique, hyper-personalized messages created for each lead.
 
-Gojiberry generates them using:
+intentsly generates them using:
 - The person's LinkedIn profile
 - Their activity / intent signal
 - Their company + role
@@ -711,7 +711,7 @@ These messages are:
 - **Different for every single contact**
 - Much more natural and contextual than generic messages
 
-This is one of Gojiberry's most powerful features.
+This is one of intentsly's most powerful features.
 
 ## How to preview an AI message before sending
 
@@ -770,7 +770,7 @@ This keeps your LinkedIn account safe and natural.`,
       {
         id: "location-proxy",
         title: "About location & proxy",
-        content: `Gojiberry uses a proxy based on your **LinkedIn country**.
+        content: `intentsly uses a proxy based on your **LinkedIn country**.
 
 To make sure it's correctly configured:
 1. Go to **Settings → LinkedIn Account**
@@ -931,7 +931,7 @@ Otherwise, create a new campaign for major changes.`,
         title: "My Chrome extension is not working",
         content: `Try these steps:
 
-1. Make sure you are **logged in** to Gojiberry
+1. Make sure you are **logged in** to intentsly
 2. Refresh the LinkedIn page
 3. Click the extension icon again
 4. Restart your browser
@@ -998,14 +998,14 @@ The system is powerful, but it needs:
       {
         id: "hubspot-integration",
         title: "How to Integrate with Hubspot",
-        content: `This integration allows Gojiberry to push leads and their data into your HubSpot CRM.
+        content: `This integration allows intentsly to push leads and their data into your HubSpot CRM.
 
 To make this possible, HubSpot requires a **Legacy App** with specific permissions (scopes).
 
 ## How to Generate an API Key for HubSpot
 
 ### Why Use a Legacy App?
-A Legacy App gives you a single, stable API key (called a private app token) that you paste directly into Gojiberry. It's simpler than OAuth and works great for this integration.
+A Legacy App gives you a single, stable API key (called a private app token) that you paste directly into intentsly. It's simpler than OAuth and works great for this integration.
 
 ### Step-by-Step Tutorial
 
@@ -1019,7 +1019,7 @@ A Legacy App gives you a single, stable API key (called a private app token) tha
 
 **3. Configure Your Legacy App**
 - Click "Create a Private App"
-- Give it a name (e.g., "Gojiberry Integration")
+- Give it a name (e.g., "intentsly Integration")
 
 **4. Assign the Correct Scopes (Permissions)**
 
@@ -1033,7 +1033,7 @@ Required scopes:
 - Click "Create app"
 - Copy the token shown
 
-**6. Add the token in Gojiberry**
+**6. Add the token in intentsly**
 - Go to **Settings → Integrations → HubSpot**
 - Paste your token
 - Click Connect`,
@@ -1048,8 +1048,8 @@ Required scopes:
     articles: [
       {
         id: "pricing-explained",
-        title: "Gojiberry pricing explained",
-        content: `Gojiberry offers different plans based on your usage and level of automation.
+        title: "intentsly pricing explained",
+        content: `intentsly offers different plans based on your usage and level of automation.
 
 Plans vary depending on:
 - Number of signals tracked
@@ -1135,7 +1135,7 @@ If you run into issues, contact support in the chat and we'll help.`,
       {
         id: "refund",
         title: "Can I get a refund?",
-        content: `Because Gojiberry is a software and data-based service, we do not offer standard refunds.
+        content: `Because intentsly is a software and data-based service, we do not offer standard refunds.
 
 However, if there has been a clear technical issue or an error, contact support and we will review the situation on a case-by-case basis.`,
       },
@@ -1181,9 +1181,9 @@ You can come back and reactivate at any time.`,
 
 ## 1. Where to find your API key
 
-To authenticate against the Gojiberry API, you need an API key tied to your workspace.
+To authenticate against the intentsly API, you need an API key tied to your workspace.
 
-- In the Gojiberry app, go to **Settings → API**
+- In the intentsly app, go to **Settings → API**
 - Create a new API key if you don't have one yet
 - Copy the key and store it in a secure place (env var, secret manager, etc.)
 - Use different keys per environment (dev / staging / prod) when possible
@@ -1194,7 +1194,7 @@ To authenticate against the Gojiberry API, you need an API key tied to your work
 
 All endpoints, parameters, and models are documented in the external API reference:
 
-- API reference: \`https://ext.gojiberry.ai/documentation\`
+- API reference: \`https://ext.intentsly.ai/documentation\`
 
 From this documentation, you can:
 - Browse all available endpoints
@@ -1236,30 +1236,30 @@ A typical workflow using the API:
       {
         id: "webhooks",
         title: "Webhooks",
-        content: `Gojiberry allows you to receive real-time notifications when new contacts are created or updated by configuring a webhook URL.
+        content: `intentsly allows you to receive real-time notifications when new contacts are created or updated by configuring a webhook URL.
 
 ## How to Configure Webhooks
 
-1. **Log in to your Gojiberry AI account** at [https://app.gojiberry.ai](https://app.gojiberry.ai)
-2. **Navigate to the Integrations page** at [https://app.gojiberry.ai/integrations](https://app.gojiberry.ai/integrations)
+1. **Log in to your intentsly AI account** at [https://app.intentsly.ai](https://app.intentsly.ai)
+2. **Navigate to the Integrations page** at [https://app.intentsly.ai/integrations](https://app.intentsly.ai/integrations)
 3. **Add a Webhook integration** by clicking the Webhook option
 4. **Enter your webhook URL** where you want to receive notifications
 5. **Save the configuration**
 
-Once configured, Gojiberry will send POST requests to your webhook URL whenever:
+Once configured, intentsly will send POST requests to your webhook URL whenever:
 - A new contact is created
 - A contact is updated
 - Other relevant events occur in your account
 
 The webhook payload will include the full contact data in JSON format.
 
-Each webhook request includes a custom header \`x-gojiberry-user-id\` containing your user ID for verification purposes.
+Each webhook request includes a custom header \`x-intentsly-user-id\` containing your user ID for verification purposes.
 
 ## How to test the webhook?
 
 Use a webhook inspection tool like [https://webhook.site](https://webhook.site/) to preview and debug your payloads.
 
-Simply paste the generated URL into your webhook configuration, trigger an event in Gojiberry, and inspect the exact body, headers, and structure being sent.
+Simply paste the generated URL into your webhook configuration, trigger an event in intentsly, and inspect the exact body, headers, and structure being sent.
 
 ## How to manually trigger an event?
 
@@ -1548,9 +1548,9 @@ export default function HelpCenter() {
         {/* Top nav */}
         <div className="flex items-center justify-between px-8 py-5 max-w-6xl mx-auto">
           <button onClick={() => navigate("/home")} className="flex items-center gap-2">
-            <img src={gojiIcon} alt="Gojiberry" className="w-7 h-7 object-contain" />
+            <img src={intentslyIcon} alt="intentsly" className="w-7 h-7 object-contain" />
             <span className="font-bold text-lg tracking-tight" style={{ color: "hsl(var(--goji-dark))" }}>
-              gojiberry
+              intentsly
             </span>
           </button>
           <button
@@ -1570,7 +1570,7 @@ export default function HelpCenter() {
         {/* Title + Search */}
         <div className="flex flex-col items-center text-center pt-8 pb-4 px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-8 max-w-xl leading-tight" style={{ color: "hsl(var(--goji-dark))" }}>
-            Advice and answers from the GojiberryAI Team
+            Advice and answers from the intentslyAI Team
           </h1>
           <div className="relative w-full max-w-lg">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "hsl(var(--goji-text-muted))" }} />
@@ -1734,14 +1734,14 @@ export default function HelpCenter() {
             {/* External link */}
             <div className="mt-6">
               <a
-                href={`https://help.gojiberry.ai/en/`}
+                href={`https://help.intentsly.ai/en/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs hover:opacity-70 transition-opacity"
                 style={{ color: "hsl(var(--goji-text-muted))" }}
               >
                 <ExternalLink className="w-3 h-3" />
-                View original on help.gojiberry.ai
+                View original on help.intentsly.ai
               </a>
             </div>
           </div>
