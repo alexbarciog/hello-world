@@ -116,6 +116,7 @@ export default function CampaignDetail() {
   const [settingsDailyLimit, setSettingsDailyLimit] = useState(25);
   const [todaySentCount, setTodaySentCount] = useState(0);
   const [remainingContacts, setRemainingContacts] = useState(0);
+  const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number }>>({});
 
   // Add step dialog state
   const [addStepOpen, setAddStepOpen] = useState(false);
@@ -207,6 +208,24 @@ export default function CampaignDetail() {
       .eq("campaign_id", campaignId)
       .gte("sent_at", todayStart.toISOString());
     setTodaySentCount(todaySent || 0);
+
+    // Load per-contact statuses from connection requests
+    const { data: connRequests } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("contact_id, status")
+      .eq("campaign_id", campaignId);
+    if (connRequests) {
+      const statusMap: Record<string, { status: string; step: number }> = {};
+      for (const cr of connRequests as any[]) {
+        // step 0 = invitation sent, accepted means they can receive messages
+        const isAccepted = cr.status === "accepted";
+        statusMap[cr.contact_id] = {
+          status: cr.status,
+          step: isAccepted ? 1 : 0, // 0 = pending invite, 1 = ready for step 1 message
+        };
+      }
+      setContactStatuses(statusMap);
+    }
 
     // Remaining unsent contacts
     const totalContacts = contactsCount || 0;
@@ -982,7 +1001,19 @@ export default function CampaignDetail() {
                                   ))}
                                 </div>
                               </td>
-                              <td className="px-3 py-3"><span className="text-xs text-muted-foreground">—</span></td>
+                              <td className="px-3 py-3">
+                                {(() => {
+                                  const cs = contactStatuses[c.id];
+                                  if (!cs) return <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-2.5 py-0.5">Queued</span>;
+                                  if (cs.status === "pending") return <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-full px-2.5 py-0.5">Pending</span>;
+                                  if (cs.status === "accepted") {
+                                    const stepNum = cs.step;
+                                    return <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded-full px-2.5 py-0.5">Step {stepNum}</span>;
+                                  }
+                                  if (cs.status === "sent") return <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/30 rounded-full px-2.5 py-0.5">Invite Sent</span>;
+                                  return <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-2.5 py-0.5 capitalize">{cs.status}</span>;
+                                })()}
+                              </td>
                               <td className="px-3 py-3">
                                 <span className="text-xs text-muted-foreground">
                                   {new Date(c.imported_at).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "2-digit" })}
