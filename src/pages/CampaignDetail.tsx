@@ -364,7 +364,7 @@ export default function CampaignDetail() {
                     <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">🔥 14/day</span>
                     <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">✉️ 20/day</span>
                   </div>
-                  <button className="text-muted-foreground hover:text-foreground"><SettingsIcon className="w-4 h-4" /></button>
+                  <button onClick={() => navigate("/settings?tab=linkedin")} className="text-muted-foreground hover:text-foreground"><SettingsIcon className="w-4 h-4" /></button>
                 </div>
 
                 {/* Workflow Canvas */}
