@@ -41,6 +41,7 @@ type CampaignFull = {
   invitations_accepted: number;
   messages_sent: number;
   messages_replied: number;
+  daily_connect_limit: number;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
@@ -104,6 +105,9 @@ export default function CampaignDetail() {
   const [assigningList, setAssigningList] = useState(false);
   const [showAgentRunning, setShowAgentRunning] = useState(false);
   const [editingStep, setEditingStep] = useState<number | null>(null);
+  const [step1Sent, setStep1Sent] = useState(0);
+  const [step1Accepted, setStep1Accepted] = useState(0);
+  const [settingsDailyLimit, setSettingsDailyLimit] = useState(25);
 
   // Add step dialog state
   const [addStepOpen, setAddStepOpen] = useState(false);
@@ -134,6 +138,7 @@ export default function CampaignDetail() {
     setCampaign(c);
     setSettingsGoal(c.campaign_goal || "conversations");
     setSettingsTone(c.message_tone || "professional");
+    setSettingsDailyLimit((c as any).daily_connect_limit || 25);
 
     if (c.source_agent_id) {
       const { data: agent } = await supabase.from("signal_agents").select("name, status, results_count").eq("id", c.source_agent_id).single();
@@ -169,6 +174,21 @@ export default function CampaignDetail() {
         setAvailableLists(listsWithCounts);
       }
     }
+
+    // Load step 1 connection request counters
+    const { count: sentCount } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .in("status", ["sent", "accepted"]);
+    setStep1Sent(sentCount || 0);
+
+    const { count: acceptedCount } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .eq("status", "accepted");
+    setStep1Accepted(acceptedCount || 0);
 
     setLoading(false);
   }
@@ -219,10 +239,11 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({
       campaign_goal: settingsGoal,
       message_tone: settingsTone,
+      daily_connect_limit: settingsDailyLimit,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, daily_connect_limit: settingsDailyLimit });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
@@ -482,8 +503,8 @@ export default function CampaignDetail() {
                       <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
                         <p className="text-xs text-muted-foreground italic">Invitation without message</p>
                         <div className="flex items-center gap-3 mt-3 text-xs">
-                          <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">0 contact(s)</span>
-                          <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 accepted</span>
+                          <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">{step1Sent} contact(s)</span>
+                          <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">{step1Accepted} accepted</span>
                         </div>
                         <div className="flex gap-2 mt-3 pt-2 border-t border-border">
                           <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
@@ -1029,6 +1050,26 @@ export default function CampaignDetail() {
                           </div>
                         </div>
                         <Switch checked={settingsReviewMode} onCheckedChange={setSettingsReviewMode} />
+                      </div>
+                      <div className="rounded-xl bg-muted/20 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-bold text-foreground">Daily connection request limit</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Max invitations sent per day (split across 5 daily runs)</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={settingsDailyLimit}
+                              onChange={(e) => setSettingsDailyLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 25)))}
+                              className="w-20 text-center px-2 py-1.5 border border-border rounded-lg text-sm font-bold bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                            <span className="text-xs text-muted-foreground">/day</span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">≈ {Math.max(1, Math.floor(settingsDailyLimit / 5))} invitations per run × 5 runs (08:00, 10:00, 12:00, 14:00, 16:00 UTC)</p>
                       </div>
                     </div>
                   </CollapsibleContent>

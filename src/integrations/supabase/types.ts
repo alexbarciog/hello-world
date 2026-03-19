@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_connection_requests: {
+        Row: {
+          accepted_at: string | null
+          campaign_id: string
+          contact_id: string
+          created_at: string
+          id: string
+          sent_at: string
+          status: string
+          unipile_request_id: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          campaign_id: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          sent_at?: string
+          status?: string
+          unipile_request_id?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          campaign_id?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          sent_at?: string
+          status?: string
+          unipile_request_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_connection_requests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_connection_requests_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           campaign_goal: string | null
@@ -22,6 +73,7 @@ export type Database = {
           country: string | null
           created_at: string
           current_step: number | null
+          daily_connect_limit: number
           description: string | null
           discovery_keywords: string[] | null
           engagement_keywords: string[] | null
@@ -70,6 +122,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_step?: number | null
+          daily_connect_limit?: number
           description?: string | null
           discovery_keywords?: string[] | null
           engagement_keywords?: string[] | null
@@ -118,6 +171,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_step?: number | null
+          daily_connect_limit?: number
           description?: string | null
           discovery_keywords?: string[] | null
           engagement_keywords?: string[] | null
