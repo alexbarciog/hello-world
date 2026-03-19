@@ -57,6 +57,22 @@
     --goji-bg-hero: 5 85% 96%;
     --goji-bg-hero-2: 20 90% 94%;
 
+    /* Dashboard MD3 palette */
+    --md-primary: 201 100% 28%;
+    --md-primary-container: 201 100% 35%;
+    --md-on-primary: 0 0% 100%;
+    --md-on-surface: 228 10% 11%;
+    --md-on-surface-variant: 210 8% 30%;
+    --md-secondary: 257 66% 55%;
+    --md-secondary-fixed: 255 100% 93%;
+    --md-tertiary: 46 100% 22%;
+    --md-tertiary-fixed: 46 100% 72%;
+    --md-surface: 250 100% 99%;
+    --md-surface-container: 240 18% 95%;
+    --md-surface-container-high: 240 12% 92%;
+    --md-outline: 207 6% 47%;
+    --md-outline-variant: 210 10% 78%;
+
     /* Gradient */
     --gradient-hero: linear-gradient(135deg, hsl(5 85% 96%) 0%, hsl(20 90% 94%) 50%, hsl(0 0% 100%) 100%);
     --gradient-brand: linear-gradient(135deg, hsl(var(--goji-orange)), hsl(var(--goji-coral)));
