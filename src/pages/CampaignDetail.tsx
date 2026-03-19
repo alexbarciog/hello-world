@@ -8,11 +8,16 @@ import {
   ChevronLeft, Play, Pause, Pencil, Settings as SettingsIcon,
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
-  AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User,
+  AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Contact, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import {
