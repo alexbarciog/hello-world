@@ -1363,6 +1363,14 @@ export default function CampaignDetail() {
                       return nowUTC < runHour + 1; // show if not fully past
                     });
 
+                    if (visibleRuns.length === 0) {
+                      return (
+                        <div className="text-center py-6 text-sm text-muted-foreground">
+                          All runs for today have been completed. Next runs start tomorrow at 08:00 UTC.
+                        </div>
+                      );
+                    }
+
                     return visibleRuns.map((run, idx) => {
                       const runHour = parseInt(run.time);
                       const isPast = nowUTC >= runHour + 1;
