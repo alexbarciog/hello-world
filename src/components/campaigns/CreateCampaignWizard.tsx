@@ -521,8 +521,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             <button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 && !canNext1}
-              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2 transition-all disabled:opacity-40 hover:scale-[1.02]"
-              style={{ background: "hsl(var(--goji-coral))" }}
+              className="btn-cta text-sm disabled:opacity-40"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
