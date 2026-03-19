@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   LineChart,
   Line,
@@ -9,10 +10,19 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { MessageSquare, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import {
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  MoreVertical,
+  TrendingUp,
+  Minus,
+} from "lucide-react";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
+import { supabase } from "@/integrations/supabase/client";
 
-// Generate chart data for last 30 days
+// ─── Chart data ──────────────────────────────────────────────────────────────
 const generateChartData = () => {
   const data = [];
   const now = new Date("2026-03-17");
@@ -26,23 +36,44 @@ const generateChartData = () => {
 };
 const chartData = generateChartData();
 
+// ─── Static example leads ────────────────────────────────────────────────────
 const exampleLeads = [
   { name: "Dylan Teixeira (example)", role: "Co-Founder", company: "GojiberryAI", heat: 2 },
   { name: "Pierre-Eliott Lallemant (example)", role: "Co-Founder", company: "GojiberryAI", heat: 2 },
   { name: "Román Czerny (example)", role: "Co-Founder", company: "GojiberryAI", heat: 2 },
 ];
 
+// ─── Mini sparkle dot pattern ─────────────────────────────────────────────────
+function SparkDots({ color }: { color: string }) {
+  // 3 rows × 5 cols of dots, randomised opacities for decorative purpose
+  const rows = [
+    [0.15, 0.25, 0.4, 0.6, 0.8],
+    [0.25, 0.35, 0.55, 0.7, 0.9],
+    [0.1, 0.2, 0.35, 0.5, 0.65],
+  ];
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((row, ri) => (
+        <div key={ri} className="flex gap-1">
+          {row.map((op, ci) => (
+            <span
+              key={ci}
+              className="w-1 h-1 rounded-full"
+              style={{ background: color, opacity: op }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 function HeatDots({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="text-sm"
-          style={{ opacity: i < count ? 1 : 0.2 }}
-        >
-          🔥
-        </span>
+        <span key={i} className="text-sm" style={{ opacity: i < count ? 1 : 0.2 }}>🔥</span>
       ))}
     </div>
   );
@@ -61,17 +92,116 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 
 const avatarColors = ["#1a1a2e", "#374151", "#1f2937"];
 
-// Reusable premium card class
+// ─── Design primitives ────────────────────────────────────────────────────────
 const premiumCard =
   "relative overflow-hidden bg-white/90 rounded-xl border border-white/80 shadow-[0_2px_4px_hsl(220_14%_10%/0.04),0_8px_24px_hsl(220_14%_10%/0.08),0_1px_2px_hsl(220_14%_10%/0.06)]";
 
-// Inner shine overlay
 function ShineOverlay() {
   return (
     <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none rounded-xl" />
   );
 }
 
+// ─── Metric Card ─────────────────────────────────────────────────────────────
+interface MetricCardProps {
+  title: string;
+  value: number | string;
+  description: string;
+  loading?: boolean;
+  /** teal = positive accent; neutral = dark; none = skip trend row */
+  accent?: "teal" | "neutral";
+  trend?: string;
+  trendUp?: boolean;
+  footer?: React.ReactNode;
+  sparkColor?: string;
+}
+
+function MetricCard({
+  title,
+  value,
+  description,
+  loading,
+  accent = "neutral",
+  trend,
+  trendUp,
+  footer,
+  sparkColor,
+}: MetricCardProps) {
+  const tealColor = "hsl(152 60% 40%)";
+  const neutralColor = "hsl(222 28% 12%)";
+  const valueColor = accent === "teal" ? tealColor : neutralColor;
+  const trendColor = trendUp ? tealColor : "hsl(220 10% 55%)";
+
+  return (
+    <div className={`${premiumCard} p-5 flex flex-col justify-between min-h-[130px]`}>
+      <ShineOverlay />
+
+      {/* Header */}
+      <div className="relative z-10 flex items-start justify-between mb-2">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-tight">
+          {title}
+        </p>
+        <button className="text-gray-300 hover:text-gray-400 transition-colors -mt-0.5">
+          <MoreVertical className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Number + spark dots */}
+      <div className="relative z-10 flex items-end justify-between">
+        <div>
+          {loading ? (
+            <div className="h-9 w-12 bg-gray-100 rounded animate-pulse mb-1" />
+          ) : (
+            <div className="flex items-end gap-2 mb-0.5">
+              <span
+                className="text-4xl font-black leading-none tabular-nums"
+                style={{ color: valueColor }}
+              >
+                {value}
+              </span>
+              {accent === "teal" && (
+                <TrendingUp
+                  className="w-4 h-4 mb-1"
+                  style={{ color: tealColor }}
+                />
+              )}
+              {accent === "neutral" && typeof value === "number" && value === 0 && (
+                <Minus className="w-4 h-4 mb-1 text-gray-300" />
+              )}
+            </div>
+          )}
+          <p className="text-xs text-gray-400">{description}</p>
+
+          {/* Trend line */}
+          {trend !== undefined && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <span className="text-xs font-semibold" style={{ color: trendColor }}>
+                {trend}
+              </span>
+              <span className="text-xs text-gray-400">vs last month</span>
+            </div>
+          )}
+        </div>
+
+        {/* Decorative spark dots */}
+        {sparkColor && (
+          <div className="mb-1 opacity-80">
+            <SparkDots color={sparkColor} />
+          </div>
+        )}
+      </div>
+
+      {/* Optional footer */}
+      {footer && (
+        <div className="relative z-10 mt-3 pt-3 border-t border-[hsl(220_14%_93%)]">
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
   const [getStartedOpen, setGetStartedOpen] = useState(true);
@@ -81,13 +211,57 @@ export default function Dashboard() {
     navigate("/");
   };
 
+  // ── Live data: aggregate campaign stats ──────────────────────────────────
+  const { data: campaignStats, isLoading: statsLoading } = useQuery({
+    queryKey: ["dashboard-campaign-stats"],
+    queryFn: async () => {
+      const { data: campaigns, error } = await supabase
+        .from("campaigns")
+        .select("invitations_sent, messages_sent");
+      if (error) throw error;
+      const leadsEngaged = (campaigns ?? []).reduce(
+        (s, c) => s + (c.invitations_sent ?? 0),
+        0
+      );
+      const conversations = (campaigns ?? []).reduce(
+        (s, c) => s + (c.messages_sent ?? 0),
+        0
+      );
+      return { leadsEngaged, conversations };
+    },
+    staleTime: 30_000,
+  });
+
+  // ── Live data: hot opportunities (leads count for user's campaigns) ──────
+  const { data: hotOppsData, isLoading: hotOppsLoading } = useQuery({
+    queryKey: ["dashboard-hot-opps"],
+    queryFn: async () => {
+      // Get all campaigns for this user first
+      const { data: campaigns } = await supabase
+        .from("campaigns")
+        .select("id");
+      if (!campaigns || campaigns.length === 0) return { count: 0 };
+
+      const campaignIds = campaigns.map((c) => c.id);
+      const { count, error } = await supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .in("campaign_id", campaignIds);
+      if (error) throw error;
+      return { count: count ?? 0 };
+    },
+    staleTime: 30_000,
+  });
+
+  const hotOpps = hotOppsData?.count ?? 0;
+  const leadsEngaged = campaignStats?.leadsEngaged ?? 0;
+  const conversations = campaignStats?.conversations ?? 0;
+
   return (
     <div className="min-h-full bg-[hsl(30_20%_98%)] rounded-2xl px-4 md:px-8 py-6 relative m-2 md:m-4">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">
-          Welcome Alex 🚀
-        </h1>
+        <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">Welcome Alex 🚀</h1>
         <div className="flex items-center gap-2 flex-wrap">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-red-500 border-red-200/60 bg-red-50/80 backdrop-blur-sm hover:bg-red-50 transition-all shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
@@ -102,12 +276,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-        {/* Ready to outreach */}
+      {/* ── Stats row ── */}
+      {/* Top strip: CTA card full-width on its own row on mobile; 4-col on ≥md */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+        {/* Ready to outreach (unchanged) */}
         <div className={`${premiumCard} p-6 flex flex-col items-center justify-center gap-3`}>
           <ShineOverlay />
-          <p className="text-sm font-semibold text-[hsl(222_28%_18%)] relative z-10">Ready to outreach?</p>
+          <p className="text-sm font-semibold text-[hsl(222_28%_18%)] relative z-10">
+            Ready to outreach?
+          </p>
           <button
             onClick={handleNewCampaign}
             className="relative z-10 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02]"
@@ -115,8 +292,12 @@ export default function Dashboard() {
               background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 65%))",
               boxShadow: "0 4px 16px hsl(5 90% 65% / 0.45)",
             }}
-            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 24px hsl(5 90% 65% / 0.55)")}
-            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px hsl(5 90% 65% / 0.45)")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.boxShadow = "0 6px 24px hsl(5 90% 65% / 0.55)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.boxShadow = "0 4px 16px hsl(5 90% 65% / 0.45)")
+            }
           >
             <span className="text-base">+</span>
             Start a campaign
@@ -125,47 +306,71 @@ export default function Dashboard() {
         </div>
 
         {/* Hot Opportunities */}
-        <div className={`${premiumCard} p-6`}>
-          <ShineOverlay />
-          <p className="text-xs text-gray-400 mb-1 relative z-10">Hot Opportunities</p>
-          <p className="text-3xl font-black text-[hsl(222_28%_12%)] mb-1 relative z-10">3</p>
-          <p className="text-xs text-gray-400 relative z-10">Detected this period</p>
-        </div>
+        <MetricCard
+          title="Hot Opportunities"
+          value={hotOpps}
+          description="Detected this period"
+          loading={hotOppsLoading}
+          accent="teal"
+          trend="+0%"
+          trendUp={hotOpps > 0}
+          sparkColor="hsl(152 60% 40%)"
+        />
 
         {/* Leads Engaged */}
-        <div className={`${premiumCard} p-6`}>
-          <ShineOverlay />
-          <p className="text-xs text-gray-400 mb-1 relative z-10">Leads Engaged</p>
-          <p className="text-3xl font-black text-[hsl(222_28%_12%)] mb-1 relative z-10">0</p>
-          <p className="text-xs text-gray-400 relative z-10">Invitations sent</p>
-        </div>
+        <MetricCard
+          title="Leads Engaged"
+          value={leadsEngaged}
+          description="Invitations sent"
+          loading={statsLoading}
+          accent="neutral"
+          trend="+0%"
+          trendUp={false}
+          sparkColor="hsl(220 10% 70%)"
+        />
 
         {/* Conversations */}
-        <div className={`${premiumCard} p-6 flex flex-col justify-between`}>
-          <ShineOverlay />
-          <div className="relative z-10">
-            <p className="text-xs text-gray-400 mb-1">Conversations</p>
-            <p className="text-3xl font-black text-[hsl(222_28%_12%)] mb-1">0</p>
-            <p className="text-xs text-gray-400">Messages sent</p>
-          </div>
-          <div className="relative z-10 mt-3 pt-3 border-t border-[hsl(220_14%_93%)] flex items-center justify-between">
-            <p className="text-xs text-gray-400">Set deal size to see pipeline generated</p>
-            <button className="text-xs font-semibold" style={{ color: "hsl(var(--goji-coral))" }}>Edit</button>
-          </div>
-        </div>
+        <MetricCard
+          title="Conversations"
+          value={conversations}
+          description="Messages sent"
+          loading={statsLoading}
+          accent="neutral"
+          trend="+0%"
+          trendUp={false}
+          sparkColor="hsl(220 10% 70%)"
+          footer={
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-400">
+                Set deal size to see pipeline generated
+              </p>
+              <button
+                className="text-xs font-semibold ml-2 shrink-0"
+                style={{ color: "hsl(var(--goji-coral))" }}
+              >
+                Edit
+              </button>
+            </div>
+          }
+        />
       </div>
 
-      {/* Activity Overview */}
+      {/* ── Activity Overview ── */}
       <div className={`${premiumCard} p-4 md:p-6 mb-6`}>
         <ShineOverlay />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
           <div>
             <h2 className="text-base font-bold text-[hsl(222_28%_15%)]">Activity Overview</h2>
-            <p className="text-xs text-gray-400">Track your lead generation &amp; outreach performance</p>
+            <p className="text-xs text-gray-400">
+              Track your lead generation &amp; outreach performance
+            </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(var(--goji-coral))" }} />
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: "hsl(var(--goji-coral))" }}
+              />
               <span className="text-xs text-gray-500">Leads created</span>
             </div>
             <button
@@ -228,7 +433,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom row */}
+      {/* ── Bottom row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
         {/* Latest Hot Leads */}
         <div className={`${premiumCard} p-6`}>
@@ -260,10 +465,21 @@ export default function Dashboard() {
                 key={lead.name}
                 className="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 transition-colors hover:bg-[hsl(5_90%_65%/0.04)] cursor-pointer"
               >
-                <Avatar initials={lead.name.split(" ").slice(0, 2).map(w => w[0]).join("")} color={avatarColors[i]} />
+                <Avatar
+                  initials={lead.name
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((w) => w[0])
+                    .join("")}
+                  color={avatarColors[i]}
+                />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[hsl(222_28%_15%)] truncate">{lead.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{lead.role} · {lead.company}</p>
+                  <p className="text-sm font-semibold text-[hsl(222_28%_15%)] truncate">
+                    {lead.name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {lead.role} · {lead.company}
+                  </p>
                 </div>
                 <HeatDots count={lead.heat} />
               </div>
@@ -295,15 +511,15 @@ export default function Dashboard() {
                 style={{ color: "hsl(var(--goji-coral))" }}
               >
                 Activate your Unibox
-              </button>
-              {" "}to never miss a reply
+              </button>{" "}
+              to never miss a reply
             </p>
             <p className="text-xs text-gray-400">All your replies will appear here</p>
           </div>
         </div>
       </div>
 
-      {/* Get Started panel */}
+      {/* ── Get Started panel ── */}
       <div className={`${premiumCard} overflow-hidden`}>
         <ShineOverlay />
         <button
@@ -313,7 +529,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
-              style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
+              style={{
+                background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))",
+              }}
             >
               <span className="text-sm">🚀</span>
             </div>
@@ -341,7 +559,7 @@ export default function Dashboard() {
                   <div
                     className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2 transition-all"
                     style={{
-                      borderColor: step.done ? "hsl(142 70% 45%)" : "hsl(220_20%_75%)",
+                      borderColor: step.done ? "hsl(142 70% 45%)" : "hsl(220 20% 75%)",
                       background: step.done ? "hsl(142 70% 45%)" : "transparent",
                       boxShadow: step.done ? "0 2px 8px hsl(142 70% 45% / 0.3)" : "none",
                     }}
@@ -352,7 +570,11 @@ export default function Dashboard() {
                       </svg>
                     )}
                   </div>
-                  <p className={`text-sm ${step.done ? "line-through text-gray-400" : "text-[hsl(222_28%_15%)]"}`}>
+                  <p
+                    className={`text-sm ${
+                      step.done ? "line-through text-gray-400" : "text-[hsl(222_28%_15%)]"
+                    }`}
+                  >
                     {step.label}
                   </p>
                 </div>
@@ -362,19 +584,30 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Floating orange button */}
+      {/* ── Floating button ── */}
       <button
         className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
         style={{
           background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 65%))",
           boxShadow: "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)",
         }}
-        onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 12px 40px hsl(5 90% 65% / 0.6), 0 2px 8px hsl(0 0% 0% / 0.15)")}
-        onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.boxShadow =
+            "0 12px 40px hsl(5 90% 65% / 0.6), 0 2px 8px hsl(0 0% 0% / 0.15)")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.boxShadow =
+            "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)")
+        }
       >
-        <img src="/favicon.ico" alt="" className="w-5 h-5 object-contain" onError={(e) => {
-          (e.target as HTMLImageElement).style.display = 'none';
-        }} />
+        <img
+          src="/favicon.ico"
+          alt=""
+          className="w-5 h-5 object-contain"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
         <span className="text-white text-lg absolute">🔥</span>
       </button>
     </div>
