@@ -346,7 +346,7 @@ export default function CampaignsPage() {
               </TableRow>
             ) : (
               campaigns.map((c) => (
-                <TableRow key={c.id} className="group">
+                <TableRow key={c.id} className="group cursor-pointer" onClick={() => navigate(`/campaigns/${c.id}`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img src={gojiIcon} alt="" className="w-5 h-5 object-contain shrink-0 opacity-70" />
