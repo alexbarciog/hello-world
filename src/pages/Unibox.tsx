@@ -70,6 +70,8 @@ interface Message {
   date?: string;
   created_at?: string;
   is_sender?: boolean;
+  from_me?: boolean;
+  direction?: string;
 }
 
 /* ── API helpers ──────────────────────────────────────────── */
