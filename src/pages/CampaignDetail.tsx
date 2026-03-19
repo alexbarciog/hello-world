@@ -590,10 +590,33 @@ export default function CampaignDetail() {
                             transition={{ delay: i * 0.08 }}
                             className="min-w-[220px] max-w-[240px] shrink-0"
                           >
-                            <div className="rounded-xl text-white p-4 shadow-md" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <Send className="w-4 h-4" />
-                                <span className="text-sm font-bold">Send Message</span>
+                            <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Send className="w-4 h-4" />
+                                  <span className="text-sm font-bold">Send Message</span>
+                                </div>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <button className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently remove this step. All following steps will be renumbered automatically.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                               <p className="text-xs opacity-80">Step {stepNum}</p>
                             </div>
