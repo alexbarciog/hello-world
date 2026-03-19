@@ -73,6 +73,20 @@ Deno.serve(async (req) => {
       }
 
       const data = await res.json();
+
+      // Log raw structure for first chat to help debug field names
+      const rawItems = data?.items || data?.data || (Array.isArray(data) ? data : []);
+      if (rawItems.length > 0) {
+        console.log('[list_chats] Sample chat keys:', JSON.stringify(Object.keys(rawItems[0])));
+        if (rawItems[0].attendees?.length) {
+          console.log('[list_chats] Sample attendee keys:', JSON.stringify(Object.keys(rawItems[0].attendees[0])));
+          console.log('[list_chats] Sample attendee:', JSON.stringify(rawItems[0].attendees[0]));
+        }
+        if (rawItems[0].last_message) {
+          console.log('[list_chats] Sample last_message keys:', JSON.stringify(Object.keys(rawItems[0].last_message)));
+        }
+      }
+
       return json(data);
     }
 
