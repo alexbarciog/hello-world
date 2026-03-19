@@ -15,6 +15,7 @@ import Settings from "./pages/Settings.tsx";
 import HelpCenter from "./pages/HelpCenter.tsx";
 import Signals from "./pages/Signals.tsx";
 import Contacts from "./pages/Contacts.tsx";
+import RedditSignals from "./pages/RedditSignals.tsx";
 import Unibox from "./pages/Unibox.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
@@ -58,6 +59,10 @@ const App = () => (
           <Route
             path="/contacts"
             element={<AuthGuard><DashboardLayout><Contacts /></DashboardLayout></AuthGuard>}
+          />
+          <Route
+            path="/reddit-signals"
+            element={<AuthGuard><DashboardLayout><RedditSignals /></DashboardLayout></AuthGuard>}
           />
           <Route
             path="/unibox"

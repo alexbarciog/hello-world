@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Users,
+  MessageCircle,
   Radio,
   Mail,
   Settings,
@@ -28,6 +29,7 @@ const navItems = [
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
+  { label: "Reddit Signals", icon: MessageCircle,   path: "/reddit-signals" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
