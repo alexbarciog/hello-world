@@ -293,6 +293,7 @@ export default function Signals() {
               agent={agent}
               onToggle={() => toggleAgentStatus(agent)}
               onDelete={() => deleteAgent(agent.id)}
+              onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
             />
           ))
         )}
