@@ -1381,16 +1381,16 @@ function renderMarkdown(text: string) {
         i++;
       }
       elements.push(
-        <ol key={`ol-${i}`} className="my-2 space-y-1 pl-1">
+        <ol key={`ol-${i}`} className="my-3 space-y-2.5 pl-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-2 text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>
+            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
               <span
-                className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: "hsl(var(--goji-coral) / 0.15)", color: "hsl(var(--goji-coral))" }}
+                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5"
+                style={{ background: "hsl(var(--md-primary) / 0.1)", color: "hsl(var(--md-primary))" }}
               >
                 {ii + 1}
               </span>
-              <span className="mt-0.5">{renderInline(item)}</span>
+              <span>{renderInline(item)}</span>
             </li>
           ))}
         </ol>
