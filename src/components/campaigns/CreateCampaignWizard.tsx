@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   X, ChevronRight, ChevronLeft, Bot, List, ChevronDown,
-  Globe, Sparkles, Briefcase, MapPin, Building2, Users,
+  Globe, Sparkles, Briefcase, MapPin, Building2, Users, Check, Loader2,
+  Target, Shield, Mic,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -34,14 +35,14 @@ interface ListData {
 }
 
 const CAMPAIGN_GOALS = [
-  { value: "conversations", label: "Start conversations with warm prospects", desc: "Build relationships and nurture leads through personalized conversations" },
-  { value: "demos", label: "Book qualified sales calls/demos", desc: "Direct approach to schedule meetings and product demonstrations" },
+  { value: "conversations", label: "Start conversations", desc: "Build relationships and nurture leads", icon: "💬" },
+  { value: "demos", label: "Book sales calls/demos", desc: "Schedule meetings and demos", icon: "📅" },
 ];
 
 const MESSAGE_TONES = [
-  { value: "professional", label: "Professional", desc: "Formal, polished" },
-  { value: "conversational", label: "Conversational", desc: "Friendly, casual" },
-  { value: "direct", label: "Direct", desc: "Bold, confident" },
+  { value: "professional", label: "Professional", desc: "Formal, polished", icon: Shield },
+  { value: "conversational", label: "Conversational", desc: "Friendly, casual", icon: Mic },
+  { value: "direct", label: "Direct", desc: "Bold, confident", icon: Target },
 ];
 
 const ease = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -56,6 +57,12 @@ const DEFAULT_WORKFLOW = [
   { type: "message", message: "", delay_days: 1, ai_icebreaker: true },
   { type: "message", message: "", delay_days: 2 },
   { type: "message", message: "", delay_days: 3 },
+];
+
+const STEP_LABELS = [
+  { num: 1, label: "Lead Source" },
+  { num: 2, label: "Campaign Details" },
+  { num: 3, label: "LinkedIn Sender" },
 ];
 
 export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampaignId }: CreateCampaignWizardProps) {
@@ -77,8 +84,6 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   const [campaignGoal, setCampaignGoal] = useState("conversations");
   const [messageTone, setMessageTone] = useState("professional");
 
-  // Step 3 (LinkedIn sender is always the connected account for now)
-
   useEffect(() => {
     if (!open) return;
     loadData();
@@ -89,15 +94,12 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   async function loadData() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
-
     const [agentsRes, listsRes] = await Promise.all([
       supabase.from("signal_agents").select("id, name, icp_job_titles, icp_industries, icp_locations, icp_company_sizes, icp_company_types, leads_list_name").eq("user_id", user.id),
       (supabase.from("lists") as any).select("id, name").eq("user_id", user.id),
     ]);
-
     if (agentsRes.data) setAgents(agentsRes.data as AgentData[]);
     if (listsRes.data) setLists(listsRes.data as ListData[]);
-
     if (agentsRes.data?.length && !selectedAgentId && !editCampaignId) {
       setSelectedAgentId(agentsRes.data[0].id);
     }
@@ -132,16 +134,12 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     if (!website.trim()) return;
     setAnalyzingWebsite(true);
     try {
-      const { data, error } = await supabase.functions.invoke("firecrawl-scrape", {
-        body: { url: website.trim() },
-      });
+      const { data, error } = await supabase.functions.invoke("firecrawl-scrape", { body: { url: website.trim() } });
       if (error) throw error;
       if (data?.description) setValueProposition(data.description);
       if (data?.painPoints?.length) setPainPoints(data.painPoints.join("\n"));
       toast.success("Website analyzed!");
-    } catch {
-      toast.error("Failed to analyze website");
-    }
+    } catch { toast.error("Failed to analyze website"); }
     setAnalyzingWebsite(false);
   }
 
@@ -196,29 +194,48 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
 
   const selectedAgent = agents.find(a => a.id === selectedAgentId);
   const canNext1 = sourceType === "agent" ? !!selectedAgentId : !!selectedListId;
-  const canNext2 = true; // all fields optional
   const totalSteps = 3;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
-        {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border">
-          <h2 className="text-lg font-bold text-foreground">
+        {/* Header with stepper */}
+        <div className="px-6 pt-6 pb-5 border-b border-border">
+          <h2 className="text-lg font-black text-foreground">
             {editCampaignId ? "Edit Campaign" : "Create AI Campaign"}
           </h2>
-          <p className="text-sm text-muted-foreground">Step {step} of {totalSteps}</p>
-          {/* Progress bar */}
-          <div className="flex gap-1.5 mt-4">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-muted">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: i < step ? "100%" : "0%",
-                    background: "hsl(var(--goji-coral))",
-                  }}
-                />
+          <p className="text-sm text-muted-foreground mt-0.5">Step {step} of {totalSteps}</p>
+
+          {/* Stepper */}
+          <div className="flex items-center justify-between mt-5">
+            {STEP_LABELS.map((s, i) => (
+              <div key={s.num} className="flex items-center flex-1">
+                <div className="flex items-center gap-2">
+                  <motion.div
+                    animate={{
+                      background: step > s.num ? "hsl(var(--goji-coral))" : step === s.num ? "hsl(var(--goji-coral))" : "hsl(var(--muted))",
+                      scale: step === s.num ? 1.1 : 1,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{ color: step >= s.num ? "white" : "hsl(var(--muted-foreground))" }}
+                  >
+                    {step > s.num ? <Check className="w-4 h-4" /> : s.num}
+                  </motion.div>
+                  <span className={`text-xs font-bold whitespace-nowrap ${step >= s.num ? "text-foreground" : "text-muted-foreground"}`}>
+                    {s.label}
+                  </span>
+                </div>
+                {i < STEP_LABELS.length - 1 && (
+                  <div className="flex-1 mx-3 h-0.5 rounded-full bg-muted overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ background: "hsl(var(--goji-coral))" }}
+                      animate={{ width: step > s.num ? "100%" : "0%" }}
+                      transition={{ duration: 0.4 }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -230,44 +247,49 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             {step === 1 && (
               <motion.div key="step1" variants={contentVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Select Your Lead Source</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Choose an agent with predefined ICP or a list with custom ICP</p>
+                  <h3 className="text-base font-black text-foreground">Select Your Lead Source</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Choose an agent with predefined ICP or a list</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">Lead Source Type</p>
+                  <p className="text-sm font-bold text-foreground mb-2">Lead Source Type</p>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setSourceType("agent")}
-                      className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-colors ${
-                        sourceType === "agent"
-                          ? "border-[hsl(var(--goji-coral))] text-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5"
-                          : "border-border text-foreground hover:bg-muted/50"
-                      }`}
-                    >
-                      <Bot className="w-4 h-4" /> AI Agent
-                    </button>
-                    <button
-                      onClick={() => setSourceType("list")}
-                      className={`flex items-center justify-center gap-2 py-3 rounded-lg border-2 text-sm font-semibold transition-colors ${
-                        sourceType === "list"
-                          ? "border-[hsl(var(--goji-coral))] text-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5"
-                          : "border-border text-foreground hover:bg-muted/50"
-                      }`}
-                    >
-                      <List className="w-4 h-4" /> List
-                    </button>
+                    {[
+                      { type: "agent" as const, icon: Bot, label: "AI Agent", desc: "Auto-discover leads" },
+                      { type: "list" as const, icon: List, label: "List", desc: "From existing contacts" },
+                    ].map((opt) => (
+                      <motion.button
+                        key={opt.type}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSourceType(opt.type)}
+                        className={`flex items-center gap-3 py-4 px-4 rounded-xl border-2 text-left transition-all ${
+                          sourceType === opt.type
+                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                            : "border-border hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                          sourceType === opt.type ? "bg-[hsl(var(--goji-coral))]/15" : "bg-muted"
+                        }`}>
+                          <opt.icon className={`w-5 h-5 transition-colors ${sourceType === opt.type ? "text-[hsl(var(--goji-coral))]" : "text-muted-foreground"}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-foreground">{opt.label}</p>
+                          <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                        </div>
+                      </motion.button>
+                    ))}
                   </div>
                 </div>
 
                 {sourceType === "agent" && (
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">AI Agent</p>
+                    <p className="text-sm font-bold text-foreground mb-2">AI Agent</p>
                     <div className="relative">
                       <select
                         value={selectedAgentId}
                         onChange={(e) => setSelectedAgentId(e.target.value)}
-                        className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-lg px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground"
+                        className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground"
                       >
                         <option value="">Select an agent...</option>
                         {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -275,71 +297,49 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>
 
-                    {/* ICP Preview */}
                     {selectedAgent && (
-                      <div className="mt-4 rounded-xl border border-[hsl(var(--goji-coral))]/20 bg-[hsl(var(--goji-coral))]/5 p-4 space-y-3">
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-4 rounded-xl border border-[hsl(var(--goji-coral))]/20 bg-[hsl(var(--goji-coral))]/5 p-4 space-y-3 overflow-hidden"
+                      >
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-lg bg-[hsl(var(--goji-coral))]/20 flex items-center justify-center">
                             <Users className="w-4 h-4 text-[hsl(var(--goji-coral))]" />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-foreground">Ideal Customer Profile</p>
+                            <p className="text-sm font-black text-foreground">Ideal Customer Profile</p>
                             <p className="text-xs text-muted-foreground">This agent targets the following profiles</p>
                           </div>
                         </div>
-                        {selectedAgent.icp_job_titles?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1"><Briefcase className="w-3 h-3" /> Job Titles</p>
+                        {[
+                          { items: selectedAgent.icp_job_titles, icon: Briefcase, label: "Job Titles" },
+                          { items: selectedAgent.icp_industries, icon: Building2, label: "Industries" },
+                          { items: selectedAgent.icp_locations, icon: MapPin, label: "Locations" },
+                          { items: selectedAgent.icp_company_sizes, icon: Users, label: "Company Sizes" },
+                        ].filter(g => g.items?.length > 0).map((group) => (
+                          <div key={group.label}>
+                            <p className="text-xs font-bold text-foreground flex items-center gap-1.5 mb-1"><group.icon className="w-3 h-3" /> {group.label}</p>
                             <div className="flex flex-wrap gap-1.5">
-                              {selectedAgent.icp_job_titles.map((t) => (
-                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-[hsl(var(--goji-coral))]/30 text-[hsl(var(--goji-coral))] bg-background">{t}</span>
+                              {group.items.map((t) => (
+                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-[hsl(var(--goji-coral))]/30 text-[hsl(var(--goji-coral))] bg-background font-medium">{t}</span>
                               ))}
                             </div>
                           </div>
-                        )}
-                        {selectedAgent.icp_industries?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1"><Building2 className="w-3 h-3" /> Industries</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {selectedAgent.icp_industries.map((t) => (
-                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-[hsl(var(--goji-coral))]/30 text-[hsl(var(--goji-coral))] bg-background">{t}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {selectedAgent.icp_locations?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1"><MapPin className="w-3 h-3" /> Locations</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {selectedAgent.icp_locations.map((t) => (
-                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-[hsl(var(--goji-coral))]/30 text-[hsl(var(--goji-coral))] bg-background">{t}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {selectedAgent.icp_company_sizes?.length > 0 && (
-                          <div>
-                            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1"><Users className="w-3 h-3" /> Company Sizes</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {selectedAgent.icp_company_sizes.map((t) => (
-                                <span key={t} className="text-xs px-2.5 py-1 rounded-full border border-[hsl(var(--goji-coral))]/30 text-[hsl(var(--goji-coral))] bg-background">{t}</span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                        ))}
+                      </motion.div>
                     )}
                   </div>
                 )}
 
                 {sourceType === "list" && (
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">Select List</p>
+                    <p className="text-sm font-bold text-foreground mb-2">Select List</p>
                     <div className="relative">
                       <select
                         value={selectedListId}
                         onChange={(e) => setSelectedListId(e.target.value)}
-                        className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-lg px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground"
+                        className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground"
                       >
                         <option value="">Select a list...</option>
                         {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -354,109 +354,87 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             {step === 2 && (
               <motion.div key="step2" variants={contentVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Campaign Details</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Tell us about your company and campaign objectives</p>
+                  <h3 className="text-base font-black text-foreground">Campaign Details</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Tell us about your company and objectives</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">Company Website</p>
+                  <p className="text-sm font-bold text-foreground mb-2">Company Website</p>
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        value={website}
-                        onChange={(e) => setWebsite(e.target.value)}
-                        placeholder="https://yourcompany.com"
-                        className="pl-9"
-                      />
+                      <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourcompany.com" className="pl-9 rounded-xl" />
                     </div>
                     <button
                       onClick={handleAnalyzeWebsite}
                       disabled={!website.trim() || analyzingWebsite}
-                      className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
+                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40 hover:scale-[1.02] flex items-center gap-1.5"
                       style={{ background: "hsl(var(--goji-coral))", color: "white" }}
                     >
-                      {analyzingWebsite ? "..." : "AI Analyze"}
+                      {analyzingWebsite ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> AI Analyze</>
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">Value Proposition</p>
-                  <Textarea
-                    value={valueProposition}
-                    onChange={(e) => setValueProposition(e.target.value)}
-                    placeholder="Describe what your company does and the value you provide..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">This helps AI craft better personalized messages</p>
+                  <p className="text-sm font-bold text-foreground mb-2">Value Proposition</p>
+                  <Textarea value={valueProposition} onChange={(e) => setValueProposition(e.target.value)} placeholder="Describe what your company does..." rows={3} className="rounded-xl" />
+                  <p className="text-xs text-muted-foreground mt-1">Helps AI craft better personalized messages</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">Pain Points</p>
-                  <Textarea
-                    value={painPoints}
-                    onChange={(e) => setPainPoints(e.target.value)}
-                    placeholder="- Pain point 1&#10;- Pain point 2&#10;- Pain point 3"
-                    rows={3}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Understanding pain points helps AI create more contextual and compelling messages</p>
+                  <p className="text-sm font-bold text-foreground mb-2">Pain Points</p>
+                  <Textarea value={painPoints} onChange={(e) => setPainPoints(e.target.value)} placeholder="- Pain point 1&#10;- Pain point 2&#10;- Pain point 3" rows={3} className="rounded-xl" />
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">Campaign Goal</p>
+                  <p className="text-sm font-bold text-foreground mb-2">Campaign Goal</p>
                   <div className="space-y-2">
                     {CAMPAIGN_GOALS.map((g) => (
-                      <button
+                      <motion.button
                         key={g.value}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => setCampaignGoal(g.value)}
-                        className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+                        className={`w-full text-left px-4 py-3.5 rounded-xl border-2 transition-all ${
                           campaignGoal === g.value
-                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5"
+                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
                             : "border-border hover:bg-muted/50"
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            campaignGoal === g.value ? "border-[hsl(var(--goji-coral))]" : "border-muted-foreground/40"
-                          }`}>
-                            {campaignGoal === g.value && <div className="w-2 h-2 rounded-full bg-[hsl(var(--goji-coral))]" />}
-                          </div>
+                          <span className="text-lg">{g.icon}</span>
                           <div>
-                            <p className="text-sm font-semibold text-foreground">{g.label}</p>
+                            <p className="text-sm font-bold text-foreground">{g.label}</p>
                             <p className="text-xs text-muted-foreground">{g.desc}</p>
                           </div>
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-foreground mb-2">Message Tone</p>
+                  <p className="text-sm font-bold text-foreground mb-2">Message Tone</p>
                   <div className="grid grid-cols-3 gap-2">
                     {MESSAGE_TONES.map((t) => (
-                      <button
+                      <motion.button
                         key={t.value}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => setMessageTone(t.value)}
-                        className={`text-left px-4 py-3 rounded-lg border-2 transition-colors ${
+                        className={`text-center px-3 py-3.5 rounded-xl border-2 transition-all ${
                           messageTone === t.value
-                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5"
+                            ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
                             : "border-border hover:bg-muted/50"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            messageTone === t.value ? "border-[hsl(var(--goji-coral))]" : "border-muted-foreground/40"
-                          }`}>
-                            {messageTone === t.value && <div className="w-2 h-2 rounded-full bg-[hsl(var(--goji-coral))]" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{t.label}</p>
-                            <p className="text-xs text-muted-foreground">{t.desc}</p>
-                          </div>
-                        </div>
-                      </button>
+                        <t.icon className={`w-5 h-5 mx-auto mb-1.5 ${messageTone === t.value ? "text-[hsl(var(--goji-coral))]" : "text-muted-foreground"}`} />
+                        <p className="text-sm font-bold text-foreground">{t.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -466,19 +444,52 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             {step === 3 && (
               <motion.div key="step3" variants={contentVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Select Your LinkedIn Sender</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Choose which LinkedIn account will send messages for this campaign.</p>
+                  <h3 className="text-base font-black text-foreground">Select Your LinkedIn Sender</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Choose which LinkedIn account will send messages.</p>
                 </div>
 
                 <div className="rounded-xl border border-border p-5">
-                  <p className="text-sm font-semibold text-foreground mb-3">LinkedIn Accounts</p>
-                  <div className="relative">
-                    <select className="w-full border-2 border-[hsl(var(--goji-coral))]/30 rounded-lg px-4 py-3 text-sm bg-background focus:outline-none focus:border-[hsl(var(--goji-coral))] appearance-none text-foreground">
-                      <option>First account</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <p className="text-sm font-bold text-foreground mb-3">LinkedIn Accounts</p>
+                  <div className="rounded-xl border-2 border-[hsl(var(--goji-coral))]/30 p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-foreground">First account</p>
+                      <p className="text-xs text-green-600 font-medium">Connected</p>
+                    </div>
+                    <div className="w-5 h-5 rounded-full border-2 border-[hsl(var(--goji-coral))] flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[hsl(var(--goji-coral))]" />
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">The LinkedIn account cannot be modified once the campaign has been created</p>
+                  <p className="text-xs text-muted-foreground mt-2">Cannot be modified after campaign creation</p>
+                </div>
+
+                {/* Review Summary */}
+                <div className="rounded-xl border border-border bg-muted/20 p-5">
+                  <h4 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-600" /> Review Summary
+                  </h4>
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Source</span>
+                      <span className="font-bold text-foreground">
+                        {sourceType === "agent" ? (selectedAgent?.name || "Agent") : "List"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Goal</span>
+                      <span className="font-bold text-foreground">{CAMPAIGN_GOALS.find(g => g.value === campaignGoal)?.label || campaignGoal}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tone</span>
+                      <span className="font-bold text-foreground capitalize">{messageTone}</span>
+                    </div>
+                    {website && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Website</span>
+                        <span className="font-bold text-foreground truncate max-w-[200px]">{website}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -490,16 +501,16 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
           {step > 1 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex items-center gap-1.5 text-sm font-medium text-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-bold text-foreground border border-border rounded-xl px-4 py-2 hover:bg-muted/50 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" /> Previous
             </button>
           ) : (
             <button
               onClick={() => onOpenChange(false)}
-              className="flex items-center gap-1.5 text-sm font-medium text-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-bold text-foreground border border-border rounded-xl px-4 py-2 hover:bg-muted/50 transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" /> Cancel
+              Cancel
             </button>
           )}
 
@@ -507,7 +518,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             <button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 && !canNext1}
-              className="flex items-center gap-1.5 text-sm font-semibold text-white rounded-lg px-5 py-2 transition-colors disabled:opacity-40"
+              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2 transition-all disabled:opacity-40 hover:scale-[1.02]"
               style={{ background: "hsl(var(--goji-coral))" }}
             >
               Next <ChevronRight className="w-4 h-4" />
@@ -516,7 +527,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="flex items-center gap-1.5 text-sm font-semibold text-white rounded-lg px-5 py-2 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2 transition-all disabled:opacity-50 hover:scale-[1.02]"
               style={{ background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(340 70% 60%))" }}
             >
               <Sparkles className="w-4 h-4" />
