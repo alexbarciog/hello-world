@@ -114,6 +114,8 @@ export default function CampaignDetail() {
   const [step1Sent, setStep1Sent] = useState(0);
   const [step1Accepted, setStep1Accepted] = useState(0);
   const [settingsDailyLimit, setSettingsDailyLimit] = useState(25);
+  const [todaySentCount, setTodaySentCount] = useState(0);
+  const [remainingContacts, setRemainingContacts] = useState(0);
 
   // Add step dialog state
   const [addStepOpen, setAddStepOpen] = useState(false);
@@ -195,6 +197,21 @@ export default function CampaignDetail() {
       .eq("campaign_id", campaignId)
       .eq("status", "accepted");
     setStep1Accepted(acceptedCount || 0);
+
+    // Load today's sent count for scheduled view
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const { count: todaySent } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .gte("sent_at", todayStart.toISOString());
+    setTodaySentCount(todaySent || 0);
+
+    // Remaining unsent contacts
+    const totalContacts = contactsCount || 0;
+    const totalSent = sentCount || 0;
+    setRemainingContacts(Math.max(0, totalContacts - totalSent));
 
     setLoading(false);
   }
@@ -1246,11 +1263,170 @@ export default function CampaignDetail() {
 
           {/* ── Scheduled Tab ── */}
           {tab === "scheduled" && (
-            <motion.div key="scheduled" variants={tabVariant} initial="hidden" animate="visible" exit="exit">
-              <div className="rounded-xl border border-border p-12 text-center">
-                <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm font-bold text-foreground">No scheduled messages</p>
-                <p className="text-xs text-muted-foreground mt-1">Scheduled outreach messages will appear here once the campaign is active.</p>
+            <motion.div key="scheduled" variants={tabVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
+              {/* Today's overview */}
+              <div className="rounded-xl border border-border p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold text-foreground">Today's Schedule</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${campaign.status === "active" ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                      {campaign.status === "active" ? "Active" : "Paused"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Daily progress bar */}
+                <div className="mb-5">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="font-medium text-muted-foreground">Daily progress</span>
+                    <span className="font-bold text-foreground">{todaySentCount} / {campaign.daily_connect_limit || 25}</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${Math.min(100, (todaySentCount / (campaign.daily_connect_limit || 25)) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {remainingContacts} contacts remaining in queue
+                  </p>
+                </div>
+
+                {/* Sequence runs timeline */}
+                <div className="space-y-0">
+                  {(() => {
+                    const runs = [
+                      { time: "08:00", label: "Run 1" },
+                      { time: "10:00", label: "Run 2" },
+                      { time: "12:00", label: "Run 3" },
+                      { time: "14:00", label: "Run 4" },
+                      { time: "16:00", label: "Run 5" },
+                    ];
+                    const dailyLimit = campaign.daily_connect_limit || 25;
+                    const perRun = Math.max(1, Math.floor(dailyLimit / 5));
+                    const nowUTC = new Date().getUTCHours();
+
+                    return runs.map((run, idx) => {
+                      const runHour = parseInt(run.time);
+                      const isPast = nowUTC >= runHour + 1;
+                      const isActive = nowUTC >= runHour && nowUTC < runHour + 1;
+                      const isFuture = !isPast && !isActive;
+
+                      // Calculate how many this run would send
+                      const sentBefore = Math.min(idx * perRun, todaySentCount);
+                      const thisBatchSent = isPast ? Math.min(perRun, Math.max(0, todaySentCount - sentBefore)) : 0;
+                      const thisBatchPlanned = Math.min(perRun, remainingContacts > 0 ? perRun : 0);
+
+                      return (
+                        <div key={idx} className="flex items-stretch gap-3">
+                          {/* Timeline line */}
+                          <div className="flex flex-col items-center w-8">
+                            <div className={`w-3 h-3 rounded-full border-2 shrink-0 mt-4 ${
+                              isPast ? "bg-primary border-primary" :
+                              isActive ? "bg-primary border-primary animate-pulse" :
+                              "bg-background border-border"
+                            }`}>
+                              {isPast && <Check className="w-2 h-2 text-primary-foreground ml-[1px] mt-[1px]" />}
+                            </div>
+                            {idx < runs.length - 1 && (
+                              <div className={`w-0.5 flex-1 min-h-[24px] ${isPast ? "bg-primary/30" : "bg-border"}`} />
+                            )}
+                          </div>
+
+                          {/* Run card */}
+                          <div className={`flex-1 rounded-xl border p-3.5 mb-2 transition-all ${
+                            isActive ? "border-primary bg-primary/5 shadow-sm" :
+                            isPast ? "border-border bg-muted/20" :
+                            "border-border"
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-foreground">{run.label}</span>
+                                <span className="text-[10px] text-muted-foreground font-medium">{run.time} UTC</span>
+                                {isActive && (
+                                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">NOW</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {isPast ? (
+                                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                                    {thisBatchSent} sent
+                                  </span>
+                                ) : campaign.status !== "active" ? (
+                                  <span className="text-[10px] font-medium text-muted-foreground">Paused</span>
+                                ) : remainingContacts === 0 ? (
+                                  <span className="text-[10px] font-medium text-muted-foreground">No contacts</span>
+                                ) : (
+                                  <span className="text-[10px] font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                                    ~{thisBatchPlanned} planned
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Step details for this run */}
+                            <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                              <UserPlus className="w-3 h-3" />
+                              <span>Send connection invitations (no message)</span>
+                            </div>
+
+                            {/* Show workflow follow-ups if applicable */}
+                            {workflowSteps.filter((ws: any) => ws.type !== "invitation").length > 0 && (
+                              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                                <MessageSquare className="w-3 h-3" />
+                                <span>
+                                  + {workflowSteps.filter((ws: any) => ws.type !== "invitation").length} follow-up message(s) after acceptance
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+              {/* Workflow sequence summary */}
+              <div className="rounded-xl border border-border p-5">
+                <h3 className="text-sm font-bold text-foreground mb-3">Full Sequence Overview</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 text-xs">
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(270 70% 92%)" }}>
+                      <UserPlus className="w-3 h-3" style={{ color: "hsl(270 70% 55%)" }} />
+                    </div>
+                    <div className="flex-1">
+                      <span className="font-bold text-foreground">Step 1:</span>
+                      <span className="text-muted-foreground ml-1">Send connection invitation</span>
+                    </div>
+                    <span className="text-muted-foreground">Day 0</span>
+                  </div>
+                  {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, idx: number) => {
+                    const cumulativeDays = workflowSteps
+                      .filter((s: any) => s.type !== "invitation")
+                      .slice(0, idx + 1)
+                      .reduce((sum: number, s: any) => sum + (s.delay_days || 0), 0);
+                    return (
+                      <div key={idx} className="flex items-center gap-3 text-xs">
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(200 80% 92%)" }}>
+                          <Send className="w-3 h-3" style={{ color: "hsl(200 80% 45%)" }} />
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-bold text-foreground">Step {idx + 2}:</span>
+                          <span className="text-muted-foreground ml-1">
+                            {ws.ai_icebreaker ? "AI-generated message" : ws.message ? `"${ws.message.slice(0, 40)}${ws.message.length > 40 ? "..." : ""}"` : "Custom message"}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground">+{ws.delay_days}d (Day {cumulativeDays})</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           )}
