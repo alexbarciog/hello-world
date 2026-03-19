@@ -548,6 +548,36 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [polling, setPolling] = useState(false);
   const [dailyMessages, setDailyMessages] = useState([15]);
   const [dailyConnections, setDailyConnections] = useState([15]);
+  const [savingLimits, setSavingLimits] = useState(false);
+  const [limitsUserId, setLimitsUserId] = useState<string | null>(null);
+
+  // Load saved limits from profile
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setLimitsUserId(user.id);
+      const { data: profile } = await supabase.from("profiles").select("daily_messages_limit, daily_connections_limit" as any).eq("user_id", user.id).single();
+      if (profile) {
+        setDailyMessages([(profile as any).daily_messages_limit ?? 15]);
+        setDailyConnections([(profile as any).daily_connections_limit ?? 15]);
+      }
+    })();
+  }, []);
+
+  // Auto-save limits on change (debounced)
+  useEffect(() => {
+    if (!limitsUserId) return;
+    const timeout = setTimeout(async () => {
+      setSavingLimits(true);
+      await supabase.from("profiles").update({
+        daily_messages_limit: dailyMessages[0],
+        daily_connections_limit: dailyConnections[0],
+      } as any).eq("user_id", limitsUserId);
+      setSavingLimits(false);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [dailyMessages, dailyConnections, limitsUserId]);
 
   function clearParam() {
     const url = new URL(window.location.href);
@@ -656,6 +686,9 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
             >
               <LinkedInSlider label="Messages / day" value={dailyMessages} onChange={setDailyMessages} />
               <LinkedInSlider label="Connections / day" value={dailyConnections} onChange={setDailyConnections} />
+              <p className="text-[10px] text-muted-foreground transition-opacity" style={{ opacity: savingLimits ? 1 : 0.5 }}>
+                {savingLimits ? "Saving…" : "Auto-saved ✓"}
+              </p>
             </motion.div>
           </>
         ) : (

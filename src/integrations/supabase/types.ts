@@ -534,6 +534,8 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          daily_connections_limit: number
+          daily_messages_limit: number
           id: string
           onboarding_complete: boolean
           unipile_account_id: string | null
@@ -542,6 +544,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          daily_connections_limit?: number
+          daily_messages_limit?: number
           id?: string
           onboarding_complete?: boolean
           unipile_account_id?: string | null
@@ -550,6 +554,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          daily_connections_limit?: number
+          daily_messages_limit?: number
           id?: string
           onboarding_complete?: boolean
           unipile_account_id?: string | null
