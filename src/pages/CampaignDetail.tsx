@@ -1373,7 +1373,7 @@ export default function CampaignDetail() {
                     if (visibleRuns.length === 0) {
                       return (
                         <div className="text-center py-6 text-sm text-muted-foreground">
-                          All runs for today have been completed. Next runs start tomorrow at 08:00 UTC.
+                          All runs for today have been completed. Next runs start tomorrow at {utcHourToLocal(8)}.
                         </div>
                       );
                     }
