@@ -225,7 +225,7 @@ export default function Dashboard() {
           title="Hot Opportunities"
           value={hotOpps}
           loading={hotOppsLoading}
-          icon={<Flame className="w-7 h-7 text-md-primary" />}
+          icon={<Flame className="w-5 h-5 text-md-primary" />}
           iconBg="hsla(var(--md-primary) / 0.12)"
           trend={hotOpps > 0 ? "12%" : "0%"}
           trendUp={hotOpps > 0}
