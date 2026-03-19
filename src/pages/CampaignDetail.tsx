@@ -258,7 +258,7 @@ export default function CampaignDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* Inline metrics */}
             <div className="hidden md:flex items-center gap-2">
-              <MetricChip label="Leads" value={contactsCount} icon={Users} color="hsl(var(--goji-coral))" />
+              <MetricChip label="Leads" value={contactsCount} icon={Users} color="hsl(var(--foreground))" />
               <MetricChip label="Sent" value={campaign.invitations_sent} icon={Send} color="hsl(217 91% 60%)" />
               <MetricChip label="Reply" value={`${replyRate}%`} icon={MessageSquare} color="hsl(142 70% 45%)" />
             </div>
