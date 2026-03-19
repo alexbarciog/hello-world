@@ -54,6 +54,8 @@ export default function RedditSignals() {
   const [newSubreddits, setNewSubreddits] = useState("");
   const [polling, setPolling] = useState(false);
   const [filterKeyword, setFilterKeyword] = useState<string | null>(null);
+  const [inlineAdding, setInlineAdding] = useState(false);
+  const [inlineKeyword, setInlineKeyword] = useState("");
 
   // ── Fetch keywords ──
   const { data: keywords = [], isLoading: kwLoading } = useQuery({
