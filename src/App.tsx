@@ -15,6 +15,7 @@ import Settings from "./pages/Settings.tsx";
 import HelpCenter from "./pages/HelpCenter.tsx";
 import Signals from "./pages/Signals.tsx";
 import Contacts from "./pages/Contacts.tsx";
+import Unibox from "./pages/Unibox.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
