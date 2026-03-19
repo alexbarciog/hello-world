@@ -251,10 +251,10 @@ export default function Dashboard() {
       </div>
 
       {/* ── Main Activity Chart & Quick Start ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
         {/* Area Chart */}
-        <div className="lg:col-span-2 glass-card rounded-[2.5rem] overflow-hidden flex flex-col relative">
-          <div className="p-8 md:p-10 pb-0">
+        <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col relative">
+          <div className="p-5 md:p-6 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
                 <h2 className="text-2xl font-light font-headline mb-1 text-md-on-surface">
