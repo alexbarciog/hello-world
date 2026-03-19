@@ -64,7 +64,7 @@ function HeatDots({ count }: { count: number }) {
 function LeadAvatar({ initials, color }: { initials: string; color: string }) {
   return (
     <div
-      className="w-14 h-14 rounded-2xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg"
+      className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-md"
       style={{ background: color }}
     >
       {initials}
