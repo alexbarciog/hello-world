@@ -138,6 +138,7 @@ export default function CampaignDetail() {
     setCampaign(c);
     setSettingsGoal(c.campaign_goal || "conversations");
     setSettingsTone(c.message_tone || "professional");
+    setSettingsDailyLimit((c as any).daily_connect_limit || 25);
 
     if (c.source_agent_id) {
       const { data: agent } = await supabase.from("signal_agents").select("name, status, results_count").eq("id", c.source_agent_id).single();
