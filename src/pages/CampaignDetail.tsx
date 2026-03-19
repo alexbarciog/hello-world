@@ -8,11 +8,16 @@ import {
   ChevronLeft, Play, Pause, Pencil, Settings as SettingsIcon,
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
-  AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User,
+  AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Contact, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import {
@@ -277,6 +282,19 @@ export default function CampaignDetail() {
     if (error) { toast.error("Failed to update delay"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setEditingDelayStep(null);
+  }
+
+  async function deleteWorkflowStep(stepIndex: number) {
+    if (!campaign) return;
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const actualIdx = nonInvitationSteps[stepIndex]?.idx;
+    if (actualIdx === undefined) return;
+    const updated = workflowSteps.filter((_: any, idx: number) => idx !== actualIdx);
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to delete step"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setEditingStep(null);
+    toast.success("Step deleted");
   }
 
   async function saveNewStep() {
@@ -572,10 +590,33 @@ export default function CampaignDetail() {
                             transition={{ delay: i * 0.08 }}
                             className="min-w-[220px] max-w-[240px] shrink-0"
                           >
-                            <div className="rounded-xl text-white p-4 shadow-md" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <Send className="w-4 h-4" />
-                                <span className="text-sm font-bold">Send Message</span>
+                            <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <Send className="w-4 h-4" />
+                                  <span className="text-sm font-bold">Send Message</span>
+                                </div>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <button className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently remove this step. All following steps will be renumbered automatically.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                               <p className="text-xs opacity-80">Step {stepNum}</p>
                             </div>
