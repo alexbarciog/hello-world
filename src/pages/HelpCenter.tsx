@@ -1440,7 +1440,7 @@ function renderInline(text: string): React.ReactNode {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} style={{ color: "hsl(var(--goji-dark))", fontWeight: 600 }}>
+        <strong key={i} className="font-semibold" style={{ color: "hsl(var(--md-on-surface))" }}>
           {part.slice(2, -2)}
         </strong>
       );
