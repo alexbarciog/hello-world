@@ -605,18 +605,7 @@ export default function Unibox() {
                 </div>
               )}
               <h3 className="text-xl font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
-              <p className="text-sm font-light text-foreground/50 mb-4">LinkedIn Connection</p>
-              <div className="flex justify-center gap-4">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-[hsl(200,100%,28%)] leading-none">—</p>
-                  <p className="text-[10px] text-foreground/40 uppercase font-medium tracking-tighter">Reach</p>
-                </div>
-                <div className="w-[1px] bg-foreground/10 h-8" />
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-[hsl(200,100%,28%)] leading-none">—</p>
-                  <p className="text-[10px] text-foreground/40 uppercase font-medium tracking-tighter">Sentiment</p>
-                </div>
-              </div>
+              <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
             </div>
 
             {/* Engagement History Card */}
