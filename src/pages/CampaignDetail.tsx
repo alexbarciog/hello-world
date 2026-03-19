@@ -1570,7 +1570,7 @@ export default function CampaignDetail() {
                             <Check className={`w-4 h-4 ${run.sent > 0 ? "text-green-600" : "text-muted-foreground"}`} />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-foreground">{run.label} — {run.time} UTC</p>
+                            <p className="text-xs font-bold text-foreground">{run.label} — {utcHourToLocal(parseInt(run.time))}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
                               {run.sent > 0 ? `${run.sent} connection invitation${run.sent !== 1 ? "s" : ""} sent` : "No contacts to process"}
                             </p>
