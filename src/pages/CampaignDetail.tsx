@@ -334,128 +334,148 @@ export default function CampaignDetail() {
                   <button className="text-muted-foreground hover:text-foreground"><SettingsIcon className="w-4 h-4" /></button>
                 </div>
 
-                {/* Workflow canvas */}
-                <div className="flex items-start gap-0 overflow-x-auto pb-4">
-                  {/* Input Source */}
-                  <div className="min-w-[220px] shrink-0">
-                    <div className="rounded-xl bg-foreground text-background p-4 shadow-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bot className="w-4 h-4" />
-                        <span className="text-sm font-bold">Input source</span>
-                      </div>
-                      <p className="text-xs opacity-70">1 agent(s)</p>
-                    </div>
-                    <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">{agentName}</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${agentStatus === "active" ? "text-green-600 bg-green-50" : "text-muted-foreground bg-muted"}`}>
-                          {agentStatus === "active" ? "Running" : "Paused"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">{listsCount} list(s) • {contactsCount} contact(s)</p>
-                    </div>
-
-                    {showAgentRunning && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 rounded-xl border border-border bg-card p-4 shadow-lg relative"
-                      >
-                        <button onClick={() => setShowAgentRunning(false)} className="absolute top-2 right-2 text-muted-foreground hover:text-foreground text-lg">×</button>
-                        <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                          <Sparkles className="w-4 h-4 text-amber-500" /> Your agent is running…
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Your agent is searching for leads. Check your <button onClick={() => navigate("/contacts")} className="text-primary underline">leads</button> in a few minutes.
-                        </p>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {/* Connector from source */}
-                  <div className="flex items-center self-center mt-8 px-1">
-                    <div className="w-8 border-t-2 border-dashed border-primary/30" />
-                    <ArrowRight className="w-4 h-4 text-primary/50 -ml-1" />
-                  </div>
-
-                  {/* Workflow Steps */}
-                  {workflowSteps.map((ws: any, i: number) => {
-                    const isInvitation = ws.type === "invitation";
-                    const colors = STEP_COLORS[i % STEP_COLORS.length];
-                    const isEditing = editingStep === i;
-
-                    return (
-                      <div key={i} className="flex items-start">
-                        {i > 0 && (
-                          <div className="flex flex-col items-center self-center mt-8 px-1">
-                            <div className="w-6 border-t-2 border-dashed border-muted-foreground/30" />
-                            <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full mt-1 whitespace-nowrap">+ {ws.delay_days}d</span>
+                {/* Workflow Canvas */}
+                <div
+                  className="relative rounded-xl border border-border overflow-x-auto p-6"
+                  style={{
+                    backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
+                    backgroundSize: "20px 20px",
+                  }}
+                >
+                  {/* Input Source - top left */}
+                  <div className="flex flex-col items-start mb-0">
+                    <div className="min-w-[240px]">
+                      <div className="rounded-xl overflow-hidden shadow-lg">
+                        <div className="bg-gradient-to-r from-muted-foreground/80 to-muted-foreground/60 text-background p-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Bot className="w-4 h-4" />
+                            <span className="text-sm font-bold">Input source</span>
                           </div>
-                        )}
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: i * 0.1 }}
-                          className="min-w-[200px] shrink-0"
-                        >
-                          <div className="rounded-xl text-white p-4 shadow-md" style={{ background: colors.bg }}>
-                            <div className="flex items-center gap-2 mb-1">
-                              {isInvitation ? <UserPlus className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                              <span className="text-sm font-bold">{isInvitation ? "Send Invitation" : "Send Message"}</span>
+                          <p className="text-xs opacity-70">1 agent(s)</p>
+                        </div>
+                        <div className="bg-card border-t border-border p-3.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-foreground">{agentName}</span>
+                            <span className="flex items-center gap-1.5">
+                              <span className={`text-xs font-bold ${agentStatus === "active" ? "text-green-600" : "text-muted-foreground"}`}>
+                                {agentStatus === "active" ? "Running" : "Paused"}
+                              </span>
+                              <span className={`w-2 h-2 rounded-full ${agentStatus === "active" ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2 bg-muted/50 rounded-full px-2.5 py-0.5 w-fit">{listsCount} list(s) • {contactsCount} contact(s)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Vertical connector arrow */}
+                    <div className="flex flex-col items-center ml-[120px] -my-1">
+                      <svg width="2" height="32" className="text-primary">
+                        <line x1="1" y1="0" x2="1" y2="32" stroke="currentColor" strokeWidth="2" strokeDasharray="4 3" />
+                      </svg>
+                      <ArrowDown className="w-5 h-5 text-primary -mt-1" />
+                    </div>
+                  </div>
+
+                  {/* Workflow Steps - horizontal row */}
+                  <div className="flex items-start gap-0 mt-0">
+                    {workflowSteps.map((ws: any, i: number) => {
+                      const isInvitation = ws.type === "invitation";
+                      const stepColor = i === 0
+                        ? "linear-gradient(135deg, hsl(270 70% 55%), hsl(300 60% 55%))"
+                        : "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))";
+                      const isEditing = editingStep === i;
+
+                      return (
+                        <div key={i} className="flex items-start">
+                          {/* Connector + delay badge between steps */}
+                          {i > 0 && (
+                            <div className="flex flex-col items-center self-start pt-10 px-1 min-w-[80px]">
+                              <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                + {ws.delay_days} days
+                              </span>
+                              <svg width="60" height="2" className="text-primary">
+                                <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                              </svg>
+                              <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
                             </div>
-                            <p className="text-xs opacity-80">Step {i + 1}</p>
-                          </div>
-                          <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
-                            {isEditing ? (
-                              <div className="space-y-2">
-                                <textarea
-                                  defaultValue={ws.message || ""}
-                                  className="w-full text-xs border border-border rounded-lg p-2 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                                  rows={3}
-                                  placeholder="Type your message..."
-                                />
-                                <div className="flex gap-1.5">
-                                  <button onClick={() => setEditingStep(null)} className="text-xs font-bold text-white bg-primary rounded px-3 py-1">Save</button>
-                                  <button onClick={() => setEditingStep(null)} className="text-xs font-medium text-muted-foreground border border-border rounded px-3 py-1">Cancel</button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                {isInvitation ? (
-                                  <p className="text-xs text-muted-foreground">Invitation without message</p>
-                                ) : ws.ai_icebreaker ? (
-                                  <div className="flex items-center gap-1.5 text-xs">
-                                    <Sparkles className="w-3 h-3 text-foreground" />
-                                    <span className="text-foreground font-bold">AI Icebreaker</span>
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">MESSAGE:</p>
-                                    <p className="text-xs text-foreground">{ws.message || "No message configured..."}</p>
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2 mt-2.5 text-xs text-muted-foreground">
-                                  <span>0 contact(s)</span>
-                                  <span className="text-green-600 font-medium">0 {isInvitation ? "accepted" : "answer(s)"}</span>
-                                </div>
-                                <div className="flex gap-2 mt-2.5">
-                                  <button className="text-xs font-medium text-foreground border border-border rounded-lg px-2.5 py-1 hover:bg-muted/50 transition-colors">View</button>
-                                  <button onClick={() => setEditingStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-2.5 py-1 hover:bg-muted/50 transition-colors">Edit</button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </motion.div>
-                      </div>
-                    );
-                  })}
+                          )}
 
-                  {/* Add Step */}
-                  <div className="flex items-center self-center mt-8 px-2">
-                    <div className="w-4 border-t-2 border-dashed border-muted-foreground/20" />
-                    <button className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                      <Plus className="w-4 h-4" />
-                    </button>
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.08 }}
+                            className="min-w-[220px] max-w-[240px] shrink-0"
+                          >
+                            {/* Step header */}
+                            <div className="rounded-xl text-white p-4 shadow-md" style={{ background: stepColor }}>
+                              <div className="flex items-center gap-2 mb-1">
+                                {isInvitation ? <UserPlus className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                                <span className="text-sm font-bold">{isInvitation ? "Send Invitation" : "Send Message"}</span>
+                              </div>
+                              <p className="text-xs opacity-80">Step {i + 1}</p>
+                            </div>
+
+                            {/* Step body */}
+                            <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    defaultValue={ws.message || ""}
+                                    className="w-full text-xs border border-border rounded-lg p-2 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                    rows={3}
+                                    placeholder="Type your message..."
+                                  />
+                                  <div className="flex gap-1.5">
+                                    <button onClick={() => setEditingStep(null)} className="text-xs font-bold text-white bg-primary rounded px-3 py-1">Save</button>
+                                    <button onClick={() => setEditingStep(null)} className="text-xs font-medium text-muted-foreground border border-border rounded px-3 py-1">Cancel</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {isInvitation ? (
+                                    <p className="text-xs text-muted-foreground italic">Invitation without message</p>
+                                  ) : ws.ai_icebreaker ? (
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-1.5 text-xs">
+                                        <Sparkles className="w-3.5 h-3.5 text-red-500" />
+                                        <span className="text-foreground font-bold">AI Icebreaker</span>
+                                      </div>
+                                      <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/50" />
+                                    </div>
+                                  ) : ws.message ? (
+                                    <div>
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 tracking-wider">MESSAGE:</p>
+                                      <p className="text-xs text-foreground leading-relaxed line-clamp-3">{ws.message}</p>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground italic">No message configured...</p>
+                                  )}
+
+                                  <div className="flex items-center gap-3 mt-3 text-xs">
+                                    <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">0 contact(s)</span>
+                                    <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 {isInvitation ? "accepted" : "answer(s)"}</span>
+                                  </div>
+
+                                  <div className="flex gap-2 mt-3 pt-2 border-t border-border">
+                                    <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
+                                    <button onClick={() => setEditingStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </motion.div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Add Step */}
+                    <div className="flex flex-col items-center self-start pt-10 px-2">
+                      <div className="w-6 border-t-2 border-dashed border-muted-foreground/20" />
+                      <button className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
