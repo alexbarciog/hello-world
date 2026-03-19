@@ -167,7 +167,7 @@ async function processCampaign(
         body: JSON.stringify({
           account_id: accountId,
           provider: 'LINKEDIN',
-          identifier: linkedinId,
+          provider_id: linkedinId,
         }),
       });
 
