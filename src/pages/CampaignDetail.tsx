@@ -1445,11 +1445,11 @@ export default function CampaignDetail() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-3 mt-1.5">
-                                  <span className="text-[10px] text-muted-foreground/80 flex items-center gap-1 font-medium">
+                                  <span className="text-[10px] text-[hsl(220,80%,55%)] flex items-center gap-1 font-medium">
                                     <UserPlus className="w-3 h-3" /> Send invitations
                                   </span>
                                   {workflowSteps.filter((ws: any) => ws.type !== "invitation").length > 0 && (
-                                    <span className="text-[10px] text-muted-foreground/80 flex items-center gap-1 font-medium">
+                                    <span className="text-[10px] text-[hsl(220,80%,55%)] flex items-center gap-1 font-medium">
                                       <MessageSquare className="w-3 h-3" /> +{workflowSteps.filter((ws: any) => ws.type !== "invitation").length} follow-up
                                     </span>
                                   )}
