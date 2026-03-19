@@ -1414,7 +1414,7 @@ export default function CampaignDetail() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-foreground">{run.label}</span>
-                                <span className="text-[10px] text-muted-foreground font-medium">{run.time} UTC</span>
+                                <span className="text-[10px] text-muted-foreground font-medium">{utcHourToLocal(runHour)}</span>
                                 {isActive && (
                                   <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">NOW</span>
                                 )}
