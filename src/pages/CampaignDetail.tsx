@@ -1572,27 +1572,51 @@ export default function CampaignDetail() {
                     {pastRuns.map((run, idx) => (
                       <motion.div
                         key={idx}
-                        initial={{ opacity: 0, y: 8 }}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.06 }}
-                        className="rounded-xl bg-muted/20 hover:bg-muted/40 transition-all p-4 flex items-center justify-between"
+                        transition={{ delay: idx * 0.08, type: "spring", stiffness: 300, damping: 24 }}
+                        whileHover={{ scale: 1.01, y: -1 }}
+                        className="relative overflow-hidden rounded-2xl p-4 cursor-default bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03] hover:shadow-lg hover:ring-border/60 transition-all duration-300"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg">{run.emoji}</span>
-                          <div>
-                            <p className="text-xs font-bold text-foreground">{run.label} — {utcHourToLocal(parseInt(run.time))}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              {run.sent > 0 ? `🚀 ${run.sent} invitation${run.sent !== 1 ? "s" : ""} sent` : "No contacts to process"}
-                            </p>
+                        {/* Glossy shine overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
+                        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                        <div className="relative flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${
+                              run.sent > 0
+                                ? "bg-gradient-to-br from-emerald-400/20 to-emerald-500/10 ring-1 ring-emerald-400/30"
+                                : "bg-gradient-to-br from-muted/60 to-muted/30 ring-1 ring-border/30"
+                            }`}>
+                              <span className="text-lg">🔥</span>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[13px] font-extrabold text-foreground tracking-tight">{run.label}</span>
+                                <span className="text-[10px] text-muted-foreground font-bold bg-foreground/[0.04] backdrop-blur-sm px-2 py-0.5 rounded-lg ring-1 ring-foreground/[0.06]">
+                                  {utcHourToLocal(parseInt(run.time))}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <span className="text-[10px] text-muted-foreground/80 flex items-center gap-1 font-medium">
+                                  {run.sent > 0 ? (
+                                    <><UserPlus className="w-3 h-3" /> {run.sent} invitation{run.sent !== 1 ? "s" : ""} sent</>
+                                  ) : (
+                                    "No contacts to process"
+                                  )}
+                                </span>
+                              </div>
+                            </div>
                           </div>
+                          <span className={`text-[10px] font-bold backdrop-blur-sm px-3 py-1.5 rounded-xl ring-1 shadow-sm ${
+                            run.sent > 0
+                              ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                              : "text-muted-foreground bg-muted/60 ring-border/30"
+                          }`}>
+                            {run.sent > 0 ? "✓ Completed" : "⏭️ Skipped"}
+                          </span>
                         </div>
-                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                          run.sent > 0
-                            ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
-                            : "bg-muted text-muted-foreground ring-1 ring-border/50"
-                        }`}>
-                          {run.sent > 0 ? "✅ Completed" : "⏭️ Skipped"}
-                        </span>
                       </motion.div>
                     ))}
                   </>
