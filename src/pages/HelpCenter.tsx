@@ -1613,11 +1613,12 @@ export default function HelpCenter() {
                   <button
                     key={a.id}
                     onClick={() => openArticle(a.categoryId, a.id)}
-                    className="w-full text-left flex items-center justify-between p-4 rounded-xl transition-all duration-200 group hover:bg-white/60"
+                    className="w-full text-left flex items-center justify-between p-5 rounded-xl transition-all duration-200 group hover:-translate-y-0.5"
                     style={{
-                      background: "rgba(255,255,255,0.4)",
+                      background: "rgba(255,255,255,0.65)",
                       backdropFilter: "blur(20px)",
-                      border: "1px solid rgba(255,255,255,0.3)",
+                      border: "1px solid rgba(255,255,255,0.5)",
+                      boxShadow: "0 2px 12px -2px rgba(0,0,0,0.06), 0 4px 20px -4px rgba(0,0,0,0.05)",
                     }}
                   >
                     <div>
