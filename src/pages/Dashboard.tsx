@@ -281,16 +281,16 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex-grow relative mt-4" style={{ minHeight: 300 }}>
+          <div className="flex-grow relative mt-2" style={{ minHeight: 220 }}>
             {/* AI Prediction bubble */}
-            <div className="absolute top-4 right-8 glass-card px-5 py-3 rounded-2xl shadow-2xl border-white/60 z-20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-md-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-md-primary" />
+            <div className="absolute top-2 right-6 glass-card px-4 py-2 rounded-xl shadow-lg border-white/60 z-20">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-md-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-md-primary" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-md-primary uppercase tracking-widest">AI Prediction</div>
-                  <div className="text-sm font-medium text-md-on-surface">Lead quality up 15%</div>
+                  <div className="text-[9px] font-bold text-md-primary uppercase tracking-widest">AI Prediction</div>
+                  <div className="text-xs font-medium text-md-on-surface">Lead quality up 15%</div>
                 </div>
               </div>
             </div>
