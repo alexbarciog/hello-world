@@ -220,7 +220,7 @@ export default function Dashboard() {
       </header>
 
       {/* ── Metrics Bento Grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <MetricCard
           title="Hot Opportunities"
           value={hotOpps}
