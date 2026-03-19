@@ -198,6 +198,17 @@ export default function CampaignsPage() {
 
   useEffect(() => { load(); }, []);
 
+  // Auto-open wizard when navigated with ?autoStart=true
+  useEffect(() => {
+    if (searchParams.get("autoStart") === "true" && !loading) {
+      if (!atLimit) {
+        setEditCampaignId(null);
+        setShowWizard(true);
+      }
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, loading]);
+
   const handleNewCampaign = () => {
     if (atLimit) { toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`); return; }
     setEditCampaignId(null);
