@@ -13,7 +13,7 @@ import {
   Mail,
   Settings,
   HelpCircle,
-  Gift,
+  LifeBuoy,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -183,9 +183,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {!collapsed && <span className="truncate">Help Center</span>}
           </button>
 
-          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
-            <Gift className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="truncate">Join Referral program</span>}
+          <button onClick={() => navigate("/support")} className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
+            <LifeBuoy className="w-4 h-4 shrink-0" />
+            {!collapsed && <span className="truncate">Support</span>}
           </button>
 
           {!collapsed && (
