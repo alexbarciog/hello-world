@@ -265,14 +265,7 @@ export default function CampaignsPage() {
 
   return (
     <div
-      className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body"
-      style={{
-        background: `
-          radial-gradient(circle at top right, hsla(var(--md-secondary-fixed), 0.4) 0%, transparent 40%),
-          radial-gradient(circle at bottom left, hsla(var(--md-primary) / 0.06) 0%, transparent 50%),
-          hsl(var(--md-surface))
-        `,
-      }}
+      className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white"
     >
       {/* Header */}
       <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
