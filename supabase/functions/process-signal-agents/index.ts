@@ -578,7 +578,7 @@ async function handleCompetitorPostEngagers(
           if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${companyName || companyId}'s post`;
-          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
           if (ok) inserted++;
         }
       }
