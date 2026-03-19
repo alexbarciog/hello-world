@@ -521,7 +521,7 @@ async function handleCompetitorFollowers(
         if (isExcluded(profile, icp.excludeKeywords)) continue;
 
         const signal = `Follows ${companyName}`;
-        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url);
+        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
         if (ok) inserted++;
       }
     } catch (e) { console.error(`Competitor followers ${url}:`, e); }
