@@ -250,7 +250,7 @@ export default function CampaignsPage() {
     >
       <div className="flex items-center gap-6 mb-2">
         {[
-          { icon: Bot, label: "Create Agent", color: "hsl(var(--goji-coral))" },
+          { icon: Bot, label: "Create Agent", color: "hsl(var(--foreground))" },
           { icon: Sparkles, label: "Build Campaign", color: "hsl(217 91% 60%)" },
           { icon: Zap, label: "Start Outreach", color: "hsl(142 70% 45%)" },
         ].map((step, i) => (
