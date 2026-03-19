@@ -93,16 +93,16 @@ function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: Met
   const trendColor = trendUp ? "text-green-700" : "text-md-on-surface-variant";
 
   return (
-    <div className="glass-card p-8 rounded-[2rem] flex flex-col justify-between group relative overflow-hidden">
-      <div className="flex justify-between items-start mb-10">
+    <div className="glass-card p-5 rounded-2xl flex flex-col justify-between group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-6">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{ background: iconBg }}
         >
           {icon}
         </div>
         {trend && (
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
             trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"
           }`}>
             {trendUp ? "↑" : ""} {trend}
@@ -110,13 +110,13 @@ function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: Met
         )}
       </div>
       <div>
-        <h3 className="text-md-on-surface-variant font-light text-xs uppercase tracking-[0.2em] mb-2">
+        <h3 className="text-md-on-surface-variant font-light text-[10px] uppercase tracking-[0.2em] mb-1">
           {title}
         </h3>
         {loading ? (
-          <div className="h-12 w-16 bg-md-surface-container rounded animate-pulse" />
+          <div className="h-8 w-12 bg-md-surface-container rounded animate-pulse" />
         ) : (
-          <div className="text-5xl font-light tracking-tight text-md-on-surface font-headline">
+          <div className="text-3xl font-light tracking-tight text-md-on-surface font-headline">
             {value}
           </div>
         )}
