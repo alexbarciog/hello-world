@@ -154,7 +154,8 @@ export default function Support() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-8 rounded-full bg-gradient-to-r from-md-primary to-md-secondary text-white font-medium text-sm shadow-lg shadow-md-secondary/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none font-body"
+                className="w-full py-3.5 px-8 rounded-full bg-gradient-to-r from-md-primary to-md-secondary text-white font-medium text-sm shadow-lg shadow-md-secondary/20 hover:brightness-110 hover:scale-[1.02] active:scale-95 active:brightness-90 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none font-body outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-md-primary/30"
+                style={{ WebkitTapHighlightColor: "transparent" }}
               >
                 <span>{loading ? "Sending..." : "Submit Ticket"}</span>
                 <Send className="w-4 h-4" />
