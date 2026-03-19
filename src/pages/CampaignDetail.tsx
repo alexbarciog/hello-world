@@ -198,6 +198,21 @@ export default function CampaignDetail() {
       .eq("status", "accepted");
     setStep1Accepted(acceptedCount || 0);
 
+    // Load today's sent count for scheduled view
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const { count: todaySent } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .gte("sent_at", todayStart.toISOString());
+    setTodaySentCount(todaySent || 0);
+
+    // Remaining unsent contacts
+    const totalContacts = contactsCount || 0;
+    const totalSent = sentCount || 0;
+    setRemainingContacts(Math.max(0, totalContacts - totalSent));
+
     setLoading(false);
   }
 
