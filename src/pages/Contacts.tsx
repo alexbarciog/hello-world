@@ -136,14 +136,6 @@ export default function Contacts() {
                 <FolderPlus className="w-3.5 h-3.5" /> Add to list
               </button>
             )}
-            <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
-              <Sparkles className="w-3.5 h-3.5" /> Enrich Email
-            </button>
-            <button
-              className="flex items-center gap-1.5 text-xs font-semibold text-primary-foreground rounded-lg px-4 py-2 transition-colors bg-primary hover:bg-primary/90"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add leads
-            </button>
           </div>
           {/* Mobile add button */}
           <button className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground shrink-0">
