@@ -1,98 +1,57 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
-  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, ExternalLink,
+  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List,
 } from "lucide-react";
+import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
+import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
+import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 
-interface Contact {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  linkedin_url: string | null;
-  title: string | null;
-  company: string | null;
-  company_icon_color: string | null;
-  signal: string | null;
-  signal_post_url: string | null;
-  ai_score: number;
-  signal_a_hit: boolean;
-  signal_b_hit: boolean;
-  signal_c_hit: boolean;
-  email: string | null;
-  email_enriched: boolean;
-  list_name: string | null;
-  imported_at: string;
-  relevance_tier: 'hot' | 'warm' | 'cold';
-}
-
-const AVATAR_COLORS = [
-  "bg-orange-500", "bg-blue-500", "bg-green-500",
-  "bg-purple-500", "bg-pink-500", "bg-teal-500",
-  "bg-red-500", "bg-indigo-500",
-];
-
-function avatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function getInitials(c: Contact) {
-  return (c.first_name[0] + (c.last_name?.[0] || "")).toUpperCase();
-}
-
-function timeAgo(dateStr: string) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-const DOT_COLORS: Record<string, string> = {
-  orange: "bg-orange-400",
-  green: "bg-green-400",
-  blue: "bg-blue-400",
-  purple: "bg-purple-400",
-  pink: "bg-pink-400",
-};
-
-const LinkedInIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="currentColor">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-  </svg>
-);
+type Tab = "all" | "hot" | "warm" | "cold";
 
 export default function Contacts() {
-  const [tab, setTab] = useState<"all" | "hot" | "warm" | "cold">("all");
+  const [tab, setTab] = useState<Tab>("all");
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [lists, setLists] = useState<ContactList[]>([]);
+  const [contactListMap, setContactListMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [perPage, setPerPage] = useState(25);
   const [page, setPage] = useState(1);
   const [listFilter, setListFilter] = useState<string>("all");
-  const [availableLists, setAvailableLists] = useState<string[]>([]);
+  const [showCreateList, setShowCreateList] = useState(false);
 
-  useEffect(() => { fetchContacts(); }, []);
-
-  async function fetchContacts() {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setLoading(false); return; }
-    const { data } = await supabase
-      .from("contacts")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("imported_at", { ascending: false });
-    if (data) {
-      setContacts(data as Contact[]);
-      const lists = [...new Set(data.map((c: any) => c.list_name).filter(Boolean))] as string[];
-      setAvailableLists(lists);
+
+    // Fetch contacts, lists, and junction in parallel
+    const [contactsRes, listsRes, junctionRes] = await Promise.all([
+      supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
+      (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      (supabase.from("contact_lists") as any).select("contact_id, list_id"),
+    ]);
+
+    if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
+    if (listsRes.data) setLists(listsRes.data as ContactList[]);
+
+    // Build contact -> list_ids map
+    if (junctionRes.data) {
+      const map: Record<string, string[]> = {};
+      for (const row of junctionRes.data as { contact_id: string; list_id: string }[]) {
+        if (!map[row.contact_id]) map[row.contact_id] = [];
+        map[row.contact_id].push(row.list_id);
+      }
+      setContactListMap(map);
     }
+
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0 };
@@ -100,10 +59,28 @@ export default function Contacts() {
     return counts;
   }, [contacts]);
 
+  // Build list contact counts
+  const listCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const listIds of Object.values(contactListMap)) {
+      for (const lid of listIds) {
+        counts[lid] = (counts[lid] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [contactListMap]);
+
   const filtered = useMemo(() => {
     let result = contacts;
     if (tab !== "all") result = result.filter((c) => c.relevance_tier === tab);
-    if (listFilter !== "all") result = result.filter((c) => c.list_name === listFilter);
+    if (listFilter !== "all") {
+      const contactIdsInList = new Set(
+        Object.entries(contactListMap)
+          .filter(([, lids]) => lids.includes(listFilter))
+          .map(([cid]) => cid)
+      );
+      result = result.filter((c) => contactIdsInList.has(c.id));
+    }
     if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
     return result.filter(
@@ -113,7 +90,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter, tab]);
+  }, [contacts, searchQuery, listFilter, tab, contactListMap]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
@@ -131,6 +108,11 @@ export default function Contacts() {
     else setSelectedIds(new Set(paged.map((c) => c.id)));
   }
 
+  function getContactListNames(contactId: string): string[] {
+    const listIds = contactListMap[contactId] || [];
+    return listIds.map((lid) => lists.find((l) => l.id === lid)?.name).filter(Boolean) as string[];
+  }
+
   return (
     <div className="min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
 
@@ -146,47 +128,51 @@ export default function Contacts() {
           </div>
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setShowCreateList(true)}
+                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+              >
+                <FolderPlus className="w-3.5 h-3.5" /> Add to list
+              </button>
+            )}
             <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
               <Sparkles className="w-3.5 h-3.5" /> Enrich Email
             </button>
             <button
-              className="flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-4 py-2 transition-colors"
-              style={{ background: "linear-gradient(135deg, #5F93FF, #9CBCFB)" }}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary-foreground rounded-lg px-4 py-2 transition-colors bg-primary hover:bg-primary/90"
             >
               <Plus className="w-3.5 h-3.5" /> Add leads
             </button>
           </div>
           {/* Mobile add button */}
-          <button
-            className="md:hidden flex items-center justify-center w-8 h-8 rounded-full text-white shrink-0"
-            style={{ background: "linear-gradient(135deg, #5F93FF, #9CBCFB)" }}
-          >
+          <button className="md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground shrink-0">
             <Plus className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-5 mt-3">
+        <div className="flex items-center gap-3 md:gap-5 mt-3 overflow-x-auto scrollbar-none">
           {([
-            { key: "all", label: "All contacts", count: contacts.length },
-            { key: "hot", label: "🔥 Hot", count: tierCounts.hot },
-            { key: "warm", label: "☀️ Warm", count: tierCounts.warm },
-            { key: "cold", label: "❄️ Cold", count: tierCounts.cold },
-          ] as const).map((t) => (
+            { key: "all" as Tab, label: "All", count: contacts.length },
+            { key: "hot" as Tab, label: "🔥 Hot", count: tierCounts.hot },
+            { key: "warm" as Tab, label: "☀️ Warm", count: tierCounts.warm },
+            { key: "cold" as Tab, label: "❄️ Cold", count: tierCounts.cold },
+          ]).map((t) => (
             <button
               key={t.key}
-              onClick={() => { setTab(t.key as any); setPage(1); }}
-              className={`pb-2 text-sm font-semibold transition-colors relative flex items-center gap-1.5 ${
-                tab === t.key ? "text-blue-500" : "text-muted-foreground hover:text-foreground"
+              onClick={() => { setTab(t.key); setPage(1); }}
+              className={`pb-2 text-sm font-semibold transition-colors relative flex items-center gap-1.5 whitespace-nowrap ${
+                tab === t.key ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t.label}
               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                tab === t.key ? "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400" : "bg-muted text-muted-foreground"
+                tab === t.key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
               }`}>
                 {t.count}
               </span>
-              {tab === t.key && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />}
+              {tab === t.key && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-primary rounded-full" />}
             </button>
           ))}
         </div>
@@ -194,39 +180,44 @@ export default function Contacts() {
 
       {/* ── Toolbar ── */}
       <div className="px-4 md:px-6 py-3 border-b border-border flex flex-col gap-2.5 md:flex-row md:items-center">
-        {/* Search */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             placeholder="Search contacts..."
-            className="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-background placeholder:text-muted-foreground"
+            className="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background placeholder:text-muted-foreground text-foreground"
           />
         </div>
-        {/* Filters row */}
         <div className="flex items-center gap-2 flex-wrap">
-          {availableLists.length > 0 && (
-            <div className="relative">
-              <select
-                value={listFilter}
-                onChange={(e) => { setListFilter(e.target.value); setPage(1); }}
-                className="border border-border rounded-lg pl-3 pr-7 py-2 text-xs bg-background focus:outline-none appearance-none text-foreground"
-              >
-                <option value="all">All lists</option>
-                {availableLists.map((l) => <option key={l} value={l}>{l}</option>)}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
-            </div>
-          )}
-          <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors">
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Filters</span>
-          </button>
+          {/* List filter dropdown */}
+          <div className="relative">
+            <List className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+            <select
+              value={listFilter}
+              onChange={(e) => { setListFilter(e.target.value); setPage(1); }}
+              className="border border-border rounded-lg pl-7 pr-7 py-2 text-xs bg-background focus:outline-none appearance-none text-foreground"
+            >
+              <option value="all">All lists</option>
+              {lists.map((l) => (
+                <option key={l.id} value={l.id}>{l.name} ({listCounts[l.id] || 0})</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+          </div>
+
           {selectedIds.size > 0 && (
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
-              {selectedIds.size} selected
-            </span>
+            <>
+              <button
+                onClick={() => setShowCreateList(true)}
+                className="md:hidden flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/10 transition-colors"
+              >
+                <FolderPlus className="w-3.5 h-3.5" /> List
+              </button>
+              <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                {selectedIds.size} selected
+              </span>
+            </>
           )}
         </div>
       </div>
@@ -235,7 +226,7 @@ export default function Contacts() {
       <div className="px-3 md:px-0">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <div className="w-8 h-8 rounded-full border-2 border-blue-200 border-t-blue-500 animate-spin" />
+            <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
             <p className="text-sm text-muted-foreground">Loading contacts...</p>
           </div>
         ) : paged.length === 0 ? (
@@ -260,10 +251,10 @@ export default function Contacts() {
                         type="checkbox"
                         checked={paged.length > 0 && selectedIds.size === paged.length}
                         onChange={toggleAll}
-                        className="w-4 h-4 rounded border-border text-blue-500 focus:ring-blue-300 cursor-pointer"
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                       />
                     </th>
-                    {["Contact", "Signal", "AI Score", "Email", "Added", "List"].map((h) => (
+                    {["Contact", "Signal", "Score", "Email", "Added", "Lists"].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
                         {h}
                       </th>
@@ -271,21 +262,29 @@ export default function Contacts() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paged.map((c) => (
+                  {paged.map((c) => {
+                    const cLists = getContactListNames(c.id);
+                    return (
                     <tr key={c.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                       <td className="w-10 px-4 py-3">
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
-                          className="w-4 h-4 rounded border-border text-blue-500 focus:ring-blue-300 cursor-pointer" />
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${avatarColor(c.first_name + (c.last_name || ""))}`}>
-                            {getInitials(c)}
+                          <div className="relative shrink-0">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
+                              {getInitials(c)}
+                            </div>
+                            {/* Tier indicator */}
+                            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                              c.relevance_tier === 'hot' ? 'bg-red-500' : c.relevance_tier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
+                            }`} />
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               {c.linkedin_url ? (
-                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-blue-600 hover:underline cursor-pointer truncate">
+                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
                                   {c.first_name} {c.last_name || ""}
                                 </a>
                               ) : (
@@ -309,7 +308,7 @@ export default function Contacts() {
                       </td>
                       <td className="px-3 py-3 max-w-[220px]">
                         {c.signal_post_url ? (
-                          <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:text-blue-700 underline underline-offset-2 truncate block max-w-[200px]">
+                          <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
                             {c.signal}
                           </a>
                         ) : (
@@ -332,46 +331,61 @@ export default function Contacts() {
                         <span className="text-xs text-muted-foreground">{timeAgo(c.imported_at)}</span>
                       </td>
                       <td className="px-3 py-3">
-                        <span className="text-xs font-medium text-blue-600 hover:underline cursor-pointer">{c.list_name || "—"}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {cLists.length > 0 ? cLists.map((name) => (
+                            <span key={name} className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                              {name}
+                            </span>
+                          )) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* ── Mobile cards ── */}
             <div className="md:hidden flex flex-col gap-2 py-3">
-              {paged.map((c) => (
+              {paged.map((c) => {
+                const cLists = getContactListNames(c.id);
+                return (
                 <div
                   key={c.id}
                   onClick={() => toggleSelect(c.id)}
                   className={`relative bg-background border rounded-2xl px-4 py-3.5 flex items-start gap-3 transition-all cursor-pointer ${
-                    selectedIds.has(c.id) ? "border-blue-400 bg-blue-50/30" : "border-border"
+                    selectedIds.has(c.id) ? "border-primary bg-primary/5" : "border-border"
                   }`}
                 >
                   {/* Selection dot */}
                   <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                    selectedIds.has(c.id) ? "border-blue-500 bg-blue-500" : "border-muted-foreground/30"
+                    selectedIds.has(c.id) ? "border-primary bg-primary" : "border-muted-foreground/30"
                   }`}>
                     {selectedIds.has(c.id) && (
-                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10">
+                      <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 10 10">
                         <path d="M2 5l2.5 2.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </div>
 
                   {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${avatarColor(c.first_name + (c.last_name || ""))}`}>
-                    {getInitials(c)}
+                  <div className="relative shrink-0">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
+                      {getInitials(c)}
+                    </div>
+                    <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                      c.relevance_tier === 'hot' ? 'bg-red-500' : c.relevance_tier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
+                    }`} />
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0 pr-6">
-                    {/* Name + LinkedIn */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {c.linkedin_url ? (
-                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-blue-600 hover:underline truncate">
+                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
                           {c.first_name} {c.last_name || ""}
                         </a>
                       ) : (
@@ -383,29 +397,36 @@ export default function Contacts() {
                         </a>
                       )}
                     </div>
-                    {/* Title */}
                     {c.title && <p className="text-xs text-muted-foreground truncate mt-0.5">{c.title}</p>}
-                    {/* Company */}
                     {c.company && (
                       <div className="flex items-center gap-1 mt-0.5">
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[c.company_icon_color || ""] || "bg-gray-400"}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[c.company_icon_color || ""] || "bg-muted-foreground"}`} />
                         <span className="text-xs text-muted-foreground truncate">{c.company}</span>
+                      </div>
+                    )}
+
+                    {/* List badges */}
+                    {cLists.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {cLists.map((name) => (
+                          <span key={name} className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                            {name}
+                          </span>
+                        ))}
                       </div>
                     )}
 
                     {/* Footer row */}
                     <div className="flex items-center justify-between mt-2.5 gap-2 flex-wrap">
-                      {/* Signal badges */}
                       <div className="flex items-center gap-0.5">
                         {[c.signal_a_hit, c.signal_b_hit, c.signal_c_hit].map((hit, i) => (
                           <Flame key={i} className={`w-3.5 h-3.5 ${hit ? "text-orange-500" : "text-muted-foreground/20"}`} fill={hit ? "currentColor" : "none"} />
                         ))}
                       </div>
-                      {/* Signal label */}
-                       {c.signal && (
+                      {c.signal && (
                         c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
-                            className="text-[10px] font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 rounded-full truncate max-w-[160px] underline underline-offset-2">
+                            className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full truncate max-w-[160px] underline underline-offset-2">
                             {c.signal}
                           </a>
                         ) : (
@@ -414,12 +435,12 @@ export default function Contacts() {
                           </span>
                         )
                       )}
-                      {/* Time */}
                       <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo(c.imported_at)}</span>
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </>
         )}
@@ -432,15 +453,13 @@ export default function Contacts() {
             {Math.min((page - 1) * perPage + 1, filtered.length)}–{Math.min(page * perPage, filtered.length)} of {filtered.length}
           </p>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <select
-                value={perPage}
-                onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
-                className="border border-border rounded-lg px-2 py-1.5 text-xs bg-background focus:outline-none"
-              >
-                {[25, 50, 100].map((n) => <option key={n} value={n}>{n} / page</option>)}
-              </select>
-            </div>
+            <select
+              value={perPage}
+              onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}
+              className="border border-border rounded-lg px-2 py-1.5 text-xs bg-background focus:outline-none text-foreground"
+            >
+              {[25, 50, 100].map((n) => <option key={n} value={n}>{n} / page</option>)}
+            </select>
             <div className="flex items-center gap-1">
               <button
                 disabled={page <= 1}
@@ -449,7 +468,7 @@ export default function Contacts() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="w-8 h-8 flex items-center justify-center border border-blue-300 rounded-lg text-xs font-semibold text-blue-600">
+              <span className="w-8 h-8 flex items-center justify-center border border-primary/30 rounded-lg text-xs font-semibold text-primary">
                 {page}
               </span>
               <button
@@ -463,6 +482,15 @@ export default function Contacts() {
           </div>
         </div>
       )}
+
+      {/* ── Create List Dialog ── */}
+      <CreateListDialog
+        open={showCreateList}
+        onOpenChange={setShowCreateList}
+        selectedContactIds={selectedIds}
+        existingLists={lists}
+        onCreated={() => { fetchData(); setSelectedIds(new Set()); }}
+      />
     </div>
   );
 }
