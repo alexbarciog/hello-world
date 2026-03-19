@@ -1737,7 +1737,7 @@ export default function HelpCenter() {
               Back to {activeCategory.title}
             </button>
 
-            <h1 className="text-2xl font-bold mb-6 text-md-on-surface">
+            <h1 className="text-3xl font-bold mb-8 text-md-on-surface leading-tight">
               {activeArticle.title}
             </h1>
 
