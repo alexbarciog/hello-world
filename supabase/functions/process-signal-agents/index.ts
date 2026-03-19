@@ -719,24 +719,32 @@ function isClearlyIrrelevant(headline: string): boolean {
   return REJECT_TITLES.some((kw) => h.includes(kw));
 }
 
+// Returns relevance tier: 'hot' | 'warm' | 'cold' | null (null = reject)
+function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
+  const hl = headline || '';
+  
+  // Always reject clearly irrelevant individual contributors
+  if (isClearlyIrrelevant(hl)) return null;
+  
+  // HOT: exact ICP title match OR buying intent + industry match
+  if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
+  if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
+  
+  // WARM: buying intent but no industry match, OR industry match with non-trivial title
+  if (hasBuyingIntent(hl)) return 'warm';
+  if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
+  
+  // COLD: has a title that's not rejected — just engagement signal, no clear ICP fit
+  if (hl.length > 5) return 'cold';
+  
+  // No title info at all — accept as cold if we have no filters, otherwise reject
+  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
+  return null;
+}
+
+// Backward compat wrapper used by all signal handlers
 function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: string): boolean {
-  // If exact ICP title match, always accept
-  if (icp.jobTitles.length > 0 && match.titleMatch) return true;
-  // If no title filter set, accept
-  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return true;
-  // If industry matches, accept unless clearly irrelevant
-  if (icp.industries.length > 0 && match.industryMatch) {
-    if (headline && isClearlyIrrelevant(headline)) return false;
-    return true;
-  }
-  // Buying intent titles pass even without exact ICP match
-  if (headline && hasBuyingIntent(headline) && !isClearlyIrrelevant(headline)) return true;
-  // Reject clearly irrelevant
-  if (headline && isClearlyIrrelevant(headline)) return false;
-  // If we have a headline but it's not clearly irrelevant and not buying intent,
-  // accept with lower confidence (the score will reflect this)
-  if (headline && headline.length > 5) return true;
-  return false;
+  return classifyContact(match, icp, headline) !== null;
 }
 
 function isExcluded(profile: any, excludeKeywords: string[]): boolean {
