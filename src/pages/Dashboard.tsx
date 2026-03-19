@@ -295,7 +295,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="px-4 md:px-8 pb-6" style={{ height: 280 }}>
+            <div className="px-3 md:px-6 pb-4" style={{ height: 200 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -28, bottom: 0 }}>
                   <defs>
