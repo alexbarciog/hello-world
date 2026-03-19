@@ -8,19 +8,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
-import {
-  MessageSquare,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-  Flame,
-  Users,
-  TrendingUp,
-  Zap,
-  CheckCircle2,
-  ArrowUpRight,
-} from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 
 // Generate chart data for last 30 days
@@ -47,7 +37,11 @@ function HeatDots({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {[0, 1, 2].map((i) => (
-        <span key={i} className="text-sm" style={{ opacity: i < count ? 1 : 0.2 }}>
+        <span
+          key={i}
+          className="text-sm"
+          style={{ opacity: i < count ? 1 : 0.25 }}
+        >
           🔥
         </span>
       ))}
@@ -78,105 +72,81 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-full px-4 md:px-6 py-6 space-y-5">
-
-      {/* ── Header row ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-foreground tracking-tight">
-            Welcome Alex 🚀
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Here's what's happening with your outreach today.</p>
-        </div>
-
+    <div className="min-h-full bg-card rounded-2xl px-4 md:px-8 py-6 relative m-2 md:m-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">
+          Welcome Alex 🚀
+        </h1>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Active Signals badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium text-muted-foreground shadow-sm">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-red-500 border-red-200 bg-white hover:bg-red-50 transition-colors">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
             0 Active Signal(s)
-          </div>
-          {/* LinkedIn Accounts badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium shadow-sm" style={{ color: "hsl(142 60% 38%)", borderColor: "hsl(142 60% 85%)", background: "hsl(142 50% 97%)" }}>
+          </button>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-green-600 border-green-200 bg-white hover:bg-green-50 transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
               <polyline points="20 6 9 17 4 12" />
             </svg>
             2 LinkedIn Account(s)
-          </div>
+          </button>
         </div>
       </div>
 
-      {/* ── Metric cards row ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-
-        {/* CTA card */}
-        <div className="bg-card rounded-2xl border border-border p-5 flex flex-col gap-3 shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)]">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--goji-coral) / 0.12)" }}>
-            <Zap className="w-4 h-4" style={{ color: "hsl(var(--goji-coral))" }} />
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-1.5">Ready to outreach?</p>
-            <button
-              onClick={handleNewCampaign}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95"
-              style={{ background: "hsl(var(--goji-coral))" }}
-            >
-              + Start a campaign <ArrowUpRight className="w-3 h-3" />
-            </button>
-          </div>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+        {/* Ready to outreach */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col items-center justify-center gap-3 shadow-sm">
+          <p className="text-sm font-semibold text-[hsl(222_28%_18%)]">Ready to outreach?</p>
+          <button
+            onClick={handleNewCampaign}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: "hsl(var(--goji-coral))" }}
+          >
+            <span className="text-base">+</span>
+            Start a campaign
+            <span>›</span>
+          </button>
         </div>
 
         {/* Hot Opportunities */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)]">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-muted-foreground">Hot Opportunities</p>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--goji-coral) / 0.1)" }}>
-              <Flame className="w-3.5 h-3.5" style={{ color: "hsl(var(--goji-coral))" }} />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">3</p>
-          <p className="text-xs text-muted-foreground mt-1">Detected this period</p>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <p className="text-xs text-gray-400 mb-1">Hot Opportunities</p>
+          <p className="text-3xl font-bold text-[hsl(222_28%_15%)] mb-1">3</p>
+          <p className="text-xs text-gray-400">Detected this period</p>
         </div>
 
         {/* Leads Engaged */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)]">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-muted-foreground">Leads Engaged</p>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-green-50">
-              <Users className="w-3.5 h-3.5 text-green-600" />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">0</p>
-          <p className="text-xs text-muted-foreground mt-1">Invitations sent</p>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <p className="text-xs text-gray-400 mb-1">Leads Engaged</p>
+          <p className="text-3xl font-bold text-[hsl(222_28%_15%)] mb-1">0</p>
+          <p className="text-xs text-gray-400">Invitations sent</p>
         </div>
 
         {/* Conversations */}
-        <div className="bg-card rounded-2xl border border-border p-5 shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)] flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-muted-foreground">Conversations</p>
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50">
-              <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
-            </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <p className="text-xs text-gray-400 mb-1">Conversations</p>
+            <p className="text-3xl font-bold text-[hsl(222_28%_15%)] mb-1">0</p>
+            <p className="text-xs text-gray-400">Messages sent</p>
           </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">0</p>
-          <p className="text-xs text-muted-foreground mt-1">Messages sent</p>
-          <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
-            <p className="text-[11px] text-muted-foreground/70 leading-tight">Set deal size to see pipeline</p>
-            <button className="text-[11px] font-semibold" style={{ color: "hsl(var(--goji-coral))" }}>Edit</button>
+          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+            <p className="text-xs text-gray-400">Set deal size to see pipeline generated</p>
+            <button className="text-xs font-semibold" style={{ color: "hsl(var(--goji-coral))" }}>Edit</button>
           </div>
         </div>
       </div>
 
-      {/* ── Activity Overview chart ──────────────────────────────────────── */}
-      <div className="bg-card rounded-2xl border border-border p-5 md:p-6 shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)]">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+      {/* Activity Overview */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6 mb-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
           <div>
-            <h2 className="text-sm font-bold text-foreground">Activity Overview</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Track your lead generation &amp; outreach performance</p>
+            <h2 className="text-base font-bold text-[hsl(222_28%_15%)]">Activity Overview</h2>
+            <p className="text-xs text-gray-400">Track your lead generation &amp; outreach performance</p>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-muted-foreground">Leads created</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+              <span className="text-xs text-gray-500">Leads created</span>
             </div>
             <button
               onClick={handleNewCampaign}
@@ -185,15 +155,14 @@ export default function Dashboard() {
             >
               Start a campaign »
             </button>
-            <div className="flex items-center gap-1 border border-border rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground bg-muted/40">
+            <div className="flex items-center gap-1 border border-gray-200 rounded px-2 py-1 text-xs text-gray-500 bg-white">
               Last 30 days
-              <ChevronDown className="w-3 h-3 ml-0.5" />
+              <ChevronDown className="w-3 h-3" />
             </div>
           </div>
         </div>
 
-        {/* Chart — DO NOT MODIFY */}
-        <div style={{ height: 200 }}>
+        <div className="mt-4" style={{ height: 200 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: -30, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 20% 94%)" vertical={false} />
@@ -232,44 +201,35 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Bottom row: Latest Hot Leads & Latest Replies ────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
         {/* Latest Hot Leads */}
-        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)] overflow-hidden">
-          {/* Card header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(var(--goji-coral) / 0.1)" }}>
-                <Flame className="w-4 h-4" style={{ color: "hsl(var(--goji-coral))" }} />
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-start justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                style={{ background: "hsl(var(--goji-coral) / 0.12)" }}
+              >
+                👤
               </div>
               <div>
-                <h3 className="text-sm font-bold text-foreground">Latest Hot Leads</h3>
-                <p className="text-[11px] text-muted-foreground">Your most promising prospects</p>
+                <h3 className="text-sm font-bold text-[hsl(222_28%_15%)]">Latest Hot Leads</h3>
+                <p className="text-xs text-gray-400">Your most promising prospects</p>
               </div>
             </div>
-            <button className="flex items-center gap-1 text-xs font-semibold text-[hsl(220,80%,55%)] hover:opacity-80 transition-opacity">
+            <button className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 transition-colors">
               View More <ExternalLink className="w-3 h-3" />
             </button>
           </div>
 
-          {/* Table header */}
-          <div className="grid grid-cols-[1fr_auto] gap-4 px-5 py-2 bg-muted/30 border-b border-border">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Contact</span>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Heat</span>
-          </div>
-
-          {/* Rows */}
-          <div className="divide-y divide-border">
+          <div className="mt-4 space-y-3">
             {exampleLeads.map((lead, i) => (
-              <div key={lead.name} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/20 transition-colors">
-                <Avatar
-                  initials={lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
-                  color={avatarColors[i]}
-                />
+              <div key={lead.name} className="flex items-center gap-3">
+                <Avatar initials={lead.name.split(" ").slice(0, 2).map(w => w[0]).join("")} color={avatarColors[i]} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[hsl(220,80%,55%)] truncate">{lead.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{lead.role} · {lead.company}</p>
+                  <p className="text-sm font-semibold text-blue-500 truncate">{lead.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{lead.role} · {lead.company}</p>
                 </div>
                 <HeatDots count={lead.heat} />
               </div>
@@ -278,62 +238,58 @@ export default function Dashboard() {
         </div>
 
         {/* Latest Replies */}
-        <div className="bg-card rounded-2xl border border-border shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)] overflow-hidden">
-          {/* Card header */}
-          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-50">
+        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "hsl(220 60% 55% / 0.12)" }}
+            >
               <MessageSquare className="w-4 h-4 text-blue-500" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground">Latest Replies</h3>
-              <p className="text-[11px] text-muted-foreground">Recent conversation responses</p>
+              <h3 className="text-sm font-bold text-[hsl(222_28%_15%)]">Latest Replies</h3>
+              <p className="text-xs text-gray-400">Recent conversation responses</p>
             </div>
           </div>
 
-          {/* Empty state */}
-          <div className="flex flex-col items-center justify-center py-14 px-6 gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-muted-foreground/30" />
-            </div>
-            <div className="text-center">
-              <p className="text-sm font-medium text-foreground">
-                <button className="text-[hsl(220,80%,55%)] hover:underline font-semibold">Activate your Unibox</button>
-                {" "}to never miss a reply
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">All your replies will appear here</p>
-            </div>
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <MessageSquare className="w-10 h-10 text-gray-200" />
+            <p className="text-sm text-center text-gray-400">
+              <button className="text-blue-500 font-semibold hover:underline">Activate your Unibox</button>
+              {" "}to never miss a reply
+            </p>
+            <p className="text-xs text-gray-400">All your replies will appear here</p>
           </div>
         </div>
       </div>
 
-      {/* ── Get Started panel ───────────────────────────────────────────── */}
-      <div className="bg-card rounded-2xl border border-border shadow-[0_1px_4px_0_hsl(220_14%_10%/0.06)] overflow-hidden">
+      {/* Get Started panel */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         <button
           onClick={() => setGetStartedOpen(!getStartedOpen)}
-          className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/20 transition-colors"
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-center gap-3">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              className="w-8 h-8 rounded-full flex items-center justify-center"
               style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
             >
               <span className="text-sm">🚀</span>
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold text-foreground">Get Started</p>
-              <p className="text-xs text-muted-foreground">Complete these steps to start</p>
+              <p className="text-sm font-bold text-[hsl(222_28%_15%)]">Get Started</p>
+              <p className="text-xs text-gray-400">Complete these steps to start</p>
             </div>
           </div>
           {getStartedOpen ? (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            <ChevronDown className="w-4 h-4 text-gray-400" />
           ) : (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            <ChevronUp className="w-4 h-4 text-gray-400" />
           )}
         </button>
-
         {getStartedOpen && (
-          <div className="px-5 pb-5 border-t border-border">
-            <div className="space-y-3 mt-4">
+          <div className="px-5 pb-5 pt-1 border-t border-gray-100">
+            <div className="space-y-3 mt-3">
               {[
                 { label: "Connect your LinkedIn account", done: true },
                 { label: "Create your first campaign", done: false },
@@ -342,7 +298,7 @@ export default function Dashboard() {
               ].map((step) => (
                 <div key={step.label} className="flex items-center gap-3">
                   <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors"
+                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2"
                     style={{
                       borderColor: step.done ? "hsl(142 70% 45%)" : "hsl(220 20% 80%)",
                       background: step.done ? "hsl(142 70% 45%)" : "transparent",
@@ -354,7 +310,7 @@ export default function Dashboard() {
                       </svg>
                     )}
                   </div>
-                  <p className={`text-sm ${step.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                  <p className={`text-sm ${step.done ? "line-through text-gray-400" : "text-[hsl(222_28%_15%)]"}`}>
                     {step.label}
                   </p>
                 </div>
@@ -364,17 +320,14 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Floating action button */}
+      {/* Floating orange button */}
       <button
-        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110 z-30"
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
         style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
       >
-        <img
-          src="/favicon.ico"
-          alt=""
-          className="w-5 h-5 object-contain"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-        />
+        <img src="/favicon.ico" alt="" className="w-5 h-5 object-contain" onError={(e) => {
+          (e.target as HTMLImageElement).style.display = 'none';
+        }} />
         <span className="text-white text-lg absolute">🔥</span>
       </button>
     </div>

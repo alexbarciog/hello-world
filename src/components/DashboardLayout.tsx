@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import premiumBg from "@/assets/premium-gradient-bg.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import {
   LayoutDashboard,
@@ -100,31 +101,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-border/60 ${collapsed ? "w-[64px]" : "w-[210px]"}`}
-        style={{ background: "hsl(0 0% 100%)" }}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[64px]" : "w-[200px]"}`}
+        style={{ background: "hsl(195 14% 95%)" }}
       >
         {/* Logo row */}
-        <div className="flex items-center justify-between px-4 h-14 border-b border-border/60 shrink-0">
+        <div className="flex items-center justify-between px-3 py-4">
           <div className="flex items-center gap-2 min-w-0">
-            <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain shrink-0" />
-            {!collapsed && <span className="font-bold text-sm tracking-tight text-foreground truncate">Intentsly</span>}
+            <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
+            {!collapsed && <span className="font-bold text-base tracking-tight text-foreground truncate">Intentsly</span>}
           </div>
           {!collapsed && (
-            <button onClick={() => setCollapsed(true)} className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0">
+            <button onClick={() => setCollapsed(true)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground shrink-0">
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
           {collapsed && (
-            <button onClick={() => setCollapsed(false)} className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground mx-auto">
+            <button onClick={() => setCollapsed(false)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground mx-auto">
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
         </div>
-
-        {/* Nav label */}
-        {!collapsed && (
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-4 pt-4 pb-1.5">Main Menu</p>
-        )}
 
         {/* Nav items */}
         <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
@@ -136,13 +132,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all group ${
-                  active
-                    ? "bg-foreground text-white shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
+                  active ? "bg-white text-foreground shadow-sm" : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                 }`}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
+                  <Icon className="w-4 h-4" />
+                </span>
                 {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
               </button>
             );
@@ -152,73 +148,77 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Bottom section */}
         <div className="px-2 pb-3 space-y-1">
           {!collapsed && (
-            <div className="rounded-xl p-3.5 mb-2 overflow-hidden relative border border-border/60" style={{ background: "hsl(25 95% 97%)" }}>
+            <div
+              className="rounded-xl p-3 mb-2 overflow-hidden relative"
+              style={{ backgroundImage: `url(${premiumBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <p className="text-xs font-bold text-foreground">Go Premium</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Unlock all features</p>
+                  <p className="text-[10px] text-foreground/60">Unlock all features</p>
                 </div>
-                <span className="text-base">✦</span>
+                <button onClick={() => navigate("/billing")} className="bg-foreground/10 hover:bg-foreground/15 rounded-full p-1 transition-colors">
+                  <ChevronRight className="w-3 h-3 text-foreground" />
+                </button>
               </div>
-              <button
-                onClick={() => navigate("/billing")}
-                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-foreground/60 border border-border rounded-lg py-1.5 mb-2 hover:bg-white transition-colors"
-              >
-                7 Days Free Trial
+              <button onClick={() => navigate("/billing")} className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-foreground/70 border border-foreground/15 rounded-md py-1 mb-1.5 hover:bg-foreground/5 transition-colors">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                7 Days Trial
               </button>
-              <button
-                onClick={() => navigate("/billing")}
-                className="w-full text-[11px] font-bold text-white rounded-lg py-2 transition-all hover:opacity-90 active:scale-95"
-                style={{ background: "hsl(var(--goji-coral))" }}
-              >
+              <button onClick={() => navigate("/billing")} className="w-full text-[11px] font-bold text-primary-foreground bg-foreground hover:bg-foreground/90 rounded-md py-1.5 transition-colors">
                 Start Trial ✦
               </button>
             </div>
           )}
 
-          <button onClick={() => navigate("/help")} className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button onClick={() => navigate("/help")} className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
             <HelpCircle className="w-4 h-4 shrink-0" />
             {!collapsed && <span className="truncate">Help Center</span>}
           </button>
 
-          <button className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
             <Gift className="w-4 h-4 shrink-0" />
             {!collapsed && <span className="truncate">Join Referral program</span>}
           </button>
 
           {!collapsed && (
-            <p className="text-[10px] text-muted-foreground/50 px-2.5 py-1">0 Credits left &nbsp;·&nbsp; ∞ Leads / Mo</p>
+            <p className="text-[10px] text-foreground/30 px-2.5 py-1">0 Credits left &nbsp;·&nbsp; ∞ Leads / Mo</p>
           )}
 
           <div className="relative" ref={userMenuRef}>
-            <button onClick={() => setUserMenuOpen((o) => !o)} className="w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 hover:bg-muted transition-colors border-t border-border/60 mt-1 pt-3">
+            <button onClick={() => setUserMenuOpen((o) => !o)} className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-foreground/5 transition-colors">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>
                 {userDisplay.initials || "?"}
               </div>
               {!collapsed && (
                 <>
                   <div className="min-w-0 text-left flex-1">
-                    <p className="text-xs font-semibold text-foreground truncate">{userDisplay.name || userDisplay.email}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{userDisplay.email}</p>
+                    <p className="text-xs font-semibold text-foreground/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                    <p className="text-[10px] text-foreground/40 truncate">{userDisplay.email}</p>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <ChevronDown className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
                 </>
               )}
             </button>
 
             {userMenuOpen && (
-              <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl bg-card shadow-xl border border-border overflow-hidden z-50">
-                <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
+              <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl bg-white shadow-xl border border-gray-100 overflow-hidden z-50">
+                <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
                     {userDisplay.initials || "?"}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{userDisplay.name || userDisplay.email}</p>
-                    <p className="text-xs text-muted-foreground truncate">{userDisplay.email}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{userDisplay.name || userDisplay.email}</p>
+                    <p className="text-xs text-gray-500 truncate">{userDisplay.email}</p>
                   </div>
                 </div>
                 <div className="py-1.5">
-                  <button onClick={() => { setUserMenuOpen(false); navigate("/billing"); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors">
+                  <button onClick={() => { setUserMenuOpen(false); navigate("/billing"); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <CreditCard className="w-4 h-4 text-yellow-500" />
                     Billing &amp; Plans
                   </button>
@@ -236,19 +236,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Mobile slide-in menu overlay ───────────────────────────────── */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col bg-card border-r border-border">
-            <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
+          {/* Panel */}
+          <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col" style={{ background: "hsl(195 14% 95%)" }}>
+            <div className="flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-2">
-                <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
-                <span className="font-bold text-sm tracking-tight text-foreground">Intentsly</span>
+                <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
+                <span className="font-bold text-base tracking-tight text-foreground">Intentsly</span>
               </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
+            <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
               {navItems.map((item) => {
                 const active = location.pathname === item.path;
                 const Icon = item.icon;
@@ -256,8 +258,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <button
                     key={item.path}
                     onClick={() => { navigate(item.path); setMobileMenuOpen(false); }}
-                    className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                      active ? "bg-foreground text-white shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    className={`w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active ? "bg-white text-foreground shadow-sm" : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -267,17 +269,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               })}
             </nav>
 
-            <div className="px-3 pb-4 pt-2 border-t border-border">
+            {/* User row at bottom of slide menu */}
+            <div className="px-3 pb-4 pt-2 border-t border-foreground/10">
               <div className="flex items-center gap-2.5 px-2 py-2">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>
                   {userDisplay.initials || "?"}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground truncate">{userDisplay.name || userDisplay.email}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{userDisplay.email}</p>
+                  <p className="text-xs font-semibold text-foreground/80 truncate">{userDisplay.name || userDisplay.email}</p>
+                  <p className="text-[10px] text-foreground/40 truncate">{userDisplay.email}</p>
                 </div>
               </div>
-              <button onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg hover:bg-red-50 transition-colors mt-1" style={{ color: "hsl(var(--goji-coral))" }}>
+              <button onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-red-50 transition-colors mt-1" style={{ color: "hsl(var(--goji-coral))" }}>
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>
@@ -289,13 +292,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top navbar */}
-        <header className="flex items-center justify-between px-4 md:px-6 h-14 shrink-0 bg-card border-b border-border/60">
+        <header className="flex items-center justify-between px-4 md:px-6 py-3 shrink-0" style={{ background: "hsl(195 14% 95%)" }}>
+          {/* Hamburger — mobile only */}
           <button
-            className="md:hidden p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+            className="md:hidden p-1.5 rounded-md hover:bg-foreground/10 transition-colors text-foreground/60"
             onClick={() => setMobileMenuOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </button>
+          {/* Logo centred on mobile */}
           <div className="md:hidden flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
             <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
             <span className="font-bold text-sm text-foreground">Intentsly</span>
@@ -304,16 +309,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <NotificationsPanel />
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-[hsl(220_20%_97%)]">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0" style={{ background: "hsl(195 14% 95%)" }}>
           {showLinkedInBanner && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-3.5 mx-4 md:mx-6 mt-4 rounded-xl border" style={{ background: "hsl(25 95% 96%)", borderColor: "hsl(25 80% 88%)" }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(25 95% 95%)", borderColor: "hsl(25 90% 85%)" }}>
               <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(var(--goji-coral))" }} />
-                <p className="text-sm font-medium" style={{ color: "hsl(25 50% 28%)" }}>
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(25 95% 53%)" }} />
+                <p className="text-sm font-medium" style={{ color: "hsl(25 60% 30%)" }}>
                   Connect your LinkedIn account to start discovering leads and running campaigns.
                 </p>
               </div>
-              <button onClick={() => navigate("/settings?tab=linkedin")} className="shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 active:scale-95" style={{ background: "hsl(var(--goji-coral))" }}>
+              <button onClick={() => navigate("/settings?tab=linkedin")} className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "hsl(var(--goji-coral))" }}>
                 Connect LinkedIn
               </button>
             </div>
@@ -323,7 +328,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* ── Mobile bottom navigation ──────────────────────────────────── */}
         <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 py-2 border-t border-border bg-card/95 backdrop-blur-md"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 py-2 border-t"
+          style={{
+            background: "rgba(240,244,245,0.92)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            borderColor: "hsl(195 14% 88%)",
+          }}
         >
           {mobileNavItems.map((item) => {
             const active = location.pathname === item.path;
@@ -332,10 +343,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all ${active ? "bg-foreground/5" : ""}`}
+                className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all"
+                style={active ? { background: "rgba(255,255,255,0.8)" } : undefined}
               >
-                <Icon className={`w-5 h-5 transition-colors ${active ? "text-foreground" : "text-muted-foreground"}`} />
-                <span className={`text-[10px] font-medium transition-colors ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                <Icon className={`w-5 h-5 transition-colors ${active ? "text-foreground" : "text-foreground/40"}`} />
+                <span className={`text-[10px] font-medium transition-colors ${active ? "text-foreground" : "text-foreground/40"}`}>
                   {item.label}
                 </span>
               </button>
