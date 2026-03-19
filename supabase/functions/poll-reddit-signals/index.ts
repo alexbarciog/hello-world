@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       return json({ message: 'No active keywords to poll', processed: 0 });
     }
 
-    console.log(`[poll-reddit] Processing ${keywords.length} keyword(s)`);
+    console.log(`[poll-reddit] Processing ${keywords.length} keyword(s) via RSS feeds`);
 
     let totalInserted = 0;
     const DEFAULT_SUBREDDITS = ['SaaS', 'startups', 'Entrepreneur', 'smallbusiness', 'marketing', 'sales'];
@@ -58,11 +58,21 @@ Deno.serve(async (req) => {
 
       for (const sub of subreddits) {
         try {
-          const inserted = await pollSubredditForKeyword(supabase, kw.user_id, kw.id, keyword, sub);
+          // Primary: RSS feed search
+          let inserted = await pollViaRSS(supabase, kw.user_id, kw.id, keyword, sub);
+
+          // Fallback: JSON API if RSS returns 0 (some subreddits block RSS search)
+          if (inserted === 0) {
+            inserted = await pollViaJSON(supabase, kw.user_id, kw.id, keyword, sub);
+          }
+
           totalInserted += inserted;
         } catch (err) {
           console.error(`[poll-reddit] Error polling r/${sub} for "${keyword}":`, err);
         }
+
+        // Small delay between requests to be polite
+        await new Promise(r => setTimeout(r, 500));
       }
     }
 
@@ -74,80 +84,160 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── Poll a single subreddit search for a keyword via Reddit JSON API ── */
+/* ── Poll via RSS feed (primary, lightweight, no API key needed) ────── */
 
-async function pollSubredditForKeyword(
+async function pollViaRSS(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   keywordId: string,
   keyword: string,
   subreddit: string
 ): Promise<number> {
-  // Use Reddit's JSON API (old.reddit.com is more lenient with server requests)
+  // Reddit RSS search: reddit.com/r/{sub}/search.rss?q={keyword}&restrict_sr=on&sort=new&t=week
+  const rssUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
+
+  console.log(`[poll-reddit] RSS: r/${subreddit} for "${keyword}"`);
+
+  const res = await fetch(rssUrl, {
+    headers: {
+      'User-Agent': 'Intentsly:v1.0.0 (intent-monitoring-bot)',
+      'Accept': 'application/rss+xml, application/xml, text/xml',
+    },
+  });
+
+  if (!res.ok) {
+    console.warn(`[poll-reddit] RSS returned ${res.status} for r/${subreddit} "${keyword}"`);
+    return 0;
+  }
+
+  const xml = await res.text();
+  if (!xml || xml.length < 100) return 0;
+
+  // Parse RSS/Atom feed entries
+  const entries = parseAtomFeed(xml);
+  if (entries.length === 0) {
+    console.log(`[poll-reddit] RSS: No entries in r/${subreddit} for "${keyword}"`);
+    return 0;
+  }
+
+  console.log(`[poll-reddit] RSS: Found ${entries.length} entries in r/${subreddit} for "${keyword}"`);
+
+  let inserted = 0;
+  for (const entry of entries) {
+    // Extract reddit post ID from the URL (e.g., /r/SaaS/comments/abc123/...)
+    const postIdMatch = entry.link.match(/\/comments\/([a-z0-9]+)/i);
+    const redditPostId = postIdMatch ? `t3_${postIdMatch[1]}` : `rss_${hashString(entry.link)}`;
+
+    const { error } = await supabase.from('reddit_mentions').upsert(
+      {
+        user_id: userId,
+        keyword_id: keywordId,
+        keyword_matched: keyword,
+        subreddit: entry.subreddit || subreddit,
+        author: entry.author || '[unknown]',
+        title: entry.title || 'No title',
+        body: (entry.body || '').slice(0, 1000) || null,
+        url: entry.link,
+        reddit_post_id: redditPostId,
+        score: 0,
+        posted_at: entry.published || null,
+      },
+      { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
+    );
+
+    if (!error) inserted++;
+  }
+
+  return inserted;
+}
+
+/* ── Parse Atom/RSS XML without external deps ──────────────────────── */
+
+interface FeedEntry {
+  title: string;
+  link: string;
+  author: string;
+  body: string;
+  published: string | null;
+  subreddit: string;
+}
+
+function parseAtomFeed(xml: string): FeedEntry[] {
+  const entries: FeedEntry[] = [];
+
+  // Reddit returns Atom format. Match <entry>...</entry> blocks
+  const entryBlocks = xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || [];
+
+  for (const block of entryBlocks) {
+    const title = extractTag(block, 'title') || '';
+    const link = extractAttr(block, 'link', 'href') || extractTag(block, 'link') || '';
+    const author = extractTag(block, 'name') || '[unknown]';
+    const published = extractTag(block, 'published') || extractTag(block, 'updated') || null;
+    const content = extractTag(block, 'content') || '';
+
+    // Strip HTML tags from content to get plain text body
+    const body = content.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+
+    // Extract subreddit from link
+    const subMatch = link.match(/\/r\/([^/]+)/);
+    const subreddit = subMatch ? subMatch[1] : '';
+
+    if (link) {
+      entries.push({ title, link, author, body, published, subreddit });
+    }
+  }
+
+  return entries;
+}
+
+function extractTag(xml: string, tag: string): string {
+  const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  return match ? match[1].trim() : '';
+}
+
+function extractAttr(xml: string, tag: string, attr: string): string {
+  const match = xml.match(new RegExp(`<${tag}[^>]*${attr}="([^"]*)"`, 'i'));
+  return match ? match[1] : '';
+}
+
+function hashString(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const chr = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+/* ── Fallback: JSON API (if RSS fails or returns empty) ────────────── */
+
+async function pollViaJSON(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  keywordId: string,
+  keyword: string,
+  subreddit: string
+): Promise<number> {
   const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
 
   const res = await fetch(searchUrl, {
     headers: {
-      'User-Agent': 'Intentsly:v1.0.0 (by /u/intentsly_bot)',
+      'User-Agent': 'Intentsly:v1.0.0 (intent-monitoring-bot)',
       'Accept': 'application/json',
     },
   });
 
   if (!res.ok) {
-    // Try fallback: global Reddit search
-    const fallbackUrl = `https://old.reddit.com/search.json?q=${encodeURIComponent(keyword + ' subreddit:' + subreddit)}&sort=new&t=week&limit=25`;
-    const fallbackRes = await fetch(fallbackUrl, {
-      headers: {
-        'User-Agent': 'Intentsly:v1.0.0 (by /u/intentsly_bot)',
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!fallbackRes.ok) {
-      const text = await fallbackRes.text();
-      console.warn(`[poll-reddit] Reddit returned ${fallbackRes.status} for r/${subreddit} "${keyword}": ${text.slice(0, 200)}`);
-      return 0;
-    }
-
-    return await processJsonResponse(supabase, await fallbackRes.json(), userId, keywordId, keyword, subreddit);
-  }
-
-  return await processJsonResponse(supabase, await res.json(), userId, keywordId, keyword, subreddit);
-}
-
-/* ── Process Reddit JSON API response ── */
-
-interface RedditPost {
-  kind: string;
-  data: {
-    id: string;
-    title: string;
-    selftext: string;
-    author: string;
-    permalink: string;
-    subreddit: string;
-    created_utc: number;
-    score: number;
-    url: string;
-  };
-}
-
-async function processJsonResponse(
-  supabase: ReturnType<typeof createClient>,
-  data: { data?: { children?: RedditPost[] } },
-  userId: string,
-  keywordId: string,
-  keyword: string,
-  subreddit: string
-): Promise<number> {
-  const posts = data?.data?.children ?? [];
-
-  if (posts.length === 0) {
-    console.log(`[poll-reddit] No results in r/${subreddit} for "${keyword}"`);
+    console.warn(`[poll-reddit] JSON fallback returned ${res.status} for r/${subreddit} "${keyword}"`);
     return 0;
   }
 
-  console.log(`[poll-reddit] Found ${posts.length} posts in r/${subreddit} for "${keyword}"`);
+  const data = await res.json();
+  const posts = data?.data?.children ?? [];
+  if (posts.length === 0) return 0;
+
+  console.log(`[poll-reddit] JSON fallback: ${posts.length} posts in r/${subreddit} for "${keyword}"`);
 
   let inserted = 0;
   for (const post of posts) {
