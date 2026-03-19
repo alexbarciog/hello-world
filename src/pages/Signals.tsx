@@ -349,9 +349,22 @@ export default function Signals() {
                       <button onClick={() => toggleAgentStatus(agent)} className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors">
                         <Pencil className="w-3.5 h-3.5" />Edit
                       </button>
-                      <button onClick={() => deleteAgent(agent.id)} className="text-gray-400 hover:text-gray-600 p-1">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" side="top" className="w-44">
+                          <DropdownMenuItem onClick={() => toggleAgentStatus(agent)} className="gap-2 text-sm">
+                            {agent.status === "active" ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => deleteAgent(agent.id)} className="gap-2 text-sm text-destructive focus:text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" />Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </td>
                 </tr>
