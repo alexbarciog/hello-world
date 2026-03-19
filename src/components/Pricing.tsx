@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { Check } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 
 const features = [
@@ -9,7 +12,47 @@ const features = [
   "AI-powered smart lead scoring",
 ];
 
+// TODO: Replace with your actual Stripe Price ID for the $99/mo Plus plan
+const PLUS_PRICE_ID = "price_REPLACE_WITH_YOUR_STRIPE_PRICE_ID";
+
 const Pricing = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Not logged in — redirect to register
+        window.location.href = "/register";
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: {
+          priceId: PLUS_PRICE_ID,
+          returnUrl: window.location.origin,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      toast({
+        title: "Checkout failed",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section id="pricing" className="py-20 md:py-32 px-6 md:px-10 bg-background">
       <div className="max-w-5xl mx-auto">
@@ -31,12 +74,13 @@ const Pricing = () => {
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                <a
-                  href="/register"
-                  className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
+                <button
+                  onClick={handleCheckout}
+                  disabled={loading}
+                  className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
                 >
-                  Get started
-                </a>
+                  {loading ? "Redirecting..." : "Get started"}
+                </button>
               </div>
             </div>
             {/* Features */}
