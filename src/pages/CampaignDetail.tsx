@@ -424,9 +424,6 @@ export default function CampaignDetail() {
                     <h2 className="text-base font-bold text-foreground">Campaign Workflow</h2>
                     <p className="text-xs text-muted-foreground mt-0.5">Design and manage your campaign automation steps</p>
                   </div>
-                  <button className="flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-                    Edit <Pencil className="w-3.5 h-3.5" />
-                  </button>
                 </div>
 
                 {/* Sender */}
