@@ -347,9 +347,6 @@ export default function Signals() {
                       <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors">
                         <Calendar className="w-3.5 h-3.5" />Next launches
                       </button>
-                      <button onClick={() => toggleAgentStatus(agent)} className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors">
-                        <Pencil className="w-3.5 h-3.5" />Edit
-                      </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="text-gray-400 hover:text-gray-600 p-1">
@@ -357,6 +354,9 @@ export default function Signals() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" side="top" className="w-44">
+                          <DropdownMenuItem onClick={() => { setEditAgentId(agent.id); setShowCreate(true); }} className="gap-2 text-sm">
+                            <Pencil className="w-3.5 h-3.5" />Edit agent
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleAgentStatus(agent)} className="gap-2 text-sm">
                             {agent.status === "active" ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
                           </DropdownMenuItem>
