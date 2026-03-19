@@ -13,7 +13,7 @@ import {
   Mail,
   Settings,
   HelpCircle,
-  Gift,
+  LifeBuoy,
   ChevronLeft,
   ChevronRight,
   LogOut,
