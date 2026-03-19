@@ -1642,12 +1642,13 @@ export default function HelpCenter() {
                 <button
                   key={cat.id}
                   onClick={() => openCategory(cat.id)}
-                  className="flex flex-col items-start text-left p-8 rounded-xl transition-all duration-500 group cursor-pointer hover:bg-white/60 shadow-card hover:shadow-lg"
+                  className="flex flex-col items-start text-left p-8 rounded-2xl transition-all duration-300 group cursor-pointer hover:-translate-y-1"
                   style={{
-                    background: "rgba(255,255,255,0.4)",
+                    background: "rgba(255,255,255,0.65)",
                     backdropFilter: "blur(20px)",
                     WebkitBackdropFilter: "blur(20px)",
-                    border: "1px solid rgba(255,255,255,0.3)",
+                    border: "1px solid rgba(255,255,255,0.5)",
+                    boxShadow: "0 4px 24px -4px rgba(0,0,0,0.08), 0 12px 40px -8px rgba(0,0,0,0.06)",
                   }}
                 >
                   <div className={`w-12 h-12 rounded-xl ${iconConfig.gradient} flex items-center justify-center mb-6 shadow-lg ${iconConfig.shadow}`}>
