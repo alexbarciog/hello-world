@@ -789,6 +789,13 @@ async function insertContact(
 
   const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
+  const hl = profile.headline || profile.title || '';
+
+  // Determine relevance tier
+  const tier = classifyContact(match, { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] }, hl);
+  // Re-classify with actual ICP for proper tier
+  const icp: ICPFilters = match as any;
+  const relevanceTier = classifyContact(match, { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] }, hl) || 'cold';
 
   const signalAHit = true;
   const signalBHit = match.score >= 60;
@@ -813,6 +820,7 @@ async function insertContact(
     email_enriched: false,
     list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
+    relevance_tier: relevanceTier,
   });
 
   if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
