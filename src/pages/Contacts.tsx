@@ -93,8 +93,15 @@ export default function Contacts() {
     setLoading(false);
   }
 
+  const tierCounts = useMemo(() => {
+    const counts = { hot: 0, warm: 0, cold: 0 };
+    contacts.forEach((c) => { if (c.relevance_tier in counts) counts[c.relevance_tier]++; });
+    return counts;
+  }, [contacts]);
+
   const filtered = useMemo(() => {
     let result = contacts;
+    if (tab !== "all") result = result.filter((c) => c.relevance_tier === tab);
     if (listFilter !== "all") result = result.filter((c) => c.list_name === listFilter);
     if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
@@ -105,7 +112,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter]);
+  }, [contacts, searchQuery, listFilter, tab]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
