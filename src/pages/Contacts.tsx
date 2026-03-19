@@ -166,16 +166,26 @@ export default function Contacts() {
 
         {/* Tabs */}
         <div className="flex items-center gap-5 mt-3">
-          {(["all", "lists"] as const).map((t) => (
+          {([
+            { key: "all", label: "All contacts", count: contacts.length },
+            { key: "hot", label: "🔥 Hot", count: tierCounts.hot },
+            { key: "warm", label: "☀️ Warm", count: tierCounts.warm },
+            { key: "cold", label: "❄️ Cold", count: tierCounts.cold },
+          ] as const).map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`pb-2 text-sm font-semibold transition-colors relative capitalize ${
-                tab === t ? "text-blue-500" : "text-muted-foreground hover:text-foreground"
+              key={t.key}
+              onClick={() => { setTab(t.key as any); setPage(1); }}
+              className={`pb-2 text-sm font-semibold transition-colors relative flex items-center gap-1.5 ${
+                tab === t.key ? "text-blue-500" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "all" ? "All contacts" : "Lists"}
-              {tab === t && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />}
+              {t.label}
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                tab === t.key ? "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400" : "bg-muted text-muted-foreground"
+              }`}>
+                {t.count}
+              </span>
+              {tab === t.key && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-500 rounded-full" />}
             </button>
           ))}
         </div>
