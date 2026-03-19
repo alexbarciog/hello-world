@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,20 @@ const PLUS_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [hadSubscription, setHadSubscription] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkSub = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setHadSubscription(false); return; }
+        const { data, error } = await supabase.functions.invoke("check-subscription");
+        if (error) { setHadSubscription(false); return; }
+        setHadSubscription(data?.had_subscription ?? false);
+      } catch { setHadSubscription(false); }
+    };
+    checkSub();
+  }, []);
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -79,7 +93,7 @@ const Pricing = () => {
                   disabled={loading}
                   className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
                 >
-                  {loading ? "Redirecting..." : "Get started"}
+                  {loading ? "Redirecting..." : hadSubscription === false ? "Start 7 Days Free Trial" : "Get started"}
                 </button>
               </div>
             </div>
