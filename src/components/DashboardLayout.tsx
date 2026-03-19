@@ -101,26 +101,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[64px]" : "w-[200px]"}`}
-        style={{ background: "hsl(195 14% 95%)" }}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-border/60 ${collapsed ? "w-[64px]" : "w-[210px]"}`}
+        style={{ background: "hsl(0 0% 100%)" }}
       >
         {/* Logo row */}
-        <div className="flex items-center justify-between px-3 py-4">
+        <div className="flex items-center justify-between px-4 h-14 border-b border-border/60 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
-            {!collapsed && <span className="font-bold text-base tracking-tight text-foreground truncate">Intentsly</span>}
+            <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain shrink-0" />
+            {!collapsed && <span className="font-bold text-sm tracking-tight text-foreground truncate">Intentsly</span>}
           </div>
           {!collapsed && (
-            <button onClick={() => setCollapsed(true)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground shrink-0">
+            <button onClick={() => setCollapsed(true)} className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0">
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
           {collapsed && (
-            <button onClick={() => setCollapsed(false)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground mx-auto">
+            <button onClick={() => setCollapsed(false)} className="p-1 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground mx-auto">
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
         </div>
+
+        {/* Nav label */}
+        {!collapsed && (
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-4 pt-4 pb-1.5">Main Menu</p>
+        )}
 
         {/* Nav items */}
         <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
@@ -132,13 +137,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
-                  active ? "bg-white text-foreground shadow-sm" : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
+                className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-all group ${
+                  active
+                    ? "bg-foreground text-white shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
-                  <Icon className="w-4 h-4" />
-                </span>
+                <Icon className="w-4 h-4 shrink-0" />
                 {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
               </button>
             );
@@ -148,29 +153,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Bottom section */}
         <div className="px-2 pb-3 space-y-1">
           {!collapsed && (
-            <div
-              className="rounded-xl p-3 mb-2 overflow-hidden relative"
-              style={{ backgroundImage: `url(${premiumBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
-            >
+            <div className="rounded-xl p-3.5 mb-2 overflow-hidden relative border border-border/60" style={{ background: "hsl(25 95% 97%)" }}>
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <p className="text-xs font-bold text-foreground">Go Premium</p>
-                  <p className="text-[10px] text-foreground/60">Unlock all features</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Unlock all features</p>
                 </div>
-                <button onClick={() => navigate("/billing")} className="bg-foreground/10 hover:bg-foreground/15 rounded-full p-1 transition-colors">
-                  <ChevronRight className="w-3 h-3 text-foreground" />
-                </button>
+                <span className="text-base">✦</span>
               </div>
-              <button onClick={() => navigate("/billing")} className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-foreground/70 border border-foreground/15 rounded-md py-1 mb-1.5 hover:bg-foreground/5 transition-colors">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                7 Days Trial
+              <button
+                onClick={() => navigate("/billing")}
+                className="w-full flex items-center justify-center gap-1.5 text-[11px] font-semibold text-foreground/60 border border-border rounded-lg py-1.5 mb-2 hover:bg-white transition-colors"
+              >
+                7 Days Free Trial
               </button>
-              <button onClick={() => navigate("/billing")} className="w-full text-[11px] font-bold text-primary-foreground bg-foreground hover:bg-foreground/90 rounded-md py-1.5 transition-colors">
+              <button
+                onClick={() => navigate("/billing")}
+                className="w-full text-[11px] font-bold text-white rounded-lg py-2 transition-all hover:opacity-90 active:scale-95"
+                style={{ background: "hsl(var(--goji-coral))" }}
+              >
                 Start Trial ✦
               </button>
             </div>
