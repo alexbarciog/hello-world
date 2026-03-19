@@ -1522,29 +1522,25 @@ export default function HelpCenter() {
   }
 
   return (
-    <div className="min-h-full bg-card rounded-2xl m-4 font-sans overflow-hidden">
-      {/* ── Hero header ── */}
-      <div
-        className="relative pb-16"
+    <div className="min-h-screen font-body text-foreground" style={{ background: "hsl(var(--md-surface))" }}>
+      {/* ── Hero Section ── */}
+      <section
+        className="relative pt-16 pb-20"
         style={{
-          background:
-            "radial-gradient(ellipse 120% 80% at 50% -10%, hsl(5 85% 70%) 0%, hsl(15 90% 80%) 30%, hsl(20 80% 90%) 55%, hsl(0 0% 100%) 80%)",
+          background: "radial-gradient(circle at top left, hsl(var(--md-primary) / 0.05), transparent), radial-gradient(circle at bottom right, hsl(var(--md-secondary) / 0.05), transparent)",
         }}
       >
         {/* Top nav */}
         <div className="flex items-center justify-between px-8 py-5 max-w-6xl mx-auto">
-          <button onClick={() => navigate("/home")} className="flex items-center gap-2">
+          <button onClick={() => navigate("/")} className="flex items-center gap-2">
             <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
-            <span className="font-bold text-lg tracking-tight" style={{ color: "hsl(var(--goji-dark))" }}>
-              intentsly
-            </span>
+            <span className="text-xl font-light tracking-tighter text-md-on-surface">Intentsly</span>
           </button>
           <button
-            onClick={() => navigate("/home")}
-            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full transition-all hover:opacity-80"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full transition-all hover:opacity-80 text-md-on-surface"
             style={{
-              color: "hsl(var(--goji-dark))",
-              background: "hsl(0 0% 100% / 0.7)",
+              background: "rgba(255,255,255,0.7)",
               boxShadow: "0 1px 6px hsl(0 0% 0% / 0.08)",
             }}
           >
@@ -1554,40 +1550,62 @@ export default function HelpCenter() {
         </div>
 
         {/* Title + Search */}
-        <div className="flex flex-col items-center text-center pt-8 pb-4 px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-8 max-w-xl leading-tight" style={{ color: "hsl(var(--goji-dark))" }}>
-            Advice and answers from the Intentsly Team
+        <div className="max-w-4xl mx-auto px-6 text-center mt-8 mb-4">
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-md-on-surface mb-8">
+            Advice and answers
           </h1>
-          <div className="relative w-full max-w-lg">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "hsl(var(--goji-text-muted))" }} />
-            <input
-              type="text"
-              placeholder="Search for articles..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 rounded-full text-sm outline-none focus:ring-2 focus:ring-[hsl(var(--goji-coral))] border-0"
+
+          {/* Glass Search Bar */}
+          <div className="relative max-w-2xl mx-auto">
+            <div
+              className="rounded-full flex items-center px-6 py-4 transition-all focus-within:ring-2 focus-within:ring-md-primary/20"
               style={{
-                background: "hsl(0 0% 100% / 0.9)",
-                color: "hsl(var(--goji-dark))",
-                boxShadow: "0 2px 12px hsl(0 0% 0% / 0.08)",
+                background: "rgba(255,255,255,0.4)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                boxShadow: "0 8px 32px 0 rgba(0,0,0,0.05)",
               }}
-            />
+            >
+              <Search className="w-5 h-5 text-md-outline mr-4 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search for articles, guides, or keywords..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 focus:outline-none w-full text-lg font-light placeholder:text-md-outline-variant text-md-on-surface"
+              />
+              <button
+                className="px-6 py-2 rounded-full font-medium text-sm text-white hover:opacity-90 active:scale-[0.98] transition-all shrink-0"
+                style={{ background: "linear-gradient(135deg, hsl(var(--md-primary)) 0%, hsl(var(--md-secondary)) 100%)" }}
+              >
+                Search
+              </button>
+            </div>
+
+            {/* Popular suggestions */}
+            <div className="mt-4 flex justify-center gap-3 flex-wrap">
+              <span className="text-xs font-light text-md-on-surface-variant">Popular:</span>
+              <button onClick={() => { openCategory("connecting-linkedin"); }} className="text-xs font-medium text-md-primary hover:underline">Connecting LinkedIn</button>
+              <button onClick={() => setSearch("CSV")} className="text-xs font-medium text-md-primary hover:underline">Importing CSV</button>
+              <button onClick={() => { openCategory("campaigns-outreach"); }} className="text-xs font-medium text-md-primary hover:underline">Campaign Metrics</button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Main content ── */}
-      <div className="max-w-4xl mx-auto px-6 py-10">
+      <section className="max-w-7xl mx-auto px-6 md:px-10 pb-24 -mt-4">
 
         {/* Search results */}
         {search.length >= 2 && (
-          <div>
-            <p className="text-xs mb-4" style={{ color: "hsl(var(--goji-text-muted))" }}>
+          <div className="max-w-4xl mx-auto">
+            <p className="text-xs mb-4 text-md-on-surface-variant">
               {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "{search}"
             </p>
             {searchResults.length === 0 ? (
               <div className="text-center py-16">
-                <p className="text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>No articles found.</p>
+                <p className="text-sm text-md-on-surface-variant">No articles found.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1595,13 +1613,18 @@ export default function HelpCenter() {
                   <button
                     key={a.id}
                     onClick={() => openArticle(a.categoryId, a.id)}
-                    className="w-full text-left flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all duration-200 group"
+                    className="w-full text-left flex items-center justify-between p-4 rounded-xl transition-all duration-200 group hover:bg-white/60"
+                    style={{
+                      background: "rgba(255,255,255,0.4)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                    }}
                   >
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "hsl(var(--goji-dark))" }}>{a.title}</p>
-                      <p className="text-xs mt-0.5" style={{ color: "hsl(var(--goji-text-muted))" }}>{a.categoryTitle}</p>
+                      <p className="text-sm font-semibold text-md-on-surface">{a.title}</p>
+                      <p className="text-xs mt-0.5 text-md-on-surface-variant">{a.categoryTitle}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: "hsl(var(--goji-coral))" }} />
+                    <ChevronRight className="w-4 h-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity text-md-primary" />
                   </button>
                 ))}
               </div>
@@ -1609,30 +1632,39 @@ export default function HelpCenter() {
           </div>
         )}
 
-        {/* HOME: category grid */}
+        {/* HOME: category bento grid */}
         {!search && view === "home" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCategories.map((cat) => {
-              const Icon = cat.icon === "wrench" ? WrenchIcon : FolderIcon;
+              const iconConfig = categoryIcons[cat.id] || categoryIcons["getting-started"];
+              const IconComponent = iconConfig.icon;
               return (
                 <button
                   key={cat.id}
                   onClick={() => openCategory(cat.id)}
-                  className="flex flex-col items-center text-center p-8 rounded-xl border border-border bg-card hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 group"
-                  style={{ boxShadow: "var(--shadow-card)" }}
+                  className="flex flex-col items-start text-left p-8 rounded-xl transition-all duration-500 group cursor-pointer hover:bg-white/60"
+                  style={{
+                    background: "rgba(255,255,255,0.4)",
+                    backdropFilter: "blur(20px)",
+                    WebkitBackdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                  }}
                 >
-                  <div className="mb-5">
-                    <Icon className="w-12 h-12" />
+                  <div className={`w-12 h-12 rounded-xl ${iconConfig.gradient} flex items-center justify-center mb-6 shadow-lg ${iconConfig.shadow}`}>
+                    <IconComponent className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="font-bold text-sm mb-2" style={{ color: "hsl(var(--goji-dark))" }}>
-                    {cat.title}
-                  </h3>
-                  <p className="text-xs leading-relaxed mb-5" style={{ color: "hsl(var(--goji-text-muted))" }}>
+                  <div className="flex justify-between items-center w-full mb-2">
+                    <h3 className="text-xl font-normal text-md-on-surface">{cat.title}</h3>
+                    <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-full bg-md-surface-container text-md-on-surface-variant">
+                      {cat.articles.length} Articles
+                    </span>
+                  </div>
+                  <p className="text-md-on-surface-variant font-light text-sm leading-relaxed mb-6">
                     {cat.description}
                   </p>
-                  <p className="text-xs mt-auto pt-3 border-t border-border w-full" style={{ color: "hsl(var(--goji-text-muted))" }}>
-                    {cat.articles.length} articles
-                  </p>
+                  <div className="mt-auto flex items-center text-md-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                    Explore Collection <ChevronRight className="w-4 h-4 ml-1" />
+                  </div>
                 </button>
               );
             })}
@@ -1641,16 +1673,24 @@ export default function HelpCenter() {
 
         {/* CATEGORY: article list */}
         {!search && view === "category" && activeCategory && (
-          <div>
-            <button onClick={goBack} className="flex items-center gap-1.5 text-sm mb-6 hover:opacity-70 transition-opacity" style={{ color: "hsl(var(--goji-coral))" }}>
+          <div className="max-w-4xl mx-auto">
+            <button onClick={goBack} className="flex items-center gap-1.5 text-sm mb-6 hover:opacity-70 transition-opacity text-md-primary">
               <ArrowLeft className="w-4 h-4" />
               All categories
             </button>
             <div className="flex items-center gap-3 mb-8">
-              {activeCategory.icon === "wrench" ? <WrenchIcon className="w-10 h-10" /> : <FolderIcon className="w-10 h-10" />}
+              {(() => {
+                const iconConfig = categoryIcons[activeCategory.id] || categoryIcons["getting-started"];
+                const IconComponent = iconConfig.icon;
+                return (
+                  <div className={`w-10 h-10 rounded-xl ${iconConfig.gradient} flex items-center justify-center shadow-lg ${iconConfig.shadow}`}>
+                    <IconComponent className="w-5 h-5 text-white" />
+                  </div>
+                );
+              })()}
               <div>
-                <h2 className="text-xl font-bold" style={{ color: "hsl(var(--goji-dark))" }}>{activeCategory.title}</h2>
-                <p className="text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>{activeCategory.description}</p>
+                <h2 className="text-xl font-bold text-md-on-surface">{activeCategory.title}</h2>
+                <p className="text-sm text-md-on-surface-variant">{activeCategory.description}</p>
               </div>
             </div>
             <div className="space-y-2">
@@ -1658,10 +1698,15 @@ export default function HelpCenter() {
                 <button
                   key={article.id}
                   onClick={() => openArticle(activeCategory.id, article.id)}
-                  className="w-full text-left flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all duration-200 group"
+                  className="w-full text-left flex items-center justify-between p-4 rounded-xl transition-all duration-200 group hover:bg-white/60"
+                  style={{
+                    background: "rgba(255,255,255,0.4)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(255,255,255,0.3)",
+                  }}
                 >
-                  <span className="text-sm font-medium" style={{ color: "hsl(var(--goji-dark))" }}>{article.title}</span>
-                  <ChevronRight className="w-4 h-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: "hsl(var(--goji-coral))" }} />
+                  <span className="text-sm font-medium text-md-on-surface">{article.title}</span>
+                  <ChevronRight className="w-4 h-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity text-md-primary" />
                 </button>
               ))}
             </div>
@@ -1670,9 +1715,9 @@ export default function HelpCenter() {
 
         {/* ARTICLE: full content */}
         {!search && view === "article" && activeCategory && activeArticle && (
-          <div className="max-w-2xl">
+          <div className="max-w-2xl mx-auto">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-1.5 text-xs mb-6" style={{ color: "hsl(var(--goji-text-muted))" }}>
+            <div className="flex items-center gap-1.5 text-xs mb-6 text-md-on-surface-variant">
               <button onClick={() => { setView("home"); setActiveCategoryId(null); }} className="hover:opacity-70">
                 Help Center
               </button>
@@ -1681,23 +1726,32 @@ export default function HelpCenter() {
                 {activeCategory.title}
               </button>
               <ChevronRight className="w-3 h-3" />
-              <span style={{ color: "hsl(var(--goji-dark))" }}>{activeArticle.title}</span>
+              <span className="text-md-on-surface">{activeArticle.title}</span>
             </div>
 
-            <button onClick={goBack} className="flex items-center gap-1.5 text-sm mb-6 hover:opacity-70 transition-opacity" style={{ color: "hsl(var(--goji-coral))" }}>
+            <button onClick={goBack} className="flex items-center gap-1.5 text-sm mb-6 hover:opacity-70 transition-opacity text-md-primary">
               <ArrowLeft className="w-4 h-4" />
               Back to {activeCategory.title}
             </button>
 
-            <h1 className="text-2xl font-bold mb-6" style={{ color: "hsl(var(--goji-dark))" }}>
+            <h1 className="text-2xl font-bold mb-6 text-md-on-surface">
               {activeArticle.title}
             </h1>
 
-            <div>{renderMarkdown(activeArticle.content)}</div>
+            <div
+              className="p-8 rounded-xl"
+              style={{
+                background: "rgba(255,255,255,0.4)",
+                backdropFilter: "blur(20px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              {renderMarkdown(activeArticle.content)}
+            </div>
 
             {/* Related articles */}
-            <div className="mt-10 pt-6 border-t border-border">
-              <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: "hsl(var(--goji-text-muted))" }}>
+            <div className="mt-10 pt-6 border-t border-md-outline-variant/30">
+              <p className="text-xs font-semibold uppercase tracking-wide mb-3 text-md-on-surface-variant">
                 More in {activeCategory.title}
               </p>
               <div className="space-y-1.5">
@@ -1708,10 +1762,10 @@ export default function HelpCenter() {
                     <button
                       key={a.id}
                       onClick={() => { setActiveArticleId(a.id); }}
-                      className="w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-card transition-colors group"
+                      className="w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/40 transition-colors group"
                     >
-                      <span className="text-sm" style={{ color: "hsl(var(--goji-dark))" }}>{a.title}</span>
-                      <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-30 group-hover:opacity-80" style={{ color: "hsl(var(--goji-coral))" }} />
+                      <span className="text-sm text-md-on-surface">{a.title}</span>
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-30 group-hover:opacity-80 text-md-primary" />
                     </button>
                   ))}
               </div>
@@ -1720,11 +1774,10 @@ export default function HelpCenter() {
             {/* External link */}
             <div className="mt-6">
               <a
-                href={`https://help.intentsly.ai/en/`}
+                href="https://help.intentsly.ai/en/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs hover:opacity-70 transition-opacity"
-                style={{ color: "hsl(var(--goji-text-muted))" }}
+                className="inline-flex items-center gap-1.5 text-xs hover:opacity-70 transition-opacity text-md-on-surface-variant"
               >
                 <ExternalLink className="w-3 h-3" />
                 View original on help.intentsly.ai
@@ -1732,7 +1785,21 @@ export default function HelpCenter() {
             </div>
           </div>
         )}
-      </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="w-full py-12 border-t border-md-outline-variant/20" style={{ background: "hsl(var(--md-surface-container) / 0.5)", backdropFilter: "blur(12px)" }}>
+        <div className="flex flex-col md:flex-row justify-between items-center px-10 w-full max-w-screen-2xl mx-auto">
+          <p className="font-body text-xs font-light uppercase tracking-widest text-md-on-surface-variant mb-6 md:mb-0">
+            © 2025 Intentsly. Help Center.
+          </p>
+          <div className="flex gap-8">
+            <button onClick={() => navigate("/privacy")} className="font-body text-xs font-light uppercase tracking-widest text-md-on-surface-variant hover:text-md-primary transition-all">Privacy Policy</button>
+            <button onClick={() => navigate("/terms")} className="font-body text-xs font-light uppercase tracking-widest text-md-on-surface-variant hover:text-md-primary transition-all">Terms of Service</button>
+            <a href="mailto:support@intentsly.com" className="font-body text-xs font-light uppercase tracking-widest text-md-primary font-medium hover:opacity-80 transition-all">Contact Expert</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
