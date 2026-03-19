@@ -108,7 +108,30 @@ export default function RedditSignals() {
       setNewKeyword("");
       setNewSubreddits("");
       queryClient.invalidateQueries({ queryKey: ["reddit-keywords"] });
-      toast.success("Keyword added! Click 'Scan Now' to find matches.");
+      toast.success("Keyword added!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // ── Inline add keyword (from agent panel) ──
+  const addInlineKeyword = useMutation({
+    mutationFn: async () => {
+      const kw = inlineKeyword.trim();
+      if (!kw) throw new Error("Keyword is required");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("reddit_keywords").insert({
+        user_id: user.id,
+        keyword: kw,
+        subreddits: [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setInlineKeyword("");
+      setInlineAdding(false);
+      queryClient.invalidateQueries({ queryKey: ["reddit-keywords"] });
+      toast.success("Keyword added!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
