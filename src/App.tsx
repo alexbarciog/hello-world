@@ -15,6 +15,7 @@ import Settings from "./pages/Settings.tsx";
 import HelpCenter from "./pages/HelpCenter.tsx";
 import Signals from "./pages/Signals.tsx";
 import Contacts from "./pages/Contacts.tsx";
+import Unibox from "./pages/Unibox.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
@@ -57,6 +58,10 @@ const App = () => (
           <Route
             path="/contacts"
             element={<AuthGuard><DashboardLayout><Contacts /></DashboardLayout></AuthGuard>}
+          />
+          <Route
+            path="/unibox"
+            element={<AuthGuard><DashboardLayout><Unibox /></DashboardLayout></AuthGuard>}
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
