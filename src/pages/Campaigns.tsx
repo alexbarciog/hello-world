@@ -3,24 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import gojiIcon from "@/assets/gojiberry-icon.png";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus } from "lucide-react";
+import { CreateCampaignWizard } from "@/components/campaigns/CreateCampaignWizard";
 
 const MAX_CAMPAIGNS = 2;
 
@@ -150,6 +142,8 @@ export default function CampaignsPage() {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showWizard, setShowWizard] = useState(false);
+  const [editCampaignId, setEditCampaignId] = useState<string | null>(null);
 
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
@@ -178,13 +172,34 @@ export default function CampaignsPage() {
     load();
   }, []);
 
+  const load = async () => {
+    const { data } = await supabase
+      .from("campaigns")
+      .select("id, company_name, status, created_at, campaign_goal")
+      .order("created_at", { ascending: false });
+    const rows = (data ?? []) as Campaign[];
+    const withCounts: CampaignWithLeads[] = await Promise.all(
+      rows.map(async (c) => {
+        const { count } = await supabase.from("leads").select("id", { count: "exact", head: true }).eq("campaign_id", c.id);
+        return { ...c, leadsCount: count ?? 0 };
+      })
+    );
+    setCampaigns(withCounts);
+    setLoading(false);
+  };
+
   const handleNewCampaign = () => {
     if (atLimit) {
-      toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
+      toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`);
       return;
     }
-    clearOnboardingSession();
-    navigate("/");
+    setEditCampaignId(null);
+    setShowWizard(true);
+  };
+
+  const handleEditCampaign = (id: string) => {
+    setEditCampaignId(id);
+    setShowWizard(true);
   };
 
   const handleDeleteCampaign = async (id: string) => {

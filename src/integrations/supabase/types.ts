@@ -34,12 +34,19 @@ export type Database = {
           id: string
           industry: string | null
           influencer_profiles: string[] | null
+          invitations_accepted: number | null
+          invitations_sent: number | null
           language: string | null
           linkedin_connection_type: string | null
           message_tone: string | null
+          messages_replied: number | null
+          messages_sent: number | null
           pain_points: string[] | null
           precision_mode: string | null
           session_id: string | null
+          source_agent_id: string | null
+          source_list_id: string | null
+          source_type: string | null
           status: string
           step_1_data: Json | null
           step_2_data: Json | null
@@ -52,7 +59,9 @@ export type Database = {
           trigger_top_active: boolean | null
           updated_at: string
           user_id: string | null
+          value_proposition: string | null
           website: string | null
+          workflow_steps: Json | null
         }
         Insert: {
           campaign_goal?: string | null
@@ -73,12 +82,19 @@ export type Database = {
           id?: string
           industry?: string | null
           influencer_profiles?: string[] | null
+          invitations_accepted?: number | null
+          invitations_sent?: number | null
           language?: string | null
           linkedin_connection_type?: string | null
           message_tone?: string | null
+          messages_replied?: number | null
+          messages_sent?: number | null
           pain_points?: string[] | null
           precision_mode?: string | null
           session_id?: string | null
+          source_agent_id?: string | null
+          source_list_id?: string | null
+          source_type?: string | null
           status?: string
           step_1_data?: Json | null
           step_2_data?: Json | null
@@ -91,7 +107,9 @@ export type Database = {
           trigger_top_active?: boolean | null
           updated_at?: string
           user_id?: string | null
+          value_proposition?: string | null
           website?: string | null
+          workflow_steps?: Json | null
         }
         Update: {
           campaign_goal?: string | null
@@ -112,12 +130,19 @@ export type Database = {
           id?: string
           industry?: string | null
           influencer_profiles?: string[] | null
+          invitations_accepted?: number | null
+          invitations_sent?: number | null
           language?: string | null
           linkedin_connection_type?: string | null
           message_tone?: string | null
+          messages_replied?: number | null
+          messages_sent?: number | null
           pain_points?: string[] | null
           precision_mode?: string | null
           session_id?: string | null
+          source_agent_id?: string | null
+          source_list_id?: string | null
+          source_type?: string | null
           status?: string
           step_1_data?: Json | null
           step_2_data?: Json | null
@@ -130,9 +155,26 @@ export type Database = {
           trigger_top_active?: boolean | null
           updated_at?: string
           user_id?: string | null
+          value_proposition?: string | null
           website?: string | null
+          workflow_steps?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_source_agent_id_fkey"
+            columns: ["source_agent_id"]
+            isOneToOne: false
+            referencedRelation: "signal_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_source_list_id_fkey"
+            columns: ["source_list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_lists: {
         Row: {
