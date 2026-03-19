@@ -59,6 +59,10 @@ const App = () => (
             path="/contacts"
             element={<AuthGuard><DashboardLayout><Contacts /></DashboardLayout></AuthGuard>}
           />
+          <Route
+            path="/unibox"
+            element={<AuthGuard><DashboardLayout><Unibox /></DashboardLayout></AuthGuard>}
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
