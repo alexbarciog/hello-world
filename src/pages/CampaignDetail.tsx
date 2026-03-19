@@ -535,9 +535,31 @@ export default function CampaignDetail() {
                         <div key={i} className="flex items-start">
                           {/* Connector + delay badge */}
                           <div className="flex flex-col items-center self-start pt-10 px-1 min-w-[80px]">
-                            <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
-                              + {ws.delay_days} days
-                            </span>
+                            {editingDelayStep === i ? (
+                              <div className="flex items-center gap-1 mb-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={30}
+                                  defaultValue={ws.delay_days}
+                                  autoFocus
+                                  className="w-12 text-center text-[10px] font-bold border border-primary rounded-full px-1 py-0.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveDelayDays(i, parseInt((e.target as HTMLInputElement).value) || 1);
+                                    if (e.key === "Escape") setEditingDelayStep(null);
+                                  }}
+                                  onBlur={(e) => saveDelayDays(i, parseInt(e.target.value) || 1)}
+                                />
+                                <span className="text-[10px] text-muted-foreground">days</span>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingDelayStep(i)}
+                                className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                              >
+                                + {ws.delay_days} days
+                              </button>
+                            )}
                             <svg width="60" height="2" className="text-primary">
                               <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
                             </svg>
