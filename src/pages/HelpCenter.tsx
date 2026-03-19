@@ -10,43 +10,40 @@ const helpData = [
   {
     id: "getting-started",
     title: "Getting Started",
-    description: "Anything you need to know about how to start on intentsly AI",
+    description: "Everything you need to know to start using Intentsly",
     icon: "folder",
     articles: [
       {
         id: "what-is-intentsly",
-        title: "What is intentsly & How Does It Work?",
-        content: `intentsly is an AI-powered sales engine that turns intent signals into real sales opportunities.
+        title: "What is Intentsly & How Does It Work?",
+        content: `Intentsly is an AI-powered sales engine that turns intent signals into real sales opportunities.
 
-Instead of guessing who might be interested in your service, intentsly **detects intent signals** (profile visits, competitor interactions, job changes, content engagement, etc.) and automatically turns them into **warm prospects you can reach out to**.
+Instead of guessing who might be interested in your service, Intentsly **detects intent signals** and automatically turns them into **warm prospects you can reach out to** via LinkedIn.
 
-## The intentsly workflow (simple version)
+## How Intentsly works
 
-intentsly works in 4 steps:
-
-**1. Your AI Agent monitors intent signals**
+**1. Your AI Signal Agent monitors intent signals**
 
 It scans for signals like:
 - People interacting with competitors on LinkedIn
-- LinkedIn Profile visits
-- Hiring signals
+- LinkedIn profile visits
+- Job changes and hiring signals
 - Content engagement on LinkedIn
-- People following your company on LinkedIn
-- People interacting with key opinion leaders in your niche
+- Reddit discussions matching your keywords
 
-**2. Hot prospects are added to your Leads Inbox**
+**2. Hot prospects appear in your Contacts**
 
-These are people already showing interest in your space.
+These are people already showing interest in your space — scored and ranked by AI.
 
 **3. You review and approve them**
 
 You decide who to contact — no spam, no guesswork.
 
-**4. intentsly launches personalized campaigns**
+**4. Intentsly launches personalized campaigns**
 
 AI-generated messages are sent automatically from your LinkedIn account.
 
-## Why people use intentsly
+## Why people use Intentsly
 
 - They're tired of cold outreach with 0% reply rates
 - They want to reach warm leads — people who are already showing interest
@@ -55,40 +52,41 @@ AI-generated messages are sent automatically from your LinkedIn account.
       },
       {
         id: "quick-start-guide",
-        title: "Your First 15 Minutes with intentsly (Quick Start Guide)",
-        content: `This is the fastest way to see value from intentsly.
+        title: "Your First 15 Minutes with Intentsly (Quick Start Guide)",
+        content: `This is the fastest way to see value from Intentsly.
 
-## Step 1 — Connect your LinkedIn account (5 min)
+## Step 1 — Complete Onboarding (5 min)
 
-intentsly uses your LinkedIn account to send automated campaigns.
+When you first sign up, you'll go through a guided onboarding:
 
-1. Go to **Settings → LinkedIn Accounts**
-2. Click "Connect account"
-3. Choose your connection method: "Credentials Login" or "Infinite Login"
-4. Follow the prompts
+1. **Enter your website URL** — Intentsly will analyze it to understand your business
+2. **Connect LinkedIn** — required for sending campaigns
+3. **Define your ICP** — job titles, industries, company sizes, locations
+4. **Set precision mode** — choose how strictly leads should match your ICP
+5. **Configure intent signals** — pick which signals to track
+6. **Set objectives** — tell Intentsly your campaign goals
 
-## Step 2 — Define ICP and choose your signals (5 min)
+## Step 2 — Create a Signal Agent (3 min)
 
-Your ICP (Ideal Customer Profile) tells intentsly who to target.
-
-1. Go to **AI Agents → Create Agent**
-2. Enter your website URL — the AI will analyze it and suggest your ICP
-3. Select the signals you want to track (competitor interactions, profile visits, job changes, etc.)
-4. Launch your agent
+1. Go to **Signals** from the sidebar
+2. Click **Create Agent**
+3. The wizard will guide you through ICP and signal configuration
+4. Launch your agent — it will start detecting leads automatically
 
 ## Step 3 — Create your first campaign (3 min)
 
-1. Go to **Campaigns → Start a campaign**
-2. Choose "AI Campaign" — intentsly builds it for you automatically
-3. Connect it to a List (your agent will fill this)
-4. Launch the campaign
+1. Go to **Campaigns** from the sidebar
+2. Click **Start a campaign**
+3. Follow the campaign wizard to set up your outreach sequence
+4. Connect it to a contact list
+5. Launch the campaign
 
-## Step 4 — Go to the Leads Inbox (5 min)
+## Step 4 — Check your Contacts (2 min)
 
-1. Open **Leads → Leads Inbox**
-2. Review the leads detected by your agent
-3. Mark bad fits as "Not a fit" (they won't be contacted)
-4. The rest will be automatically handled by your campaign
+1. Open **Contacts** from the sidebar
+2. Review leads detected by your agent — sorted by Hot, Warm, and Cold
+3. Create lists to organize your contacts
+4. Your campaigns will automatically reach out to them
 
 That's it. Your AI is now prospecting for you 24/7.`,
       },
@@ -97,101 +95,80 @@ That's it. Your AI is now prospecting for you 24/7.`,
         title: "What Results Should I Expect (And When)?",
         content: `## When will I see leads?
 
-Most users see their **first warm prospects within a few minutes — it can take up to 24 hours maximum** after:
+Most users see their **first warm prospects within a few minutes** after:
 - LinkedIn is connected
-- At least 4 signals are activated
-
-High-volume niches can see results in minutes.
+- At least one Signal Agent is active
 
 ## How many warm leads should I expect?
 
 This depends on:
 - Your market size
-- Your ICP
+- Your ICP configuration
 - The signals selected
 
 It can be 3–5 per day or 100+ per day depending on your criteria.
 
-**Common mistake:** expecting instant demos.
-
-intentsly doesn't magically replace your sales skills or your offer. It gets you more warm conversations — but you still need to close deals yourself.
-
-## If you see no leads or if the targeting isn't right after 48h
+## If you see no leads after 48h
 
 - Broaden your ICP (more industries, more job titles, more locations)
 - Add more signals (the more signals, the more leads)
-- Check that your LinkedIn is properly connected
-- Contact support if you're still stuck`,
-      },
-      {
-        id: "intentsly-vs-tools",
-        title: "intentsly vs Traditional Prospecting Tools",
-        content: `Here's the difference:
-
-| Traditional tools | intentsly |
-|---|---|
-| Static contact lists | Live buying signals |
-| Cold emails | Warm LinkedIn conversations |
-| Guesswork targeting | Behavior-based targeting |
-| Low reply rate | Higher reply rate |
-| Manual scraping | AI-powered detection |
-
-intentsly does **not** replace your CRM.
-
-It replaces the boring, ineffective "prospecting grind".
-
-It plugs directly into:
-- LinkedIn
-- CRM
-- Your outreach workflows
-
-Think of it as: **An AI SDR watching LinkedIn for you 24/7**.`,
+- Check that your LinkedIn is properly connected in **Settings → LinkedIn**
+- Make sure your Signal Agent is set to **Active**`,
       },
       {
         id: "glossary",
-        title: "intentsly Glossary (Key Terms)",
-        content: `**Signals Agent**
-Your automated assistant that tracks prospects showing buying intent.
+        title: "Intentsly Glossary (Key Terms)",
+        content: `**Signal Agent**
+Your automated assistant that tracks prospects showing buying intent on LinkedIn and the web.
 
-**Signals**
+**Intent Signals**
 Triggers your agent looks for:
 - Competitor engagement
 - Profile visits
 - Job changes
 - Posts, comments, likes
+- Reddit keyword mentions
 
-**Leads Inbox**
-Where all detected prospects appear.
+**Contacts**
+Where all detected and imported prospects are stored and managed.
+
+**Lists**
+Custom groups you create to organize contacts (e.g., "Hot SaaS Founders").
 
 **Campaign**
-A sequence of LinkedIn actions (connect, message, follow-up).
+A sequence of LinkedIn actions (connect, message, follow-up) targeting contacts in a list.
 
 **Warm lead**
-A person already showing signs of interest.
+A person already showing signs of interest — detected by intent signals.
 
-**Enrichment**
-Adding email / extra data to a lead.`,
+**Unibox**
+Your unified LinkedIn messaging inbox inside Intentsly.
+
+**Reddit AI Agent**
+Monitors Reddit for posts matching your intent keywords across specified subreddits.
+
+**Precision Mode**
+Controls how strictly leads must match your ICP criteria — from broad to exact match.`,
       },
     ],
   },
   {
     id: "connecting-linkedin",
     title: "Connecting LinkedIn",
-    description: "How to connect LinkedIn accounts",
+    description: "How to connect and manage LinkedIn accounts",
     icon: "folder",
     articles: [
       {
         id: "connect-linkedin-steps",
         title: "How to connect your LinkedIn account (step-by-step)",
-        content: `Connecting your LinkedIn account is required to send campaigns directly from intentsly.
-
-Here's how to do it safely and correctly in under 2 minutes:
+        content: `Connecting your LinkedIn account is required to send campaigns and use the Unibox.
 
 ## Step-by-step
 
-1. Go to **Settings → LinkedIn Accounts**
-2. Click on "Connect account"
-3. Choose your connection method: "Credentials Login" or "Infinite Login"
+1. Go to **Settings** from the sidebar
+2. Click the **LinkedIn** tab
+3. Click **Connect account**
+4. Choose your connection method: "Credentials Login" or "Infinite Login"
 
 ## If "Credentials Login":
 - Enter your LinkedIn email and password
@@ -201,21 +178,22 @@ Here's how to do it safely and correctly in under 2 minutes:
 ## If "Infinite Login":
 - Click the link provided
 - Log into LinkedIn in the new window
-- Copy the token shown and paste it in intentsly
+- Copy the token shown and paste it in Intentsly
 
 ## What this allows
-Once connected, intentsly can:
+Once connected, Intentsly can:
 - Send connection requests
-- Send messages
-- Run follow-up sequences
+- Send messages via campaigns
+- Display your LinkedIn conversations in the Unibox
 
 ## Notes
-- You can connect multiple accounts (depending on your plan)
-- Disconnect at any time from Settings`,
+- You can see your connected accounts in the LinkedIn tab of Settings
+- Disconnect at any time from Settings
+- The connection status is also shown on the Dashboard`,
       },
       {
         id: "linkedin-connection-failed",
-        title: "I tried to connect LinkedIn but it failed — what should I do?",
+        title: "LinkedIn connection failed — what should I do?",
         content: `This is a common issue and is usually easy to fix.
 
 ## 1. Wrong email or password
@@ -224,866 +202,735 @@ Sometimes the LinkedIn email or password entered is slightly incorrect.
 
 **How to fix it:**
 - Try again with the right credentials
-- If it fails again: try logging in directly on LinkedIn to make sure the credentials are working, then retry connecting inside intentsly
+- Log in directly on LinkedIn first to verify, then retry inside Intentsly
 
 ## 2. LinkedIn triggered a verification
 
-If LinkedIn asks for a verification, they might:
-- Ask for a verification code
+LinkedIn might:
+- Ask for a verification code via email
 - Send a confirmation email
 - Block the login attempt temporarily
 
-This is a normal process.
-
 **How to fix it:**
-- Check your email for a message from LinkedIn with a code
+- Check your email for a code from LinkedIn
 - Check your LinkedIn app for a notification
-- Enter the code in intentsly when prompted
+- Enter the code in Intentsly when prompted
 
 ## 3. You're using a VPN
 
 VPNs can trigger security checks from LinkedIn.
 
 **How to fix it:**
-- Turn off your VPN
-- Try again
+- Turn off your VPN and try again
 
 ## 4. Too many attempts
 
-If you've tried multiple times in a row, LinkedIn might temporarily block the login.
+Multiple rapid attempts may temporarily block login.
 
 **How to fix it:**
-- Wait 10–15 minutes
-- Try again`,
-      },
-      {
-        id: "right-password-not-working",
-        title: "I entered the right password but it's still not working",
-        content: `If you're sure your password is correct, here are the most common reasons:
-
-## Two-factor authentication (2FA)
-
-LinkedIn may require an additional approval step.
-
-**What to do:**
-- Check your email
-- Check your phone (SMS)
-- Check your LinkedIn app notifications
-- Approve the login, then try again
-
-If you don't have any verification code OR if the code doesn't work:
-- Try again after 5–10 minutes
-- Deactivate the 2FA on your LinkedIn account and try again
-
-## Temporary LinkedIn restriction
-
-Sometimes LinkedIn blocks new logins temporarily.
-
-**What to do:**
-- Wait 15–30 minutes
-- Try again later
-- Avoid repeated attempts
-
-## Session conflict
-
-Too many active LinkedIn sessions can cause errors.
-
-**What to do:**
-- Log out of LinkedIn everywhere
-- Restart your browser
-- Retry the connection`,
+- Wait 10–15 minutes and try again`,
       },
       {
         id: "why-linkedin-access",
-        title: "Why does intentsly need access to my LinkedIn account?",
-        content: `intentsly uses your LinkedIn account to:
-- Send connection requests
-- Send messages
-- Launch automated campaigns
-- Follow up with leads found by your AI Agent
+        title: "Why does Intentsly need access to my LinkedIn?",
+        content: `Intentsly uses your LinkedIn account to:
+- Send connection requests to detected leads
+- Send messages as part of campaigns
+- Run follow-up sequences
+- Display your conversations in the Unibox
 
-Without LinkedIn connection, intentsly can still detect leads — but it **cannot start conversations or run campaigns**.
+Without LinkedIn connected, Intentsly can still detect leads — but it **cannot start conversations or run campaigns**.
 
 Your data is secure:
 - Passwords are not stored
 - Information is encrypted
-- You can disconnect at any time`,
+- You can disconnect at any time from **Settings → LinkedIn**`,
       },
       {
         id: "is-linkedin-safe",
-        title: "Is connecting LinkedIn to intentsly safe?",
-        content: `Yes. intentsly is built with account safety in mind.
+        title: "Is connecting LinkedIn to Intentsly safe?",
+        content: `Yes. Intentsly is built with account safety in mind.
 
 It uses:
-- Human-like delays
+- Human-like delays between actions
 - Action limits aligned with LinkedIn guidelines
 - Natural sequencing (view → connect → message)
 - Randomized timing
-- Proxy with IPs in your country
 
-intentsly does **not**:
+Intentsly does **not**:
 - Share your LinkedIn data
 - Perform aggressive or unsafe actions
 
-You stay in control at all times.`,
-      },
-      {
-        id: "linkedin-restricted",
-        title: "Could my LinkedIn account get restricted or banned?",
-        content: `The risk is extremely low if you follow best practices.
-
-Most LinkedIn restrictions happen when:
-- Sending hundreds of requests per day
-- Spamming identical messages
-- Using unsafe automation
-- Using several automation tools at the same time
-
-intentsly is specifically designed to prevent that by:
-- Limiting activity
-- Adding delays
-- Simulating real human behavior
-
-For best results:
-- Use a real profile photo
-- Have at least 100–500 connections
-- Stay active (like, comment, post occasionally)
-- Warm up your account: start low and increase
-- Stay under the limits (100 connection requests / week maximum for LinkedIn users with an active & solid account and 100–180 per week for Sales Navigator users with a very solid account)`,
-      },
-      {
-        id: "check-linkedin-connected",
-        title: "How to check if your LinkedIn is properly connected",
-        content: `To confirm your status:
-
-1. Go to **Settings → LinkedIn Connection**
-2. Make sure you see:
-   - ✅ "Connected"
-   - Your LinkedIn name
-   - Your profile picture
-
-If it shows "Disconnected":
-- Click **Connect**
-- Then reconnect again`,
+You stay in control at all times. You can set daily connection and message limits in **Settings → LinkedIn**.`,
       },
       {
         id: "safety-limits",
         title: "Safety & Limits on LinkedIn",
-        content: `## How to keep your LinkedIn account safe while using intentsly
+        content: `## Recommended Activity Limits
 
-## Overview
-
-Using automation on LinkedIn requires following certain safety practices to protect your account. Here's everything you need to know.
-
-## 1. Recommended Activity Limits
-
-### 🔗 Connection Requests
+### Connection Requests
 - **Standard LinkedIn**: max 80–100/week
 - **Sales Navigator**: max 100–180/week
 - Start with 5–10/day when warming up a new account
 
-### 💬 Messages (DMs + follow-ups)
+### Messages (DMs + follow-ups)
 - Max 100–150 messages/day
 - Keep messages short and personalized
 - Avoid links in first messages
 
-### 👀 Other Actions (views, likes, follows)
-- Profile views: up to 80–100/day
-- Likes: up to 50–100/day
-- Follows: up to 50/day
-
-## 2. Behaviors LinkedIn Flags
-
-- Sending hundreds of connection requests rapidly
-- Sending identical messages to many people
-- Logging in from multiple IPs in the same day
-- Using multiple automation tools simultaneously
-
-## 3. Best Practices for Staying Safe
+## Best Practices for Staying Safe
 
 - Use a real, professional profile photo
 - Have a complete LinkedIn profile
 - Be active naturally (like posts, comment occasionally)
 - Start slowly and increase volume gradually
-- Use only one automation tool (intentsly)
+- Use only one automation tool (Intentsly)
 
-## 4. What Happens if LinkedIn Flags You?
+## How Intentsly Protects Your Account
 
-LinkedIn may send a warning, temporarily restrict actions, or in rare cases, suspend the account. This is usually reversible.
-
-## 5. How intentsly Helps Protect Your Account
-
-### Built-in protections:
 - Randomized timing between actions
 - Human-like delays
-- Proxy with IPs matching your country
-- Daily and weekly action caps
-- Natural sequencing (view → connect → message)
-
-## 6. Quick Safety Checklist
-
-✅ LinkedIn properly connected
-✅ Country/proxy set correctly in Settings
-✅ Starting with low volume (5–10/day)
-✅ Real profile photo
-✅ Not using other automation tools simultaneously`,
+- Daily and weekly action caps (configurable in Settings)
+- Natural sequencing (view → connect → message)`,
       },
     ],
   },
   {
-    id: "finding-leads",
-    title: "Finding & Adding Leads",
-    description: "How to find & add leads",
+    id: "signal-agents",
+    title: "Signal Agents",
+    description: "How to create and manage AI Signal Agents",
     icon: "folder",
     articles: [
       {
-        id: "ai-agent-finds-leads",
-        title: "How your AI Agent finds leads automatically",
-        content: `intentsly's AI Agent works in the background to detect **high-intent prospects** on LinkedIn, based on the signals you selected.
-
-These signals include:
-- People interacting with competitors
-- People engaging with content in your niche
-- Profile visits
-- Job changes
-- Activity from specific LinkedIn pages
-- Company followers
+        id: "how-agents-work",
+        title: "How Signal Agents find leads automatically",
+        content: `Signal Agents work in the background to detect **high-intent prospects** based on the signals and ICP you configured.
 
 ## How it works
 
-1. You define your ICP (Ideal Customer Profile) when creating an Agent
-2. You select which signals to track (competitor pages, keywords, influencers, etc.)
-3. The Agent runs automatically — typically every few hours
-4. Matched leads appear in your Leads Inbox
+1. Go to **Signals** from the sidebar
+2. Click **Create Agent** to set up a new agent
+3. Configure your ICP: job titles, industries, company sizes, locations
+4. Select which signals to track
+5. The Agent runs automatically — detecting matching leads
 
-## What happens next?
+## Agent statuses
 
-Once a lead appears in the Inbox, you can:
-- Review their profile
-- Mark them as a good fit or not
-- Add them to a List for campaigns
-- Enrich their data (email, phone)`,
+- **Active** — the agent is running and detecting leads
+- **Paused** — the agent is stopped and won't detect new leads
+
+You can toggle between Active and Paused at any time from the Signals page.
+
+## Managing agents
+
+From the three-dot menu on each agent, you can:
+- **Edit** — modify the agent's configuration
+- **Pause / Activate** — toggle the agent on or off
+- **Delete** — permanently remove the agent
+
+## Limits
+
+You can have up to **2 Signal Agents** active at a time. Delete an existing one to create a new one.`,
       },
       {
-        id: "manually-add-leads",
-        title: "How to manually add warm leads (step-by-step)",
-        content: `To manually add leads to intentsly, you need to use the **intentsly Chrome Extension**.
+        id: "create-agent-wizard",
+        title: "Creating a Signal Agent (step-by-step)",
+        content: `## Step 1 — Enter your website
 
-If you don't have it yet, install it first from the Chrome Web Store and log in with your intentsly account.
+Provide your company website URL. Intentsly will analyze it to understand your business and suggest ICP parameters.
 
-Once installed, you can add leads directly from LinkedIn in one click.
+## Step 2 — Connect LinkedIn
 
-Go to: **Leads → Leads Inbox → Add Leads** to see the installation link and status.
+Make sure your LinkedIn account is connected. This is needed for the agent to find leads on LinkedIn.
 
-## Add leads via LinkedIn Search
+## Step 3 — Define your ICP
 
-1. Go to LinkedIn and run a people search
-2. Open the intentsly extension
-3. Click "Add all" or click on individual profiles
-4. Leads are added to your Leads Inbox
+Configure your Ideal Customer Profile:
+- **Job titles** — e.g., CEO, CTO, Head of Marketing
+- **Industries** — e.g., SaaS, FinTech, E-commerce
+- **Company sizes** — e.g., 1-10, 11-50, 51-200
+- **Locations** — e.g., United States, United Kingdom
+- **Exclude keywords** — filter out irrelevant results
 
-## Add leads via Sales Navigator
+## Step 4 — Set Precision Mode
 
-1. Open Sales Navigator and run a search
-2. Activate the intentsly extension
-3. Use the bulk-add option to import the list
+Choose how strictly leads must match your ICP:
+- **Broad** — more leads, less precise
+- **Balanced** — recommended for most users
+- **Exact** — fewer leads, highly targeted
 
-## Add leads from LinkedIn Events
+## Step 5 — Configure Intent Signals
 
-1. Go to a LinkedIn event page
-2. Click on "Attendees"
-3. Use the extension to import attendees
+Select which signals the agent should monitor. More signals = more leads.
 
-## Add leads from your existing connections
+## Step 6 — Set Objectives
 
-1. Go to your LinkedIn connections
-2. Filter by criteria (location, company, etc.)
-3. Use the extension to bulk-add them
+Define your campaign goal and value proposition. This helps the AI generate better outreach messages.
 
-## Important notes
+After completing all steps, your agent will start running automatically.`,
+      },
+    ],
+  },
+  {
+    id: "reddit-signals",
+    title: "Reddit AI Agent",
+    description: "Monitor Reddit for intent signals",
+    icon: "folder",
+    articles: [
+      {
+        id: "reddit-agent-overview",
+        title: "What is the Reddit AI Agent?",
+        content: `The Reddit AI Agent monitors Reddit posts and discussions for keywords that match your intent signals.
 
-- Leads added manually go directly to your Leads Inbox
-- You can then add them to any List and connect them to a campaign
-- Avoid adding the same person multiple times`,
+## How it works
+
+1. You add **intent keywords** (e.g., "looking for CRM", "need automation tool")
+2. The agent scans relevant subreddits for posts matching those keywords
+3. Matching posts appear in the **Reddit Signals** page
+4. You can review each post, see the author, subreddit, and original content
+
+## Why use it?
+
+Reddit is full of people actively looking for solutions. By monitoring specific keywords, you can:
+- Find people who are actively looking for your type of product
+- Discover pain points in your market
+- Identify potential customers before your competitors do`,
       },
       {
-        id: "import-leads-csv",
-        title: "How to import leads from a list or CSV",
-        content: `You can upload a list of leads directly.
+        id: "reddit-add-keywords",
+        title: "How to add and manage Reddit keywords",
+        content: `## Adding keywords
 
-Accepted formats: **CSV**
+1. Go to **Reddit Signals** from the sidebar
+2. Enter your keyword in the input field at the top
+3. Optionally specify subreddits (comma-separated) — if empty, defaults are used
+4. Click **Add Keyword**
 
-## Steps
+Default subreddits monitored: SaaS, startups, Entrepreneur, smallbusiness, marketing, sales.
 
-1. Go to **Leads → Leads Inbox**
-2. Click **Add leads**
-3. Select **Import a CSV**
-4. Upload your file
-5. Map the columns if needed
-6. Start import
+## Managing keywords
 
-Once imported, the leads can be:
-- Enriched
-- Added to campaigns
-- Filtered
-- Exported
+Each keyword card shows:
+- The keyword text
+- Status (active or inactive)
+- Number of subreddits being monitored
 
-## CSV format requirements
+You can:
+- **Toggle active/inactive** — pause or resume monitoring
+- **Delete** — remove the keyword entirely
 
-Your CSV should ideally include:
-- First name
-- Last name
-- LinkedIn URL (recommended)
-- Company
-- Job title`,
+## Tips for good keywords
+
+- Use phrases people would actually search for: "looking for a tool to..."
+- Be specific: "B2B lead generation software" works better than just "leads"
+- Add variations of the same intent: "need CRM", "CRM recommendation", "best CRM for"`,
       },
       {
-        id: "export-leads",
-        title: "How to export leads from intentsly",
-        content: `You can download your leads at any time.
+        id: "reddit-reviewing-mentions",
+        title: "Reviewing Reddit mentions",
+        content: `When the agent finds matching posts, they appear in the Reddit Signals page.
 
-## Steps
+## What you see for each mention
 
-1. Go to **Leads → Leads Inbox** or to a specific **List**
-2. Apply your filters (signal, list, status, etc.)
-3. Click **Export**
-4. Download the file (CSV)
+- **Post title** — the Reddit post title
+- **Subreddit** — which subreddit it was found in
+- **Author** — the Reddit username
+- **Keyword matched** — which of your keywords triggered the match
+- **Body preview** — a snippet of the post content
+- **Posted time** — when the post was published
+- **Link** — click to open the original Reddit post
 
-You can also export leads with our integrations:
-- Your CRM
-- Zapier
-- Webhook / API
-- Other outreach tools`,
+## Filtering mentions
+
+Use the keyword filter at the top to see mentions for a specific keyword only.
+
+## Scanning for new mentions
+
+Click the **Scan Now** button to trigger an immediate scan. The agent also runs automatically twice a day (8:00 AM and 6:00 PM UTC).
+
+## Dismissing mentions
+
+Click the X on any mention to dismiss it — it won't appear in your feed again.`,
+      },
+    ],
+  },
+  {
+    id: "contacts-lists",
+    title: "Contacts & Lists",
+    description: "Manage your leads and contact lists",
+    icon: "folder",
+    articles: [
+      {
+        id: "contacts-overview",
+        title: "How the Contacts page works",
+        content: `The **Contacts** page is your central hub for all detected and imported leads.
+
+## What you see
+
+- **Contact cards** with name, company, title, and AI score
+- **Relevance tier** — each contact is classified as Hot 🔥, Warm, or Cold
+- **Signal indicators** — which intent signals were matched
+- **LinkedIn URL** — direct link to the contact's profile
+
+## Tabs
+
+Filter contacts by tier:
+- **All** — see every contact
+- **Hot** — highest intent, most likely to convert
+- **Warm** — moderate intent signals
+- **Cold** — lower signals but still relevant
+
+## Search & Filter
+
+- Use the **search bar** to find contacts by name, company, or title
+- Filter by **list** using the dropdown
+- Adjust **items per page** (10, 25, 50, 100)`,
+      },
+      {
+        id: "creating-lists",
+        title: "How to create and manage lists",
+        content: `Lists help you organize contacts into groups for campaigns.
+
+## Creating a list
+
+1. Go to **Contacts** from the sidebar
+2. Click the **Create List** button (folder icon)
+3. Enter a name and optional description
+4. Click **Create**
+
+## Adding contacts to lists
+
+Contacts are automatically added to lists by your Signal Agents. You can also manually organize contacts into different lists.
+
+## Using lists with campaigns
+
+When creating a campaign, you select a list as the source. The campaign will target all contacts in that list.
+
+## Filtering by list
+
+Use the list dropdown filter on the Contacts page to see only contacts in a specific list.`,
       },
     ],
   },
   {
     id: "campaigns-outreach",
     title: "Campaigns & Outreach",
-    description: "How to use campaigns",
+    description: "Create and manage LinkedIn campaigns",
     icon: "folder",
     articles: [
       {
-        id: "leads-inbox-how-it-works",
-        title: "How the Leads Inbox works (and how to use it properly)",
-        content: `The **Leads Inbox** is your central hub for all detected and imported leads.
-
-This is where you can:
-- See who matched your signals
-- Filter by signal type or list
-- Enrich leads (email, phone, company data)
-- Add them to a specific list
-- Reject bad fits
-- Export your data
-
-## Best workflow
-
-**Automatic:**
-1. Open **Leads Inbox**
-2. Check new leads
-3. Put the ones you don't want as "not a fit" (red cross)
-4. The good ones will be sent to your specific campaign
-
-**Manual:**
-1. Open **Leads Inbox**
-2. Check new leads
-3. Review each lead
-4. Add the good ones to a List manually
-5. The campaign will contact them`,
-      },
-      {
         id: "how-campaigns-work",
-        title: "How campaigns work in intentsly",
+        title: "How campaigns work in Intentsly",
         content: `A campaign is what turns leads into real conversations on LinkedIn.
 
-In intentsly, the real flow is:
+## The flow
 
-**Signals Agent → List → Campaign → LinkedIn actions**
+**Signal Agent → Contacts → List → Campaign → LinkedIn actions**
 
-Here's how it works:
-1. Your **Signals Agent** detects high-intent leads based on your ICP and signals
-2. These leads are **sent to a List** (automatically or manually)
-3. That List is used as the **source of a Campaign**
-4. The Campaign sends LinkedIn actions and messages
+1. Your **Signal Agent** detects high-intent leads
+2. Leads appear in your **Contacts**
+3. They are grouped into **Lists**
+4. A **Campaign** targets a list and sends LinkedIn actions
 
-A campaign never pulls leads directly from LinkedIn.
+## Campaign statuses
 
-It always pulls from a **List** inside intentsly.`,
-      },
-      {
-        id: "best-automated-workflow",
-        title: "The best automated workflow (recommended)",
-        content: `This is the most powerful and scalable setup:
+- **Active** — campaign is running and sending actions
+- **Paused** — campaign is stopped
+- **Pending** — waiting for LinkedIn connection
 
-1. Your **Signals Agent** finds warm leads based on your ICP
-2. intentsly **scores each lead automatically** using AI
-3. Leads are **sent into a List automatically**
-4. That List is **connected to a Campaign**
-5. The Campaign automatically contacts the best leads
+## Campaign limits
 
-Inside a campaign, intentsly will **prioritize**:
-- Leads with **recent activity**
-- Leads with the **highest AI score**
-
-This ensures your best opportunities are contacted first.`,
+You can have up to **2 campaigns** at a time. Delete an existing one to create a new one.`,
       },
       {
         id: "create-campaign",
         title: "How to create a campaign",
-        content: `Go to: **Campaigns → Start a campaign**
+        content: `## Steps
 
-You will see two options:
+1. Go to **Campaigns** from the sidebar
+2. Click **Start a campaign**
+3. Follow the campaign wizard:
+   - Set your campaign goal
+   - Configure your target audience
+   - Set up your outreach sequence (connection request, messages, follow-ups)
+   - Choose your daily limits
+   - Select the source list
+4. Review and launch
 
-## 🤖 AI Campaign (recommended)
+## Tips for better campaigns
 
-Choose this if you want intentsly to build the campaign for you.
-
-The AI will:
-- Analyze your website
-- Analyze your ICP
-- Use detected intent
-- Generate the sequence automatically
-- Optimize tone, timing and structure
-
-This is the best option for:
-- First-time users
-- Founders
-- Fast setup
-- Best performance
-
-Select **AI Campaign**, review the steps, and launch.
-
-## ✍️ Manual Campaign
-
-Choose this if you want full control over every step.
-
-You can:
-- Set custom messages for each step
-- Define delays between steps
-- Choose exact actions (connect, message, follow-up)
-- Set daily limits
-
-This is best for experienced users who want full customization.`,
+- Start with low daily limits (5–10 connections/day) and increase gradually
+- Use short, personalized messages (2–3 lines max)
+- Avoid links in your first message
+- Focus on the prospect's situation, not your product`,
       },
       {
-        id: "list-as-campaign-source",
-        title: "How to use a List as a Campaign source",
-        content: `Every campaign needs a **List** as its source.
+        id: "campaign-stats",
+        title: "Understanding campaign statistics",
+        content: `Each campaign shows key metrics:
 
-There are 3 ways to create a List:
+- **Invitations sent** — connection requests sent
+- **Invitations accepted** — connections that accepted
+- **Messages sent** — follow-up messages delivered
+- **Messages replied** — responses received
 
-## 1. Automatically (from your Agent)
+## Where to see stats
 
-This is the recommended method.
-- Go to your **Signals Agent settings**
-- Select a target **List**
-- All detected leads will be added automatically
+- **Campaigns page** — overview cards for each campaign
+- **Campaign detail** — click a campaign to see full statistics
+- **Dashboard** — top-level summary of all campaign activity
 
-That List can then be connected to a Campaign.
+## Improving results
 
-## 2. Manually (using filters)
-
-You can create your own List at any time:
-1. Go to **Leads Inbox**
-2. Apply filters (score, intent, company, job title, etc.)
-3. Click **Create List from filter**
-4. Name your List
-
-## 3. With the Chrome Extension
-
-When adding leads manually from LinkedIn:
-1. Use the Chrome extension to add leads
-2. Select which List to add them to
-3. The leads will immediately appear in that List`,
-      },
-      {
-        id: "ai-messages-work",
-        title: "How AI Messages work (very important)",
-        content: `AI Messages are unique, hyper-personalized messages created for each lead.
-
-intentsly generates them using:
-- The person's LinkedIn profile
-- Their activity / intent signal
-- Their company + role
-- Your ICP and offer
-
-These messages are:
-- Only available for **Message 1 (the icebreaker)**
-- **Different for every single contact**
-- Much more natural and contextual than generic messages
-
-This is one of intentsly's most powerful features.
-
-## How to preview an AI message before sending
-
-You can preview what a lead will receive.
-
-Steps:
-1. Open a lead in the Leads Inbox
-2. Click **"AI LinkedIn Message"** on the right
-3. Click **Generate**
-4. Read the message — if it looks good, keep it; if not, regenerate
-
-## How to change the language of AI messages
-
-Go to **Settings → Account → Preferred language**
-
-All future AI messages will use that language.
-
-## How to set your AI Outreach Template for Campaigns
-
-When creating or editing a campaign:
-1. Select **"AI Message"** for Step 1
-2. Optionally add a custom context or instruction
-3. The AI will use your ICP + the lead's profile to write the message`,
-      },
-      {
-        id: "editing-campaign",
-        title: "Editing an existing campaign",
-        content: `You can edit your campaign at any time, with one limitation:
-
-## ✅ You CAN:
-- Edit messages
-- Add new steps at the end
-- Change delays
-- Update limits
-
-## ⚠️ You CANNOT:
-- Remove a step **if contacts are already inside it**
-
-To remove steps, the Campaign must contain **0 leads**.
-
-If leads are already inside the campaign and you need to make major changes:
-- Create a new campaign with the correct setup
-- Pause the old campaign`,
+If your acceptance/reply rates are low:
+- Review your ICP — make sure you're targeting the right people
+- Improve your message — make it shorter, more personal
+- Use stronger intent signals
+- Check your LinkedIn profile — a professional profile gets more acceptances`,
       },
       {
         id: "when-campaigns-run",
         title: "When campaigns run",
-        content: `Campaigns run automatically at a scheduled time.
+        content: `Campaigns run automatically at scheduled times.
 
 - Actions are triggered in scheduled windows
 - Delays are **randomized** to mimic real human behavior
 - No robotic or spam-like patterns
 
-This keeps your LinkedIn account safe and natural.`,
+This keeps your LinkedIn account safe and natural.
+
+## Daily limits
+
+You can configure daily limits for:
+- **Connection requests** per day
+- **Messages** per day
+
+Set these in **Settings → LinkedIn** to control the pace of your campaigns.`,
+      },
+    ],
+  },
+  {
+    id: "unibox",
+    title: "Unibox",
+    description: "Your unified LinkedIn messaging inbox",
+    icon: "folder",
+    articles: [
+      {
+        id: "unibox-overview",
+        title: "What is the Unibox?",
+        content: `The **Unibox** is your unified LinkedIn messaging inbox inside Intentsly.
+
+It shows all your LinkedIn conversations in one place, so you don't need to switch between Intentsly and LinkedIn to reply to prospects.
+
+## Requirements
+
+To use the Unibox, you need:
+- A **LinkedIn account connected** in Settings
+- An active LinkedIn session
+
+## Features
+
+- **Conversation list** — see all your LinkedIn chats
+- **Search** — find specific conversations
+- **Reply** — send messages directly from Intentsly
+- **Real-time updates** — new messages appear automatically`,
       },
       {
-        id: "location-proxy",
-        title: "About location & proxy",
-        content: `intentsly uses a proxy based on your **LinkedIn country**.
+        id: "unibox-replying",
+        title: "How to reply to messages in the Unibox",
+        content: `## Replying to a conversation
 
-To make sure it's correctly configured:
-1. Go to **Settings → LinkedIn Account**
-2. Select your **Country**
-3. Save
+1. Go to **Unibox** from the sidebar
+2. Select a conversation from the left panel
+3. Type your reply in the message input at the bottom
+4. Click **Send** or press Enter
 
-This helps:
-- Improve safety
-- Improve deliverability
-- Avoid suspicious activity
+## Tips
 
-Using the correct country proxy reduces the chances of LinkedIn triggering security checks.`,
+- Reply quickly to warm leads — timing matters
+- Keep messages short and relevant
+- Reference the prospect's specific situation or intent signal
+- If you need to see their full profile, click the LinkedIn icon to open it externally`,
+      },
+    ],
+  },
+  {
+    id: "dashboard",
+    title: "Dashboard",
+    description: "Understanding your dashboard overview",
+    icon: "folder",
+    articles: [
+      {
+        id: "dashboard-overview",
+        title: "Understanding the Dashboard",
+        content: `The Dashboard is your main overview of everything happening in Intentsly.
+
+## What you see
+
+### Stats cards
+- **Active Campaigns** — number of running campaigns
+- **Contacts** — total contacts in your database
+- **Messages Sent** — total outreach messages sent
+
+### Activity Overview
+A chart showing your campaign activity over the last 30 days.
+
+### Hot Leads
+A quick view of your highest-intent contacts with their AI score and company.
+
+### Latest Replies
+Shows recent responses from your prospects. When active, these appear in the Unibox.
+
+### Get Started Checklist
+A step-by-step guide to set up your account:
+1. ✅ Create an account
+2. Connect your LinkedIn
+3. Create a Signal Agent
+4. Launch your first campaign
+
+## Navigation
+
+From the Dashboard, you can quickly access:
+- **Campaigns** — start or manage campaigns
+- **Contacts** — review your leads
+- **Unibox** — read and reply to messages`,
+      },
+    ],
+  },
+  {
+    id: "settings",
+    title: "Settings",
+    description: "Configure your account and preferences",
+    icon: "folder",
+    articles: [
+      {
+        id: "settings-overview",
+        title: "Settings overview",
+        content: `The Settings page lets you configure everything about your Intentsly account.
+
+## Tabs
+
+### Organization
+- Manage your workspace name
+- Invite team members (up to 2 invitations)
+- View current team members
+
+### Company
+- Set your company name, industry, country
+- Add your website URL and value proposition
+- This information is used by the AI for message generation
+
+### Account
+- View and update your email
+- Change your display name
+
+### LinkedIn
+- Connect/disconnect LinkedIn accounts
+- Set daily connection request limits
+- Set daily message limits
+- View connection status
+
+### Security
+- Change your password
+- Manage account security
+
+### Billing
+- View current plan
+- Upgrade or downgrade
+- Access billing portal`,
       },
       {
-        id: "filter-remove-leads",
-        title: "How to filter or remove leads from a campaign",
-        content: `If you want to stop certain leads from being contacted by a campaign, you have several options.
+        id: "invite-team",
+        title: "How to invite team members",
+        content: `You can invite team members to your Intentsly workspace.
 
-## 1. From a List or the Leads Inbox
+## Steps
 
-1. Go to your **List** or **Leads Inbox**
-2. Find the contact you want to remove
-3. Choose one of the following:
-   - **Remove from list**
-   - Click **"Not a fit"** (this will freeze the contact)
+1. Go to **Settings** from the sidebar
+2. Click the **Organization** tab
+3. Enter the email and name of your team member
+4. Click **Send Invite**
 
-Once a contact is marked as **Not a fit**, they will no longer receive any campaign actions.
+## Limits
 
-## 2. From inside the Campaign (Next Actions)
+- You can send up to **2 team invitations**
+- Each invitation is valid for 7 days
+- The invitee will receive an email with a link to join
 
-You can preview and control who will be contacted next.
+## Managing invitations
 
-1. Go to **Campaigns**
-2. Open the campaign
-3. Click on **Next Actions**
-4. You'll see:
-   - Who is scheduled to receive a connection request
-   - Who is scheduled to receive a message
-5. Find the contact and click **Remove**`,
+You can see pending invitations in the Organization tab. Expired invitations don't count toward your limit.`,
+      },
+      {
+        id: "daily-limits",
+        title: "How to set daily LinkedIn limits",
+        content: `Control how many actions Intentsly performs per day on your LinkedIn account.
+
+## Steps
+
+1. Go to **Settings → LinkedIn**
+2. Adjust the **Daily connections limit** slider
+3. Adjust the **Daily messages limit** slider
+4. Changes are saved automatically
+
+## Recommended limits
+
+- **New accounts**: Start with 5–10 connections/day
+- **Established accounts**: 20–40 connections/day
+- **Messages**: 50–100/day maximum
+
+Starting low and gradually increasing is the safest approach.`,
       },
     ],
   },
   {
     id: "troubleshooting",
     title: "Troubleshooting & FAQ",
-    description: "Need help?",
+    description: "Common issues and solutions",
     icon: "folder",
     articles: [
       {
         id: "no-leads-normal",
         title: "I don't see any leads — is this normal?",
-        content: `Yes, it can be normal during the first **hours.**
+        content: `It can be normal during the first hours.
 
 Before leads start appearing, make sure that:
-- Your **LinkedIn account is connected**
-- Your **Signals Agent is active**
-- You have selected **at least one signal**
-- Your targeting is not too narrow
+- Your **LinkedIn account is connected** (check in Settings → LinkedIn)
+- Your **Signal Agent is active** (check in Signals page)
+- You have configured your ICP with enough breadth
+- Your agent has at least one signal type selected
 
-Most users see their first leads within **the first minutes.**
+Most users see their first leads within **a few minutes** of activating an agent.
 
-## Check your Agent activity in "Insights"
+## If nothing appears after 24h
 
-You can see exactly when your Agent last ran and how many leads were found.
-
-1. Go to **Insights**
-2. Look at the most recent Agent launches
-3. Check how many leads were detected
-
-If you see:
-- **0 leads found** → your targeting may be **too narrow**
-- **Very few leads** → consider **broadening your signals or ICP**
-
-If nothing appears after that, try:
-- Expanding your signals
-- Using broader job titles
-- Increasing your company size range`,
+- Expand your ICP — add more job titles, industries, or locations
+- Make sure your Signal Agent status is **Active**
+- Check that LinkedIn shows as **Connected** in Settings`,
       },
       {
         id: "campaign-not-sending",
-        title: "I connected LinkedIn but my campaign isn't sending anything",
-        content: `This usually means one of the steps is missing.
+        title: "My campaign isn't sending anything",
+        content: `Check the following:
 
-Check the following:
+1. Is your **LinkedIn connected**? (Settings → LinkedIn)
+2. Does your campaign have a **source list** with contacts?
+3. Is the campaign status **Active** (not Paused)?
+4. Are your **daily limits** set above 0? (Settings → LinkedIn)
 
-1. Do you have **at least one List** connected to your campaign?
-2. Are there **leads inside that List**?
-3. Is the campaign **active** (not paused)?
-4. Have you selected **at least one step** (connection, message, etc.)?
-
-Remember: A campaign cannot send messages without leads inside its source List.`,
+A campaign cannot send messages without contacts in its source list and an active LinkedIn connection.`,
       },
       {
         id: "no-replies",
         title: "My campaign is live but I'm getting no replies",
-        content: `Reply rate depends on 4 things:
-- Your **targeting**
-- Your **message**
-- The **intent signal**
-- The **timing**
+        content: `Reply rate depends on:
+- Your **targeting** (ICP quality)
+- Your **message** (length, personalization)
+- The **intent signal** strength
+- **Timing**
 
-To improve results:
-- Use **AI Message** for step 1
+## Tips to improve
+
 - Shorten your message (2–3 lines max)
-- Make it more specific to the lead's role or situation
+- Make it specific to the lead's role or company
+- Don't include links in the first message
 - Use stronger intent signals
-- Filter out low-score leads`,
+- Ensure your LinkedIn profile looks professional`,
       },
       {
-        id: "ai-message-not-generating",
-        title: "My AI Message is not showing or generating",
-        content: `AI Messages only work for **Message 1 (the first message)** in a campaign.
+        id: "reddit-no-results",
+        title: "My Reddit AI Agent isn't finding any posts",
+        content: `If no mentions are appearing:
 
-Make sure that:
-- The AI Message is placed at **Step 1**
-- Your preferred language is set in **Settings → Account**
-- The lead has enough data (profile + intent)
+1. Check that your **keywords are active** on the Reddit Signals page
+2. Try broader keywords — "CRM software" instead of "specific-niche CRM for dental clinics"
+3. Make sure the subreddits you're monitoring are active communities
+4. Click **Scan Now** to trigger an immediate scan
+5. The agent runs automatically twice daily (8:00 AM and 6:00 PM UTC)
 
-To preview it:
-1. Open a lead
-2. Click **"AI LinkedIn Message"** on the right
-3. Click **Generate**`,
+## Default subreddits
+
+If you don't specify subreddits, these are monitored by default:
+- r/SaaS, r/startups, r/Entrepreneur, r/smallbusiness, r/marketing, r/sales`,
       },
       {
-        id: "added-someone-mistake",
-        title: "I added someone by mistake — how do I remove them?",
-        content: `You have two options:
+        id: "unibox-empty",
+        title: "My Unibox is empty",
+        content: `The Unibox requires an active LinkedIn connection to display conversations.
 
-**Option 1:** Go to your **List** or **Leads Inbox**
-- Click **Remove**, or
-- Click **"Not a fit"** (this will freeze the contact)
+## Check these:
 
-**Option 2:** Go to the **Campaign → Next Actions**
-- Find the contact
-- Remove them from the queue
+1. Go to **Settings → LinkedIn** and verify your account shows as **Connected**
+2. Make sure you have existing LinkedIn conversations
+3. If you just connected, wait a few moments for conversations to sync
 
-Once frozen or removed, the lead will no longer receive actions.`,
-      },
-      {
-        id: "campaign-wrong-edit",
-        title: "I created a campaign wrong — can I edit it?",
-        content: `Yes, but with one important rule:
-
-✅ You can:
-- Edit messages
-- Change delays
-- Add steps at the end
-
-❌ You cannot:
-- Remove a step if **leads are already inside it**
-
-If there are **0 leads**, you can fully edit the campaign.
-
-Otherwise, create a new campaign for major changes.`,
-      },
-      {
-        id: "chrome-extension-not-working",
-        title: "My Chrome extension is not working",
-        content: `Try these steps:
-
-1. Make sure you are **logged in** to intentsly
-2. Refresh the LinkedIn page
-3. Click the extension icon again
-4. Restart your browser
-5. Make sure Chrome is updated
-6. Check that you are on a **LinkedIn / Sales Nav / Events** page
-
-If it still doesn't work, reinstall it and reconnect your account.`,
+If your LinkedIn connection expired, reconnect it from Settings.`,
       },
       {
         id: "error-connecting-linkedin",
         title: "I get an error when connecting LinkedIn",
         content: `This is usually caused by:
 - Wrong credentials
-- LinkedIn security verification
-- Too many attempts
+- LinkedIn security verification (check your email for a code)
+- Too many login attempts
 - VPN usage
 
-To fix it:
-- Retry after 5–10 minutes
-- Turn off your VPN
-- Check your email, SMS, app etc. — LinkedIn can send you a verification code
-- If nothing works: turn off your 2FA on LinkedIn and start again
-- Contact our support with the chat`,
-      },
-      {
-        id: "results-too-low",
-        title: "My results are too low",
-        content: `If your account is set up correctly but results are still low, the most common reasons are:
+## How to fix it:
 
-- Signals too weak or too broad
-- ICP not clear enough or too specific
-- Message not specific, too long
-- Offer not attractive
-- Too few steps in campaign
-
-Best fix:
-- Use stronger/more intent signals
-- Add AI Message in step 1
-- Review your ICP (add more location / job titles / industries for example)
-- Tighten your targeting`,
+1. Wait 5–10 minutes before retrying
+2. Turn off your VPN
+3. Check your email/SMS for LinkedIn verification codes
+4. If 2FA is enabled, make sure to enter the code when prompted
+5. Try logging into LinkedIn directly first, then retry in Intentsly`,
       },
       {
         id: "common-mistakes",
         title: "Common mistakes new users make",
         content: `Avoid these to get better results faster:
 
-- Not creating a campaign
-- Not connecting a List to the campaign
-- Using very generic messages
-- Putting links in their campaign messages
-- Choosing weak signals
-- Never checking the Leads Inbox
-- Never checking if the leads are good
-- Not warming up their campaign (start at 5/10 connection requests per day)
-- Not giving the system enough time to see which signals work
+- **Not connecting LinkedIn** — required for campaigns and Unibox
+- **Creating agents without enough signals** — more signals = more leads
+- **Using very narrow ICP** — start broad, then narrow down
+- **Not checking Contacts** — review leads regularly
+- **Sending too many connections too fast** — start with 5–10/day
+- **Long, generic messages** — keep them short and personal
+- **Not giving enough time** — allow 2–3 days to see patterns
 
-The system is powerful, but it needs:
+## The system works best with:
 
-✅ Correct setup
-✅ Good signals
-✅ A clear message
-✅ A few days so you can see which signals perform`,
-      },
-      {
-        id: "hubspot-integration",
-        title: "How to Integrate with Hubspot",
-        content: `This integration allows intentsly to push leads and their data into your HubSpot CRM.
-
-To make this possible, HubSpot requires a **Legacy App** with specific permissions (scopes).
-
-## How to Generate an API Key for HubSpot
-
-### Why Use a Legacy App?
-A Legacy App gives you a single, stable API key (called a private app token) that you paste directly into intentsly. It's simpler than OAuth and works great for this integration.
-
-### Step-by-Step Tutorial
-
-**1. Log into HubSpot**
-- Go to [app.hubspot.com](https://app.hubspot.com) and log in
-
-**2. Navigate to the "Legacy Apps" Section**
-- Click your profile icon (top right)
-- Go to **Account Settings → Integrations → Legacy API Key**
-- Or go to **Settings → Account Setup → Integrations → Private Apps**
-
-**3. Configure Your Legacy App**
-- Click "Create a Private App"
-- Give it a name (e.g., "intentsly Integration")
-
-**4. Assign the Correct Scopes (Permissions)**
-
-Required scopes:
-- \`crm.objects.contacts.read\`
-- \`crm.objects.contacts.write\`
-- \`crm.objects.companies.read\`
-- \`crm.objects.companies.write\`
-
-**5. Create the App and Get the Token**
-- Click "Create app"
-- Copy the token shown
-
-**6. Add the token in intentsly**
-- Go to **Settings → Integrations → HubSpot**
-- Paste your token
-- Click Connect`,
+✅ Correct setup (LinkedIn + Agent + Campaign)
+✅ Good intent signals
+✅ Short, personal messages
+✅ Patience to optimize over a few days`,
       },
     ],
   },
   {
     id: "billing-plans",
-    title: "Billing & plans",
-    description: "More information on our plans",
+    title: "Billing & Plans",
+    description: "Plans, payments, and subscription management",
     icon: "folder",
     articles: [
       {
         id: "pricing-explained",
-        title: "intentsly pricing explained",
-        content: `intentsly offers different plans based on your usage and level of automation.
+        title: "Intentsly pricing explained",
+        content: `Intentsly offers different plans based on your usage.
 
-Plans vary depending on:
-- Number of signals tracked
-- Number of LinkedIn accounts connected
-- Email enrichment credits
-- Team / workspace size
+You can view the current pricing at **Settings → Billing** or by visiting the Billing Plans page.
 
-You can view the current pricing inside your dashboard or on the pricing page.
+Plans include access to:
+- Signal Agents (up to 2)
+- LinkedIn Campaigns (up to 2)
+- Contacts management with AI scoring
+- Reddit AI Agent
+- Unibox for LinkedIn messaging
+- Team invitations (up to 2)
 
-Each paid plan includes:
-- Access to AI Agents
-- Lead detection & scoring
-- Campaign creation
-- Chrome extension
-- AI messages
-- Leads Inbox + Lists
-
-You can upgrade or downgrade anytime.`,
-      },
-      {
-        id: "free-trial-ends",
-        title: "What happens when my free trial ends?",
-        content: `When your free trial ends:
-
-- If a payment method is added → your plan automatically starts
-- If no payment method is added or if you canceled your trial → your account is paused
-
-Your data (leads, lists, campaigns) is **not deleted**.
-
-You can reactivate your account at any time by choosing a plan.`,
+You can upgrade or downgrade anytime from Settings → Billing.`,
       },
       {
         id: "change-plan",
-        title: "Can I change my plan later?",
+        title: "Can I change my plan?",
         content: `Yes. You can change your plan at any time.
 
 Go to: **Settings → Billing**
@@ -1091,184 +938,24 @@ Go to: **Settings → Billing**
 From there, you can:
 - Upgrade to a higher plan
 - Downgrade to a lower plan
-- Switch from monthly to annual
-- Switch from annual to monthly
+- View your current usage
 
-Changes will be applied automatically.`,
-      },
-      {
-        id: "discounts",
-        title: "Do you offer discounts?",
-        content: `We regularly offer:
-- Discounts on **quarterly and annual plans**
-- Custom plans for agencies & teams
-
-If you're managing multiple clients or many LinkedIn accounts, contact support to discuss a tailored plan.`,
-      },
-      {
-        id: "update-payment",
-        title: "How do I update my payment method?",
-        content: `To update your payment method:
-
-1. Go to **Settings → Billing**
-2. Click **View Invoices**
-3. Add your new card
-4. Save
-
-Your next invoice will use the updated card.`,
-      },
-      {
-        id: "payment-failed",
-        title: "My payment failed — what should I do?",
-        content: `If your payment fails:
-- Your account may be temporarily paused
-- Campaigns may stop running
-
-To fix it:
-1. Go to **Settings → Billing**
-2. Click on "View Invoices"
-3. Update your payment method
-4. Retry the payment if needed
-
-If you run into issues, contact support in the chat and we'll help.`,
-      },
-      {
-        id: "refund",
-        title: "Can I get a refund?",
-        content: `Because intentsly is a software and data-based service, we do not offer standard refunds.
-
-However, if there has been a clear technical issue or an error, contact support and we will review the situation on a case-by-case basis.`,
-      },
-      {
-        id: "forgot-to-cancel",
-        title: "I forgot to cancel and got charged",
-        content: `If you were charged but no longer want to use the service:
-
-1. Contact support as quickly as possible
-2. Explain your situation
-3. Include your account email
-
-We'll review your request and let you know what's possible.`,
+Changes are applied automatically.`,
       },
       {
         id: "cancel-subscription",
         title: "How do I cancel my subscription?",
-        content: `You can cancel your subscription directly from your account.
+        content: `You can cancel your subscription from your account.
 
 1. Go to **Settings → Billing**
-2. Click **Cancel subscription**
-3. Follow the steps
+2. Click on the billing portal link
+3. Follow the steps to cancel
 
 Once cancelled:
 - You will not be charged again
 - Your account stays active until the end of the billing period
-- Your data remains saved
-
-You can come back and reactivate at any time.`,
-      },
-    ],
-  },
-  {
-    id: "technical-api",
-    title: "Technical & API",
-    description: "API, webhooks, authentication...",
-    icon: "wrench",
-    articles: [
-      {
-        id: "using-the-api",
-        title: "Using the API",
-        content: `This page explains where to get your API key, how to use the API reference, how rate limiting works, and what you can do with the API.
-
-## 1. Where to find your API key
-
-To authenticate against the intentsly API, you need an API key tied to your workspace.
-
-- In the intentsly app, go to **Settings → API**
-- Create a new API key if you don't have one yet
-- Copy the key and store it in a secure place (env var, secret manager, etc.)
-- Use different keys per environment (dev / staging / prod) when possible
-
-⚠️ Never expose your API key in client-side code or public repositories.
-
-## 2. How to use the API documentation
-
-All endpoints, parameters, and models are documented in the external API reference:
-
-- API reference: \`https://ext.intentsly.ai/documentation\`
-
-From this documentation, you can:
-- Browse all available endpoints
-- See request/response examples
-- Try requests directly from the browser
-
-## 3. Rate limiting
-
-The API uses rate limiting to ensure fair usage:
-- **100 requests per minute** per API key
-- **5,000 requests per day** per API key
-
-If you exceed the limit, you'll receive a \`429 Too Many Requests\` response.
-
-## 4. What you can do with the API
-
-### Contacts
-- List all contacts
-- Get a specific contact by ID
-- Create a new contact
-- Update a contact
-- Delete a contact
-
-### Campaigns
-- List all campaigns
-- Get campaign details
-- Add contacts to a campaign
-- Remove contacts from a campaign
-
-## 5. Putting it all together
-
-A typical workflow using the API:
-
-1. Import contacts via \`POST /contacts\`
-2. Get a list of your campaigns via \`GET /campaigns\`
-3. Add imported contacts to a campaign via \`POST /campaigns/{id}/contacts\`
-4. Monitor results via \`GET /contacts?campaign_id={id}\``,
-      },
-      {
-        id: "webhooks",
-        title: "Webhooks",
-        content: `intentsly allows you to receive real-time notifications when new contacts are created or updated by configuring a webhook URL.
-
-## How to Configure Webhooks
-
-1. **Log in to your intentsly AI account** at [https://app.intentsly.ai](https://app.intentsly.ai)
-2. **Navigate to the Integrations page** at [https://app.intentsly.ai/integrations](https://app.intentsly.ai/integrations)
-3. **Add a Webhook integration** by clicking the Webhook option
-4. **Enter your webhook URL** where you want to receive notifications
-5. **Save the configuration**
-
-Once configured, intentsly will send POST requests to your webhook URL whenever:
-- A new contact is created
-- A contact is updated
-- Other relevant events occur in your account
-
-The webhook payload will include the full contact data in JSON format.
-
-Each webhook request includes a custom header \`x-intentsly-user-id\` containing your user ID for verification purposes.
-
-## How to test the webhook?
-
-Use a webhook inspection tool like [https://webhook.site](https://webhook.site/) to preview and debug your payloads.
-
-Simply paste the generated URL into your webhook configuration, trigger an event in intentsly, and inspect the exact body, headers, and structure being sent.
-
-## How to manually trigger an event?
-
-1. Go to **Integrations → Webhooks**
-2. Find your webhook configuration
-3. Click **"Test webhook"**
-4. A sample payload will be sent to your URL
-
-This lets you verify your endpoint is working correctly before relying on it in production.`,
+- Your data (contacts, lists, campaigns) is preserved
+- You can reactivate at any time`,
       },
     ],
   },
@@ -1280,11 +967,15 @@ This lets you verify your endpoint is working correctly before relying on it in 
 const categoryIcons: Record<string, { icon: React.ElementType; gradient: string; shadow: string }> = {
   "getting-started": { icon: Rocket, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
   "connecting-linkedin": { icon: Link, gradient: "bg-gradient-to-br from-md-secondary to-md-primary-container", shadow: "shadow-md-secondary/20" },
-  "finding-leads": { icon: UserPlus, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary-fixed))] to-[hsl(46,100%,50%)]", shadow: "shadow-[hsl(var(--md-tertiary))]/20" },
-  "campaigns-outreach": { icon: BarChart3, gradient: "bg-gradient-to-br from-md-primary-container to-md-secondary", shadow: "shadow-md-primary/20" },
+  "signal-agents": { icon: Radio, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary-fixed))] to-[hsl(46,100%,50%)]", shadow: "shadow-[hsl(var(--md-tertiary))]/20" },
+  "reddit-signals": { icon: Sparkles, gradient: "bg-gradient-to-br from-[hsl(18,95%,58%)] to-[hsl(5,90%,65%)]", shadow: "shadow-[hsl(5,90%,65%)]/20" },
+  "contacts-lists": { icon: UserPlus, gradient: "bg-gradient-to-br from-md-primary-container to-md-secondary", shadow: "shadow-md-primary/20" },
+  "campaigns-outreach": { icon: BarChart3, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
+  "unibox": { icon: MessageSquare, gradient: "bg-gradient-to-br from-md-secondary to-[hsl(var(--md-tertiary))]", shadow: "shadow-md-secondary/20" },
+  "dashboard": { icon: BarChart3, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary))] to-md-primary", shadow: "shadow-[hsl(var(--md-tertiary))]/10" },
+  "settings": { icon: Settings, gradient: "bg-gradient-to-br from-md-primary-container to-md-primary", shadow: "shadow-md-primary/10" },
   "troubleshooting": { icon: Shield, gradient: "bg-gradient-to-br from-destructive to-md-secondary", shadow: "shadow-destructive/10" },
-  "billing-plans": { icon: Sparkles, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
-  "technical-api": { icon: Code2, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary))] to-md-primary", shadow: "shadow-[hsl(var(--md-tertiary))]/10" },
+  "billing-plans": { icon: CreditCard, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
 };
 
 // ─────────────────────────────────────────
