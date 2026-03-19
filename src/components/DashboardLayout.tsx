@@ -148,7 +148,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
                   <Icon className="w-4 h-4" />
                 </span>
-                {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
+                {!collapsed && (
+                  <span className="flex-1 text-left truncate flex items-center gap-1.5">
+                    {item.label}
+                    {(item as any).badge && (
+                      <span className="text-[9px] font-semibold uppercase tracking-wider bg-md-secondary/15 text-md-secondary px-1.5 py-0.5 rounded-full leading-none">
+                        {(item as any).badge}
+                      </span>
+                    )}
+                  </span>
+                )}
               </button>
             );
           })}
