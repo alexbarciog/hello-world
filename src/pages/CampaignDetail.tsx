@@ -99,6 +99,9 @@ export default function CampaignDetail() {
   const [agentStatus, setAgentStatus] = useState("paused");
   const [contactsCount, setContactsCount] = useState(0);
   const [listsCount, setListsCount] = useState(0);
+  const [availableLists, setAvailableLists] = useState<{ id: string; name: string; contact_count: number }[]>([]);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [assigningList, setAssigningList] = useState(false);
   const [showAgentRunning, setShowAgentRunning] = useState(false);
   const [editingStep, setEditingStep] = useState<number | null>(null);
 
