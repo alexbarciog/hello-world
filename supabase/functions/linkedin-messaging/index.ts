@@ -108,7 +108,31 @@ Deno.serve(async (req) => {
       }
 
       const data = await res.json();
-      return json(data);
+      const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
+
+      // Log first message structure for debugging
+      if (rawItems.length > 0) {
+        console.log('[get_messages] Raw message sample keys:', Object.keys(rawItems[0]));
+        console.log('[get_messages] Raw message sample:', JSON.stringify(rawItems[0], null, 2));
+      }
+
+      // Normalize is_sender field across different Unipile response formats
+      const normalizedItems = rawItems.map((msg) => {
+        const isSender =
+          msg.is_sender === true ||
+          msg.is_sender === 'true' ||
+          msg.from_me === true ||
+          msg.from_me === 'true' ||
+          (msg.direction && msg.direction === 'outbound') ||
+          (msg.sender_id && msg.sender_id === accountId);
+
+        return {
+          ...msg,
+          is_sender: isSender,
+        };
+      });
+
+      return json({ ...data, items: normalizedItems });
     }
 
     // ── send_message ──
