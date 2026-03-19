@@ -405,7 +405,7 @@ export default function CampaignsPage() {
                             <Pause className="w-3.5 h-3.5" />Pause campaign
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => navigate(`/onboarding?campaign=${c.id}`)} className="gap-2 text-sm">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditCampaign(c.id); }} className="gap-2 text-sm">
                           <Pencil className="w-3.5 h-3.5" />Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
