@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.linkedin-messaging]
 verify_jwt = false
+
+[functions.poll-reddit-signals]
+verify_jwt = false
