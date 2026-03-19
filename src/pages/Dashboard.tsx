@@ -176,15 +176,7 @@ export default function Dashboard() {
 
   return (
     <div
-      className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body"
-      style={{
-        background: `
-          radial-gradient(circle at 0% 0%, hsla(var(--md-primary) / 0.08) 0%, transparent 50%),
-          radial-gradient(circle at 100% 0%, hsla(var(--md-secondary) / 0.08) 0%, transparent 50%),
-          radial-gradient(circle at 50% 100%, hsla(var(--md-tertiary-fixed) / 0.08) 0%, transparent 50%),
-          hsl(var(--md-surface))
-        `,
-      }}
+      className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body bg-white"
     >
       {/* ── Header ── */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
