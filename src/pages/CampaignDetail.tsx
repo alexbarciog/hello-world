@@ -102,7 +102,15 @@ export default function CampaignDetail() {
   const [showAgentRunning, setShowAgentRunning] = useState(false);
   const [editingStep, setEditingStep] = useState<number | null>(null);
 
-  // Settings state
+  // Add step dialog state
+  const [addStepOpen, setAddStepOpen] = useState(false);
+  const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile">("message");
+  const [newStepMessage, setNewStepMessage] = useState("");
+  const [newStepDelay, setNewStepDelay] = useState(1);
+  const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
+
+  
   const [settingsGoal, setSettingsGoal] = useState("");
   const [settingsTone, setSettingsTone] = useState("");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
