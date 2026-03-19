@@ -243,7 +243,7 @@ export default function Dashboard() {
           title="Conversations"
           value={conversations}
           loading={statsLoading}
-          icon={<MessagesSquare className="w-7 h-7 text-md-tertiary" />}
+          icon={<MessagesSquare className="w-5 h-5 text-md-tertiary" />}
           iconBg="hsla(var(--md-tertiary-fixed) / 0.3)"
           trend={conversations > 0 ? "24%" : "0%"}
           trendUp={conversations > 0}
