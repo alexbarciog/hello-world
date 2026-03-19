@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ArrowLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { Search, ArrowLeft, ChevronRight, ExternalLink, Rocket, Link, UserPlus, BarChart3, Shield, Code2, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 
