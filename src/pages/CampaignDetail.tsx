@@ -175,8 +175,36 @@ export default function CampaignDetail() {
     }
     setSavingSettings(false);
   }
+  function openAddStep() {
+    setNewStepType("message");
+    setNewStepMessage("");
+    setNewStepDelay(1);
+    setNewStepMessageMode("manual");
+    setAddStepPhase("choose");
+    setAddStepOpen(true);
+  }
 
-  const filteredContacts = useMemo(() => {
+  function insertVariable(v: string) {
+    setNewStepMessage(prev => prev + `{{${v}}}`);
+  }
+
+  async function saveNewStep() {
+    if (!campaign) return;
+    const newStep: any = {
+      type: newStepType === "visit_profile" ? "visit_profile" : "message",
+      message: newStepMessageMode === "ai" ? "" : newStepMessage,
+      delay_days: newStepDelay,
+      ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
+    };
+    const updated = [...workflowSteps, newStep];
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to add step"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setAddStepOpen(false);
+    toast.success("Step added!");
+  }
+
+
     let list = contacts;
     if (contactFilter !== "all") {
       list = list.filter(c => c.relevance_tier === contactFilter);
