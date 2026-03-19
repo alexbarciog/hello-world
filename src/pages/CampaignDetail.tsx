@@ -227,10 +227,25 @@ export default function CampaignDetail() {
       setContactStatuses(statusMap);
     }
 
-    // Remaining unsent contacts
-    const totalContacts = contactsCount || 0;
-    const totalSent = sentCount || 0;
-    setRemainingContacts(Math.max(0, totalContacts - totalSent));
+    // Remaining unsent contacts — count only sent requests for contacts currently in the list
+    if (c.source_list_id) {
+      const { data: currentContactLinks } = await supabase
+        .from("contact_lists")
+        .select("contact_id")
+        .eq("list_id", c.source_list_id);
+      const currentContactIds = (currentContactLinks || []).map((cl: any) => cl.contact_id);
+      const { count: sentForCurrentList } = await supabase
+        .from("campaign_connection_requests" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("campaign_id", campaignId)
+        .in("contact_id", currentContactIds)
+        .in("status", ["sent", "accepted"]);
+      setRemainingContacts(Math.max(0, currentContactIds.length - (sentForCurrentList || 0)));
+    } else {
+      const totalContacts = contactsCount || 0;
+      const totalSent = sentCount || 0;
+      setRemainingContacts(Math.max(0, totalContacts - totalSent));
+    }
 
     setLoading(false);
   }
@@ -1342,7 +1357,21 @@ export default function CampaignDetail() {
                     const perRun = Math.max(1, Math.floor(dailyLimit / 5));
                     const nowUTC = new Date().getUTCHours();
 
-                    return runs.map((run, idx) => {
+                    // Filter to only show current and future runs
+                    const visibleRuns = runs.filter((run) => {
+                      const runHour = parseInt(run.time);
+                      return nowUTC < runHour + 1; // show if not fully past
+                    });
+
+                    if (visibleRuns.length === 0) {
+                      return (
+                        <div className="text-center py-6 text-sm text-muted-foreground">
+                          All runs for today have been completed. Next runs start tomorrow at 08:00 UTC.
+                        </div>
+                      );
+                    }
+
+                    return visibleRuns.map((run, idx) => {
                       const runHour = parseInt(run.time);
                       const isPast = nowUTC >= runHour + 1;
                       const isActive = nowUTC >= runHour && nowUTC < runHour + 1;
