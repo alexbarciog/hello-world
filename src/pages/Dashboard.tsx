@@ -16,13 +16,13 @@ import {
   ChevronUp,
   ExternalLink,
   MoreVertical,
-  TrendingUp,
-  Minus,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 import { supabase } from "@/integrations/supabase/client";
 
-// ─── Chart data ──────────────────────────────────────────────────────────────
+// ─── Main chart data ──────────────────────────────────────────────────────────
 const generateChartData = () => {
   const data = [];
   const now = new Date("2026-03-17");
@@ -36,37 +36,22 @@ const generateChartData = () => {
 };
 const chartData = generateChartData();
 
+// ─── Sparkline data per card ──────────────────────────────────────────────────
+const sparkFlat = [
+  { v: 0 }, { v: 0 }, { v: 0 }, { v: 0 }, { v: 0 },
+  { v: 0 }, { v: 0 }, { v: 0 },
+];
+const sparkHot = [
+  { v: 1 }, { v: 0 }, { v: 1 }, { v: 2 }, { v: 1 },
+  { v: 2 }, { v: 3 }, { v: 3 },
+];
+
 // ─── Static example leads ────────────────────────────────────────────────────
 const exampleLeads = [
   { name: "Dylan Teixeira (example)", role: "Co-Founder", company: "GojiberryAI", heat: 2 },
   { name: "Pierre-Eliott Lallemant (example)", role: "Co-Founder", company: "GojiberryAI", heat: 2 },
   { name: "Román Czerny (example)", role: "Co-Founder", company: "GojiberryAI", heat: 2 },
 ];
-
-// ─── Mini sparkle dot pattern ─────────────────────────────────────────────────
-function SparkDots({ color }: { color: string }) {
-  // 3 rows × 5 cols of dots, randomised opacities for decorative purpose
-  const rows = [
-    [0.15, 0.25, 0.4, 0.6, 0.8],
-    [0.25, 0.35, 0.55, 0.7, 0.9],
-    [0.1, 0.2, 0.35, 0.5, 0.65],
-  ];
-  return (
-    <div className="flex flex-col gap-1">
-      {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-1">
-          {row.map((op, ci) => (
-            <span
-              key={ci}
-              className="w-1 h-1 rounded-full"
-              style={{ background: color, opacity: op }}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function HeatDots({ count }: { count: number }) {
@@ -92,9 +77,29 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 
 const avatarColors = ["#1a1a2e", "#374151", "#1f2937"];
 
+// ─── Inline mini sparkline ────────────────────────────────────────────────────
+function Sparkline({ data, color }: { data: { v: number }[]; color: string }) {
+  return (
+    <div style={{ width: 88, height: 44 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 4 }}>
+          <Line
+            type="monotone"
+            dataKey="v"
+            stroke={color}
+            strokeWidth={2}
+            dot={false}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 // ─── Design primitives ────────────────────────────────────────────────────────
 const premiumCard =
-  "relative overflow-hidden bg-white/90 rounded-xl border border-white/80 shadow-[0_2px_4px_hsl(220_14%_10%/0.04),0_8px_24px_hsl(220_14%_10%/0.08),0_1px_2px_hsl(220_14%_10%/0.06)]";
+  "relative overflow-hidden bg-white rounded-xl border border-[hsl(220_20%_94%)] shadow-[0_1px_3px_hsl(220_14%_10%/0.06),0_4px_16px_hsl(220_14%_10%/0.06)]";
 
 function ShineOverlay() {
   return (
@@ -102,98 +107,90 @@ function ShineOverlay() {
   );
 }
 
-// ─── Metric Card ─────────────────────────────────────────────────────────────
+// ─── New-style Metric Card (image reference) ──────────────────────────────────
 interface MetricCardProps {
   title: string;
   value: number | string;
-  description: string;
   loading?: boolean;
-  /** teal = positive accent; neutral = dark; none = skip trend row */
   accent?: "teal" | "neutral";
   trend?: string;
   trendUp?: boolean;
+  sparkData?: { v: number }[];
   footer?: React.ReactNode;
-  sparkColor?: string;
 }
 
 function MetricCard({
   title,
   value,
-  description,
   loading,
   accent = "neutral",
   trend,
   trendUp,
+  sparkData,
   footer,
-  sparkColor,
 }: MetricCardProps) {
-  const tealColor = "hsl(152 60% 40%)";
-  const neutralColor = "hsl(222 28% 12%)";
+  const tealColor = "hsl(152 60% 38%)";
+  const coralColor = "hsl(18 95% 58%)";
+  const neutralColor = "hsl(222 28% 14%)";
   const valueColor = accent === "teal" ? tealColor : neutralColor;
-  const trendColor = trendUp ? tealColor : "hsl(220 10% 55%)";
+  const sparkColor = accent === "teal" ? tealColor : "hsl(220 10% 72%)";
+  const trendColor = trendUp === true ? tealColor : trendUp === false && trend !== "+0%" ? coralColor : "hsl(220 10% 60%)";
 
   return (
-    <div className={`${premiumCard} p-5 flex flex-col justify-between min-h-[130px]`}>
+    <div className={`${premiumCard} px-5 py-4 flex flex-col gap-2 min-h-[110px]`}>
       <ShineOverlay />
 
-      {/* Header */}
-      <div className="relative z-10 flex items-start justify-between mb-2">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-tight">
+      {/* Title row */}
+      <div className="relative z-10 flex items-center justify-between">
+        <p className="text-[11px] font-semibold text-[hsl(220_10%_55%)] tracking-wide">
           {title}
         </p>
-        <button className="text-gray-300 hover:text-gray-400 transition-colors -mt-0.5">
+        <button className="text-[hsl(220_10%_75%)] hover:text-[hsl(220_10%_55%)] transition-colors">
           <MoreVertical className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Number + spark dots */}
+      {/* Number + sparkline row */}
       <div className="relative z-10 flex items-end justify-between">
-        <div>
+        <div className="flex flex-col gap-1">
           {loading ? (
-            <div className="h-9 w-12 bg-gray-100 rounded animate-pulse mb-1" />
+            <div className="h-8 w-12 bg-[hsl(220_20%_96%)] rounded animate-pulse" />
           ) : (
-            <div className="flex items-end gap-2 mb-0.5">
-              <span
-                className="text-4xl font-black leading-none tabular-nums"
-                style={{ color: valueColor }}
-              >
-                {value}
-              </span>
-              {accent === "teal" && (
-                <TrendingUp
-                  className="w-4 h-4 mb-1"
-                  style={{ color: tealColor }}
-                />
-              )}
-              {accent === "neutral" && typeof value === "number" && value === 0 && (
-                <Minus className="w-4 h-4 mb-1 text-gray-300" />
-              )}
-            </div>
+            <span
+              className="text-[2rem] font-black leading-none tabular-nums tracking-tight"
+              style={{ color: valueColor }}
+            >
+              {value}
+            </span>
           )}
-          <p className="text-xs text-gray-400">{description}</p>
 
-          {/* Trend line */}
+          {/* Trend */}
           {trend !== undefined && (
-            <div className="flex items-center gap-1 mt-1.5">
-              <span className="text-xs font-semibold" style={{ color: trendColor }}>
+            <div className="flex items-center gap-1">
+              {trendUp ? (
+                <ArrowUpRight className="w-3 h-3" style={{ color: trendColor }} />
+              ) : (
+                <ArrowDownRight className="w-3 h-3" style={{ color: trendColor }} />
+              )}
+              <span className="text-[11px] font-semibold" style={{ color: trendColor }}>
                 {trend}
               </span>
-              <span className="text-xs text-gray-400">vs last month</span>
+              <span className="text-[11px] text-[hsl(220_10%_60%)]">vs last month</span>
             </div>
           )}
         </div>
 
-        {/* Decorative spark dots */}
-        {sparkColor && (
-          <div className="mb-1 opacity-80">
-            <SparkDots color={sparkColor} />
+        {/* Sparkline */}
+        {sparkData && (
+          <div className="mb-1">
+            <Sparkline data={sparkData} color={sparkColor} />
           </div>
         )}
       </div>
 
       {/* Optional footer */}
       {footer && (
-        <div className="relative z-10 mt-3 pt-3 border-t border-[hsl(220_14%_93%)]">
+        <div className="relative z-10 pt-2 border-t border-[hsl(220_14%_93%)]">
           {footer}
         </div>
       )}
