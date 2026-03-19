@@ -176,7 +176,7 @@ export default function Dashboard() {
 
   return (
     <div
-      className="min-h-full rounded-2xl px-6 md:px-12 py-8 md:py-12 relative m-2 md:m-4 font-body"
+      className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body"
       style={{
         background: `
           radial-gradient(circle at 0% 0%, hsla(var(--md-primary) / 0.08) 0%, transparent 50%),
@@ -187,12 +187,12 @@ export default function Dashboard() {
       }}
     >
       {/* ── Header ── */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-        <div className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-md-on-surface font-headline">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-light tracking-tight text-md-on-surface font-headline">
             Welcome back, <span className="font-semibold text-md-primary">Alex</span>
           </h1>
-          <p className="text-md-on-surface-variant font-light text-lg tracking-wide">
+          <p className="text-md-on-surface-variant font-light text-sm tracking-wide">
             Your architected outreach performance for this week.
           </p>
         </div>
