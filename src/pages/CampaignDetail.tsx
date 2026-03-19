@@ -114,6 +114,8 @@ export default function CampaignDetail() {
   const [step1Sent, setStep1Sent] = useState(0);
   const [step1Accepted, setStep1Accepted] = useState(0);
   const [settingsDailyLimit, setSettingsDailyLimit] = useState(25);
+  const [todaySentCount, setTodaySentCount] = useState(0);
+  const [remainingContacts, setRemainingContacts] = useState(0);
 
   // Add step dialog state
   const [addStepOpen, setAddStepOpen] = useState(false);
