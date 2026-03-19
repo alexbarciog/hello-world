@@ -599,7 +599,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
               }}
             >
               <Sparkles className="w-4 h-4" />
-              {saving ? "Creating..." : editCampaignId ? "Save Changes" : "Generate My Campaign"}
+              {saving ? "Generating messages..." : editCampaignId ? "Save Changes" : "Generate My Campaign"}
             </button>
           )}
         </div>
