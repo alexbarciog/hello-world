@@ -298,7 +298,7 @@ export default function Signals() {
           ))
         )}
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => { setEditAgentId(null); setShowCreate(true); }}
           disabled={agents.length >= maxAgents}
           className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 bg-blue-50/50 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
