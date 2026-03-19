@@ -64,7 +64,7 @@ function HeatDots({ count }: { count: number }) {
 function LeadAvatar({ initials, color }: { initials: string; color: string }) {
   return (
     <div
-      className="w-14 h-14 rounded-2xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg"
+      className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-md"
       style={{ background: color }}
     >
       {initials}
@@ -93,16 +93,16 @@ function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: Met
   const trendColor = trendUp ? "text-green-700" : "text-md-on-surface-variant";
 
   return (
-    <div className="glass-card p-8 rounded-[2rem] flex flex-col justify-between group relative overflow-hidden">
-      <div className="flex justify-between items-start mb-10">
+    <div className="glass-card p-5 rounded-2xl flex flex-col justify-between group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-6">
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{ background: iconBg }}
         >
           {icon}
         </div>
         {trend && (
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
             trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"
           }`}>
             {trendUp ? "↑" : ""} {trend}
@@ -110,13 +110,13 @@ function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: Met
         )}
       </div>
       <div>
-        <h3 className="text-md-on-surface-variant font-light text-xs uppercase tracking-[0.2em] mb-2">
+        <h3 className="text-md-on-surface-variant font-light text-[10px] uppercase tracking-[0.2em] mb-1">
           {title}
         </h3>
         {loading ? (
-          <div className="h-12 w-16 bg-md-surface-container rounded animate-pulse" />
+          <div className="h-8 w-12 bg-md-surface-container rounded animate-pulse" />
         ) : (
-          <div className="text-5xl font-light tracking-tight text-md-on-surface font-headline">
+          <div className="text-3xl font-light tracking-tight text-md-on-surface font-headline">
             {value}
           </div>
         )}
@@ -176,7 +176,7 @@ export default function Dashboard() {
 
   return (
     <div
-      className="min-h-full rounded-2xl px-6 md:px-12 py-8 md:py-12 relative m-2 md:m-4 font-body"
+      className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body"
       style={{
         background: `
           radial-gradient(circle at 0% 0%, hsla(var(--md-primary) / 0.08) 0%, transparent 50%),
@@ -187,12 +187,12 @@ export default function Dashboard() {
       }}
     >
       {/* ── Header ── */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
-        <div className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-md-on-surface font-headline">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-light tracking-tight text-md-on-surface font-headline">
             Welcome back, <span className="font-semibold text-md-primary">Alex</span>
           </h1>
-          <p className="text-md-on-surface-variant font-light text-lg tracking-wide">
+          <p className="text-md-on-surface-variant font-light text-sm tracking-wide">
             Your architected outreach performance for this week.
           </p>
         </div>
@@ -207,7 +207,7 @@ export default function Dashboard() {
           </button>
           <button
             onClick={handleNewCampaign}
-            className="text-md-on-primary px-6 py-3 rounded-full font-medium flex items-center gap-2 shadow-xl hover:scale-[1.02] transition-transform duration-300"
+            className="text-md-on-primary px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-transform duration-300"
             style={{
               background: "var(--gradient-md-brand)",
               boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)",
@@ -220,12 +220,12 @@ export default function Dashboard() {
       </header>
 
       {/* ── Metrics Bento Grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <MetricCard
           title="Hot Opportunities"
           value={hotOpps}
           loading={hotOppsLoading}
-          icon={<Flame className="w-7 h-7 text-md-primary" />}
+          icon={<Flame className="w-5 h-5 text-md-primary" />}
           iconBg="hsla(var(--md-primary) / 0.12)"
           trend={hotOpps > 0 ? "12%" : "0%"}
           trendUp={hotOpps > 0}
@@ -234,7 +234,7 @@ export default function Dashboard() {
           title="Leads Engaged"
           value={leadsEngaged}
           loading={statsLoading}
-          icon={<Users className="w-7 h-7 text-md-secondary" />}
+          icon={<Users className="w-5 h-5 text-md-secondary" />}
           iconBg="hsla(var(--md-secondary) / 0.12)"
           trend={leadsEngaged > 0 ? "8%" : "0%"}
           trendUp={leadsEngaged > 0}
@@ -243,7 +243,7 @@ export default function Dashboard() {
           title="Conversations"
           value={conversations}
           loading={statsLoading}
-          icon={<MessagesSquare className="w-7 h-7 text-md-tertiary" />}
+          icon={<MessagesSquare className="w-5 h-5 text-md-tertiary" />}
           iconBg="hsla(var(--md-tertiary-fixed) / 0.3)"
           trend={conversations > 0 ? "24%" : "0%"}
           trendUp={conversations > 0}
@@ -251,13 +251,13 @@ export default function Dashboard() {
       </div>
 
       {/* ── Main Activity Chart & Quick Start ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
         {/* Area Chart */}
-        <div className="lg:col-span-2 glass-card rounded-[2.5rem] overflow-hidden flex flex-col relative">
-          <div className="p-8 md:p-10 pb-0">
+        <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col relative">
+          <div className="p-5 md:p-6 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
-                <h2 className="text-2xl font-light font-headline mb-1 text-md-on-surface">
+                <h2 className="text-lg font-light font-headline mb-0.5 text-md-on-surface">
                   Performance Velocity
                 </h2>
                 <p className="text-md-on-surface-variant font-light text-sm">
@@ -281,21 +281,21 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex-grow relative mt-4" style={{ minHeight: 300 }}>
+          <div className="flex-grow relative mt-2" style={{ minHeight: 220 }}>
             {/* AI Prediction bubble */}
-            <div className="absolute top-4 right-8 glass-card px-5 py-3 rounded-2xl shadow-2xl border-white/60 z-20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-md-primary/10 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-md-primary" />
+            <div className="absolute top-2 right-6 glass-card px-4 py-2 rounded-xl shadow-lg border-white/60 z-20">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-md-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-md-primary" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold text-md-primary uppercase tracking-widest">AI Prediction</div>
-                  <div className="text-sm font-medium text-md-on-surface">Lead quality up 15%</div>
+                  <div className="text-[9px] font-bold text-md-primary uppercase tracking-widest">AI Prediction</div>
+                  <div className="text-xs font-medium text-md-on-surface">Lead quality up 15%</div>
                 </div>
               </div>
             </div>
 
-            <div className="px-4 md:px-8 pb-6" style={{ height: 280 }}>
+            <div className="px-3 md:px-6 pb-4" style={{ height: 200 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -28, bottom: 0 }}>
                   <defs>
@@ -368,9 +368,9 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Start Section */}
-        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 flex flex-col">
-          <h2 className="text-2xl font-light font-headline mb-8 text-md-on-surface">Quick Start</h2>
-          <div className="space-y-4 flex-grow">
+        <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col">
+          <h2 className="text-lg font-light font-headline mb-5 text-md-on-surface">Quick Start</h2>
+          <div className="space-y-3 flex-grow">
             {[
               { label: "Connect LinkedIn", desc: "Profile synced & verified", done: true },
               { label: "Create your first campaign", desc: "Set up outreach sequence", done: false },
@@ -379,7 +379,7 @@ export default function Dashboard() {
             ].map((step) => (
               <div
                 key={step.label}
-                className={`flex items-start gap-4 p-5 rounded-[1.5rem] border transition-all duration-300 ${
+                className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
                   step.done
                     ? "bg-white/40 border-white/20 hover:bg-white/60"
                     : "bg-white/20 border-white/10 hover:bg-white/40"
@@ -387,57 +387,57 @@ export default function Dashboard() {
               >
                 <div className="mt-0.5 flex-shrink-0">
                   {step.done ? (
-                    <div className="w-7 h-7 rounded-full bg-md-primary text-white flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    <div className="w-5 h-5 rounded-full bg-md-primary text-white flex items-center justify-center">
+                      <Check className="w-3 h-3" strokeWidth={3} />
                     </div>
                   ) : (
-                    <div className="w-7 h-7 rounded-full border-2 border-md-outline-variant bg-transparent" />
+                    <div className="w-5 h-5 rounded-full border-2 border-md-outline-variant bg-transparent" />
                   )}
                 </div>
                 <div>
-                  <div className="font-medium text-md-on-surface">{step.label}</div>
-                  <div className="text-xs font-light text-md-on-surface-variant">{step.desc}</div>
+                  <div className="font-medium text-sm text-md-on-surface">{step.label}</div>
+                  <div className="text-[11px] font-light text-md-on-surface-variant">{step.desc}</div>
                 </div>
               </div>
             ))}
           </div>
           <button
             onClick={handleNewCampaign}
-            className="w-full py-4 mt-8 rounded-full border border-md-primary/30 text-md-primary font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
+            className="w-full py-2.5 mt-5 rounded-full border border-md-primary/30 text-md-primary text-sm font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
           >
             View setup guide
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* ── Bottom row: Leads & Replies ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
         {/* Latest Hot Leads */}
-        <div className="glass-card rounded-[2.5rem] p-8 md:p-10">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-light font-headline text-md-on-surface">Latest Hot Leads</h2>
-            <button className="text-sm font-medium text-md-primary hover:underline">View CRM</button>
+        <div className="glass-card rounded-2xl p-5 md:p-6">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-lg font-light font-headline text-md-on-surface">Latest Hot Leads</h2>
+            <button className="text-xs font-medium text-md-primary hover:underline">View CRM</button>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {exampleLeads.map((lead, i) => (
               <div
                 key={lead.name}
-                className="group flex items-center justify-between p-5 rounded-[1.75rem] bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer"
+                className="group flex items-center justify-between p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer"
               >
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-3">
                   <div className="relative">
                     <LeadAvatar
                       initials={lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
                       color={avatarColors[i]}
                     />
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-white flex items-center justify-center shadow-sm">
-                      <Zap className="w-3 h-3 text-white" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 border-2 border-white flex items-center justify-center shadow-sm">
+                      <Zap className="w-2 h-2 text-white" />
                     </div>
                   </div>
                   <div>
-                    <div className="font-semibold text-md-on-surface text-base">{lead.name}</div>
-                    <div className="text-sm font-light text-md-on-surface-variant">
+                    <div className="font-semibold text-md-on-surface text-sm">{lead.name}</div>
+                    <div className="text-xs font-light text-md-on-surface-variant">
                       {lead.role} · {lead.company}
                     </div>
                   </div>
@@ -449,21 +449,19 @@ export default function Dashboard() {
         </div>
 
         {/* Latest Replies */}
-        <div className="glass-card rounded-[2.5rem] p-8 md:p-10">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-light font-headline text-md-on-surface">Latest Replies</h2>
-            <div className="flex items-center gap-2 px-4 py-2 bg-md-secondary/10 rounded-full cursor-pointer hover:bg-md-secondary/20 transition-colors group">
-              <span className="text-sm font-semibold text-md-secondary">Open Inbox</span>
-              <ArrowRight className="w-3.5 h-3.5 text-md-secondary group-hover:translate-x-1 transition-transform" />
+        <div className="glass-card rounded-2xl p-5 md:p-6">
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-lg font-light font-headline text-md-on-surface">Latest Replies</h2>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-md-secondary/10 rounded-full cursor-pointer hover:bg-md-secondary/20 transition-colors group">
+              <span className="text-xs font-semibold text-md-secondary">Open Inbox</span>
+              <ArrowRight className="w-3 h-3 text-md-secondary group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center py-10 gap-3">
-            <MessageSquare className="w-10 h-10 text-md-outline-variant" />
+          <div className="flex flex-col items-center justify-center py-8 gap-2">
+            <MessageSquare className="w-8 h-8 text-md-outline-variant" />
             <p className="text-sm text-center text-md-on-surface-variant">
-              <button
-                className="font-semibold text-md-primary hover:opacity-80 transition-opacity"
-              >
+              <button className="font-semibold text-md-primary hover:opacity-80 transition-opacity">
                 Activate your Unibox
               </button>{" "}
               to never miss a reply
@@ -474,48 +472,48 @@ export default function Dashboard() {
       </div>
 
       {/* ── Get Started panel ── */}
-      <div className="glass-card rounded-[2.5rem] overflow-hidden mb-8">
+      <div className="glass-card rounded-2xl overflow-hidden mb-6">
         <button
           onClick={() => setGetStartedOpen(!getStartedOpen)}
-          className="w-full flex items-center justify-between px-8 md:px-10 py-6 transition-colors hover:bg-white/30"
+          className="w-full flex items-center justify-between px-5 md:px-6 py-4 transition-colors hover:bg-white/30"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
+              className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm"
               style={{ background: "var(--gradient-md-brand)" }}
             >
-              <Rocket className="w-5 h-5 text-white" />
+              <Rocket className="w-4 h-4 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-lg font-medium text-md-on-surface font-headline">Get Started</p>
-              <p className="text-xs text-md-on-surface-variant font-light">Complete these steps to start</p>
+              <p className="text-sm font-medium text-md-on-surface font-headline">Get Started</p>
+              <p className="text-[11px] text-md-on-surface-variant font-light">Complete these steps to start</p>
             </div>
           </div>
           {getStartedOpen ? (
-            <ChevronDown className="w-5 h-5 text-md-on-surface-variant" />
+            <ChevronDown className="w-4 h-4 text-md-on-surface-variant" />
           ) : (
-            <ChevronUp className="w-5 h-5 text-md-on-surface-variant" />
+            <ChevronUp className="w-4 h-4 text-md-on-surface-variant" />
           )}
         </button>
         {getStartedOpen && (
-          <div className="px-8 md:px-10 pb-8 pt-2 border-t border-white/30">
-            <div className="space-y-4 mt-4">
+          <div className="px-5 md:px-6 pb-5 pt-1 border-t border-white/30">
+            <div className="space-y-3 mt-3">
               {[
                 { label: "Connect your LinkedIn account", done: true },
                 { label: "Create your first campaign", done: false },
                 { label: "Add your ICP (Ideal Customer Profile)", done: false },
                 { label: "Launch your first outreach sequence", done: false },
               ].map((step) => (
-                <div key={step.label} className="flex items-center gap-4">
+                <div key={step.label} className="flex items-center gap-3">
                   <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                     style={{
                       background: step.done ? "hsl(var(--md-primary))" : "transparent",
                       border: step.done ? "none" : "2px solid hsl(var(--md-outline-variant))",
                       boxShadow: step.done ? "0 2px 8px hsla(var(--md-primary) / 0.3)" : "none",
                     }}
                   >
-                    {step.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                    {step.done && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
                   </div>
                   <p
                     className={`text-sm ${
@@ -533,7 +531,7 @@ export default function Dashboard() {
 
       {/* ── Floating button ── */}
       <button
-        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-xl"
+        className="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
         style={{
           background: "var(--gradient-md-brand)",
           boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.4), 0 2px 8px hsla(0, 0%, 0%, 0.15)",
