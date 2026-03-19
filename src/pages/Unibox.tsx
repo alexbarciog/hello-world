@@ -650,22 +650,8 @@ export default function Unibox() {
                 </div>
               </div>
 
-              <div className="mt-10">
-                <h4 className="text-xs font-bold text-foreground/40 uppercase tracking-[2px] mb-4">Shared Connections</h4>
-                <div className="flex -space-x-3 overflow-hidden">
-                  {["MC", "ER", "JS"].map((init) => (
-                    <div
-                      key={init}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-white bg-foreground/10 text-xs font-medium text-foreground/50"
-                    >
-                      {init}
-                    </div>
-                  ))}
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-white bg-foreground/5 text-[10px] font-bold text-foreground/40">
-                    +12
-                  </div>
-                </div>
-              </div>
+
+
             </div>
           </aside>
         )}
