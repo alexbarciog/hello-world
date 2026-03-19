@@ -1275,31 +1275,17 @@ This lets you verify your endpoint is working correctly before relying on it in 
 ];
 
 // ─────────────────────────────────────────
-// ICONS
+// CATEGORY ICON MAP
 // ─────────────────────────────────────────
-function FolderIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" className={className} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="14" width="40" height="28" rx="3" fill="hsl(var(--goji-coral) / 0.1)" stroke="hsl(var(--goji-coral))" strokeWidth="2" />
-      <path d="M4 14 C4 12 5 10 7 10 L18 10 C20 10 21 11 22 13 L22 14" fill="hsl(var(--goji-coral) / 0.15)" stroke="hsl(var(--goji-coral))" strokeWidth="2" />
-      <line x1="12" y1="24" x2="36" y2="24" stroke="hsl(var(--goji-coral))" strokeWidth="1.5" />
-      <line x1="12" y1="30" x2="30" y2="30" stroke="hsl(var(--goji-coral))" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
-function WrenchIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" className={className} strokeLinecap="round" strokeLinejoin="round">
-      <path
-        d="M33 6C28.5 6 25 9.5 25 14C25 15.2 25.3 16.3 25.8 17.3L10 33C9 34 9 35.7 10 36.7L13.3 40C14.3 41 16 41 17 40L33 24.2C34 24.7 35.1 25 36.3 25C40.7 25 44.2 21.5 44.2 17C44.2 16 44 15.1 43.6 14.2L38.5 19.3L34.7 18L33.4 14.2L38.5 9.1C37 7.1 35.1 6 33 6Z"
-        fill="hsl(var(--goji-coral) / 0.1)"
-        stroke="hsl(var(--goji-coral))"
-        strokeWidth="2"
-      />
-    </svg>
-  );
-}
+const categoryIcons: Record<string, { icon: React.ElementType; gradient: string; shadow: string }> = {
+  "getting-started": { icon: Rocket, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
+  "connecting-linkedin": { icon: Link, gradient: "bg-gradient-to-br from-md-secondary to-md-primary-container", shadow: "shadow-md-secondary/20" },
+  "finding-leads": { icon: UserPlus, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary-fixed))] to-[hsl(46,100%,50%)]", shadow: "shadow-[hsl(var(--md-tertiary))]/20" },
+  "campaigns-outreach": { icon: BarChart3, gradient: "bg-gradient-to-br from-md-primary-container to-md-secondary", shadow: "shadow-md-primary/20" },
+  "troubleshooting": { icon: Shield, gradient: "bg-gradient-to-br from-destructive to-md-secondary", shadow: "shadow-destructive/10" },
+  "billing-plans": { icon: Sparkles, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
+  "technical-api": { icon: Code2, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary))] to-md-primary", shadow: "shadow-[hsl(var(--md-tertiary))]/10" },
+};
 
 // ─────────────────────────────────────────
 // MARKDOWN RENDERER (simple)
