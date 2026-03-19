@@ -35,10 +35,12 @@ function AgentCard({
   agent,
   onToggle,
   onDelete,
+  onEdit,
 }: {
   agent: SignalAgent;
   onToggle: () => void;
   onDelete: () => void;
+  onEdit: () => void;
 }) {
   const isActive = agent.status === "active";
 
