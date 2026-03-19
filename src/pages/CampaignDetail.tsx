@@ -444,10 +444,10 @@ export default function CampaignDetail() {
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-bold text-foreground">{agentName}</span>
                             <span className="flex items-center gap-1.5">
-                              <span className={`text-xs font-bold ${agentStatus === "active" ? "text-green-600" : "text-muted-foreground"}`}>
-                                {agentStatus === "active" ? "Running" : "Paused"}
+                              <span className={`text-xs font-bold ${(campaign?.source_agent_id ? agentStatus : campaign?.status) === "active" ? "text-green-600" : "text-muted-foreground"}`}>
+                                {(campaign?.source_agent_id ? agentStatus : campaign?.status) === "active" ? "Running" : "Paused"}
                               </span>
-                              <span className={`w-2 h-2 rounded-full ${agentStatus === "active" ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                              <span className={`w-2 h-2 rounded-full ${(campaign?.source_agent_id ? agentStatus : campaign?.status) === "active" ? "bg-green-500" : "bg-muted-foreground/40"}`} />
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-2 bg-muted/50 rounded-full px-2.5 py-0.5 w-fit">{listsCount} list(s) • {contactsCount} contact(s)</p>
