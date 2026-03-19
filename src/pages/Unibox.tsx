@@ -70,6 +70,8 @@ interface Message {
   date?: string;
   created_at?: string;
   is_sender?: boolean;
+  from_me?: boolean;
+  direction?: string;
 }
 
 /* ── API helpers ──────────────────────────────────────────── */
@@ -496,7 +498,7 @@ export default function Unibox() {
                   ) : (
                     <>
                       {messages.map((msg) => {
-                        const isSent = msg.is_sender === true;
+                        const isSent = msg.is_sender === true || msg.from_me === true || msg.direction === "outbound";
                         return isSent ? (
                           /* Sent Message */
                           <div key={msg.id} className="flex flex-row-reverse items-end gap-3 ml-auto max-w-[80%]">
