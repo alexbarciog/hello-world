@@ -64,7 +64,7 @@ interface Message {
   timestamp?: string;
   date?: string;
   created_at?: string;
-  is_sender?: boolean;
+  is_sender?: boolean | number | string;
   from_me?: boolean;
   direction?: string;
 }
