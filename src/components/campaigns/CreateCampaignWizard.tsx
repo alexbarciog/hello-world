@@ -213,7 +213,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                 <div className="flex items-center gap-2">
                   <motion.div
                     animate={{
-                      background: step > s.num ? "hsl(var(--goji-coral))" : step === s.num ? "hsl(var(--goji-coral))" : "hsl(var(--muted))",
+                      background: step > s.num ? "hsl(var(--foreground))" : step === s.num ? "hsl(var(--foreground))" : "hsl(var(--muted))",
                       scale: step === s.num ? 1.1 : 1,
                     }}
                     transition={{ duration: 0.2 }}
