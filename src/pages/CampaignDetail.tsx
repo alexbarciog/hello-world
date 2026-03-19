@@ -1317,63 +1317,73 @@ export default function CampaignDetail() {
           {/* ── Scheduled Tab ── */}
           {tab === "scheduled" && (
             <motion.div key="scheduled" variants={tabVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
-              {/* Today's overview */}
-              <div className="rounded-xl border border-border p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-bold text-foreground">Today's Schedule</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                    </p>
+              {/* ✨ Today's overview — iOS glassmorphic card */}
+              <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background via-background to-primary/[0.03] p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">📅</div>
+                    <div>
+                      <h2 className="text-base font-extrabold text-foreground tracking-tight">Today's Schedule</h2>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${campaign.status === "active" ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
-                      {campaign.status === "active" ? "Active" : "Paused"}
-                    </span>
-                  </div>
+                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-sm ${
+                    campaign.status === "active"
+                      ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                      : "bg-muted text-muted-foreground ring-1 ring-border"
+                  }`}>
+                    {campaign.status === "active" ? "🟢 Active" : "⏸️ Paused"}
+                  </span>
                 </div>
 
-                {/* Daily progress bar */}
-                <div className="mb-5">
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-medium text-muted-foreground">Daily progress</span>
-                    <span className="font-bold text-foreground">{todaySentCount} / {campaign.daily_connect_limit || 25}</span>
+                {/* Progress pill */}
+                <div className="mb-6 rounded-xl bg-muted/40 p-3.5">
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="font-medium text-muted-foreground flex items-center gap-1.5">⚡ Daily progress</span>
+                    <span className="font-extrabold text-foreground">{todaySentCount} / {campaign.daily_connect_limit || 25}</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${Math.min(100, (todaySentCount / (campaign.daily_connect_limit || 25)) * 100)}%` }}
+                  <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, (todaySentCount / (campaign.daily_connect_limit || 25)) * 100)}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {remainingContacts} contacts remaining in queue
+                  <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                    👥 {remainingContacts} contacts remaining in queue
                   </p>
                 </div>
 
-                {/* Sequence runs timeline */}
-                <div className="space-y-0">
+                {/* Sequence runs */}
+                <div className="space-y-2">
                   {(() => {
                     const runs = [
-                      { time: "08:00", label: "Run 1" },
-                      { time: "10:00", label: "Run 2" },
-                      { time: "12:00", label: "Run 3" },
-                      { time: "14:00", label: "Run 4" },
-                      { time: "16:00", label: "Run 5" },
+                      { time: "08:00", label: "Run 1", emoji: "🌅" },
+                      { time: "10:00", label: "Run 2", emoji: "☀️" },
+                      { time: "12:00", label: "Run 3", emoji: "🔆" },
+                      { time: "14:00", label: "Run 4", emoji: "🌤️" },
+                      { time: "16:00", label: "Run 5", emoji: "🌇" },
                     ];
                     const dailyLimit = campaign.daily_connect_limit || 25;
                     const perRun = Math.max(1, Math.floor(dailyLimit / 5));
                     const nowUTC = new Date().getUTCHours();
 
-                    // Filter to only show current and future runs
                     const visibleRuns = runs.filter((run) => {
                       const runHour = parseInt(run.time);
-                      return nowUTC < runHour + 1; // show if not fully past
+                      return nowUTC < runHour + 1;
                     });
 
                     if (visibleRuns.length === 0) {
                       return (
-                        <div className="text-center py-6 text-sm text-muted-foreground">
-                          All runs for today have been completed. Next runs start tomorrow at {utcHourToLocal(8)}.
+                        <div className="text-center py-8">
+                          <div className="text-3xl mb-2">✅</div>
+                          <p className="text-sm font-bold text-foreground">All done for today!</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Next runs start tomorrow at {utcHourToLocal(8)} 🌅
+                          </p>
                         </div>
                       );
                     }
@@ -1382,77 +1392,69 @@ export default function CampaignDetail() {
                       const runHour = parseInt(run.time);
                       const isPast = nowUTC >= runHour + 1;
                       const isActive = nowUTC >= runHour && nowUTC < runHour + 1;
-                      const isFuture = !isPast && !isActive;
 
-                      // Calculate how many this run would send
                       const sentBefore = Math.min(idx * perRun, todaySentCount);
                       const thisBatchSent = isPast ? Math.min(perRun, Math.max(0, todaySentCount - sentBefore)) : 0;
                       const thisBatchPlanned = Math.min(perRun, remainingContacts > 0 ? perRun : 0);
 
                       return (
-                        <div key={idx} className="flex items-stretch gap-3">
-                          {/* Timeline line */}
-                          <div className="flex flex-col items-center w-8">
-                            <div className={`w-3 h-3 rounded-full border-2 shrink-0 mt-4 ${
-                              isPast ? "bg-primary border-primary" :
-                              isActive ? "bg-primary border-primary animate-pulse" :
-                              "bg-background border-border"
-                            }`}>
-                              {isPast && <Check className="w-2 h-2 text-primary-foreground ml-[1px] mt-[1px]" />}
-                            </div>
-                            {idx < runs.length - 1 && (
-                              <div className={`w-0.5 flex-1 min-h-[24px] ${isPast ? "bg-primary/30" : "bg-border"}`} />
-                            )}
-                          </div>
-
-                          {/* Run card */}
-                          <div className={`flex-1 rounded-xl border p-3.5 mb-2 transition-all ${
-                            isActive ? "border-primary bg-primary/5 shadow-sm" :
-                            isPast ? "border-border bg-muted/20" :
-                            "border-border"
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-foreground">{run.label}</span>
-                                <span className="text-[10px] text-muted-foreground font-medium">{utcHourToLocal(runHour)}</span>
-                                {isActive && (
-                                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">NOW</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {isPast ? (
-                                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                                    {thisBatchSent} sent
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.06 }}
+                          className={`rounded-xl p-3.5 transition-all duration-300 ${
+                            isActive
+                              ? "bg-primary/[0.06] ring-1 ring-primary/25 shadow-sm shadow-primary/5"
+                              : isPast
+                              ? "bg-muted/30"
+                              : "bg-muted/20 hover:bg-muted/40"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-lg">{run.emoji}</span>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-foreground">{run.label}</span>
+                                  <span className="text-[10px] text-muted-foreground font-semibold bg-muted/60 px-1.5 py-0.5 rounded-md">
+                                    {utcHourToLocal(runHour)}
                                   </span>
-                                ) : campaign.status !== "active" ? (
-                                  <span className="text-[10px] font-medium text-muted-foreground">Paused</span>
-                                ) : remainingContacts === 0 ? (
-                                  <span className="text-[10px] font-medium text-muted-foreground">No contacts</span>
-                                ) : (
-                                  <span className="text-[10px] font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">
-                                    ~{thisBatchPlanned} planned
+                                  {isActive && (
+                                    <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">
+                                      ⚡ LIVE
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1">
+                                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    <UserPlus className="w-2.5 h-2.5" /> Send invitations
                                   </span>
-                                )}
+                                  {workflowSteps.filter((ws: any) => ws.type !== "invitation").length > 0 && (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                      <MessageSquare className="w-2.5 h-2.5" /> +{workflowSteps.filter((ws: any) => ws.type !== "invitation").length} follow-up
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
-
-                            {/* Step details for this run */}
-                            <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
-                              <UserPlus className="w-3 h-3" />
-                              <span>Send connection invitations (no message)</span>
-                            </div>
-
-                            {/* Show workflow follow-ups if applicable */}
-                            {workflowSteps.filter((ws: any) => ws.type !== "invitation").length > 0 && (
-                              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
-                                <MessageSquare className="w-3 h-3" />
-                                <span>
-                                  + {workflowSteps.filter((ws: any) => ws.type !== "invitation").length} follow-up message(s) after acceptance
+                            <div>
+                              {isPast ? (
+                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full ring-1 ring-emerald-500/20">
+                                  ✓ {thisBatchSent} sent
                                 </span>
-                              </div>
-                            )}
+                              ) : campaign.status !== "active" ? (
+                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">⏸️ Paused</span>
+                              ) : remainingContacts === 0 ? (
+                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">No contacts</span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-foreground/70 bg-muted/60 px-2.5 py-1 rounded-full ring-1 ring-border/50">
+                                  ~{thisBatchPlanned} planned
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     });
                   })()}
@@ -1502,86 +1504,78 @@ export default function CampaignDetail() {
           {tab === "launches" && (
             <motion.div key="launches" variants={tabVariant} initial="hidden" animate="visible" exit="exit" className="space-y-3">
               {(() => {
-                // Build past runs from today + historical data from campaign_connection_requests
                 const runSlots = [
-                  { time: "08:00", hour: 8 },
-                  { time: "10:00", hour: 10 },
-                  { time: "12:00", hour: 12 },
-                  { time: "14:00", hour: 14 },
-                  { time: "16:00", hour: 16 },
+                  { time: "08:00", hour: 8, emoji: "🌅" },
+                  { time: "10:00", hour: 10, emoji: "☀️" },
+                  { time: "12:00", hour: 12, emoji: "🔆" },
+                  { time: "14:00", hour: 14, emoji: "🌤️" },
+                  { time: "16:00", hour: 16, emoji: "🌇" },
                 ];
                 const nowUTC = new Date().getUTCHours();
-
-                // Group connection requests by date and approximate run slot
-                const requestsBySlot: Record<string, { date: string; time: string; sent: number; skipped: number; failed: number }> = {};
-
-                // Use contactStatuses data + connection requests
-                // We already have connRequests loaded — let's use the raw data
-                // For now, reconstruct from todaySentCount and the run schedule
-                const todayStr = new Date().toISOString().slice(0, 10);
-
-                // Build today's past runs
                 const dailyLimit = campaign.daily_connect_limit || 25;
                 const perRun = Math.max(1, Math.floor(dailyLimit / 5));
-                const pastRuns: { date: string; time: string; label: string; sent: number; status: string }[] = [];
+                const pastRuns: { date: string; time: string; label: string; sent: number; status: string; emoji: string }[] = [];
 
                 runSlots.forEach((slot, idx) => {
                   if (nowUTC >= slot.hour + 1) {
-                    // This run is in the past
                     const sentBefore = Math.min(idx * perRun, todaySentCount);
                     const thisBatchSent = Math.min(perRun, Math.max(0, todaySentCount - sentBefore));
                     pastRuns.push({
-                      date: todayStr,
+                      date: new Date().toISOString().slice(0, 10),
                       time: slot.time,
                       label: `Run ${idx + 1}`,
                       sent: thisBatchSent,
                       status: thisBatchSent > 0 ? "completed" : "no_contacts",
+                      emoji: slot.emoji,
                     });
                   }
                 });
-
-                // Reverse to show most recent first
                 pastRuns.reverse();
 
                 if (pastRuns.length === 0) {
                   return (
-                    <div className="rounded-xl border border-border p-12 text-center">
-                      <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                    <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background to-muted/20 p-12 text-center">
+                      <div className="text-4xl mb-3">🕐</div>
                       <p className="text-sm font-bold text-foreground">No launches yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Completed runs will appear here.</p>
+                      <p className="text-xs text-muted-foreground mt-1">Completed runs will appear here ✨</p>
                     </div>
                   );
                 }
 
                 return (
                   <>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm font-bold text-foreground">Today's Completed Runs</h3>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <span className="text-lg">📋</span>
+                      <h3 className="text-sm font-extrabold text-foreground tracking-tight">Today's Completed Runs</h3>
+                      <span className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md font-medium">
+                        {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                     </div>
                     {pastRuns.map((run, idx) => (
-                      <div key={idx} className="rounded-xl border border-border p-4 flex items-center justify-between">
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.06 }}
+                        className="rounded-xl bg-muted/20 hover:bg-muted/40 transition-all p-4 flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                            run.sent > 0 ? "bg-green-100" : "bg-muted"
-                          }`}>
-                            <Check className={`w-4 h-4 ${run.sent > 0 ? "text-green-600" : "text-muted-foreground"}`} />
-                          </div>
+                          <span className="text-lg">{run.emoji}</span>
                           <div>
                             <p className="text-xs font-bold text-foreground">{run.label} — {utcHourToLocal(parseInt(run.time))}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
-                              {run.sent > 0 ? `${run.sent} connection invitation${run.sent !== 1 ? "s" : ""} sent` : "No contacts to process"}
+                              {run.sent > 0 ? `🚀 ${run.sent} invitation${run.sent !== 1 ? "s" : ""} sent` : "No contacts to process"}
                             </p>
                           </div>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          run.sent > 0 ? "bg-green-50 text-green-700" : "bg-muted text-muted-foreground"
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                          run.sent > 0
+                            ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                            : "bg-muted text-muted-foreground ring-1 ring-border/50"
                         }`}>
-                          {run.sent > 0 ? "Completed" : "Skipped"}
+                          {run.sent > 0 ? "✅ Completed" : "⏭️ Skipped"}
                         </span>
-                      </div>
+                      </motion.div>
                     ))}
                   </>
                 );
