@@ -143,6 +143,7 @@ export default function CampaignDetail() {
     // Load contacts from source_list_id if set
     if (c.source_list_id) {
       setSelectedListId(c.source_list_id);
+      setListsCount(1);
       await loadContactsForList(c.source_list_id);
     } else if (c.source_agent_id) {
       const { data: agentData } = await supabase.from("signal_agents").select("leads_list_name").eq("id", c.source_agent_id).single();
@@ -196,6 +197,7 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({ source_list_id: listId } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to assign list"); setAssigningList(false); return; }
     setSelectedListId(listId);
+    setListsCount(1);
     setCampaign({ ...campaign, source_list_id: listId });
     await loadContactsForList(listId);
     setAssigningList(false);
