@@ -1011,7 +1011,7 @@ export default function CampaignDetail() {
                                     return <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded-full px-2.5 py-0.5">Step {stepNum}</span>;
                                   }
                                   if (cs.status === "sent") return <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/30 rounded-full px-2.5 py-0.5">Invite Sent</span>;
-                                  return <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-2.5 py-0.5 capitalize">{cs.status}</span>;
+                                  return <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted/50 rounded-full px-2.5 py-0.5">{cs.status === "failed" ? "Skipped" : cs.status}</span>;
                                 })()}
                               </td>
                               <td className="px-3 py-3">
