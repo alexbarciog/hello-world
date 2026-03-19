@@ -284,6 +284,19 @@ export default function CampaignDetail() {
     setEditingDelayStep(null);
   }
 
+  async function deleteWorkflowStep(stepIndex: number) {
+    if (!campaign) return;
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const actualIdx = nonInvitationSteps[stepIndex]?.idx;
+    if (actualIdx === undefined) return;
+    const updated = workflowSteps.filter((_: any, idx: number) => idx !== actualIdx);
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to delete step"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setEditingStep(null);
+    toast.success("Step deleted");
+  }
+
   async function saveNewStep() {
     if (!campaign) return;
     const newStep: any = {
