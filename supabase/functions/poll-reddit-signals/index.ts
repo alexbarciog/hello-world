@@ -410,6 +410,11 @@ async function pollViaApify(
     }
 
     console.log(`[poll-reddit] Apify: ${posts.length} posts in r/${subreddit} for "${keyword}"`);
+    // Log first post structure for debugging
+    if (posts.length > 0) {
+      console.log(`[poll-reddit] Apify sample post keys: ${JSON.stringify(Object.keys(posts[0]))}`);
+      console.log(`[poll-reddit] Apify sample post: ${JSON.stringify(posts[0]).slice(0, 500)}`);
+    }
 
     let inserted = 0;
     for (const p of posts) {
