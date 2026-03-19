@@ -585,16 +585,57 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="flex flex-col items-center justify-center py-8 gap-2">
-            <MessageSquare className="w-8 h-8 text-md-outline-variant" />
-            <p className="text-sm text-center text-md-on-surface-variant">
-              <button onClick={() => navigate("/unibox")} className="font-semibold text-md-primary hover:opacity-80 transition-opacity">
-                Activate your Unibox
-              </button>{" "}
-              to never miss a reply
-            </p>
-            <p className="text-xs text-md-on-surface-variant">All your replies will appear here</p>
-          </div>
+          {repliesLoading ? (
+            <div className="space-y-3 py-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <div className="w-10 h-10 rounded-xl bg-md-surface-container animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-32 bg-md-surface-container rounded animate-pulse" />
+                    <div className="h-2.5 w-48 bg-md-surface-container rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (latestReplies ?? []).length > 0 ? (
+            <div className="space-y-2">
+              {(latestReplies ?? []).map((reply, i) => {
+                const initials = reply.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
+                const timeAgo = reply.timestamp ? (() => {
+                  const diff = Math.floor((Date.now() - new Date(reply.timestamp).getTime()) / 1000);
+                  if (diff < 60) return `${diff}s ago`;
+                  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                  return `${Math.floor(diff / 86400)}d ago`;
+                })() : "";
+                return (
+                  <div
+                    key={reply.chat_id || i}
+                    onClick={() => navigate("/unibox")}
+                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer"
+                  >
+                    {reply.avatar_url ? (
+                      <img src={reply.avatar_url} alt={reply.name} className="w-10 h-10 rounded-xl object-cover shrink-0 shadow-md" />
+                    ) : (
+                      <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-md-on-surface text-sm">{reply.name}</span>
+                        {timeAgo && <span className="text-[10px] text-md-on-surface-variant">{timeAgo}</span>}
+                      </div>
+                      <p className="text-xs font-light text-md-on-surface-variant truncate">{reply.text || "No message"}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 gap-2">
+              <MessageSquare className="w-8 h-8 text-md-outline-variant" />
+              <p className="text-sm text-md-on-surface-variant">No new replies yet</p>
+            </div>
+          )}
         </div>
       </div>
 
