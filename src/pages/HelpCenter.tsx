@@ -1312,7 +1312,7 @@ function renderMarkdown(text: string) {
     // Heading 3
     if (line.startsWith("### ")) {
       elements.push(
-        <h3 key={i} className="text-sm font-bold mt-4 mb-1" style={{ color: "hsl(var(--goji-dark))" }}>
+        <h3 key={i} className="text-base font-semibold mt-6 mb-2" style={{ color: "hsl(var(--md-on-surface))" }}>
           {renderInline(line.slice(4))}
         </h3>
       );
