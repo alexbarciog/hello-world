@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -172,6 +172,7 @@ function CampaignCard({
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
@@ -196,6 +197,17 @@ export default function CampaignsPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Auto-open wizard when navigated with ?autoStart=true
+  useEffect(() => {
+    if (searchParams.get("autoStart") === "true" && !loading) {
+      if (!atLimit) {
+        setEditCampaignId(null);
+        setShowWizard(true);
+      }
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, loading]);
 
   const handleNewCampaign = () => {
     if (atLimit) { toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`); return; }

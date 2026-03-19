@@ -101,8 +101,7 @@ export default function Dashboard() {
   const [getStartedOpen, setGetStartedOpen] = useState(true);
 
   const handleNewCampaign = () => {
-    clearOnboardingSession();
-    navigate("/");
+    navigate("/campaigns?autoStart=true");
   };
 
   // ── User info ──
