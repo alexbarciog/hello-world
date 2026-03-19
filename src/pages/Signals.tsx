@@ -102,6 +102,7 @@ export default function Signals() {
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editAgentId, setEditAgentId] = useState<string | null>(null);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showPreviousLaunches, setShowPreviousLaunches] = useState(false);
   const [activeAgent, setActiveAgent] = useState<SignalAgent | null>(null);
