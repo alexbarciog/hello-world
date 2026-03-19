@@ -116,7 +116,7 @@ async function pollViaRSS(
   subreddit: string
 ): Promise<number> {
   // Reddit RSS search: reddit.com/r/{sub}/search.rss?q={keyword}&restrict_sr=on&sort=new&t=week
-  const rssUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
+  const rssUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=month&limit=100`;
 
   console.log(`[poll-reddit] RSS: r/${subreddit} for "${keyword}"`);
 
@@ -241,7 +241,7 @@ async function pollViaJSON(
   keyword: string,
   subreddit: string
 ): Promise<number> {
-  const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
+  const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=month&limit=100`;
 
   const res = await fetch(searchUrl, {
     headers: {
