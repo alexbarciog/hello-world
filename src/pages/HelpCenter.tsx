@@ -1548,7 +1548,7 @@ export default function HelpCenter() {
         {/* Top nav */}
         <div className="flex items-center justify-between px-8 py-5 max-w-6xl mx-auto">
           <button onClick={() => navigate("/home")} className="flex items-center gap-2">
-            <img src={intentslyIcon} alt="intentsly" className="w-7 h-7 object-contain" />
+            <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
             <span className="font-bold text-lg tracking-tight" style={{ color: "hsl(var(--goji-dark))" }}>
               intentsly
             </span>
@@ -1570,7 +1570,7 @@ export default function HelpCenter() {
         {/* Title + Search */}
         <div className="flex flex-col items-center text-center pt-8 pb-4 px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-8 max-w-xl leading-tight" style={{ color: "hsl(var(--goji-dark))" }}>
-            Advice and answers from the intentslyAI Team
+            Advice and answers from the Intentsly Team
           </h1>
           <div className="relative w-full max-w-lg">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "hsl(var(--goji-text-muted))" }} />
