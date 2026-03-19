@@ -99,6 +99,9 @@ export default function CampaignDetail() {
   const [agentStatus, setAgentStatus] = useState("paused");
   const [contactsCount, setContactsCount] = useState(0);
   const [listsCount, setListsCount] = useState(0);
+  const [availableLists, setAvailableLists] = useState<{ id: string; name: string; contact_count: number }[]>([]);
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [assigningList, setAssigningList] = useState(false);
   const [showAgentRunning, setShowAgentRunning] = useState(false);
   const [editingStep, setEditingStep] = useState<number | null>(null);
 
@@ -137,7 +140,11 @@ export default function CampaignDetail() {
       if (agent) { setAgentName(agent.name); setAgentStatus(agent.status); }
     }
 
-    if (c.source_agent_id) {
+    // Load contacts from source_list_id if set
+    if (c.source_list_id) {
+      setSelectedListId(c.source_list_id);
+      await loadContactsForList(c.source_list_id);
+    } else if (c.source_agent_id) {
       const { data: agentData } = await supabase.from("signal_agents").select("leads_list_name").eq("id", c.source_agent_id).single();
       if (agentData?.leads_list_name) {
         const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", agentData.leads_list_name).order("imported_at", { ascending: false });
@@ -147,7 +154,52 @@ export default function CampaignDetail() {
       }
     }
 
+    // Load all available lists for the user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: lists } = await supabase.from("lists").select("id, name").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (lists) {
+        const listsWithCounts = await Promise.all(
+          lists.map(async (l) => {
+            const { count } = await supabase.from("contact_lists").select("id", { count: "exact", head: true }).eq("list_id", l.id);
+            return { id: l.id, name: l.name, contact_count: count || 0 };
+          })
+        );
+        setAvailableLists(listsWithCounts);
+      }
+    }
+
     setLoading(false);
+  }
+
+  async function loadContactsForList(listId: string) {
+    const { data: contactLinks } = await supabase.from("contact_lists").select("contact_id").eq("list_id", listId);
+    if (contactLinks && contactLinks.length > 0) {
+      const contactIds = contactLinks.map(cl => cl.contact_id);
+      const { data: contactData } = await supabase.from("contacts").select("*").in("id", contactIds).order("imported_at", { ascending: false });
+      if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
+    } else {
+      // Fallback: try by list name
+      const { data: listData } = await supabase.from("lists").select("name").eq("id", listId).single();
+      if (listData?.name) {
+        const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", listData.name).order("imported_at", { ascending: false });
+        if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
+      } else {
+        setContacts([]); setContactsCount(0);
+      }
+    }
+  }
+
+  async function assignListToCampaign(listId: string) {
+    if (!campaign) return;
+    setAssigningList(true);
+    const { error } = await supabase.from("campaigns").update({ source_list_id: listId } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to assign list"); setAssigningList(false); return; }
+    setSelectedListId(listId);
+    setCampaign({ ...campaign, source_list_id: listId });
+    await loadContactsForList(listId);
+    setAssigningList(false);
+    toast.success("List assigned! Contacts will go through the campaign workflow.");
   }
 
   async function toggleCampaignStatus() {
@@ -678,8 +730,49 @@ export default function CampaignDetail() {
           {tab === "contacts" && (
             <motion.div key="contacts" variants={tabVariant} initial="hidden" animate="visible" exit="exit">
               <div className="rounded-xl border border-border p-5">
-                <h2 className="text-base font-bold text-foreground">Campaign Contacts</h2>
-                <p className="text-sm text-muted-foreground mb-4">View and manage contacts for this campaign</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold text-foreground">Campaign Contacts</h2>
+                    <p className="text-sm text-muted-foreground">Select a list to enroll contacts into this campaign's workflow</p>
+                  </div>
+                </div>
+
+                {/* List selector */}
+                <div className="mb-5 rounded-xl border border-border bg-muted/10 p-4">
+                  <label className="text-sm font-bold text-foreground mb-2 block">Select a contact list</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {availableLists.length === 0 ? (
+                      <p className="text-xs text-muted-foreground col-span-full">No lists available. Create a list from the Contacts page or run a Signal Agent first.</p>
+                    ) : (
+                      availableLists.map((list) => {
+                        const isSelected = selectedListId === list.id;
+                        return (
+                          <button
+                            key={list.id}
+                            disabled={assigningList}
+                            onClick={() => !isSelected && assignListToCampaign(list.id)}
+                            className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all text-left ${
+                              isSelected
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/40 hover:bg-muted/30"
+                            } ${assigningList ? "opacity-50 cursor-wait" : ""}`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                                <Users className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-foreground">{list.name}</p>
+                                <p className="text-xs text-muted-foreground">{list.contact_count} contact(s)</p>
+                              </div>
+                            </div>
+                            {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
 
                 {/* Tier filter tabs */}
                 <div className="flex items-center gap-1 mb-4 bg-muted/30 rounded-lg p-1 w-fit">
