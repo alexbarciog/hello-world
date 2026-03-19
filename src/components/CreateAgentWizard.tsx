@@ -269,13 +269,10 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
 
     const activeSubSignals = Object.entries(enabledSignals).filter(([, v]) => v).map(([k]) => k);
 
-    const { error } = await supabase.from("signal_agents").insert({
-      user_id: user.id,
+    const agentData = {
       name: agentName || "My Agent",
       agent_type: "signals",
       keywords: jobTitles,
-      status: "active",
-      last_launched_at: new Date().toISOString(),
       icp_job_titles: jobTitles,
       icp_locations: selectedLocations,
       icp_industries: selectedIndustries,
@@ -288,18 +285,30 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         keywords: signalKeywords,
       },
       leads_list_name: leadsListName || null,
-    });
+    };
+
+    let error;
+    if (editAgentId) {
+      ({ error } = await supabase.from("signal_agents").update(agentData).eq("id", editAgentId));
+    } else {
+      ({ error } = await supabase.from("signal_agents").insert({
+        ...agentData,
+        user_id: user.id,
+        status: "active",
+        last_launched_at: new Date().toISOString(),
+      }));
+    }
 
     setSaving(false);
     if (error) {
       if (error.message?.includes("LIMIT_REACHED")) {
         toast.error("You've reached the maximum of 2 signal agents");
       } else {
-        toast.error("Failed to create agent");
+        toast.error(editAgentId ? "Failed to update agent" : "Failed to create agent");
       }
       return;
     }
-    toast.success("Agent created successfully!");
+    toast.success(editAgentId ? "Agent updated successfully!" : "Agent created successfully!");
     onCreated();
     onClose();
   }
