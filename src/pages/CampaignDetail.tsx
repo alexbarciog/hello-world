@@ -175,6 +175,21 @@ export default function CampaignDetail() {
       }
     }
 
+    // Load step 1 connection request counters
+    const { count: sentCount } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .in("status", ["sent", "accepted"]);
+    setStep1Sent(sentCount || 0);
+
+    const { count: acceptedCount } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", campaignId)
+      .eq("status", "accepted");
+    setStep1Accepted(acceptedCount || 0);
+
     setLoading(false);
   }
 
