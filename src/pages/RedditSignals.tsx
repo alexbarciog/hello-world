@@ -197,101 +197,92 @@ export default function RedditSignals() {
 
       {/* ── Agent Status Panel (shown when running) ── */}
       {agentRunning && keywords.length > 0 && (
-        <div className="relative overflow-hidden rounded-2xl mb-6 border border-green-200/60 bg-gradient-to-br from-green-50/80 via-white to-emerald-50/50">
-          {/* Decorative background elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-green-100/40 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-gradient-to-tr from-emerald-100/30 to-transparent rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+        <div className="relative overflow-hidden rounded-2xl mb-6 border border-green-200/60 bg-gradient-to-r from-green-50/80 via-white to-emerald-50/50">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-green-100/30 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
-          <div className="relative p-5 md:p-6">
-            {/* Top row: status + actions */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                  <Bot className="w-5 h-5 text-white" />
+          <div className="relative px-4 py-3 md:px-5 md:py-3.5">
+            {/* Row 1: Agent info + stats + re-scan */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5 mr-1">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md shadow-green-500/20">
+                  <Bot className="w-4 h-4 text-white" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-foreground">Reddit Spy Agent</h2>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 border border-green-200">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
-                      </span>
-                      Active
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Monitoring Reddit for buying intent signals</p>
+                <h2 className="text-sm font-bold text-foreground">Reddit Spy Agent</h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 border border-green-200">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500" />
+                  </span>
+                  Active
+                </span>
+              </div>
+
+              <div className="hidden md:block w-px h-5 bg-border/40" />
+
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Keywords:</span>
+                  <span className="font-bold text-foreground">{keywords.length}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Found:</span>
+                  <span className="font-bold text-orange-600">{mentions.length}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">Next:</span>
+                  <span className="font-bold text-foreground">
+                    {(() => {
+                      const now = new Date();
+                      const nextMorning = new Date(now);
+                      nextMorning.setHours(8, 0, 0, 0);
+                      const nextEvening = new Date(now);
+                      nextEvening.setHours(18, 0, 0, 0);
+                      let next: Date;
+                      if (now < nextMorning) next = nextMorning;
+                      else if (now < nextEvening) next = nextEvening;
+                      else { next = new Date(now); next.setDate(next.getDate() + 1); next.setHours(8, 0, 0, 0); }
+                      const isToday = next.getDate() === now.getDate();
+                      const timeStr = next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                      return `${isToday ? "Today" : "Tomorrow"}, ${timeStr}`;
+                    })()}
+                  </span>
                 </div>
               </div>
+
+              <div className="hidden md:flex items-center gap-1 ml-1">
+                <span className="w-1 h-1 rounded-full bg-red-400 animate-pulse" />
+                <span className="w-1 h-1 rounded-full bg-orange-400 animate-pulse" style={{ animationDelay: "150ms" }} />
+                <span className="w-1 h-1 rounded-full bg-yellow-400 animate-pulse" style={{ animationDelay: "300ms" }} />
+              </div>
+
               <button
                 onClick={handleRescan}
                 disabled={polling}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-border text-foreground/70 hover:bg-white/80 transition-all disabled:opacity-50 bg-white/50 backdrop-blur-sm"
+                className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center border border-border text-foreground/60 hover:bg-white/80 transition-all disabled:opacity-50 bg-white/50 backdrop-blur-sm"
+                title={polling ? "Scanning..." : "Re-scan now"}
               >
-                {polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                {polling ? "Scanning..." : "Re-scan"}
+                {polling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
               </button>
             </div>
 
-            {/* Stats row */}
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-3.5 border border-white/80 shadow-sm">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Keywords</p>
-                <p className="text-xl font-bold text-foreground">{keywords.length}</p>
-              </div>
-              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-3.5 border border-white/80 shadow-sm">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Reddits Found</p>
-                <p className="text-xl font-bold text-orange-600">{mentions.length}</p>
-              </div>
-              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-3.5 border border-white/80 shadow-sm">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Next Launch</p>
-                <p className="text-sm font-bold text-foreground">
-                  {(() => {
-                    const now = new Date();
-                    const nextMorning = new Date(now);
-                    nextMorning.setHours(8, 0, 0, 0);
-                    const nextEvening = new Date(now);
-                    nextEvening.setHours(18, 0, 0, 0);
-                    let next: Date;
-                    if (now < nextMorning) next = nextMorning;
-                    else if (now < nextEvening) next = nextEvening;
-                    else { next = new Date(now); next.setDate(next.getDate() + 1); next.setHours(8, 0, 0, 0); }
-                    const isToday = next.getDate() === now.getDate();
-                    const timeStr = next.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                    return `${isToday ? "Today" : "Tomorrow"}, ${timeStr}`;
-                  })()}
-                </p>
-              </div>
-            </div>
-
-            {/* Monitored keywords */}
-            <div className="mb-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Watching for</p>
-              <div className="flex flex-wrap gap-2">
-                {keywords.map(kw => (
-                  <span
-                    key={kw.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-white/80 text-orange-700 border border-orange-200/60 shadow-sm"
-                  >
-                    <Search className="w-3 h-3 opacity-60" />
-                    {kw.keyword}
-                    {kw.subreddits.length > 0 && (
-                      <span className="text-[10px] opacity-60">({kw.subreddits.length} subs)</span>
-                    )}
-                    <button onClick={() => deleteKeyword.mutate(kw.id)} className="ml-0.5 hover:opacity-80">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Scanning animation */}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/50 border border-green-100 w-fit">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" style={{ animationDelay: "150ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" style={{ animationDelay: "300ms" }} />
-              <span className="text-xs text-muted-foreground ml-1">Spying on Reddit for high-intent leads...</span>
+            {/* Row 2: Keywords */}
+            <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Watching:</span>
+              {keywords.map(kw => (
+                <span
+                  key={kw.id}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/80 text-orange-700 border border-orange-200/60 shadow-sm"
+                >
+                  <Search className="w-2.5 h-2.5 opacity-60" />
+                  {kw.keyword}
+                  {kw.subreddits.length > 0 && (
+                    <span className="text-[9px] opacity-60">({kw.subreddits.length})</span>
+                  )}
+                  <button onClick={() => deleteKeyword.mutate(kw.id)} className="ml-0.5 hover:opacity-80">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
         </div>
