@@ -183,10 +183,25 @@ export default function Dashboard() {
     staleTime: 30_000,
   });
 
-  // ── Real leads for "Latest Hot Leads" ──
+  // ── Real leads for "Latest Hot Leads" (contacts table as primary) ──
   const { data: latestLeads, isLoading: leadsLoading } = useQuery({
     queryKey: ["dashboard-latest-leads"],
     queryFn: async () => {
+      // Try contacts first (user's main data)
+      const { data: contacts, error: cErr } = await supabase
+        .from("contacts")
+        .select("first_name, last_name, title, company, ai_score, relevance_tier")
+        .order("imported_at", { ascending: false })
+        .limit(5);
+      if (!cErr && contacts && contacts.length > 0) {
+        return contacts.map(c => ({
+          name: [c.first_name, c.last_name].filter(Boolean).join(" "),
+          title: c.title,
+          company: c.company,
+          score: c.ai_score ?? 0,
+        }));
+      }
+      // Fallback to leads table
       const { data: campaigns } = await supabase.from("campaigns").select("id");
       if (!campaigns || campaigns.length === 0) return [];
       const campaignIds = campaigns.map((c) => c.id);
@@ -200,6 +215,35 @@ export default function Dashboard() {
       return data ?? [];
     },
     staleTime: 30_000,
+  });
+
+  // ── Latest replies from LinkedIn messaging ──
+  const { data: latestReplies, isLoading: repliesLoading } = useQuery({
+    queryKey: ["dashboard-latest-replies"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return [];
+      const res = await supabase.functions.invoke("linkedin-messaging", {
+        body: { action: "list_chats", limit: 5 },
+      });
+      if (res.error) return [];
+      const items = res.data?.items ?? [];
+      return items.map((chat: Record<string, unknown>) => {
+        const attendees = (chat.attendees as Array<{ display_name?: string; profile_picture_url?: string }>) ?? [];
+        const attendee = attendees[0];
+        const lastMsg = chat.last_message as { text?: string; timestamp?: string; is_sender?: boolean } | undefined;
+        return {
+          name: attendee?.display_name ?? "LinkedIn User",
+          avatar_url: attendee?.profile_picture_url ?? null,
+          text: lastMsg?.text ?? "",
+          timestamp: lastMsg?.timestamp ?? "",
+          is_sender: lastMsg?.is_sender ?? false,
+          chat_id: chat.id as string,
+        };
+      }).filter((r: { is_sender: boolean }) => !r.is_sender).slice(0, 4);
+    },
+    staleTime: 60_000,
+    enabled: linkedinConnected,
   });
 
   // ── Contacts for chart data ──
