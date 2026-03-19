@@ -69,7 +69,8 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [analyzingWebsite, setAnalyzingWebsite] = useState(false);
-
+  const [onboardingWebsiteLoaded, setOnboardingWebsiteLoaded] = useState(false);
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   // Step 1
   const [sourceType, setSourceType] = useState<"agent" | "list">("agent");
   const [agents, setAgents] = useState<AgentData[]>([]);
@@ -91,17 +92,32 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     else resetForm();
   }, [open, editCampaignId]);
 
+  // Auto-trigger AI analysis when entering step 2 with pre-filled website from onboarding
+  useEffect(() => {
+    if (step === 2 && onboardingWebsiteLoaded && !autoAnalyzed && website.trim() && !editCampaignId) {
+      setAutoAnalyzed(true);
+      handleAnalyzeWebsite();
+    }
+  }, [step, onboardingWebsiteLoaded, autoAnalyzed]);
+
   async function loadData() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
-    const [agentsRes, listsRes] = await Promise.all([
+    const [agentsRes, listsRes, campaignsRes] = await Promise.all([
       supabase.from("signal_agents").select("id, name, icp_job_titles, icp_industries, icp_locations, icp_company_sizes, icp_company_types, leads_list_name").eq("user_id", user.id),
       (supabase.from("lists") as any).select("id, name").eq("user_id", user.id),
+      // Fetch the most recent campaign to get onboarding website
+      supabase.from("campaigns").select("website, description").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1),
     ]);
     if (agentsRes.data) setAgents(agentsRes.data as AgentData[]);
     if (listsRes.data) setLists(listsRes.data as ListData[]);
     if (agentsRes.data?.length && !selectedAgentId && !editCampaignId) {
       setSelectedAgentId(agentsRes.data[0].id);
+    }
+    // Auto-fill website from onboarding if not editing an existing campaign
+    if (!editCampaignId && campaignsRes.data?.[0]?.website) {
+      setWebsite(campaignsRes.data[0].website);
+      setOnboardingWebsiteLoaded(true);
     }
   }
 
@@ -128,6 +144,8 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     setPainPoints("");
     setCampaignGoal("conversations");
     setMessageTone("professional");
+    setAutoAnalyzed(false);
+    setOnboardingWebsiteLoaded(false);
   }
 
   async function handleAnalyzeWebsite() {
