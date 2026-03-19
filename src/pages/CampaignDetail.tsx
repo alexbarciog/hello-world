@@ -730,8 +730,49 @@ export default function CampaignDetail() {
           {tab === "contacts" && (
             <motion.div key="contacts" variants={tabVariant} initial="hidden" animate="visible" exit="exit">
               <div className="rounded-xl border border-border p-5">
-                <h2 className="text-base font-bold text-foreground">Campaign Contacts</h2>
-                <p className="text-sm text-muted-foreground mb-4">View and manage contacts for this campaign</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-bold text-foreground">Campaign Contacts</h2>
+                    <p className="text-sm text-muted-foreground">Select a list to enroll contacts into this campaign's workflow</p>
+                  </div>
+                </div>
+
+                {/* List selector */}
+                <div className="mb-5 rounded-xl border border-border bg-muted/10 p-4">
+                  <label className="text-sm font-bold text-foreground mb-2 block">Select a contact list</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {availableLists.length === 0 ? (
+                      <p className="text-xs text-muted-foreground col-span-full">No lists available. Create a list from the Contacts page or run a Signal Agent first.</p>
+                    ) : (
+                      availableLists.map((list) => {
+                        const isSelected = selectedListId === list.id;
+                        return (
+                          <button
+                            key={list.id}
+                            disabled={assigningList}
+                            onClick={() => !isSelected && assignListToCampaign(list.id)}
+                            className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all text-left ${
+                              isSelected
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/40 hover:bg-muted/30"
+                            } ${assigningList ? "opacity-50 cursor-wait" : ""}`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                                <Users className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-foreground">{list.name}</p>
+                                <p className="text-xs text-muted-foreground">{list.contact_count} contact(s)</p>
+                              </div>
+                            </div>
+                            {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
 
                 {/* Tier filter tabs */}
                 <div className="flex items-center gap-1 mb-4 bg-muted/30 rounded-lg p-1 w-fit">
