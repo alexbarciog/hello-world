@@ -426,7 +426,6 @@ export default function Unibox() {
                       <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
                     </div>
                   </div>
-                  </div>
                 </div>
 
                 {/* Messages Thread Area */}
