@@ -204,7 +204,7 @@ export default function CampaignDetail() {
     toast.success("Step added!");
   }
 
-
+  const filteredContacts = useMemo(() => {
     let list = contacts;
     if (contactFilter !== "all") {
       list = list.filter(c => c.relevance_tier === contactFilter);
