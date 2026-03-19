@@ -16,10 +16,6 @@ const BROWSER_USER_AGENTS = [
   'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0',
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
 ];
 
 const ACCEPT_LANGUAGES = [
@@ -27,7 +23,6 @@ const ACCEPT_LANGUAGES = [
   'en-GB,en;q=0.9,en-US;q=0.8',
   'en-US,en;q=0.9,fr;q=0.8',
   'en,en-US;q=0.9,de;q=0.7',
-  'en-US,en;q=0.8',
 ];
 
 function pick<T>(arr: T[]): T {
@@ -83,6 +78,15 @@ function randomLimit(): number {
   return pick([25, 50, 75, 100]);
 }
 
+/* ── Types ─────────────────────────────────────────────────────────── */
+
+interface FailedPair {
+  userId: string;
+  keywordId: string;
+  keyword: string;
+  subreddit: string;
+}
+
 /* ── Main handler ──────────────────────────────────────────────────── */
 
 Deno.serve(async (req) => {
@@ -121,18 +125,17 @@ Deno.serve(async (req) => {
       return json({ message: 'No active keywords to poll', processed: 0 });
     }
 
-    // Shuffle keywords to randomize order across users
     const shuffledKeywords = shuffle(keywords);
-
     console.log(`[poll-reddit] Processing ${shuffledKeywords.length} keyword(s)`);
 
     let totalInserted = 0;
     let requestCount = 0;
     const DEFAULT_SUBREDDITS = ['SaaS', 'startups', 'Entrepreneur', 'smallbusiness', 'marketing', 'sales'];
     const userInsertions: Record<string, number> = {};
+    const failedPairs: FailedPair[] = [];
 
+    // Phase 1: Try RSS and JSON for each keyword/subreddit pair
     for (const kw of shuffledKeywords) {
-      // Shuffle subreddits per keyword
       const subreddits = shuffle(kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS);
       const keyword = kw.keyword;
 
@@ -147,10 +150,9 @@ Deno.serve(async (req) => {
             requestCount++;
           }
 
-          // Apify fallback when both RSS and JSON fail
           if (inserted === 0) {
-            await randomDelay(1000, 2500);
-            inserted = await pollViaApify(supabase, kw.user_id, kw.id, keyword, sub);
+            // Track this pair for batched Apify fallback
+            failedPairs.push({ userId: kw.user_id, keywordId: kw.id, keyword, subreddit: sub });
           }
 
           totalInserted += inserted;
@@ -159,9 +161,9 @@ Deno.serve(async (req) => {
           }
         } catch (err) {
           console.error(`[poll-reddit] Error polling r/${sub} for "${keyword}":`, err);
+          failedPairs.push({ userId: kw.user_id, keywordId: kw.id, keyword, subreddit: sub });
         }
 
-        // Variable delay between requests; longer pause every 5-8 requests
         if (requestCount % randInt(5, 8) === 0) {
           await randomDelay(5000, 15000);
         } else {
@@ -169,8 +171,17 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Inter-keyword delay
       await randomDelay(2000, 8000);
+    }
+
+    // Phase 2: ONE batched Apify call for all failed pairs
+    if (failedPairs.length > 0) {
+      console.log(`[poll-reddit] ${failedPairs.length} pairs failed RSS/JSON, attempting single Apify batch call`);
+      const apifyInserted = await pollViaApifyBatch(supabase, failedPairs);
+      totalInserted += apifyInserted;
+
+      // Track per-user insertions from Apify
+      // (pollViaApifyBatch returns total; we attribute to users inside the function)
     }
 
     // Notifications
@@ -312,6 +323,163 @@ async function pollViaJSON(
   return inserted;
 }
 
+/* ── Batched Apify fallback (ONE call for all failed pairs) ────────── */
+
+async function pollViaApifyBatch(
+  supabase: ReturnType<typeof createClient>,
+  failedPairs: FailedPair[]
+): Promise<number> {
+  const APIFY_TOKEN = Deno.env.get('APIFY_TOKEN');
+  if (!APIFY_TOKEN) {
+    console.warn('[poll-reddit] APIFY_TOKEN not configured, skipping Apify fallback');
+    return 0;
+  }
+
+  // Deduplicate keywords and subreddits
+  const uniqueKeywords = [...new Set(failedPairs.map(p => p.keyword))];
+  const uniqueSubreddits = [...new Set(failedPairs.map(p => p.subreddit))];
+
+  console.log(`[poll-reddit] Apify batch: ${uniqueKeywords.length} keywords × ${uniqueSubreddits.length} subreddits`);
+  console.log(`[poll-reddit] Apify keywords: ${JSON.stringify(uniqueKeywords)}`);
+  console.log(`[poll-reddit] Apify subreddits: ${JSON.stringify(uniqueSubreddits)}`);
+
+  const actorUrl = `https://api.apify.com/v2/acts/parseforge~reddit-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
+
+  try {
+    const res = await fetch(actorUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        searchQueries: uniqueKeywords,
+        subreddits: uniqueSubreddits,
+        sort: 'new',
+        time: 'week',
+        maxItems: 200,
+        postsPerSource: 50,
+        includeNSFW: false,
+        proxyConfiguration: {
+          useApifyProxy: true,
+          apifyProxyGroups: ['RESIDENTIAL'],
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[poll-reddit] Apify returned ${res.status}: ${errText.slice(0, 300)}`);
+      return 0;
+    }
+
+    const posts: any[] = await res.json();
+    if (!Array.isArray(posts) || posts.length === 0) {
+      console.log('[poll-reddit] Apify: 0 results returned');
+      return 0;
+    }
+
+    // Filter out error objects
+    const validPosts = posts.filter((p: any) => p && !p.error && (p.title || p.url || p.permalink));
+
+    if (validPosts.length === 0) {
+      console.log(`[poll-reddit] Apify: 0 valid posts (${posts.length} raw items filtered out)`);
+      if (posts[0]) {
+        console.warn(`[poll-reddit] Apify first item sample: ${JSON.stringify(posts[0]).slice(0, 300)}`);
+      }
+      return 0;
+    }
+
+    // Log first valid post structure for debugging
+    console.log(`[poll-reddit] Apify: ${validPosts.length} valid posts from batch call`);
+    console.log(`[poll-reddit] Apify sample keys: ${JSON.stringify(Object.keys(validPosts[0]))}`);
+    console.log(`[poll-reddit] Apify sample: ${JSON.stringify(validPosts[0]).slice(0, 500)}`);
+
+    // Build a lookup for keyword matching
+    // For each post, find which keyword it matches by checking title+body
+    const keywordLower = uniqueKeywords.map(k => k.toLowerCase());
+
+    let totalInserted = 0;
+
+    for (const p of validPosts) {
+      const title = p.title || '';
+      const body = (p.selftext || p.selfText || p.body || p.text || '').slice(0, 1000);
+      const permalink = p.permalink || '';
+      const postUrl = p.url || (permalink ? `https://www.reddit.com${permalink}` : '');
+      const postSubreddit = p.subreddit || p.subredditName || '';
+      const author = p.author || p.authorName || '[unknown]';
+      const score = p.score ?? p.ups ?? p.upvoteScore ?? 0;
+
+      // Extract reddit post ID from permalink
+      const postIdMatch = (permalink || postUrl).match(/\/comments\/([a-z0-9]+)/i);
+      const rawId = p.id || p.postId || p.name;
+      const redditPostId = postIdMatch
+        ? `t3_${postIdMatch[1]}`
+        : rawId
+          ? (String(rawId).startsWith('t3_') ? String(rawId) : `t3_${rawId}`)
+          : `apify_${hashString(postUrl || JSON.stringify(p))}`;
+
+      const finalUrl = postUrl || `https://www.reddit.com${permalink}`;
+
+      // Parse posted_at from various possible fields
+      let postedAt: string | null = null;
+      const rawDate = p.createdAt || p.postedDate || p.created_utc || p.postedAt;
+      if (rawDate) {
+        if (typeof rawDate === 'number') {
+          // Unix timestamp (seconds or milliseconds)
+          postedAt = new Date(rawDate > 1e12 ? rawDate : rawDate * 1000).toISOString();
+        } else if (typeof rawDate === 'string') {
+          postedAt = rawDate;
+        }
+      }
+
+      // Match post to keyword by checking title + body content
+      const searchText = `${title} ${body}`.toLowerCase();
+      let matchedKeywordIdx = keywordLower.findIndex(k => searchText.includes(k));
+      if (matchedKeywordIdx === -1) matchedKeywordIdx = 0; // fallback to first keyword
+
+      const matchedKeyword = uniqueKeywords[matchedKeywordIdx];
+
+      // Find all failedPairs that match this keyword (could be multiple users)
+      const matchingPairs = failedPairs.filter(fp => fp.keyword === matchedKeyword);
+      if (matchingPairs.length === 0) continue;
+
+      // Insert for each user that had this keyword
+      const seenUsers = new Set<string>();
+      for (const pair of matchingPairs) {
+        if (seenUsers.has(pair.userId)) continue;
+        seenUsers.add(pair.userId);
+
+        const { error } = await supabase.from('reddit_mentions').upsert(
+          {
+            user_id: pair.userId,
+            keyword_id: pair.keywordId,
+            keyword_matched: matchedKeyword,
+            subreddit: postSubreddit || pair.subreddit,
+            author,
+            title: title || 'No title',
+            body: body || null,
+            url: finalUrl,
+            reddit_post_id: redditPostId,
+            score,
+            posted_at: postedAt,
+          },
+          { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
+        );
+
+        if (!error) {
+          totalInserted++;
+        } else {
+          console.warn(`[poll-reddit] Apify upsert error: ${error.message}`);
+        }
+      }
+    }
+
+    console.log(`[poll-reddit] Apify batch: inserted ${totalInserted} mentions`);
+    return totalInserted;
+  } catch (err) {
+    console.error(`[poll-reddit] Apify batch error:`, err);
+    return 0;
+  }
+}
+
 /* ── XML parsing helpers ───────────────────────────────────────────── */
 
 interface FeedEntry {
@@ -362,113 +530,6 @@ function hashString(str: string): string {
     hash |= 0;
   }
   return Math.abs(hash).toString(36);
-}
-
-/* ── Fallback: Apify Reddit Posts Scraper ───────────────────────────── */
-
-async function pollViaApify(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-  keywordId: string,
-  keyword: string,
-  subreddit: string
-): Promise<number> {
-  const APIFY_TOKEN = Deno.env.get('APIFY_TOKEN');
-  if (!APIFY_TOKEN) {
-    console.warn('[poll-reddit] APIFY_TOKEN not configured, skipping Apify fallback');
-    return 0;
-  }
-
-  const actorUrl = `https://api.apify.com/v2/acts/parseforge~reddit-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
-
-  console.log(`[poll-reddit] Apify fallback: r/${subreddit} for "${keyword}"`);
-
-  try {
-    const res = await fetch(actorUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        searchQueries: [keyword],
-        searchInSubreddit: subreddit,
-        sort: 'new',
-        time: 'month',
-        maxItems: 50,
-        postsPerSource: 50,
-        proxyConfiguration: { useApifyProxy: true },
-      }),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.warn(`[poll-reddit] Apify returned ${res.status}: ${errText.slice(0, 200)}`);
-      return 0;
-    }
-
-    const posts: any[] = await res.json();
-    if (!posts || posts.length === 0) {
-      console.log(`[poll-reddit] Apify: 0 results for r/${subreddit} "${keyword}"`);
-      return 0;
-    }
-
-    // Filter out error objects from results
-    const validPosts = posts.filter((p: any) => p && !p.error && (p.title || p.url || p.permalink));
-
-    if (validPosts.length === 0) {
-      console.log(`[poll-reddit] Apify: 0 valid posts for r/${subreddit} "${keyword}" (${posts.length} raw items filtered)`);
-      if (posts[0]?.error) {
-        console.warn(`[poll-reddit] Apify item error: ${JSON.stringify(posts[0].error).slice(0, 200)}`);
-      }
-      return 0;
-    }
-
-    console.log(`[poll-reddit] Apify: ${validPosts.length} valid posts in r/${subreddit} for "${keyword}"`);
-    // Log first post structure for debugging
-    console.log(`[poll-reddit] Apify sample keys: ${JSON.stringify(Object.keys(validPosts[0]))}`);
-    console.log(`[poll-reddit] Apify sample: ${JSON.stringify(validPosts[0]).slice(0, 500)}`);
-
-    let inserted = 0;
-    for (const p of validPosts) {
-      // Extract post ID from various possible fields
-      const permalink = p.permalink || '';
-      const postUrl = p.url || p.postUrl || (permalink ? `https://www.reddit.com${permalink}` : '');
-      const postIdMatch = (permalink || postUrl).match(/\/comments\/([a-z0-9]+)/i);
-      const rawId = p.id || p.postId || p.name;
-      const redditPostId = postIdMatch
-        ? `t3_${postIdMatch[1]}`
-        : rawId
-          ? (rawId.startsWith('t3_') ? rawId : `t3_${rawId}`)
-          : `apify_${hashString(postUrl || JSON.stringify(p))}`;
-
-      const finalUrl = postUrl || `https://www.reddit.com${permalink}`;
-
-      const { error } = await supabase.from('reddit_mentions').upsert(
-        {
-          user_id: userId,
-          keyword_id: keywordId,
-          keyword_matched: keyword,
-          subreddit: p.subredditName || p.subreddit || subreddit,
-          author: p.author || p.authorName || p.username || '[unknown]',
-          title: p.title || 'No title',
-          body: (p.selfText || p.selftext || p.body || p.text || '').slice(0, 1000) || null,
-          url: finalUrl,
-          reddit_post_id: redditPostId,
-          score: p.score ?? p.ups ?? p.upvotes ?? 0,
-          posted_at: p.createdAt || p.created_utc || p.postedAt
-            ? (typeof (p.created_utc || p.createdAt) === 'number'
-              ? new Date((p.created_utc || p.createdAt) * 1000).toISOString()
-              : p.createdAt || p.postedAt || null)
-            : null,
-        },
-        { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
-      );
-      if (!error) inserted++;
-    }
-
-    return inserted;
-  } catch (err) {
-    console.error(`[poll-reddit] Apify error for r/${subreddit} "${keyword}":`, err);
-    return 0;
-  }
 }
 
 function json(payload: unknown, status = 200) {
