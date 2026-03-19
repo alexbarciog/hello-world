@@ -116,7 +116,7 @@ async function pollViaRSS(
   subreddit: string
 ): Promise<number> {
   // Reddit RSS search: reddit.com/r/{sub}/search.rss?q={keyword}&restrict_sr=on&sort=new&t=week
-  const rssUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
+  const rssUrl = `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/search.rss?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=month&limit=100`;
 
   console.log(`[poll-reddit] RSS: r/${subreddit} for "${keyword}"`);
 
