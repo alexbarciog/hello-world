@@ -9,6 +9,7 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import CampaignsPage from "./pages/Campaigns.tsx";
+import CampaignDetail from "./pages/CampaignDetail.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Settings from "./pages/Settings.tsx";
 import HelpCenter from "./pages/HelpCenter.tsx";
@@ -35,53 +36,27 @@ const App = () => (
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
           <Route
             path="/dashboard"
-            element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Dashboard />
-                </DashboardLayout>
-              </AuthGuard>
-            }
+            element={<AuthGuard><DashboardLayout><Dashboard /></DashboardLayout></AuthGuard>}
           />
           <Route
             path="/campaigns"
-            element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <CampaignsPage />
-                </DashboardLayout>
-              </AuthGuard>
-            }
+            element={<AuthGuard><DashboardLayout><CampaignsPage /></DashboardLayout></AuthGuard>}
+          />
+          <Route
+            path="/campaigns/:id"
+            element={<AuthGuard><DashboardLayout><CampaignDetail /></DashboardLayout></AuthGuard>}
           />
           <Route
             path="/settings"
-            element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Settings />
-                </DashboardLayout>
-              </AuthGuard>
-            }
+            element={<AuthGuard><DashboardLayout><Settings /></DashboardLayout></AuthGuard>}
           />
           <Route
             path="/signals"
-            element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Signals />
-                </DashboardLayout>
-              </AuthGuard>
-            }
+            element={<AuthGuard><DashboardLayout><Signals /></DashboardLayout></AuthGuard>}
           />
           <Route
             path="/contacts"
-            element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Contacts />
-                </DashboardLayout>
-              </AuthGuard>
-            }
+            element={<AuthGuard><DashboardLayout><Contacts /></DashboardLayout></AuthGuard>}
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -90,7 +65,6 @@ const App = () => (
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/billing" element={<AuthGuard><DashboardLayout><BillingPlans /></DashboardLayout></AuthGuard>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

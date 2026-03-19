@@ -172,13 +172,34 @@ export default function CampaignsPage() {
     load();
   }, []);
 
+  const load = async () => {
+    const { data } = await supabase
+      .from("campaigns")
+      .select("id, company_name, status, created_at, campaign_goal")
+      .order("created_at", { ascending: false });
+    const rows = (data ?? []) as Campaign[];
+    const withCounts: CampaignWithLeads[] = await Promise.all(
+      rows.map(async (c) => {
+        const { count } = await supabase.from("leads").select("id", { count: "exact", head: true }).eq("campaign_id", c.id);
+        return { ...c, leadsCount: count ?? 0 };
+      })
+    );
+    setCampaigns(withCounts);
+    setLoading(false);
+  };
+
   const handleNewCampaign = () => {
     if (atLimit) {
-      toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns. Delete an existing one to create a new campaign.`);
+      toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`);
       return;
     }
-    clearOnboardingSession();
-    navigate("/");
+    setEditCampaignId(null);
+    setShowWizard(true);
+  };
+
+  const handleEditCampaign = (id: string) => {
+    setEditCampaignId(id);
+    setShowWizard(true);
   };
 
   const handleDeleteCampaign = async (id: string) => {
