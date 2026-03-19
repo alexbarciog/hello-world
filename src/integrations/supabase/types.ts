@@ -564,6 +564,92 @@ export type Database = {
         }
         Relationships: []
       }
+      reddit_keywords: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          keyword: string
+          subreddits: string[]
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          keyword: string
+          subreddits?: string[]
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          keyword?: string
+          subreddits?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reddit_mentions: {
+        Row: {
+          author: string
+          body: string | null
+          dismissed: boolean
+          found_at: string
+          id: string
+          keyword_id: string
+          keyword_matched: string
+          posted_at: string | null
+          reddit_post_id: string
+          score: number | null
+          subreddit: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          author: string
+          body?: string | null
+          dismissed?: boolean
+          found_at?: string
+          id?: string
+          keyword_id: string
+          keyword_matched: string
+          posted_at?: string | null
+          reddit_post_id: string
+          score?: number | null
+          subreddit: string
+          title: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          author?: string
+          body?: string | null
+          dismissed?: boolean
+          found_at?: string
+          id?: string
+          keyword_id?: string
+          keyword_matched?: string
+          posted_at?: string | null
+          reddit_post_id?: string
+          score?: number | null
+          subreddit?: string
+          title?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reddit_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "reddit_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signal_agents: {
         Row: {
           agent_type: string
