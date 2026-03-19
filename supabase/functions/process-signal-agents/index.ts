@@ -279,7 +279,7 @@ async function handlePostEngagers(
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
         if (ok) inserted++;
       }
     }
