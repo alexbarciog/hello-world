@@ -39,7 +39,7 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="py-20 md:py-32 px-6 md:px-10">
+    <section id="faq" className="py-20 md:py-32 px-6 md:px-10 bg-background">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <motion.div
