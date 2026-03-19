@@ -393,6 +393,7 @@ async function pollViaApify(
         sort: 'new',
         time: 'month',
         maxResults: 50,
+        proxyConfiguration: { useApifyProxy: true },
       }),
     });
 
