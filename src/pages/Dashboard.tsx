@@ -207,7 +207,7 @@ export default function Dashboard() {
           </button>
           <button
             onClick={handleNewCampaign}
-            className="text-md-on-primary px-6 py-3 rounded-full font-medium flex items-center gap-2 shadow-xl hover:scale-[1.02] transition-transform duration-300"
+            className="text-md-on-primary px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-transform duration-300"
             style={{
               background: "var(--gradient-md-brand)",
               boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)",
