@@ -1051,6 +1051,26 @@ export default function CampaignDetail() {
                         </div>
                         <Switch checked={settingsReviewMode} onCheckedChange={setSettingsReviewMode} />
                       </div>
+                      <div className="rounded-xl bg-muted/20 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-bold text-foreground">Daily connection request limit</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Max invitations sent per day (split across 5 daily runs)</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={settingsDailyLimit}
+                              onChange={(e) => setSettingsDailyLimit(Math.max(1, Math.min(100, parseInt(e.target.value) || 25)))}
+                              className="w-20 text-center px-2 py-1.5 border border-border rounded-lg text-sm font-bold bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                            <span className="text-xs text-muted-foreground">/day</span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">≈ {Math.max(1, Math.floor(settingsDailyLimit / 5))} invitations per run × 5 runs (08:00, 10:00, 12:00, 14:00, 16:00 UTC)</p>
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </div>
