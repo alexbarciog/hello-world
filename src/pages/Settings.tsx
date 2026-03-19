@@ -686,6 +686,9 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
             >
               <LinkedInSlider label="Messages / day" value={dailyMessages} onChange={setDailyMessages} />
               <LinkedInSlider label="Connections / day" value={dailyConnections} onChange={setDailyConnections} />
+              <p className="text-[10px] text-muted-foreground transition-opacity" style={{ opacity: savingLimits ? 1 : 0.5 }}>
+                {savingLimits ? "Saving…" : "Auto-saved ✓"}
+              </p>
             </motion.div>
           </>
         ) : (
