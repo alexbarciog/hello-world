@@ -531,7 +531,7 @@ export default function Dashboard() {
 
       {/* ── Floating button ── */}
       <button
-        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-xl"
+        className="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
         style={{
           background: "var(--gradient-md-brand)",
           boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.4), 0 2px 8px hsla(0, 0%, 0%, 0.15)",
