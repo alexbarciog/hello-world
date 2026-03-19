@@ -25,8 +25,13 @@ interface ChatAttendee {
   id?: string;
   display_name?: string;
   name?: string;
+  first_name?: string;
+  last_name?: string;
   profile_picture_url?: string;
+  profile_picture?: string;
   avatar_url?: string;
+  picture_url?: string;
+  image_url?: string;
   provider_id?: string;
 }
 
@@ -35,8 +40,12 @@ interface Chat {
   attendees?: ChatAttendee[];
   last_message?: {
     text?: string;
+    body?: string;
+    content?: string;
     timestamp?: string;
     date?: string;
+    created_at?: string;
+    sender_name?: string;
   };
   timestamp?: string;
   updated_at?: string;
@@ -76,22 +85,48 @@ async function callMessaging(body: Record<string, unknown>) {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Request failed");
+
+  // Debug: log raw response structure on first call
+  if (body.action === "list_chats") {
+    const items = data?.items || data?.data || (Array.isArray(data) ? data : []);
+    if (items.length > 0) {
+      console.log("[Unibox] Raw chat sample:", JSON.stringify(items[0], null, 2));
+    }
+  }
+
   return data;
 }
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
+function attendeeName(a: ChatAttendee): string {
+  if (a.display_name) return a.display_name;
+  if (a.name) return a.name;
+  if (a.first_name || a.last_name) {
+    return [a.first_name, a.last_name].filter(Boolean).join(" ");
+  }
+  return "";
+}
+
 function chatDisplayName(chat: Chat): string {
   const a = chat.attendees;
   if (!a?.length) return "Unknown";
-  const first = a[0];
-  return first.display_name || first.name || "LinkedIn User";
+  // Try first attendee, if empty name try second
+  for (const att of a) {
+    const n = attendeeName(att);
+    if (n && n !== "Unknown") return n;
+  }
+  return attendeeName(a[0]) || "LinkedIn User";
 }
 
 function chatAvatar(chat: Chat): string | undefined {
   const a = chat.attendees;
   if (!a?.length) return undefined;
-  return a[0].profile_picture_url || a[0].avatar_url;
+  for (const att of a) {
+    const url = att.profile_picture_url || att.profile_picture || att.avatar_url || att.picture_url || att.image_url;
+    if (url) return url;
+  }
+  return undefined;
 }
 
 function chatInitials(chat: Chat): string {
@@ -105,11 +140,12 @@ function chatInitials(chat: Chat): string {
 }
 
 function chatLastText(chat: Chat): string {
-  return chat.last_message?.text || "";
+  if (!chat.last_message) return "No messages yet";
+  return chat.last_message.text || chat.last_message.body || chat.last_message.content || "";
 }
 
 function chatTimestamp(chat: Chat): string {
-  const raw = chat.last_message?.timestamp || chat.last_message?.date || chat.timestamp || chat.updated_at;
+  const raw = chat.last_message?.timestamp || chat.last_message?.date || chat.last_message?.created_at || chat.timestamp || chat.updated_at;
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
