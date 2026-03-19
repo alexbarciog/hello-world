@@ -190,6 +190,31 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     const selectedAgent = agents.find(a => a.id === selectedAgentId);
     const painPointsArr = painPoints.split("\n").map(s => s.replace(/^-\s*/, "").trim()).filter(Boolean);
 
+    // Generate AI outreach messages
+    let workflowSteps = DEFAULT_WORKFLOW;
+    try {
+      toast.info("Generating AI outreach messages...");
+      const { data: msgData, error: msgErr } = await supabase.functions.invoke("generate-outreach-messages", {
+        body: {
+          companyName: selectedAgent?.name || "My Company",
+          valueProposition: valueProposition.trim(),
+          painPoints: painPointsArr,
+          campaignGoal,
+          messageTone,
+          industry: "",
+          language: "",
+        },
+      });
+
+      if (!msgErr && msgData?.steps?.length) {
+        workflowSteps = msgData.steps;
+      } else {
+        console.warn("AI message generation failed, using defaults:", msgErr);
+      }
+    } catch (err) {
+      console.warn("AI message generation error, using defaults:", err);
+    }
+
     const campaignData = {
       user_id: user.id,
       company_name: selectedAgent?.name || "My Campaign",
@@ -208,7 +233,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
       icp_locations: selectedAgent?.icp_locations || [],
       icp_company_sizes: selectedAgent?.icp_company_sizes || [],
       icp_company_types: selectedAgent?.icp_company_types || [],
-      workflow_steps: DEFAULT_WORKFLOW,
+      workflow_steps: workflowSteps,
     };
 
     if (editCampaignId) {
@@ -223,7 +248,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
         else toast.error("Failed to create campaign");
         setSaving(false); return;
       }
-      toast.success("Campaign created!");
+      toast.success("Campaign created with AI-generated messages!");
       onCreated(data.id);
     }
 
