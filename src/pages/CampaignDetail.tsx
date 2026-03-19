@@ -754,13 +754,13 @@ export default function CampaignDetail() {
                               onClick={() => setSettingsGoal(g.value)}
                               className={`text-left px-4 py-3.5 rounded-xl border-2 transition-all hover:scale-[1.01] ${
                                 settingsGoal === g.value
-                                  ? "border-[hsl(var(--goji-coral))] bg-[hsl(var(--goji-coral))]/5 shadow-sm"
+                                  ? "border-foreground bg-foreground/5 shadow-sm"
                                   : "border-border hover:bg-muted/50"
                               }`}
                             >
                               <div className="flex items-center gap-2.5">
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${settingsGoal === g.value ? "border-[hsl(var(--goji-coral))]" : "border-muted-foreground/40"}`}>
-                                  {settingsGoal === g.value && <div className="w-2 h-2 rounded-full bg-[hsl(var(--goji-coral))]" />}
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${settingsGoal === g.value ? "border-foreground" : "border-muted-foreground/40"}`}>
+                                  {settingsGoal === g.value && <div className="w-2 h-2 rounded-full bg-foreground" />}
                                 </div>
                                 <div>
                                   <p className="text-sm font-bold text-foreground">{g.label}</p>
