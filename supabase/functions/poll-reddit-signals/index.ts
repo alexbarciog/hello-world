@@ -241,7 +241,7 @@ async function pollViaJSON(
   keyword: string,
   subreddit: string
 ): Promise<number> {
-  const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=week&limit=25`;
+  const searchUrl = `https://old.reddit.com/r/${encodeURIComponent(subreddit)}/search.json?q=${encodeURIComponent(keyword)}&restrict_sr=on&sort=new&t=month&limit=100`;
 
   const res = await fetch(searchUrl, {
     headers: {
