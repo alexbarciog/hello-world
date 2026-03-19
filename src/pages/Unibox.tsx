@@ -237,7 +237,7 @@ export default function Unibox() {
   };
 
   // ── No LinkedIn connected ──
-  if (chatsError && (chatsError as Error).message?.includes("NO_LINKEDIN")) {
+  if (chatsError && ((chatsError as Error).message?.includes("NO_LINKEDIN") || (chatsError as Error).message?.includes("not connected"))) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-4 text-center px-4">
         <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">

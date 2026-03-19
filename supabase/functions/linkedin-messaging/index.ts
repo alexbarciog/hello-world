@@ -5,6 +5,9 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Cache for user profile lookups within a single request (provider_id → profile data)
+const profileCache = new Map<string, { name: string; avatar_url: string | null }>();
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -73,21 +76,14 @@ Deno.serve(async (req) => {
       }
 
       const data = await res.json();
+      const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Log raw structure for first chat to help debug field names
-      const rawItems = data?.items || data?.data || (Array.isArray(data) ? data : []);
-      if (rawItems.length > 0) {
-        console.log('[list_chats] Sample chat keys:', JSON.stringify(Object.keys(rawItems[0])));
-        if (rawItems[0].attendees?.length) {
-          console.log('[list_chats] Sample attendee keys:', JSON.stringify(Object.keys(rawItems[0].attendees[0])));
-          console.log('[list_chats] Sample attendee:', JSON.stringify(rawItems[0].attendees[0]));
-        }
-        if (rawItems[0].last_message) {
-          console.log('[list_chats] Sample last_message keys:', JSON.stringify(Object.keys(rawItems[0].last_message)));
-        }
-      }
+      // Enrich each chat: fetch attendee profile + last message in parallel (batched)
+      const enriched = await Promise.all(
+        rawItems.map((chat) => enrichChat(chat, accountId, UNIPILE_API_KEY, UNIPILE_DSN))
+      );
 
-      return json(data);
+      return json({ ...data, items: enriched });
     }
 
     // ── get_messages ──
@@ -155,6 +151,139 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+/* ── Enrich a single chat with participant name/photo and last message ── */
+
+async function enrichChat(
+  chat: Record<string, unknown>,
+  accountId: string,
+  apiKey: string,
+  dsn: string
+): Promise<Record<string, unknown>> {
+  const chatId = chat.id as string;
+  const attendeeProviderId = chat.attendee_provider_id as string | undefined;
+
+  // Run both lookups in parallel
+  const [participantInfo, lastMessage] = await Promise.all([
+    attendeeProviderId ? fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn) : null,
+    chatId ? fetchLastMessage(chatId, apiKey, dsn) : null,
+  ]);
+
+  return {
+    ...chat,
+    // Inject enriched attendees array so frontend can use existing helpers
+    attendees: participantInfo
+      ? [
+          {
+            display_name: participantInfo.name,
+            profile_picture_url: participantInfo.avatar_url ?? undefined,
+            provider_id: attendeeProviderId,
+          },
+        ]
+      : [],
+    // Inject last_message so frontend can show preview
+    last_message: lastMessage ?? undefined,
+  };
+}
+
+/* ── Fetch participant profile from Unipile ── */
+
+async function fetchParticipantProfile(
+  providerId: string,
+  accountId: string,
+  apiKey: string,
+  dsn: string
+): Promise<{ name: string; avatar_url: string | null }> {
+  // Use in-request cache to avoid duplicate lookups
+  const cached = profileCache.get(providerId);
+  if (cached) return cached;
+
+  try {
+    const url = new URL(`https://${dsn}/api/v1/users/${encodeURIComponent(providerId)}`);
+    url.searchParams.set('account_id', accountId);
+
+    const res = await fetch(url.toString(), {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) {
+      console.warn('[enrichChat] user lookup failed:', res.status, 'for provider_id:', providerId);
+      const fallback = { name: 'LinkedIn User', avatar_url: null };
+      profileCache.set(providerId, fallback);
+      return fallback;
+    }
+
+    const data = await res.json();
+
+    // Extract name from various possible fields
+    const name =
+      data.display_name ||
+      data.name ||
+      (data.first_name || data.last_name
+        ? [data.first_name, data.last_name].filter(Boolean).join(' ')
+        : null) ||
+      data.full_name ||
+      'LinkedIn User';
+
+    // Extract avatar from various possible fields
+    const avatar_url =
+      data.profile_picture_url ||
+      data.picture_url ||
+      data.avatar_url ||
+      data.image_url ||
+      data.profile_photo ||
+      null;
+
+    console.log('[enrichChat] profile fetched:', { providerId, name, hasAvatar: !!avatar_url });
+
+    const result = { name, avatar_url };
+    profileCache.set(providerId, result);
+    return result;
+  } catch (err) {
+    console.error('[enrichChat] profile fetch error:', err);
+    const fallback = { name: 'LinkedIn User', avatar_url: null };
+    profileCache.set(providerId, fallback);
+    return fallback;
+  }
+}
+
+/* ── Fetch latest message for a chat ── */
+
+async function fetchLastMessage(
+  chatId: string,
+  apiKey: string,
+  dsn: string
+): Promise<Record<string, unknown> | null> {
+  try {
+    const url = new URL(`https://${dsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`);
+    url.searchParams.set('limit', '1');
+
+    const res = await fetch(url.toString(), {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) {
+      console.warn('[enrichChat] messages lookup failed:', res.status, 'for chat:', chatId);
+      return null;
+    }
+
+    const data = await res.json();
+    const items: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
+
+    if (!items.length) return null;
+
+    const msg = items[0];
+    // Normalize to a stable shape
+    return {
+      text: msg.text || msg.body || msg.content || '',
+      timestamp: msg.timestamp || msg.date || msg.created_at || null,
+      is_sender: msg.is_sender ?? false,
+    };
+  } catch (err) {
+    console.error('[enrichChat] last message fetch error:', err);
+    return null;
+  }
+}
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
