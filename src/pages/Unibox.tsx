@@ -9,15 +9,10 @@ import {
   Send,
   Inbox,
   LinkIcon,
-  Search,
   MessageSquare,
-  SlidersHorizontal,
   Sparkles,
   PlusCircle,
   Smile,
-  Video,
-  Phone,
-  MoreHorizontal,
   Eye,
   Heart,
   Zap,
@@ -297,47 +292,6 @@ export default function Unibox() {
             <div className="p-6 pb-2">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-light tracking-tight text-foreground">Unibox</h1>
-                <div className="flex gap-2">
-                  <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-foreground/5 transition-colors">
-                    <SlidersHorizontal className="w-5 h-5 text-foreground/50" />
-                  </button>
-                  <button
-                    onClick={() => setShowSearch(!showSearch)}
-                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-foreground/5 transition-colors"
-                  >
-                    <Search className="w-5 h-5 text-foreground/50" />
-                  </button>
-                </div>
-              </div>
-
-              {showSearch && (
-                <div className="mb-4">
-                  <Input
-                    placeholder="Search conversations..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-9 text-sm bg-white/40 border-white/50 rounded-xl"
-                    autoFocus
-                  />
-                </div>
-              )}
-
-              {/* Filter Tabs */}
-              <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
-                {FILTER_TABS.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveFilter(tab)}
-                    className={cn(
-                      "px-4 py-1.5 rounded-full text-sm whitespace-nowrap transition-all",
-                      activeFilter === tab
-                        ? "bg-[hsl(200,100%,28%)] text-white font-medium"
-                        : "hover:bg-white/40 text-foreground/50 font-light"
-                    )}
-                  >
-                    {tab}
-                  </button>
-                ))}
               </div>
             </div>
 
@@ -466,17 +420,6 @@ export default function Unibox() {
                       <h2 className="text-lg font-medium text-foreground leading-tight">{chatDisplayName(selectedChat)}</h2>
                       <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 rounded-xl hover:bg-white/40 text-foreground/50 transition-colors">
-                      <Video className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 rounded-xl hover:bg-white/40 text-foreground/50 transition-colors">
-                      <Phone className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 rounded-xl hover:bg-white/40 text-foreground/50 transition-colors">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
                   </div>
                 </div>
 
@@ -656,18 +599,7 @@ export default function Unibox() {
                 </div>
               )}
               <h3 className="text-xl font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
-              <p className="text-sm font-light text-foreground/50 mb-4">LinkedIn Connection</p>
-              <div className="flex justify-center gap-4">
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-[hsl(200,100%,28%)] leading-none">—</p>
-                  <p className="text-[10px] text-foreground/40 uppercase font-medium tracking-tighter">Reach</p>
-                </div>
-                <div className="w-[1px] bg-foreground/10 h-8" />
-                <div className="text-center">
-                  <p className="text-lg font-semibold text-[hsl(200,100%,28%)] leading-none">—</p>
-                  <p className="text-[10px] text-foreground/40 uppercase font-medium tracking-tighter">Sentiment</p>
-                </div>
-              </div>
+              <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
             </div>
 
             {/* Engagement History Card */}
@@ -712,22 +644,8 @@ export default function Unibox() {
                 </div>
               </div>
 
-              <div className="mt-10">
-                <h4 className="text-xs font-bold text-foreground/40 uppercase tracking-[2px] mb-4">Shared Connections</h4>
-                <div className="flex -space-x-3 overflow-hidden">
-                  {["MC", "ER", "JS"].map((init) => (
-                    <div
-                      key={init}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-white bg-foreground/10 text-xs font-medium text-foreground/50"
-                    >
-                      {init}
-                    </div>
-                  ))}
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full ring-4 ring-white bg-foreground/5 text-[10px] font-bold text-foreground/40">
-                    +12
-                  </div>
-                </div>
-              </div>
+
+
             </div>
           </aside>
         )}
