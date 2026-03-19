@@ -13,7 +13,7 @@ const features = [
 ];
 
 // TODO: Replace with your actual Stripe Price ID for the $99/mo Plus plan
-const PLUS_PRICE_ID = "price_REPLACE_WITH_YOUR_STRIPE_PRICE_ID";
+const PLUS_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
 
 const Pricing = () => {
   const { toast } = useToast();
