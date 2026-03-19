@@ -393,7 +393,7 @@ async function handleKeywordPosts(
             if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
 
             const eSignal = `Engaged with post about "${post._keyword}"`;
-            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl);
+            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
             if (eOk) { inserted++; console.log(`keyword_posts: ACCEPTED engager "${fullEngager.first_name || ''} ${fullEngager.last_name || ''}" (${eHl})`); }
           }
         } else {
