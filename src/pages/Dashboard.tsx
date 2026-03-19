@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
+  AreaChart,
+  Area,
   LineChart,
   Line,
   XAxis,
@@ -350,80 +352,145 @@ export default function Dashboard() {
       </div>
 
       {/* ── Activity Overview ── */}
-      <div className={`${premiumCard} p-4 md:p-6 mb-6`}>
-        <ShineOverlay />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
-          <div>
-            <h2 className="text-base font-bold text-[hsl(222_28%_15%)]">Activity Overview</h2>
-            <p className="text-xs text-gray-400">
-              Track your lead generation &amp; outreach performance
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ background: "hsl(var(--goji-coral))" }}
-              />
-              <span className="text-xs text-gray-500">Leads created</span>
-            </div>
-            <button
-              onClick={handleNewCampaign}
-              className="text-xs font-semibold hover:opacity-80 transition-opacity"
-              style={{ color: "hsl(var(--goji-coral))" }}
-            >
-              Start a campaign »
-            </button>
-            <div className="flex items-center gap-1 border border-[hsl(220_14%_88%)] rounded-lg px-2 py-1 text-xs text-gray-500 bg-white/70 shadow-sm">
-              Last 30 days
-              <ChevronDown className="w-3 h-3" />
-            </div>
-          </div>
-        </div>
+      <div className="relative overflow-hidden rounded-2xl mb-6 border border-white/80 shadow-[0_2px_4px_hsl(220_14%_10%/0.04),0_12px_40px_hsl(220_14%_10%/0.10)]"
+        style={{
+          background: "linear-gradient(145deg, rgba(255,255,255,0.97) 0%, rgba(255,252,250,0.95) 100%)",
+        }}
+      >
+        {/* Decorative background orbs */}
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(18 95% 58% / 0.08) 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(152 60% 38% / 0.06) 0%, transparent 70%)" }} />
 
-        <div className="relative z-10 mt-4" style={{ height: 200 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 10, left: -30, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 20% 94%)" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                tickLine={false}
-                axisLine={false}
-                interval={3}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-                ticks={[0, 1, 2]}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "rgba(255,255,255,0.95)",
-                  border: "1px solid hsl(220 20% 90%)",
-                  borderRadius: "10px",
-                  fontSize: "12px",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-                  backdropFilter: "blur(8px)",
+        <div className="relative z-10 p-5 md:p-7">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+            <div>
+              <h2 className="text-base font-bold text-[hsl(222_28%_15%)]">Activity Overview</h2>
+              <p className="text-xs text-[hsl(220_10%_55%)] mt-0.5">
+                Track your lead generation &amp; outreach performance
+              </p>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Legend */}
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ background: "hsl(var(--goji-coral))" }} />
+                <span className="text-[11px] text-[hsl(220_10%_50%)] font-medium">Leads created</span>
+              </div>
+              {/* CTA */}
+              <button
+                onClick={handleNewCampaign}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-[1.03]"
+                style={{
+                  color: "white",
+                  background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 62%))",
+                  boxShadow: "0 2px 10px hsl(5 90% 62% / 0.35)",
                 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="leads"
-                stroke="hsl(var(--goji-coral))"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{
-                  r: 5,
-                  fill: "hsl(var(--goji-coral))",
-                  stroke: "hsl(5 90% 75%)",
-                  strokeWidth: 3,
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+              >
+                + Start a campaign
+              </button>
+              {/* Period pill */}
+              <div className="flex items-center gap-1 border border-[hsl(220_14%_90%)] rounded-full px-3 py-1.5 text-[11px] text-[hsl(220_10%_50%)] bg-white/80 backdrop-blur-sm shadow-sm font-medium cursor-pointer hover:border-[hsl(220_14%_80%)] transition-colors">
+                Last 30 days
+                <ChevronDown className="w-3 h-3" />
+              </div>
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div className="relative" style={{ height: 220 }}>
+            {/* Subtle inner glass panel behind chart */}
+            <div className="absolute inset-x-0 bottom-0 top-0 rounded-xl pointer-events-none"
+              style={{ background: "linear-gradient(180deg, transparent 60%, hsl(18 95% 58% / 0.03) 100%)" }} />
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -28, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="coralGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(18, 95%, 58%)" stopOpacity={0.22} />
+                    <stop offset="55%" stopColor="hsl(18, 95%, 58%)" stopOpacity={0.07} />
+                    <stop offset="100%" stopColor="hsl(18, 95%, 58%)" stopOpacity={0} />
+                  </linearGradient>
+                  <filter id="glowLine">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="hsl(220 20% 94%)"
+                  vertical={false}
+                  strokeOpacity={0.8}
+                />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: "hsl(220,10%,65%)", fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={3}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "hsl(220,10%,65%)", fontWeight: 500 }}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  ticks={[0, 1, 2]}
+                />
+                <Tooltip
+                  cursor={{ stroke: "hsl(18 95% 58% / 0.2)", strokeWidth: 1, strokeDasharray: "4 3" }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    return (
+                      <div style={{
+                        background: "rgba(255,255,255,0.92)",
+                        backdropFilter: "blur(16px)",
+                        WebkitBackdropFilter: "blur(16px)",
+                        border: "1px solid rgba(255,255,255,0.9)",
+                        borderRadius: "12px",
+                        padding: "10px 14px",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)",
+                        fontSize: "12px",
+                        minWidth: 120,
+                      }}>
+                        <p style={{ color: "hsl(220,10%,50%)", marginBottom: 4, fontWeight: 500 }}>{label}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{
+                            width: 8, height: 8, borderRadius: "50%",
+                            background: "hsl(18, 95%, 58%)",
+                            display: "inline-block",
+                            boxShadow: "0 0 6px hsl(18, 95%, 58%)",
+                          }} />
+                          <span style={{ color: "hsl(222,28%,15%)", fontWeight: 700, fontSize: 14 }}>
+                            {payload[0].value}
+                          </span>
+                          <span style={{ color: "hsl(220,10%,55%)", fontWeight: 400 }}>leads</span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="leads"
+                  stroke="hsl(18, 95%, 58%)"
+                  strokeWidth={2.5}
+                  fill="url(#coralGradient)"
+                  dot={false}
+                  activeDot={{
+                    r: 6,
+                    fill: "hsl(18, 95%, 58%)",
+                    stroke: "white",
+                    strokeWidth: 2.5,
+                    filter: "drop-shadow(0 0 6px hsl(18 95% 58% / 0.6))",
+                  }}
+                  style={{ filter: "url(#glowLine)" }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
