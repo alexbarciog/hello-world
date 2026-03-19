@@ -306,39 +306,36 @@ export default function Dashboard() {
         <MetricCard
           title="Hot Opportunities"
           value={hotOpps}
-          description="Detected this period"
           loading={hotOppsLoading}
           accent="teal"
           trend="+0%"
           trendUp={hotOpps > 0}
-          sparkColor="hsl(152 60% 40%)"
+          sparkData={sparkHot}
         />
 
         {/* Leads Engaged */}
         <MetricCard
           title="Leads Engaged"
           value={leadsEngaged}
-          description="Invitations sent"
           loading={statsLoading}
           accent="neutral"
           trend="+0%"
           trendUp={false}
-          sparkColor="hsl(220 10% 70%)"
+          sparkData={sparkFlat}
         />
 
         {/* Conversations */}
         <MetricCard
           title="Conversations"
           value={conversations}
-          description="Messages sent"
           loading={statsLoading}
           accent="neutral"
           trend="+0%"
           trendUp={false}
-          sparkColor="hsl(220 10% 70%)"
+          sparkData={sparkFlat}
           footer={
             <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-[hsl(220_10%_60%)]">
                 Set deal size to see pipeline generated
               </p>
               <button
