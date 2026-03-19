@@ -182,8 +182,17 @@ export default function RedditSignals() {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reddit Signals</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Monitor Reddit for buying intent signals using keyword-based RSS tracking
+          AI-powered Reddit monitoring — automatically scans for buying intent signals twice daily
         </p>
+        {agentRunning && keywords.length > 0 && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+            </span>
+            <span className="text-xs font-medium text-green-600">AI Agent active — auto-scanning twice daily</span>
+          </div>
+        )}
       </div>
 
       {/* ── Keywords Management Card ── */}
