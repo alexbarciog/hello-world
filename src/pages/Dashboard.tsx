@@ -368,9 +368,9 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Start Section */}
-        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 flex flex-col">
-          <h2 className="text-2xl font-light font-headline mb-8 text-md-on-surface">Quick Start</h2>
-          <div className="space-y-4 flex-grow">
+        <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col">
+          <h2 className="text-lg font-light font-headline mb-5 text-md-on-surface">Quick Start</h2>
+          <div className="space-y-3 flex-grow">
             {[
               { label: "Connect LinkedIn", desc: "Profile synced & verified", done: true },
               { label: "Create your first campaign", desc: "Set up outreach sequence", done: false },
@@ -379,7 +379,7 @@ export default function Dashboard() {
             ].map((step) => (
               <div
                 key={step.label}
-                className={`flex items-start gap-4 p-5 rounded-[1.5rem] border transition-all duration-300 ${
+                className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
                   step.done
                     ? "bg-white/40 border-white/20 hover:bg-white/60"
                     : "bg-white/20 border-white/10 hover:bg-white/40"
@@ -387,26 +387,26 @@ export default function Dashboard() {
               >
                 <div className="mt-0.5 flex-shrink-0">
                   {step.done ? (
-                    <div className="w-7 h-7 rounded-full bg-md-primary text-white flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    <div className="w-5 h-5 rounded-full bg-md-primary text-white flex items-center justify-center">
+                      <Check className="w-3 h-3" strokeWidth={3} />
                     </div>
                   ) : (
-                    <div className="w-7 h-7 rounded-full border-2 border-md-outline-variant bg-transparent" />
+                    <div className="w-5 h-5 rounded-full border-2 border-md-outline-variant bg-transparent" />
                   )}
                 </div>
                 <div>
-                  <div className="font-medium text-md-on-surface">{step.label}</div>
-                  <div className="text-xs font-light text-md-on-surface-variant">{step.desc}</div>
+                  <div className="font-medium text-sm text-md-on-surface">{step.label}</div>
+                  <div className="text-[11px] font-light text-md-on-surface-variant">{step.desc}</div>
                 </div>
               </div>
             ))}
           </div>
           <button
             onClick={handleNewCampaign}
-            className="w-full py-4 mt-8 rounded-full border border-md-primary/30 text-md-primary font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
+            className="w-full py-2.5 mt-5 rounded-full border border-md-primary/30 text-md-primary text-sm font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
           >
             View setup guide
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
