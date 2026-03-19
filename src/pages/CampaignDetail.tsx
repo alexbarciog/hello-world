@@ -140,7 +140,11 @@ export default function CampaignDetail() {
       if (agent) { setAgentName(agent.name); setAgentStatus(agent.status); }
     }
 
-    if (c.source_agent_id) {
+    // Load contacts from source_list_id if set
+    if (c.source_list_id) {
+      setSelectedListId(c.source_list_id);
+      await loadContactsForList(c.source_list_id);
+    } else if (c.source_agent_id) {
       const { data: agentData } = await supabase.from("signal_agents").select("leads_list_name").eq("id", c.source_agent_id).single();
       if (agentData?.leads_list_name) {
         const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", agentData.leads_list_name).order("imported_at", { ascending: false });
@@ -150,7 +154,52 @@ export default function CampaignDetail() {
       }
     }
 
+    // Load all available lists for the user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: lists } = await supabase.from("lists").select("id, name").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (lists) {
+        const listsWithCounts = await Promise.all(
+          lists.map(async (l) => {
+            const { count } = await supabase.from("contact_lists").select("id", { count: "exact", head: true }).eq("list_id", l.id);
+            return { id: l.id, name: l.name, contact_count: count || 0 };
+          })
+        );
+        setAvailableLists(listsWithCounts);
+      }
+    }
+
     setLoading(false);
+  }
+
+  async function loadContactsForList(listId: string) {
+    const { data: contactLinks } = await supabase.from("contact_lists").select("contact_id").eq("list_id", listId);
+    if (contactLinks && contactLinks.length > 0) {
+      const contactIds = contactLinks.map(cl => cl.contact_id);
+      const { data: contactData } = await supabase.from("contacts").select("*").in("id", contactIds).order("imported_at", { ascending: false });
+      if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
+    } else {
+      // Fallback: try by list name
+      const { data: listData } = await supabase.from("lists").select("name").eq("id", listId).single();
+      if (listData?.name) {
+        const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", listData.name).order("imported_at", { ascending: false });
+        if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
+      } else {
+        setContacts([]); setContactsCount(0);
+      }
+    }
+  }
+
+  async function assignListToCampaign(listId: string) {
+    if (!campaign) return;
+    setAssigningList(true);
+    const { error } = await supabase.from("campaigns").update({ source_list_id: listId } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to assign list"); setAssigningList(false); return; }
+    setSelectedListId(listId);
+    setCampaign({ ...campaign, source_list_id: listId });
+    await loadContactsForList(listId);
+    setAssigningList(false);
+    toast.success("List assigned! Contacts will go through the campaign workflow.");
   }
 
   async function toggleCampaignStatus() {
