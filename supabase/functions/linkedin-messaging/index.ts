@@ -132,11 +132,14 @@ Deno.serve(async (req) => {
       const normalizedItems = rawItems.map((msg) => {
         const isSender =
           msg.is_sender === true ||
+          msg.is_sender === 1 ||
           msg.is_sender === 'true' ||
+          msg.is_sender === '1' ||
           msg.from_me === true ||
+          msg.from_me === 1 ||
           msg.from_me === 'true' ||
-          (msg.direction && msg.direction === 'outbound') ||
-          (msg.sender_id && msg.sender_id === accountId);
+          msg.from_me === '1' ||
+          (msg.direction && (msg.direction === 'outbound' || msg.direction === 'outgoing'));
 
         return {
           ...msg,
