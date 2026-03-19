@@ -10,6 +10,7 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { scrapeWebsite } from "@/lib/api/firecrawl";
 
 interface CreateCampaignWizardProps {
   open: boolean;
@@ -152,12 +153,32 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     if (!website.trim()) return;
     setAnalyzingWebsite(true);
     try {
-      const { data, error } = await supabase.functions.invoke("firecrawl-scrape", { body: { url: website.trim() } });
-      if (error) throw error;
-      if (data?.description) setValueProposition(data.description);
-      if (data?.painPoints?.length) setPainPoints(data.painPoints.join("\n"));
+      // 1. Scrape website for company info
+      const scraped = await scrapeWebsite(website.trim());
+
+      // 2. Set value proposition from scraped description immediately
+      if (scraped.description) setValueProposition(scraped.description);
+
+      // 3. Call AI to generate pain points based on scraped data
+      const { data: painData, error: painErr } = await supabase.functions.invoke("generate-pain-points", {
+        body: {
+          companyName: scraped.companyName,
+          industry: scraped.industry,
+          description: scraped.description,
+          jobTitles: [],
+          targetIndustries: [],
+        },
+      });
+
+      if (!painErr && painData?.painPoints?.length) {
+        setPainPoints(painData.painPoints.join("\n"));
+      }
+
       toast.success("Website analyzed!");
-    } catch { toast.error("Failed to analyze website"); }
+    } catch (err) {
+      console.error("Analyze website error:", err);
+      toast.error("Failed to analyze website");
+    }
     setAnalyzingWebsite(false);
   }
 
