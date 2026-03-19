@@ -11,6 +11,7 @@ import {
 interface CreateAgentWizardProps {
   onClose: () => void;
   onCreated: () => void;
+  editAgentId?: string | null;
 }
 
 const INDUSTRIES = ["Technology", "Healthcare", "Finance", "Retail", "Manufacturing", "Education", "Real Estate", "Marketing", "Consulting", "SaaS"];
