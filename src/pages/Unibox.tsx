@@ -326,7 +326,7 @@ export default function Unibox() {
                       </p>
                     </div>
                     {(chat.unread_count || 0) > 0 && (
-                      <span className="w-5 h-5 rounded-full bg-[hsl(220,80%,55%)] text-white text-[10px] flex items-center justify-center font-medium shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-[hsl(18,95%,58%)] text-white text-[10px] flex items-center justify-center font-medium shrink-0">
                         {chat.unread_count}
                       </span>
                     )}
