@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { MessageSquare, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
@@ -40,7 +39,7 @@ function HeatDots({ count }: { count: number }) {
         <span
           key={i}
           className="text-sm"
-          style={{ opacity: i < count ? 1 : 0.25 }}
+          style={{ opacity: i < count ? 1 : 0.2 }}
         >
           🔥
         </span>
@@ -52,7 +51,7 @@ function HeatDots({ count }: { count: number }) {
 function Avatar({ initials, color }: { initials: string; color: string }) {
   return (
     <div
-      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ring-2 ring-white/70 shadow-sm"
       style={{ background: color }}
     >
       {initials}
@@ -61,6 +60,17 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 }
 
 const avatarColors = ["#1a1a2e", "#374151", "#1f2937"];
+
+// Reusable premium card class
+const premiumCard =
+  "relative overflow-hidden bg-white/90 rounded-xl border border-white/80 shadow-[0_2px_4px_hsl(220_14%_10%/0.04),0_8px_24px_hsl(220_14%_10%/0.08),0_1px_2px_hsl(220_14%_10%/0.06)]";
+
+// Inner shine overlay
+function ShineOverlay() {
+  return (
+    <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none rounded-xl" />
+  );
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -72,18 +82,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-full bg-card rounded-2xl px-4 md:px-8 py-6 relative m-2 md:m-4">
+    <div className="min-h-full bg-[hsl(30_20%_98%)] rounded-2xl px-4 md:px-8 py-6 relative m-2 md:m-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">
           Welcome Alex 🚀
         </h1>
         <div className="flex items-center gap-2 flex-wrap">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-red-500 border-red-200 bg-white hover:bg-red-50 transition-colors">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-red-500 border-red-200/60 bg-red-50/80 backdrop-blur-sm hover:bg-red-50 transition-all shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
             0 Active Signal(s)
           </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-green-600 border-green-200 bg-white hover:bg-green-50 transition-colors">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50 transition-all shadow-sm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -95,12 +105,18 @@ export default function Dashboard() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
         {/* Ready to outreach */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 flex flex-col items-center justify-center gap-3 shadow-sm">
-          <p className="text-sm font-semibold text-[hsl(222_28%_18%)]">Ready to outreach?</p>
+        <div className={`${premiumCard} p-6 flex flex-col items-center justify-center gap-3`}>
+          <ShineOverlay />
+          <p className="text-sm font-semibold text-[hsl(222_28%_18%)] relative z-10">Ready to outreach?</p>
           <button
             onClick={handleNewCampaign}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: "hsl(var(--goji-coral))" }}
+            className="relative z-10 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02]"
+            style={{
+              background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 65%))",
+              boxShadow: "0 4px 16px hsl(5 90% 65% / 0.45)",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 24px hsl(5 90% 65% / 0.55)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px hsl(5 90% 65% / 0.45)")}
           >
             <span className="text-base">+</span>
             Start a campaign
@@ -109,27 +125,30 @@ export default function Dashboard() {
         </div>
 
         {/* Hot Opportunities */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <p className="text-xs text-gray-400 mb-1">Hot Opportunities</p>
-          <p className="text-3xl font-bold text-[hsl(222_28%_15%)] mb-1">3</p>
-          <p className="text-xs text-gray-400">Detected this period</p>
+        <div className={`${premiumCard} p-6`}>
+          <ShineOverlay />
+          <p className="text-xs text-gray-400 mb-1 relative z-10">Hot Opportunities</p>
+          <p className="text-3xl font-black text-[hsl(222_28%_12%)] mb-1 relative z-10">3</p>
+          <p className="text-xs text-gray-400 relative z-10">Detected this period</p>
         </div>
 
         {/* Leads Engaged */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <p className="text-xs text-gray-400 mb-1">Leads Engaged</p>
-          <p className="text-3xl font-bold text-[hsl(222_28%_15%)] mb-1">0</p>
-          <p className="text-xs text-gray-400">Invitations sent</p>
+        <div className={`${premiumCard} p-6`}>
+          <ShineOverlay />
+          <p className="text-xs text-gray-400 mb-1 relative z-10">Leads Engaged</p>
+          <p className="text-3xl font-black text-[hsl(222_28%_12%)] mb-1 relative z-10">0</p>
+          <p className="text-xs text-gray-400 relative z-10">Invitations sent</p>
         </div>
 
         {/* Conversations */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm flex flex-col justify-between">
-          <div>
+        <div className={`${premiumCard} p-6 flex flex-col justify-between`}>
+          <ShineOverlay />
+          <div className="relative z-10">
             <p className="text-xs text-gray-400 mb-1">Conversations</p>
-            <p className="text-3xl font-bold text-[hsl(222_28%_15%)] mb-1">0</p>
+            <p className="text-3xl font-black text-[hsl(222_28%_12%)] mb-1">0</p>
             <p className="text-xs text-gray-400">Messages sent</p>
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+          <div className="relative z-10 mt-3 pt-3 border-t border-[hsl(220_14%_93%)] flex items-center justify-between">
             <p className="text-xs text-gray-400">Set deal size to see pipeline generated</p>
             <button className="text-xs font-semibold" style={{ color: "hsl(var(--goji-coral))" }}>Edit</button>
           </div>
@@ -137,15 +156,16 @@ export default function Dashboard() {
       </div>
 
       {/* Activity Overview */}
-      <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6 mb-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
+      <div className={`${premiumCard} p-4 md:p-6 mb-6`}>
+        <ShineOverlay />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
           <div>
             <h2 className="text-base font-bold text-[hsl(222_28%_15%)]">Activity Overview</h2>
             <p className="text-xs text-gray-400">Track your lead generation &amp; outreach performance</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(var(--goji-coral))" }} />
               <span className="text-xs text-gray-500">Leads created</span>
             </div>
             <button
@@ -155,14 +175,14 @@ export default function Dashboard() {
             >
               Start a campaign »
             </button>
-            <div className="flex items-center gap-1 border border-gray-200 rounded px-2 py-1 text-xs text-gray-500 bg-white">
+            <div className="flex items-center gap-1 border border-[hsl(220_14%_88%)] rounded-lg px-2 py-1 text-xs text-gray-500 bg-white/70 shadow-sm">
               Last 30 days
               <ChevronDown className="w-3 h-3" />
             </div>
           </div>
         </div>
 
-        <div className="mt-4" style={{ height: 200 }}>
+        <div className="relative z-10 mt-4" style={{ height: 200 }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: -30, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 20% 94%)" vertical={false} />
@@ -182,19 +202,26 @@ export default function Dashboard() {
               />
               <Tooltip
                 contentStyle={{
-                  background: "white",
+                  background: "rgba(255,255,255,0.95)",
                   border: "1px solid hsl(220 20% 90%)",
-                  borderRadius: "8px",
+                  borderRadius: "10px",
                   fontSize: "12px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+                  backdropFilter: "blur(8px)",
                 }}
               />
               <Line
                 type="monotone"
                 dataKey="leads"
                 stroke="hsl(var(--goji-coral))"
-                strokeWidth={2}
+                strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 4 }}
+                activeDot={{
+                  r: 5,
+                  fill: "hsl(var(--goji-coral))",
+                  stroke: "hsl(5 90% 75%)",
+                  strokeWidth: 3,
+                }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -204,11 +231,12 @@ export default function Dashboard() {
       {/* Bottom row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
         {/* Latest Hot Leads */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-start justify-between mb-1">
+        <div className={`${premiumCard} p-6`}>
+          <ShineOverlay />
+          <div className="relative z-10 flex items-start justify-between mb-1">
             <div className="flex items-center gap-2">
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm"
                 style={{ background: "hsl(var(--goji-coral) / 0.12)" }}
               >
                 👤
@@ -218,17 +246,23 @@ export default function Dashboard() {
                 <p className="text-xs text-gray-400">Your most promising prospects</p>
               </div>
             </div>
-            <button className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 transition-colors">
+            <button
+              className="flex items-center gap-1 text-xs font-semibold hover:opacity-80 transition-opacity"
+              style={{ color: "hsl(var(--goji-coral))" }}
+            >
               View More <ExternalLink className="w-3 h-3" />
             </button>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="relative z-10 mt-4 space-y-1">
             {exampleLeads.map((lead, i) => (
-              <div key={lead.name} className="flex items-center gap-3">
+              <div
+                key={lead.name}
+                className="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 transition-colors hover:bg-[hsl(5_90%_65%/0.04)] cursor-pointer"
+              >
                 <Avatar initials={lead.name.split(" ").slice(0, 2).map(w => w[0]).join("")} color={avatarColors[i]} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-blue-500 truncate">{lead.name}</p>
+                  <p className="text-sm font-semibold text-[hsl(222_28%_15%)] truncate">{lead.name}</p>
                   <p className="text-xs text-gray-400 truncate">{lead.role} · {lead.company}</p>
                 </div>
                 <HeatDots count={lead.heat} />
@@ -238,13 +272,14 @@ export default function Dashboard() {
         </div>
 
         {/* Latest Replies */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-1">
+        <div className={`${premiumCard} p-6`}>
+          <ShineOverlay />
+          <div className="relative z-10 flex items-center gap-2 mb-1">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "hsl(220 60% 55% / 0.12)" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
+              style={{ background: "hsl(var(--goji-coral) / 0.10)" }}
             >
-              <MessageSquare className="w-4 h-4 text-blue-500" />
+              <MessageSquare className="w-4 h-4" style={{ color: "hsl(var(--goji-coral))" }} />
             </div>
             <div>
               <h3 className="text-sm font-bold text-[hsl(222_28%_15%)]">Latest Replies</h3>
@@ -252,10 +287,15 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center py-10 gap-3">
-            <MessageSquare className="w-10 h-10 text-gray-200" />
+          <div className="relative z-10 flex flex-col items-center justify-center py-10 gap-3">
+            <MessageSquare className="w-10 h-10 text-[hsl(220_14%_88%)]" />
             <p className="text-sm text-center text-gray-400">
-              <button className="text-blue-500 font-semibold hover:underline">Activate your Unibox</button>
+              <button
+                className="font-semibold hover:opacity-80 transition-opacity"
+                style={{ color: "hsl(var(--goji-coral))" }}
+              >
+                Activate your Unibox
+              </button>
               {" "}to never miss a reply
             </p>
             <p className="text-xs text-gray-400">All your replies will appear here</p>
@@ -264,14 +304,15 @@ export default function Dashboard() {
       </div>
 
       {/* Get Started panel */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className={`${premiumCard} overflow-hidden`}>
+        <ShineOverlay />
         <button
           onClick={() => setGetStartedOpen(!getStartedOpen)}
-          className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+          className="relative z-10 w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-[hsl(5_90%_65%/0.03)]"
         >
           <div className="flex items-center gap-3">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
+              className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
               style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
             >
               <span className="text-sm">🚀</span>
@@ -288,7 +329,7 @@ export default function Dashboard() {
           )}
         </button>
         {getStartedOpen && (
-          <div className="px-5 pb-5 pt-1 border-t border-gray-100">
+          <div className="relative z-10 px-5 pb-5 pt-1 border-t border-[hsl(220_14%_93%)]">
             <div className="space-y-3 mt-3">
               {[
                 { label: "Connect your LinkedIn account", done: true },
@@ -298,10 +339,11 @@ export default function Dashboard() {
               ].map((step) => (
                 <div key={step.label} className="flex items-center gap-3">
                   <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2"
+                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2 transition-all"
                     style={{
-                      borderColor: step.done ? "hsl(142 70% 45%)" : "hsl(220 20% 80%)",
+                      borderColor: step.done ? "hsl(142 70% 45%)" : "hsl(220_20%_75%)",
                       background: step.done ? "hsl(142 70% 45%)" : "transparent",
+                      boxShadow: step.done ? "0 2px 8px hsl(142 70% 45% / 0.3)" : "none",
                     }}
                   >
                     {step.done && (
@@ -322,8 +364,13 @@ export default function Dashboard() {
 
       {/* Floating orange button */}
       <button
-        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-110"
-        style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+        style={{
+          background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 65%))",
+          boxShadow: "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 12px 40px hsl(5 90% 65% / 0.6), 0 2px 8px hsl(0 0% 0% / 0.15)")}
+        onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)")}
       >
         <img src="/favicon.ico" alt="" className="w-5 h-5 object-contain" onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';
