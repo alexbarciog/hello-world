@@ -264,8 +264,7 @@ export default function CampaignDetail() {
             </div>
             <button
               onClick={toggleCampaignStatus}
-              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2.5 transition-all hover:opacity-90 hover:scale-[1.02]"
-              style={{ background: campaign.status === "active" ? "hsl(0 70% 50%)" : "hsl(var(--goji-coral))" }}
+              className={`btn-cta text-sm ${campaign.status === "active" ? "!bg-destructive" : ""}`}
             >
               {campaign.status === "active" ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Start Campaign</>}
             </button>
