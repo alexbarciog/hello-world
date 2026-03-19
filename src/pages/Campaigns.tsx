@@ -325,7 +325,7 @@ export default function CampaignsPage() {
           className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"
         >
           {[
-            { label: "Total Leads", value: totalLeads, icon: Users, color: "hsl(var(--goji-coral))" },
+            { label: "Total Leads", value: totalLeads, icon: Users, color: "hsl(var(--foreground))" },
             { label: "Active", value: activeCampaigns, icon: Play, color: "hsl(142 70% 45%)" },
             { label: "Invitations Sent", value: totalSent, icon: Zap, color: "hsl(217 91% 60%)" },
             { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: TrendingUp, color: "hsl(var(--goji-orange))" },
