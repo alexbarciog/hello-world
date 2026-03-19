@@ -426,17 +426,7 @@ export default function Unibox() {
                       <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 rounded-xl hover:bg-white/40 text-foreground/50 transition-colors">
-                      <Video className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 rounded-xl hover:bg-white/40 text-foreground/50 transition-colors">
-                      <Phone className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 rounded-xl hover:bg-white/40 text-foreground/50 transition-colors">
-                      <MoreHorizontal className="w-5 h-5" />
-                    </button>
-                  </div>
+                </div>
                 </div>
 
                 {/* Messages Thread Area */}
