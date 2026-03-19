@@ -1400,39 +1400,57 @@ export default function CampaignDetail() {
                       return (
                         <motion.div
                           key={idx}
-                          initial={{ opacity: 0, y: 8 }}
+                          initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.06 }}
-                          className={`rounded-xl p-3.5 transition-all duration-300 ${
+                          transition={{ delay: idx * 0.08, type: "spring", stiffness: 300, damping: 24 }}
+                          whileHover={{ scale: 1.01, y: -1 }}
+                          className={`relative overflow-hidden rounded-2xl p-4 transition-all duration-300 cursor-default ${
                             isActive
-                              ? "bg-primary/[0.06] ring-1 ring-primary/25 shadow-sm shadow-primary/5"
+                              ? "bg-gradient-to-br from-foreground/[0.04] via-foreground/[0.02] to-transparent ring-1 ring-foreground/10 shadow-lg shadow-foreground/5"
                               : isPast
-                              ? "bg-muted/30"
-                              : "bg-muted/20 hover:bg-muted/40"
+                              ? "bg-muted/25 opacity-60"
+                              : "bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03] hover:shadow-lg hover:ring-border/60"
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <span className="text-lg">{run.emoji}</span>
+                          {/* Glossy shine overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
+                          
+                          {/* Subtle top highlight for glass effect */}
+                          <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
+                          <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {/* Fire icon container */}
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${
+                                isActive
+                                  ? "bg-gradient-to-br from-amber-400/20 to-orange-500/10 ring-1 ring-amber-400/30"
+                                  : "bg-gradient-to-br from-muted/60 to-muted/30 ring-1 ring-border/30"
+                              }`}>
+                                <span className={`text-lg ${isActive ? "animate-pulse" : ""}`}>🔥</span>
+                              </div>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-foreground">{run.label}</span>
-                                  <span className="text-[10px] text-muted-foreground font-semibold bg-muted/60 px-1.5 py-0.5 rounded-md">
+                                  <span className="text-[13px] font-extrabold text-foreground tracking-tight">{run.label}</span>
+                                  <span className="text-[10px] text-muted-foreground font-bold bg-foreground/[0.04] backdrop-blur-sm px-2 py-0.5 rounded-lg ring-1 ring-foreground/[0.06]">
                                     {utcHourToLocal(runHour)}
                                   </span>
                                   {isActive && (
-                                    <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">
+                                    <motion.span
+                                      animate={{ opacity: [1, 0.6, 1] }}
+                                      transition={{ duration: 1.5, repeat: Infinity }}
+                                      className="text-[10px] font-black tracking-wide text-foreground bg-foreground/[0.07] px-2.5 py-0.5 rounded-full ring-1 ring-foreground/10"
+                                    >
                                       ⚡ LIVE
-                                    </span>
+                                    </motion.span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-3 mt-1">
-                                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                    <UserPlus className="w-2.5 h-2.5" /> Send invitations
+                                <div className="flex items-center gap-3 mt-1.5">
+                                  <span className="text-[10px] text-muted-foreground/80 flex items-center gap-1 font-medium">
+                                    <UserPlus className="w-3 h-3" /> Send invitations
                                   </span>
                                   {workflowSteps.filter((ws: any) => ws.type !== "invitation").length > 0 && (
-                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                      <MessageSquare className="w-2.5 h-2.5" /> +{workflowSteps.filter((ws: any) => ws.type !== "invitation").length} follow-up
+                                    <span className="text-[10px] text-muted-foreground/80 flex items-center gap-1 font-medium">
+                                      <MessageSquare className="w-3 h-3" /> +{workflowSteps.filter((ws: any) => ws.type !== "invitation").length} follow-up
                                     </span>
                                   )}
                                 </div>
@@ -1440,15 +1458,15 @@ export default function CampaignDetail() {
                             </div>
                             <div>
                               {isPast ? (
-                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full ring-1 ring-emerald-500/20">
+                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 backdrop-blur-sm px-3 py-1.5 rounded-xl ring-1 ring-emerald-500/20 shadow-sm">
                                   ✓ {thisBatchSent} sent
                                 </span>
                               ) : campaign.status !== "active" ? (
-                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">⏸️ Paused</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 backdrop-blur-sm px-3 py-1.5 rounded-xl">⏸️ Paused</span>
                               ) : remainingContacts === 0 ? (
-                                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2.5 py-1 rounded-full">No contacts</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 backdrop-blur-sm px-3 py-1.5 rounded-xl">No contacts</span>
                               ) : (
-                                <span className="text-[10px] font-semibold text-foreground/70 bg-muted/60 px-2.5 py-1 rounded-full ring-1 ring-border/50">
+                                <span className="text-[10px] font-bold text-foreground/70 bg-foreground/[0.04] backdrop-blur-sm px-3 py-1.5 rounded-xl ring-1 ring-foreground/[0.06] shadow-sm">
                                   ~{thisBatchPlanned} planned
                                 </span>
                               )}
