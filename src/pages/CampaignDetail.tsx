@@ -1599,7 +1599,7 @@ export default function CampaignDetail() {
                                 </span>
                               </div>
                               <div className="flex items-center gap-3 mt-1.5">
-                                <span className="text-[10px] text-primary flex items-center gap-1 font-medium">
+                                <span className="text-[10px] text-[hsl(220,80%,55%)] flex items-center gap-1 font-medium">
                                   {run.sent > 0 ? (
                                     <><UserPlus className="w-3 h-3" /> {run.sent} invitation{run.sent !== 1 ? "s" : ""} sent</>
                                   ) : (
