@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import gojiIcon from "@/assets/gojiberry-icon.png";
 import { toast } from "sonner";
-import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles } from "lucide-react";
+import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
 import { CreateCampaignWizard } from "@/components/campaigns/CreateCampaignWizard";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,34 +37,37 @@ const cardVariants = {
 
 function StatusBadge({ status }: { status: string }) {
   const isActive = status === "active";
+  const isPaused = status === "paused";
   const isPending = status === "pending_linkedin";
-  const color = isActive ? "hsl(142 70% 45%)" : isPending ? "hsl(38 92% 50%)" : "hsl(220 10% 65%)";
-  const bgColor = isActive ? "hsl(142 70% 95%)" : isPending ? "hsl(38 92% 95%)" : "hsl(220 10% 95%)";
-  const label = isActive ? "Active" : isPending ? "Pending" : status.charAt(0).toUpperCase() + status.slice(1);
 
+  if (isActive) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+        ACTIVE
+      </span>
+    );
+  }
+  if (isPaused) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+        <span className="w-2 h-2 rounded-full bg-amber-400" />
+        PAUSED
+      </span>
+    );
+  }
+  if (isPending) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+        <span className="w-2 h-2 rounded-full bg-amber-400" />
+        PENDING
+      </span>
+    );
+  }
   return (
-    <span
-      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full"
-      style={{ color, background: bgColor }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-      {label}
+    <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider font-medium px-2 py-0.5 rounded-full bg-md-surface-container text-md-on-surface-variant">
+      {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
-  );
-}
-
-function MiniStatBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
-  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10px] font-medium">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-bold" style={{ color }}>{pct}%</span>
-      </div>
-      <div className="h-1 rounded-full bg-muted overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
-      </div>
-    </div>
   );
 }
 
@@ -79,7 +82,8 @@ function CampaignCard({
 }) {
   const navigate = useNavigate();
   const isActive = c.status === "active";
-  const borderAccent = isActive ? "hsl(142 70% 45%)" : c.status === "pending_linkedin" ? "hsl(38 92% 50%)" : "hsl(220 10% 80%)";
+  const acceptRate = c.invitations_sent > 0 ? Math.round(((c.invitations_accepted || 0) / c.invitations_sent) * 100) : 0;
+  const replyRate = c.messages_sent > 0 ? Math.round(((c.messages_replied || 0) / c.messages_sent) * 100) : 0;
 
   return (
     <motion.div
@@ -87,100 +91,80 @@ function CampaignCard({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="group relative rounded-xl border border-border bg-card overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-lg hover:shadow-primary/5"
+      className="glass-card rounded-2xl p-5 ghost-border hover:shadow-xl hover:shadow-md-primary/5 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 cursor-pointer"
       onClick={() => navigate(`/campaigns/${c.id}`)}
     >
-      {/* Status accent line */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl" style={{ background: borderAccent }} />
+      {/* Icon */}
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-md-primary/10 to-md-secondary/10 flex items-center justify-center shrink-0">
+        <img src={gojiIcon} alt="" className="w-6 h-6 object-contain" />
+      </div>
 
-      <div className="pl-5 pr-4 py-4">
-        {/* Top row: name + status + actions */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
-              <img src={gojiIcon} alt="" className="w-5 h-5 object-contain opacity-70" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold truncate text-foreground">
-                {c.company_name || "My Campaign"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {c.campaign_goal === "demos" ? "Book demos" : "Start conversations"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <StatusBadge status={c.status} />
-            <div onClick={(e) => e.stopPropagation()}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground opacity-0 group-hover:opacity-100">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  {!isActive ? (
-                    <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
-                      <Play className="w-3.5 h-3.5 text-green-600" /> Activate
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
-                      <Pause className="w-3.5 h-3.5" /> Pause
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={onEdit} className="gap-2 text-sm">
-                    <Pencil className="w-3.5 h-3.5" /> Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onDelete} className="gap-2 text-sm text-destructive focus:text-destructive">
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
+      {/* Title & status */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-3 mb-1">
+          <h3 className="font-headline font-normal text-md-on-surface truncate">
+            {c.company_name || "My Campaign"}
+          </h3>
+          <StatusBadge status={c.status} />
         </div>
+        <p className="text-xs text-md-on-surface-variant font-light">
+          {c.campaign_goal === "demos" ? "Book demos" : "Start conversations"}
+        </p>
+      </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-4 gap-3 mt-4">
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Leads</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">{c.leadsCount}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Sent</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">{c.invitations_sent || 0}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Connect</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">{c.invitations_accepted || 0}</p>
-          </div>
-          <div className="rounded-lg bg-muted/40 px-3 py-2.5 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Reply</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">{c.messages_replied || 0}</p>
-          </div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-4 gap-8 md:gap-12 text-center items-center md:px-8">
+        <div>
+          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Leads</p>
+          <p className="text-lg font-light text-md-on-surface">{c.leadsCount}</p>
         </div>
+        <div>
+          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Sent</p>
+          <p className="text-lg font-light text-md-on-surface">{c.invitations_sent || 0}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Connect</p>
+          <p className="text-lg font-light text-md-primary">{acceptRate}%</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Reply</p>
+          <p className="text-lg font-light text-md-secondary">{replyRate}%</p>
+        </div>
+      </div>
 
-        {/* Rate bars */}
-        <div className="grid grid-cols-2 gap-4 mt-3">
-          <MiniStatBar label="Accept Rate" value={c.invitations_accepted || 0} total={c.invitations_sent || 0} color="hsl(142 70% 45%)" />
-          <MiniStatBar label="Reply Rate" value={c.messages_replied || 0} total={c.messages_sent || 0} color="hsl(217 91% 60%)" />
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px]">👤</div>
-            First account · connected
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </span>
-            <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </div>
+      {/* Actions */}
+      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => navigate(`/campaigns/${c.id}`)}
+          className="px-5 py-2 rounded-full bg-white/80 ghost-border text-xs font-medium hover:bg-white transition-colors"
+        >
+          View Leads
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 text-md-outline hover:text-md-on-surface transition-colors">
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {!isActive ? (
+              <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
+                <Play className="w-3.5 h-3.5 text-green-600" /> Activate
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
+                <Pause className="w-3.5 h-3.5" /> Pause
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onEdit} className="gap-2 text-sm">
+              <Pencil className="w-3.5 h-3.5" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="gap-2 text-sm text-destructive focus:text-destructive">
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </motion.div>
   );
@@ -250,28 +234,28 @@ export default function CampaignsPage() {
     >
       <div className="flex items-center gap-6 mb-2">
         {[
-          { icon: Bot, label: "Create Agent", color: "hsl(var(--foreground))" },
-          { icon: Sparkles, label: "Build Campaign", color: "hsl(217 91% 60%)" },
-          { icon: Zap, label: "Start Outreach", color: "hsl(142 70% 45%)" },
+          { icon: Bot, label: "Create Agent", color: "hsl(var(--md-primary))" },
+          { icon: Sparkles, label: "Build Campaign", color: "hsl(var(--md-secondary))" },
+          { icon: Zap, label: "Start Outreach", color: "hsl(var(--md-tertiary))" },
         ].map((step, i) => (
           <div key={i} className="flex items-center gap-3">
-            {i > 0 && <ArrowRight className="w-4 h-4 text-muted-foreground/40" />}
+            {i > 0 && <ArrowRight className="w-4 h-4 text-md-outline-variant" />}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: `${step.color}15` }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center glass-card ghost-border">
                 <step.icon className="w-6 h-6" style={{ color: step.color }} />
               </div>
-              <span className="text-xs font-semibold text-muted-foreground">{step.label}</span>
+              <span className="text-xs font-medium text-md-on-surface-variant">{step.label}</span>
             </div>
           </div>
         ))}
       </div>
-      <p className="text-base font-bold text-foreground mt-2">No campaigns yet</p>
-      <p className="text-sm text-muted-foreground max-w-md text-center">
+      <p className="text-base font-medium text-md-on-surface mt-2 font-headline">No campaigns yet</p>
+      <p className="text-sm text-md-on-surface-variant max-w-md text-center font-light">
         Create your first AI-powered outreach campaign to start connecting with your ideal prospects on LinkedIn.
       </p>
       <button
         onClick={handleNewCampaign}
-        className={`mt-2 btn-cta text-sm ${campaigns.length === 0 ? "animate-pulse" : ""}`}
+        className="mt-2 px-6 py-3 rounded-full bg-md-primary text-md-on-primary text-sm font-medium shadow-md hover:opacity-90 transition-opacity flex items-center gap-2"
       >
         <Plus className="w-4 h-4" />
         Start your first campaign
@@ -280,41 +264,44 @@ export default function CampaignsPage() {
   );
 
   return (
-    <div className="min-h-full bg-card rounded-2xl m-3 md:m-4 p-4 md:p-6">
+    <div
+      className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body"
+      style={{
+        background: `
+          radial-gradient(circle at top right, hsla(var(--md-secondary-fixed), 0.4) 0%, transparent 40%),
+          radial-gradient(circle at bottom left, hsla(var(--md-primary) / 0.06) 0%, transparent 50%),
+          hsl(var(--md-surface))
+        `,
+      }}
+    >
       {/* Header */}
-      <div className="rounded-xl bg-card border border-border p-4 mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-base font-bold flex items-center gap-2 flex-wrap text-foreground">
-            <span className="flex items-center gap-1.5">
-              <img src={gojiIcon} alt="" className="w-5 h-5 object-contain" />
-              Campaigns
-            </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-              {loading ? "..." : campaigns.length} / {MAX_CAMPAIGNS}
-            </span>
+          <h1 className="text-3xl md:text-4xl font-headline font-light tracking-tight text-md-on-surface mb-2">
+            Campaign Intelligence
           </h1>
-          <p className="text-xs mt-1 ml-7 text-muted-foreground">
+          <p className="text-md-on-surface-variant font-light">
+            {loading ? "Loading..." : `${campaigns.length} / ${MAX_CAMPAIGNS} campaigns · `}
             Create and manage your outreach campaigns
           </p>
         </div>
-
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+        <div className="flex gap-3">
           {atLimit && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-1.5">
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
               <Info className="w-3.5 h-3.5 shrink-0" />
-              Limit reached ({MAX_CAMPAIGNS}/{MAX_CAMPAIGNS})
+              Limit reached
             </div>
           )}
           <button
             onClick={handleNewCampaign}
             disabled={atLimit}
-            className="btn-cta text-sm disabled:opacity-40 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
+            className="px-6 py-2.5 rounded-full bg-md-primary text-md-on-primary text-sm font-medium shadow-md shadow-md-primary/10 hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Start a campaign
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Summary Stats */}
       {!loading && campaigns.length > 0 && (
@@ -322,46 +309,56 @@ export default function CampaignsPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
         >
           {[
-            { label: "Total Leads", value: totalLeads, icon: Users, color: "hsl(var(--foreground))" },
-            { label: "Active", value: activeCampaigns, icon: Play, color: "hsl(142 70% 45%)" },
-            { label: "Invitations Sent", value: totalSent, icon: Zap, color: "hsl(217 91% 60%)" },
-            { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: TrendingUp, color: "hsl(var(--goji-orange))" },
+            { label: "Total Leads", value: totalLeads, icon: Users, iconBg: "from-md-primary/10 to-md-secondary/10" },
+            { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, iconBg: "from-emerald-100/60 to-emerald-50/40" },
+            { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, iconBg: "from-md-secondary/10 to-md-primary/5" },
+            { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, iconBg: "from-md-tertiary-fixed/30 to-md-tertiary-fixed/10" },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-border bg-card p-3.5 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${stat.color}12` }}>
-                <stat.icon className="w-4 h-4" style={{ color: stat.color }} />
+            <div key={stat.label} className="glass-card rounded-2xl p-6 ghost-border flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-4">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon className="w-5 h-5 text-md-primary" />
+                </div>
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
-                <p className="text-lg font-bold text-foreground">{stat.value}</p>
+                <p className="text-md-on-surface-variant text-sm font-light mb-1">{stat.label}</p>
+                <p className="text-2xl font-headline tracking-tight text-md-on-surface">{stat.value}</p>
               </div>
             </div>
           ))}
         </motion.div>
       )}
 
+      {/* Active Outreach Streams */}
+      {!loading && campaigns.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-headline font-light tracking-tight text-md-on-surface">Active Outreach Streams</h2>
+            <div className="flex items-center gap-4 text-sm text-md-on-surface-variant">
+              <span>Sort by: <span className="text-md-primary font-medium cursor-pointer">Efficiency ↓</span></span>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Campaign Cards */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {loading ? (
           Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border p-5 space-y-4">
+            <div key={i} className="glass-card ghost-border rounded-2xl p-5 space-y-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="h-9 w-9 rounded-lg" />
+                <Skeleton className="h-12 w-12 rounded-xl" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-3 w-24" />
                 </div>
                 <Skeleton className="h-6 w-16 rounded-full" />
               </div>
-              <div className="grid grid-cols-4 gap-3">
-                {Array.from({ length: 4 }).map((_, j) => <Skeleton key={j} className="h-14 rounded-lg" />)}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Skeleton className="h-4 rounded-full" />
-                <Skeleton className="h-4 rounded-full" />
+              <div className="grid grid-cols-4 gap-8">
+                {Array.from({ length: 4 }).map((_, j) => <Skeleton key={j} className="h-10 rounded-lg" />)}
               </div>
             </div>
           ))
