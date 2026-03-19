@@ -1741,11 +1741,12 @@ export default function HelpCenter() {
             </h1>
 
             <div
-              className="p-8 rounded-xl"
+              className="p-10 rounded-2xl"
               style={{
-                background: "rgba(255,255,255,0.4)",
-                backdropFilter: "blur(20px)",
-                border: "1px solid rgba(255,255,255,0.3)",
+                background: "rgba(255,255,255,0.7)",
+                backdropFilter: "blur(24px)",
+                border: "1px solid rgba(255,255,255,0.5)",
+                boxShadow: "0 4px 24px -4px rgba(0,0,0,0.08), 0 12px 40px -8px rgba(0,0,0,0.06)",
               }}
             >
               {renderMarkdown(activeArticle.content)}
