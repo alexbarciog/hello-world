@@ -264,6 +264,21 @@ export default function CampaignDetail() {
     setNewStepMessage(prev => prev + `{{${v}}}`);
   }
 
+  async function saveDelayDays(stepIndex: number, newDelay: number) {
+    if (!campaign) return;
+    const updated = [...workflowSteps];
+    // stepIndex is the index in the filtered (non-invitation) steps, 
+    // but we need the actual index in workflowSteps
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const actualIdx = nonInvitationSteps[stepIndex]?.idx;
+    if (actualIdx === undefined) return;
+    updated[actualIdx] = { ...updated[actualIdx], delay_days: Math.max(1, newDelay) };
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to update delay"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setEditingDelayStep(null);
+  }
+
   async function saveNewStep() {
     if (!campaign) return;
     const newStep: any = {
