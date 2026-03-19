@@ -770,6 +770,28 @@ function normalizeText(value: string): string {
 
 // ─── Contact Insertion ────────────────────────────────────────────────────────
 
+async function ensureList(supabase: any, userId: string, listName: string, agentId: string): Promise<string | null> {
+  // Check if list already exists for this user+name
+  const { data: existing } = await supabase
+    .from('lists')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('name', listName)
+    .limit(1);
+
+  if (existing && existing.length > 0) return existing[0].id;
+
+  // Create new list
+  const { data: created, error } = await supabase
+    .from('lists')
+    .insert({ user_id: userId, name: listName, source_agent_id: agentId })
+    .select('id')
+    .single();
+
+  if (error) { console.error(`Create list error: ${error.message}`); return null; }
+  return created?.id || null;
+}
+
 async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null,
@@ -801,7 +823,7 @@ async function insertContact(
   const signalCHit = match.score >= 80;
   const aiScore = Math.min(3, [signalAHit, signalBHit, signalCHit].filter(Boolean).length);
 
-  const { error } = await supabase.from('contacts').insert({
+  const { data: inserted, error } = await supabase.from('contacts').insert({
     user_id: userId,
     first_name: firstName,
     last_name: lastName,
@@ -820,9 +842,21 @@ async function insertContact(
     list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
     relevance_tier: relevanceTier,
-  });
+  }).select('id').single();
 
   if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
+
+  // Associate contact with list via junction table
+  if (inserted?.id && listName) {
+    const listId = await ensureList(supabase, userId, listName, agentId);
+    if (listId) {
+      await supabase.from('contact_lists').insert({
+        contact_id: inserted.id,
+        list_id: listId,
+      });
+    }
+  }
+
   return true;
 }
 
