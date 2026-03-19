@@ -92,6 +92,14 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     else resetForm();
   }, [open, editCampaignId]);
 
+  // Auto-trigger AI analysis when entering step 2 with pre-filled website from onboarding
+  useEffect(() => {
+    if (step === 2 && onboardingWebsiteLoaded && !autoAnalyzed && website.trim() && !editCampaignId) {
+      setAutoAnalyzed(true);
+      handleAnalyzeWebsite();
+    }
+  }, [step, onboardingWebsiteLoaded, autoAnalyzed]);
+
   async function loadData() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
