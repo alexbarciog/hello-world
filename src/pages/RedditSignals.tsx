@@ -1,32 +1,33 @@
 import { useState } from "react";
-import { Search, ExternalLink, UserPlus, Globe, X, Plus } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Search, ExternalLink, UserPlus, X, Plus, Loader2, Trash2,
+  RefreshCw, Sparkles, Hash, AlertCircle,
+} from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
-type Platform = "reddit" | "linkedin" | "twitter";
-
-interface Mention {
+interface RedditKeyword {
   id: string;
-  username: string;
-  platform: Platform;
-  score: number;
-  title: string;
-  body: string;
-  url: string;
+  keyword: string;
+  subreddits: string[];
+  active: boolean;
+  created_at: string;
 }
 
-/* ── Mock data ──────────────────────────────────────────────────────── */
-const defaultCompetitors = ["Brandwatch", "Hootsuite", "Apollo"];
-
-const mockMentions: Mention[] = [
-  { id: "1", username: "knock_his_block_off", platform: "reddit", score: 95, title: "What should I do? I created a awesome product it went viral and people started selling...", body: "I created a genuinely innovative product that went viral shortly after launch and sold out within weeks. After recently restocking months later an...", url: "#" },
-  { id: "2", username: "SeaTransition7090", platform: "reddit", score: 90, title: "I feel like I'm jumping between tasks every five minutes at my agency job. How do people...", body: "I work as a social media associate at an agency, and my days feel all over the place. I am constantly switching tasks and genuinely feel lik...", url: "#" },
-  { id: "3", username: "In-Hell123", platform: "reddit", score: 90, title: "any good youtube channels on SaaS marketing?", body: "I have a SaaS idea I have 0 budget and I have 0 marketing background so I need to learn a lot but it looks like youtube is full of run-of-the-mill...", url: "#" },
-  { id: "4", username: "StonedShadowe", platform: "reddit", score: 85, title: "What do you think SEO will look like in 2026?", body: "Genuine question. SEO already feels very different compared to even 2–3 years ago. With AI search, Google focusing more on intent, and...", url: "#" },
-  { id: "5", username: "Chris_Munch", platform: "reddit", score: 85, title: "Social media buying journey shifts in 2026... how are you tracking this?", body: "Few things I keep reading about: * ChatGPT apparently driving 15-20% of referral traffic for some major retailers now like walmart through...", url: "#" },
-  { id: "6", username: "kiyyang", platform: "reddit", score: 85, title: "0 to $186k per month. I will not promote.", body: "i am 34 years old asian man, and I've been trying to build businesses for the past 10 years. Along the way, I spent some time freelancing and also...", url: "#" },
-];
-
-const platformCounts: Record<Platform, number> = { reddit: 20, linkedin: 0, twitter: 0 };
+interface RedditMention {
+  id: string;
+  keyword_matched: string;
+  subreddit: string;
+  author: string;
+  title: string;
+  body: string | null;
+  url: string;
+  posted_at: string | null;
+  found_at: string;
+  dismissed: boolean;
+}
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 const RedditIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
@@ -35,154 +36,252 @@ const RedditIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 );
 
-const LinkedInIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-  </svg>
-);
+function timeAgo(dateStr: string | null) {
+  if (!dateStr) return "";
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
 
-const XIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const ScoreBadge = ({ score }: { score: number }) => {
-  const color = score >= 90 ? "text-emerald-600 border-emerald-200 bg-emerald-50" : "text-emerald-500 border-emerald-200 bg-emerald-50";
-  return (
-    <span className={`inline-flex items-center justify-center w-9 h-9 rounded-full border-2 text-sm font-bold ${color}`}>
-      {score}
-    </span>
-  );
-};
-
-const competitorColors: Record<string, string> = {
-  Brandwatch: "bg-orange-50 text-orange-600 border-orange-200",
-  Hootsuite: "bg-red-50 text-red-600 border-red-200",
-  Apollo: "bg-purple-50 text-purple-600 border-purple-200",
-};
+const DEFAULT_SUBREDDITS = ["SaaS", "startups", "Entrepreneur", "smallbusiness", "marketing", "sales"];
 
 /* ── Page component ──────────────────────────────────────────────────── */
 export default function RedditSignals() {
-  const [competitors, setCompetitors] = useState(defaultCompetitors);
-  const [editing, setEditing] = useState(false);
-  const [newCompetitor, setNewCompetitor] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<Platform | null>(null);
+  const queryClient = useQueryClient();
+  const [newKeyword, setNewKeyword] = useState("");
+  const [newSubreddits, setNewSubreddits] = useState("");
+  const [polling, setPolling] = useState(false);
+  const [filterKeyword, setFilterKeyword] = useState<string | null>(null);
 
-  const filtered = activeFilter ? mockMentions.filter((m) => m.platform === activeFilter) : mockMentions;
+  // ── Fetch keywords ──
+  const { data: keywords = [], isLoading: kwLoading } = useQuery({
+    queryKey: ["reddit-keywords"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reddit_keywords")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as RedditKeyword[];
+    },
+  });
 
-  const handleSearch = () => {
-    setSearching(true);
-    setTimeout(() => {
-      setSearching(false);
-      setHasSearched(true);
-    }, 1200);
-  };
+  // ── Fetch mentions ──
+  const { data: mentions = [], isLoading: mentionsLoading } = useQuery({
+    queryKey: ["reddit-mentions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reddit_mentions")
+        .select("*")
+        .eq("dismissed", false)
+        .order("found_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as RedditMention[];
+    },
+  });
 
-  const addCompetitor = () => {
-    const name = newCompetitor.trim();
-    if (name && !competitors.includes(name)) {
-      setCompetitors([...competitors, name]);
-      setNewCompetitor("");
+  // ── Add keyword ──
+  const addKeyword = useMutation({
+    mutationFn: async () => {
+      const kw = newKeyword.trim();
+      if (!kw) throw new Error("Keyword is required");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const subs = newSubreddits.trim()
+        ? newSubreddits.split(",").map(s => s.trim()).filter(Boolean)
+        : [];
+
+      const { error } = await supabase.from("reddit_keywords").insert({
+        user_id: user.id,
+        keyword: kw,
+        subreddits: subs,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setNewKeyword("");
+      setNewSubreddits("");
+      queryClient.invalidateQueries({ queryKey: ["reddit-keywords"] });
+      toast.success("Keyword added! Click 'Scan Now' to find matches.");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  // ── Delete keyword ──
+  const deleteKeyword = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("reddit_keywords").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reddit-keywords"] });
+      queryClient.invalidateQueries({ queryKey: ["reddit-mentions"] });
+      toast.success("Keyword removed");
+    },
+  });
+
+  // ── Manual poll ──
+  const handlePoll = async () => {
+    if (keywords.length === 0) {
+      toast.error("Add at least one keyword first");
+      return;
+    }
+    setPolling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
+      if (error) throw error;
+      toast.success(`Scan complete! Found ${data?.inserted ?? 0} new mention(s).`);
+      queryClient.invalidateQueries({ queryKey: ["reddit-mentions"] });
+    } catch (err) {
+      toast.error("Scan failed. Try again.");
+      console.error(err);
+    } finally {
+      setPolling(false);
     }
   };
 
-  const removeCompetitor = (name: string) => setCompetitors(competitors.filter((c) => c !== name));
+  const filtered = filterKeyword
+    ? mentions.filter(m => m.keyword_matched === filterKeyword)
+    : mentions;
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Competitors</h1>
-        <p className="text-sm text-muted-foreground mt-1">Monitor competitor mentions across social platforms</p>
+        <div className="flex items-center gap-3 mb-1">
+          <RedditIcon className="w-7 h-7 text-orange-500" />
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Reddit Signals</h1>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Monitor Reddit for buying intent signals using keyword-based RSS tracking
+        </p>
       </div>
 
-      {/* Competitors card */}
+      {/* ── Keywords Management Card ── */}
       <div className="glass-card rounded-2xl p-5 md:p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-foreground/60" />
-            <h2 className="text-lg font-semibold text-foreground">Your Competitors</h2>
+            <Hash className="w-5 h-5 text-foreground/60" />
+            <h2 className="text-lg font-semibold text-foreground">Intent Keywords</h2>
           </div>
           <button
-            onClick={() => setEditing(!editing)}
-            className="text-sm font-medium text-foreground/60 hover:text-foreground border border-border rounded-lg px-3 py-1.5 transition-colors"
+            onClick={handlePoll}
+            disabled={polling || keywords.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
+            style={{ background: "hsl(var(--goji-dark))" }}
           >
-            {editing ? "Done" : "Edit"}
+            {polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {polling ? "Scanning..." : "Scan Now"}
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {competitors.map((c) => {
-            const colorClass = competitorColors[c] || "bg-muted text-foreground/70 border-border";
-            return (
-              <span key={c} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium ${colorClass}`}>
-                {c}
-                <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-                {editing && (
-                  <button onClick={() => removeCompetitor(c)} className="ml-0.5 hover:opacity-80">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+        {/* Existing keywords */}
+        {kwLoading ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading keywords...
+          </div>
+        ) : keywords.length === 0 ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <AlertCircle className="w-4 h-4" />
+            No keywords yet. Add intent keywords below to start monitoring Reddit.
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {keywords.map(kw => (
+              <span
+                key={kw.id}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium bg-orange-50 text-orange-700 border-orange-200"
+              >
+                <Search className="w-3 h-3 opacity-60" />
+                {kw.keyword}
+                {kw.subreddits.length > 0 && (
+                  <span className="text-[10px] opacity-60">({kw.subreddits.length} subs)</span>
                 )}
+                <button
+                  onClick={() => deleteKeyword.mutate(kw.id)}
+                  className="ml-0.5 hover:opacity-80"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </span>
-            );
-          })}
-          {editing && (
-            <span className="inline-flex items-center gap-1">
-              <input
-                value={newCompetitor}
-                onChange={(e) => setNewCompetitor(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addCompetitor()}
-                placeholder="Add competitor..."
-                className="border border-border rounded-full px-3 py-1.5 text-sm bg-transparent outline-none w-36"
-              />
-              <button onClick={addCompetitor} className="p-1 rounded-full hover:bg-muted transition-colors">
-                <Plus className="w-4 h-4 text-foreground/60" />
-              </button>
-            </span>
-          )}
+            ))}
+          </div>
+        )}
+
+        {/* Add new keyword form */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={newKeyword}
+            onChange={(e) => setNewKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addKeyword.mutate()}
+            placeholder='Intent keyword (e.g. "alternative to", "how do I")'
+            className="flex-1 border border-border rounded-xl px-3.5 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50"
+          />
+          <input
+            value={newSubreddits}
+            onChange={(e) => setNewSubreddits(e.target.value)}
+            placeholder="Subreddits (optional, comma-sep)"
+            className="sm:w-56 border border-border rounded-xl px-3.5 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50"
+          />
+          <button
+            onClick={() => addKeyword.mutate()}
+            disabled={addKeyword.isPending || !newKeyword.trim()}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" />
+            Add
+          </button>
         </div>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Default subreddits: {DEFAULT_SUBREDDITS.join(", ")}. Override by specifying custom subreddits.
+        </p>
       </div>
 
-      {/* Search button */}
-      <div className="flex justify-center mb-8">
-        <button
-          onClick={handleSearch}
-          disabled={searching || competitors.length === 0}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-          style={{ background: "hsl(var(--goji-dark))" }}
-        >
-          <Search className="w-4 h-4" />
-          {searching ? "Searching..." : "Find Competitor Mentions"}
-        </button>
-      </div>
-
-      {/* Results */}
-      {hasSearched && (
+      {/* ── Results ── */}
+      {mentionsLoading ? (
+        <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" /> Loading mentions...
+        </div>
+      ) : mentions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <RedditIcon className="w-12 h-12 text-muted-foreground/30" />
+          <p className="text-muted-foreground text-sm">No mentions found yet</p>
+          <p className="text-muted-foreground/60 text-xs">Add keywords and click "Scan Now" to discover Reddit posts</p>
+        </div>
+      ) : (
         <>
-          {/* Results header */}
+          {/* Filter bar */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-foreground">Found {platformCounts.reddit + platformCounts.linkedin + platformCounts.twitter} competitor mentions</h2>
-              <span className="text-foreground/40 cursor-help" title="Mentions discovered from Reddit, LinkedIn, and X based on your competitor list.">ⓘ</span>
+              <h2 className="text-lg font-bold text-foreground">
+                {filtered.length} mention{filtered.length !== 1 ? "s" : ""} found
+              </h2>
+              <span className="text-foreground/40 cursor-help" title="Reddit posts matching your intent keywords">ⓘ</span>
             </div>
 
-            {/* Platform filter tabs */}
-            <div className="flex items-center gap-4">
-              {([
-                { key: "reddit" as Platform, icon: RedditIcon, color: "text-orange-500", count: platformCounts.reddit },
-                { key: "linkedin" as Platform, icon: LinkedInIcon, color: "text-blue-600", count: platformCounts.linkedin },
-                { key: "twitter" as Platform, icon: XIcon, color: "text-foreground", count: platformCounts.twitter },
-              ]).map(({ key, icon: Icon, color, count }) => (
+            {/* Keyword filter chips */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setFilterKeyword(null)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  !filterKeyword ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                }`}
+              >
+                All
+              </button>
+              {[...new Set(mentions.map(m => m.keyword_matched))].map(kw => (
                 <button
-                  key={key}
-                  onClick={() => setActiveFilter(activeFilter === key ? null : key)}
-                  className={`flex flex-col items-center gap-0.5 transition-opacity ${activeFilter && activeFilter !== key ? "opacity-40" : ""}`}
+                  key={kw}
+                  onClick={() => setFilterKeyword(filterKeyword === kw ? null : kw)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    filterKeyword === kw ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                  }`}
                 >
-                  <Icon className={`w-5 h-5 ${color}`} />
-                  <span className="text-xs font-medium text-foreground/60">{count}</span>
+                  {kw}
                 </button>
               ))}
             </div>
@@ -196,17 +295,29 @@ export default function RedditSignals() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2.5">
                     <RedditIcon className="w-5 h-5 text-orange-500" />
-                    <span className="text-sm font-semibold text-foreground">{mention.username}</span>
+                    <span className="text-sm font-semibold text-foreground">u/{mention.author}</span>
                   </div>
-                  <ScoreBadge score={mention.score} />
+                  <span className="text-[10px] text-muted-foreground">{timeAgo(mention.posted_at || mention.found_at)}</span>
+                </div>
+
+                {/* Subreddit + keyword badge */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200 font-medium">
+                    r/{mention.subreddit}
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border font-medium">
+                    {mention.keyword_matched}
+                  </span>
                 </div>
 
                 {/* Content */}
                 <h3 className="text-sm font-semibold text-foreground mb-1.5 line-clamp-2">{mention.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-4">{mention.body}</p>
+                {mention.body && (
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1 mb-4">{mention.body}</p>
+                )}
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 mt-auto">
+                <div className="flex items-center gap-2 mt-auto pt-3">
                   <a
                     href={mention.url}
                     target="_blank"
@@ -214,7 +325,7 @@ export default function RedditSignals() {
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground/70 hover:bg-muted transition-colors flex-1 justify-center"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    View
+                    View Post
                   </a>
                   <button
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all flex-1 justify-center"
