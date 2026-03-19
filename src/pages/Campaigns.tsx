@@ -386,7 +386,7 @@ export default function CampaignsPage() {
                       {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </span>
                   </TableCell>
-                  <TableCell className="text-center">
+                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1.5 rounded hover:bg-muted/60 transition-colors" style={{ color: "hsl(var(--goji-text-muted))" }}>
@@ -405,7 +405,7 @@ export default function CampaignsPage() {
                             <Pause className="w-3.5 h-3.5" />Pause campaign
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditCampaign(c.id); }} className="gap-2 text-sm">
+                        <DropdownMenuItem onClick={() => handleEditCampaign(c.id)} className="gap-2 text-sm">
                           <Pencil className="w-3.5 h-3.5" />Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
