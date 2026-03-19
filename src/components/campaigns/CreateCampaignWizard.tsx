@@ -144,6 +144,8 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     setPainPoints("");
     setCampaignGoal("conversations");
     setMessageTone("professional");
+    setAutoAnalyzed(false);
+    setOnboardingWebsiteLoaded(false);
   }
 
   async function handleAnalyzeWebsite() {
