@@ -4,8 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   AreaChart,
   Area,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -17,9 +15,16 @@ import {
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  MoreVertical,
   ArrowUpRight,
   ArrowDownRight,
+  Flame,
+  Users,
+  MessagesSquare,
+  Rocket,
+  Check,
+  Zap,
+  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,16 +42,6 @@ const generateChartData = () => {
   return data;
 };
 const chartData = generateChartData();
-
-// ─── Sparkline data per card ──────────────────────────────────────────────────
-const sparkFlat = [
-  { v: 0 }, { v: 0 }, { v: 0 }, { v: 0 }, { v: 0 },
-  { v: 0 }, { v: 0 }, { v: 0 },
-];
-const sparkHot = [
-  { v: 1 }, { v: 0 }, { v: 1 }, { v: 2 }, { v: 1 },
-  { v: 2 }, { v: 3 }, { v: 3 },
-];
 
 // ─── Static example leads ────────────────────────────────────────────────────
 const exampleLeads = [
@@ -66,10 +61,10 @@ function HeatDots({ count }: { count: number }) {
   );
 }
 
-function Avatar({ initials, color }: { initials: string; color: string }) {
+function LeadAvatar({ initials, color }: { initials: string; color: string }) {
   return (
     <div
-      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ring-2 ring-white/70 shadow-sm"
+      className="w-14 h-14 rounded-2xl flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-lg"
       style={{ background: color }}
     >
       {initials}
@@ -77,125 +72,55 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
   );
 }
 
-const avatarColors = ["#1a1a2e", "#374151", "#1f2937"];
+const avatarColors = [
+  "hsl(var(--md-primary))",
+  "hsl(var(--md-secondary))",
+  "hsl(var(--md-tertiary))",
+];
 
-// ─── Inline mini sparkline ────────────────────────────────────────────────────
-function Sparkline({ data, color }: { data: { v: number }[]; color: string }) {
-  return (
-    <div style={{ width: 88, height: 44 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 4 }}>
-          <Line
-            type="monotone"
-            dataKey="v"
-            stroke={color}
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// ─── Design primitives ────────────────────────────────────────────────────────
-const premiumCard =
-  "relative overflow-hidden bg-white rounded-xl border border-[hsl(220_20%_94%)] shadow-[0_1px_3px_hsl(220_14%_10%/0.06),0_4px_16px_hsl(220_14%_10%/0.06)]";
-
-function ShineOverlay() {
-  return (
-    <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-transparent to-transparent pointer-events-none rounded-xl" />
-  );
-}
-
-// ─── New-style Metric Card (image reference) ──────────────────────────────────
+// ─── Metric Card ──────────────────────────────────────────────────────────────
 interface MetricCardProps {
   title: string;
   value: number | string;
   loading?: boolean;
-  accent?: "teal" | "neutral";
+  icon: React.ReactNode;
+  iconBg: string;
   trend?: string;
   trendUp?: boolean;
-  sparkData?: { v: number }[];
-  footer?: React.ReactNode;
 }
 
-function MetricCard({
-  title,
-  value,
-  loading,
-  accent = "neutral",
-  trend,
-  trendUp,
-  sparkData,
-  footer,
-}: MetricCardProps) {
-  const tealColor = "hsl(152 60% 38%)";
-  const coralColor = "hsl(18 95% 58%)";
-  const neutralColor = "hsl(222 28% 14%)";
-  const valueColor = accent === "teal" ? tealColor : neutralColor;
-  const sparkColor = accent === "teal" ? tealColor : "hsl(220 10% 72%)";
-  const trendColor = trendUp === true ? tealColor : trendUp === false && trend !== "+0%" ? coralColor : "hsl(220 10% 60%)";
+function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: MetricCardProps) {
+  const trendColor = trendUp ? "text-green-700" : "text-md-on-surface-variant";
 
   return (
-    <div className={`${premiumCard} px-5 py-4 flex flex-col gap-2 min-h-[110px]`}>
-      <ShineOverlay />
-
-      {/* Title row */}
-      <div className="relative z-10 flex items-center justify-between">
-        <p className="text-[11px] font-semibold text-[hsl(220_10%_55%)] tracking-wide">
-          {title}
-        </p>
-        <button className="text-[hsl(220_10%_75%)] hover:text-[hsl(220_10%_55%)] transition-colors">
-          <MoreVertical className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Number + sparkline row */}
-      <div className="relative z-10 flex items-end justify-between">
-        <div className="flex flex-col gap-1">
-          {loading ? (
-            <div className="h-8 w-12 bg-[hsl(220_20%_96%)] rounded animate-pulse" />
-          ) : (
-            <span
-              className="text-[2rem] font-black leading-none tabular-nums tracking-tight"
-              style={{ color: valueColor }}
-            >
-              {value}
-            </span>
-          )}
-
-          {/* Trend */}
-          {trend !== undefined && (
-            <div className="flex items-center gap-1">
-              {trendUp ? (
-                <ArrowUpRight className="w-3 h-3" style={{ color: trendColor }} />
-              ) : (
-                <ArrowDownRight className="w-3 h-3" style={{ color: trendColor }} />
-              )}
-              <span className="text-[11px] font-semibold" style={{ color: trendColor }}>
-                {trend}
-              </span>
-              <span className="text-[11px] text-[hsl(220_10%_60%)]">vs last month</span>
-            </div>
-          )}
+    <div className="glass-card p-8 rounded-[2rem] flex flex-col justify-between group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-10">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          style={{ background: iconBg }}
+        >
+          {icon}
         </div>
-
-        {/* Sparkline */}
-        {sparkData && (
-          <div className="mb-1">
-            <Sparkline data={sparkData} color={sparkColor} />
+        {trend && (
+          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+            trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"
+          }`}>
+            {trendUp ? "↑" : ""} {trend}
+          </span>
+        )}
+      </div>
+      <div>
+        <h3 className="text-md-on-surface-variant font-light text-xs uppercase tracking-[0.2em] mb-2">
+          {title}
+        </h3>
+        {loading ? (
+          <div className="h-12 w-16 bg-md-surface-container rounded animate-pulse" />
+        ) : (
+          <div className="text-5xl font-light tracking-tight text-md-on-surface font-headline">
+            {value}
           </div>
         )}
       </div>
-
-      {/* Optional footer */}
-      {footer && (
-        <div className="relative z-10 pt-2 border-t border-[hsl(220_14%_93%)]">
-          {footer}
-        </div>
-      )}
     </div>
   );
 }
@@ -210,7 +135,7 @@ export default function Dashboard() {
     navigate("/");
   };
 
-  // ── Live data: aggregate campaign stats ──────────────────────────────────
+  // ── Live data ────────────────────────────────────────────────────────────
   const { data: campaignStats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-campaign-stats"],
     queryFn: async () => {
@@ -219,28 +144,21 @@ export default function Dashboard() {
         .select("invitations_sent, messages_sent");
       if (error) throw error;
       const leadsEngaged = (campaigns ?? []).reduce(
-        (s, c) => s + (c.invitations_sent ?? 0),
-        0
+        (s, c) => s + (c.invitations_sent ?? 0), 0
       );
       const conversations = (campaigns ?? []).reduce(
-        (s, c) => s + (c.messages_sent ?? 0),
-        0
+        (s, c) => s + (c.messages_sent ?? 0), 0
       );
       return { leadsEngaged, conversations };
     },
     staleTime: 30_000,
   });
 
-  // ── Live data: hot opportunities (leads count for user's campaigns) ──────
   const { data: hotOppsData, isLoading: hotOppsLoading } = useQuery({
     queryKey: ["dashboard-hot-opps"],
     queryFn: async () => {
-      // Get all campaigns for this user first
-      const { data: campaigns } = await supabase
-        .from("campaigns")
-        .select("id");
+      const { data: campaigns } = await supabase.from("campaigns").select("id");
       if (!campaigns || campaigns.length === 0) return { count: 0 };
-
       const campaignIds = campaigns.map((c) => c.id);
       const { count, error } = await supabase
         .from("leads")
@@ -257,290 +175,272 @@ export default function Dashboard() {
   const conversations = campaignStats?.conversations ?? 0;
 
   return (
-    <div className="min-h-full bg-[hsl(30_20%_98%)] rounded-2xl px-4 md:px-8 py-6 relative m-2 md:m-4">
+    <div
+      className="min-h-full rounded-2xl px-6 md:px-12 py-8 md:py-12 relative m-2 md:m-4 font-body"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, hsla(var(--md-primary) / 0.08) 0%, transparent 50%),
+          radial-gradient(circle at 100% 0%, hsla(var(--md-secondary) / 0.08) 0%, transparent 50%),
+          radial-gradient(circle at 50% 100%, hsla(var(--md-tertiary-fixed) / 0.08) 0%, transparent 50%),
+          hsl(var(--md-surface))
+        `,
+      }}
+    >
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-[hsl(222_28%_15%)]">Welcome Alex 🚀</h1>
-        <div className="flex items-center gap-2 flex-wrap">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl md:text-5xl font-light tracking-tight text-md-on-surface font-headline">
+            Welcome back, <span className="font-semibold text-md-primary">Alex</span>
+          </h1>
+          <p className="text-md-on-surface-variant font-light text-lg tracking-wide">
+            Your architected outreach performance for this week.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-red-500 border-red-200/60 bg-red-50/80 backdrop-blur-sm hover:bg-red-50 transition-all shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
             0 Active Signal(s)
           </button>
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50 transition-all shadow-sm">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <Check className="w-3.5 h-3.5" />
             2 LinkedIn Account(s)
           </button>
-        </div>
-      </div>
-
-      {/* ── Stats row ── */}
-      {/* Top strip: CTA card full-width on its own row on mobile; 4-col on ≥md */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-        {/* Ready to outreach (unchanged) */}
-        <div className={`${premiumCard} p-6 flex flex-col items-center justify-center gap-3`}>
-          <ShineOverlay />
-          <p className="text-sm font-semibold text-[hsl(222_28%_18%)] relative z-10">
-            Ready to outreach?
-          </p>
           <button
             onClick={handleNewCampaign}
-            className="relative z-10 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02]"
+            className="text-md-on-primary px-6 py-3 rounded-full font-medium flex items-center gap-2 shadow-xl hover:scale-[1.02] transition-transform duration-300"
             style={{
-              background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 65%))",
-              boxShadow: "0 4px 16px hsl(5 90% 65% / 0.45)",
+              background: "var(--gradient-md-brand)",
+              boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.boxShadow = "0 6px 24px hsl(5 90% 65% / 0.55)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.boxShadow = "0 4px 16px hsl(5 90% 65% / 0.45)")
-            }
           >
-            <span className="text-base">+</span>
+            <Rocket className="w-4 h-4" />
             Start a campaign
-            <span>›</span>
           </button>
         </div>
+      </header>
 
-        {/* Hot Opportunities */}
+      {/* ── Metrics Bento Grid ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <MetricCard
           title="Hot Opportunities"
           value={hotOpps}
           loading={hotOppsLoading}
-          accent="teal"
-          trend="+0%"
+          icon={<Flame className="w-7 h-7 text-md-primary" />}
+          iconBg="hsla(var(--md-primary) / 0.12)"
+          trend={hotOpps > 0 ? "12%" : "0%"}
           trendUp={hotOpps > 0}
-          sparkData={sparkHot}
         />
-
-        {/* Leads Engaged */}
         <MetricCard
           title="Leads Engaged"
           value={leadsEngaged}
           loading={statsLoading}
-          accent="neutral"
-          trend="+0%"
-          trendUp={false}
-          sparkData={sparkFlat}
+          icon={<Users className="w-7 h-7 text-md-secondary" />}
+          iconBg="hsla(var(--md-secondary) / 0.12)"
+          trend={leadsEngaged > 0 ? "8%" : "0%"}
+          trendUp={leadsEngaged > 0}
         />
-
-        {/* Conversations */}
         <MetricCard
           title="Conversations"
           value={conversations}
           loading={statsLoading}
-          accent="neutral"
-          trend="+0%"
-          trendUp={false}
-          sparkData={sparkFlat}
-          footer={
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-[hsl(220_10%_60%)]">
-                Set deal size to see pipeline generated
-              </p>
-              <button
-                className="text-xs font-semibold ml-2 shrink-0"
-                style={{ color: "hsl(var(--goji-coral))" }}
-              >
-                Edit
-              </button>
-            </div>
-          }
+          icon={<MessagesSquare className="w-7 h-7 text-md-tertiary" />}
+          iconBg="hsla(var(--md-tertiary-fixed) / 0.3)"
+          trend={conversations > 0 ? "24%" : "0%"}
+          trendUp={conversations > 0}
         />
       </div>
 
-      {/* ── Activity Overview ── */}
-      <div className="relative overflow-hidden rounded-2xl mb-6 border border-white/80 shadow-[0_2px_4px_hsl(220_14%_10%/0.04),0_12px_40px_hsl(220_14%_10%/0.10)]"
-        style={{
-          background: "linear-gradient(145deg, rgba(255,255,255,0.97) 0%, rgba(255,252,250,0.95) 100%)",
-        }}
-      >
-        {/* Decorative background orbs */}
-        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, hsl(18 95% 58% / 0.08) 0%, transparent 70%)" }} />
-        <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, hsl(152 60% 38% / 0.06) 0%, transparent 70%)" }} />
-
-        <div className="relative z-10 p-5 md:p-7">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-base font-bold text-[hsl(222_28%_15%)]">Activity Overview</h2>
-              <p className="text-xs text-[hsl(220_10%_55%)] mt-0.5">
-                Track your lead generation &amp; outreach performance
-              </p>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* Legend */}
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ background: "hsl(var(--goji-coral))" }} />
-                <span className="text-[11px] text-[hsl(220_10%_50%)] font-medium">Leads created</span>
+      {/* ── Main Activity Chart & Quick Start ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+        {/* Area Chart */}
+        <div className="lg:col-span-2 glass-card rounded-[2.5rem] overflow-hidden flex flex-col relative">
+          <div className="p-8 md:p-10 pb-0">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+              <div>
+                <h2 className="text-2xl font-light font-headline mb-1 text-md-on-surface">
+                  Performance Velocity
+                </h2>
+                <p className="text-md-on-surface-variant font-light text-sm">
+                  Real-time engagement tracking across all channels
+                </p>
               </div>
-              {/* CTA */}
-              <button
-                onClick={handleNewCampaign}
-                className="text-[11px] font-semibold px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-[1.03]"
-                style={{
-                  color: "white",
-                  background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 62%))",
-                  boxShadow: "0 2px 10px hsl(5 90% 62% / 0.35)",
-                }}
-              >
-                + Start a campaign
-              </button>
-              {/* Period pill */}
-              <div className="flex items-center gap-1 border border-[hsl(220_14%_90%)] rounded-full px-3 py-1.5 text-[11px] text-[hsl(220_10%_50%)] bg-white/80 backdrop-blur-sm shadow-sm font-medium cursor-pointer hover:border-[hsl(220_14%_80%)] transition-colors">
-                Last 30 days
-                <ChevronDown className="w-3 h-3" />
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-md-secondary" />
+                  <span className="text-[11px] text-md-on-surface-variant font-medium">Leads created</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs font-medium text-md-on-surface-variant bg-white/50 px-3 py-1.5 rounded-full border border-white/40">
+                  <span className="w-2 h-2 rounded-full bg-md-secondary animate-pulse" />
+                  Live Updates
+                </div>
+                <div className="flex items-center gap-1 border border-md-outline-variant rounded-full px-3 py-1.5 text-[11px] text-md-on-surface-variant bg-white/80 backdrop-blur-sm shadow-sm font-medium cursor-pointer hover:border-md-outline transition-colors">
+                  Last 30 days
+                  <ChevronDown className="w-3 h-3" />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Chart */}
-          <div className="relative" style={{ height: 220 }}>
-            {/* Subtle inner glass panel behind chart */}
-            <div className="absolute inset-x-0 bottom-0 top-0 rounded-xl pointer-events-none"
-              style={{ background: "linear-gradient(180deg, transparent 60%, hsl(18 95% 58% / 0.03) 100%)" }} />
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -28, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="coralGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(18, 95%, 58%)" stopOpacity={0.22} />
-                    <stop offset="55%" stopColor="hsl(18, 95%, 58%)" stopOpacity={0.07} />
-                    <stop offset="100%" stopColor="hsl(18, 95%, 58%)" stopOpacity={0} />
-                  </linearGradient>
-                  <filter id="glowLine">
-                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="4 4"
-                  stroke="hsl(220 20% 94%)"
-                  vertical={false}
-                  strokeOpacity={0.8}
-                />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "hsl(220,10%,65%)", fontWeight: 500 }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={3}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "hsl(220,10%,65%)", fontWeight: 500 }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                  ticks={[0, 1, 2]}
-                />
-                <Tooltip
-                  cursor={{ stroke: "hsl(18 95% 58% / 0.2)", strokeWidth: 1, strokeDasharray: "4 3" }}
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
-                    return (
-                      <div style={{
-                        background: "rgba(255,255,255,0.92)",
-                        backdropFilter: "blur(16px)",
-                        WebkitBackdropFilter: "blur(16px)",
-                        border: "1px solid rgba(255,255,255,0.9)",
-                        borderRadius: "12px",
-                        padding: "10px 14px",
-                        boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)",
-                        fontSize: "12px",
-                        minWidth: 120,
-                      }}>
-                        <p style={{ color: "hsl(220,10%,50%)", marginBottom: 4, fontWeight: 500 }}>{label}</p>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{
-                            width: 8, height: 8, borderRadius: "50%",
-                            background: "hsl(18, 95%, 58%)",
-                            display: "inline-block",
-                            boxShadow: "0 0 6px hsl(18, 95%, 58%)",
-                          }} />
-                          <span style={{ color: "hsl(222,28%,15%)", fontWeight: 700, fontSize: 14 }}>
-                            {payload[0].value}
-                          </span>
-                          <span style={{ color: "hsl(220,10%,55%)", fontWeight: 400 }}>leads</span>
+          <div className="flex-grow relative mt-4" style={{ minHeight: 300 }}>
+            {/* AI Prediction bubble */}
+            <div className="absolute top-4 right-8 glass-card px-5 py-3 rounded-2xl shadow-2xl border-white/60 z-20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-md-primary/10 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-md-primary" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-md-primary uppercase tracking-widest">AI Prediction</div>
+                  <div className="text-sm font-medium text-md-on-surface">Lead quality up 15%</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 md:px-8 pb-6" style={{ height: 280 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 12, left: -28, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="mdGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#005d8f" stopOpacity={0.15} />
+                      <stop offset="50%" stopColor="#5b3cdd" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="#ffe170" stopOpacity={0.08} />
+                    </linearGradient>
+                    <linearGradient id="mdStroke" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#005d8f" />
+                      <stop offset="50%" stopColor="#5b3cdd" />
+                      <stop offset="100%" stopColor="#ffe170" />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="4 4"
+                    stroke="hsl(var(--md-outline-variant))"
+                    vertical={false}
+                    strokeOpacity={0.5}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: "hsl(var(--md-on-surface-variant))", fontWeight: 400 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={3}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "hsl(var(--md-on-surface-variant))", fontWeight: 400 }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                    ticks={[0, 1, 2]}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: "hsl(var(--md-secondary) / 0.2)", strokeWidth: 1, strokeDasharray: "4 3" }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="glass-card rounded-2xl px-4 py-3 shadow-2xl text-xs min-w-[120px]">
+                          <p className="text-md-on-surface-variant mb-1 font-medium">{label}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-md-secondary shadow-[0_0_6px_hsl(var(--md-secondary))]" />
+                            <span className="text-md-on-surface font-bold text-sm">{payload[0].value}</span>
+                            <span className="text-md-on-surface-variant">leads</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="leads"
-                  stroke="hsl(18, 95%, 58%)"
-                  strokeWidth={2.5}
-                  fill="url(#coralGradient)"
-                  dot={false}
-                  activeDot={{
-                    r: 6,
-                    fill: "hsl(18, 95%, 58%)",
-                    stroke: "white",
-                    strokeWidth: 2.5,
-                    filter: "drop-shadow(0 0 6px hsl(18 95% 58% / 0.6))",
-                  }}
-                  style={{ filter: "url(#glowLine)" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+                      );
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="leads"
+                    stroke="url(#mdStroke)"
+                    strokeWidth={3}
+                    fill="url(#mdGradient)"
+                    dot={false}
+                    activeDot={{
+                      r: 6,
+                      fill: "#5b3cdd",
+                      stroke: "white",
+                      strokeWidth: 2.5,
+                    }}
+                    style={{ filter: "drop-shadow(0px 4px 8px rgba(91, 60, 221, 0.2))" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
+        </div>
+
+        {/* Quick Start Section */}
+        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 flex flex-col">
+          <h2 className="text-2xl font-light font-headline mb-8 text-md-on-surface">Quick Start</h2>
+          <div className="space-y-4 flex-grow">
+            {[
+              { label: "Connect LinkedIn", desc: "Profile synced & verified", done: true },
+              { label: "Create your first campaign", desc: "Set up outreach sequence", done: false },
+              { label: "Add your ICP", desc: "Define ideal customer profile", done: false },
+              { label: "Launch first outreach", desc: "Start engaging leads", done: false },
+            ].map((step) => (
+              <div
+                key={step.label}
+                className={`flex items-start gap-4 p-5 rounded-[1.5rem] border transition-all duration-300 ${
+                  step.done
+                    ? "bg-white/40 border-white/20 hover:bg-white/60"
+                    : "bg-white/20 border-white/10 hover:bg-white/40"
+                }`}
+              >
+                <div className="mt-0.5 flex-shrink-0">
+                  {step.done ? (
+                    <div className="w-7 h-7 rounded-full bg-md-primary text-white flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    </div>
+                  ) : (
+                    <div className="w-7 h-7 rounded-full border-2 border-md-outline-variant bg-transparent" />
+                  )}
+                </div>
+                <div>
+                  <div className="font-medium text-md-on-surface">{step.label}</div>
+                  <div className="text-xs font-light text-md-on-surface-variant">{step.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={handleNewCampaign}
+            className="w-full py-4 mt-8 rounded-full border border-md-primary/30 text-md-primary font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            View setup guide
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* ── Bottom row ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+      {/* ── Bottom row: Leads & Replies ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
         {/* Latest Hot Leads */}
-        <div className={`${premiumCard} p-6`}>
-          <ShineOverlay />
-          <div className="relative z-10 flex items-start justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-sm"
-                style={{ background: "hsl(var(--goji-coral) / 0.12)" }}
-              >
-                👤
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[hsl(222_28%_15%)]">Latest Hot Leads</h3>
-                <p className="text-xs text-gray-400">Your most promising prospects</p>
-              </div>
-            </div>
-            <button
-              className="flex items-center gap-1 text-xs font-semibold hover:opacity-80 transition-opacity"
-              style={{ color: "hsl(var(--goji-coral))" }}
-            >
-              View More <ExternalLink className="w-3 h-3" />
-            </button>
+        <div className="glass-card rounded-[2.5rem] p-8 md:p-10">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-light font-headline text-md-on-surface">Latest Hot Leads</h2>
+            <button className="text-sm font-medium text-md-primary hover:underline">View CRM</button>
           </div>
-
-          <div className="relative z-10 mt-4 space-y-1">
+          <div className="space-y-4">
             {exampleLeads.map((lead, i) => (
               <div
                 key={lead.name}
-                className="flex items-center gap-3 rounded-lg px-2 py-2 -mx-2 transition-colors hover:bg-[hsl(5_90%_65%/0.04)] cursor-pointer"
+                className="group flex items-center justify-between p-5 rounded-[1.75rem] bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer"
               >
-                <Avatar
-                  initials={lead.name
-                    .split(" ")
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join("")}
-                  color={avatarColors[i]}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[hsl(222_28%_15%)] truncate">
-                    {lead.name}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {lead.role} · {lead.company}
-                  </p>
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <LeadAvatar
+                      initials={lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}
+                      color={avatarColors[i]}
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 border-2 border-white flex items-center justify-center shadow-sm">
+                      <Zap className="w-3 h-3 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-md-on-surface text-base">{lead.name}</div>
+                    <div className="text-sm font-light text-md-on-surface-variant">
+                      {lead.role} · {lead.company}
+                    </div>
+                  </div>
                 </div>
                 <HeatDots count={lead.heat} />
               </div>
@@ -549,91 +449,77 @@ export default function Dashboard() {
         </div>
 
         {/* Latest Replies */}
-        <div className={`${premiumCard} p-6`}>
-          <ShineOverlay />
-          <div className="relative z-10 flex items-center gap-2 mb-1">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
-              style={{ background: "hsl(var(--goji-coral) / 0.10)" }}
-            >
-              <MessageSquare className="w-4 h-4" style={{ color: "hsl(var(--goji-coral))" }} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-[hsl(222_28%_15%)]">Latest Replies</h3>
-              <p className="text-xs text-gray-400">Recent conversation responses</p>
+        <div className="glass-card rounded-[2.5rem] p-8 md:p-10">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-light font-headline text-md-on-surface">Latest Replies</h2>
+            <div className="flex items-center gap-2 px-4 py-2 bg-md-secondary/10 rounded-full cursor-pointer hover:bg-md-secondary/20 transition-colors group">
+              <span className="text-sm font-semibold text-md-secondary">Open Inbox</span>
+              <ArrowRight className="w-3.5 h-3.5 text-md-secondary group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
 
-          <div className="relative z-10 flex flex-col items-center justify-center py-10 gap-3">
-            <MessageSquare className="w-10 h-10 text-[hsl(220_14%_88%)]" />
-            <p className="text-sm text-center text-gray-400">
+          <div className="flex flex-col items-center justify-center py-10 gap-3">
+            <MessageSquare className="w-10 h-10 text-md-outline-variant" />
+            <p className="text-sm text-center text-md-on-surface-variant">
               <button
-                className="font-semibold hover:opacity-80 transition-opacity"
-                style={{ color: "hsl(var(--goji-coral))" }}
+                className="font-semibold text-md-primary hover:opacity-80 transition-opacity"
               >
                 Activate your Unibox
               </button>{" "}
               to never miss a reply
             </p>
-            <p className="text-xs text-gray-400">All your replies will appear here</p>
+            <p className="text-xs text-md-on-surface-variant">All your replies will appear here</p>
           </div>
         </div>
       </div>
 
       {/* ── Get Started panel ── */}
-      <div className={`${premiumCard} overflow-hidden`}>
-        <ShineOverlay />
+      <div className="glass-card rounded-[2.5rem] overflow-hidden mb-8">
         <button
           onClick={() => setGetStartedOpen(!getStartedOpen)}
-          className="relative z-10 w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-[hsl(5_90%_65%/0.03)]"
+          className="w-full flex items-center justify-between px-8 md:px-10 py-6 transition-colors hover:bg-white/30"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
-              style={{
-                background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))",
-              }}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
+              style={{ background: "var(--gradient-md-brand)" }}
             >
-              <span className="text-sm">🚀</span>
+              <Rocket className="w-5 h-5 text-white" />
             </div>
             <div className="text-left">
-              <p className="text-sm font-bold text-[hsl(222_28%_15%)]">Get Started</p>
-              <p className="text-xs text-gray-400">Complete these steps to start</p>
+              <p className="text-lg font-medium text-md-on-surface font-headline">Get Started</p>
+              <p className="text-xs text-md-on-surface-variant font-light">Complete these steps to start</p>
             </div>
           </div>
           {getStartedOpen ? (
-            <ChevronDown className="w-4 h-4 text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-md-on-surface-variant" />
           ) : (
-            <ChevronUp className="w-4 h-4 text-gray-400" />
+            <ChevronUp className="w-5 h-5 text-md-on-surface-variant" />
           )}
         </button>
         {getStartedOpen && (
-          <div className="relative z-10 px-5 pb-5 pt-1 border-t border-[hsl(220_14%_93%)]">
-            <div className="space-y-3 mt-3">
+          <div className="px-8 md:px-10 pb-8 pt-2 border-t border-white/30">
+            <div className="space-y-4 mt-4">
               {[
                 { label: "Connect your LinkedIn account", done: true },
                 { label: "Create your first campaign", done: false },
                 { label: "Add your ICP (Ideal Customer Profile)", done: false },
                 { label: "Launch your first outreach sequence", done: false },
               ].map((step) => (
-                <div key={step.label} className="flex items-center gap-3">
+                <div key={step.label} className="flex items-center gap-4">
                   <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2 transition-all"
+                    className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      borderColor: step.done ? "hsl(142 70% 45%)" : "hsl(220 20% 75%)",
-                      background: step.done ? "hsl(142 70% 45%)" : "transparent",
-                      boxShadow: step.done ? "0 2px 8px hsl(142 70% 45% / 0.3)" : "none",
+                      background: step.done ? "hsl(var(--md-primary))" : "transparent",
+                      border: step.done ? "none" : "2px solid hsl(var(--md-outline-variant))",
+                      boxShadow: step.done ? "0 2px 8px hsla(var(--md-primary) / 0.3)" : "none",
                     }}
                   >
-                    {step.done && (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3 h-3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
+                    {step.done && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                   </div>
                   <p
                     className={`text-sm ${
-                      step.done ? "line-through text-gray-400" : "text-[hsl(222_28%_15%)]"
+                      step.done ? "line-through text-md-on-surface-variant" : "text-md-on-surface"
                     }`}
                   >
                     {step.label}
@@ -647,29 +533,13 @@ export default function Dashboard() {
 
       {/* ── Floating button ── */}
       <button
-        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-xl"
         style={{
-          background: "linear-gradient(135deg, hsl(18 95% 58%), hsl(5 90% 65%))",
-          boxShadow: "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)",
+          background: "var(--gradient-md-brand)",
+          boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.4), 0 2px 8px hsla(0, 0%, 0%, 0.15)",
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.boxShadow =
-            "0 12px 40px hsl(5 90% 65% / 0.6), 0 2px 8px hsl(0 0% 0% / 0.15)")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.boxShadow =
-            "0 8px 32px hsl(5 90% 65% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.15)")
-        }
       >
-        <img
-          src="/favicon.ico"
-          alt=""
-          className="w-5 h-5 object-contain"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
-        />
-        <span className="text-white text-lg absolute">🔥</span>
+        <span className="text-white text-lg">🔥</span>
       </button>
     </div>
   );

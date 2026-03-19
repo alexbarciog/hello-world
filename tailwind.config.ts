@@ -15,6 +15,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
+        headline: ["Manrope", "sans-serif"],
+        body: ["Manrope", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -68,6 +70,22 @@ export default {
           "text-muted": "hsl(var(--goji-text-muted))",
           "bg-hero": "hsl(var(--goji-bg-hero))",
           "bg-hero-2": "hsl(var(--goji-bg-hero-2))",
+        },
+        md: {
+          primary: "hsl(var(--md-primary))",
+          "primary-container": "hsl(var(--md-primary-container))",
+          "on-primary": "hsl(var(--md-on-primary))",
+          "on-surface": "hsl(var(--md-on-surface))",
+          "on-surface-variant": "hsl(var(--md-on-surface-variant))",
+          secondary: "hsl(var(--md-secondary))",
+          "secondary-fixed": "hsl(var(--md-secondary-fixed))",
+          tertiary: "hsl(var(--md-tertiary))",
+          "tertiary-fixed": "hsl(var(--md-tertiary-fixed))",
+          surface: "hsl(var(--md-surface))",
+          "surface-container": "hsl(var(--md-surface-container))",
+          "surface-container-high": "hsl(var(--md-surface-container-high))",
+          outline: "hsl(var(--md-outline))",
+          "outline-variant": "hsl(var(--md-outline-variant))",
         },
       },
       borderRadius: {
