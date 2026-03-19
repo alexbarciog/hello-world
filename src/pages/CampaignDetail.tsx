@@ -92,6 +92,13 @@ function MetricChip({ label, value, icon: Icon, color }: { label: string; value:
   );
 }
 
+// Convert a UTC hour (e.g. 8) to the user's local time string like "10:00"
+function utcHourToLocal(utcHour: number): string {
+  const d = new Date();
+  d.setUTCHours(utcHour, 0, 0, 0);
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -1366,7 +1373,7 @@ export default function CampaignDetail() {
                     if (visibleRuns.length === 0) {
                       return (
                         <div className="text-center py-6 text-sm text-muted-foreground">
-                          All runs for today have been completed. Next runs start tomorrow at 08:00 UTC.
+                          All runs for today have been completed. Next runs start tomorrow at {utcHourToLocal(8)}.
                         </div>
                       );
                     }
@@ -1407,7 +1414,7 @@ export default function CampaignDetail() {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-foreground">{run.label}</span>
-                                <span className="text-[10px] text-muted-foreground font-medium">{run.time} UTC</span>
+                                <span className="text-[10px] text-muted-foreground font-medium">{utcHourToLocal(runHour)}</span>
                                 {isActive && (
                                   <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">NOW</span>
                                 )}
@@ -1563,7 +1570,7 @@ export default function CampaignDetail() {
                             <Check className={`w-4 h-4 ${run.sent > 0 ? "text-green-600" : "text-muted-foreground"}`} />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-foreground">{run.label} — {run.time} UTC</p>
+                            <p className="text-xs font-bold text-foreground">{run.label} — {utcHourToLocal(parseInt(run.time))}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">
                               {run.sent > 0 ? `${run.sent} connection invitation${run.sent !== 1 ? "s" : ""} sent` : "No contacts to process"}
                             </p>
