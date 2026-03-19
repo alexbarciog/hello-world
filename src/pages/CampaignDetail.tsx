@@ -615,7 +615,7 @@ export default function CampaignDetail() {
                                 </div>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <button className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20">
+                                    <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
                                       <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                   </AlertDialogTrigger>
