@@ -1342,7 +1342,13 @@ export default function CampaignDetail() {
                     const perRun = Math.max(1, Math.floor(dailyLimit / 5));
                     const nowUTC = new Date().getUTCHours();
 
-                    return runs.map((run, idx) => {
+                    // Filter to only show current and future runs
+                    const visibleRuns = runs.filter((run) => {
+                      const runHour = parseInt(run.time);
+                      return nowUTC < runHour + 1; // show if not fully past
+                    });
+
+                    return visibleRuns.map((run, idx) => {
                       const runHour = parseInt(run.time);
                       const isPast = nowUTC >= runHour + 1;
                       const isActive = nowUTC >= runHour && nowUTC < runHour + 1;
