@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[64px]" : "w-[200px]"}`}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[64px]" : "w-[230px]"}`}
         style={{ background: "hsl(195 14% 95%)" }}
       >
         {/* Logo row */}
