@@ -644,7 +644,7 @@ async function handleProfileEngagers(
           if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
           const signal = `Engaged with ${profileName}'s post`;
-          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
           if (ok) inserted++;
         }
       }
