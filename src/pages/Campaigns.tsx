@@ -421,6 +421,16 @@ export default function CampaignsPage() {
           </TableBody>
         </Table>
       </div>
+      {/* Create/Edit Campaign Wizard */}
+      <CreateCampaignWizard
+        open={showWizard}
+        onOpenChange={setShowWizard}
+        editCampaignId={editCampaignId}
+        onCreated={(id) => {
+          load();
+          navigate(`/campaigns/${id}`);
+        }}
+      />
     </div>
   );
 }
