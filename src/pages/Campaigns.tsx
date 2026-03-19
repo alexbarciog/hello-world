@@ -299,13 +299,14 @@ export default function CampaignsPage() {
           emptyState
         ) : (
           campaigns.map((c) => (
-            <CampaignCard
-              key={c.id}
-              c={c}
-              onToggle={() => handleToggleStatus(c.id, c.status)}
-              onEdit={() => navigate(`/onboarding?campaign=${c.id}`)}
-              onDelete={() => handleDeleteCampaign(c.id)}
-            />
+            <div key={c.id} onClick={() => navigate(`/campaigns/${c.id}`)} className="cursor-pointer">
+              <CampaignCard
+                c={c}
+                onToggle={() => handleToggleStatus(c.id, c.status)}
+                onEdit={() => handleEditCampaign(c.id)}
+                onDelete={() => handleDeleteCampaign(c.id)}
+              />
+            </div>
           ))
         )}
       </div>
