@@ -196,6 +196,7 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({ source_list_id: listId } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to assign list"); setAssigningList(false); return; }
     setSelectedListId(listId);
+    setListsCount(1);
     setCampaign({ ...campaign, source_list_id: listId });
     await loadContactsForList(listId);
     setAssigningList(false);
