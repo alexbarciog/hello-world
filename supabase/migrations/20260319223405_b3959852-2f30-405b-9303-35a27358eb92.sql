@@ -1,0 +1,1 @@
+DELETE FROM public.reddit_mentions WHERE reddit_post_id LIKE 'apify_%';
