@@ -1278,8 +1278,8 @@ export default function HelpCenter() {
             <div className="mt-4 flex justify-center gap-3 flex-wrap">
               <span className="text-xs font-light text-md-on-surface-variant">Popular:</span>
               <button onClick={() => { openCategory("connecting-linkedin"); }} className="text-xs font-medium text-md-primary hover:underline">Connecting LinkedIn</button>
-              <button onClick={() => setSearch("CSV")} className="text-xs font-medium text-md-primary hover:underline">Importing CSV</button>
-              <button onClick={() => { openCategory("campaigns-outreach"); }} className="text-xs font-medium text-md-primary hover:underline">Campaign Metrics</button>
+              <button onClick={() => { openCategory("reddit-signals"); }} className="text-xs font-medium text-md-primary hover:underline">Reddit AI Agent</button>
+              <button onClick={() => { openCategory("campaigns-outreach"); }} className="text-xs font-medium text-md-primary hover:underline">Campaigns</button>
             </div>
           </div>
         </div>
