@@ -433,7 +433,10 @@ async function pollViaApifyBatch(
       // Match post to keyword by checking title + body content
       const searchText = `${title} ${body}`.toLowerCase();
       let matchedKeywordIdx = keywordLower.findIndex(k => searchText.includes(k));
-      if (matchedKeywordIdx === -1) matchedKeywordIdx = 0; // fallback to first keyword
+      if (matchedKeywordIdx === -1) {
+        // Post doesn't contain any of our keywords — skip it
+        continue;
+      }
 
       const matchedKeyword = uniqueKeywords[matchedKeywordIdx];
 
