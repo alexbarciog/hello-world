@@ -773,6 +773,7 @@ function normalizeText(value: string): string {
 async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null,
+  icp?: ICPFilters,
 ): Promise<boolean> {
   const linkedinProfileId = profile.public_id || profile.public_identifier || profile.provider_id || profile.id;
   if (!linkedinProfileId) return false;
@@ -791,11 +792,9 @@ async function insertContact(
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
 
-  // Determine relevance tier
-  const tier = classifyContact(match, { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] }, hl);
-  // Re-classify with actual ICP for proper tier
-  const icp: ICPFilters = match as any;
-  const relevanceTier = classifyContact(match, { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] }, hl) || 'cold';
+  // Determine relevance tier using actual ICP
+  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] };
+  const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
 
   const signalAHit = true;
   const signalBHit = match.score >= 60;
