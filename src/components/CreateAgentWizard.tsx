@@ -91,7 +91,7 @@ const SIGNAL_CATEGORIES = [
 // ── Shared input class ──────────────────────────────────────────────────────
 const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50";
 
-export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWizardProps) {
+export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: CreateAgentWizardProps) {
   const [step, setStep] = useState(1);
   const [agentName, setAgentName] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
