@@ -144,10 +144,9 @@ async function processCampaign(
 
   for (const contact of contactsData) {
     try {
-      const linkedinId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-      if (!linkedinId) {
+      const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+      if (!publicId) {
         console.log(`[campaign ${campaign.id}] contact ${contact.id} has no linkedin ID, skipping`);
-        // Still mark as processed to avoid retrying
         await serviceClient.from('campaign_connection_requests').insert({
           campaign_id: campaign.id,
           contact_id: contact.id,
@@ -157,7 +156,27 @@ async function processCampaign(
         continue;
       }
 
-      // Send invitation via Unipile
+      // Step 1: Resolve public identifier to Unipile provider_id
+      const resolveRes = await fetch(
+        `https://${unipileDsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
+        { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
+      );
+      const resolveData = await resolveRes.json();
+
+      if (!resolveRes.ok || !resolveData.provider_id) {
+        console.error(`[campaign ${campaign.id}] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status, JSON.stringify(resolveData));
+        await serviceClient.from('campaign_connection_requests').insert({
+          campaign_id: campaign.id,
+          contact_id: contact.id,
+          user_id: campaign.user_id,
+          status: 'skipped',
+        });
+        continue;
+      }
+
+      const providerId = resolveData.provider_id;
+
+      // Step 2: Send invitation via Unipile with the resolved provider_id
       const inviteRes = await fetch(`https://${unipileDsn}/api/v1/users/invite`, {
         method: 'POST',
         headers: {
@@ -166,8 +185,7 @@ async function processCampaign(
         },
         body: JSON.stringify({
           account_id: accountId,
-          provider: 'LINKEDIN',
-          provider_id: linkedinId,
+          provider_id: providerId,
         }),
       });
 
