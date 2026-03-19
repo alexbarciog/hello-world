@@ -66,6 +66,7 @@ const LinkedInIcon = () => (
 
 export default function Contacts() {
   const [tab, setTab] = useState<"all" | "hot" | "warm" | "cold">("all");
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
