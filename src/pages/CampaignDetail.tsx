@@ -537,9 +537,9 @@ export default function CampaignDetail() {
                           <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">{step1Sent} contact(s)</span>
                           <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">{step1Accepted} accepted</span>
                         </div>
-                        <div className="flex gap-2 mt-3 pt-2 border-t border-border">
-                          <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
-                          <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
+                        <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
+                          <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
+                          <button className="text-xs font-medium text-white bg-foreground rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity w-full">Edit</button>
                         </div>
                       </div>
                     </motion.div>
