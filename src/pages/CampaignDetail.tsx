@@ -808,8 +808,7 @@ export default function CampaignDetail() {
                 <button
                   onClick={saveSettings}
                   disabled={savingSettings}
-                  className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-6 py-2.5 transition-all hover:opacity-90 hover:scale-[1.02] disabled:opacity-50"
-                  style={{ background: savedAnimation ? "hsl(142 70% 45%)" : "hsl(var(--goji-coral))" }}
+                  className={`btn-cta text-sm disabled:opacity-50 ${savedAnimation ? "!bg-[hsl(142,70%,45%)]" : ""}`}
                 >
                   {savedAnimation ? (
                     <><Check className="w-4 h-4" /> Saved!</>

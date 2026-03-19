@@ -529,8 +529,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2 transition-all disabled:opacity-50 hover:scale-[1.02]"
-              style={{ background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(340 70% 60%))" }}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-white rounded-full px-5 py-2.5 disabled:opacity-50 transition-all hover:scale-[1.03] active:scale-[0.97]"
+              style={{
+                background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(var(--goji-orange)), #FDC94B, #C8D9FF)",
+                boxShadow: "0 4px 20px hsla(var(--goji-coral), 0.4)",
+              }}
             >
               <Sparkles className="w-4 h-4" />
               {saving ? "Creating..." : editCampaignId ? "Save Changes" : "Generate My Campaign"}
