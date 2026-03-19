@@ -264,8 +264,7 @@ export default function CampaignDetail() {
             </div>
             <button
               onClick={toggleCampaignStatus}
-              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2.5 transition-all hover:opacity-90 hover:scale-[1.02]"
-              style={{ background: campaign.status === "active" ? "hsl(0 70% 50%)" : "hsl(var(--goji-coral))" }}
+              className={`btn-cta text-sm ${campaign.status === "active" ? "!bg-destructive" : ""}`}
             >
               {campaign.status === "active" ? <><Pause className="w-4 h-4" /> Pause</> : <><Play className="w-4 h-4" /> Start Campaign</>}
             </button>
@@ -282,7 +281,7 @@ export default function CampaignDetail() {
               onClick={() => setTab(t.key)}
               className={`relative flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap z-10 ${
                 tab === t.key
-                  ? "text-[hsl(var(--goji-coral))] shadow-sm"
+                  ? "text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -809,8 +808,7 @@ export default function CampaignDetail() {
                 <button
                   onClick={saveSettings}
                   disabled={savingSettings}
-                  className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-6 py-2.5 transition-all hover:opacity-90 hover:scale-[1.02] disabled:opacity-50"
-                  style={{ background: savedAnimation ? "hsl(142 70% 45%)" : "hsl(var(--goji-coral))" }}
+                  className={`btn-cta text-sm disabled:opacity-50 ${savedAnimation ? "!bg-[hsl(142,70%,45%)]" : ""}`}
                 >
                   {savedAnimation ? (
                     <><Check className="w-4 h-4" /> Saved!</>

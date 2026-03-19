@@ -213,7 +213,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                 <div className="flex items-center gap-2">
                   <motion.div
                     animate={{
-                      background: step > s.num ? "hsl(var(--goji-coral))" : step === s.num ? "hsl(var(--goji-coral))" : "hsl(var(--muted))",
+                      background: step > s.num ? "hsl(var(--foreground))" : step === s.num ? "hsl(var(--foreground))" : "hsl(var(--muted))",
                       scale: step === s.num ? 1.1 : 1,
                     }}
                     transition={{ duration: 0.2 }}
@@ -229,8 +229,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                 {i < STEP_LABELS.length - 1 && (
                   <div className="flex-1 mx-3 h-0.5 rounded-full bg-muted overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full"
-                      style={{ background: "hsl(var(--goji-coral))" }}
+                      className="h-full rounded-full bg-foreground"
                       animate={{ width: step > s.num ? "100%" : "0%" }}
                       transition={{ duration: 0.4 }}
                     />
@@ -368,8 +367,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                     <button
                       onClick={handleAnalyzeWebsite}
                       disabled={!website.trim() || analyzingWebsite}
-                      className="px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-40 hover:scale-[1.02] flex items-center gap-1.5"
-                      style={{ background: "hsl(var(--goji-coral))", color: "white" }}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-white rounded-full px-5 py-2.5 disabled:opacity-40 transition-all hover:scale-[1.03] active:scale-[0.97]"
+                      style={{
+                        background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(var(--goji-orange)), #FDC94B, #C8D9FF)",
+                        boxShadow: "0 4px 20px hsla(var(--goji-coral), 0.4)",
+                      }}
                     >
                       {analyzingWebsite ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
@@ -518,8 +520,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             <button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 && !canNext1}
-              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2 transition-all disabled:opacity-40 hover:scale-[1.02]"
-              style={{ background: "hsl(var(--goji-coral))" }}
+              className="btn-cta text-sm disabled:opacity-40"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
@@ -527,8 +528,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="flex items-center gap-1.5 text-sm font-bold text-white rounded-xl px-5 py-2 transition-all disabled:opacity-50 hover:scale-[1.02]"
-              style={{ background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(340 70% 60%))" }}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-white rounded-full px-5 py-2.5 disabled:opacity-50 transition-all hover:scale-[1.03] active:scale-[0.97]"
+              style={{
+                background: "linear-gradient(135deg, hsl(var(--goji-coral)), hsl(var(--goji-orange)), #FDC94B, #C8D9FF)",
+                boxShadow: "0 4px 20px hsla(var(--goji-coral), 0.4)",
+              }}
             >
               <Sparkles className="w-4 h-4" />
               {saving ? "Creating..." : editCampaignId ? "Save Changes" : "Generate My Campaign"}

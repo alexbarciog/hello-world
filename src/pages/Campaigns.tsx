@@ -271,8 +271,7 @@ export default function CampaignsPage() {
       </p>
       <button
         onClick={handleNewCampaign}
-        className={`mt-2 inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold transition-all hover:opacity-90 hover:scale-[1.02] text-white ${campaigns.length === 0 ? "animate-pulse" : ""}`}
-        style={{ background: "hsl(var(--goji-coral))" }}
+        className={`mt-2 btn-cta text-sm ${campaigns.length === 0 ? "animate-pulse" : ""}`}
       >
         <Plus className="w-4 h-4" />
         Start your first campaign
@@ -309,8 +308,7 @@ export default function CampaignsPage() {
           <button
             onClick={handleNewCampaign}
             disabled={atLimit}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 w-full sm:w-auto justify-center text-white"
-            style={{ background: "hsl(var(--goji-coral))" }}
+            className="btn-cta text-sm disabled:opacity-40 disabled:cursor-not-allowed w-full sm:w-auto justify-center"
           >
             <Plus className="w-4 h-4" />
             Start a campaign
