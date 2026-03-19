@@ -229,8 +229,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                 {i < STEP_LABELS.length - 1 && (
                   <div className="flex-1 mx-3 h-0.5 rounded-full bg-muted overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full"
-                      style={{ background: "hsl(var(--goji-coral))" }}
+                      className="h-full rounded-full bg-foreground"
                       animate={{ width: step > s.num ? "100%" : "0%" }}
                       transition={{ duration: 0.4 }}
                     />
