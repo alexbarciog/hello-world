@@ -105,6 +105,11 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   async function loadData() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
+    const fn = user.user_metadata?.first_name || "";
+    const ln = user.user_metadata?.last_name || "";
+    const displayName = [fn, ln].filter(Boolean).join(" ") || user.user_metadata?.full_name || user.user_metadata?.name || user.email || "";
+    if (displayName) setLinkedInName(displayName);
+
     const [agentsRes, listsRes, campaignsRes] = await Promise.all([
       supabase.from("signal_agents").select("id, name, icp_job_titles, icp_industries, icp_locations, icp_company_sizes, icp_company_types, leads_list_name").eq("user_id", user.id),
       (supabase.from("lists") as any).select("id, name").eq("user_id", user.id),
