@@ -299,13 +299,14 @@ export default function CampaignsPage() {
           emptyState
         ) : (
           campaigns.map((c) => (
-            <CampaignCard
-              key={c.id}
-              c={c}
-              onToggle={() => handleToggleStatus(c.id, c.status)}
-              onEdit={() => navigate(`/onboarding?campaign=${c.id}`)}
-              onDelete={() => handleDeleteCampaign(c.id)}
-            />
+            <div key={c.id} onClick={() => navigate(`/campaigns/${c.id}`)} className="cursor-pointer">
+              <CampaignCard
+                c={c}
+                onToggle={() => handleToggleStatus(c.id, c.status)}
+                onEdit={() => handleEditCampaign(c.id)}
+                onDelete={() => handleDeleteCampaign(c.id)}
+              />
+            </div>
           ))
         )}
       </div>
@@ -345,7 +346,7 @@ export default function CampaignsPage() {
               </TableRow>
             ) : (
               campaigns.map((c) => (
-                <TableRow key={c.id} className="group">
+                <TableRow key={c.id} className="group cursor-pointer" onClick={() => navigate(`/campaigns/${c.id}`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <img src={gojiIcon} alt="" className="w-5 h-5 object-contain shrink-0 opacity-70" />
@@ -385,7 +386,7 @@ export default function CampaignsPage() {
                       {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </span>
                   </TableCell>
-                  <TableCell className="text-center">
+                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1.5 rounded hover:bg-muted/60 transition-colors" style={{ color: "hsl(var(--goji-text-muted))" }}>
@@ -404,7 +405,7 @@ export default function CampaignsPage() {
                             <Pause className="w-3.5 h-3.5" />Pause campaign
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => navigate(`/onboarding?campaign=${c.id}`)} className="gap-2 text-sm">
+                        <DropdownMenuItem onClick={() => handleEditCampaign(c.id)} className="gap-2 text-sm">
                           <Pencil className="w-3.5 h-3.5" />Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -420,6 +421,16 @@ export default function CampaignsPage() {
           </TableBody>
         </Table>
       </div>
+      {/* Create/Edit Campaign Wizard */}
+      <CreateCampaignWizard
+        open={showWizard}
+        onOpenChange={setShowWizard}
+        editCampaignId={editCampaignId}
+        onCreated={(id) => {
+          load();
+          navigate(`/campaigns/${id}`);
+        }}
+      />
     </div>
   );
 }
