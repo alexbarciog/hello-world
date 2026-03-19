@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     // ── list_chats ──
     if (action === 'list_chats') {
       const cursor = body.cursor || '';
-      const limit = Math.min(body.limit || 30, 50);
+      const limit = Math.min(body.limit || 15, 15);
       const url = new URL(`https://${UNIPILE_DSN}/api/v1/chats`);
       url.searchParams.set('account_id', accountId);
       url.searchParams.set('limit', String(limit));
@@ -78,14 +78,20 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Enrich chats sequentially with small delay to avoid 429 rate limiting
+      // Log first chat structure to understand available fields
+      if (rawItems.length > 0) {
+        console.log('[list_chats] Raw chat keys:', Object.keys(rawItems[0]));
+        console.log('[list_chats] Raw chat sample:', JSON.stringify(rawItems[0], null, 2));
+      }
+
+      // Enrich chats sequentially with 500ms delay to avoid 429 rate limiting
       const enriched: Record<string, unknown>[] = [];
-      for (const chat of rawItems) {
-        const enrichedChat = await enrichChat(chat, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+      for (let i = 0; i < rawItems.length; i++) {
+        const enrichedChat = await enrichChat(rawItems[i], accountId, UNIPILE_API_KEY, UNIPILE_DSN);
         enriched.push(enrichedChat);
-        // Small delay between profile lookups to respect rate limits
-        if (rawItems.indexOf(chat) < rawItems.length - 1) {
-          await new Promise((r) => setTimeout(r, 150));
+        // 500ms delay between lookups to respect rate limits
+        if (i < rawItems.length - 1) {
+          await new Promise((r) => setTimeout(r, 500));
         }
       }
 
@@ -190,18 +196,29 @@ async function enrichChat(
   apiKey: string,
   dsn: string
 ): Promise<Record<string, unknown>> {
-  const chatId = chat.id as string;
   const attendeeProviderId = chat.attendee_provider_id as string | undefined;
 
-  // Run both lookups in parallel
-  const [participantInfo, lastMessage] = await Promise.all([
-    attendeeProviderId ? fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn) : null,
-    chatId ? fetchLastMessage(chatId, apiKey, dsn) : null,
-  ]);
+  // Try to extract name from chat data first (avoid extra API call)
+  const existingAttendees = chat.attendees as Array<Record<string, unknown>> | undefined;
+  const chatName = chat.name as string | undefined;
+
+  let participantInfo: { name: string; avatar_url: string | null } | null = null;
+
+  // Check if chat already has attendee info
+  if (existingAttendees?.length && existingAttendees[0]?.display_name) {
+    participantInfo = {
+      name: existingAttendees[0].display_name as string,
+      avatar_url: (existingAttendees[0].profile_picture_url as string) || null,
+    };
+  } else if (chatName && chatName !== 'LinkedIn User') {
+    participantInfo = { name: chatName, avatar_url: null };
+  } else if (attendeeProviderId) {
+    // Only call API if we don't have name from chat data
+    participantInfo = await fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn);
+  }
 
   return {
     ...chat,
-    // Inject enriched attendees array so frontend can use existing helpers
     attendees: participantInfo
       ? [
           {
@@ -211,8 +228,6 @@ async function enrichChat(
           },
         ]
       : [],
-    // Inject last_message so frontend can show preview
-    last_message: lastMessage ?? undefined,
   };
 }
 
