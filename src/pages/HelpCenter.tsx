@@ -1301,7 +1301,7 @@ function renderMarkdown(text: string) {
     // Heading 2
     if (line.startsWith("## ")) {
       elements.push(
-        <h2 key={i} className="text-base font-bold mt-6 mb-2" style={{ color: "hsl(var(--goji-dark))" }}>
+        <h2 key={i} className="text-lg font-bold mt-8 mb-3 pb-2 border-b border-border/40" style={{ color: "hsl(var(--md-on-surface))" }}>
           {renderInline(line.slice(3))}
         </h2>
       );
