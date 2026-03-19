@@ -1424,7 +1424,7 @@ function renderMarkdown(text: string) {
 
     // Paragraph
     elements.push(
-      <p key={i} className="text-sm leading-relaxed my-1.5" style={{ color: "hsl(var(--goji-text-muted))" }}>
+      <p key={i} className="text-[15px] leading-[1.75] my-2.5" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
         {renderInline(line)}
       </p>
     );
