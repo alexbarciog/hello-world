@@ -89,9 +89,9 @@ Deno.serve(async (req) => {
       for (let i = 0; i < rawItems.length; i++) {
         const enrichedChat = await enrichChat(rawItems[i], accountId, UNIPILE_API_KEY, UNIPILE_DSN);
         enriched.push(enrichedChat);
-        // 500ms delay between lookups to respect rate limits
+        // 1s delay between profile lookups to respect Unipile rate limits
         if (i < rawItems.length - 1) {
-          await new Promise((r) => setTimeout(r, 500));
+          await new Promise((r) => setTimeout(r, 1000));
         }
       }
 
@@ -204,16 +204,20 @@ async function enrichChat(
 
   let participantInfo: { name: string; avatar_url: string | null } | null = null;
 
-  // Check if chat already has attendee info
-  if (existingAttendees?.length && existingAttendees[0]?.display_name) {
+  // Check if chat already has REAL attendee info (not the generic "LinkedIn User" fallback)
+  const hasRealName = existingAttendees?.length &&
+    existingAttendees[0]?.display_name &&
+    (existingAttendees[0].display_name as string) !== 'LinkedIn User';
+
+  if (hasRealName) {
     participantInfo = {
-      name: existingAttendees[0].display_name as string,
-      avatar_url: (existingAttendees[0].profile_picture_url as string) || null,
+      name: existingAttendees![0].display_name as string,
+      avatar_url: (existingAttendees![0].profile_picture_url as string) || null,
     };
   } else if (chatName && chatName !== 'LinkedIn User') {
     participantInfo = { name: chatName, avatar_url: null };
   } else if (attendeeProviderId) {
-    // Only call API if we don't have name from chat data
+    // Call profile API since we only have the generic fallback name
     participantInfo = await fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn);
   }
 
