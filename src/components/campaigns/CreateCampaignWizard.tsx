@@ -69,7 +69,8 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [analyzingWebsite, setAnalyzingWebsite] = useState(false);
-
+  const [onboardingWebsiteLoaded, setOnboardingWebsiteLoaded] = useState(false);
+  const [autoAnalyzed, setAutoAnalyzed] = useState(false);
   // Step 1
   const [sourceType, setSourceType] = useState<"agent" | "list">("agent");
   const [agents, setAgents] = useState<AgentData[]>([]);
