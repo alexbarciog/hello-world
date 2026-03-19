@@ -78,10 +78,16 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Enrich each chat: fetch attendee profile + last message in parallel (batched)
-      const enriched = await Promise.all(
-        rawItems.map((chat) => enrichChat(chat, accountId, UNIPILE_API_KEY, UNIPILE_DSN))
-      );
+      // Enrich chats sequentially with small delay to avoid 429 rate limiting
+      const enriched: Record<string, unknown>[] = [];
+      for (const chat of rawItems) {
+        const enrichedChat = await enrichChat(chat, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+        enriched.push(enrichedChat);
+        // Small delay between profile lookups to respect rate limits
+        if (rawItems.indexOf(chat) < rawItems.length - 1) {
+          await new Promise((r) => setTimeout(r, 150));
+        }
+      }
 
       return json({ ...data, items: enriched });
     }
