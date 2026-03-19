@@ -62,12 +62,6 @@ const MESSAGE_TONES = [
   { value: "direct", label: "Direct", desc: "Bold, confident", icon: Target },
 ];
 
-const STEP_COLORS = [
-  { bg: "hsl(270 70% 55%)", light: "hsl(270 70% 95%)" },
-  { bg: "hsl(190 80% 45%)", light: "hsl(190 80% 95%)" },
-  { bg: "hsl(25 90% 55%)", light: "hsl(25 90% 95%)" },
-  { bg: "hsl(200 80% 50%)", light: "hsl(200 80% 95%)" },
-];
 
 const tabVariant = {
   hidden: { opacity: 0, y: 12 },
