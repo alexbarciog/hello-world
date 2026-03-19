@@ -66,39 +66,43 @@ export default function Support() {
   };
 
   return (
-    <div className="relative px-4 py-6 flex flex-col items-center">
-      <div className="w-full max-w-xl">
+    <div className="relative px-6 py-8 flex flex-col items-center min-h-[80vh] font-body">
+      {/* Background blurs */}
+      <div className="absolute top-1/4 -left-20 w-72 h-72 bg-md-secondary/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-20 w-72 h-72 bg-md-primary/10 rounded-full blur-[100px] pointer-events-none" />
+
+      <div className="w-full max-w-2xl relative z-10">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-1.5 text-muted-foreground/60 text-[10px] mb-5 font-medium tracking-wide uppercase">
+        <div className="flex items-center gap-2 text-md-on-surface-variant/60 text-[11px] mb-6 font-light tracking-widest uppercase font-body">
           <span>Support</span>
           <ChevronRight className="w-2.5 h-2.5" />
-          <span className="text-foreground/70">New Ticket</span>
+          <span className="text-md-on-surface-variant">New Ticket</span>
         </div>
 
         {/* Main Card */}
-        <section className="bg-card border border-border/40 rounded-2xl p-6 md:p-8 shadow-sm">
-          <div className="mb-6">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground mb-1 font-[Manrope]">
+        <section className="glass-card rounded-[1.5rem] p-6 md:p-10">
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-light tracking-tight text-foreground mb-2 font-headline">
               Submit a Ticket
             </h1>
-            <p className="text-muted-foreground text-sm font-normal leading-relaxed">
+            <p className="text-md-on-surface-variant font-light text-sm leading-relaxed max-w-md font-body">
               Describe your issue and we'll get back to you as soon as possible.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Category */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-md-on-surface-variant/70 mb-2 ml-0.5 font-body">
                 Category
               </label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full bg-background border-border rounded-xl h-9 text-sm">
+                <SelectTrigger className="w-full bg-white/60 border-md-outline-variant/15 rounded-xl h-11 text-sm font-light font-body">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                    <SelectItem key={c.value} value={c.value} className="font-body text-sm">{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -106,7 +110,7 @@ export default function Support() {
 
             {/* Subject */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-md-on-surface-variant/70 mb-2 ml-0.5 font-body">
                 Subject
               </label>
               <input
@@ -115,47 +119,47 @@ export default function Support() {
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 maxLength={200}
-                className="w-full bg-background border border-border rounded-xl px-3 py-2 h-9 text-sm focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all text-foreground placeholder:text-muted-foreground/50 outline-none"
+                className="w-full bg-white/60 border border-md-outline-variant/15 rounded-xl px-4 py-3 h-11 text-sm font-light font-body focus:ring-2 focus:ring-md-primary/20 focus:border-md-primary/30 transition-all text-foreground placeholder:text-md-on-surface-variant/40 outline-none"
               />
             </div>
 
             {/* Message */}
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-md-on-surface-variant/70 mb-2 ml-0.5 font-body">
                 Message
               </label>
               <textarea
                 placeholder="Please provide as much detail as possible..."
                 value={message}
                 onChange={e => setMessage(e.target.value)}
-                rows={4}
+                rows={5}
                 maxLength={2000}
-                className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-ring/20 focus:border-ring transition-all text-foreground placeholder:text-muted-foreground/50 outline-none resize-none"
+                className="w-full bg-white/60 border border-md-outline-variant/15 rounded-xl px-4 py-3 text-sm font-light font-body focus:ring-2 focus:ring-md-primary/20 focus:border-md-primary/30 transition-all text-foreground placeholder:text-md-on-surface-variant/40 outline-none resize-none"
               />
             </div>
 
             {/* Attachment placeholder */}
-            <div className="flex items-center justify-between px-3 py-2.5 bg-secondary/50 border border-dashed border-border rounded-xl">
-              <div className="flex items-center gap-2">
-                <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Add screenshot or file</span>
+            <div className="flex items-center justify-between px-4 py-3 bg-md-surface-container/30 border border-dashed border-md-outline-variant/30 rounded-xl">
+              <div className="flex items-center gap-2.5">
+                <Paperclip className="w-4 h-4 text-md-primary/60" />
+                <span className="text-xs font-light text-md-on-surface-variant font-body">Add screenshot or file</span>
               </div>
-              <button type="button" className="text-[11px] font-medium text-primary hover:underline underline-offset-4">
-                Browse
+              <button type="button" className="text-xs font-medium text-md-primary hover:underline underline-offset-4 font-body">
+                Browse files
               </button>
             </div>
 
             {/* Submit */}
-            <div className="pt-1">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-6 rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow-sm hover:bg-primary/90 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+                className="w-full py-3.5 px-8 rounded-full bg-gradient-to-r from-md-primary to-md-secondary text-white font-medium text-sm shadow-lg shadow-md-secondary/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none font-body"
               >
                 <span>{loading ? "Sending..." : "Submit Ticket"}</span>
-                <Send className="w-3.5 h-3.5" />
+                <Send className="w-4 h-4" />
               </button>
-              <p className="text-center text-[10px] text-muted-foreground/50 mt-3 tracking-wide">
+              <p className="text-center text-[10px] text-md-on-surface-variant/50 mt-4 tracking-widest uppercase font-body">
                 Average response time: &lt; 24 hours
               </p>
             </div>
@@ -163,18 +167,18 @@ export default function Support() {
         </section>
 
         {/* Info Cards */}
-        <div className="mt-6 grid grid-cols-2 gap-4">
+        <div className="mt-8 grid grid-cols-2 gap-4">
           <div
             onClick={() => navigate("/help")}
-            className="bg-card border border-border/40 p-4 rounded-xl cursor-pointer hover:shadow-sm transition-all"
+            className="glass-card p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-foreground/60">
+              <div className="w-9 h-9 rounded-xl bg-md-primary/10 flex items-center justify-center text-md-primary">
                 <HelpCircle className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-medium text-foreground">Help Center</h3>
-                <p className="text-[11px] text-muted-foreground">Find instant answers.</p>
+                <h3 className="text-xs font-medium text-foreground font-body">Self-Service Docs</h3>
+                <p className="text-[11px] font-light text-md-on-surface-variant font-body">Find instant answers in our portal.</p>
               </div>
             </div>
           </div>
@@ -183,15 +187,15 @@ export default function Support() {
             href="https://discord.gg/intentsly"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-card border border-border/40 p-4 rounded-xl cursor-pointer hover:shadow-sm transition-all"
+            className="glass-card p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-foreground/60">
+              <div className="w-9 h-9 rounded-xl bg-md-secondary/10 flex items-center justify-center text-md-secondary">
                 <MessageCircle className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-medium text-foreground">Community</h3>
-                <p className="text-[11px] text-muted-foreground">Join us on Discord.</p>
+                <h3 className="text-xs font-medium text-foreground font-body">Live Community</h3>
+                <p className="text-[11px] font-light text-md-on-surface-variant font-body">Join 2,000+ creators on Discord.</p>
               </div>
             </div>
           </a>
