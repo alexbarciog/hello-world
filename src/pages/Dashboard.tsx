@@ -234,7 +234,7 @@ export default function Dashboard() {
           title="Leads Engaged"
           value={leadsEngaged}
           loading={statsLoading}
-          icon={<Users className="w-7 h-7 text-md-secondary" />}
+          icon={<Users className="w-5 h-5 text-md-secondary" />}
           iconBg="hsla(var(--md-secondary) / 0.12)"
           trend={leadsEngaged > 0 ? "8%" : "0%"}
           trendUp={leadsEngaged > 0}
