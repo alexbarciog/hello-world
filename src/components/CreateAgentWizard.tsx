@@ -11,6 +11,7 @@ import {
 interface CreateAgentWizardProps {
   onClose: () => void;
   onCreated: () => void;
+  editAgentId?: string | null;
 }
 
 const INDUSTRIES = ["Technology", "Healthcare", "Finance", "Retail", "Manufacturing", "Education", "Real Estate", "Marketing", "Consulting", "SaaS"];
@@ -90,7 +91,7 @@ const SIGNAL_CATEGORIES = [
 // ── Shared input class ──────────────────────────────────────────────────────
 const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50";
 
-export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWizardProps) {
+export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: CreateAgentWizardProps) {
   const [step, setStep] = useState(1);
   const [agentName, setAgentName] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -126,6 +127,33 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
   // Dropdowns
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Load existing agent data when editing
+  useEffect(() => {
+    if (!editAgentId) return;
+    async function loadAgent() {
+      const { data } = await supabase.from("signal_agents").select("*").eq("id", editAgentId!).single();
+      if (data) {
+        setAgentName(data.name || "");
+        setJobTitles(data.icp_job_titles || []);
+        setSelectedLocations(data.icp_locations || []);
+        setSelectedIndustries(data.icp_industries || []);
+        setSelectedCompanyTypes(data.icp_company_types || []);
+        setSelectedCompanySizes(data.icp_company_sizes || []);
+        setExcludeKeywords(data.icp_exclude_keywords || []);
+        setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
+        setLeadsListName(data.leads_list_name || "");
+        const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
+        if (config?.enabled) {
+          const map: Record<string, boolean> = {};
+          config.enabled.forEach((s: string) => { map[s] = true; });
+          setEnabledSignals(map);
+        }
+        if (config?.keywords) setSignalKeywords(config.keywords);
+      }
+    }
+    loadAgent();
+  }, [editAgentId]);
 
   // Load existing lists from contacts
   useEffect(() => {
@@ -241,13 +269,10 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
 
     const activeSubSignals = Object.entries(enabledSignals).filter(([, v]) => v).map(([k]) => k);
 
-    const { error } = await supabase.from("signal_agents").insert({
-      user_id: user.id,
+    const agentData = {
       name: agentName || "My Agent",
       agent_type: "signals",
       keywords: jobTitles,
-      status: "active",
-      last_launched_at: new Date().toISOString(),
       icp_job_titles: jobTitles,
       icp_locations: selectedLocations,
       icp_industries: selectedIndustries,
@@ -260,18 +285,30 @@ export default function CreateAgentWizard({ onClose, onCreated }: CreateAgentWiz
         keywords: signalKeywords,
       },
       leads_list_name: leadsListName || null,
-    });
+    };
+
+    let error;
+    if (editAgentId) {
+      ({ error } = await supabase.from("signal_agents").update(agentData).eq("id", editAgentId));
+    } else {
+      ({ error } = await supabase.from("signal_agents").insert({
+        ...agentData,
+        user_id: user.id,
+        status: "active",
+        last_launched_at: new Date().toISOString(),
+      }));
+    }
 
     setSaving(false);
     if (error) {
       if (error.message?.includes("LIMIT_REACHED")) {
         toast.error("You've reached the maximum of 2 signal agents");
       } else {
-        toast.error("Failed to create agent");
+        toast.error(editAgentId ? "Failed to update agent" : "Failed to create agent");
       }
       return;
     }
-    toast.success("Agent created successfully!");
+    toast.success(editAgentId ? "Agent updated successfully!" : "Agent created successfully!");
     onCreated();
     onClose();
   }

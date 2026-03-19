@@ -35,10 +35,12 @@ function AgentCard({
   agent,
   onToggle,
   onDelete,
+  onEdit,
 }: {
   agent: SignalAgent;
   onToggle: () => void;
   onDelete: () => void;
+  onEdit: () => void;
 }) {
   const isActive = agent.status === "active";
 
@@ -64,6 +66,9 @@ function AgentCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onClick={onEdit} className="gap-2 text-sm">
+              <Pencil className="w-3.5 h-3.5" />Edit agent
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
               {isActive ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
             </DropdownMenuItem>
@@ -102,6 +107,7 @@ export default function Signals() {
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editAgentId, setEditAgentId] = useState<string | null>(null);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showPreviousLaunches, setShowPreviousLaunches] = useState(false);
   const [activeAgent, setActiveAgent] = useState<SignalAgent | null>(null);
@@ -181,7 +187,7 @@ export default function Signals() {
   if (showCreate) {
     return (
       <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
-        <CreateAgentWizard onClose={() => setShowCreate(false)} onCreated={fetchAgents} />
+        <CreateAgentWizard onClose={() => { setShowCreate(false); setEditAgentId(null); }} onCreated={fetchAgents} editAgentId={editAgentId} />
       </div>
     );
   }
@@ -287,11 +293,12 @@ export default function Signals() {
               agent={agent}
               onToggle={() => toggleAgentStatus(agent)}
               onDelete={() => deleteAgent(agent.id)}
+              onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
             />
           ))
         )}
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => { setEditAgentId(null); setShowCreate(true); }}
           disabled={agents.length >= maxAgents}
           className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 bg-blue-50/50 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -346,9 +353,6 @@ export default function Signals() {
                       <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors">
                         <Calendar className="w-3.5 h-3.5" />Next launches
                       </button>
-                      <button onClick={() => toggleAgentStatus(agent)} className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-md px-3 py-1.5 hover:bg-red-50 transition-colors">
-                        <Pencil className="w-3.5 h-3.5" />Edit
-                      </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="text-gray-400 hover:text-gray-600 p-1">
@@ -356,6 +360,9 @@ export default function Signals() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" side="top" className="w-44">
+                          <DropdownMenuItem onClick={() => { setEditAgentId(agent.id); setShowCreate(true); }} className="gap-2 text-sm">
+                            <Pencil className="w-3.5 h-3.5" />Edit agent
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleAgentStatus(agent)} className="gap-2 text-sm">
                             {agent.status === "active" ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
                           </DropdownMenuItem>
@@ -374,7 +381,7 @@ export default function Signals() {
         </table>
         <div className="bg-blue-50/50 border-t border-dashed border-blue-200">
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={() => { setEditAgentId(null); setShowCreate(true); }}
             disabled={agents.length >= maxAgents}
             className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
