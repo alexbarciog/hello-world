@@ -1642,7 +1642,7 @@ export default function HelpCenter() {
                 <button
                   key={cat.id}
                   onClick={() => openCategory(cat.id)}
-                  className="flex flex-col items-start text-left p-8 rounded-xl transition-all duration-500 group cursor-pointer hover:bg-white/60"
+                  className="flex flex-col items-start text-left p-8 rounded-xl transition-all duration-500 group cursor-pointer hover:bg-white/60 shadow-card hover:shadow-lg"
                   style={{
                     background: "rgba(255,255,255,0.4)",
                     backdropFilter: "blur(20px)",
