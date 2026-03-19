@@ -117,22 +117,6 @@ export default function BillingPlans() {
 
   return (
     <div className="min-h-screen" style={{ background: "hsl(220 20% 97%)" }}>
-      {/* Top bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <div className="h-4 w-px bg-gray-200" />
-        <div className="flex items-center gap-1.5">
-          <img src={gojiIcon} alt="Gojiberry" className="w-5 h-5 object-contain" />
-          <span className="text-sm font-bold text-gray-900 tracking-tight">gojiberry</span>
-        </div>
-      </div>
-
       <div className="max-w-4xl mx-auto px-6 py-14">
         {/* ─── Hero ───────────────────────────────────────────── */}
         <div className="text-center mb-10 animate-fade-in">
