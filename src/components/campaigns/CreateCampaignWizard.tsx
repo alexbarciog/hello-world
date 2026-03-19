@@ -85,6 +85,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   const [painPoints, setPainPoints] = useState("");
   const [campaignGoal, setCampaignGoal] = useState("conversations");
   const [messageTone, setMessageTone] = useState("professional");
+  const [linkedInName, setLinkedInName] = useState("LinkedIn Account");
 
   useEffect(() => {
     if (!open) return;
