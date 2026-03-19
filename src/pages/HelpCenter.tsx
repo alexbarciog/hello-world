@@ -1361,10 +1361,10 @@ function renderMarkdown(text: string) {
         i++;
       }
       elements.push(
-        <ul key={`ul-${i}`} className="list-none my-2 space-y-1">
+        <ul key={`ul-${i}`} className="list-none my-3 space-y-2 pl-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-2 text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>
-              <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "hsl(var(--goji-coral))" }} />
+            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
+              <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "hsl(var(--md-primary))" }} />
               <span>{renderInline(item)}</span>
             </li>
           ))}
