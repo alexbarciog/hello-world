@@ -412,27 +412,49 @@ export default function CampaignDetail() {
 
                   {/* Workflow Steps - horizontal row */}
                   <div className="flex items-start gap-0 mt-0">
-                    {workflowSteps.map((ws: any, i: number) => {
-                      const isInvitation = ws.type === "invitation";
-                      const stepColor = i === 0
-                        ? "linear-gradient(135deg, hsl(270 70% 55%), hsl(300 60% 55%))"
-                        : "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))";
+                    {/* Fixed Step 1: Send Connect Request (cannot be deleted) */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="min-w-[220px] max-w-[240px] shrink-0"
+                    >
+                      <div className="rounded-xl text-white p-4 shadow-md" style={{ background: "linear-gradient(135deg, hsl(270 70% 55%), hsl(300 60% 55%))" }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <UserPlus className="w-4 h-4" />
+                          <span className="text-sm font-bold">Send Invitation</span>
+                        </div>
+                        <p className="text-xs opacity-80">Step 1</p>
+                      </div>
+                      <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
+                        <p className="text-xs text-muted-foreground italic">Invitation without message</p>
+                        <div className="flex items-center gap-3 mt-3 text-xs">
+                          <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">0 contact(s)</span>
+                          <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 accepted</span>
+                        </div>
+                        <div className="flex gap-2 mt-3 pt-2 border-t border-border">
+                          <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
+                          <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Dynamic message steps (skip the first invitation step from data) */}
+                    {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, i: number) => {
                       const isEditing = editingStep === i;
+                      const stepNum = i + 2; // Step 1 is always the invitation
 
                       return (
                         <div key={i} className="flex items-start">
-                          {/* Connector + delay badge between steps */}
-                          {i > 0 && (
-                            <div className="flex flex-col items-center self-start pt-10 px-1 min-w-[80px]">
-                              <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
-                                + {ws.delay_days} days
-                              </span>
-                              <svg width="60" height="2" className="text-primary">
-                                <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
-                              </svg>
-                              <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
-                            </div>
-                          )}
+                          {/* Connector + delay badge */}
+                          <div className="flex flex-col items-center self-start pt-10 px-1 min-w-[80px]">
+                            <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                              + {ws.delay_days} days
+                            </span>
+                            <svg width="60" height="2" className="text-primary">
+                              <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                            </svg>
+                            <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
+                          </div>
 
                           <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -440,16 +462,14 @@ export default function CampaignDetail() {
                             transition={{ delay: i * 0.08 }}
                             className="min-w-[220px] max-w-[240px] shrink-0"
                           >
-                            {/* Step header */}
-                            <div className="rounded-xl text-white p-4 shadow-md" style={{ background: stepColor }}>
+                            <div className="rounded-xl text-white p-4 shadow-md" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
                               <div className="flex items-center gap-2 mb-1">
-                                {isInvitation ? <UserPlus className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-                                <span className="text-sm font-bold">{isInvitation ? "Send Invitation" : "Send Message"}</span>
+                                <Send className="w-4 h-4" />
+                                <span className="text-sm font-bold">Send Message</span>
                               </div>
-                              <p className="text-xs opacity-80">Step {i + 1}</p>
+                              <p className="text-xs opacity-80">Step {stepNum}</p>
                             </div>
 
-                            {/* Step body */}
                             <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
                               {isEditing ? (
                                 <div className="space-y-2">
@@ -466,9 +486,7 @@ export default function CampaignDetail() {
                                 </div>
                               ) : (
                                 <>
-                                  {isInvitation ? (
-                                    <p className="text-xs text-muted-foreground italic">Invitation without message</p>
-                                  ) : ws.ai_icebreaker ? (
+                                  {ws.ai_icebreaker ? (
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-1.5 text-xs">
                                         <Sparkles className="w-3.5 h-3.5 text-red-500" />
@@ -487,7 +505,7 @@ export default function CampaignDetail() {
 
                                   <div className="flex items-center gap-3 mt-3 text-xs">
                                     <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">0 contact(s)</span>
-                                    <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 {isInvitation ? "accepted" : "answer(s)"}</span>
+                                    <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 answer(s)</span>
                                   </div>
 
                                   <div className="flex gap-2 mt-3 pt-2 border-t border-border">
