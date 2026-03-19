@@ -466,7 +466,7 @@ async function handleHashtagEngagement(
         if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
-        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl);
+        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
         if (ok) inserted++;
       }
     } catch (e) { console.error('Hashtag engager fetch:', e); }
