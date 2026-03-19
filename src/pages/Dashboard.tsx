@@ -257,7 +257,7 @@ export default function Dashboard() {
           <div className="p-5 md:p-6 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
-                <h2 className="text-2xl font-light font-headline mb-1 text-md-on-surface">
+                <h2 className="text-lg font-light font-headline mb-0.5 text-md-on-surface">
                   Performance Velocity
                 </h2>
                 <p className="text-md-on-surface-variant font-light text-sm">
