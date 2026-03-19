@@ -290,7 +290,7 @@ export default function RedditSignals() {
               </button>
             </div>
 
-            {/* Row 2: Keywords */}
+            {/* Row 2: Keywords + inline add */}
             <div className="flex items-center gap-2 mt-2.5 flex-wrap">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Watching:</span>
               {keywords.map(kw => (
@@ -308,21 +308,57 @@ export default function RedditSignals() {
                   </button>
                 </span>
               ))}
+
+              {/* Inline add keyword */}
+              {inlineAdding ? (
+                <div className="inline-flex items-center gap-1 animate-in slide-in-from-left-2 fade-in duration-200">
+                  <input
+                    autoFocus
+                    value={inlineKeyword}
+                    onChange={(e) => setInlineKeyword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && inlineKeyword.trim()) addInlineKeyword.mutate();
+                      if (e.key === "Escape") { setInlineAdding(false); setInlineKeyword(""); }
+                    }}
+                    placeholder="New keyword..."
+                    className="w-32 px-2.5 py-1 rounded-full text-xs border border-orange-200 bg-white/90 outline-none focus:ring-1 focus:ring-orange-300 placeholder:text-muted-foreground/50"
+                  />
+                  <button
+                    onClick={() => addInlineKeyword.mutate()}
+                    disabled={addInlineKeyword.isPending || !inlineKeyword.trim()}
+                    className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors disabled:opacity-50"
+                  >
+                    {addInlineKeyword.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  </button>
+                  <button
+                    onClick={() => { setInlineAdding(false); setInlineKeyword(""); }}
+                    className="w-6 h-6 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground flex items-center justify-center transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setInlineAdding(true)}
+                  className="w-6 h-6 rounded-full border border-dashed border-orange-300 text-orange-400 hover:text-orange-600 hover:border-orange-400 flex items-center justify-center transition-colors"
+                  title="Add keyword"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Keywords Management Card (shown when agent not started) ── */}
-      <div className="glass-card rounded-2xl p-5 md:p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Hash className="w-5 h-5 text-foreground/60" />
-            <h2 className="text-lg font-semibold text-foreground">
-              {agentRunning && keywords.length > 0 ? "Add More Keywords" : "Intent Keywords"}
-            </h2>
-          </div>
-          {!(agentRunning && keywords.length > 0) && (
+      {/* ── Keywords Management Card (only when agent NOT running) ── */}
+      {!(agentRunning && keywords.length > 0) && (
+        <div className="glass-card rounded-2xl p-5 md:p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Hash className="w-5 h-5 text-foreground/60" />
+              <h2 className="text-lg font-semibold text-foreground">Intent Keywords</h2>
+            </div>
             <button
               onClick={handleStartAgent}
               disabled={polling || keywords.length === 0}
@@ -332,71 +368,65 @@ export default function RedditSignals() {
               {polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
               {polling ? "Starting..." : "Start AI Agent"}
             </button>
+          </div>
+
+          {kwLoading ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading keywords...
+            </div>
+          ) : keywords.length === 0 ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <AlertCircle className="w-4 h-4" />
+              No keywords yet. Add intent keywords below to start monitoring Reddit.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {keywords.map(kw => (
+                <span
+                  key={kw.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium bg-orange-50 text-orange-700 border-orange-200"
+                >
+                  <Search className="w-3 h-3 opacity-60" />
+                  {kw.keyword}
+                  {kw.subreddits.length > 0 && (
+                    <span className="text-[10px] opacity-60">({kw.subreddits.length} subs)</span>
+                  )}
+                  <button onClick={() => deleteKeyword.mutate(kw.id)} className="ml-0.5 hover:opacity-80">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
           )}
-        </div>
 
-        {/* Show keywords only when agent is NOT running */}
-        {!(agentRunning && keywords.length > 0) && (
-          <>
-            {kwLoading ? (
-              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" /> Loading keywords...
-              </div>
-            ) : keywords.length === 0 ? (
-              <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                <AlertCircle className="w-4 h-4" />
-                No keywords yet. Add intent keywords below to start monitoring Reddit.
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {keywords.map(kw => (
-                  <span
-                    key={kw.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium bg-orange-50 text-orange-700 border-orange-200"
-                  >
-                    <Search className="w-3 h-3 opacity-60" />
-                    {kw.keyword}
-                    {kw.subreddits.length > 0 && (
-                      <span className="text-[10px] opacity-60">({kw.subreddits.length} subs)</span>
-                    )}
-                    <button onClick={() => deleteKeyword.mutate(kw.id)} className="ml-0.5 hover:opacity-80">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Add new keyword form */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={newKeyword}
-            onChange={(e) => setNewKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addKeyword.mutate()}
-            placeholder='Intent keyword (e.g. "alternative to", "how do I")'
-            className="flex-1 border border-border rounded-xl px-3.5 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50"
-          />
-          <input
-            value={newSubreddits}
-            onChange={(e) => setNewSubreddits(e.target.value)}
-            placeholder="Subreddits (optional, comma-sep)"
-            className="sm:w-56 border border-border rounded-xl px-3.5 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50"
-          />
-          <button
-            onClick={() => addKeyword.mutate()}
-            disabled={addKeyword.isPending || !newKeyword.trim()}
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
-          >
-            <Plus className="w-4 h-4" />
-            Add
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addKeyword.mutate()}
+              placeholder='Intent keyword (e.g. "alternative to", "how do I")'
+              className="flex-1 border border-border rounded-xl px-3.5 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50"
+            />
+            <input
+              value={newSubreddits}
+              onChange={(e) => setNewSubreddits(e.target.value)}
+              placeholder="Subreddits (optional, comma-sep)"
+              className="sm:w-56 border border-border rounded-xl px-3.5 py-2.5 text-sm bg-transparent outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50"
+            />
+            <button
+              onClick={() => addKeyword.mutate()}
+              disabled={addKeyword.isPending || !newKeyword.trim()}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              <Plus className="w-4 h-4" />
+              Add
+            </button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Default subreddits: {DEFAULT_SUBREDDITS.join(", ")}. Override by specifying custom subreddits.
+          </p>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-2">
-          Default subreddits: {DEFAULT_SUBREDDITS.join(", ")}. Override by specifying custom subreddits.
-        </p>
-      </div>
+      )}
 
       {/* ── Results ── */}
       {mentionsLoading ? (
