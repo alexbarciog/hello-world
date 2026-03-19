@@ -243,7 +243,7 @@ export default function Dashboard() {
       }).filter((r: { is_sender: boolean }) => !r.is_sender).slice(0, 4);
     },
     staleTime: 60_000,
-    enabled: linkedinConnected,
+    enabled: Boolean(profileData?.linkedinConnected),
   });
 
   // ── Contacts for chart data ──
