@@ -297,47 +297,6 @@ export default function Unibox() {
             <div className="p-6 pb-2">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-light tracking-tight text-foreground">Unibox</h1>
-                <div className="flex gap-2">
-                  <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-foreground/5 transition-colors">
-                    <SlidersHorizontal className="w-5 h-5 text-foreground/50" />
-                  </button>
-                  <button
-                    onClick={() => setShowSearch(!showSearch)}
-                    className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-foreground/5 transition-colors"
-                  >
-                    <Search className="w-5 h-5 text-foreground/50" />
-                  </button>
-                </div>
-              </div>
-
-              {showSearch && (
-                <div className="mb-4">
-                  <Input
-                    placeholder="Search conversations..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-9 text-sm bg-white/40 border-white/50 rounded-xl"
-                    autoFocus
-                  />
-                </div>
-              )}
-
-              {/* Filter Tabs */}
-              <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
-                {FILTER_TABS.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveFilter(tab)}
-                    className={cn(
-                      "px-4 py-1.5 rounded-full text-sm whitespace-nowrap transition-all",
-                      activeFilter === tab
-                        ? "bg-[hsl(200,100%,28%)] text-white font-medium"
-                        : "hover:bg-white/40 text-foreground/50 font-light"
-                    )}
-                  >
-                    {tab}
-                  </button>
-                ))}
               </div>
             </div>
 
