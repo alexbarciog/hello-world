@@ -388,11 +388,12 @@ async function pollViaApify(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        searchQuery: keyword,
-        subreddit: subreddit,
+        searchQueries: [keyword],
+        searchInSubreddit: subreddit,
         sort: 'new',
         time: 'month',
-        maxResults: 50,
+        maxItems: 50,
+        postsPerSource: 50,
         proxyConfiguration: { useApifyProxy: true },
       }),
     });
@@ -409,43 +410,53 @@ async function pollViaApify(
       return 0;
     }
 
-    console.log(`[poll-reddit] Apify: ${posts.length} posts in r/${subreddit} for "${keyword}"`);
-    // Log first post structure for debugging
-    if (posts.length > 0) {
-      console.log(`[poll-reddit] Apify sample post keys: ${JSON.stringify(Object.keys(posts[0]))}`);
-      console.log(`[poll-reddit] Apify sample post: ${JSON.stringify(posts[0]).slice(0, 500)}`);
+    // Filter out error objects from results
+    const validPosts = posts.filter((p: any) => p && !p.error && (p.title || p.url || p.permalink));
+
+    if (validPosts.length === 0) {
+      console.log(`[poll-reddit] Apify: 0 valid posts for r/${subreddit} "${keyword}" (${posts.length} raw items filtered)`);
+      if (posts[0]?.error) {
+        console.warn(`[poll-reddit] Apify item error: ${JSON.stringify(posts[0].error).slice(0, 200)}`);
+      }
+      return 0;
     }
 
-    let inserted = 0;
-    for (const p of posts) {
-      if (!p) continue;
+    console.log(`[poll-reddit] Apify: ${validPosts.length} valid posts in r/${subreddit} for "${keyword}"`);
+    // Log first post structure for debugging
+    console.log(`[poll-reddit] Apify sample keys: ${JSON.stringify(Object.keys(validPosts[0]))}`);
+    console.log(`[poll-reddit] Apify sample: ${JSON.stringify(validPosts[0]).slice(0, 500)}`);
 
-      // Extract post ID from URL or use provided id
-      const postId = p.id || p.postId;
-      const url = p.url || p.postUrl || `https://www.reddit.com${p.permalink || ''}`;
-      const postIdMatch = url.match(/\/comments\/([a-z0-9]+)/i);
+    let inserted = 0;
+    for (const p of validPosts) {
+      // Extract post ID from various possible fields
+      const permalink = p.permalink || '';
+      const postUrl = p.url || p.postUrl || (permalink ? `https://www.reddit.com${permalink}` : '');
+      const postIdMatch = (permalink || postUrl).match(/\/comments\/([a-z0-9]+)/i);
+      const rawId = p.id || p.postId || p.name;
       const redditPostId = postIdMatch
         ? `t3_${postIdMatch[1]}`
-        : postId
-          ? `t3_${postId}`
-          : `apify_${hashString(url)}`;
+        : rawId
+          ? (rawId.startsWith('t3_') ? rawId : `t3_${rawId}`)
+          : `apify_${hashString(postUrl || JSON.stringify(p))}`;
+
+      const finalUrl = postUrl || `https://www.reddit.com${permalink}`;
 
       const { error } = await supabase.from('reddit_mentions').upsert(
         {
           user_id: userId,
           keyword_id: keywordId,
           keyword_matched: keyword,
-          subreddit: p.subreddit || subreddit,
-          author: p.author || p.username || '[unknown]',
+          subreddit: p.subredditName || p.subreddit || subreddit,
+          author: p.author || p.authorName || p.username || '[unknown]',
           title: p.title || 'No title',
-          body: (p.body || p.selftext || p.text || '').slice(0, 1000) || null,
-          url: url,
+          body: (p.selfText || p.selftext || p.body || p.text || '').slice(0, 1000) || null,
+          url: finalUrl,
           reddit_post_id: redditPostId,
-          score: p.score ?? p.upvotes ?? 0,
-          posted_at: p.createdAt || p.posted_at || p.created_utc
-            ? (typeof p.created_utc === 'number'
-              ? new Date(p.created_utc * 1000).toISOString()
-              : p.createdAt || p.posted_at)
+          score: p.score ?? p.ups ?? p.upvotes ?? 0,
+          posted_at: p.createdAt || p.created_utc || p.postedAt
+            ? (typeof (p.created_utc || p.createdAt) === 'number'
+              ? new Date((p.created_utc || p.createdAt) * 1000).toISOString()
+              : p.createdAt || p.postedAt || null)
             : null,
         },
         { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
