@@ -366,7 +366,7 @@ export default function Unibox() {
                             {chatTimestamp(chat)}
                           </span>
                         </div>
-                        <p className="text-sm text-foreground/50 font-light truncate">
+                        <p className="text-xs text-foreground/50 font-light truncate">
                           {chatLastText(chat)}
                         </p>
                         {(chat.unread_count || 0) > 0 && (
