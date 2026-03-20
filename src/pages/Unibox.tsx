@@ -503,11 +503,11 @@ export default function Unibox() {
                           <Sparkles className="w-3.5 h-3.5 text-white" />
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-[hsl(254,70%,55%)] uppercase tracking-widest mb-1">AI Smart Insight</p>
-                          <p className="text-sm text-foreground font-light leading-snug">
+                          <p className="text-[10px] font-semibold text-[hsl(254,70%,55%)] uppercase tracking-widest mb-0.5">AI Smart Insight</p>
+                          <p className="text-xs text-foreground font-light leading-snug">
                             This contact typically responds faster on weekday mornings. Consider a follow-up around 10 AM.
                           </p>
-                          <button className="mt-3 text-[11px] font-bold text-[hsl(200,100%,28%)] hover:underline">
+                          <button className="mt-2 text-[10px] font-bold text-[hsl(200,100%,28%)] hover:underline">
                             Apply Smart Suggestion →
                           </button>
                         </div>
