@@ -402,8 +402,8 @@ export default function Unibox() {
             {selectedChatId && selectedChat ? (
               <>
                 {/* Conversation Header */}
-                <div className="p-6 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
-                  <div className="flex items-center gap-4">
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
+                  <div className="flex items-center gap-3">
                     {isMobile && (
                       <button onClick={() => setSelectedChatId(null)} className="text-foreground mr-1">
                         <ArrowLeft className="w-5 h-5" />
