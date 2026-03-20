@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { toast } from "sonner";
+import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import {
@@ -164,6 +167,8 @@ function AgentCard({
 }
 
 export default function Signals() {
+  const navigate = useNavigate();
+  const sub = useSubscription();
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -218,6 +223,13 @@ export default function Signals() {
 
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
+    // Block activation on free plan
+    if (newStatus === "active" && !sub.subscribed) {
+      toast.error("Upgrade to a paid plan to activate agents", {
+        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+      });
+      return;
+    }
     await supabase
       .from("signal_agents")
       .update({ status: newStatus, ...(newStatus === "active" ? { last_launched_at: new Date().toISOString() } : {}) })
@@ -254,6 +266,19 @@ export default function Signals() {
 
   return (
     <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 p-4 md:p-8">
+      {/* Free plan banner */}
+      {!sub.loading && !sub.subscribed && (
+        <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-900 font-medium">
+            Your AI agents are paused because you're on the Free plan.{" "}
+            <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
+              Start your free trial
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* Toast notification */}
       {toastAgent && (
         <div className="fixed top-4 right-4 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[min(320px,calc(100vw-2rem))] animate-in slide-in-from-right">

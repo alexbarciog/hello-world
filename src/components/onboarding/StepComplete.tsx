@@ -84,7 +84,8 @@ export const StepComplete = ({
         linkedinConnected = !!profile?.unipile_account_id;
       }
 
-      const initialStatus = linkedinConnected ? "active" : "pending_linkedin";
+      // Always start as paused — user needs a subscription to activate
+      const initialStatus = "paused";
 
       let campaignId: string | null = existingCampaignId ?? null;
 
@@ -219,7 +220,7 @@ export const StepComplete = ({
       }
 
       // Trigger lead discovery (fire-and-forget) — only if campaign is active
-      if (campaignId && initialStatus === "active") {
+      if (campaignId && linkedinConnected) {
         try {
           const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
           const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;

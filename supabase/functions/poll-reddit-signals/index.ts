@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Stripe from 'https://esm.sh/stripe@18.5.0';
 
 /* ── Anti-detection utilities ──────────────────────────────────────── */
 
@@ -135,7 +136,7 @@ Deno.serve(async (req) => {
     const failedPairs: FailedPair[] = [];
 
     // Phase 1: Try RSS and JSON for each keyword/subreddit pair
-    for (const kw of shuffledKeywords) {
+    for (const kw of paidKeywords) {
       const subreddits = shuffle(kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS);
       const keyword = kw.keyword;
 

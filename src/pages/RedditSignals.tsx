@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import {
   Search, ExternalLink, Bookmark, X, Plus, Loader2, Trash2,
-  RefreshCw, Sparkles, Hash, AlertCircle, Bot, Power, Check,
+  RefreshCw, Sparkles, Hash, AlertCircle, Bot, Power, Check, AlertTriangle,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
@@ -67,7 +69,9 @@ const DEFAULT_SUBREDDITS = ["SaaS", "startups", "Entrepreneur", "smallbusiness",
 
 /* ── Page component ──────────────────────────────────────────────────── */
 export default function RedditSignals() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const sub = useSubscription();
   const [newKeyword, setNewKeyword] = useState("");
   const [newSubreddits, setNewSubreddits] = useState("");
   const [polling, setPolling] = useState(false);
@@ -179,6 +183,12 @@ export default function RedditSignals() {
 
   // ── Start AI Agent (initial scan + enable auto-polling) ──
   const handleStartAgent = async () => {
+    if (!sub.subscribed) {
+      toast.error("Upgrade to a paid plan to run the Reddit agent", {
+        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+      });
+      return;
+    }
     if (keywords.length === 0) {
       toast.error("Add at least one keyword first");
       return;
@@ -200,6 +210,12 @@ export default function RedditSignals() {
 
   // ── Manual re-scan ──
   const handleRescan = async () => {
+    if (!sub.subscribed) {
+      toast.error("Upgrade to a paid plan to scan Reddit", {
+        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+      });
+      return;
+    }
     setPolling(true);
     try {
       const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
@@ -240,6 +256,19 @@ export default function RedditSignals() {
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
+      {/* Free plan banner */}
+      {!sub.loading && !sub.subscribed && (
+        <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-900 font-medium">
+            Reddit monitoring is paused on the Free plan.{" "}
+            <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
+              Start your free trial
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
