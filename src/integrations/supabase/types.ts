@@ -725,6 +725,98 @@ export type Database = {
         }
         Relationships: []
       }
+      x_keywords: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          keyword: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          keyword: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          keyword?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      x_mentions: {
+        Row: {
+          author: string
+          author_name: string | null
+          body: string | null
+          dismissed: boolean
+          found_at: string
+          id: string
+          keyword_id: string
+          keyword_matched: string
+          like_count: number | null
+          posted_at: string | null
+          reply_count: number | null
+          retweet_count: number | null
+          saved: boolean
+          title: string
+          url: string
+          user_id: string
+          x_post_id: string
+        }
+        Insert: {
+          author: string
+          author_name?: string | null
+          body?: string | null
+          dismissed?: boolean
+          found_at?: string
+          id?: string
+          keyword_id: string
+          keyword_matched: string
+          like_count?: number | null
+          posted_at?: string | null
+          reply_count?: number | null
+          retweet_count?: number | null
+          saved?: boolean
+          title: string
+          url: string
+          user_id: string
+          x_post_id: string
+        }
+        Update: {
+          author?: string
+          author_name?: string | null
+          body?: string | null
+          dismissed?: boolean
+          found_at?: string
+          id?: string
+          keyword_id?: string
+          keyword_matched?: string
+          like_count?: number | null
+          posted_at?: string | null
+          reply_count?: number | null
+          retweet_count?: number | null
+          saved?: boolean
+          title?: string
+          url?: string
+          user_id?: string
+          x_post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "x_mentions_keyword_id_fkey"
+            columns: ["keyword_id"]
+            isOneToOne: false
+            referencedRelation: "x_keywords"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
