@@ -78,20 +78,49 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Log first chat structure to understand available fields
-      if (rawItems.length > 0) {
-        console.log('[list_chats] Raw chat keys:', Object.keys(rawItems[0]));
-        console.log('[list_chats] Raw chat sample:', JSON.stringify(rawItems[0], null, 2));
-      }
+      // Unipile already returns attendees + last_message in list_chats.
+      // Only enrich chats that are missing real attendee names (rare).
+      const chatsNeedingEnrichment: number[] = [];
+      const enriched = rawItems.map((chat, i) => {
+        const attendees = chat.attendees as Array<Record<string, unknown>> | undefined;
+        const hasRealName = attendees?.length &&
+          attendees[0]?.display_name &&
+          (attendees[0].display_name as string) !== 'LinkedIn User';
 
-      // Enrich chats sequentially with 500ms delay to avoid 429 rate limiting
-      const enriched: Record<string, unknown>[] = [];
-      for (let i = 0; i < rawItems.length; i++) {
-        const enrichedChat = await enrichChat(rawItems[i], accountId, UNIPILE_API_KEY, UNIPILE_DSN);
-        enriched.push(enrichedChat);
-        // 1s delay between profile lookups to respect Unipile rate limits
-        if (i < rawItems.length - 1) {
-          await new Promise((r) => setTimeout(r, 1000));
+        if (!hasRealName && chat.attendee_provider_id) {
+          chatsNeedingEnrichment.push(i);
+        }
+        return { ...chat };
+      });
+
+      // Batch-enrich only chats missing names (in parallel, max 3 concurrent)
+      if (chatsNeedingEnrichment.length > 0) {
+        const batchSize = 3;
+        for (let b = 0; b < chatsNeedingEnrichment.length; b += batchSize) {
+          const batch = chatsNeedingEnrichment.slice(b, b + batchSize);
+          const results = await Promise.all(
+            batch.map(idx => {
+              const chat = enriched[idx];
+              return fetchParticipantProfile(
+                chat.attendee_provider_id as string,
+                accountId,
+                UNIPILE_API_KEY,
+                UNIPILE_DSN
+              );
+            })
+          );
+          results.forEach((profile, j) => {
+            const idx = batch[j];
+            enriched[idx].attendees = [{
+              display_name: profile.name,
+              profile_picture_url: profile.avatar_url ?? undefined,
+              provider_id: enriched[idx].attendee_provider_id,
+            }];
+          });
+          // Small delay between batches only if needed
+          if (b + batchSize < chatsNeedingEnrichment.length) {
+            await new Promise(r => setTimeout(r, 500));
+          }
         }
       }
 
