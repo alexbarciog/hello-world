@@ -417,8 +417,8 @@ export default function Unibox() {
                       </div>
                     )}
                     <div>
-                      <h2 className="text-lg font-medium text-foreground leading-tight">{chatDisplayName(selectedChat)}</h2>
-                      <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
+                      <h2 className="text-sm font-medium text-foreground leading-tight">{chatDisplayName(selectedChat)}</h2>
+                      <p className="text-xs font-light text-foreground/50">LinkedIn Connection</p>
                     </div>
                   </div>
                 </div>
