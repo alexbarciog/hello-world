@@ -17,7 +17,7 @@ const testimonials = [
     name: "Frank Houbre",
     role: "Co-founder @ Lunesia",
     avatar: "https://framerusercontent.com/images/GiJdLM9mml1ig4OtoZZ90jXcUk.jpeg",
-    text: "Before GojiberryAI, we were blasting outreach to anyone who fit our ICP. Now we only talk to the warmest leads in our market and reply rates tripled.",
+    text: "Before Intentsly, we were blasting outreach to anyone who fit our ICP. Now we only talk to the warmest leads in our market and reply rates tripled.",
   },
   {
     name: "Nathan Amram",
