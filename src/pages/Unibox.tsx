@@ -300,8 +300,8 @@ export default function Unibox() {
               {chatsLoading ? (
                 <div className="p-3 space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4">
-                      <Skeleton className="w-14 h-14 rounded-2xl" />
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <Skeleton className="w-10 h-10 rounded-xl" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-3.5 w-28" />
                         <Skeleton className="h-3 w-44" />
