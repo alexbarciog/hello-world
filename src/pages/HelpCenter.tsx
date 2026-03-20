@@ -1466,18 +1466,6 @@ export default function HelpCenter() {
               </div>
             </div>
 
-            {/* External link */}
-            <div className="mt-6">
-              <a
-                href="https://help.intentsly.ai/en/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs hover:opacity-70 transition-opacity text-md-on-surface-variant"
-              >
-                <ExternalLink className="w-3 h-3" />
-                View original on help.intentsly.ai
-              </a>
-            </div>
           </div>
         )}
       </section>
