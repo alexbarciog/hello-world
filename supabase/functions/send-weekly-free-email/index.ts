@@ -168,6 +168,11 @@ function generateEmailHtml(
 </head>
 <body style="margin:0;padding:0;background-color:#f8f7fc;font-family:'Segoe UI',Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
 
+  <!-- Hidden preheader: forces email clients to show headline instead of badge text -->
+  <div style="display:none;font-size:1px;color:#f8f7fc;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">
+    ${headline}${'&nbsp;&zwnj;'.repeat(30)}
+  </div>
+
   <!-- Outer wrapper -->
   <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(180deg,#f3f2fa 0%,#f8f7fc 50%,#f4f3fa 100%);padding:40px 16px;">
     <tr><td align="center">
