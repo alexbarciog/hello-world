@@ -495,37 +495,6 @@ export default function Unibox() {
                     </>
                   )}
 
-                  {/* AI Insight Bubble */}
-                  {messages.length > 0 && (
-                    <div className="relative py-2">
-                      <div
-                        className="p-3.5 rounded-2xl max-w-xs mx-auto flex items-start gap-3"
-                        style={{
-                          background: "rgba(255,255,255,0.4)",
-                          backdropFilter: "blur(20px)",
-                          WebkitBackdropFilter: "blur(20px)",
-                          border: "1px solid rgba(255,255,255,0.6)",
-                          boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.2)",
-                        }}
-                      >
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
-                          style={{ background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)" }}
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-white" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-[hsl(254,70%,55%)] uppercase tracking-widest mb-0.5">AI Smart Insight</p>
-                          <p className="text-xs text-foreground font-light leading-snug">
-                            This contact typically responds faster on weekday mornings. Consider a follow-up around 10 AM.
-                          </p>
-                          <button className="mt-2 text-[10px] font-bold text-[hsl(200,100%,28%)] hover:underline">
-                            Apply Smart Suggestion →
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Message Input Area */}
