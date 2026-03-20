@@ -231,7 +231,12 @@ export default function RedditSignals() {
 
   const filtered = mentions
     .filter(m => viewMode === "saved" ? m.saved : true)
-    .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true);
+    .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true)
+    .sort((a, b) => {
+      const dateA = new Date(a.posted_at || a.found_at).getTime();
+      const dateB = new Date(b.posted_at || b.found_at).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
