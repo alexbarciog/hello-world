@@ -16,6 +16,7 @@ import HelpCenter from "./pages/HelpCenter.tsx";
 import Signals from "./pages/Signals.tsx";
 import Contacts from "./pages/Contacts.tsx";
 import RedditSignals from "./pages/RedditSignals.tsx";
+import XSignals from "./pages/XSignals.tsx";
 import Unibox from "./pages/Unibox.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
