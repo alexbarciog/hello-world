@@ -539,8 +539,8 @@ export default function Unibox() {
                       disabled={sendMutation.isPending}
                     />
                     <div className="flex items-center gap-1">
-                      <button type="button" className="w-10 h-10 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
-                        <Smile className="w-5 h-5" />
+                      <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
+                        <Smile className="w-4 h-4" />
                       </button>
                       <button
                         type="submit"
