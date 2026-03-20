@@ -370,9 +370,9 @@ export default function Unibox() {
                           {chatLastText(chat)}
                         </p>
                         {(chat.unread_count || 0) > 0 && (
-                          <div className="mt-2 flex gap-2">
-                            <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-semibold uppercase tracking-tighter">
-                              🔥 HOT INTENT
+                          <div className="mt-1 flex gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[9px] font-semibold uppercase tracking-tighter">
+                              🔥 HOT
                             </span>
                           </div>
                         )}
