@@ -1,0 +1,1 @@
+ALTER TABLE public.reddit_mentions ADD COLUMN saved boolean NOT NULL DEFAULT false;

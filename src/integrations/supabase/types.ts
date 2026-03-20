@@ -605,6 +605,7 @@ export type Database = {
           keyword_matched: string
           posted_at: string | null
           reddit_post_id: string
+          saved: boolean
           score: number | null
           subreddit: string
           title: string
@@ -621,6 +622,7 @@ export type Database = {
           keyword_matched: string
           posted_at?: string | null
           reddit_post_id: string
+          saved?: boolean
           score?: number | null
           subreddit: string
           title: string
@@ -637,6 +639,7 @@ export type Database = {
           keyword_matched?: string
           posted_at?: string | null
           reddit_post_id?: string
+          saved?: boolean
           score?: number | null
           subreddit?: string
           title?: string

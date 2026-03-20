@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Search, ExternalLink, UserPlus, X, Plus, Loader2, Trash2,
+  Search, ExternalLink, Bookmark, X, Plus, Loader2, Trash2,
   RefreshCw, Sparkles, Hash, AlertCircle, Bot, Power, Check,
 } from "lucide-react";
 
@@ -27,6 +27,7 @@ interface RedditMention {
   posted_at: string | null;
   found_at: string;
   dismissed: boolean;
+  saved: boolean;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
@@ -71,6 +72,7 @@ export default function RedditSignals() {
   const [newSubreddits, setNewSubreddits] = useState("");
   const [polling, setPolling] = useState(false);
   const [filterKeyword, setFilterKeyword] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"all" | "saved">("all");
   const [inlineAdding, setInlineAdding] = useState(false);
   const [inlineKeyword, setInlineKeyword] = useState("");
 
@@ -211,9 +213,24 @@ export default function RedditSignals() {
     }
   };
 
-  const filtered = filterKeyword
-    ? mentions.filter(m => m.keyword_matched === filterKeyword)
-    : mentions;
+  // ── Save/unsave mention ──
+  const toggleSave = useMutation({
+    mutationFn: async ({ id, saved }: { id: string; saved: boolean }) => {
+      const { error } = await supabase
+        .from("reddit_mentions")
+        .update({ saved: !saved })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reddit-mentions"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const filtered = mentions
+    .filter(m => viewMode === "saved" ? m.saved : true)
+    .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true);
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
@@ -460,11 +477,37 @@ export default function RedditSignals() {
         <>
           {/* Filter bar */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold text-foreground">
                 {filtered.length} mention{filtered.length !== 1 ? "s" : ""} found
               </h2>
               <span className="text-foreground/40 cursor-help" title="Reddit posts matching your intent keywords">ⓘ</span>
+
+              {/* View mode tabs */}
+              <div className="flex items-center gap-1 ml-2 bg-muted rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode("all")}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "all" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setViewMode("saved")}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
+                    viewMode === "saved" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Bookmark className="w-3 h-3" />
+                  Saved
+                  {mentions.filter(m => m.saved).length > 0 && (
+                    <span className="ml-0.5 px-1.5 py-0 rounded-full text-[10px] bg-foreground text-background font-bold">
+                      {mentions.filter(m => m.saved).length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Keyword filter chips */}
@@ -475,7 +518,7 @@ export default function RedditSignals() {
                   !filterKeyword ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
                 }`}
               >
-                All
+                All keywords
               </button>
               {[...new Set(mentions.map(m => m.keyword_matched))].map(kw => (
                 <button
@@ -532,11 +575,15 @@ export default function RedditSignals() {
                     View Post
                   </a>
                   <button
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all flex-1 justify-center"
-                    style={{ background: "hsl(var(--goji-dark))" }}
+                    onClick={() => toggleSave.mutate({ id: mention.id, saved: mention.saved })}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 justify-center ${
+                      mention.saved
+                        ? "bg-foreground/10 text-foreground border border-border"
+                        : "bg-foreground text-background"
+                    }`}
                   >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Add to Leads
+                    <Bookmark className={`w-3.5 h-3.5 ${mention.saved ? "fill-current" : ""}`} />
+                    {mention.saved ? "Saved" : "Save"}
                   </button>
                 </div>
               </div>
