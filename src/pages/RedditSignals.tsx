@@ -72,6 +72,7 @@ export default function RedditSignals() {
   const [newSubreddits, setNewSubreddits] = useState("");
   const [polling, setPolling] = useState(false);
   const [filterKeyword, setFilterKeyword] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [viewMode, setViewMode] = useState<"all" | "saved">("all");
   const [inlineAdding, setInlineAdding] = useState(false);
   const [inlineKeyword, setInlineKeyword] = useState("");
@@ -230,7 +231,12 @@ export default function RedditSignals() {
 
   const filtered = mentions
     .filter(m => viewMode === "saved" ? m.saved : true)
-    .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true);
+    .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true)
+    .sort((a, b) => {
+      const dateA = new Date(a.posted_at || a.found_at).getTime();
+      const dateB = new Date(b.posted_at || b.found_at).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
@@ -510,8 +516,14 @@ export default function RedditSignals() {
               </div>
             </div>
 
-            {/* Keyword filter chips */}
+            {/* Sort + Keyword filter chips */}
             <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
+                className="px-3 py-1 rounded-full text-xs font-medium border border-border bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              >
+                {sortOrder === "newest" ? "↓ Newest" : "↑ Oldest"}
+              </button>
               <button
                 onClick={() => setFilterKeyword(null)}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
