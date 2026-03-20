@@ -289,9 +289,9 @@ export default function Unibox() {
             }}
           >
             {/* List Header */}
-            <div className="p-6 pb-2">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-light tracking-tight text-foreground">Unibox</h1>
+            <div className="px-4 pt-4 pb-1">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-lg font-light tracking-tight text-foreground">Unibox</h1>
               </div>
             </div>
 
