@@ -410,9 +410,9 @@ export default function Unibox() {
                       </button>
                     )}
                     {chatAvatar(selectedChat) ? (
-                      <img className="w-12 h-12 rounded-2xl object-cover" src={chatAvatar(selectedChat)} alt="" />
+                      <img className="w-9 h-9 rounded-xl object-cover" src={chatAvatar(selectedChat)} alt="" />
                     ) : (
-                      <div className="w-12 h-12 rounded-2xl bg-foreground/10 flex items-center justify-center text-sm font-medium text-foreground/60">
+                      <div className="w-9 h-9 rounded-xl bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground/60">
                         {chatInitials(selectedChat)}
                       </div>
                     )}
