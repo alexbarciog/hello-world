@@ -46,7 +46,7 @@ const Footer = () => {
     <footer className="border-t border-border bg-background">
       <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
         <a href="#" className="flex items-center gap-2">
-          <img src={gojiIcon} alt="Gojiberry" className="w-6 h-6 object-contain" />
+          
           
         </a>
         <div className="flex items-center gap-8 text-sm text-goji-text-muted">
