@@ -273,13 +273,13 @@ export default function Unibox() {
         <div className="absolute -bottom-[5%] left-[20%] w-[30%] h-[30%] rounded-full bg-[hsl(49,100%,40%)]/10 blur-[120px]" />
       </div>
 
-      <div className="flex h-full p-3 md:p-4 gap-4">
+      <div className="flex h-full p-2 md:p-3 gap-3">
         {/* ── Sidebar: Message List ── */}
         {showChatList && (
           <section
             className={cn(
-              "flex flex-col h-full rounded-3xl overflow-hidden",
-              isMobile ? "w-full" : "w-full md:w-[400px]"
+              "flex flex-col h-full rounded-2xl overflow-hidden",
+              isMobile ? "w-full" : "w-full md:w-[340px]"
             )}
             style={{
               background: "rgba(255,255,255,0.4)",
@@ -289,19 +289,19 @@ export default function Unibox() {
             }}
           >
             {/* List Header */}
-            <div className="p-6 pb-2">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-light tracking-tight text-foreground">Unibox</h1>
+            <div className="px-4 pt-4 pb-1">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-lg font-light tracking-tight text-foreground">Unibox</h1>
               </div>
             </div>
 
             {/* Conversations Scroll Area */}
-            <div className="flex-1 overflow-y-auto px-3 space-y-1 pb-6">
+            <div className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4">
               {chatsLoading ? (
                 <div className="p-3 space-y-3">
                   {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4">
-                      <Skeleton className="w-14 h-14 rounded-2xl" />
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <Skeleton className="w-10 h-10 rounded-xl" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-3.5 w-28" />
                         <Skeleton className="h-3 w-44" />
@@ -326,7 +326,7 @@ export default function Unibox() {
                       key={chat.id}
                       onClick={() => setSelectedChatId(chat.id)}
                       className={cn(
-                        "w-full flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer group text-left",
+                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group text-left",
                         isSelected
                           ? "bg-white shadow-sm border border-white/50"
                           : "hover:bg-white/30"
@@ -336,25 +336,25 @@ export default function Unibox() {
                         {avatarUrl ? (
                           <img
                             className={cn(
-                              "w-14 h-14 rounded-2xl object-cover transition-opacity",
+                              "w-10 h-10 rounded-xl object-cover transition-opacity",
                               !isSelected && !isFirst && "opacity-80 group-hover:opacity-100"
                             )}
                             src={avatarUrl}
                             alt=""
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-2xl bg-foreground/10 flex items-center justify-center text-sm font-medium text-foreground/60">
+                          <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground/60">
                             {initials}
                           </div>
                         )}
                         {isFirst && (
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-0.5">
                           <h3 className={cn(
-                            "text-[15px] truncate text-foreground",
+                            "text-[13px] truncate text-foreground",
                             isSelected || isFirst ? "font-medium" : "font-light"
                           )}>
                             {chatDisplayName(chat)}
@@ -366,13 +366,13 @@ export default function Unibox() {
                             {chatTimestamp(chat)}
                           </span>
                         </div>
-                        <p className="text-sm text-foreground/50 font-light truncate">
+                        <p className="text-xs text-foreground/50 font-light truncate">
                           {chatLastText(chat)}
                         </p>
                         {(chat.unread_count || 0) > 0 && (
-                          <div className="mt-2 flex gap-2">
-                            <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-semibold uppercase tracking-tighter">
-                              🔥 HOT INTENT
+                          <div className="mt-1 flex gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[9px] font-semibold uppercase tracking-tighter">
+                              🔥 HOT
                             </span>
                           </div>
                         )}
@@ -389,7 +389,7 @@ export default function Unibox() {
         {showMessages && (
           <section
             className={cn(
-              "hidden md:flex flex-col flex-1 h-full rounded-3xl overflow-hidden relative",
+              "hidden md:flex flex-col flex-1 h-full rounded-2xl overflow-hidden relative",
               isMobile && selectedChatId && "!flex"
             )}
             style={{
@@ -402,29 +402,29 @@ export default function Unibox() {
             {selectedChatId && selectedChat ? (
               <>
                 {/* Conversation Header */}
-                <div className="p-6 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
-                  <div className="flex items-center gap-4">
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
+                  <div className="flex items-center gap-3">
                     {isMobile && (
                       <button onClick={() => setSelectedChatId(null)} className="text-foreground mr-1">
                         <ArrowLeft className="w-5 h-5" />
                       </button>
                     )}
                     {chatAvatar(selectedChat) ? (
-                      <img className="w-12 h-12 rounded-2xl object-cover" src={chatAvatar(selectedChat)} alt="" />
+                      <img className="w-9 h-9 rounded-xl object-cover" src={chatAvatar(selectedChat)} alt="" />
                     ) : (
-                      <div className="w-12 h-12 rounded-2xl bg-foreground/10 flex items-center justify-center text-sm font-medium text-foreground/60">
+                      <div className="w-9 h-9 rounded-xl bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground/60">
                         {chatInitials(selectedChat)}
                       </div>
                     )}
                     <div>
-                      <h2 className="text-lg font-medium text-foreground leading-tight">{chatDisplayName(selectedChat)}</h2>
-                      <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
+                      <h2 className="text-sm font-medium text-foreground leading-tight">{chatDisplayName(selectedChat)}</h2>
+                      <p className="text-xs font-light text-foreground/50">LinkedIn Connection</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Messages Thread Area */}
-                <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                   {messagesLoading ? (
                     <div className="space-y-6 py-4">
                       {[...Array(4)].map((_, i) => (
@@ -444,11 +444,11 @@ export default function Unibox() {
                         const isSent = msg.is_sender === true || msg.is_sender === 1 || msg.is_sender === "true" || msg.from_me === true || msg.from_me === 1 || msg.direction === "outbound";
                         return isSent ? (
                           /* Sent Message */
-                          <div key={msg.id} className="flex flex-row-reverse items-end gap-3 ml-auto max-w-[80%]">
-                            <div className="w-8 h-8 flex-shrink-0" />
+                          <div key={msg.id} className="flex flex-row-reverse items-end gap-2 ml-auto max-w-[75%]">
+                            <div className="w-6 h-6 flex-shrink-0" />
                             <div className="flex flex-col items-end">
                               <div
-                                className="px-5 py-4 rounded-2xl rounded-br-none shadow-md text-white font-light leading-relaxed"
+                                className="px-3.5 py-2.5 rounded-2xl rounded-br-none shadow-md text-white font-light text-sm leading-relaxed"
                                 style={{ background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)" }}
                               >
                                 <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
@@ -460,16 +460,16 @@ export default function Unibox() {
                           </div>
                         ) : (
                           /* Received Message */
-                          <div key={msg.id} className="flex items-end gap-3 max-w-[80%]">
+                          <div key={msg.id} className="flex items-end gap-2 max-w-[75%]">
                             {chatAvatar(selectedChat) ? (
-                              <img className="w-8 h-8 rounded-lg object-cover flex-shrink-0" src={chatAvatar(selectedChat)} alt="" />
+                              <img className="w-6 h-6 rounded-md object-cover flex-shrink-0" src={chatAvatar(selectedChat)} alt="" />
                             ) : (
-                              <div className="w-8 h-8 rounded-lg bg-foreground/10 flex items-center justify-center text-[10px] font-medium text-foreground/50 flex-shrink-0">
+                              <div className="w-6 h-6 rounded-md bg-foreground/10 flex items-center justify-center text-[9px] font-medium text-foreground/50 flex-shrink-0">
                                 {chatInitials(selectedChat)}
                               </div>
                             )}
                             <div>
-                              <div className="bg-white px-5 py-4 rounded-2xl rounded-bl-none shadow-sm border border-white/50 text-foreground font-light leading-relaxed">
+                              <div className="bg-white px-3.5 py-2.5 rounded-2xl rounded-bl-none shadow-sm border border-white/50 text-foreground font-light text-sm leading-relaxed">
                                 <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
                               </div>
                               <span className="text-[10px] text-foreground/40 font-medium ml-1 mt-1 block uppercase tracking-tighter">
@@ -485,9 +485,9 @@ export default function Unibox() {
 
                   {/* AI Insight Bubble */}
                   {messages.length > 0 && (
-                    <div className="relative py-4">
+                    <div className="relative py-2">
                       <div
-                        className="p-5 rounded-3xl max-w-sm mx-auto flex items-start gap-4"
+                        className="p-3.5 rounded-2xl max-w-xs mx-auto flex items-start gap-3"
                         style={{
                           background: "rgba(255,255,255,0.4)",
                           backdropFilter: "blur(20px)",
@@ -497,17 +497,17 @@ export default function Unibox() {
                         }}
                       >
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
+                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
                           style={{ background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)" }}
                         >
-                          <Sparkles className="w-4 h-4 text-white" />
+                          <Sparkles className="w-3.5 h-3.5 text-white" />
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-[hsl(254,70%,55%)] uppercase tracking-widest mb-1">AI Smart Insight</p>
-                          <p className="text-sm text-foreground font-light leading-snug">
+                          <p className="text-[10px] font-semibold text-[hsl(254,70%,55%)] uppercase tracking-widest mb-0.5">AI Smart Insight</p>
+                          <p className="text-xs text-foreground font-light leading-snug">
                             This contact typically responds faster on weekday mornings. Consider a follow-up around 10 AM.
                           </p>
-                          <button className="mt-3 text-[11px] font-bold text-[hsl(200,100%,28%)] hover:underline">
+                          <button className="mt-2 text-[10px] font-bold text-[hsl(200,100%,28%)] hover:underline">
                             Apply Smart Suggestion →
                           </button>
                         </div>
@@ -517,7 +517,7 @@ export default function Unibox() {
                 </div>
 
                 {/* Message Input Area */}
-                <div className="p-6">
+                <div className="px-4 py-3">
                   <form
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                     className="flex items-center gap-2 p-2 rounded-[32px] border border-white/80"
@@ -528,8 +528,8 @@ export default function Unibox() {
                       boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)",
                     }}
                   >
-                    <button type="button" className="w-10 h-10 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
-                      <PlusCircle className="w-5 h-5" />
+                    <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
+                      <PlusCircle className="w-4 h-4" />
                     </button>
                     <input
                       className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none placeholder:text-foreground/30 font-light text-sm px-2"
@@ -539,13 +539,13 @@ export default function Unibox() {
                       disabled={sendMutation.isPending}
                     />
                     <div className="flex items-center gap-1">
-                      <button type="button" className="w-10 h-10 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
-                        <Smile className="w-5 h-5" />
+                      <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
+                        <Smile className="w-4 h-4" />
                       </button>
                       <button
                         type="submit"
                         disabled={!messageInput.trim() || sendMutation.isPending}
-                        className="w-10 h-10 flex items-center justify-center rounded-full shadow-lg text-white active:scale-90 transition-transform disabled:opacity-40"
+                        className="w-8 h-8 flex items-center justify-center rounded-full shadow-lg text-white active:scale-90 transition-transform disabled:opacity-40"
                         style={{
                           background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)",
                           boxShadow: "0 4px 14px rgba(0,93,143,0.3)",
@@ -575,10 +575,10 @@ export default function Unibox() {
 
         {/* ── Contextual Details Panel (xl only) ── */}
         {selectedChat && (
-          <aside className="hidden xl:flex flex-col w-[320px] h-full gap-4">
+          <aside className="hidden xl:flex flex-col w-[280px] h-full gap-3">
             {/* Profile Card */}
             <div
-              className="rounded-3xl p-6 text-center"
+              className="rounded-2xl p-4 text-center"
               style={{
                 background: "rgba(255,255,255,0.4)",
                 backdropFilter: "blur(20px)",
@@ -589,22 +589,22 @@ export default function Unibox() {
             >
               {chatAvatar(selectedChat) ? (
                 <img
-                  className="w-24 h-24 rounded-3xl mx-auto object-cover mb-4 shadow-xl border-4 border-white"
+                  className="w-16 h-16 rounded-2xl mx-auto object-cover mb-3 shadow-lg border-3 border-white"
                   src={chatAvatar(selectedChat)}
                   alt=""
                 />
               ) : (
-                <div className="w-24 h-24 rounded-3xl mx-auto mb-4 shadow-xl border-4 border-white bg-foreground/10 flex items-center justify-center text-2xl font-medium text-foreground/50">
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-3 shadow-lg border-3 border-white bg-foreground/10 flex items-center justify-center text-lg font-medium text-foreground/50">
                   {chatInitials(selectedChat)}
                 </div>
               )}
-              <h3 className="text-xl font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
-              <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
+              <h3 className="text-sm font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
+              <p className="text-xs font-light text-foreground/50">LinkedIn Connection</p>
             </div>
 
             {/* Engagement History Card */}
             <div
-              className="rounded-3xl p-6 flex-1"
+              className="rounded-2xl p-4 flex-1"
               style={{
                 background: "rgba(255,255,255,0.4)",
                 backdropFilter: "blur(20px)",
@@ -613,39 +613,36 @@ export default function Unibox() {
                 border: "1px solid rgba(255,255,255,0.3)",
               }}
             >
-              <h4 className="text-xs font-bold text-foreground/40 uppercase tracking-[2px] mb-6">Engagement History</h4>
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-xl bg-[hsl(200,100%,28%)]/10 flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-4 h-4 text-[hsl(200,100%,28%)]" />
+              <h4 className="text-[10px] font-bold text-foreground/40 uppercase tracking-[2px] mb-4">Engagement History</h4>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(200,100%,28%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-[hsl(200,100%,28%)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Viewed your profile</p>
-                    <p className="text-xs text-foreground/40 font-light">3 hours ago</p>
+                    <p className="text-xs font-medium text-foreground">Viewed your profile</p>
+                    <p className="text-[10px] text-foreground/40 font-light">3 hours ago</p>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-xl bg-[hsl(254,70%,55%)]/10 flex items-center justify-center flex-shrink-0">
-                    <Heart className="w-4 h-4 text-[hsl(254,70%,55%)]" />
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(254,70%,55%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-3.5 h-3.5 text-[hsl(254,70%,55%)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Liked your post</p>
-                    <p className="text-xs text-foreground/40 font-light">Yesterday, 4:12 PM</p>
+                    <p className="text-xs font-medium text-foreground">Liked your post</p>
+                    <p className="text-[10px] text-foreground/40 font-light">Yesterday, 4:12 PM</p>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-xl bg-[hsl(49,100%,40%)]/10 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-4 h-4 text-[hsl(49,100%,40%)]" />
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(49,100%,40%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-3.5 h-3.5 text-[hsl(49,100%,40%)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">High Intent Signal</p>
-                    <p className="text-xs text-foreground/40 font-light">Clicked external link</p>
+                    <p className="text-xs font-medium text-foreground">High Intent Signal</p>
+                    <p className="text-[10px] text-foreground/40 font-light">Clicked external link</p>
                   </div>
                 </div>
               </div>
-
-
-
             </div>
           </aside>
         )}
