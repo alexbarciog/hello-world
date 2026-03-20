@@ -183,6 +183,12 @@ export default function RedditSignals() {
 
   // ── Start AI Agent (initial scan + enable auto-polling) ──
   const handleStartAgent = async () => {
+    if (!sub.subscribed) {
+      toast.error("Upgrade to a paid plan to run the Reddit agent", {
+        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+      });
+      return;
+    }
     if (keywords.length === 0) {
       toast.error("Add at least one keyword first");
       return;
