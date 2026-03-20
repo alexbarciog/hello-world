@@ -78,20 +78,49 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Log first chat structure to understand available fields
-      if (rawItems.length > 0) {
-        console.log('[list_chats] Raw chat keys:', Object.keys(rawItems[0]));
-        console.log('[list_chats] Raw chat sample:', JSON.stringify(rawItems[0], null, 2));
-      }
+      // Unipile already returns attendees + last_message in list_chats.
+      // Only enrich chats that are missing real attendee names (rare).
+      const chatsNeedingEnrichment: number[] = [];
+      const enriched = rawItems.map((chat, i) => {
+        const attendees = chat.attendees as Array<Record<string, unknown>> | undefined;
+        const hasRealName = attendees?.length &&
+          attendees[0]?.display_name &&
+          (attendees[0].display_name as string) !== 'LinkedIn User';
 
-      // Enrich chats sequentially with 500ms delay to avoid 429 rate limiting
-      const enriched: Record<string, unknown>[] = [];
-      for (let i = 0; i < rawItems.length; i++) {
-        const enrichedChat = await enrichChat(rawItems[i], accountId, UNIPILE_API_KEY, UNIPILE_DSN);
-        enriched.push(enrichedChat);
-        // 1s delay between profile lookups to respect Unipile rate limits
-        if (i < rawItems.length - 1) {
-          await new Promise((r) => setTimeout(r, 1000));
+        if (!hasRealName && chat.attendee_provider_id) {
+          chatsNeedingEnrichment.push(i);
+        }
+        return { ...chat };
+      });
+
+      // Batch-enrich only chats missing names (in parallel, max 3 concurrent)
+      if (chatsNeedingEnrichment.length > 0) {
+        const batchSize = 3;
+        for (let b = 0; b < chatsNeedingEnrichment.length; b += batchSize) {
+          const batch = chatsNeedingEnrichment.slice(b, b + batchSize);
+          const results = await Promise.all(
+            batch.map(idx => {
+              const chat = enriched[idx];
+              return fetchParticipantProfile(
+                chat.attendee_provider_id as string,
+                accountId,
+                UNIPILE_API_KEY,
+                UNIPILE_DSN
+              );
+            })
+          );
+          results.forEach((profile, j) => {
+            const idx = batch[j];
+            enriched[idx].attendees = [{
+              display_name: profile.name,
+              profile_picture_url: profile.avatar_url ?? undefined,
+              provider_id: enriched[idx].attendee_provider_id,
+            }];
+          });
+          // Small delay between batches only if needed
+          if (b + batchSize < chatsNeedingEnrichment.length) {
+            await new Promise(r => setTimeout(r, 500));
+          }
         }
       }
 
@@ -191,56 +220,7 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── Enrich a single chat with participant name/photo and last message ── */
-
-async function enrichChat(
-  chat: Record<string, unknown>,
-  accountId: string,
-  apiKey: string,
-  dsn: string
-): Promise<Record<string, unknown>> {
-  const attendeeProviderId = chat.attendee_provider_id as string | undefined;
-  const chatId = chat.id as string | undefined;
-
-  // Try to extract name from chat data first (avoid extra API call)
-  const existingAttendees = chat.attendees as Array<Record<string, unknown>> | undefined;
-  const chatName = chat.name as string | undefined;
-
-  let participantInfo: { name: string; avatar_url: string | null } | null = null;
-
-  // Check if chat already has REAL attendee info (not the generic "LinkedIn User" fallback)
-  const hasRealName = existingAttendees?.length &&
-    existingAttendees[0]?.display_name &&
-    (existingAttendees[0].display_name as string) !== 'LinkedIn User';
-
-  if (hasRealName) {
-    participantInfo = {
-      name: existingAttendees![0].display_name as string,
-      avatar_url: (existingAttendees![0].profile_picture_url as string) || null,
-    };
-  } else if (chatName && chatName !== 'LinkedIn User') {
-    participantInfo = { name: chatName, avatar_url: null };
-  } else if (attendeeProviderId) {
-    // Call profile API since we only have the generic fallback name
-    participantInfo = await fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn);
-  }
-
-  const lastMessage = chatId ? await fetchLastMessage(chatId, apiKey, dsn) : null;
-
-  return {
-    ...chat,
-    attendees: participantInfo
-      ? [
-          {
-            display_name: participantInfo.name,
-            profile_picture_url: participantInfo.avatar_url ?? undefined,
-            provider_id: attendeeProviderId,
-          },
-        ]
-      : [],
-    last_message: lastMessage,
-  };
-}
+/* ── No longer needed: Unipile returns attendees + last_message in list_chats ── */
 
 /* ── Fetch participant profile from Unipile ── */
 
@@ -303,43 +283,6 @@ async function fetchParticipantProfile(
   }
 }
 
-/* ── Fetch latest message for a chat ── */
-
-async function fetchLastMessage(
-  chatId: string,
-  apiKey: string,
-  dsn: string
-): Promise<Record<string, unknown> | null> {
-  try {
-    const url = new URL(`https://${dsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`);
-    url.searchParams.set('limit', '1');
-
-    const res = await fetch(url.toString(), {
-      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
-    });
-
-    if (!res.ok) {
-      console.warn('[enrichChat] messages lookup failed:', res.status, 'for chat:', chatId);
-      return null;
-    }
-
-    const data = await res.json();
-    const items: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
-
-    if (!items.length) return null;
-
-    const msg = items[0];
-    // Normalize to a stable shape
-    return {
-      text: msg.text || msg.body || msg.content || '',
-      timestamp: msg.timestamp || msg.date || msg.created_at || null,
-      is_sender: msg.is_sender ?? false,
-    };
-  } catch (err) {
-    console.error('[enrichChat] last message fetch error:', err);
-    return null;
-  }
-}
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
