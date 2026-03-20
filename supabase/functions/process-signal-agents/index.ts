@@ -75,8 +75,37 @@ Deno.serve(async (req) => {
 
     let totalLeads = 0;
 
+    // ── Stripe subscription check: build set of paid user IDs ──
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    const paidUsers = new Set<string>();
+    if (stripeKey) {
+      const stripe = new Stripe(stripeKey, { apiVersion: '2025-08-27.basil' });
+      const uniqueUserIds = [...new Set(agents.map((a: any) => a.user_id))];
+      for (const uid of uniqueUserIds) {
+        try {
+          const { data: { user } } = await supabase.auth.admin.getUserById(uid);
+          if (!user?.email) continue;
+          const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+          if (customers.data.length === 0) continue;
+          const subs = await stripe.subscriptions.list({ customer: customers.data[0].id, status: 'active', limit: 1 });
+          const trials = await stripe.subscriptions.list({ customer: customers.data[0].id, status: 'trialing', limit: 1 });
+          if (subs.data.length > 0 || trials.data.length > 0) paidUsers.add(uid);
+        } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
+      }
+      console.log(`Paid users: ${paidUsers.size}/${uniqueUserIds.length}`);
+    } else {
+      console.warn('STRIPE_SECRET_KEY not set — skipping subscription check, processing all agents');
+      agents.forEach((a: any) => paidUsers.add(a.user_id));
+    }
+
     for (const agent of agents) {
       if (!hasTime()) { console.log('Time budget exhausted, stopping'); break; }
+
+      // Skip free users
+      if (!paidUsers.has(agent.user_id)) {
+        console.log(`Skipping agent ${agent.id}: user ${agent.user_id} is on free plan`);
+        continue;
+      }
 
       try {
         const { data: profile } = await supabase
