@@ -517,7 +517,7 @@ export default function Unibox() {
                 </div>
 
                 {/* Message Input Area */}
-                <div className="p-6">
+                <div className="px-4 py-3">
                   <form
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                     className="flex items-center gap-2 p-2 rounded-[32px] border border-white/80"
