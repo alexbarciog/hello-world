@@ -58,7 +58,7 @@ const Hero = () => {
           starts relevant conversations on LinkedIn, and books more demos, on autopilot.
         </p>
 
-        <a href="https://app.gojiberry.ai/registration" className="btn-cta text-base animate-fade-in-up" style={{ animationDelay: "240ms" }}>
+        <a href="/register" className="btn-cta text-base animate-fade-in-up" style={{ animationDelay: "240ms" }}>
           Launch your AI Agent for free
           <ArrowUpRight className="w-4 h-4" />
         </a>
