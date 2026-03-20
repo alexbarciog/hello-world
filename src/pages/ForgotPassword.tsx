@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 
 const SUPABASE_URL = "https://uwwajlezgeurnvvrvdvb.supabase.co";
 
@@ -160,7 +160,7 @@ export default function ForgotPassword() {
 
             {/* Logo */}
             <div className="flex items-center justify-center gap-2 mb-2">
-              <img src={gojiIcon} alt="Intentsly" className="w-8 h-8 object-contain" />
+              <img src={intentslyIcon} alt="Intentsly" className="w-8 h-8 object-contain" />
               <span className="text-2xl font-bold text-gray-900 tracking-tight">intentsly</span>
             </div>
 

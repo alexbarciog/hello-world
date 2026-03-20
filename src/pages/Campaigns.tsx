@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from
 "@/components/ui/dropdown-menu";
-import gojiIcon from "@/assets/gojiberry-icon.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
 import { CreateCampaignWizard } from "@/components/campaigns/CreateCampaignWizard";

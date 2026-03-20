@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 
-/* Gojiberry.ai Design System — All colors in HSL */
+/* Intentsly Design System — All colors in HSL */
 
 @layer base {
   :root {
@@ -48,7 +48,7 @@
 
     --radius: 0.75rem;
 
-    /* Gojiberry custom tokens */
+    /* Intentsly custom tokens */
     --goji-orange: 18 95% 58%;
     --goji-coral: 5 90% 65%;
     --goji-berry: 340 35% 25%;
