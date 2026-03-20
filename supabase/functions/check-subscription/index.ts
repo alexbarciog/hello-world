@@ -80,11 +80,23 @@ serve(async (req) => {
     let trialEnd = null;
 
     if (hasActiveSub) {
-      subscriptionEnd = new Date(activeSub.current_period_end * 1000).toISOString();
-      productId = activeSub.items.data[0].price.product;
-      if (activeSub.trial_end) {
-        trialEnd = new Date(activeSub.trial_end * 1000).toISOString();
-      }
+      try {
+        const endTs = activeSub.current_period_end;
+        if (typeof endTs === 'number' && endTs > 0) {
+          subscriptionEnd = new Date(endTs * 1000).toISOString();
+        }
+      } catch { /* ignore invalid date */ }
+
+      try {
+        productId = activeSub.items?.data?.[0]?.price?.product ?? null;
+      } catch { /* ignore */ }
+
+      try {
+        const trialTs = activeSub.trial_end;
+        if (typeof trialTs === 'number' && trialTs > 0) {
+          trialEnd = new Date(trialTs * 1000).toISOString();
+        }
+      } catch { /* ignore invalid date */ }
     }
 
     const { data: profile } = await supabaseClient
