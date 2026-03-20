@@ -296,7 +296,7 @@ export default function Unibox() {
             </div>
 
             {/* Conversations Scroll Area */}
-            <div className="flex-1 overflow-y-auto px-3 space-y-1 pb-6">
+            <div className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4">
               {chatsLoading ? (
                 <div className="p-3 space-y-3">
                   {[...Array(5)].map((_, i) => (
