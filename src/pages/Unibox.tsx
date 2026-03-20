@@ -389,7 +389,7 @@ export default function Unibox() {
         {showMessages && (
           <section
             className={cn(
-              "hidden md:flex flex-col flex-1 h-full rounded-3xl overflow-hidden relative",
+              "hidden md:flex flex-col flex-1 h-full rounded-2xl overflow-hidden relative",
               isMobile && selectedChatId && "!flex"
             )}
             style={{
