@@ -529,7 +529,7 @@ export default function Unibox() {
                     }}
                   >
                     <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
-                      <PlusCircle className="w-5 h-5" />
+                      <PlusCircle className="w-4 h-4" />
                     </button>
                     <input
                       className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none placeholder:text-foreground/30 font-light text-sm px-2"
