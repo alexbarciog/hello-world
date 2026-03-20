@@ -273,7 +273,7 @@ export default function Unibox() {
         <div className="absolute -bottom-[5%] left-[20%] w-[30%] h-[30%] rounded-full bg-[hsl(49,100%,40%)]/10 blur-[120px]" />
       </div>
 
-      <div className="flex h-full p-3 md:p-4 gap-4">
+      <div className="flex h-full p-2 md:p-3 gap-3">
         {/* ── Sidebar: Message List ── */}
         {showChatList && (
           <section
