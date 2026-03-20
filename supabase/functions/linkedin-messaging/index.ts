@@ -283,25 +283,6 @@ async function fetchParticipantProfile(
   }
 }
 
-/* fetchLastMessage removed — Unipile includes last_message in list_chats response */
-
-    const data = await res.json();
-    const items: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
-
-    if (!items.length) return null;
-
-    const msg = items[0];
-    // Normalize to a stable shape
-    return {
-      text: msg.text || msg.body || msg.content || '',
-      timestamp: msg.timestamp || msg.date || msg.created_at || null,
-      is_sender: msg.is_sender ?? false,
-    };
-  } catch (err) {
-    console.error('[enrichChat] last message fetch error:', err);
-    return null;
-  }
-}
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
