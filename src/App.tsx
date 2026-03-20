@@ -67,6 +67,10 @@ const App = () => (
             element={<AuthGuard><DashboardLayout><RedditSignals /></DashboardLayout></AuthGuard>}
           />
           <Route
+            path="/x-signals"
+            element={<AuthGuard><DashboardLayout><XSignals /></DashboardLayout></AuthGuard>}
+          />
+          <Route
             path="/unibox"
             element={<AuthGuard><DashboardLayout><Unibox /></DashboardLayout></AuthGuard>}
           />
