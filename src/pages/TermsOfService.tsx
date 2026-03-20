@@ -399,21 +399,21 @@ export default function TermsOfService() {
                 </p>
               </div>
             </a>
-            <div
-              className="rounded-2xl border border-border p-5 flex items-start gap-4"
-              style={{ background: "hsl(0 0% 99%)" }}>
-              
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "hsl(var(--goji-bg-hero))" }}>
-                
-                <Phone className="w-4 h-4 text-goji-coral" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground mb-0.5">Call us</p>
-                <p className="text-sm text-muted-foreground">(866) 241-4820</p>
-              </div>
-            </div>
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
           </div>
 
           {/* Back link */}
