@@ -348,7 +348,7 @@ export default function Unibox() {
                           </div>
                         )}
                         {isFirst && (
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
