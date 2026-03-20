@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause } from "lucide-react";
+import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2 } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import HowItWorksModal from "@/components/HowItWorksModal";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +34,61 @@ const AGENT_TYPE_LABELS: Record<string, string> = {
   engagement: "Engagement",
   funding: "Funding",
 };
+
+// ── Scheduled launch times (UTC) mapped to local ─────────────────────────────
+const DAILY_LAUNCH_HOURS_UTC = [7, 9, 12, 15, 18]; // process-signal-agents at 07:00, then connection batches
+
+function NextLaunchesPopover() {
+  const now = new Date();
+  const launches = DAILY_LAUNCH_HOURS_UTC.map((hour) => {
+    const d = new Date();
+    d.setUTCHours(hour, 0, 0, 0);
+    return d;
+  });
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-md px-3 py-1.5 hover:bg-muted transition-colors">
+          <Calendar className="w-3.5 h-3.5" />Next launches
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64 p-0">
+        <div className="px-4 py-3 border-b border-border">
+          <p className="text-sm font-semibold text-foreground">Today's Launches</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {now.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+          </p>
+        </div>
+        <div className="p-2 space-y-0.5">
+          {launches.map((launch, i) => {
+            const isPast = now > launch;
+            const isNext = !isPast && (i === 0 || now > launches[i - 1]);
+            return (
+              <div
+                key={i}
+                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs ${
+                  isNext ? "bg-primary/10 text-primary font-semibold" : isPast ? "text-muted-foreground" : "text-foreground"
+                }`}
+              >
+                {isPast ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                ) : (
+                  <Clock className={`w-3.5 h-3.5 shrink-0 ${isNext ? "text-primary" : "text-muted-foreground"}`} />
+                )}
+                <span>
+                  {launch.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                {isPast && <span className="ml-auto text-[10px] text-muted-foreground">Done</span>}
+                {isNext && <span className="ml-auto text-[10px] font-semibold text-primary">Next</span>}
+              </div>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // ── Mobile agent card ────────────────────────────────────────────────────────
 function AgentCard({
@@ -350,9 +410,7 @@ export default function Signals() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors">
-                        <Calendar className="w-3.5 h-3.5" />Next launches
-                      </button>
+                      <NextLaunchesPopover />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="text-gray-400 hover:text-gray-600 p-1">
