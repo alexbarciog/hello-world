@@ -8,8 +8,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  ResponsiveContainer } from
+"recharts";
 import {
   MessageSquare,
   ChevronDown,
@@ -24,38 +24,38 @@ import {
   Check,
   Zap,
   Sparkles,
-  ArrowRight,
-} from "lucide-react";
+  ArrowRight } from
+"lucide-react";
 import { clearOnboardingSession } from "@/components/OnboardingGuard";
 import { supabase } from "@/integrations/supabase/client";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-function HeatDots({ count }: { count: number }) {
+function HeatDots({ count }: {count: number;}) {
   return (
     <div className="flex items-center gap-0.5">
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="text-sm" style={{ opacity: i < count ? 1 : 0.2 }}>🔥</span>
-      ))}
-    </div>
-  );
+      {[0, 1, 2].map((i) =>
+      <span key={i} className="text-sm" style={{ opacity: i < count ? 1 : 0.2 }}>🔥</span>
+      )}
+    </div>);
+
 }
 
-function LeadAvatar({ initials, color }: { initials: string; color: string }) {
+function LeadAvatar({ initials, color }: {initials: string;color: string;}) {
   return (
     <div
       className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-md"
-      style={{ background: color }}
-    >
+      style={{ background: color }}>
+      
       {initials}
-    </div>
-  );
+    </div>);
+
 }
 
 const avatarColors = [
-  "hsl(var(--md-primary))",
-  "hsl(var(--md-secondary))",
-  "hsl(var(--md-tertiary))",
-];
+"hsl(var(--md-primary))",
+"hsl(var(--md-secondary))",
+"hsl(var(--md-tertiary))"];
+
 
 // ─── Metric Card ──────────────────────────────────────────────────────────────
 interface MetricCardProps {
@@ -75,24 +75,24 @@ function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: Met
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
           {icon}
         </div>
-        {trend && (
-          <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-            trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"
-          }`}>
+        {trend &&
+        <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+        trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"}`
+        }>
             {trendUp ? "↑" : ""} {trend}
           </span>
-        )}
+        }
       </div>
       <div>
         <h3 className="text-md-on-surface-variant font-light text-[10px] uppercase tracking-[0.2em] mb-1">{title}</h3>
-        {loading ? (
-          <div className="h-8 w-12 bg-md-surface-container rounded animate-pulse" />
-        ) : (
-          <div className="text-3xl font-light tracking-tight text-md-on-surface font-headline">{value}</div>
-        )}
+        {loading ?
+        <div className="h-8 w-12 bg-md-surface-container rounded animate-pulse" /> :
+
+        <div className="text-3xl font-light tracking-tight text-md-on-surface font-headline">{value}</div>
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export default function Dashboard() {
       const firstName = user.user_metadata?.first_name || user.user_metadata?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
       return { firstName, email: user.email || "" };
     },
-    staleTime: 60_000,
+    staleTime: 60_000
   });
 
   // ── Profile (LinkedIn check) ──
@@ -125,44 +125,44 @@ export default function Dashboard() {
       const { data } = await supabase.from("profiles").select("unipile_account_id, onboarding_complete").eq("user_id", user.id).single();
       return {
         linkedinConnected: Boolean(data?.unipile_account_id),
-        onboardingComplete: data?.onboarding_complete ?? false,
+        onboardingComplete: data?.onboarding_complete ?? false
       };
     },
-    staleTime: 30_000,
+    staleTime: 30_000
   });
 
   // ── Active signals count ──
   const { data: signalData, isLoading: signalLoading } = useQuery({
     queryKey: ["dashboard-signals"],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from("signal_agents")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active");
+      const { count, error } = await supabase.
+      from("signal_agents").
+      select("id", { count: "exact", head: true }).
+      eq("status", "active");
       if (error) throw error;
       return { activeCount: count ?? 0 };
     },
-    staleTime: 30_000,
+    staleTime: 30_000
   });
 
   // ── Campaigns stats ──
   const { data: campaignStats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-campaign-stats"],
     queryFn: async () => {
-      const { data: campaigns, error } = await supabase
-        .from("campaigns")
-        .select("id, status, invitations_sent, messages_sent, icp_job_titles, icp_industries");
+      const { data: campaigns, error } = await supabase.
+      from("campaigns").
+      select("id, status, invitations_sent, messages_sent, icp_job_titles, icp_industries");
       if (error) throw error;
       const all = campaigns ?? [];
       const leadsEngaged = all.reduce((s, c) => s + (c.invitations_sent ?? 0), 0);
       const conversations = all.reduce((s, c) => s + (c.messages_sent ?? 0), 0);
       const totalCampaigns = all.length;
-      const activeCampaigns = all.filter(c => c.status === "active").length;
-      const hasIcp = all.some(c => (c.icp_job_titles?.length ?? 0) > 0 || (c.icp_industries?.length ?? 0) > 0);
-      const hasLaunched = all.some(c => c.status === "active" && (c.invitations_sent ?? 0) > 0);
+      const activeCampaigns = all.filter((c) => c.status === "active").length;
+      const hasIcp = all.some((c) => (c.icp_job_titles?.length ?? 0) > 0 || (c.icp_industries?.length ?? 0) > 0);
+      const hasLaunched = all.some((c) => c.status === "active" && (c.invitations_sent ?? 0) > 0);
       return { leadsEngaged, conversations, totalCampaigns, activeCampaigns, hasIcp, hasLaunched };
     },
-    staleTime: 30_000,
+    staleTime: 30_000
   });
 
   // ── Hot opportunities (leads) ──
@@ -172,14 +172,14 @@ export default function Dashboard() {
       const { data: campaigns } = await supabase.from("campaigns").select("id");
       if (!campaigns || campaigns.length === 0) return { count: 0 };
       const campaignIds = campaigns.map((c) => c.id);
-      const { count, error } = await supabase
-        .from("leads")
-        .select("id", { count: "exact", head: true })
-        .in("campaign_id", campaignIds);
+      const { count, error } = await supabase.
+      from("leads").
+      select("id", { count: "exact", head: true }).
+      in("campaign_id", campaignIds);
       if (error) throw error;
       return { count: count ?? 0 };
     },
-    staleTime: 30_000,
+    staleTime: 30_000
   });
 
   // ── Real leads for "Latest Hot Leads" (contacts table as primary) ──
@@ -187,33 +187,33 @@ export default function Dashboard() {
     queryKey: ["dashboard-latest-leads"],
     queryFn: async () => {
       // Try contacts first (user's main data)
-      const { data: contacts, error: cErr } = await supabase
-        .from("contacts")
-        .select("first_name, last_name, title, company, ai_score, relevance_tier")
-        .order("imported_at", { ascending: false })
-        .limit(5);
+      const { data: contacts, error: cErr } = await supabase.
+      from("contacts").
+      select("first_name, last_name, title, company, ai_score, relevance_tier").
+      order("imported_at", { ascending: false }).
+      limit(5);
       if (!cErr && contacts && contacts.length > 0) {
-        return contacts.map(c => ({
+        return contacts.map((c) => ({
           name: [c.first_name, c.last_name].filter(Boolean).join(" "),
           title: c.title,
           company: c.company,
-          score: c.ai_score ?? 0,
+          score: c.ai_score ?? 0
         }));
       }
       // Fallback to leads table
       const { data: campaigns } = await supabase.from("campaigns").select("id");
       if (!campaigns || campaigns.length === 0) return [];
       const campaignIds = campaigns.map((c) => c.id);
-      const { data, error } = await supabase
-        .from("leads")
-        .select("name, title, company, score")
-        .in("campaign_id", campaignIds)
-        .order("created_at", { ascending: false })
-        .limit(5);
+      const { data, error } = await supabase.
+      from("leads").
+      select("name, title, company, score").
+      in("campaign_id", campaignIds).
+      order("created_at", { ascending: false }).
+      limit(5);
       if (error) throw error;
       return data ?? [];
     },
-    staleTime: 30_000,
+    staleTime: 30_000
   });
 
   // ── Latest replies from LinkedIn messaging ──
@@ -223,40 +223,40 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return [];
       const res = await supabase.functions.invoke("linkedin-messaging", {
-        body: { action: "list_chats", limit: 5 },
+        body: { action: "list_chats", limit: 5 }
       });
       if (res.error) return [];
       const items = res.data?.items ?? [];
       return items.map((chat: Record<string, unknown>) => {
-        const attendees = (chat.attendees as Array<{ display_name?: string; profile_picture_url?: string }>) ?? [];
+        const attendees = chat.attendees as Array<{display_name?: string;profile_picture_url?: string;}> ?? [];
         const attendee = attendees[0];
-        const lastMsg = chat.last_message as { text?: string; timestamp?: string; is_sender?: boolean } | undefined;
+        const lastMsg = chat.last_message as {text?: string;timestamp?: string;is_sender?: boolean;} | undefined;
         return {
           name: attendee?.display_name ?? "LinkedIn User",
           avatar_url: attendee?.profile_picture_url ?? null,
           text: lastMsg?.text ?? "",
           timestamp: lastMsg?.timestamp ?? "",
           is_sender: lastMsg?.is_sender ?? false,
-          chat_id: chat.id as string,
+          chat_id: chat.id as string
         };
-      }).filter((r: { is_sender: boolean }) => !r.is_sender).slice(0, 4);
+      }).filter((r: {is_sender: boolean;}) => !r.is_sender).slice(0, 4);
     },
     staleTime: 60_000,
-    enabled: Boolean(profileData?.linkedinConnected),
+    enabled: Boolean(profileData?.linkedinConnected)
   });
 
   // ── Contacts for chart data ──
   const { data: chartContacts } = useQuery({
     queryKey: ["dashboard-chart-contacts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("contacts")
-        .select("imported_at")
-        .order("imported_at", { ascending: true });
+      const { data, error } = await supabase.
+      from("contacts").
+      select("imported_at").
+      order("imported_at", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
-    staleTime: 60_000,
+    staleTime: 60_000
   });
 
   // ── Generate chart from real contacts ──
@@ -264,7 +264,7 @@ export default function Dashboard() {
     const result = [];
     const now = new Date();
     const counts: Record<string, number> = {};
-    (chartContacts ?? []).forEach(c => {
+    (chartContacts ?? []).forEach((c) => {
       const d = new Date(c.imported_at);
       const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       counts[key] = (counts[key] || 0) + 1;
@@ -290,20 +290,20 @@ export default function Dashboard() {
 
   // ── Quick Start steps (dynamic) ──
   const quickStartSteps = [
-    { label: "Connect LinkedIn", desc: linkedinConnected ? "Profile synced & verified" : "Required to start outreach", done: linkedinConnected },
-    { label: "Create your first campaign", desc: totalCampaigns > 0 ? `${totalCampaigns} campaign(s) created` : "Set up outreach sequence", done: totalCampaigns > 0 },
-    { label: "Add your ICP", desc: hasIcp ? "Customer profile defined" : "Define ideal customer profile", done: hasIcp },
-    { label: "Launch first outreach", desc: hasLaunched ? "Outreach is live!" : "Start engaging leads", done: hasLaunched },
-  ];
+  { label: "Connect LinkedIn", desc: linkedinConnected ? "Profile synced & verified" : "Required to start outreach", done: linkedinConnected },
+  { label: "Create your first campaign", desc: totalCampaigns > 0 ? `${totalCampaigns} campaign(s) created` : "Set up outreach sequence", done: totalCampaigns > 0 },
+  { label: "Add your ICP", desc: hasIcp ? "Customer profile defined" : "Define ideal customer profile", done: hasIcp },
+  { label: "Launch first outreach", desc: hasLaunched ? "Outreach is live!" : "Start engaging leads", done: hasLaunched }];
+
 
   const getStartedSteps = [
-    { label: "Connect your LinkedIn account", done: linkedinConnected },
-    { label: "Create your first campaign", done: totalCampaigns > 0 },
-    { label: "Add your ICP (Ideal Customer Profile)", done: hasIcp },
-    { label: "Launch your first outreach sequence", done: hasLaunched },
-  ];
+  { label: "Connect your LinkedIn account", done: linkedinConnected },
+  { label: "Create your first campaign", done: totalCampaigns > 0 },
+  { label: "Add your ICP (Ideal Customer Profile)", done: hasIcp },
+  { label: "Launch your first outreach sequence", done: hasLaunched }];
 
-  const completedSteps = getStartedSteps.filter(s => s.done).length;
+
+  const completedSteps = getStartedSteps.filter((s) => s.done).length;
 
   return (
     <div className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body bg-white">
@@ -321,22 +321,22 @@ export default function Dashboard() {
           <button
             onClick={() => navigate("/signals")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all shadow-sm ${
-              activeSignals > 0
-                ? "text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50"
-                : "text-red-500 border-red-200/60 bg-red-50/80 backdrop-blur-sm hover:bg-red-50"
-            }`}
-          >
+            activeSignals > 0 ?
+            "text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50" :
+            "text-red-500 border-red-200/60 bg-red-50/80 backdrop-blur-sm hover:bg-red-50"}`
+            }>
+            
             <span className={`w-1.5 h-1.5 rounded-full ${activeSignals > 0 ? "bg-emerald-400" : "bg-red-400"}`} />
             {activeSignals} Active Signal(s)
           </button>
           <button
             onClick={() => navigate("/settings?tab=linkedin")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all shadow-sm ${
-              linkedinConnected
-                ? "text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50"
-                : "text-orange-600 border-orange-200/60 bg-orange-50/80 backdrop-blur-sm hover:bg-orange-50"
-            }`}
-          >
+            linkedinConnected ?
+            "text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50" :
+            "text-orange-600 border-orange-200/60 bg-orange-50/80 backdrop-blur-sm hover:bg-orange-50"}`
+            }>
+            
             {linkedinConnected ? <Check className="w-3.5 h-3.5" /> : <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
             {linkedinConnected ? "LinkedIn Connected" : "Connect LinkedIn"}
           </button>
@@ -345,9 +345,9 @@ export default function Dashboard() {
             className="text-md-on-primary px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-transform duration-300"
             style={{
               background: "var(--gradient-md-brand)",
-              boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)",
-            }}
-          >
+              boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)"
+            }}>
+            
             <Rocket className="w-4 h-4" />
             Start a campaign
           </button>
@@ -363,8 +363,8 @@ export default function Dashboard() {
           icon={<Flame className="w-5 h-5 text-md-primary" />}
           iconBg="hsla(var(--md-primary) / 0.12)"
           trend={hotOpps > 0 ? "12%" : "0%"}
-          trendUp={hotOpps > 0}
-        />
+          trendUp={hotOpps > 0} />
+        
         <MetricCard
           title="Leads Engaged"
           value={leadsEngaged}
@@ -372,8 +372,8 @@ export default function Dashboard() {
           icon={<Users className="w-5 h-5 text-md-secondary" />}
           iconBg="hsla(var(--md-secondary) / 0.12)"
           trend={leadsEngaged > 0 ? "8%" : "0%"}
-          trendUp={leadsEngaged > 0}
-        />
+          trendUp={leadsEngaged > 0} />
+        
         <MetricCard
           title="Conversations"
           value={conversations}
@@ -381,8 +381,8 @@ export default function Dashboard() {
           icon={<MessagesSquare className="w-5 h-5 text-md-tertiary" />}
           iconBg="hsla(var(--md-tertiary-fixed) / 0.3)"
           trend={conversations > 0 ? "24%" : "0%"}
-          trendUp={conversations > 0}
-        />
+          trendUp={conversations > 0} />
+        
       </div>
 
       {/* ── Main Activity Chart & Quick Start ── */}
@@ -455,10 +455,10 @@ export default function Dashboard() {
                             <span className="text-md-on-surface font-bold text-sm">{payload[0].value}</span>
                             <span className="text-md-on-surface-variant">leads</span>
                           </div>
-                        </div>
-                      );
-                    }}
-                  />
+                        </div>);
+
+                    }} />
+                  
                   <Area
                     type="monotone"
                     dataKey="leads"
@@ -467,8 +467,8 @@ export default function Dashboard() {
                     fill="url(#mdGradient)"
                     dot={false}
                     activeDot={{ r: 6, fill: "#5b3cdd", stroke: "white", strokeWidth: 2.5 }}
-                    style={{ filter: "drop-shadow(0px 4px 8px rgba(91, 60, 221, 0.2))" }}
-                  />
+                    style={{ filter: "drop-shadow(0px 4px 8px rgba(91, 60, 221, 0.2))" }} />
+                  
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -482,35 +482,35 @@ export default function Dashboard() {
             <span className="text-xs font-medium text-md-primary">{completedSteps}/{quickStartSteps.length}</span>
           </div>
           <div className="space-y-3 flex-grow">
-            {quickStartSteps.map((step) => (
-              <div
-                key={step.label}
-                className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
-                  step.done
-                    ? "bg-white/40 border-white/20 hover:bg-white/60"
-                    : "bg-white/20 border-white/10 hover:bg-white/40"
-                }`}
-              >
+            {quickStartSteps.map((step) =>
+            <div
+              key={step.label}
+              className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
+              step.done ?
+              "bg-white/40 border-white/20 hover:bg-white/60" :
+              "bg-white/20 border-white/10 hover:bg-white/40"}`
+              }>
+              
                 <div className="mt-0.5 flex-shrink-0">
-                  {step.done ? (
-                    <div className="w-5 h-5 rounded-full bg-md-primary text-white flex items-center justify-center">
+                  {step.done ?
+                <div className="w-5 h-5 rounded-full bg-md-primary text-white flex items-center justify-center">
                       <Check className="w-3 h-3" strokeWidth={3} />
-                    </div>
-                  ) : (
-                    <div className="w-5 h-5 rounded-full border-2 border-md-outline-variant bg-transparent" />
-                  )}
+                    </div> :
+
+                <div className="w-5 h-5 rounded-full border-2 border-md-outline-variant bg-transparent" />
+                }
                 </div>
                 <div>
                   <div className={`font-medium text-sm ${step.done ? "text-md-on-surface-variant line-through" : "text-md-on-surface"}`}>{step.label}</div>
                   <div className="text-[11px] font-light text-md-on-surface-variant">{step.desc}</div>
                 </div>
               </div>
-            ))}
+            )}
           </div>
           <button
             onClick={handleNewCampaign}
-            className="w-full py-2.5 mt-5 rounded-full border border-md-primary/30 text-md-primary text-sm font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
-          >
+            className="w-full py-2.5 mt-5 rounded-full border border-md-primary/30 text-md-primary text-sm font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2">
+            
             View setup guide
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -526,32 +526,32 @@ export default function Dashboard() {
             <button onClick={() => navigate("/contacts")} className="text-xs font-medium text-md-primary hover:underline">View CRM</button>
           </div>
           <div className="space-y-2">
-            {leadsLoading ? (
-              <div className="space-y-3 py-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3">
+            {leadsLoading ?
+            <div className="space-y-3 py-4">
+                {[...Array(3)].map((_, i) =>
+              <div key={i} className="flex items-center gap-3 p-3">
                     <div className="w-10 h-10 rounded-xl bg-md-surface-container animate-pulse" />
                     <div className="flex-1 space-y-2">
                       <div className="h-3 w-32 bg-md-surface-container rounded animate-pulse" />
                       <div className="h-2.5 w-24 bg-md-surface-container rounded animate-pulse" />
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (latestLeads ?? []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 gap-2">
+              )}
+              </div> :
+            (latestLeads ?? []).length === 0 ?
+            <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <Users className="w-8 h-8 text-md-outline-variant" />
                 <p className="text-sm text-md-on-surface-variant">No leads yet. Start a campaign to discover leads.</p>
-              </div>
-            ) : (
-              (latestLeads ?? []).map((lead, i) => {
-                const initials = lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-                const heat = (lead.score ?? 0) >= 80 ? 3 : (lead.score ?? 0) >= 50 ? 2 : 1;
-                return (
-                  <div
-                    key={i}
-                    className="group flex items-center justify-between p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer"
-                  >
+              </div> :
+
+            (latestLeads ?? []).map((lead, i) => {
+              const initials = lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+              const heat = (lead.score ?? 0) >= 80 ? 3 : (lead.score ?? 0) >= 50 ? 2 : 1;
+              return (
+                <div
+                  key={i}
+                  className="group flex items-center justify-between p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer">
+                  
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
@@ -567,10 +567,10 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <HeatDots count={heat} />
-                  </div>
-                );
-              })
-            )}
+                  </div>);
+
+            })
+            }
           </div>
         </div>
 
@@ -584,40 +584,40 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {repliesLoading ? (
-            <div className="space-y-3 py-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 p-3">
+          {repliesLoading ?
+          <div className="space-y-3 py-4">
+              {[...Array(3)].map((_, i) =>
+            <div key={i} className="flex items-center gap-3 p-3">
                   <div className="w-10 h-10 rounded-xl bg-md-surface-container animate-pulse" />
                   <div className="flex-1 space-y-2">
                     <div className="h-3 w-32 bg-md-surface-container rounded animate-pulse" />
                     <div className="h-2.5 w-48 bg-md-surface-container rounded animate-pulse" />
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (latestReplies ?? []).length > 0 ? (
-            <div className="space-y-2">
+            )}
+            </div> :
+          (latestReplies ?? []).length > 0 ?
+          <div className="space-y-2">
               {(latestReplies ?? []).map((reply, i) => {
-                const initials = reply.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
-                const timeAgo = reply.timestamp ? (() => {
-                  const diff = Math.floor((Date.now() - new Date(reply.timestamp).getTime()) / 1000);
-                  if (diff < 60) return `${diff}s ago`;
-                  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-                  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-                  return `${Math.floor(diff / 86400)}d ago`;
-                })() : "";
-                return (
-                  <div
-                    key={reply.chat_id || i}
-                    onClick={() => navigate("/unibox")}
-                    className="group flex items-center gap-3 p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer"
-                  >
-                    {reply.avatar_url ? (
-                      <img src={reply.avatar_url} alt={reply.name} className="w-10 h-10 rounded-xl object-cover shrink-0 shadow-md" />
-                    ) : (
-                      <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
-                    )}
+              const initials = reply.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
+              const timeAgo = reply.timestamp ? (() => {
+                const diff = Math.floor((Date.now() - new Date(reply.timestamp).getTime()) / 1000);
+                if (diff < 60) return `${diff}s ago`;
+                if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                return `${Math.floor(diff / 86400)}d ago`;
+              })() : "";
+              return (
+                <div
+                  key={reply.chat_id || i}
+                  onClick={() => navigate("/unibox")}
+                  className="group flex items-center gap-3 p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer">
+                  
+                    {reply.avatar_url ?
+                  <img src={reply.avatar_url} alt={reply.name} className="w-10 h-10 rounded-xl object-cover shrink-0 shadow-md" /> :
+
+                  <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
+                  }
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-md-on-surface text-sm">{reply.name}</span>
@@ -625,26 +625,26 @@ export default function Dashboard() {
                       </div>
                       <p className="text-xs font-light text-md-on-surface-variant truncate">{reply.text || "No message"}</p>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 gap-2">
+                  </div>);
+
+            })}
+            </div> :
+
+          <div className="flex flex-col items-center justify-center py-8 gap-2">
               <MessageSquare className="w-8 h-8 text-md-outline-variant" />
               <p className="text-sm text-md-on-surface-variant">No new replies yet</p>
             </div>
-          )}
+          }
         </div>
       </div>
 
       {/* ── Get Started panel ── */}
-      {completedSteps < getStartedSteps.length && (
-        <div className="glass-card rounded-2xl overflow-hidden mb-6">
+      {completedSteps < getStartedSteps.length &&
+      <div className="glass-card rounded-2xl overflow-hidden mb-6">
           <button
-            onClick={() => setGetStartedOpen(!getStartedOpen)}
-            className="w-full flex items-center justify-between px-5 md:px-6 py-4 transition-colors hover:bg-white/30"
-          >
+          onClick={() => setGetStartedOpen(!getStartedOpen)}
+          className="w-full flex items-center justify-between px-5 md:px-6 py-4 transition-colors hover:bg-white/30">
+          
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm" style={{ background: "var(--gradient-md-brand)" }}>
                 <Rocket className="w-4 h-4 text-white" />
@@ -654,48 +654,48 @@ export default function Dashboard() {
                 <p className="text-[11px] text-md-on-surface-variant font-light">{completedSteps} of {getStartedSteps.length} steps completed</p>
               </div>
             </div>
-            {getStartedOpen ? (
-              <ChevronDown className="w-4 h-4 text-md-on-surface-variant" />
-            ) : (
-              <ChevronUp className="w-4 h-4 text-md-on-surface-variant" />
-            )}
+            {getStartedOpen ?
+          <ChevronDown className="w-4 h-4 text-md-on-surface-variant" /> :
+
+          <ChevronUp className="w-4 h-4 text-md-on-surface-variant" />
+          }
           </button>
-          {getStartedOpen && (
-            <div className="px-5 md:px-6 pb-5 pt-1 border-t border-white/30">
+          {getStartedOpen &&
+        <div className="px-5 md:px-6 pb-5 pt-1 border-t border-white/30">
               <div className="space-y-3 mt-3">
-                {getStartedSteps.map((step) => (
-                  <div key={step.label} className="flex items-center gap-3">
+                {getStartedSteps.map((step) =>
+            <div key={step.label} className="flex items-center gap-3">
                     <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
-                      style={{
-                        background: step.done ? "hsl(var(--md-primary))" : "transparent",
-                        border: step.done ? "none" : "2px solid hsl(var(--md-outline-variant))",
-                        boxShadow: step.done ? "0 2px 8px hsla(var(--md-primary) / 0.3)" : "none",
-                      }}
-                    >
+                className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                style={{
+                  background: step.done ? "hsl(var(--md-primary))" : "transparent",
+                  border: step.done ? "none" : "2px solid hsl(var(--md-outline-variant))",
+                  boxShadow: step.done ? "0 2px 8px hsla(var(--md-primary) / 0.3)" : "none"
+                }}>
+                
                       {step.done && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
                     </div>
                     <p className={`text-sm ${step.done ? "line-through text-md-on-surface-variant" : "text-md-on-surface"}`}>
                       {step.label}
                     </p>
                   </div>
-                ))}
+            )}
               </div>
             </div>
-          )}
+        }
         </div>
-      )}
+      }
 
       {/* ── Floating button ── */}
-      <button
-        className="fixed bottom-6 right-6 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg"
-        style={{
-          background: "var(--gradient-md-brand)",
-          boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.4), 0 2px 8px hsla(0, 0%, 0%, 0.15)",
-        }}
-      >
-        <span className="text-white text-lg">🔥</span>
-      </button>
-    </div>
-  );
+      
+
+
+
+
+
+
+
+      
+    </div>);
+
 }
