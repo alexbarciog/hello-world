@@ -283,25 +283,7 @@ async function fetchParticipantProfile(
   }
 }
 
-/* ── Fetch latest message for a chat ── */
-
-async function fetchLastMessage(
-  chatId: string,
-  apiKey: string,
-  dsn: string
-): Promise<Record<string, unknown> | null> {
-  try {
-    const url = new URL(`https://${dsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`);
-    url.searchParams.set('limit', '1');
-
-    const res = await fetch(url.toString(), {
-      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
-    });
-
-    if (!res.ok) {
-      console.warn('[enrichChat] messages lookup failed:', res.status, 'for chat:', chatId);
-      return null;
-    }
+/* fetchLastMessage removed — Unipile includes last_message in list_chats response */
 
     const data = await res.json();
     const items: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
