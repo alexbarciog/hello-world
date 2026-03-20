@@ -69,7 +69,9 @@ const DEFAULT_SUBREDDITS = ["SaaS", "startups", "Entrepreneur", "smallbusiness",
 
 /* ── Page component ──────────────────────────────────────────────────── */
 export default function RedditSignals() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const sub = useSubscription();
   const [newKeyword, setNewKeyword] = useState("");
   const [newSubreddits, setNewSubreddits] = useState("");
   const [polling, setPolling] = useState(false);
