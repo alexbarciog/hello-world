@@ -223,6 +223,13 @@ export default function Signals() {
 
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
+    // Block activation on free plan
+    if (newStatus === "active" && !sub.subscribed) {
+      toast.error("Upgrade to a paid plan to activate agents", {
+        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+      });
+      return;
+    }
     await supabase
       .from("signal_agents")
       .update({ status: newStatus, ...(newStatus === "active" ? { last_launched_at: new Date().toISOString() } : {}) })
