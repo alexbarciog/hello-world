@@ -29,7 +29,7 @@ const testimonials = [
     name: "Alessandro Paladin",
     role: "Co-Founder at KubaLabs (B2B SaaS)",
     avatar: "https://framerusercontent.com/images/AGz7vm4kKfkb2Q14ZP2eXQb6U.jpeg",
-    text: "We booked 5 demos from just 30 leads found by our AI Agent. Gojiberry gave us direct founder's contact info.",
+    text: "We booked 5 demos from just 30 leads found by our AI Agent. Intentsly gave us direct founder's contact info.",
   },
   {
     name: "Amin Lams",
