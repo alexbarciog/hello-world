@@ -296,8 +296,12 @@ export default function Register() {
                   </button>
                 </form>
 
+                <p className="text-center text-xs text-muted-foreground mt-3 font-medium">
+                  ✨ 7 days free trial
+                </p>
+
                 {/* Divider */}
-                <div className="flex items-center gap-3 my-5">
+                <div className="flex items-center gap-3 my-3">
                   <div className="flex-1 border-t border-border" />
                   <span className="text-xs text-muted-foreground">Or</span>
                   <div className="flex-1 border-t border-border" />
@@ -306,41 +310,7 @@ export default function Register() {
                 {/* Google */}
                 
 
-
-
-
-
-
-
-
-
-
-
-              
-
-                {/* Trust badges */}
-                <div className="flex items-center justify-center gap-6 mt-5">
-                  
-
-
-
-
-
-                
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    7-day free trial
-                  </span>
-                </div>
-
-                <p className="text-center text-xs text-muted-foreground mt-5 font-medium">
-                  ✨ 7 days free trial
-                </p>
-
-                <p className="text-center text-sm text-muted-foreground mt-4">
+                <p className="text-center text-sm text-muted-foreground mt-3">
                   Already have an account?{" "}
                   <Link to="/login" className="font-medium text-foreground hover:underline">
                     Log in
