@@ -355,9 +355,7 @@ export default function Signals() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="flex items-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md px-3 py-1.5 hover:bg-gray-50 transition-colors">
-                        <Calendar className="w-3.5 h-3.5" />Next launches
-                      </button>
+                      <NextLaunchesPopover />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="text-gray-400 hover:text-gray-600 p-1">
