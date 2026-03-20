@@ -103,7 +103,7 @@ export default function RedditSignals() {
         .select("*")
         .eq("dismissed", false)
         .order("found_at", { ascending: false })
-        .limit(100);
+        .limit(500);
       if (error) throw error;
       return data as RedditMention[];
     },
