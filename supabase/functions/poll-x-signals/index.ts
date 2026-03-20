@@ -124,22 +124,23 @@ Deno.serve(async (req) => {
     const keywordLower = uniqueKeywords.map(k => k.toLowerCase());
 
     for (const tweet of tweets) {
-      const tweetText = (tweet.text || tweet.full_text || '').slice(0, 2000);
-      const tweetId = tweet.id || tweet.id_str || '';
+      const tweetText = (tweet.full_text || tweet.text || tweet.tweet_text || '').slice(0, 2000);
+      const tweetId = tweet.id_str || tweet.id || tweet.tweet_id || '';
       if (!tweetId) continue;
 
-      const author = tweet.author || tweet.username || tweet.screen_name || '[unknown]';
-      const authorName = tweet.author_name || tweet.name || null;
-      const url = tweet.url || `https://x.com/${author}/status/${tweetId}`;
-      const likeCount = tweet.like_count || tweet.favorite_count || 0;
-      const retweetCount = tweet.retweet_count || 0;
-      const replyCount = tweet.reply_count || 0;
+      const author = tweet.user?.screen_name || tweet.screen_name || tweet.username || tweet.author || '[unknown]';
+      const authorName = tweet.user?.name || tweet.name || tweet.author_name || null;
+      const url = tweet.url || tweet.tweet_url || `https://x.com/${author}/status/${tweetId}`;
+      const likeCount = tweet.favorite_count || tweet.like_count || tweet.likeCount || 0;
+      const retweetCount = tweet.retweet_count || tweet.retweetCount || 0;
+      const replyCount = tweet.reply_count || tweet.replyCount || 0;
 
       // Parse posted_at
       let postedAt: string | null = null;
-      if (tweet.created_at) {
+      const rawDate = tweet.created_at || tweet.createdAt || tweet.timestamp;
+      if (rawDate) {
         try {
-          postedAt = new Date(tweet.created_at).toISOString();
+          postedAt = new Date(rawDate).toISOString();
         } catch { /* ignore */ }
       }
 
