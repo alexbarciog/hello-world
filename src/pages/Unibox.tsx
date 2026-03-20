@@ -278,8 +278,8 @@ export default function Unibox() {
         {showChatList && (
           <section
             className={cn(
-              "flex flex-col h-full rounded-3xl overflow-hidden",
-              isMobile ? "w-full" : "w-full md:w-[400px]"
+              "flex flex-col h-full rounded-2xl overflow-hidden",
+              isMobile ? "w-full" : "w-full md:w-[340px]"
             )}
             style={{
               background: "rgba(255,255,255,0.4)",
