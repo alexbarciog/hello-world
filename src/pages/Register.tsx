@@ -336,7 +336,11 @@ export default function Register() {
                   </span>
                 </div>
 
-                <p className="text-center text-sm text-muted-foreground mt-6">
+                <p className="text-center text-xs text-muted-foreground mt-5 font-medium">
+                  ✨ 7 days free trial — no credit card required
+                </p>
+
+                <p className="text-center text-sm text-muted-foreground mt-4">
                   Already have an account?{" "}
                   <Link to="/login" className="font-medium text-foreground hover:underline">
                     Log in
@@ -446,7 +450,11 @@ export default function Register() {
                   </span>
                 </div>
 
-                <p className="text-center text-sm text-muted-foreground mt-6">
+                <p className="text-center text-xs text-muted-foreground mt-5 font-medium">
+                  ✨ 7 days free trial — no credit card required
+                </p>
+
+                <p className="text-center text-sm text-muted-foreground mt-4">
                   Already have an account?{" "}
                   <Link to="/login" className="font-medium text-foreground hover:underline">
                     Log in
