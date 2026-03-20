@@ -5,7 +5,7 @@ const testimonials = [
     name: "Kenny Saad",
     role: "CEO @ Vision Media",
     avatar: "https://framerusercontent.com/images/2rHJc9DRzuslWXwysrWiEmtU.jpeg",
-    text: "Gojiberry is solving the hardest problem in outbound: Finding high-intent leads, people who are already in the market, searching for what you offer, and ready to engage.",
+    text: "Intentsly is solving the hardest problem in outbound: Finding high-intent leads, people who are already in the market, searching for what you offer, and ready to engage.",
   },
   {
     name: "Stuart Brent",
