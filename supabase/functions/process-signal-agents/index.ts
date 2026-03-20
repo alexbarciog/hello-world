@@ -29,6 +29,11 @@ interface SignalsConfig {
   keywords?: Record<string, string[]>;
 }
 
+// ─── Time budget: stop processing before edge function timeout ────────────────
+const START = Date.now();
+const MAX_RUNTIME_MS = 110_000; // 110s (Supabase timeout ~120s)
+function hasTime() { return Date.now() - START < MAX_RUNTIME_MS; }
+
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -46,24 +51,20 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Accept optional agent_id to process a single agent (e.g. right after creation)
+  // Accept optional agent_id to process a single agent
   let targetAgentId: string | null = null;
   try {
     const body = await req.json();
     targetAgentId = body?.agent_id || null;
-  } catch { /* no body or invalid JSON — process all agents */ }
+  } catch { /* no body — process all agents */ }
 
   try {
-    const query = supabase
-      .from('signal_agents')
-      .select('*');
-
+    const query = supabase.from('signal_agents').select('*');
     if (targetAgentId) {
       query.eq('id', targetAgentId);
     } else {
       query.in('status', ['active', 'paused']);
     }
-
     const { data: agents, error: agentErr } = await query.limit(20);
 
     if (agentErr) throw new Error(`Failed to load agents: ${agentErr.message}`);
@@ -74,6 +75,8 @@ Deno.serve(async (req) => {
     let totalLeads = 0;
 
     for (const agent of agents) {
+      if (!hasTime()) { console.log('Time budget exhausted, stopping'); break; }
+
       try {
         const { data: profile } = await supabase
           .from('profiles')
@@ -103,86 +106,87 @@ Deno.serve(async (req) => {
         const listName = agent.leads_list_name || agent.name || 'Signal Leads';
         let agentLeads = 0;
 
-        console.log(`Agent ${agent.id}: enabled signals = [${enabled.join(', ')}]`);
+        console.log(`Agent ${agent.id}: signals=[${enabled.join(',')}]`);
 
-        // Resolve user's own LinkedIn identifier for post_engagers / profile_viewers
+        // Helper to increment results_count after each signal type
+        async function saveProgress(count: number) {
+          if (count <= 0) return;
+          agentLeads += count;
+          await supabase.from('signal_agents').update({
+            last_launched_at: new Date().toISOString(),
+            results_count: (agent.results_count || 0) + agentLeads,
+          }).eq('id', agent.id);
+        }
+
+        // Resolve user's LinkedIn ID if needed
         let userLinkedInId: string | null = null;
         if (enabled.includes('post_engagers') || enabled.includes('profile_viewers')) {
           userLinkedInId = await resolveUserLinkedInId(accountId, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (userLinkedInId) {
-            console.log(`Resolved user LinkedIn ID: ${userLinkedInId}`);
-          } else {
-            console.log(`Could not resolve user LinkedIn ID for account ${accountId}`);
-          }
         }
 
-        // ── 1. Profile Viewers ──
-        // Note: Unipile does not have a dedicated "profile viewers" endpoint.
-        // We skip this signal type as it's not supported by the API.
+        // ── 1. Profile Viewers (not supported) ──
         if (enabled.includes('profile_viewers')) {
           console.log('profile_viewers: skipped (not supported by Unipile API)');
         }
 
         // ── 2. Post Engagers ──
-        if (enabled.includes('post_engagers') && userLinkedInId) {
+        if (hasTime() && enabled.includes('post_engagers') && userLinkedInId) {
           const count = await handlePostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, userLinkedInId);
-          agentLeads += count;
+          await saveProgress(count);
         }
 
         // ── 3. Keyword Posts ──
-        if (enabled.includes('keyword_posts')) {
+        if (hasTime() && enabled.includes('keyword_posts')) {
           const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
           if (kws.length > 0) {
             const count = await handleKeywordPosts(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws);
-            agentLeads += count;
+            await saveProgress(count);
           }
         }
 
         // ── 4. Hashtag Engagement ──
-        if (enabled.includes('hashtag_engagement')) {
+        if (hasTime() && enabled.includes('hashtag_engagement')) {
           const kws = signalKeywords['hashtag_engagement'] || [];
           if (kws.length > 0) {
             const count = await handleHashtagEngagement(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws);
-            agentLeads += count;
+            await saveProgress(count);
           }
         }
 
         // ── 5. Competitor Followers ──
-        // Unipile doesn't have a company followers endpoint directly.
-        // We use people search with company name as a workaround.
-        if (enabled.includes('competitor_followers')) {
+        if (hasTime() && enabled.includes('competitor_followers')) {
           const urls = signalKeywords['competitor_followers'] || [];
           if (urls.length > 0) {
             const count = await handleCompetitorFollowers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
-            agentLeads += count;
+            await saveProgress(count);
           }
         }
 
         // ── 6. Competitor Post Engagers ──
-        if (enabled.includes('competitor_engagers')) {
+        if (hasTime() && enabled.includes('competitor_engagers')) {
           const urls = signalKeywords['competitor_engagers'] || [];
           if (urls.length > 0) {
             const count = await handleCompetitorPostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
-            agentLeads += count;
+            await saveProgress(count);
           }
         }
 
         // ── 7. Profile Engagers ──
-        if (enabled.includes('profile_engagers')) {
+        if (hasTime() && enabled.includes('profile_engagers')) {
           const urls = signalKeywords['profile_engagers'] || [];
           if (urls.length > 0) {
             const count = await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
-            agentLeads += count;
+            await saveProgress(count);
           }
         }
 
-        // Update agent metadata
+        // Final update
         await supabase.from('signal_agents').update({
           last_launched_at: new Date().toISOString(),
           results_count: (agent.results_count || 0) + agentLeads,
         }).eq('id', agent.id);
 
-        // Insert notification
+        // Notification
         if (agentLeads > 0) {
           await supabase.from('notifications').insert({
             user_id: agent.user_id,
@@ -194,7 +198,7 @@ Deno.serve(async (req) => {
         }
 
         totalLeads += agentLeads;
-        console.log(`Agent ${agent.id}: inserted ${agentLeads} leads`);
+        console.log(`Agent ${agent.id}: ${agentLeads} leads (${Math.round((Date.now() - START) / 1000)}s elapsed)`);
       } catch (e) {
         console.error(`Error processing agent ${agent.id}:`, e);
       }
@@ -215,16 +219,10 @@ Deno.serve(async (req) => {
 
 async function resolveUserLinkedInId(accountId: string, apiKey: string, dsn: string): Promise<string | null> {
   try {
-    // Use the "own profile" endpoint: GET /api/v1/users/me
     const res = await unipileGet(`/api/v1/users/me?account_id=${accountId}`, apiKey, dsn);
     if (!res.ok) {
-      console.error(`Resolve user ID: /api/v1/users/me returned ${res.status}`);
-      // Fallback: try the LinkedIn-specific endpoint
       const res2 = await unipileGet(`/api/v1/linkedin/profile/me?account_id=${accountId}`, apiKey, dsn);
-      if (!res2.ok) {
-        console.error(`Resolve user ID fallback: ${res2.status}`);
-        return null;
-      }
+      if (!res2.ok) return null;
       const data2 = await res2.json();
       return data2.provider_id || data2.public_id || data2.id || null;
     }
@@ -243,46 +241,31 @@ async function handlePostEngagers(
   icp: ICPFilters, userId: string, listName: string, agentId: string, userLinkedInId: string,
 ): Promise<number> {
   try {
-    // Correct Unipile endpoint: GET /api/v1/users/{identifier}/posts
-    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
-    if (!postsRes.ok) {
-      console.error(`User posts (${userLinkedInId}): ${postsRes.status}`);
-      return 0;
-    }
+    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
+    if (!postsRes.ok) { await postsRes.text(); return 0; }
     const postsData = await postsRes.json();
-    const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-
-    console.log(`post_engagers: found ${posts.length} user posts`);
+    const posts = (postsData.items || postsData.posts || []).slice(0, 3);
 
     let inserted = 0;
     for (const post of posts) {
-      await delay(1500);
-      // Use social_id for reactions endpoint (more reliable per Unipile docs)
+      if (!hasTime()) break;
+      await delay(800);
       const postId = post.social_id || post.id || post.provider_id;
       if (!postId) continue;
 
-      // Correct Unipile endpoint: GET /api/v1/posts/{post_id}/reactions
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
-      if (!reactionsRes.ok) {
-        console.error(`Post reactions for ${postId}: ${reactionsRes.status}`);
-        continue;
-      }
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=15`, apiKey, dsn);
+      if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 15);
-
-      console.log(`post_engagers: post ${postId} has ${engagers.length} reactions`);
+      const engagers = (reactionsData.items || []).slice(0, 10);
 
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
       const postText = post.text || post.commentary || '';
       const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
 
       for (const engager of engagers) {
-        await delay(500);
-        // Reactions return author object with profile data
+        if (!hasTime()) break;
         const profile = engager.author || engager;
         if (!profile) continue;
-
-        // If we need more profile data, fetch it
         const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
         if (!fullProfile) continue;
 
@@ -307,113 +290,88 @@ async function handleKeywordPosts(
   let inserted = 0;
   const allPosts: any[] = [];
 
+  // Fetch all keyword searches with minimal delay
   for (const keyword of keywords.slice(0, 5)) {
-    await delay(2000);
+    if (!hasTime()) break;
+    await delay(800);
     try {
-      // Same search endpoint as discover-leads (verified working)
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
         headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week' }),
       });
-      if (!res.ok) {
-        console.error(`Keyword search "${keyword}": ${res.status}`);
-        continue;
-      }
+      if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
       const items = (data.items || data.results || []).slice(0, 10);
-      console.log(`keyword_posts "${keyword}": found ${items.length} posts`);
-      for (const item of items) {
-        allPosts.push({ ...item, _keyword: keyword });
-      }
+      console.log(`keyword_posts "${keyword}": ${items.length} posts`);
+      for (const item of items) allPosts.push({ ...item, _keyword: keyword });
     } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
   }
 
-  // Get top 10 posts by engagement
+  // Get top 8 posts by engagement
   const topPosts = allPosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 10);
-
-  console.log(`keyword_posts: top ${topPosts.length} posts to process`);
+    .slice(0, 8);
 
   for (const post of topPosts) {
-    await delay(1500);
+    if (!hasTime()) break;
+    await delay(300);
 
-    // Log post structure to understand available fields
-    console.log(`keyword_posts: post keys = ${Object.keys(post).join(', ')}`);
-    if (post.author) console.log(`keyword_posts: author keys = ${Object.keys(post.author).join(', ')}`);
-    if (post.actor) console.log(`keyword_posts: actor keys = ${Object.keys(post.actor).join(', ')}`);
-
-    // Try multiple author field locations, but do not fetch profiles by LinkedIn author ID.
-    // Unipile search often returns LinkedIn/provider IDs here that are not valid for /users/{id}.
     const authorData = post.author || post.actor || post.author_detail || null;
     const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
 
-    let profile: any = null;
+    if (!authorData) continue;
 
-    if (authorData) {
-      const name = authorData.first_name || authorData.name || authorData.title || authorData.headline || post.author_name || post.actor_name || '';
-      const nameParts = name.split(' ').filter(Boolean);
-      profile = {
-        first_name: authorData.first_name || nameParts[0] || 'Unknown',
-        last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
-        headline: authorData.headline || authorData.occupation || authorData.title || post.author_headline || null,
-        industry: authorData.industry || null,
-        location: authorData.location || authorData.geo_location || null,
-        company: authorData.company || authorData.current_company?.name || authorData.company_name || null,
-        public_id: authorData.public_identifier || authorData.public_id || authorData.vanity_name || authorId,
-        linkedin_url: authorData.profile_url || authorData.public_profile_url || authorData.url || (authorData.vanity_name ? `https://www.linkedin.com/in/${authorData.vanity_name}` : null),
-        provider_id: authorData.provider_id || authorId,
-      };
-      console.log(`keyword_posts: built profile from inline data: ${profile.first_name} ${profile.last_name || ''} — ${profile.headline || 'no headline'}`);
-    } else {
-      console.log(`keyword_posts: skipping post without inline author data (${authorId || 'no author id'})`);
-      continue;
-    }
-
-    if (!profile) continue;
+    const name = authorData.first_name || authorData.name || authorData.title || authorData.headline || '';
+    const nameParts = name.split(' ').filter(Boolean);
+    const profile: any = {
+      first_name: authorData.first_name || nameParts[0] || 'Unknown',
+      last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
+      headline: authorData.headline || authorData.occupation || authorData.title || null,
+      industry: authorData.industry || null,
+      location: authorData.location || authorData.geo_location || null,
+      company: authorData.company || authorData.current_company?.name || authorData.company_name || null,
+      public_id: authorData.public_identifier || authorData.public_id || authorData.vanity_name || authorId,
+      linkedin_url: authorData.profile_url || authorData.public_profile_url || authorData.url || (authorData.vanity_name ? `https://www.linkedin.com/in/${authorData.vanity_name}` : null),
+      provider_id: authorData.provider_id || authorId,
+    };
 
     const match = scoreProfileAgainstICP(profile, icp);
-    const hl = profile.headline || profile.title || '';
-    if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`keyword_posts: REJECTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); continue; }
+    const hl = profile.headline || '';
+    if (!matchesTitleOrIndustry(match, icp, hl)) continue;
     if (isExcluded(profile, icp.excludeKeywords)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
     const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl, icp);
-    if (ok) { inserted++; console.log(`keyword_posts: ACCEPTED author "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
+    if (ok) { inserted++; console.log(`keyword_posts: +1 "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
 
-    // ── Also scan engagers (reactions) on this post ──
-    const postId = post.social_id || post.id || post.provider_id;
-    if (postId) {
-      try {
-        await delay(1500);
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
-        if (reactionsRes.ok) {
-          const reactionsData = await reactionsRes.json();
-          const engagers = (reactionsData.items || []).slice(0, 15);
-          console.log(`keyword_posts: post ${postId} has ${engagers.length} engagers to check`);
-
-          for (const engager of engagers) {
-            await delay(500);
-            const engagerProfile = engager.author || engager;
-            const fullEngager = await fetchProfileIfNeeded(engagerProfile, accountId, apiKey, dsn);
-            if (!fullEngager) continue;
-
-            const eMatch = scoreProfileAgainstICP(fullEngager, icp);
-            const eHl = fullEngager.headline || fullEngager.title || '';
-            if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
-            if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
-
-            const eSignal = `Engaged with post about "${post._keyword}"`;
-            const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
-            if (eOk) { inserted++; console.log(`keyword_posts: ACCEPTED engager "${fullEngager.first_name || ''} ${fullEngager.last_name || ''}" (${eHl})`); }
-          }
-        } else {
-          console.log(`keyword_posts: reactions fetch for ${postId}: ${reactionsRes.status}`);
-          await reactionsRes.text();
-        }
-      } catch (e) { console.error('keyword_posts engager scan:', e); }
+    // Scan engagers on top 3 posts only (to save time)
+    if (inserted <= 3) {
+      const postId = post.social_id || post.id || post.provider_id;
+      if (postId && hasTime()) {
+        try {
+          await delay(500);
+          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+          if (reactionsRes.ok) {
+            const reactionsData = await reactionsRes.json();
+            const engagers = (reactionsData.items || []).slice(0, 8);
+            for (const engager of engagers) {
+              if (!hasTime()) break;
+              const engagerProfile = engager.author || engager;
+              const fullEngager = await fetchProfileIfNeeded(engagerProfile, accountId, apiKey, dsn);
+              if (!fullEngager) continue;
+              const eMatch = scoreProfileAgainstICP(fullEngager, icp);
+              const eHl = fullEngager.headline || fullEngager.title || '';
+              if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
+              if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
+              const eSignal = `Engaged with post about "${post._keyword}"`;
+              const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
+              if (eOk) inserted++;
+            }
+          } else { await reactionsRes.text(); }
+        } catch (e) { console.error('keyword engager scan:', e); }
+      }
     }
   }
   return inserted;
@@ -426,49 +384,44 @@ async function handleHashtagEngagement(
   let inserted = 0;
   const allPosts: any[] = [];
 
-  for (let tag of hashtags.slice(0, 5)) {
+  for (let tag of hashtags.slice(0, 3)) {
+    if (!hasTime()) break;
     if (!tag.startsWith('#')) tag = `#${tag}`;
-    await delay(2000);
+    await delay(800);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
         headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ api: 'classic', category: 'posts', keywords: tag, date_posted: 'past_week' }),
       });
-      if (!res.ok) continue;
+      if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 10);
-      console.log(`hashtag "${tag}": found ${items.length} posts`);
-      for (const item of items) {
-        allPosts.push({ ...item, _hashtag: tag });
-      }
-    } catch (e) { console.error(`Hashtag search "${tag}":`, e); }
+      const items = (data.items || data.results || []).slice(0, 8);
+      console.log(`hashtag "${tag}": ${items.length} posts`);
+      for (const item of items) allPosts.push({ ...item, _hashtag: tag });
+    } catch (e) { console.error(`Hashtag "${tag}":`, e); }
   }
 
   const topPosts = allPosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 10);
+    .slice(0, 5);
 
-  // For hashtag, get engagers (reactors) not just authors
   for (const post of topPosts) {
-    await delay(1500);
+    if (!hasTime()) break;
+    await delay(500);
     const postId = post.social_id || post.id || post.provider_id;
     if (!postId) continue;
 
     try {
-      // Correct endpoint: /api/v1/posts/{post_id}/reactions
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
-      if (!reactionsRes.ok) {
-        console.error(`Hashtag reactions for ${postId}: ${reactionsRes.status}`);
-        continue;
-      }
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+      if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 10);
+      const engagers = (reactionsData.items || []).slice(0, 8);
 
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
       for (const engager of engagers) {
-        await delay(500);
+        if (!hasTime()) break;
         const profile = engager.author || engager;
         const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
         if (!fullProfile) continue;
@@ -493,33 +446,27 @@ async function handleCompetitorFollowers(
 ): Promise<number> {
   let inserted = 0;
 
-  // Unipile doesn't have a direct "company followers" endpoint.
-  // Workaround: search for people who work at / are associated with the competitor company.
   for (const url of urls.slice(0, 3)) {
-    await delay(2000);
+    if (!hasTime()) break;
+    await delay(800);
     const companyName = extractCompanyName(url);
     if (!companyName) continue;
 
-    console.log(`competitor_followers: searching people associated with "${companyName}"`);
+    console.log(`competitor_followers: searching "${companyName}"`);
 
     try {
-      // Use people search with company name as keyword
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
         headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName }),
       });
-      if (!res.ok) {
-        console.error(`Competitor people search "${companyName}": ${res.status}`);
-        continue;
-      }
+      if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const people = (data.items || data.results || []).slice(0, 20);
-
-      console.log(`competitor_followers "${companyName}": found ${people.length} people`);
+      const people = (data.items || data.results || []).slice(0, 15);
+      console.log(`competitor_followers "${companyName}": ${people.length} people`);
 
       for (const person of people) {
-        await delay(500);
+        if (!hasTime()) break;
         const profile = {
           ...person,
           title: person.headline || person.title || null,
@@ -548,39 +495,34 @@ async function handleCompetitorPostEngagers(
 ): Promise<number> {
   let inserted = 0;
 
-  for (const url of urls.slice(0, 3)) {
-    await delay(2000);
+  for (const url of urls.slice(0, 2)) {
+    if (!hasTime()) break;
+    await delay(800);
     const companyId = extractLinkedInId(url);
     const companyName = extractCompanyName(url);
     if (!companyId) continue;
 
     try {
-      // Correct Unipile endpoint: GET /api/v1/users/{identifier}/posts?is_company=true
-      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=5`, apiKey, dsn);
-      if (!postsRes.ok) {
-        console.error(`Competitor posts for ${companyId}: ${postsRes.status}`);
-        continue;
-      }
+      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=3`, apiKey, dsn);
+      if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-
-      console.log(`competitor_engagers "${companyName}": found ${posts.length} posts`);
+      const posts = (postsData.items || postsData.posts || []).slice(0, 3);
 
       for (const post of posts) {
-        await delay(1500);
+        if (!hasTime()) break;
+        await delay(500);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        // Correct endpoint: /api/v1/posts/{post_id}/reactions
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
-        if (!reactionsRes.ok) continue;
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+        if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 10);
+        const engagers = (reactionsData.items || []).slice(0, 8);
 
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
         for (const engager of engagers) {
-          await delay(500);
+          if (!hasTime()) break;
           const profile = engager.author || engager;
           const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
           if (!fullProfile) continue;
@@ -607,19 +549,16 @@ async function handleProfileEngagers(
   let inserted = 0;
 
   for (const url of profileUrls.slice(0, 3)) {
-    await delay(2000);
+    if (!hasTime()) break;
+    await delay(800);
     const profileId = extractLinkedInId(url);
     if (!profileId) continue;
 
     try {
-      // Correct Unipile endpoint: GET /api/v1/users/{identifier}/posts
-      const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
-      if (!postsRes.ok) {
-        console.error(`Profile engagers posts for ${profileId}: ${postsRes.status}`);
-        continue;
-      }
+      const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
+      if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
+      const posts = (postsData.items || postsData.posts || []).slice(0, 3);
 
       let profileName = profileId;
       try {
@@ -627,26 +566,24 @@ async function handleProfileEngagers(
         if (profRes.ok) {
           const profData = await profRes.json();
           profileName = [profData.first_name, profData.last_name].filter(Boolean).join(' ') || profileId;
-        }
+        } else { await profRes.text(); }
       } catch (_) { /* fallback */ }
 
-      console.log(`profile_engagers "${profileName}": found ${posts.length} posts`);
-
       for (const post of posts) {
-        await delay(1500);
+        if (!hasTime()) break;
+        await delay(500);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        // Correct endpoint: /api/v1/posts/{post_id}/reactions
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=20`, apiKey, dsn);
-        if (!reactionsRes.ok) continue;
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+        if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 10);
+        const engagers = (reactionsData.items || []).slice(0, 8);
 
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
         for (const engager of engagers) {
-          await delay(500);
+          if (!hasTime()) break;
           const profile = engager.author || engager;
           const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
           if (!fullProfile) continue;
@@ -699,7 +636,6 @@ function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
   return { titleMatch, industryMatch, locationMatch, score: Math.min(100, score), matchedFields };
 }
 
-// Buying-intent titles: decision makers, budget holders, founders
 const BUYING_INTENT_KEYWORDS = [
   'ceo', 'cto', 'coo', 'cfo', 'cmo', 'cro', 'cpo', 'cio',
   'founder', 'co-founder', 'cofounder', 'owner', 'partner',
@@ -710,7 +646,6 @@ const BUYING_INTENT_KEYWORDS = [
   'svp', 'evp', 'avp',
 ];
 
-// Clearly irrelevant individual contributor titles to reject
 const REJECT_TITLES = [
   'software developer', 'software engineer', 'frontend developer', 'backend developer',
   'full stack developer', 'fullstack developer', 'web developer', 'mobile developer',
@@ -732,30 +667,18 @@ function isClearlyIrrelevant(headline: string): boolean {
   return REJECT_TITLES.some((kw) => h.includes(kw));
 }
 
-// Returns relevance tier: 'hot' | 'warm' | 'cold' | null (null = reject)
 function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
   const hl = headline || '';
-  
-  // Always reject clearly irrelevant individual contributors
   if (isClearlyIrrelevant(hl)) return null;
-  
-  // HOT: exact ICP title match OR buying intent + industry match
   if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
   if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
-  
-  // WARM: buying intent but no industry match, OR industry match with non-trivial title
   if (hasBuyingIntent(hl)) return 'warm';
   if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
-  
-  // COLD: has a title that's not rejected — just engagement signal, no clear ICP fit
   if (hl.length > 5) return 'cold';
-  
-  // No title info at all — accept as cold if we have no filters, otherwise reject
   if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
   return null;
 }
 
-// Backward compat wrapper used by all signal handlers
 function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: string): boolean {
   return classifyContact(match, icp, headline) !== null;
 }
@@ -784,7 +707,6 @@ function normalizeText(value: string): string {
 // ─── Contact Insertion ────────────────────────────────────────────────────────
 
 async function ensureList(supabase: any, userId: string, listName: string, agentId: string): Promise<string | null> {
-  // Check if list already exists for this user+name
   const { data: existing } = await supabase
     .from('lists')
     .select('id')
@@ -794,7 +716,6 @@ async function ensureList(supabase: any, userId: string, listName: string, agent
 
   if (existing && existing.length > 0) return existing[0].id;
 
-  // Create new list
   const { data: created, error } = await supabase
     .from('lists')
     .insert({ user_id: userId, name: listName, source_agent_id: agentId })
@@ -827,7 +748,6 @@ async function insertContact(
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
 
-  // Determine relevance tier using actual ICP
   const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] };
   const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
 
@@ -859,14 +779,10 @@ async function insertContact(
 
   if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
 
-  // Associate contact with list via junction table
   if (inserted?.id && listName) {
     const listId = await ensureList(supabase, userId, listName, agentId);
     if (listId) {
-      await supabase.from('contact_lists').insert({
-        contact_id: inserted.id,
-        list_id: listId,
-      });
+      await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId });
     }
   }
 
@@ -880,17 +796,13 @@ function unipileGet(path: string, apiKey: string, dsn: string) {
 }
 
 async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
-  // If item already has sufficient profile data, use it directly
   if (item.first_name && (item.headline || item.title)) return item;
-
-  // Try to get identifier from various fields
   const id = item.provider_id || item.id || item.public_id || item.public_identifier || item.author_id;
-  if (!id) return item.first_name ? item : null; // Return partial data if we have at least a name
+  if (!id) return item.first_name ? item : null;
 
   try {
-    // Use the same profile endpoint that works in discover-leads
     const res = await unipileGet(`/api/v1/linkedin/profile/${id}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) return item.first_name ? item : null;
+    if (!res.ok) { await res.text(); return item.first_name ? item : null; }
     return await res.json();
   } catch { return item.first_name ? item : null; }
 }
@@ -906,7 +818,6 @@ function extractCompanyName(url: string): string | null {
   if (!url) return null;
   const id = extractLinkedInId(url);
   if (!id) return null;
-  // Convert URL slug to readable name: "my-company-name" → "My Company Name"
   return id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -914,10 +825,16 @@ function extractCompanyName(url: string): string | null {
 
 function delay(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 
-function jsonResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+function jsonResponse(data: any) {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }
 
 function errorResponse(message: string) {
-  return new Response(JSON.stringify({ error: message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ error: message }), {
+    status: 500,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
 }
