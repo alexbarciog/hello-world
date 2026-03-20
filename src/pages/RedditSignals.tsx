@@ -244,6 +244,19 @@ export default function RedditSignals() {
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
+      {/* Free plan banner */}
+      {!sub.loading && !sub.subscribed && (
+        <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-900 font-medium">
+            Reddit monitoring is paused on the Free plan.{" "}
+            <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
+              Start your free trial
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
