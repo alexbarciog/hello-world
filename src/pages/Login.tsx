@@ -104,7 +104,8 @@ export default function Login() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`${inputCls} pr-11`}
+                  className={`${inputCls} pr-11 [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden`}
+                  autoComplete="current-password"
                   required />
                 
                 <button
