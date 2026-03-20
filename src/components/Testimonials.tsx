@@ -23,7 +23,7 @@ const testimonials = [
     name: "Nathan Amram",
     role: "Growth Automation Manager @Mindflow",
     avatar: "https://framerusercontent.com/images/PuKXMfLxtVLQLCgauFRxcgtVHko.jpeg",
-    text: "With Gojiberry we track people engaging with our competitors and it's bringing in some of our best leads. It's like having a radar for high-intent prospects.",
+    text: "With Intentsly we track people engaging with our competitors and it's bringing in some of our best leads. It's like having a radar for high-intent prospects.",
   },
   {
     name: "Alessandro Paladin",
