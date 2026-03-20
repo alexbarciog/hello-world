@@ -90,18 +90,16 @@ Deno.serve(async (req) => {
     const uniqueKeywords = [...new Set(paidUserKeywords.map(k => k.keyword))];
     console.log(`[poll-x] Searching X for keywords: ${uniqueKeywords.join(', ')}`);
 
-    // Call Apify actor synchronously to get dataset items
-    const apifyUrl = `https://api.apify.com/v2/acts/watcher.data~search-x-by-keywords/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
+    // Call Apify apidojo~tweet-scraper actor synchronously
+    const apifyUrl = `https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
 
     const apifyRes = await fetch(apifyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        searchType: 'tweets',
-        keywords: uniqueKeywords,
-        maxItemsPerKeyword: 30,
-        sortBy: 'latest',
-        outputFormat: 'json',
+        searchTerms: uniqueKeywords,
+        maxItems: uniqueKeywords.length * 30,
+        sort: 'Latest',
       }),
     });
 
@@ -120,28 +118,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[poll-x] Apify returned ${tweets.length} tweets`);
+    // Filter out noResults items
+    const validTweets = tweets.filter((t: any) => !t.noResults && (t.full_text || t.text || t.tweet_text));
+    console.log(`[poll-x] Apify returned ${tweets.length} items, ${validTweets.length} valid tweets`);
 
     let totalInserted = 0;
     const keywordLower = uniqueKeywords.map(k => k.toLowerCase());
 
-    for (const tweet of tweets) {
-      const tweetText = (tweet.text || tweet.full_text || '').slice(0, 2000);
-      const tweetId = tweet.id || tweet.id_str || '';
+    for (const tweet of validTweets) {
+      const tweetText = (tweet.full_text || tweet.text || tweet.tweet_text || '').slice(0, 2000);
+      const tweetId = tweet.id_str || tweet.id || tweet.tweet_id || '';
       if (!tweetId) continue;
 
-      const author = tweet.author || tweet.username || tweet.screen_name || '[unknown]';
-      const authorName = tweet.author_name || tweet.name || null;
-      const url = tweet.url || `https://x.com/${author}/status/${tweetId}`;
-      const likeCount = tweet.like_count || tweet.favorite_count || 0;
-      const retweetCount = tweet.retweet_count || 0;
-      const replyCount = tweet.reply_count || 0;
+      const author = tweet.user?.screen_name || tweet.screen_name || tweet.username || tweet.author || '[unknown]';
+      const authorName = tweet.user?.name || tweet.name || tweet.author_name || null;
+      const url = tweet.url || tweet.tweet_url || `https://x.com/${author}/status/${tweetId}`;
+      const likeCount = tweet.favorite_count || tweet.like_count || tweet.likeCount || 0;
+      const retweetCount = tweet.retweet_count || tweet.retweetCount || 0;
+      const replyCount = tweet.reply_count || tweet.replyCount || 0;
 
       // Parse posted_at
       let postedAt: string | null = null;
-      if (tweet.created_at) {
+      const rawDate = tweet.created_at || tweet.createdAt || tweet.timestamp;
+      if (rawDate) {
         try {
-          postedAt = new Date(tweet.created_at).toISOString();
+          postedAt = new Date(rawDate).toISOString();
         } catch { /* ignore */ }
       }
 
@@ -189,7 +190,7 @@ Deno.serve(async (req) => {
 
     console.log(`[poll-x] Done. Inserted ${totalInserted} mentions.`);
 
-    return new Response(JSON.stringify({ inserted: totalInserted, tweets: tweets.length }), {
+    return new Response(JSON.stringify({ inserted: totalInserted, tweets: validTweets.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
