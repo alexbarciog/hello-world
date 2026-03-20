@@ -1,0 +1,1 @@
+ALTER TABLE public.reddit_mentions ADD CONSTRAINT reddit_mentions_user_id_reddit_post_id_key UNIQUE (user_id, reddit_post_id);
