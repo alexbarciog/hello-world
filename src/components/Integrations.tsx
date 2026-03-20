@@ -5,7 +5,6 @@ const integrations = [
   { name: "Slack", logo: "https://framerusercontent.com/images/vOPjnWXz35bBeOJuZ9TMQaMKQ.png" },
   { name: "Zapier", logo: "https://framerusercontent.com/images/isHWJUW2oYREwJMFsK9tPiNfW6U.png" },
   { name: "Make", logo: "https://framerusercontent.com/images/i8txZqTVS9vRd0bhEd3hHOfF5RQ.jpeg" },
-  { name: "Gojiberry", logo: "https://framerusercontent.com/images/wP4cR7A1ErcKXuoZoUMqG7WOiIs.png" },
 ];
 
 const Integrations = () => {
