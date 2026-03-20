@@ -72,6 +72,7 @@ export default function RedditSignals() {
   const [newSubreddits, setNewSubreddits] = useState("");
   const [polling, setPolling] = useState(false);
   const [filterKeyword, setFilterKeyword] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [viewMode, setViewMode] = useState<"all" | "saved">("all");
   const [inlineAdding, setInlineAdding] = useState(false);
   const [inlineKeyword, setInlineKeyword] = useState("");
