@@ -469,7 +469,7 @@ export default function Unibox() {
                               </div>
                             )}
                             <div>
-                              <div className="bg-white px-5 py-4 rounded-2xl rounded-bl-none shadow-sm border border-white/50 text-foreground font-light leading-relaxed">
+                              <div className="bg-white px-3.5 py-2.5 rounded-2xl rounded-bl-none shadow-sm border border-white/50 text-foreground font-light text-sm leading-relaxed">
                                 <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
                               </div>
                               <span className="text-[10px] text-foreground/40 font-medium ml-1 mt-1 block uppercase tracking-tighter">
