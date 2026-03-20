@@ -575,11 +575,15 @@ export default function RedditSignals() {
                     View Post
                   </a>
                   <button
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all flex-1 justify-center"
-                    style={{ background: "hsl(var(--goji-dark))" }}
+                    onClick={() => toggleSave.mutate({ id: mention.id, saved: mention.saved })}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 justify-center ${
+                      mention.saved
+                        ? "bg-foreground/10 text-foreground border border-border"
+                        : "bg-foreground text-background"
+                    }`}
                   >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Add to Leads
+                    <Bookmark className={`w-3.5 h-3.5 ${mention.saved ? "fill-current" : ""}`} />
+                    {mention.saved ? "Saved" : "Save"}
                   </button>
                 </div>
               </div>
