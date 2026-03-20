@@ -575,10 +575,10 @@ export default function Unibox() {
 
         {/* ── Contextual Details Panel (xl only) ── */}
         {selectedChat && (
-          <aside className="hidden xl:flex flex-col w-[320px] h-full gap-4">
+          <aside className="hidden xl:flex flex-col w-[280px] h-full gap-3">
             {/* Profile Card */}
             <div
-              className="rounded-3xl p-6 text-center"
+              className="rounded-2xl p-4 text-center"
               style={{
                 background: "rgba(255,255,255,0.4)",
                 backdropFilter: "blur(20px)",
@@ -589,22 +589,22 @@ export default function Unibox() {
             >
               {chatAvatar(selectedChat) ? (
                 <img
-                  className="w-24 h-24 rounded-3xl mx-auto object-cover mb-4 shadow-xl border-4 border-white"
+                  className="w-16 h-16 rounded-2xl mx-auto object-cover mb-3 shadow-lg border-3 border-white"
                   src={chatAvatar(selectedChat)}
                   alt=""
                 />
               ) : (
-                <div className="w-24 h-24 rounded-3xl mx-auto mb-4 shadow-xl border-4 border-white bg-foreground/10 flex items-center justify-center text-2xl font-medium text-foreground/50">
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-3 shadow-lg border-3 border-white bg-foreground/10 flex items-center justify-center text-lg font-medium text-foreground/50">
                   {chatInitials(selectedChat)}
                 </div>
               )}
-              <h3 className="text-xl font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
-              <p className="text-sm font-light text-foreground/50">LinkedIn Connection</p>
+              <h3 className="text-sm font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
+              <p className="text-xs font-light text-foreground/50">LinkedIn Connection</p>
             </div>
 
             {/* Engagement History Card */}
             <div
-              className="rounded-3xl p-6 flex-1"
+              className="rounded-2xl p-4 flex-1"
               style={{
                 background: "rgba(255,255,255,0.4)",
                 backdropFilter: "blur(20px)",
@@ -613,39 +613,36 @@ export default function Unibox() {
                 border: "1px solid rgba(255,255,255,0.3)",
               }}
             >
-              <h4 className="text-xs font-bold text-foreground/40 uppercase tracking-[2px] mb-6">Engagement History</h4>
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-xl bg-[hsl(200,100%,28%)]/10 flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-4 h-4 text-[hsl(200,100%,28%)]" />
+              <h4 className="text-[10px] font-bold text-foreground/40 uppercase tracking-[2px] mb-4">Engagement History</h4>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(200,100%,28%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-[hsl(200,100%,28%)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Viewed your profile</p>
-                    <p className="text-xs text-foreground/40 font-light">3 hours ago</p>
+                    <p className="text-xs font-medium text-foreground">Viewed your profile</p>
+                    <p className="text-[10px] text-foreground/40 font-light">3 hours ago</p>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-xl bg-[hsl(254,70%,55%)]/10 flex items-center justify-center flex-shrink-0">
-                    <Heart className="w-4 h-4 text-[hsl(254,70%,55%)]" />
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(254,70%,55%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-3.5 h-3.5 text-[hsl(254,70%,55%)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Liked your post</p>
-                    <p className="text-xs text-foreground/40 font-light">Yesterday, 4:12 PM</p>
+                    <p className="text-xs font-medium text-foreground">Liked your post</p>
+                    <p className="text-[10px] text-foreground/40 font-light">Yesterday, 4:12 PM</p>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-xl bg-[hsl(49,100%,40%)]/10 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-4 h-4 text-[hsl(49,100%,40%)]" />
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(49,100%,40%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-3.5 h-3.5 text-[hsl(49,100%,40%)]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">High Intent Signal</p>
-                    <p className="text-xs text-foreground/40 font-light">Clicked external link</p>
+                    <p className="text-xs font-medium text-foreground">High Intent Signal</p>
+                    <p className="text-[10px] text-foreground/40 font-light">Clicked external link</p>
                   </div>
                 </div>
               </div>
-
-
-
             </div>
           </aside>
         )}
