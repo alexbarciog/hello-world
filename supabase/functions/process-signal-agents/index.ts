@@ -46,12 +46,25 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+  // Accept optional agent_id to process a single agent (e.g. right after creation)
+  let targetAgentId: string | null = null;
   try {
-    const { data: agents, error: agentErr } = await supabase
+    const body = await req.json();
+    targetAgentId = body?.agent_id || null;
+  } catch { /* no body or invalid JSON — process all agents */ }
+
+  try {
+    const query = supabase
       .from('signal_agents')
-      .select('*')
-      .in('status', ['active', 'paused'])
-      .limit(20);
+      .select('*');
+
+    if (targetAgentId) {
+      query.eq('id', targetAgentId);
+    } else {
+      query.in('status', ['active', 'paused']);
+    }
+
+    const { data: agents, error: agentErr } = await query.limit(20);
 
     if (agentErr) throw new Error(`Failed to load agents: ${agentErr.message}`);
     if (!agents || agents.length === 0) {
