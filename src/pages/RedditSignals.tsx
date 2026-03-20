@@ -27,6 +27,7 @@ interface RedditMention {
   posted_at: string | null;
   found_at: string;
   dismissed: boolean;
+  saved: boolean;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
