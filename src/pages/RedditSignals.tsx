@@ -477,11 +477,37 @@ export default function RedditSignals() {
         <>
           {/* Filter bar */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <h2 className="text-lg font-bold text-foreground">
                 {filtered.length} mention{filtered.length !== 1 ? "s" : ""} found
               </h2>
               <span className="text-foreground/40 cursor-help" title="Reddit posts matching your intent keywords">ⓘ</span>
+
+              {/* View mode tabs */}
+              <div className="flex items-center gap-1 ml-2 bg-muted rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode("all")}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    viewMode === "all" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setViewMode("saved")}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
+                    viewMode === "saved" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Bookmark className="w-3 h-3" />
+                  Saved
+                  {mentions.filter(m => m.saved).length > 0 && (
+                    <span className="ml-0.5 px-1.5 py-0 rounded-full text-[10px] bg-foreground text-background font-bold">
+                      {mentions.filter(m => m.saved).length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Keyword filter chips */}
@@ -492,7 +518,7 @@ export default function RedditSignals() {
                   !filterKeyword ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
                 }`}
               >
-                All
+                All keywords
               </button>
               {[...new Set(mentions.map(m => m.keyword_matched))].map(kw => (
                 <button
