@@ -213,9 +213,24 @@ export default function RedditSignals() {
     }
   };
 
-  const filtered = filterKeyword
-    ? mentions.filter(m => m.keyword_matched === filterKeyword)
-    : mentions;
+  // ── Save/unsave mention ──
+  const toggleSave = useMutation({
+    mutationFn: async ({ id, saved }: { id: string; saved: boolean }) => {
+      const { error } = await supabase
+        .from("reddit_mentions")
+        .update({ saved: !saved })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reddit-mentions"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const filtered = mentions
+    .filter(m => viewMode === "saved" ? m.saved : true)
+    .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true);
 
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
