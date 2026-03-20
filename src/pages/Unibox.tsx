@@ -444,8 +444,8 @@ export default function Unibox() {
                         const isSent = msg.is_sender === true || msg.is_sender === 1 || msg.is_sender === "true" || msg.from_me === true || msg.from_me === 1 || msg.direction === "outbound";
                         return isSent ? (
                           /* Sent Message */
-                          <div key={msg.id} className="flex flex-row-reverse items-end gap-3 ml-auto max-w-[80%]">
-                            <div className="w-8 h-8 flex-shrink-0" />
+                          <div key={msg.id} className="flex flex-row-reverse items-end gap-2 ml-auto max-w-[75%]">
+                            <div className="w-6 h-6 flex-shrink-0" />
                             <div className="flex flex-col items-end">
                               <div
                                 className="px-5 py-4 rounded-2xl rounded-br-none shadow-md text-white font-light leading-relaxed"
