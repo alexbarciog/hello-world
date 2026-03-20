@@ -210,6 +210,12 @@ export default function RedditSignals() {
 
   // ── Manual re-scan ──
   const handleRescan = async () => {
+    if (!sub.subscribed) {
+      toast.error("Upgrade to a paid plan to scan Reddit", {
+        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+      });
+      return;
+    }
     setPolling(true);
     try {
       const { data, error } = await supabase.functions.invoke("poll-reddit-signals");
