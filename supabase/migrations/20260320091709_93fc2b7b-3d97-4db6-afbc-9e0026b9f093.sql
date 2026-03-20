@@ -1,0 +1,1 @@
+UPDATE signal_agents SET results_count = 15, last_launched_at = '2026-03-20T09:10:54Z' WHERE id = 'b4ff9ae5-4c1c-4be4-a01c-1833d9e18e17' AND results_count = 0;
