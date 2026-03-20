@@ -22,7 +22,7 @@ const CTASection = () => {
           Start Now and Get New High Intent Leads Delivered Straight to Slack or Your Inbox.
         </p>
         <a
-          href="https://app.gojiberry.ai/registration"
+          href="/register"
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full backdrop-blur-md border font-medium text-base transition-all duration-300 hover:scale-[1.02]"
           style={{
             background: "rgba(255,255,255,0.25)",
