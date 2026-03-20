@@ -337,7 +337,7 @@ export default function Register() {
                 </div>
 
                 <p className="text-center text-xs text-muted-foreground mt-5 font-medium">
-                  ✨ 7 days free trial — no credit card required
+                  ✨ 7 days free trial
                 </p>
 
                 <p className="text-center text-sm text-muted-foreground mt-4">
