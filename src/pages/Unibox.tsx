@@ -343,7 +343,7 @@ export default function Unibox() {
                             alt=""
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-2xl bg-foreground/10 flex items-center justify-center text-sm font-medium text-foreground/60">
+                          <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground/60">
                             {initials}
                           </div>
                         )}
