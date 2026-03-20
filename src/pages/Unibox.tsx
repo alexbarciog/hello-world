@@ -545,7 +545,7 @@ export default function Unibox() {
                       <button
                         type="submit"
                         disabled={!messageInput.trim() || sendMutation.isPending}
-                        className="w-10 h-10 flex items-center justify-center rounded-full shadow-lg text-white active:scale-90 transition-transform disabled:opacity-40"
+                        className="w-8 h-8 flex items-center justify-center rounded-full shadow-lg text-white active:scale-90 transition-transform disabled:opacity-40"
                         style={{
                           background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)",
                           boxShadow: "0 4px 14px rgba(0,93,143,0.3)",
