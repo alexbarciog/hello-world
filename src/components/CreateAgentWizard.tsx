@@ -288,15 +288,18 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     };
 
     let error;
+    let newAgentId: string | null = null;
     if (editAgentId) {
       ({ error } = await supabase.from("signal_agents").update(agentData).eq("id", editAgentId));
     } else {
-      ({ error } = await supabase.from("signal_agents").insert({
+      const { data: inserted, error: insertErr } = await supabase.from("signal_agents").insert({
         ...agentData,
         user_id: user.id,
         status: "active",
         last_launched_at: new Date().toISOString(),
-      }));
+      }).select("id").single();
+      error = insertErr;
+      newAgentId = inserted?.id || null;
     }
 
     setSaving(false);
@@ -308,9 +311,22 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       }
       return;
     }
-    toast.success(editAgentId ? "Agent updated successfully!" : "Agent created successfully!");
+    toast.success(editAgentId ? "Agent updated successfully!" : "Agent created — hunting for leads now! 🚀");
     onCreated();
     onClose();
+
+    // Trigger immediate processing for new agents (fire-and-forget)
+    if (newAgentId) {
+      supabase.functions.invoke("process-signal-agents", {
+        body: { agent_id: newAgentId },
+      }).then(({ error: fnErr }) => {
+        if (fnErr) console.error("Immediate agent processing failed:", fnErr);
+        else {
+          toast.success("Your agent just finished its first run — check your leads!");
+          onCreated(); // refresh to show results
+        }
+      });
+    }
   }
 
   const totalEnabledSignals = Object.values(enabledSignals).filter(Boolean).length;
