@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     let totalInserted = 0;
     const keywordLower = uniqueKeywords.map(k => k.toLowerCase());
 
-    for (const tweet of tweets) {
+    for (const tweet of validTweets) {
       const tweetText = (tweet.full_text || tweet.text || tweet.tweet_text || '').slice(0, 2000);
       const tweetId = tweet.id_str || tweet.id || tweet.tweet_id || '';
       if (!tweetId) continue;
