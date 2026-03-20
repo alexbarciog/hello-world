@@ -448,7 +448,7 @@ export default function Unibox() {
                             <div className="w-6 h-6 flex-shrink-0" />
                             <div className="flex flex-col items-end">
                               <div
-                                className="px-5 py-4 rounded-2xl rounded-br-none shadow-md text-white font-light leading-relaxed"
+                                className="px-3.5 py-2.5 rounded-2xl rounded-br-none shadow-md text-white font-light text-sm leading-relaxed"
                                 style={{ background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)" }}
                               >
                                 <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
