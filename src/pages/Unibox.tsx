@@ -326,7 +326,7 @@ export default function Unibox() {
                       key={chat.id}
                       onClick={() => setSelectedChatId(chat.id)}
                       className={cn(
-                        "w-full flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer group text-left",
+                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group text-left",
                         isSelected
                           ? "bg-white shadow-sm border border-white/50"
                           : "hover:bg-white/30"
