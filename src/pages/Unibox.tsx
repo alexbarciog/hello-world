@@ -485,9 +485,9 @@ export default function Unibox() {
 
                   {/* AI Insight Bubble */}
                   {messages.length > 0 && (
-                    <div className="relative py-4">
+                    <div className="relative py-2">
                       <div
-                        className="p-5 rounded-3xl max-w-sm mx-auto flex items-start gap-4"
+                        className="p-3.5 rounded-2xl max-w-xs mx-auto flex items-start gap-3"
                         style={{
                           background: "rgba(255,255,255,0.4)",
                           backdropFilter: "blur(20px)",
