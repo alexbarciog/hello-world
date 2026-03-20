@@ -460,11 +460,11 @@ export default function Unibox() {
                           </div>
                         ) : (
                           /* Received Message */
-                          <div key={msg.id} className="flex items-end gap-3 max-w-[80%]">
+                          <div key={msg.id} className="flex items-end gap-2 max-w-[75%]">
                             {chatAvatar(selectedChat) ? (
-                              <img className="w-8 h-8 rounded-lg object-cover flex-shrink-0" src={chatAvatar(selectedChat)} alt="" />
+                              <img className="w-6 h-6 rounded-md object-cover flex-shrink-0" src={chatAvatar(selectedChat)} alt="" />
                             ) : (
-                              <div className="w-8 h-8 rounded-lg bg-foreground/10 flex items-center justify-center text-[10px] font-medium text-foreground/50 flex-shrink-0">
+                              <div className="w-6 h-6 rounded-md bg-foreground/10 flex items-center justify-center text-[9px] font-medium text-foreground/50 flex-shrink-0">
                                 {chatInitials(selectedChat)}
                               </div>
                             )}
