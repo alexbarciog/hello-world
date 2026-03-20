@@ -11,7 +11,7 @@ const testimonials = [
     name: "Stuart Brent",
     role: "Founder at SaasyDB (B2B SaaS)",
     avatar: "https://framerusercontent.com/images/LAvL9XyYfVUSXWW2z2f2HMek.jpeg",
-    text: "We made our money back 6x already, and our week is now fully booked with leads GojiberryAI found for us.",
+    text: "We made our money back 6x already, and our week is now fully booked with leads Intentsly found for us.",
   },
   {
     name: "Frank Houbre",
