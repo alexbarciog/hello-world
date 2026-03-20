@@ -240,7 +240,8 @@ export default function Register() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className={`${inputCls} pr-11`}
+                      className={`${inputCls} pr-11 [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden`}
+                      autoComplete="new-password"
                       required />
                     
                       <button
