@@ -49,6 +49,7 @@ interface Chat {
     date?: string;
     created_at?: string;
     sender_name?: string;
+    is_sender?: boolean | number | string;
   };
   timestamp?: string;
   updated_at?: string;
