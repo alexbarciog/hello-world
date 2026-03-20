@@ -368,7 +368,18 @@ export default function Unibox() {
                           </span>
                         </div>
                         <p className="text-xs text-foreground/50 font-light truncate">
+                          <span className="font-medium text-foreground/60">
+                            {chat.last_message
+                              ? (chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
+                                ? 'You'
+                                : chatDisplayName(chat).split(' ')[0])
+                              : ''}
+                          </span>
+                          {chat.last_message ? ': ' : ''}
                           {chatLastText(chat)}
+                          {chat.last_message ? (
+                            <span className="text-foreground/30 ml-1">· {chatTimestamp(chat)}</span>
+                          ) : null}
                         </p>
                         {(chat.unread_count || 0) > 0 && (
                           <div className="mt-1 flex gap-1.5">
