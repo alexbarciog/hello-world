@@ -497,10 +497,10 @@ export default function Unibox() {
                         }}
                       >
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
+                          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
                           style={{ background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)" }}
                         >
-                          <Sparkles className="w-4 h-4 text-white" />
+                          <Sparkles className="w-3.5 h-3.5 text-white" />
                         </div>
                         <div>
                           <p className="text-xs font-semibold text-[hsl(254,70%,55%)] uppercase tracking-widest mb-1">AI Smart Insight</p>
