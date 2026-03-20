@@ -336,7 +336,7 @@ export default function Unibox() {
                         {avatarUrl ? (
                           <img
                             className={cn(
-                              "w-14 h-14 rounded-2xl object-cover transition-opacity",
+                              "w-10 h-10 rounded-xl object-cover transition-opacity",
                               !isSelected && !isFirst && "opacity-80 group-hover:opacity-100"
                             )}
                             src={avatarUrl}
