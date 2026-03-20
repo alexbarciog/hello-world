@@ -354,7 +354,7 @@ export default function Unibox() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-0.5">
                           <h3 className={cn(
-                            "text-[15px] truncate text-foreground",
+                            "text-[13px] truncate text-foreground",
                             isSelected || isFirst ? "font-medium" : "font-light"
                           )}>
                             {chatDisplayName(chat)}
