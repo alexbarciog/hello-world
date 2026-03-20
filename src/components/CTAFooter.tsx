@@ -56,7 +56,7 @@ const Footer = () => {
           <a href="https://gojiberry.ai/privacy-policy" className="hover:text-goji-dark transition-colors">Privacy</a>
         </div>
         <p className="text-xs text-goji-text-muted">
-          © {new Date().getFullYear()} Gojiberry. All rights reserved.
+          © {new Date().getFullYear()} Intently. All rights reserved.
         </p>
       </div>
     </footer>);
