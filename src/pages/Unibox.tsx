@@ -528,7 +528,7 @@ export default function Unibox() {
                       boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)",
                     }}
                   >
-                    <button type="button" className="w-10 h-10 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
+                    <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
                       <PlusCircle className="w-5 h-5" />
                     </button>
                     <input
