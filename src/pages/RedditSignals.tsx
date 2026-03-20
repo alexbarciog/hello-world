@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import {
   Search, ExternalLink, Bookmark, X, Plus, Loader2, Trash2,
-  RefreshCw, Sparkles, Hash, AlertCircle, Bot, Power, Check,
+  RefreshCw, Sparkles, Hash, AlertCircle, Bot, Power, Check, AlertTriangle,
 } from "lucide-react";
 
 /* ── Types ──────────────────────────────────────────────────────────── */
