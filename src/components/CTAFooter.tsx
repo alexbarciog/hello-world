@@ -1,5 +1,4 @@
 import { ArrowUpRight } from "lucide-react";
-import gojiIcon from "@/assets/gojiberry-icon.png";
 import footerGradient from "@/assets/footer-gradient.svg";
 
 const CTASection = () => {
