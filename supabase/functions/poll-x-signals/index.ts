@@ -118,11 +118,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[poll-x] Apify returned ${tweets.length} tweets`);
-    if (tweets.length > 0) {
-      console.log(`[poll-x] Sample tweet keys: ${Object.keys(tweets[0]).join(', ')}`);
-      console.log(`[poll-x] Sample tweet:`, JSON.stringify(tweets[0]).slice(0, 500));
-    }
+    // Filter out noResults items
+    const validTweets = tweets.filter((t: any) => !t.noResults && (t.full_text || t.text || t.tweet_text));
+    console.log(`[poll-x] Apify returned ${tweets.length} items, ${validTweets.length} valid tweets`);
 
     let totalInserted = 0;
     const keywordLower = uniqueKeywords.map(k => k.toLowerCase());
