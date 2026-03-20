@@ -35,7 +35,7 @@ const testimonials = [
     name: "Amin Lams",
     role: "CEO TheLams.io (Agency)",
     avatar: "https://framerusercontent.com/images/5B5Etij7d9BNNtcmUjw9IQEPLr0.jpeg",
-    text: "The best part of GojiberryAI is predictability : every week we know we'll have a fresh batch of warm leads to work. It takes the stress out of outbound.",
+    text: "The best part of Intentsly is predictability : every week we know we'll have a fresh batch of warm leads to work. It takes the stress out of outbound.",
   },
   {
     name: "Maxime Le Morillon",

@@ -26,7 +26,7 @@ const Integrations = () => {
           Integrate with your best tools
         </h2>
         <p className="text-goji-text-muted text-base mb-14">
-          Integrate Gojiberry with your stack in a few clicks to automate all your workflows.
+          Integrate Intentsly with your stack in a few clicks to automate all your workflows.
         </p>
 
         {/* Integration logos grid */}

@@ -52,7 +52,7 @@ const Footer = () => {
           <a href="#features" className="hover:text-goji-dark transition-colors">Features</a>
           <a href="#pricing" className="hover:text-goji-dark transition-colors">Pricing</a>
           <a href="#faq" className="hover:text-goji-dark transition-colors">FAQ</a>
-          <a href="https://gojiberry.ai/privacy-policy" className="hover:text-goji-dark transition-colors">Privacy</a>
+          <a href="/privacy" className="hover:text-goji-dark transition-colors">Privacy</a>
         </div>
         <p className="text-xs text-goji-text-muted">
           © {new Date().getFullYear()} Intentsly. All rights reserved.
