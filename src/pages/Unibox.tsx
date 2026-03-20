@@ -424,7 +424,7 @@ export default function Unibox() {
                 </div>
 
                 {/* Messages Thread Area */}
-                <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                   {messagesLoading ? (
                     <div className="space-y-6 py-4">
                       {[...Array(4)].map((_, i) => (
