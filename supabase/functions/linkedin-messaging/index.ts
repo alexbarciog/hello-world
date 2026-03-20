@@ -200,6 +200,7 @@ async function enrichChat(
   dsn: string
 ): Promise<Record<string, unknown>> {
   const attendeeProviderId = chat.attendee_provider_id as string | undefined;
+  const chatId = chat.id as string | undefined;
 
   // Try to extract name from chat data first (avoid extra API call)
   const existingAttendees = chat.attendees as Array<Record<string, unknown>> | undefined;
@@ -224,6 +225,8 @@ async function enrichChat(
     participantInfo = await fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn);
   }
 
+  const lastMessage = chatId ? await fetchLastMessage(chatId, apiKey, dsn) : null;
+
   return {
     ...chat,
     attendees: participantInfo
@@ -235,6 +238,7 @@ async function enrichChat(
           },
         ]
       : [],
+    last_message: lastMessage,
   };
 }
 
