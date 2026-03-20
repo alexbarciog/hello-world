@@ -198,7 +198,47 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' });
 
-    // Get all users
+    // Check for test mode: send to a specific email, skip Stripe check
+    let body: any = {};
+    try { body = await req.json(); } catch { /* empty body is fine */ }
+    const testEmail = body?.test_email as string | undefined;
+
+    if (testEmail) {
+      console.log(`[weekly-email] TEST MODE: sending to ${testEmail}`);
+      const template = pick(TEMPLATES);
+      const name = pick(FICTIONAL_NAMES);
+      const BILLING_URL = 'https://intentsly043.lovable.app/billing';
+      const { subject, html } = generateEmailHtml(template, name, BILLING_URL);
+
+      const emailRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'Intentsly <onboarding@resend.dev>',
+          to: [testEmail],
+          subject,
+          html,
+        }),
+      });
+
+      const resBody = await emailRes.text();
+      if (emailRes.ok) {
+        console.log(`[weekly-email] ✉️ Test sent to ${testEmail}: "${subject}"`);
+        return new Response(JSON.stringify({ sent: 1, subject, test: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        console.warn(`[weekly-email] Test failed: ${resBody}`);
+        return new Response(JSON.stringify({ sent: 0, error: resBody, test: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Normal mode: send to all free users
     const { data: usersData, error: usersErr } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     if (usersErr) throw usersErr;
 
@@ -207,7 +247,6 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     let skipped = 0;
-
     const BILLING_URL = 'https://intentsly043.lovable.app/billing';
 
     for (const user of users) {
