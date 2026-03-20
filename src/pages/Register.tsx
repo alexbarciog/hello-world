@@ -320,13 +320,13 @@ export default function Register() {
 
                 {/* Trust badges */}
                 <div className="flex items-center justify-center gap-6 mt-5">
-                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
-                      <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                      <line x1="1" y1="10" x2="23" y2="10" />
-                    </svg>
-                    No credit card required
-                  </span>
+                  
+
+
+
+
+
+                
                   <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5">
                       <circle cx="12" cy="12" r="10" />
