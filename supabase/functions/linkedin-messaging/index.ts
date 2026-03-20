@@ -220,56 +220,7 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── Enrich a single chat with participant name/photo and last message ── */
-
-async function enrichChat(
-  chat: Record<string, unknown>,
-  accountId: string,
-  apiKey: string,
-  dsn: string
-): Promise<Record<string, unknown>> {
-  const attendeeProviderId = chat.attendee_provider_id as string | undefined;
-  const chatId = chat.id as string | undefined;
-
-  // Try to extract name from chat data first (avoid extra API call)
-  const existingAttendees = chat.attendees as Array<Record<string, unknown>> | undefined;
-  const chatName = chat.name as string | undefined;
-
-  let participantInfo: { name: string; avatar_url: string | null } | null = null;
-
-  // Check if chat already has REAL attendee info (not the generic "LinkedIn User" fallback)
-  const hasRealName = existingAttendees?.length &&
-    existingAttendees[0]?.display_name &&
-    (existingAttendees[0].display_name as string) !== 'LinkedIn User';
-
-  if (hasRealName) {
-    participantInfo = {
-      name: existingAttendees![0].display_name as string,
-      avatar_url: (existingAttendees![0].profile_picture_url as string) || null,
-    };
-  } else if (chatName && chatName !== 'LinkedIn User') {
-    participantInfo = { name: chatName, avatar_url: null };
-  } else if (attendeeProviderId) {
-    // Call profile API since we only have the generic fallback name
-    participantInfo = await fetchParticipantProfile(attendeeProviderId, accountId, apiKey, dsn);
-  }
-
-  const lastMessage = chatId ? await fetchLastMessage(chatId, apiKey, dsn) : null;
-
-  return {
-    ...chat,
-    attendees: participantInfo
-      ? [
-          {
-            display_name: participantInfo.name,
-            profile_picture_url: participantInfo.avatar_url ?? undefined,
-            provider_id: attendeeProviderId,
-          },
-        ]
-      : [],
-    last_message: lastMessage,
-  };
-}
+/* ── No longer needed: Unipile returns attendees + last_message in list_chats ── */
 
 /* ── Fetch participant profile from Unipile ── */
 
