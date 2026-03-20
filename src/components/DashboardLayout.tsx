@@ -63,6 +63,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const sub = useSubscription();
+  const [showAgentTooltip, setShowAgentTooltip] = useState(false);
+
+  // 8-second auto-dismiss tooltip for free users
+  useEffect(() => {
+    if (!sub.loading && !sub.subscribed) {
+      setShowAgentTooltip(true);
+      const timer = setTimeout(() => setShowAgentTooltip(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [sub.loading, sub.subscribed]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

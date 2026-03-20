@@ -84,7 +84,8 @@ export const StepComplete = ({
         linkedinConnected = !!profile?.unipile_account_id;
       }
 
-      const initialStatus = linkedinConnected ? "active" : "pending_linkedin";
+      // Always start as paused — user needs a subscription to activate
+      const initialStatus = "paused";
 
       let campaignId: string | null = existingCampaignId ?? null;
 
