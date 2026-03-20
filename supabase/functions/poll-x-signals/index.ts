@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
 
     console.log(`[poll-x] Done. Inserted ${totalInserted} mentions.`);
 
-    return new Response(JSON.stringify({ inserted: totalInserted, tweets: tweets.length }), {
+    return new Response(JSON.stringify({ inserted: totalInserted, tweets: validTweets.length }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
