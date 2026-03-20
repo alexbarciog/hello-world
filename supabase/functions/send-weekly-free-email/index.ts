@@ -220,27 +220,11 @@ function generateEmailHtml(
           </table>
         </td></tr>
 
-        <!-- Meta grid -->
-        <tr><td style="padding:0 40px 32px;">
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td width="50%" valign="top" style="padding-right:12px;">
-                <p style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9ca3af;margin:0 0 4px;font-weight:500;">Source</p>
-                <p style="font-size:14px;color:#1a1b20;margin:0;">💬 Reddit · ${template.subreddit}</p>
-              </td>
-              <td width="50%" valign="top" style="padding-left:12px;">
-                <p style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9ca3af;margin:0 0 4px;font-weight:500;">Keywords</p>
-                <p style="font-size:14px;color:#1a1b20;margin:0;">🔗 ${template.keywords}</p>
-              </td>
-            </tr>
-          </table>
-        </td></tr>
-
         <!-- CTA button -->
         <tr><td style="padding:8px 40px 12px;" align="center">
           <table cellpadding="0" cellspacing="0">
-            <tr><td style="background:linear-gradient(135deg,#005d8f 0%,#5b3cdd 100%);border-radius:50px;padding:16px 44px;box-shadow:0 4px 16px rgba(0,93,143,0.2);">
-              <a href="${billingUrl}" style="color:#ffffff;font-size:15px;font-weight:500;text-decoration:none;display:inline-block;letter-spacing:0.2px;">
+            <tr><td style="background:#005d8f;border-radius:50px;padding:16px 44px;">
+              <a href="${billingUrl}" style="color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;display:inline-block;letter-spacing:0.2px;">
                 ${template.cta} →
               </a>
             </td></tr>
