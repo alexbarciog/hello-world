@@ -516,7 +516,14 @@ export default function RedditSignals() {
               </div>
             </div>
 
-            {/* Keyword filter chips */}
+            {/* Sort + Keyword filter chips */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
+                className="px-3 py-1 rounded-full text-xs font-medium border border-border bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              >
+                {sortOrder === "newest" ? "↓ Newest" : "↑ Oldest"}
+              </button>
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setFilterKeyword(null)}
