@@ -308,23 +308,43 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
   return <td className={`px-4 py-3 text-sm text-md-on-surface ${className}`}>{children}</td>;
 }
 
-function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
+function UsersTable({ data, expandedRow, setExpandedRow, campaigns }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void; campaigns: any[] }) {
+  const getUserWebsite = (userId: string) => {
+    const campaign = campaigns.find((c: any) => c.user_id === userId && c.website);
+    return campaign?.website || null;
+  };
+
   return (
     <table className="w-full">
       <thead>
-        <tr><TH>Email</TH><TH>Name</TH><TH>Onboarded</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
+        <tr><TH>Email</TH><TH>Name</TH><TH>Website</TH><TH>Onboarded</TH><TH>Plan</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
       </thead>
       <tbody className="divide-y divide-md-outline-variant/20">
         {data.map((u: any) => {
           const id = u.id || u.user_id;
           const name = [u.raw_user_meta_data?.first_name, u.raw_user_meta_data?.last_name].filter(Boolean).join(" ") || "—";
           const isExpanded = expandedRow === id;
+          const website = getUserWebsite(id);
+          const isPaid = (u.credits ?? 0) >= 100;
           return (
             <>
               <tr key={id} className="hover:bg-md-surface-container/30 transition-colors cursor-pointer" onClick={() => setExpandedRow(isExpanded ? null : id)}>
                 <TD><CopyCell value={u.email} /></TD>
                 <TD>{name}</TD>
+                <TD>
+                  {website ? (
+                    <a href={website.startsWith("http") ? website : `https://${website}`} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 text-blue-500 hover:text-blue-700 text-xs truncate max-w-[150px]">
+                      <Globe className="w-3 h-3 shrink-0" />
+                      {website.replace(/^https?:\/\//, "")}
+                    </a>
+                  ) : <span className="text-md-on-surface-variant/40">—</span>}
+                </TD>
                 <TD>{u.onboarding_complete ? <Check className="w-4 h-4 text-emerald-500" /> : <span className="text-md-on-surface-variant/40">✗</span>}</TD>
+                <TD>
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${isPaid ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                    {isPaid ? "Paid" : "Free"}
+                  </span>
+                </TD>
                 <TD><span className="font-mono text-xs">{u.credits ?? 0}</span></TD>
                 <TD>{u.unipile_account_id ? <Check className="w-4 h-4 text-blue-500" /> : <span className="text-md-on-surface-variant/40">—</span>}</TD>
                 <TD><span className="text-xs text-md-on-surface-variant">{new Date(u.created_at).toLocaleDateString()}</span></TD>
@@ -332,9 +352,10 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
               </tr>
               {isExpanded && (
                 <tr key={`${id}-detail`}>
-                  <td colSpan={7} className="px-6 py-4 bg-md-surface-container/20">
+                  <td colSpan={9} className="px-6 py-4 bg-md-surface-container/20">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                       <div><span className="text-md-on-surface-variant/60">User ID:</span> <CopyCell value={id} /></div>
+                      <div><span className="text-md-on-surface-variant/60">Website:</span> <CopyCell value={website} /></div>
                       <div><span className="text-md-on-surface-variant/60">Daily Msgs Limit:</span> {u.daily_messages_limit ?? "—"}</div>
                       <div><span className="text-md-on-surface-variant/60">Daily Conn Limit:</span> {u.daily_connections_limit ?? "—"}</div>
                       <div><span className="text-md-on-surface-variant/60">Unipile ID:</span> <CopyCell value={u.unipile_account_id} /></div>
