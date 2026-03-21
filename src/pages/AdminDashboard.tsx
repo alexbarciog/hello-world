@@ -312,7 +312,7 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
   return (
     <table className="w-full">
       <thead>
-        <tr><TH>Email</TH><TH>Name</TH><TH>Onboarded</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH></TH></tr>
+        <tr><TH>Email</TH><TH>Name</TH><TH>Onboarded</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
       </thead>
       <tbody className="divide-y divide-md-outline-variant/20">
         {data.map((u: any) => {
