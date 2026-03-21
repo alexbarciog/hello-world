@@ -347,7 +347,7 @@ function UsersTable({ data, expandedRow, setExpandedRow, campaigns }: { data: an
                 </TD>
                 <TD><span className="font-mono text-xs">{u.credits ?? 0}</span></TD>
                 <TD>{u.unipile_account_id ? <Check className="w-4 h-4 text-blue-500" /> : <span className="text-md-on-surface-variant/40">—</span>}</TD>
-                <TD><span className="text-xs text-md-on-surface-variant">{new Date(u.created_at).toLocaleDateString()}</span></TD>
+                <TD><span className="text-xs text-md-on-surface-variant whitespace-nowrap">{new Date(u.created_at).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></TD>
                 <TD>{isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</TD>
               </tr>
               {isExpanded && (
