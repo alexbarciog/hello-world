@@ -410,78 +410,47 @@ export default function Register() {
         }}>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center px-12 max-w-md w-full">
-          {/* Rating badges */}
-          <div className="flex gap-8 mb-10">
-            {["G2", "Capterra"].map((platform) =>
-            <div key={platform} className="flex flex-col items-center gap-1.5">
-                <div className="flex items-center gap-1">
-                  {/* Laurel left */}
-                  <svg viewBox="0 0 40 60" className="w-5 h-7 opacity-80" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5">
-                    <path d="M20 55 C10 45, 2 35, 5 20 C8 10, 15 5, 20 5" />
-                    <path d="M20 45 C13 38, 7 30, 9 18" />
-                    <path d="M20 35 C15 30, 11 24, 13 15" />
-                  </svg>
-                  <div className="flex items-center gap-0.5">
-                    {[1, 2, 3, 4].map((i) =>
-                  <svg key={i} viewBox="0 0 24 24" fill="hsl(var(--foreground))" className="w-3.5 h-3.5">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                  )}
-                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" />
-                      <path d="M12 2 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 Z" fill="hsl(var(--foreground))" />
-                    </svg>
-                    <span className="text-xs font-semibold text-foreground ml-0.5">4.5</span>
-                  </div>
-                  {/* Laurel right */}
-                  <svg viewBox="0 0 40 60" className="w-5 h-7 opacity-80 scale-x-[-1]" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5">
-                    <path d="M20 55 C10 45, 2 35, 5 20 C8 10, 15 5, 20 5" />
-                    <path d="M20 45 C13 38, 7 30, 9 18" />
-                    <path d="M20 35 C15 30, 11 24, 13 15" />
-                  </svg>
+        <div className="relative z-10 flex flex-col items-start px-12 max-w-md w-full">
+          <h2 className="text-3xl font-semibold text-foreground tracking-tight mb-2">
+            Find buyers before your competitors do
+          </h2>
+          <p className="text-sm text-foreground/60 mb-10">
+            Intent-driven prospecting that fills your pipeline on autopilot.
+          </p>
+
+          <div className="space-y-8 w-full">
+            {[
+              {
+                icon: Radar,
+                title: "Detect Intent Signals",
+                desc: "Our AI monitors Reddit, X, and LinkedIn to find people actively looking for your services."
+              },
+              {
+                icon: Target,
+                title: "Score & Qualify Leads",
+                desc: "Every prospect is scored against your ICP so you only talk to the right people."
+              },
+              {
+                icon: Zap,
+                title: "Automate Outreach",
+                desc: "Start relevant conversations on LinkedIn automatically and book more demos on autopilot."
+              }
+            ].map((item) => (
+              <div key={item.title} className="flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center shrink-0">
+                  <item.icon className="w-5 h-5 text-foreground" />
                 </div>
-                <span className="text-xs text-foreground/70">100+ reviews on <span className="underline">{platform}</span></span>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">{item.title}</h3>
+                  <p className="text-sm text-foreground/60 leading-relaxed">{item.desc}</p>
+                </div>
               </div>
-            )}
+            ))}
           </div>
 
-          {/* Testimonial */}
-          <div className="text-center min-h-[100px] flex flex-col items-center justify-center">
-            <p className="text-lg text-foreground leading-relaxed font-normal mb-4 transition-all duration-500">
-              "{testimonials[activeTestimonial].quote}"
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {testimonials[activeTestimonial].author}
-            </p>
-          </div>
-
-          {/* Dots + arrows */}
-          <div className="flex items-center gap-3 mt-8">
-            <button
-              onClick={() => setActiveTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
-              className="text-foreground/60 hover:text-foreground transition-colors">
-              
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            {testimonials.map((_, i) =>
-            <button
-              key={i}
-              onClick={() => setActiveTestimonial(i)}
-              className={`w-2 h-2 rounded-full transition-all duration-200 ${i === activeTestimonial ? "bg-foreground w-3" : "bg-foreground/30"}`} />
-
-            )}
-            <button
-              onClick={() => setActiveTestimonial((prev) => (prev + 1) % testimonials.length)}
-              className="border border-foreground/30 rounded p-1 text-foreground/60 hover:text-foreground hover:border-foreground transition-colors">
-              
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          </div>
+          <p className="text-xs text-foreground/40 mt-12">
+            Trusted by 500+ B2B founders and sales teams
+          </p>
         </div>
       </div>
     </div>);
