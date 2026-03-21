@@ -5,6 +5,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import premiumBg from "@/assets/premium-gradient-bg.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Progress } from "@/components/ui/progress";
 
 import {
@@ -25,6 +26,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  Shield,
 } from "lucide-react";
 
 // Reddit icon component
@@ -71,7 +73,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const sub = useSubscription();
+  const { data: isAdmin } = useAdminCheck();
   const [showAgentTooltip, setShowAgentTooltip] = useState(false);
+
+  const allNavItems = isAdmin
+    ? [...navItems, { label: "Admin", icon: Shield, path: "/admin" }]
+    : navItems;
 
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
@@ -155,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav items */}
         <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto relative">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const active = location.pathname === item.path;
             const Icon = item.icon;
             return (
@@ -322,7 +329,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
-              {navItems.map((item) => {
+              {allNavItems.map((item) => {
                 const active = location.pathname === item.path;
                 const Icon = item.icon;
                 return (
