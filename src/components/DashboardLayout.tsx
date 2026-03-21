@@ -5,6 +5,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import premiumBg from "@/assets/premium-gradient-bg.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Progress } from "@/components/ui/progress";
 
 import {
