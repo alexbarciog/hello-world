@@ -442,6 +442,7 @@ function RedditTable({ data }: { data: any[] }) {
             <TD><span className="font-mono text-xs">{m.score ?? 0}</span></TD>
             <TD><span className="text-xs text-md-on-surface-variant">{new Date(m.found_at).toLocaleDateString()}</span></TD>
             <TD><a href={m.url} target="_blank" rel="noopener" className="text-blue-500 hover:text-blue-700"><ExternalLink className="w-3.5 h-3.5" /></a></TD>
+
           </tr>
         ))}
       </tbody>
