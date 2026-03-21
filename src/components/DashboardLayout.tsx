@@ -162,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav items */}
         <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto relative">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const active = location.pathname === item.path;
             const Icon = item.icon;
             return (
