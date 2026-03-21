@@ -164,7 +164,7 @@ export default function AdminDashboard() {
   // ── Merge user data ──
   const mergedUsers = (allUsers.length > 0 ? allUsers : users).map((u: any) => {
     const profile = users.find((p: any) => p.user_id === (u.id || u.user_id));
-    return { ...u, ...profile, email: u.email || profile?.email || "N/A" };
+    return { ...u, ...profile, email: u.email || (u as any).email || "N/A" };
   });
 
   const tabs: TabDef[] = [
