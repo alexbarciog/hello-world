@@ -23,6 +23,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
 import BillingPlans from "./pages/BillingPlans.tsx";
 import Support from "./pages/Support.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import { Navigate } from "react-router-dom";
