@@ -26,6 +26,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  Shield,
 } from "lucide-react";
 
 // Reddit icon component
