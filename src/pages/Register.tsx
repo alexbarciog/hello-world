@@ -16,23 +16,6 @@ interface InviteData {
   accepted_at: string | null;
 }
 
-const testimonials = [
-{
-  quote: "We made our money back 6× already, and our week is now fully booked with leads Intentsly found for us.",
-  author: "Stuart Brent, Founder @ SaasyDB"
-},
-{
-  quote: "Intentsly changed the way we approach outreach. The signal detection is incredibly accurate.",
-  author: "Maria T, Head of Growth @ Scalify"
-},
-{
-  quote: "Best investment for our sales team. We went from 3 meetings a week to 15 in the first month.",
-  author: "James R, VP Sales @ CloudPeak"
-},
-{
-  quote: "Finally a tool that actually finds people who want to buy, not just anyone with a LinkedIn profile.",
-  author: "Anna K, Co-Founder @ Nestly"
-}];
 
 
 const passwordRules = [
