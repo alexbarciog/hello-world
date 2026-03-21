@@ -252,7 +252,7 @@ export default function AdminDashboard() {
 
       {/* Content */}
       <div className="overflow-x-auto rounded-xl border border-md-outline-variant/30">
-        {activeTab === "users" && <UsersTable data={filterData(mergedUsers)} expandedRow={expandedRow} setExpandedRow={setExpandedRow} />}
+        {activeTab === "users" && <UsersTable data={filterData(mergedUsers)} expandedRow={expandedRow} setExpandedRow={setExpandedRow} campaigns={campaigns} />}
         {activeTab === "campaigns" && <CampaignsTable data={filterData(campaigns)} />}
         {activeTab === "contacts" && <ContactsTable data={filterData(contacts)} />}
         {activeTab === "agents" && <AgentsTable data={filterData(agents)} />}
