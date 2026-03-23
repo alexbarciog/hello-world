@@ -71,7 +71,6 @@ serve(async (req) => {
 
     let subscriptionEnd = null;
     let productId = null;
-    let trialEnd = null;
 
     if (hasActiveSub) {
       try {
@@ -84,13 +83,6 @@ serve(async (req) => {
       try {
         productId = activeSub.items?.data?.[0]?.price?.product ?? null;
       } catch { /* ignore */ }
-
-      try {
-        const trialTs = activeSub.trial_end;
-        if (typeof trialTs === 'number' && trialTs > 0) {
-          trialEnd = new Date(trialTs * 1000).toISOString();
-        }
-      } catch { /* ignore invalid date */ }
     }
 
     const { data: profile } = await supabaseClient
