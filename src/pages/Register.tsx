@@ -273,7 +273,7 @@ export default function Register() {
                 </form>
 
                 <p className="text-center text-xs text-muted-foreground mt-3 font-medium">
-                  ✨ 7 days free trial
+                  ✨ No credit card required
                 </p>
 
                 {/* Divider */}
