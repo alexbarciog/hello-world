@@ -106,7 +106,6 @@ serve(async (req) => {
       had_subscription: hadSubscription,
       product_id: productId,
       subscription_end: subscriptionEnd,
-      trial_end: trialEnd,
       credits,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
