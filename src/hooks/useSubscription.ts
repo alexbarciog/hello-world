@@ -34,7 +34,6 @@ export function useSubscription() {
         subscribed: data?.subscribed ?? false,
         hadSubscription: data?.had_subscription ?? false,
         subscriptionEnd: data?.subscription_end ?? null,
-        trialEnd: data?.trial_end ?? null,
         credits: data?.credits ?? 0,
         loading: false,
       });
