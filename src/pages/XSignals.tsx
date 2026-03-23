@@ -242,7 +242,7 @@ export default function XSignals() {
           <p className="text-sm text-amber-900 font-medium">
             X monitoring is paused on the Free plan.{" "}
             <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
-              Start your free trial
+              Upgrade now
             </button>
           </p>
         </div>

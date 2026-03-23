@@ -263,7 +263,7 @@ export default function RedditSignals() {
           <p className="text-sm text-amber-900 font-medium">
             Reddit monitoring is paused on the Free plan.{" "}
             <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
-              Start your free trial
+              Upgrade now
             </button>
           </p>
         </div>
