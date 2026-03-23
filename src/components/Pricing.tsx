@@ -68,7 +68,7 @@ const Pricing = () => {
         disabled={loading}
         className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
       >
-        {loading ? "Redirecting..." : sub.hadSubscription === false ? "Start 7 Days Free Trial" : "Get started"}
+        {loading ? "Redirecting..." : "Get started"}
       </button>
     );
   };
