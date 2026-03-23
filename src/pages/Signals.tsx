@@ -226,7 +226,7 @@ export default function Signals() {
     // Block activation on free plan
     if (newStatus === "active" && !sub.subscribed) {
       toast.error("Upgrade to a paid plan to activate agents", {
-        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+        action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
       return;
     }
