@@ -164,7 +164,7 @@ export default function XSignals() {
   const handleStartAgent = async () => {
     if (!sub.subscribed) {
       toast.error("Upgrade to a paid plan to run the X agent", {
-        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+        action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
       return;
     }
