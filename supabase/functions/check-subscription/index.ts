@@ -60,18 +60,12 @@ serve(async (req) => {
       limit: 1,
     });
 
-    const trialingSubs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "trialing",
-      limit: 1,
-    });
-
     const allSubs = await stripe.subscriptions.list({
       customer: customerId,
       limit: 1,
     });
 
-    const activeSub = activeSubs.data[0] || trialingSubs.data[0];
+    const activeSub = activeSubs.data[0];
     const hasActiveSub = Boolean(activeSub);
     const hadSubscription = allSubs.data.length > 0;
 
