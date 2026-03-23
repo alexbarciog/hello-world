@@ -273,7 +273,7 @@ export default function Register() {
                 </form>
 
                 <p className="text-center text-xs text-muted-foreground mt-3 font-medium">
-                  ✨ 7 days free trial
+                  ✨ No credit card required
                 </p>
 
                 {/* Divider */}
@@ -373,13 +373,13 @@ export default function Register() {
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg> :
                     null}
-                      {loading ? "Creating account..." : inviteData ? "Accept & Create Account" : "Start my free trial"}
+                      {loading ? "Creating account..." : inviteData ? "Accept & Create Account" : "Create my account"}
                     </button>
                   </div>
                 </form>
 
                 <p className="text-center text-xs text-muted-foreground mt-3 font-medium">
-                  ✨ 7 days free trial
+                  ✨ No credit card required
                 </p>
 
                 <p className="text-center text-sm text-muted-foreground mt-3">

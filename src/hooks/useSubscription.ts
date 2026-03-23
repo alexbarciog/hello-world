@@ -5,7 +5,6 @@ export interface SubscriptionState {
   subscribed: boolean;
   hadSubscription: boolean;
   subscriptionEnd: string | null;
-  trialEnd: string | null;
   credits: number;
   loading: boolean;
 }
@@ -15,7 +14,6 @@ export function useSubscription() {
     subscribed: false,
     hadSubscription: false,
     subscriptionEnd: null,
-    trialEnd: null,
     credits: 0,
     loading: true,
   });
@@ -36,7 +34,6 @@ export function useSubscription() {
         subscribed: data?.subscribed ?? false,
         hadSubscription: data?.had_subscription ?? false,
         subscriptionEnd: data?.subscription_end ?? null,
-        trialEnd: data?.trial_end ?? null,
         credits: data?.credits ?? 0,
         loading: false,
       });

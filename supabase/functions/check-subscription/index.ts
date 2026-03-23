@@ -60,24 +60,17 @@ serve(async (req) => {
       limit: 1,
     });
 
-    const trialingSubs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "trialing",
-      limit: 1,
-    });
-
     const allSubs = await stripe.subscriptions.list({
       customer: customerId,
       limit: 1,
     });
 
-    const activeSub = activeSubs.data[0] || trialingSubs.data[0];
+    const activeSub = activeSubs.data[0];
     const hasActiveSub = Boolean(activeSub);
     const hadSubscription = allSubs.data.length > 0;
 
     let subscriptionEnd = null;
     let productId = null;
-    let trialEnd = null;
 
     if (hasActiveSub) {
       try {
@@ -90,13 +83,6 @@ serve(async (req) => {
       try {
         productId = activeSub.items?.data?.[0]?.price?.product ?? null;
       } catch { /* ignore */ }
-
-      try {
-        const trialTs = activeSub.trial_end;
-        if (typeof trialTs === 'number' && trialTs > 0) {
-          trialEnd = new Date(trialTs * 1000).toISOString();
-        }
-      } catch { /* ignore invalid date */ }
     }
 
     const { data: profile } = await supabaseClient
@@ -120,7 +106,6 @@ serve(async (req) => {
       had_subscription: hadSubscription,
       product_id: productId,
       subscription_end: subscriptionEnd,
-      trial_end: trialEnd,
       credits,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

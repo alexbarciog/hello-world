@@ -164,7 +164,7 @@ export default function XSignals() {
   const handleStartAgent = async () => {
     if (!sub.subscribed) {
       toast.error("Upgrade to a paid plan to run the X agent", {
-        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+        action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
       return;
     }
@@ -191,7 +191,7 @@ export default function XSignals() {
   const handleRescan = async () => {
     if (!sub.subscribed) {
       toast.error("Upgrade to a paid plan to scan X", {
-        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+        action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
       return;
     }
@@ -242,7 +242,7 @@ export default function XSignals() {
           <p className="text-sm text-amber-900 font-medium">
             X monitoring is paused on the Free plan.{" "}
             <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
-              Start your free trial
+              Upgrade now
             </button>
           </p>
         </div>
