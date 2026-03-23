@@ -212,7 +212,7 @@ export default function RedditSignals() {
   const handleRescan = async () => {
     if (!sub.subscribed) {
       toast.error("Upgrade to a paid plan to scan Reddit", {
-        action: { label: "Start Trial", onClick: () => navigate("/billing") },
+        action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
       return;
     }
