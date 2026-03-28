@@ -18,33 +18,42 @@ export type Database = {
         Row: {
           accepted_at: string | null
           campaign_id: string
+          chat_id: string | null
           contact_id: string
           created_at: string
+          current_step: number
           id: string
           sent_at: string
           status: string
+          step_completed_at: string | null
           unipile_request_id: string | null
           user_id: string
         }
         Insert: {
           accepted_at?: string | null
           campaign_id: string
+          chat_id?: string | null
           contact_id: string
           created_at?: string
+          current_step?: number
           id?: string
           sent_at?: string
           status?: string
+          step_completed_at?: string | null
           unipile_request_id?: string | null
           user_id: string
         }
         Update: {
           accepted_at?: string | null
           campaign_id?: string
+          chat_id?: string | null
           contact_id?: string
           created_at?: string
+          current_step?: number
           id?: string
           sent_at?: string
           status?: string
+          step_completed_at?: string | null
           unipile_request_id?: string | null
           user_id?: string
         }
