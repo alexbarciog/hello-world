@@ -91,14 +91,15 @@ Deno.serve(async (req) => {
     console.log(`[poll-x] Searching X for keywords: ${uniqueKeywords.join(', ')}`);
 
     // Call Apify apidojo~tweet-scraper actor synchronously
-    const apifyUrl = `https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
+    const maxItems = Math.max(1, uniqueKeywords.length * 30);
+    const apifyUrl = `https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}&maxItems=${maxItems}`;
 
     const apifyRes = await fetch(apifyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         searchTerms: uniqueKeywords,
-        maxItems: Math.max(1, uniqueKeywords.length * 30),
+        maxItems: maxItems,
         sort: 'Latest',
       }),
     });
