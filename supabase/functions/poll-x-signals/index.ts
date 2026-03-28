@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         searchTerms: uniqueKeywords,
-        maxItems: uniqueKeywords.length * 30,
+        maxItems: Math.max(1, uniqueKeywords.length * 30),
         sort: 'Latest',
       }),
     });
