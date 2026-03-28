@@ -550,8 +550,11 @@ export default function XSignals() {
       ) : (
         <div className="space-y-0 divide-y divide-border/40">
           {filtered.map(m => {
+            const displayName = parseUserField(m.author_name, "name") || parseUserField(m.author, "userName") || m.author;
+            const handle = parseUserField(m.author, "userName") || m.author;
+            const avatarUrl = getProfilePicture(m.author_name, m.author);
             const tweetContent = m.body && m.body.length > 0 ? `${m.title}\n\n${m.body}` : m.title || "No content";
-            const profileUrl = `https://x.com/${m.author}`;
+            const profileUrl = `https://x.com/${handle}`;
 
             return (
               <div
@@ -568,9 +571,13 @@ export default function XSignals() {
                     onClick={e => e.stopPropagation()}
                     className="shrink-0"
                   >
-                    <div className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-bold text-foreground/60 hover:opacity-80 transition-opacity">
-                      {(m.author_name || m.author).charAt(0).toUpperCase()}
-                    </div>
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={handle} className="w-10 h-10 rounded-full object-cover hover:opacity-80 transition-opacity" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-bold text-foreground/60 hover:opacity-80 transition-opacity">
+                        {displayName.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </a>
 
                   <div className="flex-1 min-w-0">
@@ -583,9 +590,9 @@ export default function XSignals() {
                         onClick={e => e.stopPropagation()}
                         className="font-bold text-foreground hover:underline truncate max-w-[160px]"
                       >
-                        {m.author_name || m.author}
+                        {displayName}
                       </a>
-                      <span className="text-muted-foreground truncate max-w-[120px]">@{m.author}</span>
+                      <span className="text-muted-foreground truncate max-w-[120px]">@{handle}</span>
                       <span className="text-muted-foreground">·</span>
                       <span className="text-muted-foreground hover:underline whitespace-nowrap">
                         {timeAgo(m.posted_at || m.found_at)}
