@@ -525,63 +525,117 @@ export default function XSignals() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map(m => (
-            <div
-              key={m.id}
-              className="group rounded-xl border border-border/60 hover:border-border hover:shadow-sm transition-all p-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-foreground/5 flex items-center justify-center shrink-0 mt-0.5">
-                  <XIcon className="w-4 h-4 text-foreground/60" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground">
-                    <span className="font-semibold text-foreground">@{m.author}</span>
-                    {m.author_name && <span>· {m.author_name}</span>}
-                    <span>· {timeAgo(m.posted_at || m.found_at)}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-semibold">{m.keyword_matched}</span>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed mb-2">
-                    {m.title || m.body || "No content"}
-                  </p>
+        <div className="space-y-0 divide-y divide-border/40">
+          {filtered.map(m => {
+            const tweetContent = m.body && m.body.length > 0 ? `${m.title}\n\n${m.body}` : m.title || "No content";
+            const profileUrl = `https://x.com/${m.author}`;
 
-                  {/* Engagement stats */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> {formatNumber(m.like_count)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Repeat2 className="w-3 h-3" /> {formatNumber(m.retweet_count)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageCircle className="w-3 h-3" /> {formatNumber(m.reply_count)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => toggleSave.mutate({ id: m.id, saved: m.saved })}
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${m.saved ? "bg-blue-100 text-blue-600" : "hover:bg-muted text-muted-foreground"}`}
-                    title={m.saved ? "Unsave" : "Save"}
-                  >
-                    <Bookmark className={`w-3.5 h-3.5 ${m.saved ? "fill-current" : ""}`} />
-                  </button>
+            return (
+              <div
+                key={m.id}
+                className="group px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                onClick={() => window.open(m.url, "_blank")}
+              >
+                <div className="flex gap-3">
+                  {/* Avatar */}
                   <a
-                    href={m.url}
+                    href={profileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted text-muted-foreground transition-colors"
-                    title="View Post"
+                    onClick={e => e.stopPropagation()}
+                    className="shrink-0"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <div className="w-10 h-10 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-bold text-foreground/60 hover:opacity-80 transition-opacity">
+                      {(m.author_name || m.author).charAt(0).toUpperCase()}
+                    </div>
                   </a>
+
+                  <div className="flex-1 min-w-0">
+                    {/* Author line */}
+                    <div className="flex items-center gap-1 text-sm leading-5">
+                      <a
+                        href={profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="font-bold text-foreground hover:underline truncate max-w-[160px]"
+                      >
+                        {m.author_name || m.author}
+                      </a>
+                      <span className="text-muted-foreground truncate max-w-[120px]">@{m.author}</span>
+                      <span className="text-muted-foreground">·</span>
+                      <span className="text-muted-foreground hover:underline whitespace-nowrap">
+                        {timeAgo(m.posted_at || m.found_at)}
+                      </span>
+                      <span className="ml-auto shrink-0 px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[10px] font-semibold border border-blue-100">
+                        {m.keyword_matched}
+                      </span>
+                    </div>
+
+                    {/* Tweet content */}
+                    <div className="mt-0.5 text-[15px] text-foreground leading-[1.4] whitespace-pre-wrap break-words">
+                      {tweetContent.length > 400 ? `${tweetContent.slice(0, 400)}…` : tweetContent}
+                    </div>
+
+                    {/* Engagement bar — Twitter style */}
+                    <div className="flex items-center justify-between mt-2 max-w-[380px]">
+                      <button
+                        onClick={e => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-muted-foreground hover:text-blue-500 transition-colors group/btn"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center group-hover/btn:bg-blue-500/10 transition-colors">
+                          <MessageCircle className="w-[18px] h-[18px]" />
+                        </div>
+                        <span className="text-[13px]">{m.reply_count > 0 ? formatNumber(m.reply_count) : ""}</span>
+                      </button>
+
+                      <button
+                        onClick={e => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-muted-foreground hover:text-green-500 transition-colors group/btn"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center group-hover/btn:bg-green-500/10 transition-colors">
+                          <Repeat2 className="w-[18px] h-[18px]" />
+                        </div>
+                        <span className="text-[13px]">{m.retweet_count > 0 ? formatNumber(m.retweet_count) : ""}</span>
+                      </button>
+
+                      <button
+                        onClick={e => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-muted-foreground hover:text-pink-500 transition-colors group/btn"
+                      >
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center group-hover/btn:bg-pink-500/10 transition-colors">
+                          <Heart className="w-[18px] h-[18px]" />
+                        </div>
+                        <span className="text-[13px]">{m.like_count > 0 ? formatNumber(m.like_count) : ""}</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={e => { e.stopPropagation(); toggleSave.mutate({ id: m.id, saved: m.saved }); }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                            m.saved ? "text-blue-500 hover:bg-blue-500/10" : "text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                          }`}
+                          title={m.saved ? "Unsave" : "Save"}
+                        >
+                          <Bookmark className={`w-[18px] h-[18px] ${m.saved ? "fill-current" : ""}`} />
+                        </button>
+                        <a
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                          title="Open on X"
+                        >
+                          <ExternalLink className="w-[18px] h-[18px]" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
