@@ -51,6 +51,29 @@ function timeAgo(dateStr: string | null) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+/** Parse a field that might be a JSON user object or a plain string */
+function parseUserField(raw: string | null, key: "userName" | "name"): string {
+  if (!raw) return "";
+  if (raw.startsWith("{")) {
+    try {
+      const obj = JSON.parse(raw);
+      return obj[key] || obj.userName || obj.name || raw;
+    } catch { /* not JSON */ }
+  }
+  return raw;
+}
+
+function getProfilePicture(authorName: string | null, author: string): string | null {
+  for (const raw of [authorName, author]) {
+    if (!raw || !raw.startsWith("{")) continue;
+    try {
+      const obj = JSON.parse(raw);
+      if (obj.profilePicture) return obj.profilePicture.replace("_normal.", "_200x200.");
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
 function formatNumber(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
