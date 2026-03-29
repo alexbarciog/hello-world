@@ -141,6 +141,10 @@ export default function CampaignDetail() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [savedAnimation, setSavedAnimation] = useState(false);
 
+  // Edit step mode popup state
+  const [editModePickerStep, setEditModePickerStep] = useState<number | null>(null);
+  const [generatingAiMessage, setGeneratingAiMessage] = useState(false);
+
   useEffect(() => {
     if (id) loadCampaign(id);
   }, [id]);
@@ -396,6 +400,56 @@ export default function CampaignDetail() {
     setCampaign({ ...campaign, workflow_steps: updated });
     setAddStepOpen(false);
     toast.success("Step added!");
+  }
+
+  async function generateAiStepMessage(stepIndex: number) {
+    if (!campaign) return;
+    setGeneratingAiMessage(true);
+    setEditModePickerStep(null);
+    setEditingStep(stepIndex);
+
+    try {
+      const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+      const stepNum = stepIndex + 2;
+      const previousStep = stepIndex > 0 ? nonInvSteps[stepIndex - 1] : null;
+      const previousMessage = previousStep?.message || "";
+
+      const { data, error } = await supabase.functions.invoke("generate-step-message", {
+        body: {
+          stepNumber: stepNum,
+          previousStepMessage: previousMessage,
+          companyName: campaign.company_name,
+          valueProposition: campaign.value_proposition,
+          painPoints: campaign.pain_points,
+          campaignGoal: campaign.campaign_goal || "conversations",
+          messageTone: campaign.message_tone || "professional",
+          industry: (campaign as any).industry || "",
+          language: (campaign as any).language || "",
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); setGeneratingAiMessage(false); return; }
+
+      const aiMessage = data?.message || "";
+      // Save directly to workflow
+      const allSteps = [...workflowSteps];
+      const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+      const actualIdx = nonInvMap[stepIndex]?.idx;
+      if (actualIdx !== undefined) {
+        allSteps[actualIdx] = { ...allSteps[actualIdx], message: aiMessage, ai_icebreaker: true };
+        const { error: updateErr } = await supabase.from("campaigns").update({ workflow_steps: allSteps as any } as any).eq("id", campaign.id);
+        if (updateErr) { toast.error("Failed to save AI message"); } else {
+          setCampaign({ ...campaign, workflow_steps: allSteps });
+          toast.success("AI message generated!");
+        }
+      }
+    } catch (e: any) {
+      console.error("AI message gen error:", e);
+      toast.error("Failed to generate AI message");
+    }
+    setGeneratingAiMessage(false);
+    setEditingStep(null);
   }
 
   const filteredContacts = useMemo(() => {
@@ -746,7 +800,7 @@ export default function CampaignDetail() {
 
                                   <div className="flex gap-2 mt-3 pt-2 border-t border-border">
                                     <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
-                                    <button onClick={() => setEditingStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
+                                    <button onClick={() => setEditModePickerStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
                                   </div>
                                 </>
                               )}
@@ -905,6 +959,56 @@ export default function CampaignDetail() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                </DialogContent>
+              </Dialog>
+
+              {/* Edit Mode Picker Dialog (AI SDR vs Manual) */}
+              <Dialog open={editModePickerStep !== null} onOpenChange={(open) => { if (!open) setEditModePickerStep(null); }}>
+                <DialogContent className="sm:max-w-[420px] p-6 gap-0">
+                  <DialogHeader className="mb-5">
+                    <DialogTitle className="text-lg font-bold">How do you want to edit?</DialogTitle>
+                    <p className="text-sm text-muted-foreground">Choose how to create the message for Step {(editModePickerStep ?? 0) + 2}</p>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <button
+                      disabled={generatingAiMessage}
+                      onClick={() => {
+                        if (editModePickerStep !== null) generateAiStepMessage(editModePickerStep);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                        <Bot className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                          AI SDR
+                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Generate a hyper-personalized message using AI based on lead context, signals, and your business
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const idx = editModePickerStep;
+                        setEditModePickerStep(null);
+                        if (idx !== null) setEditingStep(idx);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-muted-foreground/40 hover:bg-muted/30 transition-all text-left group"
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-muted">
+                        <Pencil className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-foreground">Manual</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Write or edit the message yourself using variables like {"{{first_name}}"}, {"{{company}}"}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
                 </DialogContent>
               </Dialog>
             </motion.div>
