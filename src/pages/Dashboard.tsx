@@ -591,9 +591,9 @@ export default function Dashboard() {
         </div>
 
         {/* Latest Replies */}
-        <div className="glass-card rounded-2xl p-5 md:p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-lg font-light font-headline text-md-on-surface">Latest Replies</h2>
+        <div className="glass-card rounded-[2rem] p-6 md:p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-md-on-surface tracking-tight">Latest Replies</h2>
             <button onClick={() => navigate("/unibox")} className="flex items-center gap-1.5 px-3 py-1.5 bg-md-secondary/10 rounded-full cursor-pointer hover:bg-md-secondary/20 transition-colors group">
               <span className="text-xs font-semibold text-md-secondary">Open Inbox</span>
               <ArrowRight className="w-3 h-3 text-md-secondary group-hover:translate-x-1 transition-transform" />
