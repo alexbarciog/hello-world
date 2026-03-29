@@ -276,7 +276,106 @@ export default function CampaignDetail() {
       setRemainingContacts(Math.max(0, totalContacts - totalSent));
     }
 
+    // Load scheduled messages - contacts with their next pending step
+    await loadScheduledMessages(campaignId, c.workflow_steps || []);
+
     setLoading(false);
+  }
+
+  async function loadScheduledMessages(campaignId: string, steps: any[]) {
+    const { data: connReqs } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("contact_id, status, current_step, accepted_at, step_completed_at")
+      .eq("campaign_id", campaignId);
+    if (!connReqs || connReqs.length === 0) { setScheduledMessages([]); return; }
+
+    // Get contact details for all contacts in campaign
+    const contactIds = (connReqs as any[]).map((cr: any) => cr.contact_id);
+    const { data: contactsData } = await supabase
+      .from("contacts")
+      .select("id, first_name, last_name, title, company, signal")
+      .in("id", contactIds);
+    const contactMap: Record<string, any> = {};
+    (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
+
+    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation");
+    const scheduled: ScheduledMessage[] = [];
+
+    for (const cr of connReqs as any[]) {
+      const contact = contactMap[cr.contact_id];
+      if (!contact) continue;
+
+      const currentStep = cr.current_step || 1;
+      // Step 1 = invitation sent. After acceptance, next is step 2 (nonInvSteps[0])
+      // current_step in DB tracks which step was last completed
+      const nextStepIdx = currentStep - 1; // index in nonInvSteps (step 2 = index 0)
+      
+      if (nextStepIdx >= nonInvSteps.length) continue; // all steps completed
+      if (cr.status === "pending") continue; // invitation not yet sent
+      
+      // For step 1 contacts (invitation sent but not accepted), show "Waiting for acceptance"
+      if (currentStep === 1 && cr.status !== "accepted") {
+        scheduled.push({
+          contactId: cr.contact_id,
+          contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
+          contactTitle: contact.title || "",
+          contactCompany: contact.company || "",
+          contactSignal: contact.signal || "",
+          currentStep: 1,
+          nextStepNum: 2,
+          message: nonInvSteps[0]?.message || "",
+          isAi: !!nonInvSteps[0]?.ai_icebreaker,
+          scheduledDate: "After acceptance",
+          status: "waiting_acceptance",
+        });
+        continue;
+      }
+
+      // For accepted contacts, show the next message step
+      if (cr.status === "accepted" && nextStepIdx < nonInvSteps.length) {
+        const nextStep = nonInvSteps[nextStepIdx];
+        const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
+        const scheduledDate = new Date(acceptedDate);
+        
+        // Calculate when this step should fire
+        let totalDelay = 0;
+        for (let j = 0; j <= nextStepIdx; j++) {
+          totalDelay += nonInvSteps[j]?.delay_days || 1;
+        }
+        scheduledDate.setDate(acceptedDate.getDate() + totalDelay);
+
+        // Personalize message preview
+        let msgPreview = nextStep?.message || "";
+        msgPreview = msgPreview
+          .replace(/\{\{first_name\}\}/g, contact.first_name)
+          .replace(/\{\{company\}\}/g, contact.company || "their company")
+          .replace(/\{\{title\}\}/g, contact.title || "their role")
+          .replace(/\{\{signal\}\}/g, contact.signal || "their recent activity");
+
+        scheduled.push({
+          contactId: cr.contact_id,
+          contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
+          contactTitle: contact.title || "",
+          contactCompany: contact.company || "",
+          contactSignal: contact.signal || "",
+          currentStep,
+          nextStepNum: currentStep + 1,
+          message: msgPreview,
+          isAi: !!nextStep?.ai_icebreaker,
+          scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          status: scheduledDate <= new Date() ? "ready" : "scheduled",
+        });
+      }
+    }
+
+    // Sort: ready first, then by scheduled date
+    scheduled.sort((a, b) => {
+      if (a.status === "ready" && b.status !== "ready") return -1;
+      if (b.status === "ready" && a.status !== "ready") return 1;
+      return 0;
+    });
+
+    setScheduledMessages(scheduled);
   }
 
   async function loadContactsForList(listId: string) {
