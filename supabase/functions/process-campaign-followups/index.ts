@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get all active campaigns with workflow steps
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
       .select('id, user_id, workflow_steps, source_list_id')
@@ -81,9 +80,11 @@ async function processCampaign(
   const accountId = profile.unipile_account_id;
 
   // ── Phase 1: Check pending invitations for acceptance ──
+  // Strategy: For each contact with status='sent', check if we can find a chat
+  // with them (= accepted) or if they show as 1st degree connection.
   const { data: pendingRequests } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, unipile_request_id, status, current_step')
+    .select('id, contact_id, status, current_step')
     .eq('campaign_id', campaign.id)
     .eq('status', 'sent')
     .eq('current_step', 1);
@@ -93,15 +94,8 @@ async function processCampaign(
   if (pendingRequests && pendingRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations`);
 
-    // Strategy: Fetch the list of PENDING sent invitations from Unipile.
-    // Contacts whose invitation is NO LONGER pending have accepted (or rejected).
-    // We then verify by trying to open a chat with them.
-    const pendingProviderIds = await fetchPendingSentInvitations(unipileDsn, unipileApiKey, accountId);
-    console.log(`[followup][campaign ${campaign.id}] Unipile pending invitations count: ${pendingProviderIds.size}`);
-
     for (const req of pendingRequests) {
       try {
-        // Get contact's LinkedIn info
         const { data: contact } = await supabase
           .from('contacts')
           .select('linkedin_profile_id, linkedin_url, first_name, last_name')
@@ -110,31 +104,46 @@ async function processCampaign(
 
         if (!contact) continue;
 
-        const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+        // Get clean LinkedIn vanity slug — decode first to avoid double-encoding
+        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
         if (!publicId) {
           console.log(`[followup] contact ${req.contact_id} no linkedin id`);
           continue;
         }
 
-        // Resolve to provider_id
+        // Decode any already-encoded chars (e.g., %C4%83 → ă)
+        try { publicId = decodeURIComponent(publicId); } catch { /* already decoded */ }
+
+        // Resolve LinkedIn vanity to Unipile provider_id
         const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
         if (!providerId) {
-          console.log(`[followup] could not resolve provider_id for ${publicId}`);
+          // Try the profile endpoint with the raw slug as fallback
+          console.log(`[followup] could not resolve ${publicId}, trying profile check`);
+
+          // Check via user profile if they show as 1st degree
+          const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
+          if (profileData && isFirstDegree(profileData)) {
+            console.log(`[followup] ${publicId} is 1st degree via profile (no provider_id)`);
+            await supabase
+              .from('campaign_connection_requests')
+              .update({
+                status: 'accepted',
+                accepted_at: new Date().toISOString(),
+                current_step: 1,
+                step_completed_at: new Date().toISOString(),
+              })
+              .eq('id', req.id);
+            acceptedCount++;
+          }
+          await delay(800);
           continue;
         }
 
-        // If this provider_id is still in pending sent invitations, skip
-        if (pendingProviderIds.has(providerId)) {
-          console.log(`[followup] ${publicId} invitation still pending`);
-          continue;
-        }
-
-        // Invitation is no longer pending → check if we have a chat (= accepted)
+        // Try to find a chat with them — if chat exists, they accepted
         const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
 
         if (chatId) {
-          // Accepted! Update record
-          console.log(`[followup] ${publicId} ACCEPTED, chat: ${chatId}`);
+          console.log(`[followup] ${publicId} ACCEPTED (chat found: ${chatId})`);
           await supabase
             .from('campaign_connection_requests')
             .update({
@@ -147,10 +156,10 @@ async function processCampaign(
             .eq('id', req.id);
           acceptedCount++;
         } else {
-          // Not pending and no chat → might be rejected or API lag, check relations
-          const isRelation = await checkRelation(unipileDsn, unipileApiKey, accountId, publicId);
-          if (isRelation) {
-            console.log(`[followup] ${publicId} is a relation (no chat yet), marking accepted`);
+          // No chat found — check if the profile shows 1st degree connection
+          const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
+          if (profileData && isFirstDegree(profileData)) {
+            console.log(`[followup] ${publicId} ACCEPTED (1st degree, no chat yet)`);
             await supabase
               .from('campaign_connection_requests')
               .update({
@@ -161,15 +170,12 @@ async function processCampaign(
               })
               .eq('id', req.id);
             acceptedCount++;
-          } else {
-            console.log(`[followup] ${publicId} not pending, no chat, not relation — likely rejected or pending API sync`);
           }
         }
 
-        // Rate limit: 1-2s between checks
         await delay(1000 + Math.random() * 1000);
       } catch (err) {
-        console.error(`[followup][campaign ${campaign.id}] acceptance check error for ${req.contact_id}:`, err);
+        console.error(`[followup] acceptance check error for ${req.contact_id}:`, err);
       }
     }
   }
@@ -201,7 +207,7 @@ async function processCampaign(
     for (const req of acceptedRequests) {
       try {
         const currentStep = req.current_step || 1;
-        const nextStepIndex = currentStep; // workflow_steps[0] = invitation, workflow_steps[1] = step 2
+        const nextStepIndex = currentStep; // workflow_steps[0]=invitation, [1]=step2, etc
         const nextStep = workflowSteps[nextStepIndex];
 
         if (!nextStep || nextStep.type !== 'message') {
@@ -220,11 +226,9 @@ async function processCampaign(
 
         const delayDays = nextStep.delay_days || 1;
         const delayMs = delayDays * 24 * 60 * 60 * 1000;
-        const elapsed = Date.now() - stepCompletedAt.getTime();
+        if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
 
-        if (elapsed < delayMs) continue;
-
-        // If no chat_id yet, try to find it now
+        // If no chat_id, try to find one now
         let chatId = req.chat_id;
         if (!chatId) {
           const { data: contact } = await supabase
@@ -234,9 +238,10 @@ async function processCampaign(
             .single();
 
           if (contact) {
-            const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-            if (publicId) {
-              const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+            let pid = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+            if (pid) {
+              try { pid = decodeURIComponent(pid); } catch { /* ok */ }
+              const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, pid);
               if (providerId) {
                 chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
                 if (chatId) {
@@ -251,18 +256,17 @@ async function processCampaign(
         }
 
         if (!chatId) {
-          console.log(`[followup] no chat_id for contact ${req.contact_id}, skipping message`);
+          console.log(`[followup] no chat for contact ${req.contact_id}, can't send message`);
           continue;
         }
 
-        // Get contact info for template personalization
+        // Get contact info for personalization
         const { data: contact } = await supabase
           .from('contacts')
           .select('first_name, last_name, company, title, signal')
           .eq('id', req.contact_id)
           .single();
 
-        // Personalize message
         let message = nextStep.message || '';
         if (contact) {
           message = message
@@ -274,11 +278,10 @@ async function processCampaign(
         }
 
         if (!message.trim()) {
-          console.log(`[followup] empty message for step ${nextStepIndex + 1}, skipping`);
+          console.log(`[followup] empty message for step ${nextStepIndex + 1}`);
           continue;
         }
 
-        // Send message via Unipile
         const sendRes = await fetch(
           `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
           {
@@ -293,22 +296,19 @@ async function processCampaign(
         );
 
         if (!sendRes.ok) {
-          const errText = await sendRes.text();
-          console.error(`[followup] send failed for contact ${req.contact_id}:`, sendRes.status, errText);
+          console.error(`[followup] send failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           continue;
         }
 
         console.log(`[followup] sent step ${nextStepIndex + 1} to contact ${req.contact_id}`);
 
         const newStep = currentStep + 1;
-        const isComplete = newStep >= workflowSteps.length;
-
         await supabase
           .from('campaign_connection_requests')
           .update({
             current_step: newStep,
             step_completed_at: new Date().toISOString(),
-            status: isComplete ? 'completed' : 'accepted',
+            status: newStep >= workflowSteps.length ? 'completed' : 'accepted',
           })
           .eq('id', req.id);
 
@@ -339,58 +339,53 @@ async function processCampaign(
 
 // ── Unipile API helpers ──
 
-/** Fetch all pending sent invitations and return a Set of provider_ids that are still pending */
-async function fetchPendingSentInvitations(
-  dsn: string, apiKey: string, accountId: string
-): Promise<Set<string>> {
-  const providerIds = new Set<string>();
-  try {
-    const url = new URL(`https://${dsn}/api/v1/users/invite/sent`);
-    url.searchParams.set('account_id', accountId);
-    url.searchParams.set('limit', '100');
-
-    const res = await fetch(url.toString(), {
-      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
-    });
-
-    if (!res.ok) {
-      console.error(`[followup] invite/sent failed: ${res.status} ${await res.text()}`);
-      return providerIds;
-    }
-
-    const data = await res.json();
-    const items = data?.items || data?.data || (Array.isArray(data) ? data : []);
-
-    for (const item of items) {
-      const pid = item.provider_id || item.id;
-      if (pid) providerIds.add(pid);
-    }
-
-    console.log(`[followup] fetched ${items.length} pending sent invitations`);
-  } catch (err) {
-    console.error('[followup] fetchPendingSentInvitations error:', err);
-  }
-  return providerIds;
-}
-
-/** Resolve a LinkedIn public ID (vanity URL slug) to a Unipile provider_id */
 async function resolveProviderId(
   dsn: string, apiKey: string, accountId: string, publicId: string
 ): Promise<string | null> {
   try {
-    const res = await fetch(
-      `https://${dsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
-      { headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' } }
-    );
-    if (!res.ok) return null;
+    const url = `https://${dsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`;
+    console.log(`[followup] resolving: ${publicId}`);
+    const res = await fetch(url, {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      console.log(`[followup] resolve ${publicId} failed: ${res.status}`);
+      return null;
+    }
     const data = await res.json();
+    console.log(`[followup] resolve ${publicId} => provider_id: ${data.provider_id}, network: ${data.network_distance}`);
     return data.provider_id || null;
+  } catch (err) {
+    console.error(`[followup] resolve error for ${publicId}:`, err);
+    return null;
+  }
+}
+
+async function fetchUserProfile(
+  dsn: string, apiKey: string, accountId: string, publicId: string
+): Promise<any | null> {
+  try {
+    const url = `https://${dsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`;
+    const res = await fetch(url, {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     return null;
   }
 }
 
-/** Find an existing chat with a provider_id, return chat ID or null */
+function isFirstDegree(profileData: any): boolean {
+  // Check various fields that Unipile might return for connection status
+  if (profileData.network_distance === 1) return true;
+  if (profileData.is_connection === true) return true;
+  if (profileData.relation_type === 'FIRST_DEGREE') return true;
+  if (profileData.distance === 'DISTANCE_1') return true;
+  if (profileData.connection_degree === 1) return true;
+  return false;
+}
+
 async function findChat(
   dsn: string, apiKey: string, accountId: string, providerId: string
 ): Promise<string | null> {
@@ -404,30 +399,17 @@ async function findChat(
       headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log(`[followup] findChat failed: ${res.status}`);
+      return null;
+    }
     const data = await res.json();
     const chats = data?.items || data?.data || [];
-    return chats.length > 0 ? (chats[0].id || chats[0].chat_id || null) : null;
+    const chatId = chats.length > 0 ? (chats[0].id || chats[0].chat_id || null) : null;
+    if (chatId) console.log(`[followup] found chat: ${chatId}`);
+    return chatId;
   } catch {
     return null;
-  }
-}
-
-/** Check if a user is a relation (connected) using the user profile endpoint */
-async function checkRelation(
-  dsn: string, apiKey: string, accountId: string, publicId: string
-): Promise<boolean> {
-  try {
-    const res = await fetch(
-      `https://${dsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
-      { headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' } }
-    );
-    if (!res.ok) return false;
-    const data = await res.json();
-    // Check if the user profile indicates a connection (network_distance === 1 or is_connection)
-    return data.network_distance === 1 || data.is_connection === true || data.relation_type === 'FIRST_DEGREE';
-  } catch {
-    return false;
   }
 }
 
