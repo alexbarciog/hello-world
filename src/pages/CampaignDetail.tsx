@@ -141,6 +141,10 @@ export default function CampaignDetail() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [savedAnimation, setSavedAnimation] = useState(false);
 
+  // Edit step mode popup state
+  const [editModePickerStep, setEditModePickerStep] = useState<number | null>(null);
+  const [generatingAiMessage, setGeneratingAiMessage] = useState(false);
+
   useEffect(() => {
     if (id) loadCampaign(id);
   }, [id]);
