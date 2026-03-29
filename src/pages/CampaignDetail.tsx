@@ -284,8 +284,35 @@ export default function CampaignDetail() {
     setListsCount(1);
     setCampaign({ ...campaign, source_list_id: listId });
     await loadContactsForList(listId);
+
+    // Trigger immediate processing so new list contacts get queued for Step 1
+    if (campaign.status === "active") {
+      try {
+        await supabase.functions.invoke("send-connection-requests");
+      } catch (e) {
+        console.warn("Could not trigger immediate connection requests:", e);
+      }
+    }
+
+    // Reload connection request statuses for updated contact list
+    const { data: connRequests } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("contact_id, status, current_step")
+      .eq("campaign_id", campaign.id);
+    if (connRequests) {
+      const statusMap: Record<string, { status: string; step: number }> = {};
+      for (const cr of connRequests as any[]) {
+        const isAccepted = cr.status === "accepted";
+        statusMap[cr.contact_id] = {
+          status: cr.status,
+          step: isAccepted ? (cr.current_step || 1) : 0,
+        };
+      }
+      setContactStatuses(statusMap);
+    }
+
     setAssigningList(false);
-    toast.success("List assigned! Contacts will go through the campaign workflow.");
+    toast.success("List assigned! New contacts are being queued for outreach.");
   }
 
   async function toggleCampaignStatus() {
