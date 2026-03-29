@@ -800,7 +800,7 @@ export default function CampaignDetail() {
 
                                   <div className="flex gap-2 mt-3 pt-2 border-t border-border">
                                     <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
-                                    <button onClick={() => setEditingStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
+                                    <button onClick={() => setEditModePickerStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
                                   </div>
                                 </>
                               )}
