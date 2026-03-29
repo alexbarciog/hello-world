@@ -150,7 +150,7 @@
 
 /* Brand text gradient */
 .brand-text-gradient {
-  background: linear-gradient(135deg, #005d8f 0%, #5b3cdd 100%);
+  background: linear-gradient(135deg, #0057bd 0%, #4647d3 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
