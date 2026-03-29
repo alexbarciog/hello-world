@@ -1727,6 +1727,149 @@ export default function CampaignDetail() {
                 </div>
               </div>
 
+              {/* Upcoming Messages Preview */}
+              {scheduledMessages.length > 0 && (
+                <div className="rounded-2xl border border-border/60 bg-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-primary" />
+                        Upcoming Messages
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Preview and edit messages before they're sent</p>
+                    </div>
+                    <span className="text-[11px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
+                      {scheduledMessages.length} contact(s)
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    {scheduledMessages.map((sm, idx) => {
+                      const isEditing = editingScheduledIdx === idx;
+                      const initials = sm.contactName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+                      return (
+                        <motion.div
+                          key={sm.contactId + sm.nextStepNum}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className="rounded-xl border border-border bg-background p-4 hover:shadow-sm transition-shadow"
+                        >
+                          {/* Contact header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                                {initials}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-foreground">{sm.contactName}</p>
+                                <p className="text-[10px] text-muted-foreground line-clamp-1">
+                                  {sm.contactTitle}{sm.contactCompany ? ` at ${sm.contactCompany}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                                sm.status === "ready" 
+                                  ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                                  : sm.status === "waiting_acceptance"
+                                  ? "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20"
+                                  : "bg-muted text-muted-foreground ring-1 ring-border"
+                              }`}>
+                                {sm.status === "ready" ? "Ready to send" 
+                                  : sm.status === "waiting_acceptance" ? "⏳ Awaiting accept" 
+                                  : `📅 ${sm.scheduledDate}`}
+                              </span>
+                              <span className="text-[10px] font-bold text-muted-foreground bg-muted/60 px-2 py-1 rounded-lg">
+                                Step {sm.nextStepNum}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Signal context */}
+                          {sm.contactSignal && (
+                            <div className="mb-3 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                              <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1">
+                                <Flame className="w-3 h-3" /> 
+                                <span className="font-bold">Signal:</span> {sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Message preview / edit */}
+                          <div className="rounded-lg border border-border bg-muted/20 p-3">
+                            {sm.isAi && !sm.message && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="italic">AI will generate a personalized message when this step triggers</span>
+                              </div>
+                            )}
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={editingScheduledMsg}
+                                  onChange={(e) => setEditingScheduledMsg(e.target.value)}
+                                  className="w-full text-xs border border-border rounded-lg p-2.5 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                  rows={4}
+                                />
+                                <div className="flex gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      // Save edited message back — update the scheduled message preview
+                                      const updated = [...scheduledMessages];
+                                      updated[idx] = { ...updated[idx], message: editingScheduledMsg };
+                                      setScheduledMessages(updated);
+                                      setEditingScheduledIdx(null);
+                                      toast.success("Message preview updated");
+                                    }}
+                                    className="text-xs font-bold text-white bg-primary rounded-lg px-3 py-1.5"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingScheduledIdx(null)}
+                                    className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-1.5"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : sm.message ? (
+                              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{sm.message}</p>
+                            ) : null}
+                          </div>
+
+                          {/* Actions */}
+                          {sm.message && !isEditing && (
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={() => {
+                                  setEditingScheduledIdx(idx);
+                                  setEditingScheduledMsg(sm.message);
+                                }}
+                                className="text-[10px] font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex items-center gap-1"
+                              >
+                                <Pencil className="w-3 h-3" /> Edit message
+                              </button>
+                              <button
+                                onClick={() => {
+                                  // Regenerate AI message for this specific contact's step
+                                  toast.info("AI regeneration per-contact coming soon");
+                                }}
+                                className="text-[10px] font-medium text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors flex items-center gap-1"
+                              >
+                                <Sparkles className="w-3 h-3" /> Regenerate with AI
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Workflow sequence summary */}
               <div className="rounded-xl border border-border p-5">
                 <h3 className="text-sm font-bold text-foreground mb-3">Full Sequence Overview</h3>
