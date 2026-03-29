@@ -125,7 +125,25 @@ export default function CampaignDetail() {
   const [remainingContacts, setRemainingContacts] = useState(0);
   const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number }>>({});
 
-  // Add step dialog state
+  // Scheduled messages state
+  type ScheduledMessage = {
+    contactId: string;
+    contactName: string;
+    contactTitle: string;
+    contactCompany: string;
+    contactSignal: string;
+    currentStep: number;
+    nextStepNum: number;
+    message: string;
+    isAi: boolean;
+    scheduledDate: string;
+    status: string;
+  };
+  const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
+  const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
+  const [editingScheduledMsg, setEditingScheduledMsg] = useState("");
+
+
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
   const [newStepType, setNewStepType] = useState<"message" | "visit_profile">("message");
@@ -258,7 +276,106 @@ export default function CampaignDetail() {
       setRemainingContacts(Math.max(0, totalContacts - totalSent));
     }
 
+    // Load scheduled messages - contacts with their next pending step
+    await loadScheduledMessages(campaignId, c.workflow_steps || []);
+
     setLoading(false);
+  }
+
+  async function loadScheduledMessages(campaignId: string, steps: any[]) {
+    const { data: connReqs } = await supabase
+      .from("campaign_connection_requests" as any)
+      .select("contact_id, status, current_step, accepted_at, step_completed_at")
+      .eq("campaign_id", campaignId);
+    if (!connReqs || connReqs.length === 0) { setScheduledMessages([]); return; }
+
+    // Get contact details for all contacts in campaign
+    const contactIds = (connReqs as any[]).map((cr: any) => cr.contact_id);
+    const { data: contactsData } = await supabase
+      .from("contacts")
+      .select("id, first_name, last_name, title, company, signal")
+      .in("id", contactIds);
+    const contactMap: Record<string, any> = {};
+    (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
+
+    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation");
+    const scheduled: ScheduledMessage[] = [];
+
+    for (const cr of connReqs as any[]) {
+      const contact = contactMap[cr.contact_id];
+      if (!contact) continue;
+
+      const currentStep = cr.current_step || 1;
+      // Step 1 = invitation sent. After acceptance, next is step 2 (nonInvSteps[0])
+      // current_step in DB tracks which step was last completed
+      const nextStepIdx = currentStep - 1; // index in nonInvSteps (step 2 = index 0)
+      
+      if (nextStepIdx >= nonInvSteps.length) continue; // all steps completed
+      if (cr.status === "pending") continue; // invitation not yet sent
+      
+      // For step 1 contacts (invitation sent but not accepted), show "Waiting for acceptance"
+      if (currentStep === 1 && cr.status !== "accepted") {
+        scheduled.push({
+          contactId: cr.contact_id,
+          contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
+          contactTitle: contact.title || "",
+          contactCompany: contact.company || "",
+          contactSignal: contact.signal || "",
+          currentStep: 1,
+          nextStepNum: 2,
+          message: nonInvSteps[0]?.message || "",
+          isAi: !!nonInvSteps[0]?.ai_icebreaker,
+          scheduledDate: "After acceptance",
+          status: "waiting_acceptance",
+        });
+        continue;
+      }
+
+      // For accepted contacts, show the next message step
+      if (cr.status === "accepted" && nextStepIdx < nonInvSteps.length) {
+        const nextStep = nonInvSteps[nextStepIdx];
+        const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
+        const scheduledDate = new Date(acceptedDate);
+        
+        // Calculate when this step should fire
+        let totalDelay = 0;
+        for (let j = 0; j <= nextStepIdx; j++) {
+          totalDelay += nonInvSteps[j]?.delay_days || 1;
+        }
+        scheduledDate.setDate(acceptedDate.getDate() + totalDelay);
+
+        // Personalize message preview
+        let msgPreview = nextStep?.message || "";
+        msgPreview = msgPreview
+          .replace(/\{\{first_name\}\}/g, contact.first_name)
+          .replace(/\{\{company\}\}/g, contact.company || "their company")
+          .replace(/\{\{title\}\}/g, contact.title || "their role")
+          .replace(/\{\{signal\}\}/g, contact.signal || "their recent activity");
+
+        scheduled.push({
+          contactId: cr.contact_id,
+          contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
+          contactTitle: contact.title || "",
+          contactCompany: contact.company || "",
+          contactSignal: contact.signal || "",
+          currentStep,
+          nextStepNum: currentStep + 1,
+          message: msgPreview,
+          isAi: !!nextStep?.ai_icebreaker,
+          scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          status: scheduledDate <= new Date() ? "ready" : "scheduled",
+        });
+      }
+    }
+
+    // Sort: ready first, then by scheduled date
+    scheduled.sort((a, b) => {
+      if (a.status === "ready" && b.status !== "ready") return -1;
+      if (b.status === "ready" && a.status !== "ready") return 1;
+      return 0;
+    });
+
+    setScheduledMessages(scheduled);
   }
 
   async function loadContactsForList(listId: string) {
@@ -1609,6 +1726,149 @@ export default function CampaignDetail() {
                   })()}
                 </div>
               </div>
+
+              {/* Upcoming Messages Preview */}
+              {scheduledMessages.length > 0 && (
+                <div className="rounded-2xl border border-border/60 bg-card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-base font-extrabold text-foreground tracking-tight flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-primary" />
+                        Upcoming Messages
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Preview and edit messages before they're sent</p>
+                    </div>
+                    <span className="text-[11px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
+                      {scheduledMessages.length} contact(s)
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    {scheduledMessages.map((sm, idx) => {
+                      const isEditing = editingScheduledIdx === idx;
+                      const initials = sm.contactName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+
+                      return (
+                        <motion.div
+                          key={sm.contactId + sm.nextStepNum}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className="rounded-xl border border-border bg-background p-4 hover:shadow-sm transition-shadow"
+                        >
+                          {/* Contact header */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                                {initials}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-foreground">{sm.contactName}</p>
+                                <p className="text-[10px] text-muted-foreground line-clamp-1">
+                                  {sm.contactTitle}{sm.contactCompany ? ` at ${sm.contactCompany}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                                sm.status === "ready" 
+                                  ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                                  : sm.status === "waiting_acceptance"
+                                  ? "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20"
+                                  : "bg-muted text-muted-foreground ring-1 ring-border"
+                              }`}>
+                                {sm.status === "ready" ? "Ready to send" 
+                                  : sm.status === "waiting_acceptance" ? "⏳ Awaiting accept" 
+                                  : `📅 ${sm.scheduledDate}`}
+                              </span>
+                              <span className="text-[10px] font-bold text-muted-foreground bg-muted/60 px-2 py-1 rounded-lg">
+                                Step {sm.nextStepNum}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Signal context */}
+                          {sm.contactSignal && (
+                            <div className="mb-3 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                              <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1">
+                                <Flame className="w-3 h-3" /> 
+                                <span className="font-bold">Signal:</span> {sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Message preview / edit */}
+                          <div className="rounded-lg border border-border bg-muted/20 p-3">
+                            {sm.isAi && !sm.message && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                <span className="italic">AI will generate a personalized message when this step triggers</span>
+                              </div>
+                            )}
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  value={editingScheduledMsg}
+                                  onChange={(e) => setEditingScheduledMsg(e.target.value)}
+                                  className="w-full text-xs border border-border rounded-lg p-2.5 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                  rows={4}
+                                />
+                                <div className="flex gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      // Save edited message back — update the scheduled message preview
+                                      const updated = [...scheduledMessages];
+                                      updated[idx] = { ...updated[idx], message: editingScheduledMsg };
+                                      setScheduledMessages(updated);
+                                      setEditingScheduledIdx(null);
+                                      toast.success("Message preview updated");
+                                    }}
+                                    className="text-xs font-bold text-white bg-primary rounded-lg px-3 py-1.5"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingScheduledIdx(null)}
+                                    className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-1.5"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : sm.message ? (
+                              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{sm.message}</p>
+                            ) : null}
+                          </div>
+
+                          {/* Actions */}
+                          {sm.message && !isEditing && (
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                onClick={() => {
+                                  setEditingScheduledIdx(idx);
+                                  setEditingScheduledMsg(sm.message);
+                                }}
+                                className="text-[10px] font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex items-center gap-1"
+                              >
+                                <Pencil className="w-3 h-3" /> Edit message
+                              </button>
+                              <button
+                                onClick={() => {
+                                  // Regenerate AI message for this specific contact's step
+                                  toast.info("AI regeneration per-contact coming soon");
+                                }}
+                                className="text-[10px] font-medium text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors flex items-center gap-1"
+                              >
+                                <Sparkles className="w-3 h-3" /> Regenerate with AI
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Workflow sequence summary */}
               <div className="rounded-xl border border-border p-5">
