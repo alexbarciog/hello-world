@@ -484,40 +484,48 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Start Section */}
-        <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-light font-headline text-md-on-surface">Quick Start</h2>
-            <span className="text-xs font-medium text-md-primary">{completedSteps}/{quickStartSteps.length}</span>
+        <div className="glass-card rounded-[2rem] p-6 md:p-8 flex flex-col">
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-md-on-surface tracking-tight">Quick Start Guide</h2>
+            <p className="text-xs text-md-on-surface-variant font-medium mt-1 uppercase tracking-widest">{completedSteps}/{quickStartSteps.length} completed</p>
           </div>
-          <div className="space-y-3 flex-grow">
+          <div className="space-y-6 flex-grow">
             {quickStartSteps.map((step) =>
             <div
               key={step.label}
-              className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
-              step.done ?
-              "bg-white/40 border-white/20 hover:bg-white/60" :
-              "bg-white/20 border-white/10 hover:bg-white/40"}`
-              }>
+              className="flex items-center gap-4 group cursor-pointer">
               
-                <div className="mt-0.5 flex-shrink-0">
+                <div className="flex-shrink-0">
                   {step.done ?
-                <div className="w-5 h-5 rounded-full bg-md-primary text-white flex items-center justify-center">
-                      <Check className="w-3 h-3" strokeWidth={3} />
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all group-hover:scale-110">
+                      <Check className="w-4 h-4" strokeWidth={3} />
                     </div> :
 
-                <div className="w-5 h-5 rounded-full border-2 border-md-outline-variant bg-transparent" />
+                <div className="w-10 h-10 rounded-full bg-md-surface-container flex items-center justify-center text-md-on-surface-variant border-2 border-md-primary/20 transition-all group-hover:shadow-[0_0_15px_hsla(var(--md-primary)/0.2)]">
+                      <Zap className="w-4 h-4" />
+                    </div>
                 }
                 </div>
                 <div>
-                  <div className={`font-medium text-sm ${step.done ? "text-md-on-surface-variant line-through" : "text-md-on-surface"}`}>{step.label}</div>
-                  <div className="text-[11px] font-light text-md-on-surface-variant">{step.desc}</div>
+                  <h4 className={`text-sm font-bold ${step.done ? "text-md-on-surface line-through opacity-50" : "text-md-on-surface"}`}>{step.label}</h4>
+                  <p className={`text-xs ${step.done ? "text-md-on-surface-variant" : "text-md-tertiary font-bold"}`}>{step.desc}</p>
                 </div>
               </div>
             )}
           </div>
+
+          <div className="mt-8 p-4 bg-md-primary/5 rounded-2xl border border-md-primary/10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-md-primary/15 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-md-primary" />
+              </div>
+              <p className="text-xs font-medium text-md-primary leading-tight">Pro tip: Connect LinkedIn first to unlock AI-powered lead discovery.</p>
+            </div>
+          </div>
+
           <button
             onClick={handleNewCampaign}
-            className="w-full py-2.5 mt-5 rounded-full border border-md-primary/30 text-md-primary text-sm font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2">
+            className="w-full py-3 mt-6 rounded-full border border-md-primary/30 text-md-primary text-sm font-bold hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2">
             
             View setup guide
             <ArrowRight className="w-3.5 h-3.5" />
@@ -526,12 +534,12 @@ export default function Dashboard() {
       </div>
 
       {/* ── Bottom row: Leads & Replies ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Latest Hot Leads */}
-        <div className="glass-card rounded-2xl p-5 md:p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-lg font-light font-headline text-md-on-surface">Latest Hot Leads</h2>
-            <button onClick={() => navigate("/contacts")} className="text-xs font-medium text-md-primary hover:underline">View CRM</button>
+        <div className="glass-card rounded-[2rem] p-6 md:p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-md-on-surface tracking-tight">Latest Hot Leads</h2>
+            <button onClick={() => navigate("/contacts")} className="text-sm font-bold text-md-primary hover:underline">View CRM</button>
           </div>
           <div className="space-y-2">
             {leadsLoading ?
