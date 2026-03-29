@@ -314,7 +314,7 @@ export default function Dashboard() {
   const completedSteps = getStartedSteps.filter((s) => s.done).length;
 
   return (
-    <div className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body bg-white">
+    <div className="min-h-full mesh-gradient-bg rounded-2xl px-4 md:px-8 py-8 md:py-10 relative m-2 md:m-4 font-body bg-md-surface-bright">
       {/* ── Header ── */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div className="space-y-1">
