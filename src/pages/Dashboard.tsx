@@ -656,7 +656,7 @@ export default function Dashboard() {
 
       {/* ── Get Started panel ── */}
       {completedSteps < getStartedSteps.length &&
-      <div className="glass-card rounded-2xl overflow-hidden mb-6">
+      <div className="glass-card rounded-[2rem] overflow-hidden mb-8">
           <button
           onClick={() => setGetStartedOpen(!getStartedOpen)}
           className="w-full flex items-center justify-between px-5 md:px-6 py-4 transition-colors hover:bg-white/30">
