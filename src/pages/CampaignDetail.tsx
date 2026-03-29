@@ -452,7 +452,7 @@ export default function CampaignDetail() {
     setEditingStep(null);
   }
 
-
+  const filteredContacts = useMemo(() => {
     let list = contacts;
     if (contactFilter !== "all") {
       list = list.filter(c => c.relevance_tier === contactFilter);
