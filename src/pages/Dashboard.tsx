@@ -66,33 +66,41 @@ interface MetricCardProps {
   iconBg: string;
   trend?: string;
   trendUp?: boolean;
+  progress?: number;
 }
 
-function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: MetricCardProps) {
+function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp, progress = 0 }: MetricCardProps) {
   return (
-    <div className="glass-card p-5 rounded-2xl flex flex-col justify-between group relative overflow-hidden">
-      <div className="flex justify-between items-start mb-6">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
+    <div className="glass-card p-6 rounded-[1.5rem] flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300">
+      <div className="flex justify-between items-start">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: iconBg }}>
           {icon}
         </div>
         {trend &&
-        <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-        trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"}`
+        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+        trendUp ? "bg-emerald-50 text-emerald-600" : "bg-md-surface-container text-md-on-surface-variant"}`
         }>
-            {trendUp ? "↑" : ""} {trend}
+            {trendUp ? "+" : ""}{trend}
           </span>
         }
       </div>
-      <div>
-        <h3 className="text-md-on-surface-variant font-light text-[10px] uppercase tracking-[0.2em] mb-1">{title}</h3>
+      <div className="mt-6">
+        <p className="text-sm font-semibold text-md-on-surface-variant">{title}</p>
         {loading ?
-        <div className="h-8 w-12 bg-md-surface-container rounded animate-pulse" /> :
-
-        <div className="text-3xl font-light tracking-tight text-md-on-surface font-headline">{value}</div>
+        <div className="h-9 w-16 bg-md-surface-container rounded animate-pulse mt-1" /> :
+        <h3 className="text-3xl font-extrabold text-md-on-surface mt-1 tracking-tight">{value}</h3>
         }
       </div>
+      <div className="mt-4 h-1.5 w-full bg-md-surface-container rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${Math.min(100, Math.max(5, progress))}%`,
+            background: "var(--gradient-md-brand)"
+          }}
+        />
+      </div>
     </div>);
-
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
