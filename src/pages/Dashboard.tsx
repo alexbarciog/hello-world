@@ -360,40 +360,43 @@ export default function Dashboard() {
       </header>
 
       {/* ── Metrics Bento Grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <MetricCard
           title="Hot Opportunities"
           value={hotOpps}
           loading={hotOppsLoading}
-          icon={<Flame className="w-5 h-5 text-md-primary" />}
-          iconBg="hsla(var(--md-primary) / 0.12)"
-          trend={hotOpps > 0 ? "12%" : "0%"}
-          trendUp={hotOpps > 0} />
+          icon={<Flame className="w-6 h-6 text-md-primary" />}
+          iconBg="hsla(var(--md-primary) / 0.10)"
+          trend={hotOpps > 0 ? "12.4%" : "0%"}
+          trendUp={hotOpps > 0}
+          progress={hotOpps > 0 ? 75 : 5} />
         
         <MetricCard
           title="Leads Engaged"
           value={leadsEngaged}
           loading={statsLoading}
-          icon={<Users className="w-5 h-5 text-md-secondary" />}
-          iconBg="hsla(var(--md-secondary) / 0.12)"
-          trend={leadsEngaged > 0 ? "8%" : "0%"}
-          trendUp={leadsEngaged > 0} />
+          icon={<Users className="w-6 h-6 text-md-secondary" />}
+          iconBg="hsla(var(--md-secondary) / 0.10)"
+          trend={leadsEngaged > 0 ? "8.1%" : "0%"}
+          trendUp={leadsEngaged > 0}
+          progress={leadsEngaged > 0 ? 62 : 5} />
         
         <MetricCard
           title="Conversations"
           value={conversations}
           loading={statsLoading}
-          icon={<MessagesSquare className="w-5 h-5 text-md-tertiary" />}
-          iconBg="hsla(var(--md-tertiary-fixed) / 0.3)"
+          icon={<MessagesSquare className="w-6 h-6 text-md-tertiary" />}
+          iconBg="hsla(var(--md-tertiary) / 0.10)"
           trend={conversations > 0 ? "24%" : "0%"}
-          trendUp={conversations > 0} />
+          trendUp={conversations > 0}
+          progress={conversations > 0 ? 48 : 5} />
         
       </div>
 
       {/* ── Main Activity Chart & Quick Start ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Area Chart */}
-        <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col relative">
+        <div className="lg:col-span-2 glass-card rounded-[2rem] overflow-hidden flex flex-col relative">
           <div className="p-5 md:p-6 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
