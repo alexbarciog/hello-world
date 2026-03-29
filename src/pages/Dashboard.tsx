@@ -397,11 +397,11 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Area Chart */}
         <div className="lg:col-span-2 glass-card rounded-[2rem] overflow-hidden flex flex-col relative">
-          <div className="p-5 md:p-6 pb-0">
+          <div className="p-6 md:p-8 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
-                <h2 className="text-lg font-light font-headline mb-0.5 text-md-on-surface">Performance Velocity</h2>
-                <p className="text-md-on-surface-variant font-light text-sm">Real-time engagement tracking across all channels</p>
+                <h2 className="text-2xl font-bold text-md-on-surface tracking-tight">Performance Velocity</h2>
+                <p className="text-sm text-md-on-surface-variant font-medium mt-1">Real-time aggregate data across all channels</p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-1.5">
