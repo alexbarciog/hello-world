@@ -125,7 +125,25 @@ export default function CampaignDetail() {
   const [remainingContacts, setRemainingContacts] = useState(0);
   const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number }>>({});
 
-  // Add step dialog state
+  // Scheduled messages state
+  type ScheduledMessage = {
+    contactId: string;
+    contactName: string;
+    contactTitle: string;
+    contactCompany: string;
+    contactSignal: string;
+    currentStep: number;
+    nextStepNum: number;
+    message: string;
+    isAi: boolean;
+    scheduledDate: string;
+    status: string;
+  };
+  const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
+  const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
+  const [editingScheduledMsg, setEditingScheduledMsg] = useState("");
+
+
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
   const [newStepType, setNewStepType] = useState<"message" | "visit_profile">("message");
