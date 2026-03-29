@@ -350,11 +350,8 @@ export default function Dashboard() {
           </button>
           <button
             onClick={handleNewCampaign}
-            className="text-md-on-primary px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-transform duration-300"
-            style={{
-              background: "var(--gradient-md-brand)",
-              boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)"
-            }}>
+            className="brand-gradient-button text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300"
+            >
             
             <Rocket className="w-4 h-4" />
             Start a campaign
