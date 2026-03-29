@@ -58,27 +58,31 @@
     --goji-bg-hero-2: 20 90% 94%;
 
     /* Dashboard MD3 palette */
-    --md-primary: 201 100% 28%;
-    --md-primary-container: 201 100% 35%;
-    --md-on-primary: 0 0% 100%;
-    --md-on-surface: 228 10% 11%;
-    --md-on-surface-variant: 210 8% 30%;
-    --md-secondary: 257 66% 55%;
-    --md-secondary-fixed: 255 100% 93%;
-    --md-tertiary: 46 100% 22%;
-    --md-tertiary-fixed: 46 100% 72%;
-    --md-surface: 250 100% 99%;
-    --md-surface-container: 240 18% 95%;
-    --md-surface-container-high: 240 12% 92%;
+    --md-primary: 210 100% 37%;
+    --md-primary-container: 216 100% 72%;
+    --md-on-primary: 220 20% 97%;
+    --md-on-surface: 210 5% 18%;
+    --md-on-surface-variant: 210 3% 36%;
+    --md-secondary: 43 100% 23%;
+    --md-secondary-container: 42 100% 66%;
+    --md-secondary-fixed: 42 100% 85%;
+    --md-tertiary: 240 61% 55%;
+    --md-tertiary-fixed: 240 100% 80%;
+    --md-surface: 210 25% 97%;
+    --md-surface-bright: 210 25% 97%;
+    --md-surface-container: 200 12% 91%;
+    --md-surface-container-high: 200 10% 88%;
+    --md-surface-container-low: 200 10% 95%;
     --md-outline: 207 6% 47%;
-    --md-outline-variant: 210 10% 78%;
+    --md-outline-variant: 210 2% 68%;
+    --md-error: 355 82% 40%;
 
     /* Gradient */
     --gradient-hero: linear-gradient(135deg, hsl(5 85% 96%) 0%, hsl(20 90% 94%) 50%, hsl(0 0% 100%) 100%);
     --gradient-brand: linear-gradient(135deg, hsl(var(--goji-orange)), hsl(var(--goji-coral)));
     --gradient-cta: linear-gradient(90deg, #311EDB 0%, #3C70EA 100%);
     --gradient-cta-bg: linear-gradient(135deg, hsl(5 80% 93%) 0%, hsl(350 60% 91%) 100%);
-    --gradient-md-brand: linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #ffe170 100%);
+    --gradient-md-brand: linear-gradient(135deg, #0057bd 0%, #4647d3 100%);
 
     /* Shadows */
     --shadow-card: 0 2px 16px 0 hsl(220 14% 10% / 0.06);
@@ -124,16 +128,29 @@
 
 /* Dashboard glass card */
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Mesh gradient background */
+.mesh-gradient-bg {
+  background:
+    radial-gradient(at 0% 0%, rgba(0, 87, 189, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(255, 202, 81, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(70, 71, 211, 0.08) 0px, transparent 50%);
+}
+
+/* Brand gradient button */
+.brand-gradient-button {
+  background: linear-gradient(135deg, #0057bd 0%, #4647d3 100%);
 }
 
 /* Brand text gradient */
 .brand-text-gradient {
-  background: linear-gradient(135deg, #005d8f 0%, #5b3cdd 100%);
+  background: linear-gradient(135deg, #0057bd 0%, #4647d3 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

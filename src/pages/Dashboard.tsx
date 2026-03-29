@@ -66,33 +66,41 @@ interface MetricCardProps {
   iconBg: string;
   trend?: string;
   trendUp?: boolean;
+  progress?: number;
 }
 
-function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp }: MetricCardProps) {
+function MetricCard({ title, value, loading, icon, iconBg, trend, trendUp, progress = 0 }: MetricCardProps) {
   return (
-    <div className="glass-card p-5 rounded-2xl flex flex-col justify-between group relative overflow-hidden">
-      <div className="flex justify-between items-start mb-6">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
+    <div className="glass-card p-6 rounded-[1.5rem] flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300">
+      <div className="flex justify-between items-start">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: iconBg }}>
           {icon}
         </div>
         {trend &&
-        <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-        trendUp ? "bg-green-100 text-green-700" : "bg-md-surface-container text-md-on-surface-variant"}`
+        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+        trendUp ? "bg-emerald-50 text-emerald-600" : "bg-md-surface-container text-md-on-surface-variant"}`
         }>
-            {trendUp ? "↑" : ""} {trend}
+            {trendUp ? "+" : ""}{trend}
           </span>
         }
       </div>
-      <div>
-        <h3 className="text-md-on-surface-variant font-light text-[10px] uppercase tracking-[0.2em] mb-1">{title}</h3>
+      <div className="mt-6">
+        <p className="text-sm font-semibold text-md-on-surface-variant">{title}</p>
         {loading ?
-        <div className="h-8 w-12 bg-md-surface-container rounded animate-pulse" /> :
-
-        <div className="text-3xl font-light tracking-tight text-md-on-surface font-headline">{value}</div>
+        <div className="h-9 w-16 bg-md-surface-container rounded animate-pulse mt-1" /> :
+        <h3 className="text-3xl font-extrabold text-md-on-surface mt-1 tracking-tight">{value}</h3>
         }
       </div>
+      <div className="mt-4 h-1.5 w-full bg-md-surface-container rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${Math.min(100, Math.max(5, progress))}%`,
+            background: "var(--gradient-md-brand)"
+          }}
+        />
+      </div>
     </div>);
-
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -306,16 +314,16 @@ export default function Dashboard() {
   const completedSteps = getStartedSteps.filter((s) => s.done).length;
 
   return (
-    <div className="min-h-full rounded-2xl px-4 md:px-8 py-6 md:py-8 relative m-2 md:m-4 font-body bg-white">
+    <div className="min-h-full mesh-gradient-bg rounded-2xl px-4 md:px-8 py-8 md:py-10 relative m-2 md:m-4 font-body bg-md-surface-bright">
       {/* ── Header ── */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-light tracking-tight text-md-on-surface font-headline">
-            Welcome back, <span className="font-semibold text-md-primary">{firstName}</span>
-          </h1>
-          <p className="text-md-on-surface-variant font-light text-sm tracking-wide">
-            Your architected outreach performance for this week.
-          </p>
+           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-md-on-surface font-headline">
+314:             Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span>
+           </h1>
+           <p className="text-md-on-surface-variant font-medium text-sm mt-1">
+             Your architected outreach performance for this week.
+           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <button
@@ -342,11 +350,8 @@ export default function Dashboard() {
           </button>
           <button
             onClick={handleNewCampaign}
-            className="text-md-on-primary px-5 py-2.5 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] transition-transform duration-300"
-            style={{
-              background: "var(--gradient-md-brand)",
-              boxShadow: "0 8px 32px hsla(var(--md-primary) / 0.2)"
-            }}>
+            className="brand-gradient-button text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300"
+            >
             
             <Rocket className="w-4 h-4" />
             Start a campaign
@@ -355,45 +360,48 @@ export default function Dashboard() {
       </header>
 
       {/* ── Metrics Bento Grid ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <MetricCard
           title="Hot Opportunities"
           value={hotOpps}
           loading={hotOppsLoading}
-          icon={<Flame className="w-5 h-5 text-md-primary" />}
-          iconBg="hsla(var(--md-primary) / 0.12)"
-          trend={hotOpps > 0 ? "12%" : "0%"}
-          trendUp={hotOpps > 0} />
+          icon={<Flame className="w-6 h-6 text-md-primary" />}
+          iconBg="hsla(var(--md-primary) / 0.10)"
+          trend={hotOpps > 0 ? "12.4%" : "0%"}
+          trendUp={hotOpps > 0}
+          progress={hotOpps > 0 ? 75 : 5} />
         
         <MetricCard
           title="Leads Engaged"
           value={leadsEngaged}
           loading={statsLoading}
-          icon={<Users className="w-5 h-5 text-md-secondary" />}
-          iconBg="hsla(var(--md-secondary) / 0.12)"
-          trend={leadsEngaged > 0 ? "8%" : "0%"}
-          trendUp={leadsEngaged > 0} />
+          icon={<Users className="w-6 h-6 text-md-secondary" />}
+          iconBg="hsla(var(--md-secondary) / 0.10)"
+          trend={leadsEngaged > 0 ? "8.1%" : "0%"}
+          trendUp={leadsEngaged > 0}
+          progress={leadsEngaged > 0 ? 62 : 5} />
         
         <MetricCard
           title="Conversations"
           value={conversations}
           loading={statsLoading}
-          icon={<MessagesSquare className="w-5 h-5 text-md-tertiary" />}
-          iconBg="hsla(var(--md-tertiary-fixed) / 0.3)"
+          icon={<MessagesSquare className="w-6 h-6 text-md-tertiary" />}
+          iconBg="hsla(var(--md-tertiary) / 0.10)"
           trend={conversations > 0 ? "24%" : "0%"}
-          trendUp={conversations > 0} />
+          trendUp={conversations > 0}
+          progress={conversations > 0 ? 48 : 5} />
         
       </div>
 
       {/* ── Main Activity Chart & Quick Start ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Area Chart */}
-        <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden flex flex-col relative">
-          <div className="p-5 md:p-6 pb-0">
+        <div className="lg:col-span-2 glass-card rounded-[2rem] overflow-hidden flex flex-col relative">
+          <div className="p-6 md:p-8 pb-0">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
-                <h2 className="text-lg font-light font-headline mb-0.5 text-md-on-surface">Performance Velocity</h2>
-                <p className="text-md-on-surface-variant font-light text-sm">Real-time engagement tracking across all channels</p>
+                <h2 className="text-2xl font-bold text-md-on-surface tracking-tight">Performance Velocity</h2>
+                <p className="text-sm text-md-on-surface-variant font-medium mt-1">Real-time aggregate data across all channels</p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-1.5">
@@ -476,40 +484,48 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Start Section */}
-        <div className="glass-card rounded-2xl p-5 md:p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-light font-headline text-md-on-surface">Quick Start</h2>
-            <span className="text-xs font-medium text-md-primary">{completedSteps}/{quickStartSteps.length}</span>
+        <div className="glass-card rounded-[2rem] p-6 md:p-8 flex flex-col">
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-md-on-surface tracking-tight">Quick Start Guide</h2>
+            <p className="text-xs text-md-on-surface-variant font-medium mt-1 uppercase tracking-widest">{completedSteps}/{quickStartSteps.length} completed</p>
           </div>
-          <div className="space-y-3 flex-grow">
+          <div className="space-y-6 flex-grow">
             {quickStartSteps.map((step) =>
             <div
               key={step.label}
-              className={`flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 ${
-              step.done ?
-              "bg-white/40 border-white/20 hover:bg-white/60" :
-              "bg-white/20 border-white/10 hover:bg-white/40"}`
-              }>
+              className="flex items-center gap-4 group cursor-pointer">
               
-                <div className="mt-0.5 flex-shrink-0">
+                <div className="flex-shrink-0">
                   {step.done ?
-                <div className="w-5 h-5 rounded-full bg-md-primary text-white flex items-center justify-center">
-                      <Check className="w-3 h-3" strokeWidth={3} />
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all group-hover:scale-110">
+                      <Check className="w-4 h-4" strokeWidth={3} />
                     </div> :
 
-                <div className="w-5 h-5 rounded-full border-2 border-md-outline-variant bg-transparent" />
+                <div className="w-10 h-10 rounded-full bg-md-surface-container flex items-center justify-center text-md-on-surface-variant border-2 border-md-primary/20 transition-all group-hover:shadow-[0_0_15px_hsla(var(--md-primary)/0.2)]">
+                      <Zap className="w-4 h-4" />
+                    </div>
                 }
                 </div>
                 <div>
-                  <div className={`font-medium text-sm ${step.done ? "text-md-on-surface-variant line-through" : "text-md-on-surface"}`}>{step.label}</div>
-                  <div className="text-[11px] font-light text-md-on-surface-variant">{step.desc}</div>
+                  <h4 className={`text-sm font-bold ${step.done ? "text-md-on-surface line-through opacity-50" : "text-md-on-surface"}`}>{step.label}</h4>
+                  <p className={`text-xs ${step.done ? "text-md-on-surface-variant" : "text-md-tertiary font-bold"}`}>{step.desc}</p>
                 </div>
               </div>
             )}
           </div>
+
+          <div className="mt-8 p-4 bg-md-primary/5 rounded-2xl border border-md-primary/10">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-md-primary/15 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-md-primary" />
+              </div>
+              <p className="text-xs font-medium text-md-primary leading-tight">Pro tip: Connect LinkedIn first to unlock AI-powered lead discovery.</p>
+            </div>
+          </div>
+
           <button
             onClick={handleNewCampaign}
-            className="w-full py-2.5 mt-5 rounded-full border border-md-primary/30 text-md-primary text-sm font-medium hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2">
+            className="w-full py-3 mt-6 rounded-full border border-md-primary/30 text-md-primary text-sm font-bold hover:bg-md-primary/5 transition-all duration-300 flex items-center justify-center gap-2">
             
             View setup guide
             <ArrowRight className="w-3.5 h-3.5" />
@@ -518,12 +534,12 @@ export default function Dashboard() {
       </div>
 
       {/* ── Bottom row: Leads & Replies ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Latest Hot Leads */}
-        <div className="glass-card rounded-2xl p-5 md:p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-lg font-light font-headline text-md-on-surface">Latest Hot Leads</h2>
-            <button onClick={() => navigate("/contacts")} className="text-xs font-medium text-md-primary hover:underline">View CRM</button>
+        <div className="glass-card rounded-[2rem] p-6 md:p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-md-on-surface tracking-tight">Latest Hot Leads</h2>
+            <button onClick={() => navigate("/contacts")} className="text-sm font-bold text-md-primary hover:underline">View CRM</button>
           </div>
           <div className="space-y-2">
             {leadsLoading ?
@@ -575,9 +591,9 @@ export default function Dashboard() {
         </div>
 
         {/* Latest Replies */}
-        <div className="glass-card rounded-2xl p-5 md:p-6">
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-lg font-light font-headline text-md-on-surface">Latest Replies</h2>
+        <div className="glass-card rounded-[2rem] p-6 md:p-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-md-on-surface tracking-tight">Latest Replies</h2>
             <button onClick={() => navigate("/unibox")} className="flex items-center gap-1.5 px-3 py-1.5 bg-md-secondary/10 rounded-full cursor-pointer hover:bg-md-secondary/20 transition-colors group">
               <span className="text-xs font-semibold text-md-secondary">Open Inbox</span>
               <ArrowRight className="w-3 h-3 text-md-secondary group-hover:translate-x-1 transition-transform" />
@@ -640,7 +656,7 @@ export default function Dashboard() {
 
       {/* ── Get Started panel ── */}
       {completedSteps < getStartedSteps.length &&
-      <div className="glass-card rounded-2xl overflow-hidden mb-6">
+      <div className="glass-card rounded-[2rem] overflow-hidden mb-8">
           <button
           onClick={() => setGetStartedOpen(!getStartedOpen)}
           className="w-full flex items-center justify-between px-5 md:px-6 py-4 transition-colors hover:bg-white/30">
