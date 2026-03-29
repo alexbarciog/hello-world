@@ -1,4 +1,5 @@
 import { useState } from "react";
+import meshGradientBg from "@/assets/mesh-gradient-bg.png";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
