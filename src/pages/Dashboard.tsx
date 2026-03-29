@@ -318,12 +318,12 @@ export default function Dashboard() {
       {/* ── Header ── */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-light tracking-tight text-md-on-surface font-headline">
-            Welcome back, <span className="font-semibold text-md-primary">{firstName}</span>
-          </h1>
-          <p className="text-md-on-surface-variant font-light text-sm tracking-wide">
-            Your architected outreach performance for this week.
-          </p>
+           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-md-on-surface font-headline">
+314:             Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span>
+           </h1>
+           <p className="text-md-on-surface-variant font-medium text-sm mt-1">
+             Your architected outreach performance for this week.
+           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <button
