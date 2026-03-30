@@ -385,7 +385,7 @@ export default function CampaignsPage() {
                 <p className="text-md-on-surface text-sm font-medium">{stat.label}</p>
               </div>
               <div>
-                <p className="font-headline tracking-tight text-md-on-surface font-semibold text-3xl">{stat.value}</p>
+                <p className={`font-headline tracking-tight font-semibold text-3xl ${stat.label === "Total Leads" ? "text-white" : "text-md-on-surface"}`}>{stat.value}</p>
               </div>
             </div>
         )}
