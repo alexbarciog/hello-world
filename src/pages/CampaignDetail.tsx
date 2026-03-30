@@ -1364,7 +1364,7 @@ export default function CampaignDetail() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[800px]">
+                  <table className="w-full min-w-[900px]">
                     <thead>
                       <tr className="border-b border-border">
                         {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "LAST ACTION", "NEXT STEP"].map((h) => (
