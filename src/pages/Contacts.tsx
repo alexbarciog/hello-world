@@ -32,10 +32,11 @@ export default function Contacts() {
     if (!user) { setLoading(false); return; }
 
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes] = await Promise.all([
+    const [contactsRes, listsRes, junctionRes, connReqRes] = await Promise.all([
       supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
+      supabase.from("campaign_connection_requests").select("contact_id, status, sent_at, accepted_at, current_step").eq("user_id", user.id).order("sent_at", { ascending: false }),
     ]);
 
     if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
