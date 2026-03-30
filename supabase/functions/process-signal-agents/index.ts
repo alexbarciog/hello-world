@@ -350,7 +350,7 @@ async function handleKeywordPosts(
       });
       if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 10);
+      const items = (data.items || data.results || []).slice(0, 20);
       console.log(`keyword_posts "${keyword}": ${items.length} posts`);
       for (const item of items) allPosts.push({ ...item, _keyword: keyword });
     } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
