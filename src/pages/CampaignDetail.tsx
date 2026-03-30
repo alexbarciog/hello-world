@@ -1183,6 +1183,30 @@ export default function CampaignDetail() {
                   </div>
                 </DialogContent>
               </Dialog>
+
+              {/* Edit Step Instructions Dialog */}
+              <Dialog open={editStepInstructionsIdx !== null} onOpenChange={(open) => { if (!open) setEditStepInstructionsIdx(null); }}>
+                <DialogContent className="sm:max-w-[480px] p-6 gap-0">
+                  <DialogHeader className="mb-4">
+                    <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" /> AI Step Instructions
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground">Add custom instructions for Step {(editStepInstructionsIdx ?? 0) + 2}. These will guide the AI when generating messages for this specific step.</p>
+                  </DialogHeader>
+                  <textarea
+                    value={editStepInstructionsText}
+                    onChange={(e) => setEditStepInstructionsText(e.target.value)}
+                    className="w-full min-h-[100px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                    placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
+                    maxLength={500}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1 mb-4">{editStepInstructionsText.length}/500</p>
+                  <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                    <button onClick={() => setEditStepInstructionsIdx(null)} className="text-sm font-medium text-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">Cancel</button>
+                    <button onClick={saveStepInstructions} className="text-sm font-bold text-white bg-primary rounded-lg px-5 py-2 hover:bg-primary/90 transition-colors">Save</button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </motion.div>
           )}
 
