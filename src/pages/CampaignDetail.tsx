@@ -1442,17 +1442,29 @@ export default function CampaignDetail() {
                               <td className="px-3 py-3">
                                 {(() => {
                                   const cs = contactStatuses[c.id];
-                                  if (!cs) return <span className="text-xs text-muted-foreground">—</span>;
-                                  const stepNum = cs.step || 1;
-                                  const stepLabel = stepNum === 1 ? "Invitation sent" : `Step ${stepNum} message`;
+                                  if (!cs) return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-muted text-muted-foreground ring-1 ring-border">Added to campaign</span>;
                                   const chipColors = [
                                     "bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20",
                                     "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20",
                                     "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20",
                                     "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20",
                                   ];
-                                  const colorClass = chipColors[(stepNum - 1) % chipColors.length];
-                                  return <span className={`inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{stepLabel}</span>;
+                                  if (cs.status === "skipped" || cs.status === "failed") {
+                                    return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-red-500/10 text-red-600 ring-1 ring-red-500/20">Invite skipped</span>;
+                                  }
+                                  if (cs.status === "pending") {
+                                    return <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${chipColors[0]}`}>Invitation sent</span>;
+                                  }
+                                  if (cs.status === "accepted") {
+                                    const stepNum = cs.step || 1;
+                                    const label = stepNum === 1 ? "Invite accepted" : `Step ${stepNum} sent`;
+                                    const colorClass = chipColors[(stepNum) % chipColors.length];
+                                    return <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{label}</span>;
+                                  }
+                                  if (cs.status === "sent") {
+                                    return <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${chipColors[0]}`}>Invitation sent</span>;
+                                  }
+                                  return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-muted text-muted-foreground ring-1 ring-border">{cs.status}</span>;
                                 })()}
                               </td>
                               <td className="px-3 py-3">
