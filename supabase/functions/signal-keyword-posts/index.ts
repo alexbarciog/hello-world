@@ -273,10 +273,11 @@ Deno.serve(async (req) => {
         const classification = classifyContact(match, icp, hl);
         console.log(`[DEBUG] Match: score=${match.score}, fields=[${match.matchedFields}], classify=${classification}, titleMatch=${match.titleMatch}, industryMatch=${match.industryMatch}, excluded=${isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)}`);
         if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
+          if (classification === 'cold' && !canInsertCold()) continue;
           const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
           const signal = `Posted about "${post._keyword}"`;
           const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
-          if (ok) { inserted++; console.log(`+1 author "${fullAuthor.first_name} ${fullAuthor.last_name || ''}" (${hl})`); }
+          if (ok) { inserted++; if (classification === 'cold') coldCount++; else hotWarmCount++; }
         }
       }
 
