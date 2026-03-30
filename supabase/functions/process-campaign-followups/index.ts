@@ -269,14 +269,50 @@ async function processCampaign(
           .eq('id', req.contact_id)
           .single();
 
-        let message = nextStep.message || '';
-        if (contact) {
-          message = message
-            .replace(/\{\{first_name\}\}/gi, contact.first_name || '')
-            .replace(/\{\{last_name\}\}/gi, contact.last_name || '')
-            .replace(/\{\{company\}\}/gi, contact.company || '')
-            .replace(/\{\{title\}\}/gi, contact.title || '')
-            .replace(/\{\{signal\}\}/gi, contact.signal || '');
+        let message = '';
+
+        // AI SDR mode: generate a unique message per lead
+        if (nextStep.ai_icebreaker && lovableApiKey) {
+          console.log(`[followup] AI SDR generating unique message for contact ${req.contact_id}, step ${nextStepIndex + 1}`);
+          const previousStepMsg = nextStepIndex > 1 ? workflowSteps[nextStepIndex - 1]?.message || '' : '';
+          try {
+            const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${lovableApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-3-flash-preview',
+                messages: [
+                  { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length) },
+                  { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousStepMsg, campaign, workflowSteps.length) },
+                ],
+              }),
+            });
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              message = aiData.choices?.[0]?.message?.content?.trim() || '';
+              console.log(`[followup] AI SDR generated message for ${contact?.first_name}: "${message.slice(0, 60)}..."`);
+            } else {
+              console.error(`[followup] AI SDR error: ${aiRes.status}`);
+            }
+          } catch (aiErr) {
+            console.error(`[followup] AI SDR fetch error:`, aiErr);
+          }
+        }
+
+        // Fallback to template message if AI didn't generate or not in AI mode
+        if (!message && nextStep.message) {
+          message = nextStep.message;
+          if (contact) {
+            message = message
+              .replace(/\{\{first_name\}\}/gi, contact?.first_name || '')
+              .replace(/\{\{last_name\}\}/gi, contact?.last_name || '')
+              .replace(/\{\{company\}\}/gi, contact?.company || '')
+              .replace(/\{\{title\}\}/gi, contact?.title || '')
+              .replace(/\{\{signal\}\}/gi, contact?.signal || '');
+          }
         }
 
         if (!message.trim()) {
