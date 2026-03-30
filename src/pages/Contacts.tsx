@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
-  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List,
+  Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
+import { toast } from "sonner";
 
 type Tab = "all" | "hot" | "warm" | "cold";
 
@@ -52,6 +53,35 @@ export default function Contacts() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = window.confirm(`Are you sure you want to delete ${selectedIds.size} contact(s)? They will be removed from all lists and campaigns.`);
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      // Delete from contact_lists junction
+      await supabase.from("contact_lists").delete().in("contact_id", ids);
+      // Delete from campaign_connection_requests
+      await supabase.from("campaign_connection_requests").delete().in("contact_id", ids);
+      // Delete scheduled_messages
+      await supabase.from("scheduled_messages").delete().in("contact_id", ids);
+      // Delete the contacts themselves
+      const { error } = await supabase.from("contacts").delete().in("id", ids);
+      if (error) throw error;
+      setSelectedIds(new Set());
+      toast.success(`${ids.length} contact(s) deleted successfully`);
+      fetchData();
+    } catch (err: any) {
+      console.error("Delete contacts error:", err);
+      toast.error("Failed to delete contacts: " + (err.message || "Unknown error"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
 
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0 };
@@ -129,12 +159,21 @@ export default function Contacts() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             {selectedIds.size > 0 && (
-              <button
-                onClick={() => setShowCreateList(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
-              >
-                <FolderPlus className="w-3.5 h-3.5" /> Add to list
-              </button>
+              <>
+                <button
+                  onClick={() => setShowCreateList(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" /> Add to list
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={deleting}
+                  className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </>
             )}
           </div>
           {/* Mobile add button */}
