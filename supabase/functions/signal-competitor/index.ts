@@ -1,0 +1,261 @@
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ─── Shared types & helpers ───────────────────────────────────────────────────
+
+interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
+interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
+
+const START = Date.now();
+const MAX_RUNTIME_MS = 105_000;
+function hasTime() { return Date.now() - START < MAX_RUNTIME_MS; }
+
+const BUYING_INTENT_KEYWORDS = ['ceo','cto','coo','cfo','cmo','cro','cpo','cio','founder','co-founder','cofounder','owner','partner','president','principal','vp','vice president','director','head of','chief','general manager','managing director','svp','evp','avp'];
+const REJECT_TITLES = ['software developer','software engineer','frontend developer','backend developer','full stack developer','fullstack developer','web developer','mobile developer','junior developer','senior developer','staff engineer','intern','data analyst','qa engineer','test engineer','devops engineer','graphic designer','ui designer','ux designer','student','fresher','trainee','apprentice','accountant','bookkeeper','cashier','clerk','receptionist','administrative assistant','office assistant'];
+
+function normalizeText(v: string): string { return (v||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim(); }
+function fuzzyMatchList(v: string, c: string[]): boolean { const h=normalizeText(v); if(!h) return false; return c.some(x=>{const n=normalizeText(x); return n?(h.includes(n)||n.includes(h)):false;}); }
+
+function scoreProfileAgainstICP(p: any, icp: ICPFilters): MatchResult {
+  const title=p.headline||p.title||p.role||''; const industry=p.industry||''; const location=p.location||p.country||'';
+  const titleMatch=icp.jobTitles.length===0||fuzzyMatchList(title,icp.jobTitles);
+  const industryMatch=icp.industries.length===0||fuzzyMatchList(industry,icp.industries);
+  const locationMatch=icp.locations.length===0||fuzzyMatchList(location,icp.locations);
+  const mf: string[]=[]; let score=0;
+  if(icp.jobTitles.length>0&&titleMatch){score+=40;mf.push('title');}else if(icp.jobTitles.length===0)score+=20;
+  if(icp.industries.length>0&&industryMatch){score+=30;mf.push('industry');}else if(icp.industries.length===0)score+=15;
+  if(icp.locations.length>0&&locationMatch){score+=20;mf.push('location');}else if(icp.locations.length===0)score+=10;
+  if(icp.companySizes.length>0){const cs=p.company_size||p.current_company?.employee_count||'';if(cs&&fuzzyMatchList(String(cs),icp.companySizes)){score+=10;mf.push('company_size');}}else score+=5;
+  return{titleMatch,industryMatch,locationMatch,score:Math.min(100,score),matchedFields:mf};
+}
+
+function hasBuyingIntent(hl: string): boolean { return BUYING_INTENT_KEYWORDS.some(kw=>(hl||'').toLowerCase().includes(kw)); }
+function isClearlyIrrelevant(hl: string): boolean { return REJECT_TITLES.some(kw=>(hl||'').toLowerCase().includes(kw)); }
+function classifyContact(m: MatchResult,icp: ICPFilters,hl?:string): 'hot'|'warm'|'cold'|null {
+  const h=hl||''; if(isClearlyIrrelevant(h)) return null;
+  if(icp.jobTitles.length>0&&m.titleMatch) return 'hot';
+  if(hasBuyingIntent(h)&&(icp.industries.length===0||m.industryMatch)) return 'hot';
+  if(hasBuyingIntent(h)) return 'warm';
+  if(icp.industries.length>0&&m.industryMatch&&h.length>5) return 'warm';
+  if(h.length>5) return 'cold';
+  if(icp.jobTitles.length===0&&icp.industries.length===0) return 'cold';
+  return null;
+}
+function matchesTitleOrIndustry(m: MatchResult,icp: ICPFilters,hl?:string): boolean { return classifyContact(m,icp,hl)!==null; }
+
+function relaxedIndustryMatch(p: any, industries: string[]): boolean {
+  if(!industries.length) return true;
+  const text=[p.industry||'',p.headline||p.title||'',p.company||p.current_company?.name||''].join(' ').toLowerCase();
+  return industries.some(ind=>{const words=normalizeText(ind).split(/\s+/).filter(w=>w.length>3);return words.some(w=>text.includes(w));});
+}
+function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean { if(!icp.industries.length) return true; if(m.industryMatch) return true; return relaxedIndustryMatch(p,icp.industries); }
+
+function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
+  const co=(p.company||p.current_company?.name||'').toLowerCase().trim();
+  const hl=(p.headline||p.title||'').toLowerCase();
+  if(cc.length>0){const t=`${co} ${hl}`;for(const c of cc){if(t.includes(c)) return true;}}
+  if(!ek.length) return false;
+  const text=[p.headline,p.title,p.company,p.current_company?.name,p.industry].filter(Boolean).join(' ').toLowerCase();
+  return ek.some(kw=>text.includes(kw));
+}
+
+function unipileGet(path: string,apiKey: string,dsn: string){return fetch(`https://${dsn}${path}`,{headers:{'X-API-KEY':apiKey}});}
+async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,dsn: string): Promise<any|null>{
+  if(item.first_name&&(item.headline||item.title)) return item;
+  const id=item.provider_id||item.id||item.public_id||item.public_identifier||item.author_id;
+  if(!id) return item.first_name?item:null;
+  try{const res=await unipileGet(`/api/v1/linkedin/profile/${id}?account_id=${accountId}`,apiKey,dsn);if(!res.ok){await res.text();return item.first_name?item:null;}return await res.json();}catch{return item.first_name?item:null;}
+}
+function delay(ms: number){return new Promise(r=>setTimeout(r,ms));}
+
+function extractLinkedInId(url: string): string|null { if(!url) return null; const m=url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/); if(m) return m[1]; return url.replace(/^https?:\/\//,'').replace(/\/$/,'')||null; }
+function extractCompanyName(url: string): string|null { const id=extractLinkedInId(url); if(!id) return null; return id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+
+async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<string|null>{
+  const{data:e}=await sb.from('lists').select('id').eq('user_id',uid).eq('name',ln).limit(1);
+  if(e?.length>0) return e[0].id;
+  const{data:c,error}=await sb.from('lists').insert({user_id:uid,name:ln,source_agent_id:aid}).select('id').single();
+  if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
+}
+
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters): Promise<boolean>{
+  const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return false;
+  const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
+  if(ex?.length>0) return false;
+  const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
+  const hl=p.headline||p.title||'';
+  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
+  const rt=classifyContact(m,icp||ei,hl)||'cold';
+  const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
+  const{data:ins,error}=await sb.from('contacts').insert({
+    user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
+    company:p.company||p.current_company?.name||null,
+    linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
+    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,
+    ai_score:as,signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
+    company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
+    relevance_tier:rt,
+  }).select('id').single();
+  if(error){console.error(`Insert contact error: ${error.message}`);return false;}
+  if(ins?.id&&ln){const lid=await ensureList(sb,uid,ln,aid);if(lid) await sb.from('contact_lists').insert({contact_id:ins.id,list_id:lid});}
+  return true;
+}
+
+// ─── Main Handler: handles both competitor_followers and competitor_engagers ──
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  try {
+    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies } = await req.json();
+    if (!agent_id || !account_id || !urls?.length || !signal_type) {
+      return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
+    }
+
+    const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
+    const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+    const icp: ICPFilters = {
+      jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
+      companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
+      excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
+    };
+
+    let inserted = 0;
+
+    if (signal_type === 'competitor_followers') {
+      // Search people associated with each competitor
+      for (const url of urls) {
+        if (!hasTime()) break;
+        await delay(150);
+        const companyName = extractCompanyName(url);
+        const isCompanyUrl = url.includes('/company/');
+        const isPersonUrl = url.includes('/in/');
+
+        if (isCompanyUrl && companyName) {
+          console.log(`competitor_followers: searching "${companyName}"`);
+          try {
+            const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+              method: 'POST',
+              headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName }),
+            });
+            if (!res.ok) { await res.text(); continue; }
+            const data = await res.json();
+            const people = (data.items || data.results || []).slice(0, 30);
+            console.log(`"${companyName}": ${people.length} people`);
+            for (const person of people) {
+              if (!hasTime()) break;
+              const profile = { ...person, title: person.headline||person.title||null, linkedin_url: person.profile_url||person.public_profile_url||null, public_id: person.public_identifier||person.id||null, company: person.current_positions?.[0]?.company||person.company||null };
+              const match = scoreProfileAgainstICP(profile, icp);
+              const hl = profile.headline || profile.title || '';
+              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+              if (!matchesIndustry(profile, match, icp)) continue;
+              if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
+              if (ok) { inserted++; console.log(`+1 "${profile.first_name} ${profile.last_name||''}" (${hl})`); }
+            }
+          } catch (e) { console.error(`Competitor followers ${url}:`, e); }
+        }
+
+        // For person URLs: scan their post engagers
+        if (isPersonUrl) {
+          const profileId = extractLinkedInId(url);
+          if (!profileId) continue;
+          try {
+            const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=5`, UNIPILE_API_KEY, UNIPILE_DSN);
+            if (!postsRes.ok) { await postsRes.text(); continue; }
+            const postsData = await postsRes.json();
+            const posts = (postsData.items || postsData.posts || []).slice(0, 5);
+            let profileName = profileId;
+            try { const pr = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN); if(pr.ok){ const pd=await pr.json(); profileName=[pd.first_name,pd.last_name].filter(Boolean).join(' ')||profileId; } else await pr.text(); } catch(_){}
+            console.log(`competitor profile "${profileName}": ${posts.length} posts`);
+            for (const post of posts) {
+              if (!hasTime()) break;
+              await delay(150);
+              const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
+              const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
+              if (!rr.ok) { await rr.text(); continue; }
+              const rd = await rr.json();
+              const engagers = (rd.items||[]).slice(0, 25);
+              const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
+              for (const engager of engagers) {
+                if (!hasTime()) break;
+                const ep = engager.author||engager;
+                const fp = await fetchProfileIfNeeded(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+                if (!fp) continue;
+                const match = scoreProfileAgainstICP(fp, icp);
+                const hl = fp.headline||fp.title||'';
+                if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+                if (!matchesIndustry(fp, match, icp)) continue;
+                if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+                const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${profileName}'s content`, postUrl, icp);
+                if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+              }
+            }
+          } catch(e) { console.error(`Profile engagers ${url}:`, e); }
+        }
+      }
+    } else if (signal_type === 'competitor_engagers') {
+      // Scan post engagers for each competitor company/person
+      for (const url of urls) {
+        if (!hasTime()) break;
+        await delay(150);
+        const companyId = extractLinkedInId(url);
+        const companyName = extractCompanyName(url);
+        const isCompany = url.includes('/company/');
+        if (!companyId) continue;
+
+        try {
+          const postsEndpoint = isCompany
+            ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=5`
+            : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=5`;
+          const postsRes = await unipileGet(postsEndpoint, UNIPILE_API_KEY, UNIPILE_DSN);
+          if (!postsRes.ok) { await postsRes.text(); continue; }
+          const postsData = await postsRes.json();
+          const posts = (postsData.items || postsData.posts || []).slice(0, 8);
+          console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts`);
+
+          for (const post of posts) {
+            if (!hasTime()) break;
+            await delay(150);
+            const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
+            const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
+            if (!rr.ok) { await rr.text(); continue; }
+            const rd = await rr.json();
+            const engagers = (rd.items||[]).slice(0, 25);
+            const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
+
+            for (const engager of engagers) {
+              if (!hasTime()) break;
+              const ep = engager.author||engager;
+              const fp = await fetchProfileIfNeeded(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+              if (!fp) continue;
+              const match = scoreProfileAgainstICP(fp, icp);
+              const hl = fp.headline||fp.title||'';
+              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+              if (!matchesIndustry(fp, match, icp)) continue;
+              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const signal = `Engaged with ${companyName||companyId}'s post`;
+              const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, postUrl, icp);
+              if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+            }
+          }
+        } catch(e) { console.error(`Competitor engagers ${url}:`, e); }
+      }
+    }
+
+    console.log(`signal-competitor (${signal_type}): ${inserted} leads total (${Math.round((Date.now()-START)/1000)}s)`);
+    return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error) {
+    console.error('signal-competitor error:', error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', leads: 0 }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
