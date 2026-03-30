@@ -383,7 +383,7 @@ export default function CampaignDetail() {
     const contactIds = (connReqs as any[]).map((cr: any) => cr.contact_id);
     const { data: contactsData } = await supabase
       .from("contacts")
-      .select("id, first_name, last_name, title, company, signal")
+      .select("id, first_name, last_name, title, company, signal, linkedin_url")
       .in("id", contactIds);
     const contactMap: Record<string, any> = {};
     (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
