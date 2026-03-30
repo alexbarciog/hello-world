@@ -56,7 +56,6 @@ async function processCampaignMessages(
   campaign: any,
   supabaseUrl: string,
   serviceRoleKey: string,
-  lovableApiKey: string,
 ): Promise<number> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   if (workflowSteps.length < 2) return 0;
