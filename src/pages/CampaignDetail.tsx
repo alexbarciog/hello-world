@@ -153,6 +153,7 @@ export default function CampaignDetail() {
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
+  const [newStepInstructions, setNewStepInstructions] = useState("");
 
   
   const [settingsGoal, setSettingsGoal] = useState("");
