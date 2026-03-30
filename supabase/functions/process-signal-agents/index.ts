@@ -477,40 +477,8 @@ async function handleKeywordPosts(
     }
   }
 
-  // Also do a people search for each keyword to find people whose profiles match
-  for (const keyword of keywords.slice(0, 4)) {
-    if (!hasSignalTime(t0, budgetMs)) break;
-    await delay(150);
-    try {
-      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
-        method: 'POST',
-        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api: 'classic', category: 'people', keywords: keyword }),
-      });
-      if (!res.ok) { await res.text(); continue; }
-      const data = await res.json();
-      const people = (data.items || data.results || []).slice(0, 15);
-      console.log(`keyword_people "${keyword}": ${people.length} results`);
+  // Removed standalone "people search" / "ICP match" — we only want engagement-based leads
 
-      for (const person of people) {
-        if (!hasSignalTime(t0, budgetMs)) break;
-        const profile = {
-          ...person,
-          title: person.headline || person.title || null,
-          linkedin_url: person.profile_url || person.public_profile_url || null,
-          public_id: person.public_identifier || person.id || null,
-          company: person.current_positions?.[0]?.company || person.company || null,
-        };
-        const match = scoreProfileAgainstICP(profile, icp);
-        const hl = profile.headline || profile.title || '';
-        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-        const signal = `Interested in "${keyword}"`;
-        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, profile.linkedin_url, icp);
-        if (ok) inserted++;
-      }
-    } catch (e) { console.error(`keyword_people "${keyword}":`, e); }
-  }
 
   return inserted;
 }
