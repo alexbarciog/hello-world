@@ -51,7 +51,15 @@ Deno.serve(async (req) => {
 
     for (const campaign of campaigns) {
       try {
-        const result = await processCampaign(supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN, LOVABLE_API_KEY);
+        const result = await processCampaign(
+          supabase,
+          campaign,
+          UNIPILE_API_KEY,
+          UNIPILE_DSN,
+          LOVABLE_API_KEY,
+          SUPABASE_URL,
+          SUPABASE_SERVICE_ROLE_KEY,
+        );
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
         totalGenerated += result.generated;
@@ -73,7 +81,9 @@ async function processCampaign(
   campaign: any,
   unipileApiKey: string,
   unipileDsn: string,
-  lovableApiKey: string | undefined
+  lovableApiKey: string | undefined,
+  supabaseUrl: string,
+  supabaseServiceRoleKey: string,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
@@ -184,7 +194,16 @@ async function processCampaign(
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
           const wfIdx = getNextWorkflowIndex(1, workflowSteps);
-          const gen = await generateNextStepMessage(supabase, campaign, req, wfIdx, workflowSteps, lovableApiKey);
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            wfIdx,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
           if (gen) generatedCount++;
         }
 
@@ -357,7 +376,16 @@ async function processCampaign(
 
         // Immediately generate next step message after sending
         if (lovableApiKey && hasMoreSteps) {
-          const gen = await generateNextStepMessage(supabase, campaign, req, newWfIdx, workflowSteps, lovableApiKey);
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            newWfIdx,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
           if (gen) generatedCount++;
         }
 
@@ -410,7 +438,16 @@ async function processCampaign(
           if (existing) continue;
 
           console.log(`[followup][catch-up] Generating message for contact ${req.contact_id}, wfIdx ${nextWfIdx}`);
-          const gen = await generateNextStepMessage(supabase, campaign, req, nextWfIdx, workflowSteps, lovableApiKey);
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            nextWfIdx,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
           if (gen) generatedCount++;
         } catch (err) {
           console.error(`[followup][catch-up] error for ${req.contact_id}:`, err);
@@ -431,7 +468,9 @@ async function generateNextStepMessage(
   req: any,
   wfIndex: number,
   workflowSteps: any[],
-  lovableApiKey: string
+  lovableApiKey: string,
+  supabaseUrl: string,
+  supabaseServiceRoleKey: string,
 ): Promise<boolean> {
   const nextStep = workflowSteps[wfIndex];
   if (!nextStep || nextStep.type !== 'message') return false;
@@ -468,40 +507,39 @@ async function generateNextStepMessage(
       .in('status', ['sent', 'generated', 'edited'])
       .order('step_index', { ascending: true });
 
-    const previousMsgHistory = (previousMessages || []).map(
-      (m: any) => `Step ${hasInvitation ? m.step_index + 1 : m.step_index + 2}: "${m.message}"`
-    ).join('\n');
+    const previousMessagesArray = (previousMessages || [])
+      .map((m: any) => (m.message || '').trim())
+      .filter((m: string) => m.length > 0);
 
-    try {
-      const totalMessageSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
-      const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
-          messages: [
-            { role: 'system', content: buildAiSdrPrompt(campaign, contact, displayStepNumber, totalMessageSteps + 1, nextStep.step_instructions) },
-            { role: 'user', content: buildAiSdrUserPrompt(displayStepNumber, previousMsgHistory, campaign, totalMessageSteps + 1) },
-          ],
-        }),
-      });
+    const previousStepMessage = previousMessagesArray.length > 0
+      ? previousMessagesArray[previousMessagesArray.length - 1]
+      : '';
 
-      if (aiRes.ok) {
-        const aiData = await aiRes.json();
-        message = aiData.choices?.[0]?.message?.content?.trim() || '';
-      } else {
-        console.error(`[followup] AI generation error: ${aiRes.status}`);
-        return false;
-      }
-    } catch (aiErr) {
-      console.error(`[followup] AI fetch error:`, aiErr);
+    message = await invokeGenerateStepMessage(supabaseUrl, supabaseServiceRoleKey, {
+      stepNumber: displayStepNumber,
+      previousStepMessage,
+      previousMessages: previousMessagesArray,
+      companyName: campaign.company_name,
+      valueProposition: campaign.value_proposition,
+      painPoints: campaign.pain_points || [],
+      campaignGoal: campaign.campaign_goal,
+      messageTone: campaign.message_tone,
+      industry: campaign.industry,
+      language: campaign.language,
+      customTraining: [campaign.custom_training, nextStep.step_instructions].filter(Boolean).join('\n\n'),
+      firstName: contact.first_name,
+      lastName: contact.last_name,
+      leadCompany: contact.company,
+      leadTitle: contact.title,
+      buyingSignal: contact.signal,
+    });
+
+    if (!message.trim()) {
+      console.error(`[followup] generate-step-message returned empty for contact ${req.contact_id}`);
       return false;
     }
 
-    await delay(1500);
+    await delay(700);
   } else {
     message = nextStep.message || '';
     message = message
@@ -537,69 +575,32 @@ async function generateNextStepMessage(
   return true;
 }
 
-// ── AI SDR prompt builders ──
+async function invokeGenerateStepMessage(
+  supabaseUrl: string,
+  supabaseServiceRoleKey: string,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/generate-step-message`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${supabaseServiceRoleKey}`,
+        apikey: supabaseServiceRoleKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number, stepInstructions?: string): string {
-  const toneGuide: Record<string, string> = {
-    professional: 'Use a professional but warm tone. Be polished and respectful.',
-    conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer.',
-    direct: 'Be bold and confident. Get to the point quickly.',
-  };
-  const goalGuide: Record<string, string> = {
-    conversations: 'The goal is to start a genuine conversation. Don\'t push for a meeting.',
-    demos: 'The goal is to book a call or demo. Include a clear but non-pushy CTA.',
-  };
+    if (!response.ok) {
+      console.error('[followup] generate-step-message error:', response.status, await response.text());
+      return '';
+    }
 
-  return `You are a world-class LinkedIn outreach copywriter writing a REAL message to a SPECIFIC person.
-
-TARGET PERSON:
-- Name: ${contact?.first_name || 'Unknown'} ${contact?.last_name || ''}
-- Title: ${contact?.title || 'Not specified'}
-- Company: ${contact?.company || 'Not specified'}
-- Buying Signal: ${contact?.signal || 'Not specified'}
-
-SENDER'S BUSINESS:
-- Company: ${campaign.company_name || 'Our company'}
-- Value Proposition: ${campaign.value_proposition || 'Not specified'}
-- Pain Points we solve: ${(campaign.pain_points || []).join('; ') || 'Not specified'}
-- Industry: ${campaign.industry || 'Not specified'}
-
-TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
-GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
-${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
-${campaign.custom_training ? `\nGLOBAL CAMPAIGN INSTRUCTIONS FROM USER:\n${campaign.custom_training}` : ''}
-${stepInstructions ? `\nSPECIFIC INSTRUCTIONS FOR THIS STEP (Step ${stepNumber}):\n${stepInstructions}` : ''}
-
-CRITICAL RULES:
-- Write 3-5 sentences MAX
-- This must feel like a genuine human message, NOT a template
-- Reference ${contact?.first_name || 'the person'}'s specific role, company, and buying signal naturally
-- DO NOT use generic openers like "I hope this finds you well" or "I came across your profile"
-- DO NOT mention AI, automation, or sequences
-- DO NOT start with "Hi ${contact?.first_name}" — vary your openings
-- Make this message UNIQUE to this person — it should NOT work for anyone else`;
-}
-
-function buildAiSdrUserPrompt(stepNumber: number, previousMessagesHistory: string, campaign: any, totalSteps: number): string {
-  const isFirst = stepNumber === 2;
-  const isLast = stepNumber >= totalSteps;
-
-  const historyBlock = previousMessagesHistory
-    ? `\nPREVIOUS MESSAGES SENT TO THIS LEAD (do NOT repeat or paraphrase these):\n${previousMessagesHistory}\n\nBuild naturally on the conversation above. Reference things differently.`
-    : '';
-
-  if (isFirst) {
-    return `Write the FIRST message after the LinkedIn connection was accepted (Step 2).
-This is the icebreaker. Reference the specific buying signal. Make it personal, curious, genuine. Ask a thoughtful question.
-Return ONLY the message text.`;
-  } else if (isLast) {
-    return `Write a FINAL follow-up message (Step ${stepNumber}).${historyBlock}
-Short, low-pressure nudge. ${campaign.campaign_goal === 'demos' ? 'Offer a quick 10-min call.' : 'Keep the door open.'}
-Return ONLY the message text.`;
-  } else {
-    return `Write a follow-up message (Step ${stepNumber}).${historyBlock}
-Reference a pain point relevant to their role. Show understanding. Don't repeat previous content.
-Return ONLY the message text.`;
+    const data = await response.json();
+    return (data?.message || '').trim();
+  } catch (error) {
+    console.error('[followup] generate-step-message invoke failed:', error);
+    return '';
   }
 }
 
