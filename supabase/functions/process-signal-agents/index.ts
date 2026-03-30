@@ -363,7 +363,7 @@ async function handlePostEngagers(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (!matchesIndustry(fullProfile, match, icp)) continue;
+        // Post engagers: engagement with YOUR content is the signal, no industry filter
         if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
