@@ -188,7 +188,7 @@ export default function CampaignsPage() {
     const withCounts: CampaignWithLeads[] = await Promise.all(
       rows.map(async (c) => {
         let leadsCount = 0;
-        if (c.source_type === "list" && c.source_list_id) {
+        if (c.source_list_id) {
           const { count } = await supabase.from("contact_lists").select("id", { count: "exact", head: true }).eq("list_id", c.source_list_id);
           leadsCount = count ?? 0;
         } else if (c.source_agent_id) {
@@ -197,9 +197,6 @@ export default function CampaignsPage() {
             const { count } = await supabase.from("contacts").select("id", { count: "exact", head: true }).eq("list_name", agentData.leads_list_name);
             leadsCount = count ?? 0;
           }
-        } else {
-          const { count } = await supabase.from("leads").select("id", { count: "exact", head: true }).eq("campaign_id", c.id);
-          leadsCount = count ?? 0;
         }
         return { ...c, leadsCount };
       })
