@@ -1805,7 +1805,15 @@ export default function CampaignDetail() {
                             {sm.isAi && !sm.message && (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                <span className="italic">AI will generate a personalized message when this step triggers</span>
+                                <span className="italic">AI SDR will generate a unique message for this lead before sending</span>
+                              </div>
+                            )}
+                            {sm.isAi && sm.message && (
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                <span className="text-[10px] font-bold text-amber-600">
+                                  {sm.editedByUser ? "AI Generated · Edited by you" : "AI Generated"}
+                                </span>
                               </div>
                             )}
                             {isEditing ? (
@@ -1818,13 +1826,20 @@ export default function CampaignDetail() {
                                 />
                                 <div className="flex gap-1.5">
                                   <button
-                                    onClick={() => {
-                                      // Save edited message back — update the scheduled message preview
+                                    onClick={async () => {
                                       const updated = [...scheduledMessages];
-                                      updated[idx] = { ...updated[idx], message: editingScheduledMsg };
+                                      updated[idx] = { ...updated[idx], message: editingScheduledMsg, editedByUser: true };
                                       setScheduledMessages(updated);
                                       setEditingScheduledIdx(null);
-                                      toast.success("Message preview updated");
+
+                                      // Persist to scheduled_messages table if exists
+                                      if (sm.scheduledMsgId) {
+                                        await supabase
+                                          .from("scheduled_messages" as any)
+                                          .update({ message: editingScheduledMsg, edited_by_user: true, status: "edited" } as any)
+                                          .eq("id", sm.scheduledMsgId);
+                                      }
+                                      toast.success("Message updated");
                                     }}
                                     className="text-xs font-bold text-white bg-primary rounded-lg px-3 py-1.5"
                                   >
@@ -1844,7 +1859,7 @@ export default function CampaignDetail() {
                           </div>
 
                           {/* Actions */}
-                          {sm.message && !isEditing && (
+                          {(sm.message || (sm.isAi && sm.scheduledMsgId)) && !isEditing && (
                             <div className="flex gap-2 mt-3">
                               <button
                                 onClick={() => {
@@ -1854,15 +1869,6 @@ export default function CampaignDetail() {
                                 className="text-[10px] font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex items-center gap-1"
                               >
                                 <Pencil className="w-3 h-3" /> Edit message
-                              </button>
-                              <button
-                                onClick={() => {
-                                  // Regenerate AI message for this specific contact's step
-                                  toast.info("AI regeneration per-contact coming soon");
-                                }}
-                                className="text-[10px] font-medium text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors flex items-center gap-1"
-                              >
-                                <Sparkles className="w-3 h-3" /> Regenerate with AI
                               </button>
                             </div>
                           )}
