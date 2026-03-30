@@ -1000,7 +1000,7 @@ export default function CampaignDetail() {
                                   </div>
 
                                   <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
-                                    <button onClick={() => setTab("contacts")} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
+                                    <button onClick={() => { setStepFilter(String(stepNum)); setTab("contacts"); }} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
                                     {ws.ai_icebreaker && (
                                       <button onClick={() => openEditStepInstructions(i)} className="text-xs font-medium text-amber-600 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors w-full">
                                         <span className="flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Instructions</span>
