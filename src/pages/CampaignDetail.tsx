@@ -933,7 +933,7 @@ export default function CampaignDetail() {
                       return (
                         <div key={i} className="flex items-start">
                           {/* Connector + delay badge */}
-                          <div className="flex flex-col items-center self-start pt-10 px-1 min-w-[80px]">
+                          <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
                             {editingDelayStep === i ? (
                               <div className="flex items-center gap-1 mb-2">
                                 <input
