@@ -6,6 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from
 "@/components/ui/dropdown-menu";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import meshGradientBg from "@/assets/mesh-gradient.png";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
 import { CreateCampaignWizard } from "@/components/campaigns/CreateCampaignWizard";
@@ -376,7 +377,7 @@ export default function CampaignsPage() {
         { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, iconBg: "from-md-secondary/10 to-md-primary/5" },
         { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, iconBg: "from-md-tertiary-fixed/30 to-md-tertiary-fixed/10" }].
         map((stat) =>
-        <div key={stat.label} className="glass-card rounded-2xl p-6 ghost-border flex flex-col justify-between">
+        <div key={stat.label} className={`rounded-2xl p-6 flex flex-col justify-between ${stat.label === "Total Leads" ? "bg-cover bg-center text-white" : "glass-card ghost-border"}`} style={stat.label === "Total Leads" ? { backgroundImage: `url(${meshGradientBg})` } : undefined}>
               <div className="flex items-center gap-2 mb-4">
                 <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
                   <stat.icon className="w-4 h-4 text-md-primary" />
