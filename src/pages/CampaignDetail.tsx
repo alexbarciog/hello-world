@@ -1395,7 +1395,7 @@ export default function CampaignDetail() {
                                       ) : (
                                         <span className="text-sm font-bold text-foreground">{c.first_name} {c.last_name || ""}</span>
                                       )}
-                                      {c.linkedin_url && <LinkedInIcon />}
+                                      {c.linkedin_url && <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer"><LinkedInIcon /></a>}
                                     </div>
                                     <p className="text-xs text-muted-foreground">{c.title}</p>
                                     {c.company && (
