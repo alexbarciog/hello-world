@@ -171,6 +171,11 @@ export default function CampaignDetail() {
 
   // Edit step mode popup state
   const [editModePickerStep, setEditModePickerStep] = useState<number | null>(null);
+
+  // Step 1 (invitation) edit dialog state
+  const [editInvitationOpen, setEditInvitationOpen] = useState(false);
+  const [invitationNoteMode, setInvitationNoteMode] = useState<"without" | "with">("without");
+  const [invitationNote, setInvitationNote] = useState("");
   
 
   useEffect(() => {
