@@ -169,16 +169,27 @@ async function processCampaign(
     return 0;
   }
 
-  // Take only the batch we need
-  const batchContactIds = unseenContactIds.slice(0, toSendNow);
-
-  // Fetch contact details (need linkedin_profile_id or linkedin_url)
-  const { data: contactsData } = await serviceClient
+  // Fetch contacts with relevance_tier to prioritize hot/warm over cold
+  const { data: contactsWithTier } = await serviceClient
     .from('contacts')
-    .select('id, first_name, last_name, linkedin_profile_id, linkedin_url')
-    .in('id', batchContactIds);
+    .select('id, first_name, last_name, linkedin_profile_id, linkedin_url, relevance_tier')
+    .in('id', unseenContactIds);
 
-  if (!contactsData || contactsData.length === 0) return 0;
+  if (!contactsWithTier || contactsWithTier.length === 0) return 0;
+
+  // Sort: hot first, then warm, then cold
+  const tierOrder: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
+  contactsWithTier.sort((a: any, b: any) => {
+    const aOrder = tierOrder[a.relevance_tier] ?? 2;
+    const bOrder = tierOrder[b.relevance_tier] ?? 2;
+    return aOrder - bOrder;
+  });
+
+  // Take only the batch we need (already sorted by priority)
+  const contactsData = contactsWithTier.slice(0, toSendNow);
+  console.log(`[campaign ${campaign.id}] batch: ${contactsData.map((c: any) => c.relevance_tier).join(',')}`);
+
+  if (contactsData.length === 0) return 0;
 
   let sentCount = 0;
 
