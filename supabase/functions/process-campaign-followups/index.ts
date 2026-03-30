@@ -324,6 +324,14 @@ async function processCampaign(
 
         console.log(`[followup] sent step ${nextStepIndex + 1} to contact ${req.contact_id}`);
 
+        // Mark scheduled_message as sent
+        if (scheduledMsg) {
+          await supabase
+            .from('scheduled_messages')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', scheduledMsg.id);
+        }
+
         const newStep = currentStep + 1;
         await supabase
           .from('campaign_connection_requests')
