@@ -116,7 +116,7 @@ function CampaignCard({
       <div className="grid grid-cols-4 gap-8 md:gap-12 text-center items-center md:px-8">
         <div>
           <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Leads</p>
-          <p className="text-lg font-light text-md-on-surface">{c.leadsCount}</p>
+          <p className="text-lg text-md-on-surface font-semibold">{c.leadsCount}</p>
         </div>
         <div>
           <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Sent</p>
