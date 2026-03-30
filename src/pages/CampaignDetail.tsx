@@ -75,7 +75,6 @@ const MESSAGE_TONES = [
   { value: "conversational", label: "Conversational", desc: "Friendly, casual", icon: Mic },
   { value: "direct", label: "Direct", desc: "Bold, confident", icon: Target },
 ];
-import { Switch } from "@/components/ui/switch";
 
 const tabVariant = {
   hidden: { opacity: 0, y: 12 },
