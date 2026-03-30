@@ -116,15 +116,32 @@ function unipileGet(path: string, apiKey: string, dsn: string) {
   return fetch(`https://${dsn}${path}`, { headers: { 'X-API-KEY': apiKey } });
 }
 
+function normalizeProfile(item: any): any {
+  // Ensure first_name/last_name from name field
+  if (!item.first_name && item.name) {
+    const parts = item.name.split(' ');
+    item.first_name = parts[0];
+    item.last_name = parts.slice(1).join(' ') || '';
+  }
+  return item;
+}
+
 async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
-  if (item.first_name && (item.headline || item.title)) return item;
-  const id = item.provider_id || item.id || item.public_id || item.public_identifier || item.author_id;
-  if (!id) return item.first_name ? item : null;
+  const norm = normalizeProfile({ ...item });
+  // If we already have name + headline, use directly (engagers/authors with data)
+  if (norm.first_name && (norm.headline || norm.title)) return norm;
+  // Try public_identifier first (works with profile API), then other IDs
+  const id = item.public_identifier || item.provider_id || item.public_id || item.author_id;
+  // Skip URN-style IDs for profile API (they don't work) 
+  const numericOrUrn = item.id;
+  const fetchId = id || (numericOrUrn && !String(numericOrUrn).startsWith('urn:') && !String(numericOrUrn).startsWith('ACo') ? numericOrUrn : null);
+  if (!fetchId) return norm.first_name ? norm : null;
   try {
-    const res = await unipileGet(`/api/v1/linkedin/profile/${id}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { await res.text(); return item.first_name ? item : null; }
-    return await res.json();
-  } catch { return item.first_name ? item : null; }
+    const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
+    if (!res.ok) { await res.text(); return norm.first_name ? norm : null; }
+    const fetched = await res.json();
+    return normalizeProfile(fetched);
+  } catch { return norm.first_name ? norm : null; }
 }
 
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
@@ -199,6 +216,7 @@ Deno.serve(async (req) => {
       competitorCompanies: competitor_companies || [],
     };
 
+    console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}]`);
     let inserted = 0;
     const allPosts: any[] = [];
 
@@ -241,10 +259,15 @@ Deno.serve(async (req) => {
       if (!authorData) continue;
 
       // Fetch full author profile (post search returns minimal data)
+      const authorId = authorData.provider_id || authorData.id || authorData.public_id || authorData.public_identifier || authorData.author_id;
+      console.log(`[DEBUG] Post author raw keys: ${Object.keys(authorData).join(',')}, id=${authorId}, first_name=${authorData.first_name||'?'}, headline=${(authorData.headline||authorData.title||'NONE').slice(0,50)}`);
       const fullAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
       if (fullAuthor) {
+        console.log(`[DEBUG] Enriched author: first_name=${fullAuthor.first_name||'?'}, headline=${(fullAuthor.headline||fullAuthor.title||'NONE').slice(0,60)}, industry=${fullAuthor.industry||'NONE'}, company=${fullAuthor.company||fullAuthor.current_company?.name||'NONE'}`);
         const match = scoreProfileAgainstICP(fullAuthor, icp);
         const hl = fullAuthor.headline || fullAuthor.title || '';
+        const classification = classifyContact(match, icp, hl);
+        console.log(`[DEBUG] Match: score=${match.score}, fields=[${match.matchedFields}], classify=${classification}, titleMatch=${match.titleMatch}, industryMatch=${match.industryMatch}, excluded=${isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)}`);
         if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
           const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
           const signal = `Posted about "${post._keyword}"`;
@@ -262,11 +285,19 @@ Deno.serve(async (req) => {
           if (reactionsRes.ok) {
             const reactionsData = await reactionsRes.json();
             const engagers = (reactionsData.items || []).slice(0, 20);
+            console.log(`[DEBUG] Post ${postId}: ${engagers.length} engagers`);
+            let engagerDebugCount = 0;
             for (const engager of engagers) {
               if (!hasTime()) break;
               const engagerProfile = engager.author || engager;
               const fullEngager = await fetchProfileIfNeeded(engagerProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!fullEngager) continue;
+              if (!fullEngager) { console.log(`[DEBUG] Engager fetch failed, raw keys: ${Object.keys(engagerProfile).join(',')}`); continue; }
+              if (engagerDebugCount < 3) {
+                const eMatch2 = scoreProfileAgainstICP(fullEngager, icp);
+                const eHl2 = fullEngager.headline || fullEngager.title || '';
+                console.log(`[DEBUG] Engager: ${fullEngager.first_name||'?'} ${fullEngager.last_name||''}, headline="${(eHl2||'NONE').slice(0,50)}", classify=${classifyContact(eMatch2,icp,eHl2)}, score=${eMatch2.score}`);
+                engagerDebugCount++;
+              }
               const eMatch = scoreProfileAgainstICP(fullEngager, icp);
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
