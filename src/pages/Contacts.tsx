@@ -98,19 +98,6 @@ export default function Contacts() {
       setDeleting(false);
     }
   };
-    // Build contact -> last action map (keep first = most recent due to order)
-    if (connReqRes.data) {
-      const actionMap: Record<string, { status: string; date: string }> = {};
-      for (const row of connReqRes.data as { contact_id: string; status: string; sent_at: string; accepted_at: string | null; current_step: number }[]) {
-        if (!actionMap[row.contact_id]) {
-          actionMap[row.contact_id] = {
-            status: row.status,
-            date: row.accepted_at || row.sent_at,
-          };
-        }
-      }
-      setLastActions(actionMap);
-    }
 
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0 };
