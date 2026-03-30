@@ -363,10 +363,58 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
   const [form, setForm] = useState({ name: "", website: "", industry: "", size: "", description: "", linkedin: "", autoEnrich: false, preventDuplication: false });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
 
   useEffect(() => {
     if (campaignData) setForm((p) => ({ ...p, name: campaignData.company_name || p.name, website: campaignData.website || p.website, industry: campaignData.industry || p.industry, description: campaignData.description || p.description }));
   }, [campaignData]);
+
+  async function handleGenerateDescription() {
+    if (!form.website.trim()) {
+      toast.error("Add a website URL first");
+      return;
+    }
+    setGeneratingDesc(true);
+    try {
+      // Step 1: Scrape website
+      const { data: scrapeData, error: scrapeError } = await supabase.functions.invoke('firecrawl-scrape', {
+        body: { url: form.website.trim(), options: { formats: ['summary', 'markdown'], onlyMainContent: true } },
+      });
+      if (scrapeError) throw scrapeError;
+
+      const summary = scrapeData?.data?.summary || scrapeData?.summary || '';
+      const markdown = scrapeData?.data?.markdown || scrapeData?.markdown || '';
+      const pageContent = summary || (markdown ? markdown.slice(0, 2000) : '');
+
+      if (!pageContent) {
+        toast.error("Could not extract content from the website");
+        return;
+      }
+
+      // Step 2: Generate description via AI
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('generate-company-description', {
+        body: {
+          websiteContent: pageContent,
+          companyName: form.name.trim() || undefined,
+          industry: form.industry || undefined,
+        },
+      });
+      if (aiError) throw aiError;
+
+      const description = aiData?.description || '';
+      if (description) {
+        setForm((p) => ({ ...p, description }));
+        toast.success("Description generated!");
+      } else {
+        toast.error("AI returned an empty description");
+      }
+    } catch (e: any) {
+      console.error('Generate description error:', e);
+      toast.error(e?.message || "Failed to generate description");
+    } finally {
+      setGeneratingDesc(false);
+    }
+  }
 
   async function handleSave() {
     if (!form.name.trim()) { toast.error("Company name is required"); return; }
