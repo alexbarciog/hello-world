@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
+  Send, UserCheck, MessageSquare, Clock,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -16,6 +17,7 @@ export default function Contacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lists, setLists] = useState<ContactList[]>([]);
   const [contactListMap, setContactListMap] = useState<Record<string, string[]>>({});
+  const [lastActions, setLastActions] = useState<Record<string, { status: string; date: string }>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -30,10 +32,11 @@ export default function Contacts() {
     if (!user) { setLoading(false); return; }
 
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes] = await Promise.all([
+    const [contactsRes, listsRes, junctionRes, connReqRes] = await Promise.all([
       supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
+      supabase.from("campaign_connection_requests").select("contact_id, status, sent_at, accepted_at, current_step").eq("user_id", user.id).order("sent_at", { ascending: false }),
     ]);
 
     if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
@@ -47,6 +50,20 @@ export default function Contacts() {
         map[row.contact_id].push(row.list_id);
       }
       setContactListMap(map);
+    }
+
+    // Build contact -> last action map (keep first = most recent due to order)
+    if (connReqRes.data) {
+      const actionMap: Record<string, { status: string; date: string }> = {};
+      for (const row of connReqRes.data as { contact_id: string; status: string; sent_at: string; accepted_at: string | null; current_step: number }[]) {
+        if (!actionMap[row.contact_id]) {
+          actionMap[row.contact_id] = {
+            status: row.status,
+            date: row.accepted_at || row.sent_at,
+          };
+        }
+      }
+      setLastActions(actionMap);
     }
 
     setLoading(false);
@@ -81,7 +98,6 @@ export default function Contacts() {
       setDeleting(false);
     }
   };
-
 
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0 };
@@ -285,7 +301,7 @@ export default function Contacts() {
                         className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                       />
                     </th>
-                    {["Contact", "Signal", "Score", "Email", "Added", "Lists"].map((h) => (
+                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists"].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
                         {h}
                       </th>
@@ -358,9 +374,24 @@ export default function Contacts() {
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <button className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground border border-border rounded-full px-2.5 py-1 hover:bg-muted/50 transition-colors">
-                          <AtSign className="w-3 h-3" /> Enrich
-                        </button>
+                        {(() => {
+                          const action = lastActions[c.id];
+                          if (!action) return <span className="text-xs text-muted-foreground">—</span>;
+                          const statusConfig: Record<string, { label: string; icon: typeof Send; color: string }> = {
+                            pending: { label: "Invite sent", icon: Send, color: "text-blue-500" },
+                            accepted: { label: "Accepted", icon: UserCheck, color: "text-emerald-500" },
+                            messaged: { label: "Messaged", icon: MessageSquare, color: "text-violet-500" },
+                          };
+                          const cfg = statusConfig[action.status] || { label: action.status, icon: Clock, color: "text-muted-foreground" };
+                          const ActionIcon = cfg.icon;
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <ActionIcon className={`w-3.5 h-3.5 ${cfg.color}`} />
+                              <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                              <span className="text-[10px] text-muted-foreground">{timeAgo(action.date)}</span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-3 py-3">
                         <span className="text-xs text-muted-foreground">{timeAgo(c.imported_at)}</span>
