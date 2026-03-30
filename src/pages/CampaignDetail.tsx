@@ -624,8 +624,16 @@ export default function CampaignDetail() {
         (c.company || "").toLowerCase().includes(q) || (c.title || "").toLowerCase().includes(q)
       );
     }
+    if (stepFilter !== "all") {
+      const stepNum = parseInt(stepFilter);
+      list = list.filter(c => {
+        const cs = contactStatuses[c.id];
+        if (!cs) return stepNum === 0; // "Queued" = not yet in any step
+        return (cs.step || 1) === stepNum;
+      });
+    }
     return list;
-  }, [contacts, contactSearch, contactFilter]);
+  }, [contacts, contactSearch, contactFilter, stepFilter, contactStatuses]);
 
   const workflowSteps = campaign?.workflow_steps || [
     { type: "invitation", message: "", delay_days: 0 },
