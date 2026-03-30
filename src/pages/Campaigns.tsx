@@ -108,8 +108,8 @@ function CampaignCard({
           </h3>
           <StatusBadge status={c.status} />
         </div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-500">
-          <p className="text-xs text-emerald-600 font-medium">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-400">
+          <p className="text-xs text-emerald-500 font-semibold">
             {c.campaign_goal === "demos" ? "Booking demos" : "Starting conversations"}
           </p>
           {c.status === "active" && (
