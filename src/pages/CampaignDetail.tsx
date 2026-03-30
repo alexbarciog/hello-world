@@ -501,6 +501,7 @@ export default function CampaignDetail() {
     setNewStepMessage("");
     setNewStepDelay(1);
     setNewStepMessageMode("manual");
+    setNewStepInstructions("");
     setAddStepPhase("choose");
     setAddStepOpen(true);
   }
