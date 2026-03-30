@@ -15,6 +15,7 @@ interface ICPFilters {
   companySizes: string[];
   companyTypes: string[];
   excludeKeywords: string[];
+  competitorCompanies: string[];
 }
 
 interface MatchResult {
@@ -124,6 +125,16 @@ Deno.serve(async (req) => {
         const enabled = config.enabled || [];
         const signalKeywords = config.keywords || {};
 
+        // Build list of competitor company names to exclude their employees
+        const competitorCompanyNames: string[] = [];
+        for (const key of ['competitor_followers', 'competitor_engagers']) {
+          const urls = signalKeywords[key] || [];
+          for (const url of urls) {
+            const name = extractCompanyName(url);
+            if (name) competitorCompanyNames.push(name.toLowerCase());
+          }
+        }
+
         const icp: ICPFilters = {
           jobTitles: (agent.icp_job_titles || []).map((s: string) => s.trim()).filter(Boolean),
           industries: (agent.icp_industries || []).map((s: string) => s.trim()).filter(Boolean),
@@ -131,6 +142,7 @@ Deno.serve(async (req) => {
           companySizes: (agent.icp_company_sizes || []).map((s: string) => s.trim()).filter(Boolean),
           companyTypes: (agent.icp_company_types || []).map((s: string) => s.trim()).filter(Boolean),
           excludeKeywords: (agent.icp_exclude_keywords || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+          competitorCompanies: competitorCompanyNames,
         };
 
         const listName = agent.leads_list_name || agent.name || 'Signal Leads';
@@ -302,7 +314,7 @@ async function handlePostEngagers(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+        if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
         const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -369,7 +381,7 @@ async function handleKeywordPosts(
     const match = scoreProfileAgainstICP(profile, icp);
     const hl = profile.headline || '';
     if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-    if (isExcluded(profile, icp.excludeKeywords)) continue;
+    if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
@@ -394,7 +406,7 @@ async function handleKeywordPosts(
               const eMatch = scoreProfileAgainstICP(fullEngager, icp);
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
-              if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
+              if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
               const eSignal = `Engaged with post about "${post._keyword}"`;
               const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
               if (eOk) inserted++;
@@ -459,7 +471,7 @@ async function handleHashtagEngagement(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+        if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
         const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -508,7 +520,7 @@ async function handleCompetitorFollowers(
         const match = scoreProfileAgainstICP(profile, icp);
         const hl = profile.headline || profile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(profile, icp.excludeKeywords)) continue;
+        if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = `Follows ${companyName}`;
         const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
@@ -560,7 +572,7 @@ async function handleCompetitorPostEngagers(
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
           const signal = `Engaged with ${companyName || companyId}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -621,7 +633,7 @@ async function handleProfileEngagers(
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
           const signal = `Engaged with ${profileName}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -713,7 +725,19 @@ function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: 
   return classifyContact(match, icp, headline) !== null;
 }
 
-function isExcluded(profile: any, excludeKeywords: string[]): boolean {
+function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
+  const company = (profile.company || profile.current_company?.name || '').toLowerCase().trim();
+
+  // CRITICAL: Never mark competitor employees as leads
+  if (competitorCompanies.length > 0 && company) {
+    for (const comp of competitorCompanies) {
+      if (company.includes(comp) || comp.includes(company)) {
+        console.log(`Excluded ${profile.first_name || ''} ${profile.last_name || ''}: works at competitor "${company}"`);
+        return true;
+      }
+    }
+  }
+
   if (excludeKeywords.length === 0) return false;
   const text = [profile.headline, profile.title, profile.company, profile.current_company?.name, profile.industry]
     .filter(Boolean).join(' ').toLowerCase();
@@ -778,7 +802,7 @@ async function insertContact(
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
 
-  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] };
+  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [], competitorCompanies: [] };
   const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
 
   const signalAHit = true;
