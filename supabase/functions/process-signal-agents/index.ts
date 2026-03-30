@@ -6,83 +6,36 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface ICPFilters {
-  jobTitles: string[];
-  industries: string[];
-  locations: string[];
-  companySizes: string[];
-  companyTypes: string[];
-  excludeKeywords: string[];
-  competitorCompanies: string[];
-}
-
-interface MatchResult {
-  titleMatch: boolean;
-  industryMatch: boolean;
-  locationMatch: boolean;
-  score: number;
-  matchedFields: string[];
-}
+// ─── Sequential Dispatcher ───────────────────────────────────────────────────
+// Invokes separate edge functions for each signal type, one at a time.
+// Each signal function gets its own ~105s budget.
 
 interface SignalsConfig {
   enabled?: string[];
   keywords?: Record<string, string[]>;
 }
 
-// ─── Time budget: stop processing before edge function timeout ────────────────
-const START = Date.now();
-const MAX_RUNTIME_MS = 110_000; // 110s (Supabase timeout ~120s)
-function hasTime() { return Date.now() - START < MAX_RUNTIME_MS; }
-function elapsedMs() { return Date.now() - START; }
-
-// Per-signal time budget: ensures each signal type gets fair allocation
-function hasSignalTime(signalStartMs: number, budgetMs: number): boolean {
-  return hasTime() && (Date.now() - signalStartMs < budgetMs);
-}
-
-// ─── Main Handler ─────────────────────────────────────────────────────────────
-
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
-  const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
-
-  if (!UNIPILE_API_KEY) return errorResponse('UNIPILE_API_KEY not configured');
-  if (!UNIPILE_DSN) return errorResponse('UNIPILE_DSN not configured');
-
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Accept optional agent_id to process a single agent
   let targetAgentId: string | null = null;
-  try {
-    const body = await req.json();
-    targetAgentId = body?.agent_id || null;
-  } catch { /* no body — process all agents */ }
+  try { const body = await req.json(); targetAgentId = body?.agent_id || null; } catch { /* process all */ }
 
   try {
     const query = supabase.from('signal_agents').select('*');
-    if (targetAgentId) {
-      query.eq('id', targetAgentId);
-    } else {
-      query.eq('status', 'active');
-    }
+    if (targetAgentId) query.eq('id', targetAgentId);
+    else query.eq('status', 'active');
     const { data: agents, error: agentErr } = await query.limit(20);
-
     if (agentErr) throw new Error(`Failed to load agents: ${agentErr.message}`);
-    if (!agents || agents.length === 0) {
-      return jsonResponse({ message: 'No active signal agents', processed: 0 });
-    }
+    if (!agents?.length) return jsonResponse({ message: 'No active signal agents', processed: 0 });
 
     let totalLeads = 0;
 
-    // ── Stripe subscription check: build set of paid user IDs ──
+    // ── Stripe subscription check ──
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     const paidUsers = new Set<string>();
     if (stripeKey) {
@@ -93,177 +46,134 @@ Deno.serve(async (req) => {
           const { data: { user } } = await supabase.auth.admin.getUserById(uid);
           if (!user?.email) continue;
           const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-          if (customers.data.length === 0) continue;
+          if (!customers.data.length) continue;
           const subs = await stripe.subscriptions.list({ customer: customers.data[0].id, limit: 5 });
-          const hasActive = subs.data.some(s => s.status === 'active' || s.status === 'trialing');
-          if (hasActive) paidUsers.add(uid);
+          if (subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing')) paidUsers.add(uid);
         } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
       }
       console.log(`Paid users: ${paidUsers.size}/${uniqueUserIds.length}`);
     } else {
-      console.warn('STRIPE_SECRET_KEY not set — skipping subscription check, processing all agents');
+      console.warn('STRIPE_SECRET_KEY not set — processing all agents');
       agents.forEach((a: any) => paidUsers.add(a.user_id));
     }
 
     for (const agent of agents) {
-      if (!hasTime()) { console.log('Time budget exhausted, stopping'); break; }
-
-      // Skip free users
       if (!paidUsers.has(agent.user_id)) {
-        console.log(`Skipping agent ${agent.id}: user ${agent.user_id} is on free plan`);
+        console.log(`Skipping agent ${agent.id}: free plan`);
         continue;
       }
 
       try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('unipile_account_id')
-          .eq('user_id', agent.user_id)
-          .single();
-
-        if (!profile?.unipile_account_id) {
-          console.log(`Skipping agent ${agent.id}: no Unipile account`);
-          continue;
-        }
+        const { data: profile } = await supabase.from('profiles').select('unipile_account_id').eq('user_id', agent.user_id).single();
+        if (!profile?.unipile_account_id) { console.log(`Skipping agent ${agent.id}: no Unipile account`); continue; }
 
         const accountId = profile.unipile_account_id;
         const config: SignalsConfig = (agent.signals_config as SignalsConfig) || {};
         const enabled = config.enabled || [];
         const signalKeywords = config.keywords || {};
+        const listName = agent.leads_list_name || agent.name || 'Signal Leads';
 
-        // Build list of competitor company names to exclude their employees
+        // Build competitor company names for exclusion
         const competitorCompanyNames: string[] = [];
         for (const key of ['competitor_followers', 'competitor_engagers']) {
-          const urls = signalKeywords[key] || [];
-          for (const url of urls) {
+          for (const url of (signalKeywords[key] || [])) {
             const name = extractCompanyName(url);
             if (name) competitorCompanyNames.push(name.toLowerCase());
           }
         }
 
-        const icp: ICPFilters = {
+        const icpPayload = {
           jobTitles: (agent.icp_job_titles || []).map((s: string) => s.trim()).filter(Boolean),
           industries: (agent.icp_industries || []).map((s: string) => s.trim()).filter(Boolean),
           locations: (agent.icp_locations || []).map((s: string) => s.trim()).filter(Boolean),
           companySizes: (agent.icp_company_sizes || []).map((s: string) => s.trim()).filter(Boolean),
           companyTypes: (agent.icp_company_types || []).map((s: string) => s.trim()).filter(Boolean),
           excludeKeywords: (agent.icp_exclude_keywords || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
-          competitorCompanies: competitorCompanyNames,
         };
 
-        const listName = agent.leads_list_name || agent.name || 'Signal Leads';
-        let agentLeads = 0;
+        const basePayload = {
+          agent_id: agent.id,
+          account_id: accountId,
+          user_id: agent.user_id,
+          list_name: listName,
+          icp: icpPayload,
+          competitor_companies: competitorCompanyNames,
+        };
 
+        let agentLeads = 0;
         console.log(`Agent ${agent.id}: signals=[${enabled.join(',')}]`);
 
-        // Helper to increment results_count after each signal type
-        async function saveProgress(count: number) {
-          if (count <= 0) return;
-          agentLeads += count;
-          await supabase.from('signal_agents').update({
-            last_launched_at: new Date().toISOString(),
-            results_count: (agent.results_count || 0) + agentLeads,
-          }).eq('id', agent.id);
+        // ── 1. Post Engagers (your own posts + profile_engagers) ──
+        if (enabled.includes('post_engagers') || enabled.includes('profile_engagers')) {
+          const profileUrls = signalKeywords['profile_engagers'] || [];
+          const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-post-engagers', {
+            ...basePayload,
+            profile_urls: profileUrls,
+          });
+          console.log(`post_engagers: ${leads} leads`);
+          agentLeads += leads;
+          await saveAgentProgress(supabase, agent, agentLeads);
         }
 
-        // Calculate per-signal time budget: divide remaining time equally
-        const activeSignals = enabled.filter((s: string) => s !== 'profile_viewers');
-        const timePerSignal = activeSignals.length > 0 ? Math.floor((MAX_RUNTIME_MS - elapsedMs() - 5000) / activeSignals.length) : 30000;
-        console.log(`Time budget: ${timePerSignal}ms per signal (${activeSignals.length} signals, ${Math.round((MAX_RUNTIME_MS - elapsedMs()) / 1000)}s remaining)`);
-
-        // Resolve user's LinkedIn ID if needed
-        let userLinkedInId: string | null = null;
-        if (enabled.includes('post_engagers') || enabled.includes('profile_viewers')) {
-          userLinkedInId = await resolveUserLinkedInId(accountId, UNIPILE_API_KEY, UNIPILE_DSN);
-        }
-
-        // ── 1. Profile Viewers (not supported) ──
-        if (enabled.includes('profile_viewers')) {
-          console.log('profile_viewers: skipped (not supported by Unipile API)');
-        }
-
-        // ── 2. Post Engagers ──
-        if (hasTime() && enabled.includes('post_engagers') && userLinkedInId) {
-          const t0 = Date.now();
-          const count = await handlePostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, userLinkedInId, timePerSignal);
-          console.log(`post_engagers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-          await saveProgress(count);
-        }
-
-        // ── 3. Keyword Posts ──
-        if (hasTime() && enabled.includes('keyword_posts')) {
+        // ── 2. Keyword Posts ──
+        if (enabled.includes('keyword_posts')) {
           const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
           if (kws.length > 0) {
-            const t0 = Date.now();
-            const count = await handleKeywordPosts(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws, timePerSignal);
-            console.log(`keyword_posts: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-            await saveProgress(count);
+            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-keyword-posts', {
+              ...basePayload,
+              keywords: kws,
+            });
+            console.log(`keyword_posts: ${leads} leads`);
+            agentLeads += leads;
+            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 4. Hashtag Engagement ──
-        if (hasTime() && enabled.includes('hashtag_engagement')) {
-          const kws = signalKeywords['hashtag_engagement'] || [];
-          if (kws.length > 0) {
-            const t0 = Date.now();
-            const count = await handleHashtagEngagement(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws, timePerSignal);
-            console.log(`hashtag_engagement: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-            await saveProgress(count);
+        // ── 3. Hashtag Engagement ──
+        if (enabled.includes('hashtag_engagement')) {
+          const hashtags = signalKeywords['hashtag_engagement'] || [];
+          if (hashtags.length > 0) {
+            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-hashtag-engagement', {
+              ...basePayload,
+              hashtags,
+            });
+            console.log(`hashtag_engagement: ${leads} leads`);
+            agentLeads += leads;
+            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 5. Competitor Followers ──
-        if (hasTime() && enabled.includes('competitor_followers')) {
+        // ── 4. Competitor Followers ──
+        if (enabled.includes('competitor_followers')) {
           const urls = signalKeywords['competitor_followers'] || [];
           if (urls.length > 0) {
-            const t0 = Date.now();
-            const companyUrls = urls.filter((u: string) => u.includes('/company/'));
-            const personUrls = urls.filter((u: string) => u.includes('/in/'));
-            let count = 0;
-            if (companyUrls.length > 0) {
-              count += await handleCompetitorFollowers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls, timePerSignal);
-            }
-            if (personUrls.length > 0 && hasTime()) {
-              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Follows', timePerSignal - (Date.now() - t0));
-            }
-            console.log(`competitor_followers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-            await saveProgress(count);
+            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-competitor', {
+              ...basePayload,
+              signal_type: 'competitor_followers',
+              urls,
+            });
+            console.log(`competitor_followers: ${leads} leads`);
+            agentLeads += leads;
+            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 6. Competitor Post Engagers ──
-        if (hasTime() && enabled.includes('competitor_engagers')) {
+        // ── 5. Competitor Engagers ──
+        if (enabled.includes('competitor_engagers')) {
           const urls = signalKeywords['competitor_engagers'] || [];
           if (urls.length > 0) {
-            const t0 = Date.now();
-            const companyUrls = urls.filter((u: string) => u.includes('/company/'));
-            const personUrls = urls.filter((u: string) => u.includes('/in/'));
-            let count = 0;
-            if (companyUrls.length > 0) {
-              count += await handleCompetitorPostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls, timePerSignal);
-            }
-            if (personUrls.length > 0 && hasTime()) {
-              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Engaged with', timePerSignal - (Date.now() - t0));
-            }
-            console.log(`competitor_engagers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-            await saveProgress(count);
+            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-competitor', {
+              ...basePayload,
+              signal_type: 'competitor_engagers',
+              urls,
+            });
+            console.log(`competitor_engagers: ${leads} leads`);
+            agentLeads += leads;
+            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 7. Profile Engagers ──
-        if (hasTime() && enabled.includes('profile_engagers')) {
-          const urls = signalKeywords['profile_engagers'] || [];
-          if (urls.length > 0) {
-            const t0 = Date.now();
-            const count = await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls, 'Engaged with', timePerSignal);
-            console.log(`profile_engagers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-            await saveProgress(count);
-          }
-        }
-
-        // ── 8. Job Changes — REMOVED (not a signal we track) ──
-
-        // Final update — count actual contacts in the agent's list for accuracy
+        // Final count from DB for accuracy
         const { data: agentList } = await supabase.from('lists').select('id').eq('source_agent_id', agent.id).eq('user_id', agent.user_id).maybeSingle();
         let actualCount = (agent.results_count || 0) + agentLeads;
         if (agentList) {
@@ -275,713 +185,77 @@ Deno.serve(async (req) => {
           results_count: actualCount,
         }).eq('id', agent.id);
 
-        // Notification
         if (agentLeads > 0) {
           await supabase.from('notifications').insert({
             user_id: agent.user_id,
             title: `${agent.name}: ${agentLeads} new leads`,
             body: `Your signal agent "${agent.name}" discovered ${agentLeads} new leads matching your ICP.`,
-            type: 'signal',
-            link: '/contacts',
+            type: 'signal', link: '/contacts',
           });
         }
 
         totalLeads += agentLeads;
-        console.log(`Agent ${agent.id}: ${agentLeads} leads (${Math.round((Date.now() - START) / 1000)}s elapsed)`);
-      } catch (e) {
-        console.error(`Error processing agent ${agent.id}:`, e);
-      }
+        console.log(`Agent ${agent.id}: ${agentLeads} leads total`);
+      } catch (e) { console.error(`Error processing agent ${agent.id}:`, e); }
     }
 
-    return jsonResponse({
-      message: `Processed ${agents.length} agents, ${totalLeads} total leads`,
-      processed: agents.length,
-      leads_inserted: totalLeads,
-    });
+    return jsonResponse({ message: `Processed ${agents.length} agents, ${totalLeads} total leads`, processed: agents.length, leads_inserted: totalLeads });
   } catch (error) {
     console.error('process-signal-agents error:', error);
     return errorResponse(error instanceof Error ? error.message : 'Unknown error');
   }
 });
 
-// ─── Resolve User's Own LinkedIn Identifier ───────────────────────────────────
+// ─── Invoke a signal edge function and wait for result ────────────────────────
 
-async function resolveUserLinkedInId(accountId: string, apiKey: string, dsn: string): Promise<string | null> {
+async function invokeSignalFunction(supabaseUrl: string, serviceRoleKey: string, functionName: string, payload: any): Promise<number> {
   try {
-    const res = await unipileGet(`/api/v1/users/me?account_id=${accountId}`, apiKey, dsn);
+    const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
     if (!res.ok) {
-      const res2 = await unipileGet(`/api/v1/linkedin/profile/me?account_id=${accountId}`, apiKey, dsn);
-      if (!res2.ok) return null;
-      const data2 = await res2.json();
-      return data2.provider_id || data2.public_id || data2.id || null;
+      const text = await res.text();
+      console.error(`${functionName} returned ${res.status}: ${text.slice(0, 200)}`);
+      return 0;
     }
     const data = await res.json();
-    return data.provider_id || data.public_id || data.id || null;
+    return data.leads || 0;
   } catch (e) {
-    console.error('resolveUserLinkedInId error:', e);
-    return null;
+    console.error(`invokeSignalFunction ${functionName}:`, e);
+    return 0;
   }
 }
 
-// ─── Signal Handlers ──────────────────────────────────────────────────────────
-
-async function handlePostEngagers(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string, userLinkedInId: string,
-  budgetMs: number = 30000,
-): Promise<number> {
-  const t0 = Date.now();
-  try {
-    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
-    if (!postsRes.ok) { await postsRes.text(); return 0; }
-    const postsData = await postsRes.json();
-    const posts = (postsData.items || postsData.posts || []).slice(0, 3);
-
-    let inserted = 0;
-    for (const post of posts) {
-      if (!hasSignalTime(t0, budgetMs)) break;
-      await delay(150);
-      const postId = post.social_id || post.id || post.provider_id;
-      if (!postId) continue;
-
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
-      if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
-      const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 20);
-
-      const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-      const postText = post.text || post.commentary || '';
-      const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
-
-      for (const engager of engagers) {
-        if (!hasSignalTime(t0, budgetMs)) break;
-        const profile = engager.author || engager;
-        if (!profile) continue;
-        const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
-        if (!fullProfile) continue;
-
-        const match = scoreProfileAgainstICP(fullProfile, icp);
-        const hl = fullProfile.headline || fullProfile.title || '';
-        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        // Post engagers: engagement with YOUR content is the signal, no industry filter
-        if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
-        const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
-        if (ok) inserted++;
-      }
-    }
-    return inserted;
-  } catch (e) { console.error('handlePostEngagers:', e); return 0; }
-}
-
-async function handleKeywordPosts(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string, keywords: string[],
-  budgetMs: number = 30000,
-): Promise<number> {
-  const t0 = Date.now();
-  let inserted = 0;
-  const allPosts: any[] = [];
-
-  // Search ALL keywords (no cap)
-  for (const keyword of keywords) {
-    if (!hasSignalTime(t0, budgetMs * 0.4)) break; // Use 40% of budget for searching
-    await delay(150);
-    try {
-      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
-        method: 'POST',
-        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week' }),
-      });
-      if (!res.ok) { await res.text(); continue; }
-      const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 20);
-      console.log(`keyword_posts "${keyword}": ${items.length} posts`);
-      for (const item of items) allPosts.push({ ...item, _keyword: keyword });
-    } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
-  }
-
-  // Deduplicate posts by ID
-  const seenPostIds = new Set<string>();
-  const uniquePosts = allPosts.filter(p => {
-    const id = p.social_id || p.id || p.provider_id;
-    if (!id || seenPostIds.has(id)) return false;
-    seenPostIds.add(id);
-    return true;
-  });
-
-  // Get top posts by engagement
-  const topPosts = uniquePosts
-    .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 20);
-
-  for (const post of topPosts) {
-    if (!hasSignalTime(t0, budgetMs)) break;
-    await delay(100);
-
-    const authorData = post.author || post.actor || post.author_detail || null;
-    const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
-
-    if (!authorData) continue;
-
-    // Post search returns minimal author data — fetch full profile
-    const fullAuthor = await fetchProfileIfNeeded(authorData, accountId, apiKey, dsn);
-    if (!fullAuthor) continue;
-
-    const match = scoreProfileAgainstICP(fullAuthor, icp);
-    const hl = fullAuthor.headline || fullAuthor.title || '';
-    const classification = classifyContact(match, icp, hl);
-    if (!classification) {
-      console.log(`keyword_posts: SKIP "${fullAuthor.first_name || ''} ${fullAuthor.last_name || ''}" hl="${hl}"`);
-      continue;
-    }
-    if (isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
-    const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-    const signal = `Posted about "${post._keyword}"`;
-    const ok = await insertContact(supabase, fullAuthor, userId, agentId, listName, match, signal, postUrl, icp);
-    if (ok) { inserted++; console.log(`keyword_posts: +1 "${fullAuthor.first_name} ${fullAuthor.last_name || ''}" (${hl})`); }
-
-    // Scan engagers on top 5 posts only (expensive)
-    if (inserted <= 5) {
-      const postId = post.social_id || post.id || post.provider_id;
-      if (postId && hasSignalTime(t0, budgetMs)) {
-        try {
-          await delay(150);
-          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
-          if (reactionsRes.ok) {
-            const reactionsData = await reactionsRes.json();
-            const engagers = (reactionsData.items || []).slice(0, 15);
-            for (const engager of engagers) {
-              if (!hasSignalTime(t0, budgetMs)) break;
-              const engagerProfile = engager.author || engager;
-              const fullEngager = await fetchProfileIfNeeded(engagerProfile, accountId, apiKey, dsn);
-              if (!fullEngager) continue;
-              const eMatch = scoreProfileAgainstICP(fullEngager, icp);
-              const eHl = fullEngager.headline || fullEngager.title || '';
-              if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
-              // For keyword engagers: the keyword IS the signal, no strict industry filter
-              if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
-              const eSignal = `Engaged with post about "${post._keyword}"`;
-              const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
-              if (eOk) inserted++;
-            }
-          } else { await reactionsRes.text(); }
-        } catch (e) { console.error('keyword engager scan:', e); }
-      }
-    }
-  }
-
-  // Removed standalone "people search" / "ICP match" — we only want engagement-based leads
-
-
-  return inserted;
-}
-
-async function handleHashtagEngagement(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string, hashtags: string[],
-  budgetMs: number = 30000,
-): Promise<number> {
-  const t0 = Date.now();
-  let inserted = 0;
-  const allPosts: any[] = [];
-
-  // Search ALL hashtags (no cap)
-  for (let tag of hashtags) {
-    if (!hasSignalTime(t0, budgetMs * 0.4)) break;
-    if (!tag.startsWith('#')) tag = `#${tag}`;
-    await delay(150);
-    try {
-      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
-        method: 'POST',
-        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api: 'classic', category: 'posts', keywords: tag, date_posted: 'past_week' }),
-      });
-      if (!res.ok) { await res.text(); continue; }
-      const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 15);
-      console.log(`hashtag "${tag}": ${items.length} posts`);
-      for (const item of items) allPosts.push({ ...item, _hashtag: tag });
-    } catch (e) { console.error(`Hashtag "${tag}":`, e); }
-  }
-
-  const topPosts = allPosts
-    .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 10);
-
-  for (const post of topPosts) {
-    if (!hasSignalTime(t0, budgetMs)) break;
-    await delay(150);
-    const postId = post.social_id || post.id || post.provider_id;
-    if (!postId) continue;
-
-    // Skip post authors — we only want people who ENGAGED with hashtag content
-    try {
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
-      if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
-      const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 20);
-
-      const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-
-      for (const engager of engagers) {
-        if (!hasSignalTime(t0, budgetMs)) break;
-        const profile = engager.author || engager;
-        const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
-        if (!fullProfile) continue;
-
-        const match = scoreProfileAgainstICP(fullProfile, icp);
-        const hl = fullProfile.headline || fullProfile.title || '';
-        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (!matchesIndustry(fullProfile, match, icp)) {
-          console.log(`hashtag_engagement: skipped "${fullProfile.first_name || ''}" — no industry match (${fullProfile.industry || 'unknown'})`);
-          continue;
-        }
-        if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
-        const signal = `Engaged with ${post._hashtag}`;
-        const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
-        if (ok) inserted++;
-      }
-    } catch (e) { console.error('Hashtag engager fetch:', e); }
-  }
-  return inserted;
-}
-
-async function handleCompetitorFollowers(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string, urls: string[],
-  budgetMs: number = 30000,
-): Promise<number> {
-  const t0 = Date.now();
-  let inserted = 0;
-  for (const url of urls) {
-    if (!hasSignalTime(t0, budgetMs)) break;
-    await delay(150);
-    const companyName = extractCompanyName(url);
-    if (!companyName) continue;
-    console.log(`competitor_followers: searching "${companyName}"`);
-    try {
-      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
-        method: 'POST',
-        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName }),
-      });
-      if (!res.ok) { await res.text(); continue; }
-      const data = await res.json();
-      const people = (data.items || data.results || []).slice(0, 30);
-      console.log(`competitor_followers "${companyName}": ${people.length} people`);
-      for (const person of people) {
-        if (!hasSignalTime(t0, budgetMs)) break;
-        const profile = {
-          ...person,
-          title: person.headline || person.title || null,
-          linkedin_url: person.profile_url || person.public_profile_url || null,
-          public_id: person.public_identifier || person.id || null,
-          company: person.current_positions?.[0]?.company || person.company || null,
-        };
-        const match = scoreProfileAgainstICP(profile, icp);
-        const hl = profile.headline || profile.title || '';
-        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (!matchesIndustry(profile, match, icp)) continue;
-        if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-        const signal = `Follows ${companyName}`;
-        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
-        if (ok) inserted++;
-      }
-    } catch (e) { console.error(`Competitor followers ${url}:`, e); }
-  }
-  return inserted;
-}
-
-async function handleCompetitorPostEngagers(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string, urls: string[],
-  budgetMs: number = 30000,
-): Promise<number> {
-  const t0 = Date.now();
-  let inserted = 0;
-  for (const url of urls) {
-    if (!hasSignalTime(t0, budgetMs)) break;
-    await delay(150);
-    const companyId = extractLinkedInId(url);
-    const companyName = extractCompanyName(url);
-    if (!companyId) continue;
-    try {
-      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=5`, apiKey, dsn);
-      if (!postsRes.ok) { await postsRes.text(); continue; }
-      const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-      for (const post of posts) {
-        if (!hasSignalTime(t0, budgetMs)) break;
-        await delay(150);
-        const postId = post.social_id || post.id || post.provider_id;
-        if (!postId) continue;
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
-        if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
-        const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 20);
-        const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-        for (const engager of engagers) {
-          if (!hasSignalTime(t0, budgetMs)) break;
-          const profile = engager.author || engager;
-          const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
-          if (!fullProfile) continue;
-          const match = scoreProfileAgainstICP(fullProfile, icp);
-          const hl = fullProfile.headline || fullProfile.title || '';
-          if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (!matchesIndustry(fullProfile, match, icp)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-          const signal = `Engaged with ${companyName || companyId}'s post`;
-          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
-          if (ok) inserted++;
-        }
-      }
-    } catch (e) { console.error(`Competitor engagers ${url}:`, e); }
-  }
-  return inserted;
-}
-
-async function handleProfileEngagers(
-  supabase: any, accountId: string, apiKey: string, dsn: string,
-  icp: ICPFilters, userId: string, listName: string, agentId: string, profileUrls: string[],
-  signalPrefix: string = 'Engaged with',
-  budgetMs: number = 30000,
-): Promise<number> {
-  const t0 = Date.now();
-  let inserted = 0;
-  for (const url of profileUrls) {
-    if (!hasSignalTime(t0, budgetMs)) break;
-    await delay(150);
-    const profileId = extractLinkedInId(url);
-    if (!profileId) continue;
-    try {
-      const isCompany = url.includes('/company/');
-      const postsEndpoint = isCompany
-        ? `/api/v1/users/${profileId}/posts?account_id=${accountId}&is_company=true&limit=5`
-        : `/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=5`;
-      const postsRes = await unipileGet(postsEndpoint, apiKey, dsn);
-      if (!postsRes.ok) { await postsRes.text(); continue; }
-      const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-      let profileName = profileId;
-      if (!isCompany) {
-        try {
-          const profRes = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${accountId}`, apiKey, dsn);
-          if (profRes.ok) {
-            const profData = await profRes.json();
-            profileName = [profData.first_name, profData.last_name].filter(Boolean).join(' ') || profileId;
-          } else { await profRes.text(); }
-        } catch (_) { /* fallback */ }
-      } else {
-        profileName = extractCompanyName(url) || profileId;
-      }
-      console.log(`profile_engagers "${profileName}": ${posts.length} posts found`);
-      for (const post of posts) {
-        if (!hasSignalTime(t0, budgetMs)) break;
-        await delay(150);
-        const postId = post.social_id || post.id || post.provider_id;
-        if (!postId) continue;
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
-        if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
-        const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 20);
-        const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-        for (const engager of engagers) {
-          if (!hasSignalTime(t0, budgetMs)) break;
-          const profile = engager.author || engager;
-          const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
-          if (!fullProfile) continue;
-          const match = scoreProfileAgainstICP(fullProfile, icp);
-          const hl = fullProfile.headline || fullProfile.title || '';
-          if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (!matchesIndustry(fullProfile, match, icp)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-          const signal = `${signalPrefix} ${profileName}'s post`;
-          const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
-          if (ok) inserted++;
-        }
-      }
-    } catch (e) { console.error(`Profile engagers ${url}:`, e); }
-  }
-  return inserted;
-}
-
-// handleJobChanges — REMOVED (not a signal we track)
-
-// ─── ICP Scoring ──────────────────────────────────────────────────────────────
-
-function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
-  const title = profile.headline || profile.title || profile.role || '';
-  const industry = profile.industry || '';
-  const location = profile.location || profile.country || '';
-
-  const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(title, icp.jobTitles);
-  const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries);
-  const locationMatch = icp.locations.length === 0 || fuzzyMatchList(location, icp.locations);
-
-  const matchedFields: string[] = [];
-  let score = 0;
-
-  if (icp.jobTitles.length > 0 && titleMatch) { score += 40; matchedFields.push('title'); }
-  else if (icp.jobTitles.length === 0) score += 20;
-
-  if (icp.industries.length > 0 && industryMatch) { score += 30; matchedFields.push('industry'); }
-  else if (icp.industries.length === 0) score += 15;
-
-  if (icp.locations.length > 0 && locationMatch) { score += 20; matchedFields.push('location'); }
-  else if (icp.locations.length === 0) score += 10;
-
-  if (icp.companySizes.length > 0) {
-    const companySize = profile.company_size || profile.current_company?.employee_count || '';
-    if (companySize && fuzzyMatchList(String(companySize), icp.companySizes)) {
-      score += 10; matchedFields.push('company_size');
-    }
-  } else score += 5;
-
-  return { titleMatch, industryMatch, locationMatch, score: Math.min(100, score), matchedFields };
-}
-
-const BUYING_INTENT_KEYWORDS = [
-  'ceo', 'cto', 'coo', 'cfo', 'cmo', 'cro', 'cpo', 'cio',
-  'founder', 'co-founder', 'cofounder', 'owner', 'partner',
-  'president', 'principal',
-  'vp', 'vice president',
-  'director', 'head of', 'chief',
-  'general manager', 'managing director',
-  'svp', 'evp', 'avp',
-];
-
-const REJECT_TITLES = [
-  'software developer', 'software engineer', 'frontend developer', 'backend developer',
-  'full stack developer', 'fullstack developer', 'web developer', 'mobile developer',
-  'junior developer', 'senior developer', 'staff engineer', 'intern',
-  'data analyst', 'qa engineer', 'test engineer', 'devops engineer',
-  'graphic designer', 'ui designer', 'ux designer',
-  'student', 'fresher', 'trainee', 'apprentice',
-  'accountant', 'bookkeeper', 'cashier', 'clerk',
-  'receptionist', 'administrative assistant', 'office assistant',
-];
-
-function hasBuyingIntent(headline: string): boolean {
-  const h = (headline || '').toLowerCase();
-  return BUYING_INTENT_KEYWORDS.some((kw) => h.includes(kw));
-}
-
-function isClearlyIrrelevant(headline: string): boolean {
-  const h = (headline || '').toLowerCase();
-  return REJECT_TITLES.some((kw) => h.includes(kw));
-}
-
-function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
-  const hl = headline || '';
-  if (isClearlyIrrelevant(hl)) return null;
-  if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
-  if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
-  if (hasBuyingIntent(hl)) return 'warm';
-  if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
-  if (hl.length > 5) return 'cold';
-  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
-  return null;
-}
-
-function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: string): boolean {
-  return classifyContact(match, icp, headline) !== null;
-}
-
-function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
-  const company = (profile.company || profile.current_company?.name || '').toLowerCase().trim();
-  const headline = (profile.headline || profile.title || '').toLowerCase();
-
-  // CRITICAL: Never mark competitor employees as leads
-  // Check both the company field AND the headline (title often contains "at CompanyName")
-  if (competitorCompanies.length > 0) {
-    const textToCheck = `${company} ${headline}`;
-    for (const comp of competitorCompanies) {
-      if (textToCheck.includes(comp)) {
-        console.log(`Excluded ${profile.first_name || ''} ${profile.last_name || ''}: competitor match "${comp}" in "${textToCheck.trim().slice(0, 80)}"`);
-        return true;
-      }
-    }
-  }
-
-  if (excludeKeywords.length === 0) return false;
-  const text = [profile.headline, profile.title, profile.company, profile.current_company?.name, profile.industry]
-    .filter(Boolean).join(' ').toLowerCase();
-  return excludeKeywords.some((kw) => text.includes(kw));
-}
-
-function fuzzyMatchList(value: string, candidates: string[]): boolean {
-  const haystack = normalizeText(value);
-  if (!haystack) return false;
-  return candidates.some((c) => {
-    const needle = normalizeText(c);
-    if (!needle) return false;
-    return haystack.includes(needle) || needle.includes(haystack);
-  });
-}
-
-function normalizeText(value: string): string {
-  return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-}
-// Relaxed industry match: checks headline, company, and industry fields against ICP industries
-// Used as fallback when strict industry field matching fails (LinkedIn profiles often lack industry)
-function relaxedIndustryMatch(profile: any, industries: string[]): boolean {
-  if (industries.length === 0) return true;
-  const text = [
-    profile.industry || '',
-    profile.headline || profile.title || '',
-    profile.company || profile.current_company?.name || '',
-  ].join(' ').toLowerCase();
-  return industries.some(ind => {
-    const needle = normalizeText(ind);
-    if (!needle) return false;
-    // Check each word of the industry name (e.g. "recruitment" from "Recruitment Agency")
-    const words = needle.split(/\s+/).filter(w => w.length > 3);
-    return words.some(word => text.includes(word));
-  });
-}
-
-// Combined industry check: strict first (industry field), relaxed fallback (headline/company)
-function matchesIndustry(profile: any, match: MatchResult, icp: ICPFilters): boolean {
-  if (icp.industries.length === 0) return true;
-  if (match.industryMatch) return true; // strict match on industry field
-  return relaxedIndustryMatch(profile, icp.industries); // fallback to headline/company
-}
-
-
-
-async function ensureList(supabase: any, userId: string, listName: string, agentId: string): Promise<string | null> {
-  const { data: existing } = await supabase
-    .from('lists')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('name', listName)
-    .limit(1);
-
-  if (existing && existing.length > 0) return existing[0].id;
-
-  const { data: created, error } = await supabase
-    .from('lists')
-    .insert({ user_id: userId, name: listName, source_agent_id: agentId })
-    .select('id')
-    .single();
-
-  if (error) { console.error(`Create list error: ${error.message}`); return null; }
-  return created?.id || null;
-}
-
-async function insertContact(
-  supabase: any, profile: any, userId: string, agentId: string,
-  listName: string, match: MatchResult, signal: string, signalPostUrl: string | null,
-  icp?: ICPFilters,
-): Promise<boolean> {
-  const linkedinProfileId = profile.public_id || profile.public_identifier || profile.provider_id || profile.id;
-  if (!linkedinProfileId) return false;
-
-  // Dedup check
-  const { data: existing } = await supabase
-    .from('contacts')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('linkedin_profile_id', linkedinProfileId)
-    .limit(1);
-
-  if (existing && existing.length > 0) return false;
-
-  const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
-  const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
-  const hl = profile.headline || profile.title || '';
-
-  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [], competitorCompanies: [] };
-  const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
-
-  const signalAHit = true;
-  const signalBHit = match.score >= 60;
-  const signalCHit = match.score >= 80;
-  const aiScore = Math.min(3, [signalAHit, signalBHit, signalCHit].filter(Boolean).length);
-
-  const { data: inserted, error } = await supabase.from('contacts').insert({
-    user_id: userId,
-    first_name: firstName,
-    last_name: lastName,
-    title: profile.headline || profile.title || null,
-    company: profile.company || profile.current_company?.name || null,
-    linkedin_url: profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
-    linkedin_profile_id: linkedinProfileId,
-    source_campaign_id: null,
-    signal,
-    signal_post_url: signalPostUrl,
-    ai_score: aiScore,
-    signal_a_hit: signalAHit,
-    signal_b_hit: signalBHit,
-    signal_c_hit: signalCHit,
-    email_enriched: false,
-    list_name: listName,
-    company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
-    relevance_tier: relevanceTier,
-  }).select('id').single();
-
-  if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
-
-  if (inserted?.id && listName) {
-    const listId = await ensureList(supabase, userId, listName, agentId);
-    if (listId) {
-      await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId });
-    }
-  }
-
-  return true;
-}
-
-// ─── Unipile Helpers ──────────────────────────────────────────────────────────
-
-function unipileGet(path: string, apiKey: string, dsn: string) {
-  return fetch(`https://${dsn}${path}`, { headers: { 'X-API-KEY': apiKey } });
-}
-
-async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
-  if (item.first_name && (item.headline || item.title)) return item;
-  const id = item.provider_id || item.id || item.public_id || item.public_identifier || item.author_id;
-  if (!id) return item.first_name ? item : null;
-
-  try {
-    const res = await unipileGet(`/api/v1/linkedin/profile/${id}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { await res.text(); return item.first_name ? item : null; }
-    return await res.json();
-  } catch { return item.first_name ? item : null; }
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+async function saveAgentProgress(supabase: any, agent: any, agentLeads: number) {
+  await supabase.from('signal_agents').update({
+    last_launched_at: new Date().toISOString(),
+    results_count: (agent.results_count || 0) + agentLeads,
+  }).eq('id', agent.id);
 }
 
 function extractLinkedInId(url: string): string | null {
   if (!url) return null;
-  const match = url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/);
-  if (match) return match[1];
-  return url.replace(/^https?:\/\//, '').replace(/\/$/, '') || null;
+  const m = url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/);
+  return m ? m[1] : null;
 }
 
 function extractCompanyName(url: string): string | null {
-  if (!url) return null;
   const id = extractLinkedInId(url);
   if (!id) return null;
-  return id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  return id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
-
-function delay(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
-
 function jsonResponse(data: any) {
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  return new Response(JSON.stringify(data), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
 function errorResponse(message: string) {
-  return new Response(JSON.stringify({ error: message }), {
-    status: 500,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
+  return new Response(JSON.stringify({ error: message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
