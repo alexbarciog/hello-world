@@ -70,10 +70,12 @@ async function processCampaignMessages(
   let generated = 0;
   const today = new Date().toISOString().split('T')[0];
 
+  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+
   for (const req of acceptedRequests) {
     try {
       const currentStep = req.current_step || 1;
-      const nextStepIndex = currentStep; // workflow_steps[0]=invitation, [1]=step2...
+      const nextStepIndex = hasInvitation ? currentStep : currentStep - 1;
       const nextStep = workflowSteps[nextStepIndex];
 
       if (!nextStep || nextStep.type !== 'message') continue;
