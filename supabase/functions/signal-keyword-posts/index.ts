@@ -241,10 +241,15 @@ Deno.serve(async (req) => {
       if (!authorData) continue;
 
       // Fetch full author profile (post search returns minimal data)
+      const authorId = authorData.provider_id || authorData.id || authorData.public_id || authorData.public_identifier || authorData.author_id;
+      console.log(`[DEBUG] Post author raw keys: ${Object.keys(authorData).join(',')}, id=${authorId}, first_name=${authorData.first_name||'?'}, headline=${(authorData.headline||authorData.title||'NONE').slice(0,50)}`);
       const fullAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
       if (fullAuthor) {
+        console.log(`[DEBUG] Enriched author: first_name=${fullAuthor.first_name||'?'}, headline=${(fullAuthor.headline||fullAuthor.title||'NONE').slice(0,60)}, industry=${fullAuthor.industry||'NONE'}, company=${fullAuthor.company||fullAuthor.current_company?.name||'NONE'}`);
         const match = scoreProfileAgainstICP(fullAuthor, icp);
         const hl = fullAuthor.headline || fullAuthor.title || '';
+        const classification = classifyContact(match, icp, hl);
+        console.log(`[DEBUG] Match: score=${match.score}, fields=[${match.matchedFields}], classify=${classification}, titleMatch=${match.titleMatch}, industryMatch=${match.industryMatch}, excluded=${isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)}`);
         if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
           const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
           const signal = `Posted about "${post._keyword}"`;
