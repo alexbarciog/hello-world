@@ -289,22 +289,22 @@ async function handlePostEngagers(
   icp: ICPFilters, userId: string, listName: string, agentId: string, userLinkedInId: string,
 ): Promise<number> {
   try {
-    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
+    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
     if (!postsRes.ok) { await postsRes.text(); return 0; }
     const postsData = await postsRes.json();
-    const posts = (postsData.items || postsData.posts || []).slice(0, 3);
+    const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
     let inserted = 0;
     for (const post of posts) {
       if (!hasTime()) break;
-      await delay(800);
+      await delay(400);
       const postId = post.social_id || post.id || post.provider_id;
       if (!postId) continue;
 
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=15`, apiKey, dsn);
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
       if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 10);
+      const engagers = (reactionsData.items || []).slice(0, 20);
 
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
       const postText = post.text || post.commentary || '';
@@ -339,9 +339,9 @@ async function handleKeywordPosts(
   const allPosts: any[] = [];
 
   // Fetch all keyword searches with minimal delay
-  for (const keyword of keywords.slice(0, 5)) {
+  for (const keyword of keywords.slice(0, 8)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -350,20 +350,20 @@ async function handleKeywordPosts(
       });
       if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 10);
+      const items = (data.items || data.results || []).slice(0, 20);
       console.log(`keyword_posts "${keyword}": ${items.length} posts`);
       for (const item of items) allPosts.push({ ...item, _keyword: keyword });
     } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
   }
 
-  // Get top 8 posts by engagement
+  // Get top 15 posts by engagement
   const topPosts = allPosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 8);
+    .slice(0, 15);
 
   for (const post of topPosts) {
     if (!hasTime()) break;
-    await delay(300);
+    await delay(200);
 
     const authorData = post.author || post.actor || post.author_detail || null;
     const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
@@ -394,16 +394,16 @@ async function handleKeywordPosts(
     const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl, icp);
     if (ok) { inserted++; console.log(`keyword_posts: +1 "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
 
-    // Scan engagers on top 3 posts only (to save time)
-    if (inserted <= 3) {
+    // Scan engagers on posts
+    {
       const postId = post.social_id || post.id || post.provider_id;
       if (postId && hasTime()) {
         try {
-          await delay(500);
-          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+          await delay(300);
+          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
           if (reactionsRes.ok) {
             const reactionsData = await reactionsRes.json();
-            const engagers = (reactionsData.items || []).slice(0, 8);
+            const engagers = (reactionsData.items || []).slice(0, 20);
             for (const engager of engagers) {
               if (!hasTime()) break;
               const engagerProfile = engager.author || engager;
@@ -432,10 +432,10 @@ async function handleHashtagEngagement(
   let inserted = 0;
   const allPosts: any[] = [];
 
-  for (let tag of hashtags.slice(0, 3)) {
+  for (let tag of hashtags.slice(0, 5)) {
     if (!hasTime()) break;
     if (!tag.startsWith('#')) tag = `#${tag}`;
-    await delay(800);
+    await delay(400);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -444,7 +444,7 @@ async function handleHashtagEngagement(
       });
       if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 8);
+      const items = (data.items || data.results || []).slice(0, 15);
       console.log(`hashtag "${tag}": ${items.length} posts`);
       for (const item of items) allPosts.push({ ...item, _hashtag: tag });
     } catch (e) { console.error(`Hashtag "${tag}":`, e); }
@@ -452,19 +452,19 @@ async function handleHashtagEngagement(
 
   const topPosts = allPosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 5);
+    .slice(0, 10);
 
   for (const post of topPosts) {
     if (!hasTime()) break;
-    await delay(500);
+    await delay(300);
     const postId = post.social_id || post.id || post.provider_id;
     if (!postId) continue;
 
     try {
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
       if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 8);
+      const engagers = (reactionsData.items || []).slice(0, 20);
 
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
@@ -494,9 +494,9 @@ async function handleCompetitorFollowers(
 ): Promise<number> {
   let inserted = 0;
 
-  for (const url of urls.slice(0, 3)) {
+  for (const url of urls.slice(0, 5)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     const companyName = extractCompanyName(url);
     if (!companyName) continue;
 
@@ -510,7 +510,7 @@ async function handleCompetitorFollowers(
       });
       if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const people = (data.items || data.results || []).slice(0, 15);
+      const people = (data.items || data.results || []).slice(0, 30);
       console.log(`competitor_followers "${companyName}": ${people.length} people`);
 
       for (const person of people) {
@@ -543,29 +543,29 @@ async function handleCompetitorPostEngagers(
 ): Promise<number> {
   let inserted = 0;
 
-  for (const url of urls.slice(0, 2)) {
+  for (const url of urls.slice(0, 4)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     const companyId = extractLinkedInId(url);
     const companyName = extractCompanyName(url);
     if (!companyId) continue;
 
     try {
-      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=3`, apiKey, dsn);
+      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=5`, apiKey, dsn);
       if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 3);
+      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
       for (const post of posts) {
         if (!hasTime()) break;
-        await delay(500);
+        await delay(300);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
         if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 8);
+        const engagers = (reactionsData.items || []).slice(0, 20);
 
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
@@ -596,17 +596,17 @@ async function handleProfileEngagers(
 ): Promise<number> {
   let inserted = 0;
 
-  for (const url of profileUrls.slice(0, 3)) {
+  for (const url of profileUrls.slice(0, 5)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     const profileId = extractLinkedInId(url);
     if (!profileId) continue;
 
     try {
-      const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
+      const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
       if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 3);
+      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
       let profileName = profileId;
       try {
@@ -619,14 +619,14 @@ async function handleProfileEngagers(
 
       for (const post of posts) {
         if (!hasTime()) break;
-        await delay(500);
+        await delay(300);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
         if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 8);
+        const engagers = (reactionsData.items || []).slice(0, 20);
 
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
