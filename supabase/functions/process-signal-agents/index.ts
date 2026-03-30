@@ -15,6 +15,7 @@ interface ICPFilters {
   companySizes: string[];
   companyTypes: string[];
   excludeKeywords: string[];
+  competitorCompanies: string[];
 }
 
 interface MatchResult {
