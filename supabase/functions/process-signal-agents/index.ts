@@ -334,17 +334,19 @@ async function resolveUserLinkedInId(accountId: string, apiKey: string, dsn: str
 async function handlePostEngagers(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, userLinkedInId: string,
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   try {
-    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
+    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
     if (!postsRes.ok) { await postsRes.text(); return 0; }
     const postsData = await postsRes.json();
-    const posts = (postsData.items || postsData.posts || []).slice(0, 5);
+    const posts = (postsData.items || postsData.posts || []).slice(0, 3);
 
     let inserted = 0;
     for (const post of posts) {
-      if (!hasTime()) break;
-      await delay(400);
+      if (!hasSignalTime(t0, budgetMs)) break;
+      await delay(150);
       const postId = post.social_id || post.id || post.provider_id;
       if (!postId) continue;
 
@@ -358,7 +360,7 @@ async function handlePostEngagers(
       const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
 
       for (const engager of engagers) {
-        if (!hasTime()) break;
+        if (!hasSignalTime(t0, budgetMs)) break;
         const profile = engager.author || engager;
         if (!profile) continue;
         const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
