@@ -1977,6 +1977,42 @@ export default function CampaignDetail() {
                           className="flex w-full rounded-xl border-2 border-border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                         />
                       </div>
+
+                      {/* Conversational AI */}
+                      <div className="rounded-xl border-2 border-border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
+                              <MessageCircle className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-foreground">Conversational AI</p>
+                              <p className="text-[10px] text-muted-foreground">Auto-reply to leads who respond, focused on booking a call</p>
+                            </div>
+                          </div>
+                          <Switch checked={settingsConversationalAi} onCheckedChange={setSettingsConversationalAi} />
+                        </div>
+                        {settingsConversationalAi && (
+                          <div className="pl-11 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-muted-foreground">Max replies per lead:</p>
+                              <select
+                                value={settingsMaxAiReplies}
+                                onChange={(e) => setSettingsMaxAiReplies(Number(e.target.value))}
+                                className="text-xs border border-border rounded-lg px-2 py-1 bg-background text-foreground"
+                              >
+                                {[3, 5, 7, 10].map(n => (
+                                  <option key={n} value={n}>{n} replies</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                              <Shield className="w-3 h-3" />
+                              <span>Smart stop: AI will stop if lead shows no interest or opts out</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </div>
