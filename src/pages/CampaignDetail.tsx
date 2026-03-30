@@ -1364,17 +1364,17 @@ export default function CampaignDetail() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[800px]">
+                  <table className="w-full min-w-[900px]">
                     <thead>
                       <tr className="border-b border-border">
-                        {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "LAST ACTION"].map((h) => (
+                        {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "LAST ACTION", "NEXT STEP"].map((h) => (
                           <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-3">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredContacts.length === 0 ? (
-                        <tr><td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No contacts yet</td></tr>
+                        <tr><td colSpan={7} className="text-center py-12 text-sm text-muted-foreground">No contacts yet</td></tr>
                       ) : (
                         filteredContacts.map((c) => {
                           const tierColor = c.relevance_tier === "hot" ? "bg-red-500" : c.relevance_tier === "warm" ? "bg-amber-500" : "bg-blue-500";
@@ -1453,6 +1453,19 @@ export default function CampaignDetail() {
                                   ];
                                   const colorClass = chipColors[(stepNum - 1) % chipColors.length];
                                   return <span className={`inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{stepLabel}</span>;
+                                })()}
+                              </td>
+                              <td className="px-3 py-3">
+                                {(() => {
+                                  const cs = contactStatuses[c.id];
+                                  const steps = workflowSteps as any[];
+                                  const currentStep = cs?.step || 0;
+                                  const nextStepIdx = currentStep; // next step index in workflow array
+                                  if (nextStepIdx >= steps.length) {
+                                    return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">✓ Completed</span>;
+                                  }
+                                  const nextLabel = nextStepIdx === 0 ? "Step 1 — Invitation" : `Step ${nextStepIdx + 1} — Message`;
+                                  return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-primary/10 text-primary ring-1 ring-primary/20">{nextLabel}</span>;
                                 })()}
                               </td>
                             </tr>
