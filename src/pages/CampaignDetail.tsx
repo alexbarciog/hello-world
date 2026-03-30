@@ -912,11 +912,35 @@ export default function CampaignDetail() {
                               {isEditing ? (
                                 <div className="space-y-2">
                                   <textarea
+                                    id={`step-edit-textarea-${i}`}
                                     defaultValue={ws.message || ""}
                                     className="w-full text-xs border border-border rounded-lg p-2 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                                     rows={3}
                                     placeholder="Type your message..."
                                   />
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] text-muted-foreground font-medium">Insert:</span>
+                                    {["first_name", "last_name", "company", "title", "signal"].map((v) => (
+                                      <button
+                                        key={v}
+                                        onClick={() => {
+                                          const ta = document.getElementById(`step-edit-textarea-${i}`) as HTMLTextAreaElement;
+                                          if (ta) {
+                                            const start = ta.selectionStart;
+                                            const end = ta.selectionEnd;
+                                            const val = ta.value;
+                                            const tag = `{{${v}}}`;
+                                            ta.value = val.substring(0, start) + tag + val.substring(end);
+                                            ta.focus();
+                                            ta.selectionStart = ta.selectionEnd = start + tag.length;
+                                          }
+                                        }}
+                                        className="text-[10px] font-semibold text-primary bg-primary/15 rounded px-2 py-0.5 hover:bg-primary/25 transition-colors"
+                                      >
+                                        {`{{${v}}}`}
+                                      </button>
+                                    ))}
+                                  </div>
                                   <div className="flex gap-1.5">
                                     <button onClick={() => setEditingStep(null)} className="text-xs font-bold text-white bg-primary rounded px-3 py-1">Save</button>
                                     <button onClick={() => setEditingStep(null)} className="text-xs font-medium text-muted-foreground border border-border rounded px-3 py-1">Cancel</button>
