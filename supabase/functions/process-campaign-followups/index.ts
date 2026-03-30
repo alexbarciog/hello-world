@@ -494,7 +494,6 @@ async function generateNextStepMessage(
   if (!contact) return false;
 
   let message = '';
-  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
   const displayStepNumber = hasInvitation ? wfIndex + 1 : wfIndex + 2; // Step 2, 3, 4...
 
   if (nextStep.ai_icebreaker) {
