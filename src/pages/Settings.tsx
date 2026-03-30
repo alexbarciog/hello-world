@@ -476,7 +476,7 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
               type="button"
               onClick={handleGenerateDescription}
               disabled={generatingDesc || !form.website.trim()}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[hsl(var(--goji-coral))/10] text-[hsl(var(--goji-coral))] hover:bg-[hsl(var(--goji-coral))/20] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
             >
               {generatingDesc ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
               {generatingDesc ? "Generating…" : "Generate with AI"}
