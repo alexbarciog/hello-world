@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     let totalSent = 0;
 
-    for (const campaign of campaigns) {
+    for (const campaign of campaignsWithList) {
       try {
         const sent = await processCampaign(
           serviceClient,
