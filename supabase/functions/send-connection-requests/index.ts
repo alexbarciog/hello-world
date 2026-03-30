@@ -115,14 +115,24 @@ async function processCampaign(
 
   const allContactIds = contactLinks.map((cl: any) => cl.contact_id);
 
-  // Get already-sent contact IDs for this campaign
+  // Get already-sent contact IDs for this campaign (only exclude successful ones)
   const { data: alreadySent } = await serviceClient
     .from('campaign_connection_requests')
-    .select('contact_id')
+    .select('contact_id, status')
     .eq('campaign_id', campaign.id);
 
-  const sentSet = new Set((alreadySent || []).map((r: any) => r.contact_id));
-  const unseenContactIds = allContactIds.filter((cid: string) => !sentSet.has(cid));
+  // Only skip contacts that were successfully sent or accepted — retry skipped/failed ones
+  const successSet = new Set(
+    (alreadySent || [])
+      .filter((r: any) => r.status === 'sent' || r.status === 'accepted' || r.status === 'pending')
+      .map((r: any) => r.contact_id)
+  );
+  const retryContactIds = (alreadySent || [])
+    .filter((r: any) => r.status === 'skipped' || r.status === 'failed')
+    .map((r: any) => r.contact_id);
+  const retrySet = new Set(retryContactIds);
+  
+  const unseenContactIds = allContactIds.filter((cid: string) => !successSet.has(cid));
 
   if (unseenContactIds.length === 0) {
     console.log(`[campaign ${campaign.id}] all contacts already processed`);
@@ -143,16 +153,19 @@ async function processCampaign(
   let sentCount = 0;
 
   for (const contact of contactsData) {
+    const isRetry = retrySet.has(contact.id);
     try {
       const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
       if (!publicId) {
         console.log(`[campaign ${campaign.id}] contact ${contact.id} has no linkedin ID, skipping`);
-        await serviceClient.from('campaign_connection_requests').insert({
-          campaign_id: campaign.id,
-          contact_id: contact.id,
-          user_id: campaign.user_id,
-          status: 'skipped',
-        });
+        if (!isRetry) {
+          await serviceClient.from('campaign_connection_requests').insert({
+            campaign_id: campaign.id,
+            contact_id: contact.id,
+            user_id: campaign.user_id,
+            status: 'skipped',
+          });
+        }
         continue;
       }
 
@@ -165,12 +178,14 @@ async function processCampaign(
 
       if (!resolveRes.ok || !resolveData.provider_id) {
         console.error(`[campaign ${campaign.id}] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status, JSON.stringify(resolveData));
-        await serviceClient.from('campaign_connection_requests').insert({
-          campaign_id: campaign.id,
-          contact_id: contact.id,
-          user_id: campaign.user_id,
-          status: 'skipped',
-        });
+        if (!isRetry) {
+          await serviceClient.from('campaign_connection_requests').insert({
+            campaign_id: campaign.id,
+            contact_id: contact.id,
+            user_id: campaign.user_id,
+            status: 'failed',
+          });
+        }
         continue;
       }
 
@@ -193,23 +208,41 @@ async function processCampaign(
 
       if (!inviteRes.ok) {
         console.error(`[campaign ${campaign.id}] invite failed for ${contact.id}:`, inviteRes.status, JSON.stringify(inviteData));
+        if (isRetry) {
+          await serviceClient.from('campaign_connection_requests')
+            .update({ status: 'failed', sent_at: new Date().toISOString() })
+            .eq('campaign_id', campaign.id)
+            .eq('contact_id', contact.id);
+        } else {
+          await serviceClient.from('campaign_connection_requests').insert({
+            campaign_id: campaign.id,
+            contact_id: contact.id,
+            user_id: campaign.user_id,
+            status: 'failed',
+          });
+        }
+        continue;
+      }
+
+      // Record successful send (update if retry, insert if new)
+      if (isRetry) {
+        await serviceClient.from('campaign_connection_requests')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            unipile_request_id: inviteData.request_id || inviteData.id || null,
+          })
+          .eq('campaign_id', campaign.id)
+          .eq('contact_id', contact.id);
+      } else {
         await serviceClient.from('campaign_connection_requests').insert({
           campaign_id: campaign.id,
           contact_id: contact.id,
           user_id: campaign.user_id,
-          status: 'failed',
+          status: 'sent',
+          unipile_request_id: inviteData.request_id || inviteData.id || null,
         });
-        continue;
       }
-
-      // Record successful send
-      await serviceClient.from('campaign_connection_requests').insert({
-        campaign_id: campaign.id,
-        contact_id: contact.id,
-        user_id: campaign.user_id,
-        status: 'sent',
-        unipile_request_id: inviteData.request_id || inviteData.id || null,
-      });
 
       sentCount++;
 
