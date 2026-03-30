@@ -9,6 +9,7 @@ import {
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
+  RefreshCw, Loader2,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -147,7 +148,55 @@ export default function CampaignDetail() {
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
   const [editingScheduledMsg, setEditingScheduledMsg] = useState("");
+  const [regeneratingIdx, setRegeneratingIdx] = useState<number | null>(null);
 
+  async function handleRegenerateMessage(idx: number) {
+    const sm = scheduledMessages[idx];
+    if (!sm || !campaign) return;
+    setRegeneratingIdx(idx);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-step-message', {
+        body: {
+          stepNumber: sm.nextStepNum,
+          previousStepMessage: "",
+          previousMessages: [],
+          companyName: campaign.company_name || "",
+          valueProposition: campaign.value_proposition || "",
+          painPoints: campaign.pain_points || [],
+          campaignGoal: campaign.campaign_goal || "",
+          messageTone: campaign.message_tone || "conversational",
+          industry: "",
+          language: campaign.language || "English",
+          customTraining: campaign.custom_training || "",
+          firstName: sm.contactName.split(" ")[0] || "",
+          lastName: sm.contactName.split(" ").slice(1).join(" ") || "",
+          leadCompany: sm.contactCompany || "",
+          leadTitle: sm.contactTitle || "",
+          buyingSignal: sm.contactSignal || "",
+        },
+      });
+      if (error) throw error;
+      const newMessage = data?.message || "";
+      if (!newMessage) { toast.error("AI returned an empty message"); return; }
+
+      const updated = [...scheduledMessages];
+      updated[idx] = { ...updated[idx], message: newMessage, editedByUser: false };
+      setScheduledMessages(updated);
+
+      if (sm.scheduledMsgId) {
+        await supabase
+          .from("scheduled_messages" as any)
+          .update({ message: newMessage, edited_by_user: false, generated_at: new Date().toISOString(), status: "generated" } as any)
+          .eq("id", sm.scheduledMsgId);
+      }
+      toast.success("Message regenerated!");
+    } catch (e: any) {
+      console.error("Regenerate error:", e);
+      toast.error(e?.message || "Failed to regenerate message");
+    } finally {
+      setRegeneratingIdx(null);
+    }
+  }
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
@@ -2216,6 +2265,14 @@ export default function CampaignDetail() {
                                 className="text-[10px] font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex items-center gap-1"
                               >
                                 <Pencil className="w-3 h-3" /> Edit message
+                              </button>
+                              <button
+                                onClick={() => handleRegenerateMessage(idx)}
+                                disabled={regeneratingIdx === idx}
+                                className="text-[10px] font-medium text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 rounded-lg px-3 py-1.5 transition-all flex items-center gap-1"
+                              >
+                                {regeneratingIdx === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                {regeneratingIdx === idx ? "Regenerating…" : "Regenerate"}
                               </button>
                             </div>
                           )}
