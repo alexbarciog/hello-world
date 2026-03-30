@@ -1418,12 +1418,16 @@ export default function CampaignDetail() {
                                 {(() => {
                                   const cs = contactStatuses[c.id];
                                   if (!cs) return <span className="text-xs text-muted-foreground">—</span>;
-                                  const steps = campaign?.workflow_steps as any[] || [];
-                                  const stepIdx = (cs.step || 1) - 1;
-                                  const stepLabel = stepIdx === 0 ? "Invitation sent" : `Step ${cs.step} message`;
-                                  const stepType = steps[stepIdx]?.type;
-                                  const icon = stepType === "invitation" ? "📨" : "💬";
-                                  return <span className="text-xs text-muted-foreground whitespace-nowrap">{icon} {stepLabel}</span>;
+                                  const stepNum = cs.step || 1;
+                                  const stepLabel = stepNum === 1 ? "Invitation sent" : `Step ${stepNum} message`;
+                                  const chipColors = [
+                                    "bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20",
+                                    "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20",
+                                    "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20",
+                                    "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20",
+                                  ];
+                                  const colorClass = chipColors[(stepNum - 1) % chipColors.length];
+                                  return <span className={`inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{stepLabel}</span>;
                                 })()}
                               </td>
                             </tr>
