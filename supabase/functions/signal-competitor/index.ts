@@ -255,9 +255,11 @@ Deno.serve(async (req) => {
               if (!matchesTitleOrIndustry(match, icp, hl)) continue;
               if (!matchesIndustry(fp, match, icp)) continue;
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const cls3 = classifyContact(match, icp, hl);
+              if (cls3 === 'cold' && !canInsertCold()) continue;
               const signal = `Engaged with ${companyName||companyId}'s post`;
               const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, postUrl, icp);
-              if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; }
             }
           }
         } catch(e) { console.error(`Competitor engagers ${url}:`, e); }
