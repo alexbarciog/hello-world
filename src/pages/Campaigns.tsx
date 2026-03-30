@@ -377,13 +377,13 @@ export default function CampaignsPage() {
         { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, iconBg: "from-md-tertiary-fixed/30 to-md-tertiary-fixed/10" }].
         map((stat) =>
         <div key={stat.label} className="glass-card rounded-2xl p-6 ghost-border flex flex-col justify-between">
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2 mb-4">
                 <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
                   <stat.icon className="w-4 h-4 text-md-primary" />
                 </div>
+                <p className="text-md-on-surface-variant text-sm font-semibold">{stat.label}</p>
               </div>
               <div>
-                <p className="text-md-on-surface-variant text-sm mb-1 font-semibold">{stat.label}</p>
                 <p className="text-2xl font-headline tracking-tight text-md-on-surface font-semibold">{stat.value}</p>
               </div>
             </div>
