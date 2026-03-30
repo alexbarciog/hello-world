@@ -355,10 +355,10 @@ export default function CampaignsPage() {
           <button
             onClick={handleNewCampaign}
             disabled={atLimit}
-            className="px-6 py-2.5 rounded-full bg-md-primary text-md-on-primary text-sm font-medium shadow-md shadow-md-primary/10 hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
-            
-            <Plus className="w-4 h-4" />
+            className="px-6 py-2.5 rounded-[12px] text-white text-sm font-medium shadow-md hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+            style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}>
             Start a campaign
+            <Plus className="w-4 h-4" />
           </button>
         </div>
       </header>
