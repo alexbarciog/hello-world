@@ -110,6 +110,7 @@ export default function CampaignDetail() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [contactFilter, setContactFilter] = useState<string>("all");
+  const [stepFilter, setStepFilter] = useState<string>("all");
   const [agentName, setAgentName] = useState("My Agent");
   const [agentStatus, setAgentStatus] = useState("paused");
   const [contactsCount, setContactsCount] = useState(0);
@@ -623,8 +624,16 @@ export default function CampaignDetail() {
         (c.company || "").toLowerCase().includes(q) || (c.title || "").toLowerCase().includes(q)
       );
     }
+    if (stepFilter !== "all") {
+      const stepNum = parseInt(stepFilter);
+      list = list.filter(c => {
+        const cs = contactStatuses[c.id];
+        if (!cs) return stepNum === 0; // "Queued" = not yet in any step
+        return (cs.step || 1) === stepNum;
+      });
+    }
     return list;
-  }, [contacts, contactSearch, contactFilter]);
+  }, [contacts, contactSearch, contactFilter, stepFilter, contactStatuses]);
 
   const workflowSteps = campaign?.workflow_steps || [
     { type: "invitation", message: "", delay_days: 0 },
@@ -1305,25 +1314,41 @@ export default function CampaignDetail() {
                 </div>
 
                 {/* Tier filter tabs */}
-                <div className="flex items-center gap-1 mb-4 bg-muted/30 rounded-lg p-1 w-fit">
-                  {[
-                    { key: "all", label: "All", color: "text-foreground" },
-                    { key: "hot", label: "🔥 Hot", color: "text-red-600" },
-                    { key: "warm", label: "🟡 Warm", color: "text-amber-600" },
-                    { key: "cold", label: "🔵 Cold", color: "text-blue-600" },
-                  ].map((f) => (
-                    <button
-                      key={f.key}
-                      onClick={() => setContactFilter(f.key)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                        contactFilter === f.key
-                          ? `bg-background shadow-sm border border-border ${f.color}`
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {f.label} ({tierCounts[f.key as keyof typeof tierCounts]})
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3 mb-4 flex-wrap">
+                  <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1 w-fit">
+                    {[
+                      { key: "all", label: "All", color: "text-foreground" },
+                      { key: "hot", label: "🔥 Hot", color: "text-red-600" },
+                      { key: "warm", label: "🟡 Warm", color: "text-amber-600" },
+                      { key: "cold", label: "🔵 Cold", color: "text-blue-600" },
+                    ].map((f) => (
+                      <button
+                        key={f.key}
+                        onClick={() => setContactFilter(f.key)}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                          contactFilter === f.key
+                            ? `bg-background shadow-sm border border-border ${f.color}`
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {f.label} ({tierCounts[f.key as keyof typeof tierCounts]})
+                      </button>
+                    ))}
+                  </div>
+
+                  <select
+                    value={stepFilter}
+                    onChange={(e) => setStepFilter(e.target.value)}
+                    className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="all">All Steps</option>
+                    <option value="0">Queued</option>
+                    {(workflowSteps as any[]).map((_: any, i: number) => (
+                      <option key={i} value={i + 1}>
+                        {i === 0 ? "Step 1 — Invitation" : `Step ${i + 1} — Message`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex items-center gap-3 mb-4">
