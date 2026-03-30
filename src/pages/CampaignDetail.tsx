@@ -1374,7 +1374,7 @@ export default function CampaignDetail() {
                     </thead>
                     <tbody>
                       {filteredContacts.length === 0 ? (
-                        <tr><td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No contacts yet</td></tr>
+                        <tr><td colSpan={7} className="text-center py-12 text-sm text-muted-foreground">No contacts yet</td></tr>
                       ) : (
                         filteredContacts.map((c) => {
                           const tierColor = c.relevance_tier === "hot" ? "bg-red-500" : c.relevance_tier === "warm" ? "bg-amber-500" : "bg-blue-500";
