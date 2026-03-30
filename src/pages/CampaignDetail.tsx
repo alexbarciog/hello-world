@@ -110,6 +110,7 @@ export default function CampaignDetail() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [contactFilter, setContactFilter] = useState<string>("all");
+  const [stepFilter, setStepFilter] = useState<string>("all");
   const [agentName, setAgentName] = useState("My Agent");
   const [agentStatus, setAgentStatus] = useState("paused");
   const [contactsCount, setContactsCount] = useState(0);
