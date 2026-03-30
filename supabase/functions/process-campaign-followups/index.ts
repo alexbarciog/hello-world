@@ -35,9 +35,35 @@ Deno.serve(async (req) => {
 
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, source_list_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
-      .eq('status', 'active')
-      .not('source_list_id', 'is', null);
+      .select('id, user_id, workflow_steps, source_list_id, source_agent_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
+      .eq('status', 'active');
+
+    // Resolve source_list_id for agent-sourced campaigns
+    if (campaigns) {
+      for (const campaign of campaigns) {
+        if (!campaign.source_list_id && campaign.source_agent_id) {
+          const { data: agent } = await supabase
+            .from('signal_agents')
+            .select('leads_list_name')
+            .eq('id', campaign.source_agent_id)
+            .single();
+
+          if (agent?.leads_list_name) {
+            const { data: list } = await supabase
+              .from('lists')
+              .select('id')
+              .eq('name', agent.leads_list_name)
+              .eq('user_id', campaign.user_id)
+              .single();
+
+            if (list) {
+              campaign.source_list_id = list.id;
+              console.log(`[followup][campaign ${campaign.id}] resolved list from agent: ${list.id}`);
+            }
+          }
+        }
+      }
+    }
 
     if (campErr) throw campErr;
     if (!campaigns || campaigns.length === 0) {
