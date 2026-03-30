@@ -955,14 +955,14 @@ export default function CampaignDetail() {
                                     <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 answer(s)</span>
                                   </div>
 
-                                  <div className="flex gap-2 mt-3 pt-2 border-t border-border">
-                                    <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
+                                  <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
+                                    <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
                                     {ws.ai_icebreaker && (
-                                      <button onClick={() => openEditStepInstructions(i)} className="text-xs font-medium text-amber-600 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors flex-1">
+                                      <button onClick={() => openEditStepInstructions(i)} className="text-xs font-medium text-amber-600 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors w-full">
                                         <span className="flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Instructions</span>
                                       </button>
                                     )}
-                                    <button onClick={() => setEditModePickerStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
+                                    <button onClick={() => setEditModePickerStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">Edit</button>
                                   </div>
                                 </>
                               )}
