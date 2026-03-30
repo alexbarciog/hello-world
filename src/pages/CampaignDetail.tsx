@@ -310,7 +310,7 @@ export default function CampaignDetail() {
       .eq("campaign_id", campaignId)
       .gte("sent_at", todayStart.toISOString());
     
-    const todayReqs = (todayRequests || []) as { id: string; sent_at: string }[];
+    const todayReqs = (todayRequests || []) as unknown as { id: string; sent_at: string }[];
     setTodaySentCount(todayReqs.length);
 
     // Group by run time slots (UTC hours: 8,10,12,14,16)
