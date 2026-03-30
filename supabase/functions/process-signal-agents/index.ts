@@ -802,7 +802,7 @@ async function insertContact(
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
 
-  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [] };
+  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [], competitorCompanies: [] };
   const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
 
   const signalAHit = true;
