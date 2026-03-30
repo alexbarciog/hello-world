@@ -2266,6 +2266,14 @@ export default function CampaignDetail() {
                               >
                                 <Pencil className="w-3 h-3" /> Edit message
                               </button>
+                              <button
+                                onClick={() => handleRegenerateMessage(idx)}
+                                disabled={regeneratingIdx === idx}
+                                className="text-[10px] font-medium text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 disabled:opacity-50 rounded-lg px-3 py-1.5 transition-all flex items-center gap-1"
+                              >
+                                {regeneratingIdx === idx ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                {regeneratingIdx === idx ? "Regenerating…" : "Regenerate"}
+                              </button>
                             </div>
                           )}
                         </motion.div>
