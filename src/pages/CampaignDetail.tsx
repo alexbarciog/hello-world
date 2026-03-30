@@ -1662,26 +1662,16 @@ export default function CampaignDetail() {
                       {/* Language */}
                       <div>
                         <p className="text-sm font-bold text-foreground mb-2.5">Language</p>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        <select
+                          value={settingsLanguage}
+                          onChange={(e) => setSettingsLanguage(e.target.value)}
+                          className="w-full max-w-xs rounded-xl border-2 border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-foreground transition-colors appearance-none cursor-pointer"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                        >
                           {["English", "Spanish", "French", "German", "Portuguese", "Italian", "Dutch", "Polish", "Swedish", "Romanian"].map((lang) => (
-                            <button
-                              key={lang}
-                              onClick={() => setSettingsLanguage(lang)}
-                              className={`text-left px-3 py-2.5 rounded-xl border-2 transition-all hover:scale-[1.01] ${
-                                settingsLanguage === lang
-                                  ? "border-foreground bg-foreground/5 shadow-sm"
-                                  : "border-border hover:bg-muted/50"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-colors ${settingsLanguage === lang ? "border-foreground" : "border-muted-foreground/40"}`}>
-                                  {settingsLanguage === lang && <div className="w-1.5 h-1.5 rounded-full bg-foreground" />}
-                                </div>
-                                <p className="text-sm font-medium text-foreground">{lang}</p>
-                              </div>
-                            </button>
+                            <option key={lang} value={lang}>{lang}</option>
                           ))}
-                        </div>
+                        </select>
                       </div>
 
                       {/* Custom AI Training */}
