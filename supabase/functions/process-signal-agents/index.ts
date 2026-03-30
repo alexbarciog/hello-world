@@ -124,6 +124,16 @@ Deno.serve(async (req) => {
         const enabled = config.enabled || [];
         const signalKeywords = config.keywords || {};
 
+        // Build list of competitor company names to exclude their employees
+        const competitorCompanyNames: string[] = [];
+        for (const key of ['competitor_followers', 'competitor_engagers']) {
+          const urls = signalKeywords[key] || [];
+          for (const url of urls) {
+            const name = extractCompanyName(url);
+            if (name) competitorCompanyNames.push(name.toLowerCase());
+          }
+        }
+
         const icp: ICPFilters = {
           jobTitles: (agent.icp_job_titles || []).map((s: string) => s.trim()).filter(Boolean),
           industries: (agent.icp_industries || []).map((s: string) => s.trim()).filter(Boolean),
@@ -131,6 +141,7 @@ Deno.serve(async (req) => {
           companySizes: (agent.icp_company_sizes || []).map((s: string) => s.trim()).filter(Boolean),
           companyTypes: (agent.icp_company_types || []).map((s: string) => s.trim()).filter(Boolean),
           excludeKeywords: (agent.icp_exclude_keywords || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+          competitorCompanies: competitorCompanyNames,
         };
 
         const listName = agent.leads_list_name || agent.name || 'Signal Leads';
