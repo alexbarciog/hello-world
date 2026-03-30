@@ -381,7 +381,7 @@ export default function CampaignsPage() {
                 <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
                   <stat.icon className="w-4 h-4 text-md-primary" />
                 </div>
-                <p className="text-md-on-surface-variant text-sm font-semibold">{stat.label}</p>
+                <p className="text-md-on-surface-variant text-sm font-medium">{stat.label}</p>
               </div>
               <div>
                 <p className="text-2xl font-headline tracking-tight text-md-on-surface font-semibold">{stat.value}</p>
