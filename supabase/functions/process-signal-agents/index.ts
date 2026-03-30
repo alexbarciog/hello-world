@@ -383,14 +383,16 @@ async function handlePostEngagers(
 async function handleKeywordPosts(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, keywords: string[],
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   let inserted = 0;
   const allPosts: any[] = [];
 
-  // Fetch all keyword searches with minimal delay
-  for (const keyword of keywords.slice(0, 8)) {
-    if (!hasTime()) break;
-    await delay(400);
+  // Search ALL keywords (no cap)
+  for (const keyword of keywords) {
+    if (!hasSignalTime(t0, budgetMs * 0.4)) break; // Use 40% of budget for searching
+    await delay(150);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -405,14 +407,23 @@ async function handleKeywordPosts(
     } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
   }
 
-  // Get top 15 posts by engagement
-  const topPosts = allPosts
+  // Deduplicate posts by ID
+  const seenPostIds = new Set<string>();
+  const uniquePosts = allPosts.filter(p => {
+    const id = p.social_id || p.id || p.provider_id;
+    if (!id || seenPostIds.has(id)) return false;
+    seenPostIds.add(id);
+    return true;
+  });
+
+  // Get top posts by engagement
+  const topPosts = uniquePosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 15);
+    .slice(0, 20);
 
   for (const post of topPosts) {
-    if (!hasTime()) break;
-    await delay(200);
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(100);
 
     const authorData = post.author || post.actor || post.author_detail || null;
     const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
@@ -443,18 +454,18 @@ async function handleKeywordPosts(
     const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl, icp);
     if (ok) { inserted++; console.log(`keyword_posts: +1 "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
 
-    // Scan engagers on posts
-    {
+    // Scan engagers on top 5 posts only (expensive)
+    if (inserted <= 5) {
       const postId = post.social_id || post.id || post.provider_id;
-      if (postId && hasTime()) {
+      if (postId && hasSignalTime(t0, budgetMs)) {
         try {
-          await delay(300);
+          await delay(150);
           const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
           if (reactionsRes.ok) {
             const reactionsData = await reactionsRes.json();
-            const engagers = (reactionsData.items || []).slice(0, 20);
+            const engagers = (reactionsData.items || []).slice(0, 15);
             for (const engager of engagers) {
-              if (!hasTime()) break;
+              if (!hasSignalTime(t0, budgetMs)) break;
               const engagerProfile = engager.author || engager;
               const fullEngager = await fetchProfileIfNeeded(engagerProfile, accountId, apiKey, dsn);
               if (!fullEngager) continue;
@@ -471,10 +482,44 @@ async function handleKeywordPosts(
       }
     }
   }
+
+  // Also do a people search for each keyword to find people whose profiles match
+  for (const keyword of keywords.slice(0, 4)) {
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
+    try {
+      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
+        method: 'POST',
+        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api: 'classic', category: 'people', keywords: keyword }),
+      });
+      if (!res.ok) { await res.text(); continue; }
+      const data = await res.json();
+      const people = (data.items || data.results || []).slice(0, 15);
+      console.log(`keyword_people "${keyword}": ${people.length} results`);
+
+      for (const person of people) {
+        if (!hasSignalTime(t0, budgetMs)) break;
+        const profile = {
+          ...person,
+          title: person.headline || person.title || null,
+          linkedin_url: person.profile_url || person.public_profile_url || null,
+          public_id: person.public_identifier || person.id || null,
+          company: person.current_positions?.[0]?.company || person.company || null,
+        };
+        const match = scoreProfileAgainstICP(profile, icp);
+        const hl = profile.headline || profile.title || '';
+        if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+        if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+        const signal = `Interested in "${keyword}"`;
+        const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, profile.linkedin_url, icp);
+        if (ok) inserted++;
+      }
+    } catch (e) { console.error(`keyword_people "${keyword}":`, e); }
+  }
+
   return inserted;
 }
-
-async function handleHashtagEngagement(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, hashtags: string[],
 ): Promise<number> {
