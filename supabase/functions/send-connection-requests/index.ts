@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     }
 
     // Resolve source_list_id for agent-sourced campaigns
-    for (const campaign of campaignsWithList) {
+    for (const campaign of campaigns) {
       if (!campaign.source_list_id && campaign.source_agent_id) {
         const { data: agent } = await serviceClient
           .from('signal_agents')
