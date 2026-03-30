@@ -348,6 +348,7 @@ async function saveAccountId(
 
   if (error) {
     throw new Error(`Failed to save account: ${error.message}`);
+  }
 }
 
 async function activatePendingAndDiscover(
@@ -399,4 +400,4 @@ async function activatePendingAndDiscover(
     console.error('[activate] error:', err);
   }
 }
-}
+
