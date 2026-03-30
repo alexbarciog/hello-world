@@ -558,14 +558,14 @@ async function handleCompetitorPostEngagers(
 
       for (const post of posts) {
         if (!hasTime()) break;
-        await delay(500);
+        await delay(300);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
 
-        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+        const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
         if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
-        const engagers = (reactionsData.items || []).slice(0, 8);
+        const engagers = (reactionsData.items || []).slice(0, 20);
 
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
