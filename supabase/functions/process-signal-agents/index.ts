@@ -520,16 +520,21 @@ async function handleKeywordPosts(
 
   return inserted;
 }
+
+async function handleHashtagEngagement(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, hashtags: string[],
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   let inserted = 0;
   const allPosts: any[] = [];
 
-  for (let tag of hashtags.slice(0, 5)) {
-    if (!hasTime()) break;
+  // Search ALL hashtags (no cap)
+  for (let tag of hashtags) {
+    if (!hasSignalTime(t0, budgetMs * 0.4)) break;
     if (!tag.startsWith('#')) tag = `#${tag}`;
-    await delay(400);
+    await delay(150);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -549,10 +554,33 @@ async function handleKeywordPosts(
     .slice(0, 10);
 
   for (const post of topPosts) {
-    if (!hasTime()) break;
-    await delay(300);
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
     const postId = post.social_id || post.id || post.provider_id;
     if (!postId) continue;
+
+    // Also capture the post author
+    const authorData = post.author || post.actor || post.author_detail;
+    if (authorData) {
+      const name = authorData.first_name || authorData.name || '';
+      const nameParts = name.split(' ').filter(Boolean);
+      const authorProfile: any = {
+        first_name: authorData.first_name || nameParts[0] || 'Unknown',
+        last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
+        headline: authorData.headline || authorData.occupation || authorData.title || null,
+        company: authorData.company || authorData.current_company?.name || null,
+        public_id: authorData.public_identifier || authorData.public_id || authorData.vanity_name || null,
+        linkedin_url: authorData.profile_url || authorData.public_profile_url || null,
+        provider_id: authorData.provider_id || post.author_id || null,
+      };
+      const aMatch = scoreProfileAgainstICP(authorProfile, icp);
+      const aHl = authorProfile.headline || '';
+      if (matchesTitleOrIndustry(aMatch, icp, aHl) && !isExcluded(authorProfile, icp.excludeKeywords, icp.competitorCompanies)) {
+        const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
+        const ok = await insertContact(supabase, authorProfile, userId, agentId, listName, aMatch, `Posted about ${post._hashtag}`, postUrl, icp);
+        if (ok) inserted++;
+      }
+    }
 
     try {
       const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
@@ -563,7 +591,7 @@ async function handleKeywordPosts(
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
       for (const engager of engagers) {
-        if (!hasTime()) break;
+        if (!hasSignalTime(t0, budgetMs)) break;
         const profile = engager.author || engager;
         const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
         if (!fullProfile) continue;
