@@ -844,7 +844,7 @@ export default function CampaignDetail() {
                         <p className="text-xs opacity-80">Step 1</p>
                       </div>
                       <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
-                        <p className="text-xs text-muted-foreground italic">Invitation without message</p>
+                        <p className="text-xs text-muted-foreground italic">{(() => { const invStep = workflowSteps.find((ws: any) => ws.type === "invitation"); return invStep?.connect_note ? "Invitation with note" : "Invitation without note"; })()}</p>
                         <div className="flex items-center gap-3 mt-3 text-xs">
                           <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">{step1Sent} contact(s)</span>
                           <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">{step1Accepted} accepted</span>
