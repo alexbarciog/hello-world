@@ -866,12 +866,15 @@ export default function CampaignDetail() {
                               ) : (
                                 <>
                                   {ws.ai_icebreaker ? (
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5 text-xs">
-                                        <Sparkles className="w-3.5 h-3.5 text-red-500" />
-                                        <span className="text-foreground font-bold">AI Icebreaker</span>
+                                    <div className="space-y-1.5">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-xs">
+                                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                          <span className="text-foreground font-bold">AI SDR Mode</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">Active</span>
                                       </div>
-                                      <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/50" />
+                                      <p className="text-[11px] text-muted-foreground leading-relaxed">Each lead will receive a unique AI-generated message based on their role, company, signal & your business context.</p>
                                     </div>
                                   ) : ws.message ? (
                                     <div>
