@@ -468,7 +468,9 @@ async function generateNextStepMessage(
   req: any,
   wfIndex: number,
   workflowSteps: any[],
-  lovableApiKey: string
+  lovableApiKey: string,
+  supabaseUrl: string,
+  supabaseServiceRoleKey: string,
 ): Promise<boolean> {
   const nextStep = workflowSteps[wfIndex];
   if (!nextStep || nextStep.type !== 'message') return false;
