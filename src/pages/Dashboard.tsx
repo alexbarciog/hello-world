@@ -587,9 +587,15 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
                           {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                         </div>
                         {lead.signal && (
-                          <div className="text-[10px] text-md-primary/70 line-clamp-1 mt-0.5 italic">
-                            ⚡ {lead.signal}
-                          </div>
+                          lead.signal_post_url ? (
+                            <a href={lead.signal_post_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-md-primary/80 line-clamp-1 mt-0.5 hover:underline">
+                              ⚡ {lead.signal}
+                            </a>
+                          ) : (
+                            <div className="text-xs text-md-primary/70 line-clamp-1 mt-0.5">
+                              ⚡ {lead.signal}
+                            </div>
+                          )
                         )}
                       </div>
                     </div>
