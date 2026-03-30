@@ -199,7 +199,17 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('competitor_followers')) {
           const urls = signalKeywords['competitor_followers'] || [];
           if (urls.length > 0) {
-            const count = await handleCompetitorFollowers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
+            // Split into company URLs and personal profile URLs
+            const companyUrls = urls.filter((u: string) => u.includes('/company/'));
+            const personUrls = urls.filter((u: string) => u.includes('/in/'));
+            let count = 0;
+            if (companyUrls.length > 0) {
+              count += await handleCompetitorFollowers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls);
+            }
+            // For personal profile URLs, treat as profile engagers (scan their post reactions)
+            if (personUrls.length > 0 && hasTime()) {
+              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Follows');
+            }
             await saveProgress(count);
           }
         }
@@ -208,7 +218,16 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('competitor_engagers')) {
           const urls = signalKeywords['competitor_engagers'] || [];
           if (urls.length > 0) {
-            const count = await handleCompetitorPostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
+            const companyUrls = urls.filter((u: string) => u.includes('/company/'));
+            const personUrls = urls.filter((u: string) => u.includes('/in/'));
+            let count = 0;
+            if (companyUrls.length > 0) {
+              count += await handleCompetitorPostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls);
+            }
+            // For personal profile URLs, scan their posts for engagers
+            if (personUrls.length > 0 && hasTime()) {
+              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Engaged with');
+            }
             await saveProgress(count);
           }
         }
@@ -220,6 +239,12 @@ Deno.serve(async (req) => {
             const count = await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
             await saveProgress(count);
           }
+        }
+
+        // ── 8. Job Changes ──
+        if (hasTime() && enabled.includes('job_changes')) {
+          const count = await handleJobChanges(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id);
+          await saveProgress(count);
         }
 
         // Final update — count actual contacts in the agent's list for accuracy
