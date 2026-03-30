@@ -196,7 +196,7 @@ async function processCampaignMessages(
 
 // ── AI SDR prompt builders ──
 
-function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number): string {
+function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number, stepInstructions?: string): string {
   const toneGuide: Record<string, string> = {
     professional: 'Use a professional but warm tone. Be polished and respectful.',
     conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer.',
@@ -224,7 +224,8 @@ SENDER'S BUSINESS:
 TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
 GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
 ${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
-${campaign.custom_training ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${campaign.custom_training}` : ''}
+${campaign.custom_training ? `\nGLOBAL CAMPAIGN INSTRUCTIONS FROM USER:\n${campaign.custom_training}` : ''}
+${stepInstructions ? `\nSPECIFIC INSTRUCTIONS FOR THIS STEP (Step ${stepNumber}):\n${stepInstructions}` : ''}
 
 CRITICAL RULES:
 - Write 3-5 sentences MAX
