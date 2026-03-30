@@ -368,29 +368,26 @@ export default function CampaignsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-12">
-        <div className="bg-gradient-to-br from-goji-bg-hero to-goji-bg-hero-2 rounded-3xl p-8 border border-goji-coral/10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        
           {[
-            { label: "Total Leads", value: totalLeads, icon: Users },
-            { label: "Active Campaigns", value: activeCampaigns, icon: Rocket },
-            { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail },
-            { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3 },
-          ].map((stat) =>
-            <div key={stat.label} className="bg-white rounded-2xl p-6 border border-goji-coral/15 shadow-sm flex flex-col justify-between">
+        { label: "Total Leads", value: totalLeads, icon: Users, iconBg: "from-md-primary/10 to-md-secondary/10" },
+        { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, iconBg: "from-emerald-100/60 to-emerald-50/40" },
+        { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, iconBg: "from-md-secondary/10 to-md-primary/5" },
+        { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, iconBg: "from-md-tertiary-fixed/30 to-md-tertiary-fixed/10" }].
+        map((stat) =>
+        <div key={stat.label} className="glass-card rounded-2xl p-6 ghost-border flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-goji-orange to-goji-coral flex items-center justify-center">
-                  <stat.icon className="w-5 h-5 text-white" />
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon className="w-5 h-5 text-md-primary" />
                 </div>
               </div>
               <div>
-                <p className="text-goji-dark text-sm mb-1 font-semibold">{stat.label}</p>
-                <p className="text-2xl font-headline tracking-tight font-semibold bg-gradient-to-r from-goji-berry to-goji-coral bg-clip-text text-transparent">{stat.value}</p>
+                <p className="text-md-on-surface-variant text-sm mb-1 font-semibold">{stat.label}</p>
+                <p className="text-2xl font-headline tracking-tight text-md-on-surface font-semibold">{stat.value}</p>
               </div>
             </div>
-          )}
-          </div>
-        </div>
+        )}
         </motion.div>
       }
 
