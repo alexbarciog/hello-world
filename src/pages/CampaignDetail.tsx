@@ -2227,7 +2227,14 @@ export default function CampaignDetail() {
                             <div className="mb-3 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
                               <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1">
                                 <Flame className="w-3 h-3" /> 
-                                <span className="font-bold">Signal:</span> {sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal}
+                                <span className="font-bold">Signal:</span>{" "}
+                                {sm.contactSignalUrl ? (
+                                  <a href={sm.contactSignalUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-900 transition-colors">
+                                    {sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal}
+                                  </a>
+                                ) : (
+                                  sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal
+                                )}
                               </p>
                             </div>
                           )}
