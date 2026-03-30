@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, source_list_id')
+      .select('id, user_id, workflow_steps, source_list_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language')
       .eq('status', 'active')
       .not('source_list_id', 'is', null);
 
