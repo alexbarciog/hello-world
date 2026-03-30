@@ -579,6 +579,27 @@ export default function CampaignDetail() {
     }
   }
 
+  function openEditStepInstructions(stepIndex: number) {
+    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+    const step = nonInvSteps[stepIndex];
+    setEditStepInstructionsText(step?.step_instructions || "");
+    setEditStepInstructionsIdx(stepIndex);
+  }
+
+  async function saveStepInstructions() {
+    if (!campaign || editStepInstructionsIdx === null) return;
+    const allSteps = [...workflowSteps];
+    const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const actualIdx = nonInvMap[editStepInstructionsIdx]?.idx;
+    if (actualIdx === undefined) return;
+    allSteps[actualIdx] = { ...allSteps[actualIdx], step_instructions: editStepInstructionsText.trim() || undefined };
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: allSteps as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to save instructions"); return; }
+    setCampaign({ ...campaign, workflow_steps: allSteps });
+    setEditStepInstructionsIdx(null);
+    toast.success("Step instructions saved!");
+  }
+
   const filteredContacts = useMemo(() => {
     let list = contacts;
     if (contactFilter !== "all") {
