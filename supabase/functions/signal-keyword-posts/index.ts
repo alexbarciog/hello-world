@@ -217,6 +217,7 @@ Deno.serve(async (req) => {
     };
 
     console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}]`);
+    let inserted = 0;
     const allPosts: any[] = [];
 
     // Phase 1: Search posts for ALL keywords (use 40% of time)
