@@ -58,8 +58,7 @@ async function processCampaign(
   supabase: any,
   campaign: any,
   unipileApiKey: string,
-  unipileDsn: string,
-  lovableApiKey: string | undefined
+  unipileDsn: string
 ): Promise<{ accepted: number; messagesSent: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   if (workflowSteps.length < 2) {
