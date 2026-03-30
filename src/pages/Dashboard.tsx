@@ -197,7 +197,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data: contacts, error: cErr } = await supabase
         .from("contacts")
-        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at, linkedin_url, signal")
+        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at, linkedin_url, signal, signal_post_url")
         .order("imported_at", { ascending: false })
         .limit(50);
       if (cErr || !contacts || contacts.length === 0) return [];
@@ -216,7 +216,8 @@ export default function Dashboard() {
         score: c.ai_score ?? 0,
         relevance_tier: c.relevance_tier as string,
         linkedin_url: c.linkedin_url,
-        signal: c.signal
+        signal: c.signal,
+        signal_post_url: c.signal_post_url
       }));
     },
     staleTime: 30_000
@@ -586,9 +587,15 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
                           {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                         </div>
                         {lead.signal && (
-                          <div className="text-[10px] text-md-primary/70 line-clamp-1 mt-0.5 italic">
-                            ⚡ {lead.signal}
-                          </div>
+                          lead.signal_post_url ? (
+                            <a href={lead.signal_post_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-xs text-md-primary/80 line-clamp-1 mt-0.5 hover:underline">
+                              ⚡ {lead.signal}
+                            </a>
+                          ) : (
+                            <div className="text-xs text-md-primary/70 line-clamp-1 mt-0.5">
+                              ⚡ {lead.signal}
+                            </div>
+                          )
                         )}
                       </div>
                     </div>
