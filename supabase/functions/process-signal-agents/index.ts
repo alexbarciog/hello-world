@@ -441,6 +441,7 @@ async function handleKeywordPosts(
     const match = scoreProfileAgainstICP(profile, icp);
     const hl = profile.headline || '';
     if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+    if (!matchesIndustry(profile, match, icp)) continue;
     if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
