@@ -138,6 +138,8 @@ export default function CampaignDetail() {
     isAi: boolean;
     scheduledDate: string;
     status: string;
+    scheduledMsgId?: string; // ID from scheduled_messages table
+    editedByUser?: boolean;
   };
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
@@ -285,7 +287,7 @@ export default function CampaignDetail() {
   async function loadScheduledMessages(campaignId: string, steps: any[]) {
     const { data: connReqs } = await supabase
       .from("campaign_connection_requests" as any)
-      .select("contact_id, status, current_step, accepted_at, step_completed_at")
+      .select("id, contact_id, status, current_step, accepted_at, step_completed_at")
       .eq("campaign_id", campaignId);
     if (!connReqs || connReqs.length === 0) { setScheduledMessages([]); return; }
 
@@ -298,6 +300,19 @@ export default function CampaignDetail() {
     const contactMap: Record<string, any> = {};
     (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
 
+    // Fetch pre-generated messages from scheduled_messages table
+    const connReqIds = (connReqs as any[]).map((cr: any) => cr.id);
+    const { data: preGenMsgs } = await supabase
+      .from("scheduled_messages" as any)
+      .select("id, connection_request_id, step_index, message, status, edited_by_user")
+      .in("connection_request_id", connReqIds)
+      .in("status", ["generated", "edited"]);
+    
+    const preGenMap: Record<string, any> = {};
+    (preGenMsgs || []).forEach((m: any) => {
+      preGenMap[`${m.connection_request_id}_${m.step_index}`] = m;
+    });
+
     const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation");
     const scheduled: ScheduledMessage[] = [];
 
@@ -306,15 +321,13 @@ export default function CampaignDetail() {
       if (!contact) continue;
 
       const currentStep = cr.current_step || 1;
-      // Step 1 = invitation sent. After acceptance, next is step 2 (nonInvSteps[0])
-      // current_step in DB tracks which step was last completed
-      const nextStepIdx = currentStep - 1; // index in nonInvSteps (step 2 = index 0)
+      const nextStepIdx = currentStep - 1;
       
-      if (nextStepIdx >= nonInvSteps.length) continue; // all steps completed
-      if (cr.status === "pending") continue; // invitation not yet sent
+      if (nextStepIdx >= nonInvSteps.length) continue;
+      if (cr.status === "pending") continue;
       
-      // For step 1 contacts (invitation sent but not accepted), show "Waiting for acceptance"
       if (currentStep === 1 && cr.status !== "accepted") {
+        const nextStep = nonInvSteps[0];
         scheduled.push({
           contactId: cr.contact_id,
           contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
@@ -323,34 +336,49 @@ export default function CampaignDetail() {
           contactSignal: contact.signal || "",
           currentStep: 1,
           nextStepNum: 2,
-          message: nonInvSteps[0]?.message || "",
-          isAi: !!nonInvSteps[0]?.ai_icebreaker,
+          message: nextStep?.ai_icebreaker ? "" : (nextStep?.message || ""),
+          isAi: !!nextStep?.ai_icebreaker,
           scheduledDate: "After acceptance",
           status: "waiting_acceptance",
         });
         continue;
       }
 
-      // For accepted contacts, show the next message step
       if (cr.status === "accepted" && nextStepIdx < nonInvSteps.length) {
         const nextStep = nonInvSteps[nextStepIdx];
+        const stepIndexInWorkflow = currentStep; // actual index in workflow_steps array
         const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
         const scheduledDate = new Date(acceptedDate);
         
-        // Calculate when this step should fire
         let totalDelay = 0;
         for (let j = 0; j <= nextStepIdx; j++) {
           totalDelay += nonInvSteps[j]?.delay_days || 1;
         }
         scheduledDate.setDate(acceptedDate.getDate() + totalDelay);
 
-        // Personalize message preview
-        let msgPreview = nextStep?.message || "";
-        msgPreview = msgPreview
-          .replace(/\{\{first_name\}\}/g, contact.first_name)
-          .replace(/\{\{company\}\}/g, contact.company || "their company")
-          .replace(/\{\{title\}\}/g, contact.title || "their role")
-          .replace(/\{\{signal\}\}/g, contact.signal || "their recent activity");
+        // Check for pre-generated message
+        const preGen = preGenMap[`${cr.id}_${stepIndexInWorkflow}`];
+        let msgPreview = "";
+        let scheduledMsgId: string | undefined;
+        let editedByUser = false;
+
+        if (preGen) {
+          // Use pre-generated message
+          msgPreview = preGen.message;
+          scheduledMsgId = preGen.id;
+          editedByUser = preGen.edited_by_user;
+        } else if (nextStep?.ai_icebreaker) {
+          // AI SDR mode but not yet generated
+          msgPreview = "";
+        } else {
+          // Template message — personalize
+          msgPreview = nextStep?.message || "";
+          msgPreview = msgPreview
+            .replace(/\{\{first_name\}\}/g, contact.first_name)
+            .replace(/\{\{company\}\}/g, contact.company || "their company")
+            .replace(/\{\{title\}\}/g, contact.title || "their role")
+            .replace(/\{\{signal\}\}/g, contact.signal || "their recent activity");
+        }
 
         scheduled.push({
           contactId: cr.contact_id,
@@ -364,11 +392,12 @@ export default function CampaignDetail() {
           isAi: !!nextStep?.ai_icebreaker,
           scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
           status: scheduledDate <= new Date() ? "ready" : "scheduled",
+          scheduledMsgId,
+          editedByUser,
         });
       }
     }
 
-    // Sort: ready first, then by scheduled date
     scheduled.sort((a, b) => {
       if (a.status === "ready" && b.status !== "ready") return -1;
       if (b.status === "ready" && a.status !== "ready") return 1;
@@ -1776,7 +1805,15 @@ export default function CampaignDetail() {
                             {sm.isAi && !sm.message && (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                <span className="italic">AI will generate a personalized message when this step triggers</span>
+                                <span className="italic">AI SDR will generate a unique message for this lead before sending</span>
+                              </div>
+                            )}
+                            {sm.isAi && sm.message && (
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Sparkles className="w-3 h-3 text-amber-500" />
+                                <span className="text-[10px] font-bold text-amber-600">
+                                  {sm.editedByUser ? "AI Generated · Edited by you" : "AI Generated"}
+                                </span>
                               </div>
                             )}
                             {isEditing ? (
@@ -1789,13 +1826,20 @@ export default function CampaignDetail() {
                                 />
                                 <div className="flex gap-1.5">
                                   <button
-                                    onClick={() => {
-                                      // Save edited message back — update the scheduled message preview
+                                    onClick={async () => {
                                       const updated = [...scheduledMessages];
-                                      updated[idx] = { ...updated[idx], message: editingScheduledMsg };
+                                      updated[idx] = { ...updated[idx], message: editingScheduledMsg, editedByUser: true };
                                       setScheduledMessages(updated);
                                       setEditingScheduledIdx(null);
-                                      toast.success("Message preview updated");
+
+                                      // Persist to scheduled_messages table if exists
+                                      if (sm.scheduledMsgId) {
+                                        await supabase
+                                          .from("scheduled_messages" as any)
+                                          .update({ message: editingScheduledMsg, edited_by_user: true, status: "edited" } as any)
+                                          .eq("id", sm.scheduledMsgId);
+                                      }
+                                      toast.success("Message updated");
                                     }}
                                     className="text-xs font-bold text-white bg-primary rounded-lg px-3 py-1.5"
                                   >
@@ -1815,7 +1859,7 @@ export default function CampaignDetail() {
                           </div>
 
                           {/* Actions */}
-                          {sm.message && !isEditing && (
+                          {(sm.message || (sm.isAi && sm.scheduledMsgId)) && !isEditing && (
                             <div className="flex gap-2 mt-3">
                               <button
                                 onClick={() => {
@@ -1825,15 +1869,6 @@ export default function CampaignDetail() {
                                 className="text-[10px] font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex items-center gap-1"
                               >
                                 <Pencil className="w-3 h-3" /> Edit message
-                              </button>
-                              <button
-                                onClick={() => {
-                                  // Regenerate AI message for this specific contact's step
-                                  toast.info("AI regeneration per-contact coming soon");
-                                }}
-                                className="text-[10px] font-medium text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/5 transition-colors flex items-center gap-1"
-                              >
-                                <Sparkles className="w-3 h-3" /> Regenerate with AI
                               </button>
                             </div>
                           )}

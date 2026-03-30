@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.check-subscription]
 verify_jwt = false
+
+[functions.generate-daily-messages]
+verify_jwt = false
+
+[functions.generate-step-message]
+verify_jwt = false

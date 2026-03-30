@@ -665,6 +665,54 @@ export type Database = {
           },
         ]
       }
+      scheduled_messages: {
+        Row: {
+          campaign_id: string
+          connection_request_id: string
+          contact_id: string
+          created_at: string
+          edited_by_user: boolean
+          generated_at: string
+          id: string
+          message: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          step_index: number
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          connection_request_id: string
+          contact_id: string
+          created_at?: string
+          edited_by_user?: boolean
+          generated_at?: string
+          id?: string
+          message?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          step_index: number
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          connection_request_id?: string
+          contact_id?: string
+          created_at?: string
+          edited_by_user?: boolean
+          generated_at?: string
+          id?: string
+          message?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          step_index?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       signal_agents: {
         Row: {
           agent_type: string
