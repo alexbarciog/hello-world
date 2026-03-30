@@ -526,7 +526,7 @@ async function generateNextStepMessage(
       messageTone: campaign.message_tone,
       industry: campaign.industry,
       language: campaign.language,
-      customTraining: nextStep.step_instructions || campaign.custom_training || '',
+      customTraining: [campaign.custom_training, nextStep.step_instructions].filter(Boolean).join('\n\n'),
       firstName: contact.first_name,
       lastName: contact.last_name,
       leadCompany: contact.company,
