@@ -138,6 +138,8 @@ export default function CampaignDetail() {
     isAi: boolean;
     scheduledDate: string;
     status: string;
+    scheduledMsgId?: string; // ID from scheduled_messages table
+    editedByUser?: boolean;
   };
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
