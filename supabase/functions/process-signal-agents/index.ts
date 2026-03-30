@@ -222,10 +222,16 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Final update
+        // Final update — count actual contacts in the agent's list for accuracy
+        const { data: agentList } = await supabase.from('lists').select('id').eq('source_agent_id', agent.id).eq('user_id', agent.user_id).maybeSingle();
+        let actualCount = (agent.results_count || 0) + agentLeads;
+        if (agentList) {
+          const { count: listContactCount } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
+          if (typeof listContactCount === 'number') actualCount = listContactCount;
+        }
         await supabase.from('signal_agents').update({
           last_launched_at: new Date().toISOString(),
-          results_count: (agent.results_count || 0) + agentLeads,
+          results_count: actualCount,
         }).eq('id', agent.id);
 
         // Notification
