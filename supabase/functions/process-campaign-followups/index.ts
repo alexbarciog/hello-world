@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!UNIPILE_API_KEY || !UNIPILE_DSN) throw new Error('Unipile not configured');
 
@@ -22,7 +23,7 @@ Deno.serve(async (req) => {
 
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, source_list_id')
+      .select('id, user_id, workflow_steps, source_list_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
       .eq('status', 'active')
       .not('source_list_id', 'is', null);
 
@@ -34,19 +35,21 @@ Deno.serve(async (req) => {
 
     let totalAccepted = 0;
     let totalMessagesSent = 0;
+    let totalGenerated = 0;
 
     for (const campaign of campaigns) {
       try {
-        const result = await processCampaign(supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN);
+        const result = await processCampaign(supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN, LOVABLE_API_KEY);
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
+        totalGenerated += result.generated;
       } catch (err) {
         console.error(`[followup][campaign ${campaign.id}] error:`, err);
       }
     }
 
-    console.log(`[followup] Done. Accepted: ${totalAccepted}, Messages sent: ${totalMessagesSent}`);
-    return jsonRes({ status: 'ok', accepted: totalAccepted, messages_sent: totalMessagesSent });
+    console.log(`[followup] Done. Accepted: ${totalAccepted}, Messages sent: ${totalMessagesSent}, Generated: ${totalGenerated}`);
+    return jsonRes({ status: 'ok', accepted: totalAccepted, messages_sent: totalMessagesSent, generated: totalGenerated });
   } catch (error) {
     console.error('[followup] Fatal error:', error);
     return jsonRes({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
@@ -57,12 +60,13 @@ async function processCampaign(
   supabase: any,
   campaign: any,
   unipileApiKey: string,
-  unipileDsn: string
-): Promise<{ accepted: number; messagesSent: number }> {
+  unipileDsn: string,
+  lovableApiKey: string | undefined
+): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   if (workflowSteps.length < 2) {
     console.log(`[followup][campaign ${campaign.id}] no follow-up steps configured`);
-    return { accepted: 0, messagesSent: 0 };
+    return { accepted: 0, messagesSent: 0, generated: 0 };
   }
 
   const { data: profile } = await supabase
@@ -73,20 +77,22 @@ async function processCampaign(
 
   if (!profile?.unipile_account_id) {
     console.log(`[followup][campaign ${campaign.id}] no unipile account`);
-    return { accepted: 0, messagesSent: 0 };
+    return { accepted: 0, messagesSent: 0, generated: 0 };
   }
 
   const accountId = profile.unipile_account_id;
+  let generatedCount = 0;
 
   // ── Phase 1: Check pending invitations for acceptance ──
   const { data: pendingRequests } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, status, current_step')
+    .select('id, contact_id, status, current_step, user_id')
     .eq('campaign_id', campaign.id)
     .eq('status', 'sent')
     .eq('current_step', 1);
 
   let acceptedCount = 0;
+  const newlyAcceptedIds: string[] = [];
 
   if (pendingRequests && pendingRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations`);
@@ -109,6 +115,8 @@ async function processCampaign(
 
         try { publicId = decodeURIComponent(publicId); } catch { /* already decoded */ }
 
+        let wasAccepted = false;
+
         const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
         if (!providerId) {
           console.log(`[followup] could not resolve ${publicId}, trying profile check`);
@@ -125,30 +133,14 @@ async function processCampaign(
               })
               .eq('id', req.id);
             acceptedCount++;
+            wasAccepted = true;
           }
           await delay(800);
-          continue;
-        }
-
-        const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
-
-        if (chatId) {
-          console.log(`[followup] ${publicId} ACCEPTED (chat found: ${chatId})`);
-          await supabase
-            .from('campaign_connection_requests')
-            .update({
-              status: 'accepted',
-              accepted_at: new Date().toISOString(),
-              current_step: 1,
-              step_completed_at: new Date().toISOString(),
-              chat_id: chatId,
-            })
-            .eq('id', req.id);
-          acceptedCount++;
         } else {
-          const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
-          if (profileData && isFirstDegree(profileData)) {
-            console.log(`[followup] ${publicId} ACCEPTED (1st degree, no chat yet)`);
+          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
+
+          if (chatId) {
+            console.log(`[followup] ${publicId} ACCEPTED (chat found: ${chatId})`);
             await supabase
               .from('campaign_connection_requests')
               .update({
@@ -156,10 +148,34 @@ async function processCampaign(
                 accepted_at: new Date().toISOString(),
                 current_step: 1,
                 step_completed_at: new Date().toISOString(),
+                chat_id: chatId,
               })
               .eq('id', req.id);
             acceptedCount++;
+            wasAccepted = true;
+          } else {
+            const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
+            if (profileData && isFirstDegree(profileData)) {
+              console.log(`[followup] ${publicId} ACCEPTED (1st degree, no chat yet)`);
+              await supabase
+                .from('campaign_connection_requests')
+                .update({
+                  status: 'accepted',
+                  accepted_at: new Date().toISOString(),
+                  current_step: 1,
+                  step_completed_at: new Date().toISOString(),
+                })
+                .eq('id', req.id);
+              acceptedCount++;
+              wasAccepted = true;
+            }
           }
+        }
+
+        // ── Immediately generate Step 2 message for newly accepted ──
+        if (wasAccepted && lovableApiKey) {
+          const gen = await generateNextStepMessage(supabase, campaign, req, 1, workflowSteps, lovableApiKey);
+          if (gen) generatedCount++;
         }
 
         await delay(1000 + Math.random() * 1000);
@@ -183,10 +199,9 @@ async function processCampaign(
   }
 
   // ── Phase 2: Send follow-up messages for accepted contacts ──
-  // Uses pre-generated messages from scheduled_messages table (generated by generate-daily-messages)
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, current_step, step_completed_at, chat_id')
+    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id')
     .eq('campaign_id', campaign.id)
     .eq('status', 'accepted');
 
@@ -255,7 +270,7 @@ async function processCampaign(
 
         let message = '';
 
-        // Check for pre-generated message from generate-daily-messages
+        // Check for pre-generated message
         const { data: scheduledMsg } = await supabase
           .from('scheduled_messages')
           .select('id, message, status')
@@ -268,7 +283,6 @@ async function processCampaign(
           message = scheduledMsg.message;
           console.log(`[followup] Using pre-generated message for contact ${req.contact_id} (${scheduledMsg.status})`);
         } else if (!nextStep.ai_icebreaker && nextStep.message) {
-          // Template message — personalize with contact data
           message = nextStep.message;
           if (contact) {
             message = message
@@ -279,7 +293,7 @@ async function processCampaign(
               .replace(/\{\{signal\}\}/gi, contact?.signal || '');
           }
         } else {
-          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextStepIndex + 1} — waiting for daily generation`);
+          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextStepIndex + 1} — waiting for generation`);
           continue;
         }
 
@@ -308,7 +322,6 @@ async function processCampaign(
 
         console.log(`[followup] sent step ${nextStepIndex + 1} to contact ${req.contact_id}`);
 
-        // Mark scheduled_message as sent
         if (scheduledMsg) {
           await supabase
             .from('scheduled_messages')
@@ -327,6 +340,13 @@ async function processCampaign(
           .eq('id', req.id);
 
         messagesSent++;
+
+        // ── Immediately generate next step message after sending ──
+        if (lovableApiKey && newStep < workflowSteps.length) {
+          const gen = await generateNextStepMessage(supabase, campaign, req, newStep, workflowSteps, lovableApiKey);
+          if (gen) generatedCount++;
+        }
+
         await delay(3000 + Math.random() * 2000);
       } catch (err) {
         console.error(`[followup] message error for ${req.contact_id}:`, err);
@@ -347,8 +367,190 @@ async function processCampaign(
     }
   }
 
-  console.log(`[followup][campaign ${campaign.id}] accepted: ${acceptedCount}, messages: ${messagesSent}`);
-  return { accepted: acceptedCount, messagesSent };
+  console.log(`[followup][campaign ${campaign.id}] accepted: ${acceptedCount}, messages: ${messagesSent}, generated: ${generatedCount}`);
+  return { accepted: acceptedCount, messagesSent, generated: generatedCount };
+}
+
+// ── Generate next step message immediately ──
+
+async function generateNextStepMessage(
+  supabase: any,
+  campaign: any,
+  req: any,
+  completedStep: number,
+  workflowSteps: any[],
+  lovableApiKey: string
+): Promise<boolean> {
+  const nextStepIndex = completedStep; // completedStep=1 means step1 done, next is workflowSteps[1]
+  const nextStep = workflowSteps[nextStepIndex];
+
+  if (!nextStep || nextStep.type !== 'message') return false;
+
+  // Check if already exists
+  const { data: existing } = await supabase
+    .from('scheduled_messages')
+    .select('id')
+    .eq('connection_request_id', req.id)
+    .eq('step_index', nextStepIndex)
+    .maybeSingle();
+
+  if (existing) {
+    console.log(`[followup] Message already exists for req ${req.id} step ${nextStepIndex + 1}`);
+    return false;
+  }
+
+  const { data: contact } = await supabase
+    .from('contacts')
+    .select('first_name, last_name, company, title, signal')
+    .eq('id', req.contact_id)
+    .single();
+
+  if (!contact) return false;
+
+  let message = '';
+
+  if (nextStep.ai_icebreaker) {
+    console.log(`[followup] Generating AI message for contact ${req.contact_id}, step ${nextStepIndex + 1}`);
+
+    const { data: previousMessages } = await supabase
+      .from('scheduled_messages')
+      .select('step_index, message, sent_at')
+      .eq('connection_request_id', req.id)
+      .in('status', ['sent', 'generated', 'edited'])
+      .order('step_index', { ascending: true });
+
+    const previousMsgHistory = (previousMessages || []).map(
+      (m: any) => `Step ${m.step_index + 1}: "${m.message}"`
+    ).join('\n');
+
+    try {
+      const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length, nextStep.step_instructions) },
+            { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousMsgHistory, campaign, workflowSteps.length) },
+          ],
+        }),
+      });
+
+      if (aiRes.ok) {
+        const aiData = await aiRes.json();
+        message = aiData.choices?.[0]?.message?.content?.trim() || '';
+      } else {
+        console.error(`[followup] AI generation error: ${aiRes.status}`);
+        return false;
+      }
+    } catch (aiErr) {
+      console.error(`[followup] AI fetch error:`, aiErr);
+      return false;
+    }
+
+    await delay(1000);
+  } else {
+    message = nextStep.message || '';
+    message = message
+      .replace(/\{\{first_name\}\}/gi, contact.first_name || '')
+      .replace(/\{\{last_name\}\}/gi, contact.last_name || '')
+      .replace(/\{\{company\}\}/gi, contact.company || '')
+      .replace(/\{\{title\}\}/gi, contact.title || '')
+      .replace(/\{\{signal\}\}/gi, contact.signal || '');
+  }
+
+  if (!message.trim()) return false;
+
+  const today = new Date().toISOString().split('T')[0];
+  const { error: insertErr } = await supabase
+    .from('scheduled_messages')
+    .insert({
+      campaign_id: campaign.id,
+      contact_id: req.contact_id,
+      connection_request_id: req.id,
+      step_index: nextStepIndex,
+      message: message.trim(),
+      status: 'generated',
+      scheduled_for: today,
+      user_id: req.user_id || campaign.user_id,
+    });
+
+  if (insertErr) {
+    console.error(`[followup] Insert scheduled_message error:`, insertErr);
+    return false;
+  }
+
+  console.log(`[followup] Generated step ${nextStepIndex + 1} message for ${contact.first_name} ${contact.last_name || ''}`);
+  return true;
+}
+
+// ── AI SDR prompt builders ──
+
+function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number, stepInstructions?: string): string {
+  const toneGuide: Record<string, string> = {
+    professional: 'Use a professional but warm tone. Be polished and respectful.',
+    conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer.',
+    direct: 'Be bold and confident. Get to the point quickly.',
+  };
+  const goalGuide: Record<string, string> = {
+    conversations: 'The goal is to start a genuine conversation. Don\'t push for a meeting.',
+    demos: 'The goal is to book a call or demo. Include a clear but non-pushy CTA.',
+  };
+
+  return `You are a world-class LinkedIn outreach copywriter writing a REAL message to a SPECIFIC person.
+
+TARGET PERSON:
+- Name: ${contact?.first_name || 'Unknown'} ${contact?.last_name || ''}
+- Title: ${contact?.title || 'Not specified'}
+- Company: ${contact?.company || 'Not specified'}
+- Buying Signal: ${contact?.signal || 'Not specified'}
+
+SENDER'S BUSINESS:
+- Company: ${campaign.company_name || 'Our company'}
+- Value Proposition: ${campaign.value_proposition || 'Not specified'}
+- Pain Points we solve: ${(campaign.pain_points || []).join('; ') || 'Not specified'}
+- Industry: ${campaign.industry || 'Not specified'}
+
+TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
+GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
+${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
+${campaign.custom_training ? `\nGLOBAL CAMPAIGN INSTRUCTIONS FROM USER:\n${campaign.custom_training}` : ''}
+${stepInstructions ? `\nSPECIFIC INSTRUCTIONS FOR THIS STEP (Step ${stepNumber}):\n${stepInstructions}` : ''}
+
+CRITICAL RULES:
+- Write 3-5 sentences MAX
+- This must feel like a genuine human message, NOT a template
+- Reference ${contact?.first_name || 'the person'}'s specific role, company, and buying signal naturally
+- DO NOT use generic openers like "I hope this finds you well" or "I came across your profile"
+- DO NOT mention AI, automation, or sequences
+- DO NOT start with "Hi ${contact?.first_name}" — vary your openings
+- Make this message UNIQUE to this person — it should NOT work for anyone else`;
+}
+
+function buildAiSdrUserPrompt(stepNumber: number, previousMessagesHistory: string, campaign: any, totalSteps: number): string {
+  const isFirst = stepNumber === 2;
+  const isLast = stepNumber >= totalSteps;
+
+  const historyBlock = previousMessagesHistory
+    ? `\nPREVIOUS MESSAGES SENT TO THIS LEAD (do NOT repeat or paraphrase these):\n${previousMessagesHistory}\n\nBuild naturally on the conversation above. Reference things differently.`
+    : '';
+
+  if (isFirst) {
+    return `Write the FIRST message after the LinkedIn connection was accepted (Step 2).
+This is the icebreaker. Reference the specific buying signal. Make it personal, curious, genuine. Ask a thoughtful question.
+Return ONLY the message text.`;
+  } else if (isLast) {
+    return `Write a FINAL follow-up message (Step ${stepNumber}).${historyBlock}
+Short, low-pressure nudge. ${campaign.campaign_goal === 'demos' ? 'Offer a quick 10-min call.' : 'Keep the door open.'}
+Return ONLY the message text.`;
+  } else {
+    return `Write a follow-up message (Step ${stepNumber}).${historyBlock}
+Reference a pain point relevant to their role. Show understanding. Don't repeat previous content.
+Return ONLY the message text.`;
+  }
 }
 
 // ── Unipile API helpers ──
