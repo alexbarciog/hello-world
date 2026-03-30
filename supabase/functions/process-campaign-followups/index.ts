@@ -51,7 +51,15 @@ Deno.serve(async (req) => {
 
     for (const campaign of campaigns) {
       try {
-        const result = await processCampaign(supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN, LOVABLE_API_KEY);
+        const result = await processCampaign(
+          supabase,
+          campaign,
+          UNIPILE_API_KEY,
+          UNIPILE_DSN,
+          LOVABLE_API_KEY,
+          SUPABASE_URL,
+          SUPABASE_SERVICE_ROLE_KEY,
+        );
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
         totalGenerated += result.generated;
