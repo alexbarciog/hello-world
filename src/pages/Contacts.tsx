@@ -159,12 +159,21 @@ export default function Contacts() {
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-2">
             {selectedIds.size > 0 && (
-              <button
-                onClick={() => setShowCreateList(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
-              >
-                <FolderPlus className="w-3.5 h-3.5" /> Add to list
-              </button>
+              <>
+                <button
+                  onClick={() => setShowCreateList(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" /> Add to list
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={deleting}
+                  className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </>
             )}
           </div>
           {/* Mobile add button */}
