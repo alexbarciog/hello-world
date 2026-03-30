@@ -47,6 +47,7 @@ type CampaignFull = {
   messages_sent: number;
   messages_replied: number;
   daily_connect_limit: number;
+  custom_training: string | null;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
