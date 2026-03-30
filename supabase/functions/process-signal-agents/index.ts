@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     if (targetAgentId) {
       query.eq('id', targetAgentId);
     } else {
-      query.in('status', ['active', 'paused']);
+      query.eq('status', 'active');
     }
     const { data: agents, error: agentErr } = await query.limit(20);
 
