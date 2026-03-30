@@ -867,7 +867,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
           ) : step === 2 ? (
             <>Leads Management <ChevronRight className="w-4 h-4" /></>
           ) : (
-            <>Create Agent <ChevronRight className="w-4 h-4" /></>
+            <>{editAgentId ? "Update Agent" : "Create Agent"} <ChevronRight className="w-4 h-4" /></>
           )}
         </button>
       </motion.div>
