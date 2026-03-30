@@ -218,6 +218,10 @@ Deno.serve(async (req) => {
 
     console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}]`);
     let inserted = 0;
+    let hotWarmCount = 0;
+    let coldCount = 0;
+    const COLD_CAP = 0.2; // max 20% cold leads
+    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
     // Phase 1: Search posts for ALL keywords (use 40% of time)
