@@ -494,9 +494,9 @@ async function handleCompetitorFollowers(
 ): Promise<number> {
   let inserted = 0;
 
-  for (const url of urls.slice(0, 3)) {
+  for (const url of urls.slice(0, 5)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     const companyName = extractCompanyName(url);
     if (!companyName) continue;
 
@@ -510,7 +510,7 @@ async function handleCompetitorFollowers(
       });
       if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const people = (data.items || data.results || []).slice(0, 15);
+      const people = (data.items || data.results || []).slice(0, 30);
       console.log(`competitor_followers "${companyName}": ${people.length} people`);
 
       for (const person of people) {
