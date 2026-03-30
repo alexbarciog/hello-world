@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!UNIPILE_API_KEY || !UNIPILE_DSN) throw new Error('Unipile not configured');
 
