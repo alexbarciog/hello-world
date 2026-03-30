@@ -216,7 +216,8 @@ export default function Dashboard() {
         score: c.ai_score ?? 0,
         relevance_tier: c.relevance_tier as string,
         linkedin_url: c.linkedin_url,
-        signal: c.signal
+        signal: c.signal,
+        signal_post_url: c.signal_post_url
       }));
     },
     staleTime: 30_000
