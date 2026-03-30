@@ -374,9 +374,24 @@ export default function Contacts() {
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <button className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground border border-border rounded-full px-2.5 py-1 hover:bg-muted/50 transition-colors">
-                          <AtSign className="w-3 h-3" /> Enrich
-                        </button>
+                        {(() => {
+                          const action = lastActions[c.id];
+                          if (!action) return <span className="text-xs text-muted-foreground">—</span>;
+                          const statusConfig: Record<string, { label: string; icon: typeof Send; color: string }> = {
+                            pending: { label: "Invite sent", icon: Send, color: "text-blue-500" },
+                            accepted: { label: "Accepted", icon: UserCheck, color: "text-emerald-500" },
+                            messaged: { label: "Messaged", icon: MessageSquare, color: "text-violet-500" },
+                          };
+                          const cfg = statusConfig[action.status] || { label: action.status, icon: Clock, color: "text-muted-foreground" };
+                          const ActionIcon = cfg.icon;
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <ActionIcon className={`w-3.5 h-3.5 ${cfg.color}`} />
+                              <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                              <span className="text-[10px] text-muted-foreground">{timeAgo(action.date)}</span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-3 py-3">
                         <span className="text-xs text-muted-foreground">{timeAgo(c.imported_at)}</span>
