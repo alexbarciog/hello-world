@@ -1367,7 +1367,7 @@ export default function CampaignDetail() {
                   <table className="w-full min-w-[800px]">
                     <thead>
                       <tr className="border-b border-border">
-                        {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "LAST ACTION"].map((h) => (
+                        {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "LAST ACTION", "NEXT STEP"].map((h) => (
                           <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-3">{h}</th>
                         ))}
                       </tr>
