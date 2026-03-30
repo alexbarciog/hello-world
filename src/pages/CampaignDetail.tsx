@@ -482,6 +482,7 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({
       campaign_goal: settingsGoal,
       message_tone: settingsTone,
+      custom_training: settingsCustomTraining || null,
       daily_connect_limit: settingsDailyLimit,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
