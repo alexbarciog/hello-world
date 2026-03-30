@@ -962,7 +962,7 @@ export default function CampaignDetail() {
                                         <span className="flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Instructions</span>
                                       </button>
                                     )}
-                                    <button onClick={() => setEditModePickerStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">Edit</button>
+                                    <button onClick={() => setEditModePickerStep(i)} className="text-xs font-bold text-primary-foreground bg-foreground rounded-lg px-3 py-1.5 hover:bg-foreground/90 transition-colors w-full">Edit</button>
                                   </div>
                                 </>
                               )}
