@@ -314,7 +314,7 @@ async function handlePostEngagers(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+        if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
         const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -381,7 +381,7 @@ async function handleKeywordPosts(
     const match = scoreProfileAgainstICP(profile, icp);
     const hl = profile.headline || '';
     if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-    if (isExcluded(profile, icp.excludeKeywords)) continue;
+    if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
@@ -406,7 +406,7 @@ async function handleKeywordPosts(
               const eMatch = scoreProfileAgainstICP(fullEngager, icp);
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
-              if (isExcluded(fullEngager, icp.excludeKeywords)) continue;
+              if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
               const eSignal = `Engaged with post about "${post._keyword}"`;
               const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
               if (eOk) inserted++;
@@ -471,7 +471,7 @@ async function handleHashtagEngagement(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+        if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
         const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -520,7 +520,7 @@ async function handleCompetitorFollowers(
         const match = scoreProfileAgainstICP(profile, icp);
         const hl = profile.headline || profile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-        if (isExcluded(profile, icp.excludeKeywords)) continue;
+        if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = `Follows ${companyName}`;
         const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
@@ -572,7 +572,7 @@ async function handleCompetitorPostEngagers(
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
           const signal = `Engaged with ${companyName || companyId}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
@@ -633,7 +633,7 @@ async function handleProfileEngagers(
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords)) continue;
+          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
           const signal = `Engaged with ${profileName}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
