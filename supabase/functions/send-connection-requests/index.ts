@@ -115,14 +115,24 @@ async function processCampaign(
 
   const allContactIds = contactLinks.map((cl: any) => cl.contact_id);
 
-  // Get already-sent contact IDs for this campaign
+  // Get already-sent contact IDs for this campaign (only exclude successful ones)
   const { data: alreadySent } = await serviceClient
     .from('campaign_connection_requests')
-    .select('contact_id')
+    .select('contact_id, status')
     .eq('campaign_id', campaign.id);
 
-  const sentSet = new Set((alreadySent || []).map((r: any) => r.contact_id));
-  const unseenContactIds = allContactIds.filter((cid: string) => !sentSet.has(cid));
+  // Only skip contacts that were successfully sent or accepted — retry skipped/failed ones
+  const successSet = new Set(
+    (alreadySent || [])
+      .filter((r: any) => r.status === 'sent' || r.status === 'accepted' || r.status === 'pending')
+      .map((r: any) => r.contact_id)
+  );
+  const retryContactIds = (alreadySent || [])
+    .filter((r: any) => r.status === 'skipped' || r.status === 'failed')
+    .map((r: any) => r.contact_id);
+  const retrySet = new Set(retryContactIds);
+  
+  const unseenContactIds = allContactIds.filter((cid: string) => !successSet.has(cid));
 
   if (unseenContactIds.length === 0) {
     console.log(`[campaign ${campaign.id}] all contacts already processed`);
