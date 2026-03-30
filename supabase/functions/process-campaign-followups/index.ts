@@ -5,6 +5,18 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+/**
+ * Compute the workflow_steps array index for the next step to process.
+ * workflow_steps may or may not include an invitation entry at [0].
+ * current_step is 1-based: 1 = invitation done, 2 = step 2 done, etc.
+ */
+function getNextWorkflowIndex(currentStep: number, workflowSteps: any[]): number {
+  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+  // If invitation is in array: current_step=1 → index 1 (first message)
+  // If invitation is NOT in array: current_step=1 → index 0 (first message)
+  return hasInvitation ? currentStep : currentStep - 1;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -64,8 +76,9 @@ async function processCampaign(
   lovableApiKey: string | undefined
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
-  if (workflowSteps.length < 2) {
-    console.log(`[followup][campaign ${campaign.id}] no follow-up steps configured`);
+  const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
+  if (messageStepsCount === 0) {
+    console.log(`[followup][campaign ${campaign.id}] no message steps configured`);
     return { accepted: 0, messagesSent: 0, generated: 0 };
   }
 
@@ -92,7 +105,6 @@ async function processCampaign(
     .eq('current_step', 1);
 
   let acceptedCount = 0;
-  const newlyAcceptedIds: string[] = [];
 
   if (pendingRequests && pendingRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations`);
@@ -119,10 +131,8 @@ async function processCampaign(
 
         const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
         if (!providerId) {
-          console.log(`[followup] could not resolve ${publicId}, trying profile check`);
           const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
           if (profileData && isFirstDegree(profileData)) {
-            console.log(`[followup] ${publicId} is 1st degree via profile (no provider_id)`);
             await supabase
               .from('campaign_connection_requests')
               .update({
@@ -140,7 +150,6 @@ async function processCampaign(
           const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
 
           if (chatId) {
-            console.log(`[followup] ${publicId} ACCEPTED (chat found: ${chatId})`);
             await supabase
               .from('campaign_connection_requests')
               .update({
@@ -156,7 +165,6 @@ async function processCampaign(
           } else {
             const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
             if (profileData && isFirstDegree(profileData)) {
-              console.log(`[followup] ${publicId} ACCEPTED (1st degree, no chat yet)`);
               await supabase
                 .from('campaign_connection_requests')
                 .update({
@@ -172,9 +180,10 @@ async function processCampaign(
           }
         }
 
-        // ── Immediately generate Step 2 message for newly accepted ──
+        // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
-          const gen = await generateNextStepMessage(supabase, campaign, req, 1, workflowSteps, lovableApiKey);
+          const wfIdx = getNextWorkflowIndex(1, workflowSteps);
+          const gen = await generateNextStepMessage(supabase, campaign, req, wfIdx, workflowSteps, lovableApiKey);
           if (gen) generatedCount++;
         }
 
@@ -198,7 +207,7 @@ async function processCampaign(
       .eq('id', campaign.id);
   }
 
-  // ── Phase 2: Send follow-up messages for accepted contacts ──
+  // ── Phase 2: Send follow-up messages for accepted contacts (only when delay passed) ──
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, current_step, step_completed_at, chat_id, user_id')
@@ -211,11 +220,14 @@ async function processCampaign(
     for (const req of acceptedRequests) {
       try {
         const currentStep = req.current_step || 1;
-        const nextStepIndex = currentStep;
-        const nextStep = workflowSteps[nextStepIndex];
+        const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
+        const nextStep = workflowSteps[nextWfIdx];
 
         if (!nextStep || nextStep.type !== 'message') {
-          if (currentStep >= workflowSteps.length) {
+          // Check if completed
+          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
+          const completedMsgSteps = currentStep - 1; // steps done after invitation
+          if (completedMsgSteps >= totalSteps) {
             await supabase
               .from('campaign_connection_requests')
               .update({ status: 'completed' })
@@ -227,6 +239,7 @@ async function processCampaign(
         const stepCompletedAt = req.step_completed_at ? new Date(req.step_completed_at) : null;
         if (!stepCompletedAt) continue;
 
+        // Check delay before SENDING (not before generating)
         const delayDays = nextStep.delay_days || 1;
         const delayMs = delayDays * 24 * 60 * 60 * 1000;
         if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
@@ -275,7 +288,7 @@ async function processCampaign(
           .from('scheduled_messages')
           .select('id, message, status')
           .eq('connection_request_id', req.id)
-          .eq('step_index', nextStepIndex)
+          .eq('step_index', nextWfIdx)
           .in('status', ['generated', 'edited'])
           .maybeSingle();
 
@@ -293,14 +306,11 @@ async function processCampaign(
               .replace(/\{\{signal\}\}/gi, contact?.signal || '');
           }
         } else {
-          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextStepIndex + 1} — waiting for generation`);
+          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextWfIdx + 1} — waiting for generation`);
           continue;
         }
 
-        if (!message.trim()) {
-          console.log(`[followup] empty message for step ${nextStepIndex + 1}`);
-          continue;
-        }
+        if (!message.trim()) continue;
 
         const sendRes = await fetch(
           `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
@@ -320,7 +330,7 @@ async function processCampaign(
           continue;
         }
 
-        console.log(`[followup] sent step ${nextStepIndex + 1} to contact ${req.contact_id}`);
+        console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
 
         if (scheduledMsg) {
           await supabase
@@ -330,20 +340,23 @@ async function processCampaign(
         }
 
         const newStep = currentStep + 1;
+        const newWfIdx = getNextWorkflowIndex(newStep, workflowSteps);
+        const hasMoreSteps = newWfIdx < workflowSteps.length && workflowSteps[newWfIdx]?.type === 'message';
+
         await supabase
           .from('campaign_connection_requests')
           .update({
             current_step: newStep,
             step_completed_at: new Date().toISOString(),
-            status: newStep >= workflowSteps.length ? 'completed' : 'accepted',
+            status: hasMoreSteps ? 'accepted' : 'completed',
           })
           .eq('id', req.id);
 
         messagesSent++;
 
-        // ── Immediately generate next step message after sending ──
-        if (lovableApiKey && newStep < workflowSteps.length) {
-          const gen = await generateNextStepMessage(supabase, campaign, req, newStep, workflowSteps, lovableApiKey);
+        // Immediately generate next step message after sending
+        if (lovableApiKey && hasMoreSteps) {
+          const gen = await generateNextStepMessage(supabase, campaign, req, newWfIdx, workflowSteps, lovableApiKey);
           if (gen) generatedCount++;
         }
 
@@ -367,23 +380,59 @@ async function processCampaign(
     }
   }
 
+  // ── Phase 3: Catch-up generation — generate messages for accepted contacts missing scheduled_messages ──
+  // This ensures messages are generated even if the contact was accepted before this code was deployed
+  if (lovableApiKey) {
+    const { data: allAccepted } = await supabase
+      .from('campaign_connection_requests')
+      .select('id, contact_id, current_step, user_id')
+      .eq('campaign_id', campaign.id)
+      .eq('status', 'accepted');
+
+    if (allAccepted && allAccepted.length > 0) {
+      for (const req of allAccepted) {
+        try {
+          const currentStep = req.current_step || 1;
+          const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
+          const nextStep = workflowSteps[nextWfIdx];
+
+          if (!nextStep || nextStep.type !== 'message') continue;
+
+          // Check if message already exists
+          const { data: existing } = await supabase
+            .from('scheduled_messages')
+            .select('id')
+            .eq('connection_request_id', req.id)
+            .eq('step_index', nextWfIdx)
+            .maybeSingle();
+
+          if (existing) continue;
+
+          console.log(`[followup][catch-up] Generating message for contact ${req.contact_id}, wfIdx ${nextWfIdx}`);
+          const gen = await generateNextStepMessage(supabase, campaign, req, nextWfIdx, workflowSteps, lovableApiKey);
+          if (gen) generatedCount++;
+        } catch (err) {
+          console.error(`[followup][catch-up] error for ${req.contact_id}:`, err);
+        }
+      }
+    }
+  }
+
   console.log(`[followup][campaign ${campaign.id}] accepted: ${acceptedCount}, messages: ${messagesSent}, generated: ${generatedCount}`);
   return { accepted: acceptedCount, messagesSent, generated: generatedCount };
 }
 
-// ── Generate next step message immediately ──
+// ── Generate next step message ──
 
 async function generateNextStepMessage(
   supabase: any,
   campaign: any,
   req: any,
-  completedStep: number,
+  wfIndex: number,
   workflowSteps: any[],
   lovableApiKey: string
 ): Promise<boolean> {
-  const nextStepIndex = completedStep; // completedStep=1 means step1 done, next is workflowSteps[1]
-  const nextStep = workflowSteps[nextStepIndex];
-
+  const nextStep = workflowSteps[wfIndex];
   if (!nextStep || nextStep.type !== 'message') return false;
 
   // Check if already exists
@@ -391,13 +440,10 @@ async function generateNextStepMessage(
     .from('scheduled_messages')
     .select('id')
     .eq('connection_request_id', req.id)
-    .eq('step_index', nextStepIndex)
+    .eq('step_index', wfIndex)
     .maybeSingle();
 
-  if (existing) {
-    console.log(`[followup] Message already exists for req ${req.id} step ${nextStepIndex + 1}`);
-    return false;
-  }
+  if (existing) return false;
 
   const { data: contact } = await supabase
     .from('contacts')
@@ -408,9 +454,11 @@ async function generateNextStepMessage(
   if (!contact) return false;
 
   let message = '';
+  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+  const displayStepNumber = hasInvitation ? wfIndex + 1 : wfIndex + 2; // Step 2, 3, 4...
 
   if (nextStep.ai_icebreaker) {
-    console.log(`[followup] Generating AI message for contact ${req.contact_id}, step ${nextStepIndex + 1}`);
+    console.log(`[followup] Generating AI message for contact ${req.contact_id}, step ${displayStepNumber}`);
 
     const { data: previousMessages } = await supabase
       .from('scheduled_messages')
@@ -420,10 +468,11 @@ async function generateNextStepMessage(
       .order('step_index', { ascending: true });
 
     const previousMsgHistory = (previousMessages || []).map(
-      (m: any) => `Step ${m.step_index + 1}: "${m.message}"`
+      (m: any) => `Step ${hasInvitation ? m.step_index + 1 : m.step_index + 2}: "${m.message}"`
     ).join('\n');
 
     try {
+      const totalMessageSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
       const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -433,8 +482,8 @@ async function generateNextStepMessage(
         body: JSON.stringify({
           model: 'google/gemini-3-flash-preview',
           messages: [
-            { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length, nextStep.step_instructions) },
-            { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousMsgHistory, campaign, workflowSteps.length) },
+            { role: 'system', content: buildAiSdrPrompt(campaign, contact, displayStepNumber, totalMessageSteps + 1, nextStep.step_instructions) },
+            { role: 'user', content: buildAiSdrUserPrompt(displayStepNumber, previousMsgHistory, campaign, totalMessageSteps + 1) },
           ],
         }),
       });
@@ -451,7 +500,7 @@ async function generateNextStepMessage(
       return false;
     }
 
-    await delay(1000);
+    await delay(1500);
   } else {
     message = nextStep.message || '';
     message = message
@@ -471,7 +520,7 @@ async function generateNextStepMessage(
       campaign_id: campaign.id,
       contact_id: req.contact_id,
       connection_request_id: req.id,
-      step_index: nextStepIndex,
+      step_index: wfIndex,
       message: message.trim(),
       status: 'generated',
       scheduled_for: today,
@@ -483,7 +532,7 @@ async function generateNextStepMessage(
     return false;
   }
 
-  console.log(`[followup] Generated step ${nextStepIndex + 1} message for ${contact.first_name} ${contact.last_name || ''}`);
+  console.log(`[followup] Generated step ${displayStepNumber} message for ${contact.first_name} ${contact.last_name || ''}`);
   return true;
 }
 
@@ -560,19 +609,13 @@ async function resolveProviderId(
 ): Promise<string | null> {
   try {
     const url = `https://${dsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`;
-    console.log(`[followup] resolving: ${publicId}`);
     const res = await fetch(url, {
       headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
     });
-    if (!res.ok) {
-      console.log(`[followup] resolve ${publicId} failed: ${res.status}`);
-      return null;
-    }
+    if (!res.ok) return null;
     const data = await res.json();
-    console.log(`[followup] resolve ${publicId} => provider_id: ${data.provider_id}, network: ${data.network_distance}`);
     return data.provider_id || null;
-  } catch (err) {
-    console.error(`[followup] resolve error for ${publicId}:`, err);
+  } catch {
     return null;
   }
 }
@@ -614,15 +657,10 @@ async function findChat(
       headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
     });
 
-    if (!res.ok) {
-      console.log(`[followup] findChat failed: ${res.status}`);
-      return null;
-    }
+    if (!res.ok) return null;
     const data = await res.json();
     const chats = data?.items || data?.data || [];
-    const chatId = chats.length > 0 ? (chats[0].id || chats[0].chat_id || null) : null;
-    if (chatId) console.log(`[followup] found chat: ${chatId}`);
-    return chatId;
+    return chats.length > 0 ? (chats[0].id || chats[0].chat_id || null) : null;
   } catch {
     return null;
   }
