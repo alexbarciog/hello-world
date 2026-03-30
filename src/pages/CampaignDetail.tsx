@@ -1659,6 +1659,31 @@ export default function CampaignDetail() {
                         </div>
                       </div>
 
+                      {/* Language */}
+                      <div>
+                        <p className="text-sm font-bold text-foreground mb-2.5">Language</p>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                          {["English", "Spanish", "French", "German", "Portuguese", "Italian", "Dutch", "Polish", "Swedish", "Romanian"].map((lang) => (
+                            <button
+                              key={lang}
+                              onClick={() => setSettingsLanguage(lang)}
+                              className={`text-left px-3 py-2.5 rounded-xl border-2 transition-all hover:scale-[1.01] ${
+                                settingsLanguage === lang
+                                  ? "border-foreground bg-foreground/5 shadow-sm"
+                                  : "border-border hover:bg-muted/50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-colors ${settingsLanguage === lang ? "border-foreground" : "border-muted-foreground/40"}`}>
+                                  {settingsLanguage === lang && <div className="w-1.5 h-1.5 rounded-full bg-foreground" />}
+                                </div>
+                                <p className="text-sm font-medium text-foreground">{lang}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Custom AI Training */}
                       <div>
                         <p className="text-sm font-bold text-foreground mb-1">Custom AI Training <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
