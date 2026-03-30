@@ -1142,45 +1142,56 @@ export default function CampaignDetail() {
                     <DialogTitle className="text-lg font-bold">How do you want to edit?</DialogTitle>
                     <p className="text-sm text-muted-foreground">Choose how to create the message for Step {(editModePickerStep ?? 0) + 2}</p>
                   </DialogHeader>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => {
-                        if (editModePickerStep !== null) enableAiSdrForStep(editModePickerStep);
-                      }}
-                      className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
-                        <Bot className="w-6 h-6 text-primary" />
+                  {(() => {
+                    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+                    const currentStep = editModePickerStep !== null ? nonInvSteps[editModePickerStep] : null;
+                    const isCurrentlyAi = currentStep?.ai_icebreaker === true;
+                    return (
+                      <div className="space-y-3">
+                        <button
+                          onClick={() => {
+                            if (editModePickerStep !== null) enableAiSdrForStep(editModePickerStep);
+                          }}
+                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left group ${isCurrentlyAi ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}`}
+                        >
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                            <Bot className="w-6 h-6 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                              AI SDR
+                              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                              {isCurrentlyAi && <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Generate a hyper-personalized message using AI based on lead context, signals, and your business
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => {
+                            const idx = editModePickerStep;
+                            setEditModePickerStep(null);
+                            if (idx !== null) setEditingStep(idx);
+                          }}
+                          className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left group ${!isCurrentlyAi ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40 hover:bg-muted/30"}`}
+                        >
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-muted">
+                            <Pencil className="w-5 h-5 text-foreground" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                              Manual
+                              {!isCurrentlyAi && <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Write or edit the message yourself using variables like {"{{first_name}}"}, {"{{company}}"}
+                            </p>
+                          </div>
+                        </button>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-foreground flex items-center gap-2">
-                          AI SDR
-                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Generate a hyper-personalized message using AI based on lead context, signals, and your business
-                        </p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const idx = editModePickerStep;
-                        setEditModePickerStep(null);
-                        if (idx !== null) setEditingStep(idx);
-                      }}
-                      className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-muted-foreground/40 hover:bg-muted/30 transition-all text-left group"
-                    >
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-muted">
-                        <Pencil className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-foreground">Manual</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Write or edit the message yourself using variables like {"{{first_name}}"}, {"{{company}}"}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
+                    );
+                  })()}
                 </DialogContent>
               </Dialog>
 
