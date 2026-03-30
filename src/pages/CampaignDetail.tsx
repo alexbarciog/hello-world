@@ -1423,7 +1423,7 @@ export default function CampaignDetail() {
                                   const stepLabel = stepIdx === 0 ? "Invitation sent" : `Step ${cs.step} message`;
                                   const stepType = steps[stepIdx]?.type;
                                   const icon = stepType === "invitation" ? "📨" : "💬";
-                                  return <span className="text-xs text-muted-foreground">{icon} {stepLabel}</span>;
+                                  return <span className="text-xs text-muted-foreground whitespace-nowrap">{icon} {stepLabel}</span>;
                                 })()}
                               </td>
                             </tr>
