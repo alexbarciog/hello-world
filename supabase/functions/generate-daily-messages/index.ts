@@ -36,7 +36,6 @@ Deno.serve(async (req) => {
           campaign,
           SUPABASE_URL,
           SUPABASE_SERVICE_ROLE_KEY,
-          LOVABLE_API_KEY,
         );
         totalGenerated += generated;
       } catch (err) {
