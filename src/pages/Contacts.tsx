@@ -7,6 +7,7 @@ import {
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
+import { toast } from "sonner";
 
 type Tab = "all" | "hot" | "warm" | "cold";
 
