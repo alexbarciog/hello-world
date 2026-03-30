@@ -17,12 +17,15 @@ export type Database = {
       campaign_connection_requests: {
         Row: {
           accepted_at: string | null
+          ai_replies_count: number
           campaign_id: string
           chat_id: string | null
           contact_id: string
+          conversation_stopped: boolean
           created_at: string
           current_step: number
           id: string
+          last_incoming_message_at: string | null
           sent_at: string
           status: string
           step_completed_at: string | null
@@ -31,12 +34,15 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          ai_replies_count?: number
           campaign_id: string
           chat_id?: string | null
           contact_id: string
+          conversation_stopped?: boolean
           created_at?: string
           current_step?: number
           id?: string
+          last_incoming_message_at?: string | null
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -45,12 +51,15 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          ai_replies_count?: number
           campaign_id?: string
           chat_id?: string | null
           contact_id?: string
+          conversation_stopped?: boolean
           created_at?: string
           current_step?: number
           id?: string
+          last_incoming_message_at?: string | null
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -79,6 +88,7 @@ export type Database = {
           campaign_goal: string | null
           company_name: string | null
           competitor_pages: string[] | null
+          conversational_ai: boolean
           country: string | null
           created_at: string
           current_step: number | null
@@ -100,6 +110,7 @@ export type Database = {
           invitations_sent: number | null
           language: string | null
           linkedin_connection_type: string | null
+          max_ai_replies: number
           message_tone: string | null
           messages_replied: number | null
           messages_sent: number | null
@@ -129,6 +140,7 @@ export type Database = {
           campaign_goal?: string | null
           company_name?: string | null
           competitor_pages?: string[] | null
+          conversational_ai?: boolean
           country?: string | null
           created_at?: string
           current_step?: number | null
@@ -150,6 +162,7 @@ export type Database = {
           invitations_sent?: number | null
           language?: string | null
           linkedin_connection_type?: string | null
+          max_ai_replies?: number
           message_tone?: string | null
           messages_replied?: number | null
           messages_sent?: number | null
@@ -179,6 +192,7 @@ export type Database = {
           campaign_goal?: string | null
           company_name?: string | null
           competitor_pages?: string[] | null
+          conversational_ai?: boolean
           country?: string | null
           created_at?: string
           current_step?: number | null
@@ -200,6 +214,7 @@ export type Database = {
           invitations_sent?: number | null
           language?: string | null
           linkedin_connection_type?: string | null
+          max_ai_replies?: number
           message_tone?: string | null
           messages_replied?: number | null
           messages_sent?: number | null

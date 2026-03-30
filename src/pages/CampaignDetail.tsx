@@ -9,7 +9,7 @@ import {
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
-  RefreshCw, Loader2,
+  RefreshCw, Loader2, MessageCircle,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -50,6 +50,8 @@ type CampaignFull = {
   daily_connect_limit: number;
   custom_training: string | null;
   language: string | null;
+  conversational_ai: boolean;
+  max_ai_replies: number;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
@@ -73,7 +75,6 @@ const MESSAGE_TONES = [
   { value: "conversational", label: "Conversational", desc: "Friendly, casual", icon: Mic },
   { value: "direct", label: "Direct", desc: "Bold, confident", icon: Target },
 ];
-
 
 const tabVariant = {
   hidden: { opacity: 0, y: 12 },
@@ -218,6 +219,8 @@ export default function CampaignDetail() {
   const [settingsLanguage, setSettingsLanguage] = useState("English");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
+  const [settingsConversationalAi, setSettingsConversationalAi] = useState(false);
+  const [settingsMaxAiReplies, setSettingsMaxAiReplies] = useState(5);
   const [savingSettings, setSavingSettings] = useState(false);
   const [savedAnimation, setSavedAnimation] = useState(false);
 
@@ -248,6 +251,8 @@ export default function CampaignDetail() {
     setSettingsLanguage(c.language || "English");
     setSettingsCustomTraining((c as any).custom_training || "");
     setSettingsDailyLimit((c as any).daily_connect_limit || 25);
+    setSettingsConversationalAi((c as any).conversational_ai || false);
+    setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
 
     if (c.source_agent_id) {
       const { data: agent } = await supabase.from("signal_agents").select("name, status, results_count").eq("id", c.source_agent_id).single();
@@ -585,10 +590,12 @@ export default function CampaignDetail() {
       language: settingsLanguage,
       custom_training: settingsCustomTraining || null,
       daily_connect_limit: settingsDailyLimit,
+      conversational_ai: settingsConversationalAi,
+      max_ai_replies: settingsMaxAiReplies,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
@@ -1968,6 +1975,42 @@ export default function CampaignDetail() {
                           rows={4}
                           className="flex w-full rounded-xl border-2 border-border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                         />
+                      </div>
+
+                      {/* Conversational AI */}
+                      <div className="rounded-xl border-2 border-border p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center">
+                              <MessageCircle className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-foreground">Conversational AI</p>
+                              <p className="text-[10px] text-muted-foreground">Auto-reply to leads who respond, focused on booking a call</p>
+                            </div>
+                          </div>
+                          <Switch checked={settingsConversationalAi} onCheckedChange={setSettingsConversationalAi} />
+                        </div>
+                        {settingsConversationalAi && (
+                          <div className="pl-11 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-muted-foreground">Max replies per lead:</p>
+                              <select
+                                value={settingsMaxAiReplies}
+                                onChange={(e) => setSettingsMaxAiReplies(Number(e.target.value))}
+                                className="text-xs border border-border rounded-lg px-2 py-1 bg-background text-foreground"
+                              >
+                                {[3, 5, 7, 10].map(n => (
+                                  <option key={n} value={n}>{n} replies</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                              <Shield className="w-3 h-3" />
+                              <span>Smart stop: AI will stop if lead shows no interest or opts out</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CollapsibleContent>
