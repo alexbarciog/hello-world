@@ -224,6 +224,7 @@ SENDER'S BUSINESS:
 TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
 GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
 ${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
+${campaign.custom_training ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${campaign.custom_training}` : ''}
 
 CRITICAL RULES:
 - Write 3-5 sentences MAX
