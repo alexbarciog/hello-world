@@ -1244,7 +1244,122 @@ export default function CampaignDetail() {
                 </DialogContent>
               </Dialog>
 
-              {/* Edit Step Instructions Dialog */}
+              {/* Edit Invitation (Step 1) Dialog */}
+              <Dialog open={editInvitationOpen} onOpenChange={setEditInvitationOpen}>
+                <DialogContent className="sm:max-w-[480px] p-6 gap-0">
+                  <DialogHeader className="mb-5">
+                    <DialogTitle className="text-lg font-bold">Edit Invitation</DialogTitle>
+                    <p className="text-sm text-muted-foreground">Choose how to send connection requests</p>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setInvitationNoteMode("without")}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${invitationNoteMode === "without" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-muted">
+                        <UserPlus className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                          Without Note
+                          {invitationNoteMode === "without" && <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Send a blank connection request without any message</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setInvitationNoteMode("with")}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${invitationNoteMode === "with" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                        <MessageSquare className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                          With Note
+                          {invitationNoteMode === "with" && <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Include a personalized note with your connection request</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <AnimatePresence>
+                    {invitationNoteMode === "with" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-4 space-y-2">
+                          <label className="text-xs font-bold text-foreground">Connection Note</label>
+                          <textarea
+                            id="invitation-note-textarea"
+                            value={invitationNote}
+                            onChange={(e) => setInvitationNote(e.target.value)}
+                            className="w-full text-xs border border-border rounded-lg p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                            rows={3}
+                            placeholder="Hi {{first_name}}, I'd love to connect..."
+                            maxLength={300}
+                          />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] text-muted-foreground font-medium">Insert:</span>
+                              {["first_name", "last_name", "company", "title"].map((v) => (
+                                <button
+                                  key={v}
+                                  onClick={() => {
+                                    const ta = document.getElementById("invitation-note-textarea") as HTMLTextAreaElement;
+                                    if (ta) {
+                                      const start = ta.selectionStart;
+                                      const end = ta.selectionEnd;
+                                      const val = ta.value;
+                                      const tag = `{{${v}}}`;
+                                      const newVal = val.substring(0, start) + tag + val.substring(end);
+                                      setInvitationNote(newVal);
+                                      setTimeout(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = start + tag.length; }, 0);
+                                    }
+                                  }}
+                                  className="text-[10px] font-semibold text-primary bg-primary/15 rounded px-2 py-0.5 hover:bg-primary/25 transition-colors"
+                                >
+                                  {`{{${v}}}`}
+                                </button>
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{invitationNote.length}/300</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="flex gap-2 mt-5">
+                    <button
+                      onClick={async () => {
+                        if (!campaign) return;
+                        const updated = workflowSteps.map((ws: any) =>
+                          ws.type === "invitation"
+                            ? { ...ws, connect_note: invitationNoteMode === "with" ? invitationNote.trim() : null }
+                            : ws
+                        );
+                        const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+                        if (error) { toast.error("Failed to save"); return; }
+                        setCampaign({ ...campaign, workflow_steps: updated });
+                        setEditInvitationOpen(false);
+                        toast.success("Invitation step updated");
+                      }}
+                      className="text-xs font-bold text-white bg-primary rounded-lg px-4 py-2 hover:bg-primary/90 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button onClick={() => setEditInvitationOpen(false)} className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={editStepInstructionsIdx !== null} onOpenChange={(open) => { if (!open) setEditStepInstructionsIdx(null); }}>
                 <DialogContent className="sm:max-w-[480px] p-6 gap-0">
                   <DialogHeader className="mb-4">
