@@ -433,7 +433,8 @@ export default function CampaignDetail() {
 
       if (cr.status === "accepted" && nextStepIdx < nonInvSteps.length) {
         const nextStep = nonInvSteps[nextStepIdx];
-        const stepIndexInWorkflow = nextStepIdx; // matches step_index stored by edge function
+        const hasInvitation = (steps || []).length > 0 && (steps || [])[0]?.type === "invitation";
+        const stepIndexInWorkflow = hasInvitation ? nextStepIdx + 1 : nextStepIdx; // matches step_index stored by edge function
         const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
         const scheduledDate = new Date(acceptedDate);
         
