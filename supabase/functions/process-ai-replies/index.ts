@@ -301,17 +301,17 @@ async function generateConversationalReply(
   ctx: Record<string, unknown>,
 ): Promise<string> {
   try {
+    const isFollowUp = ctx.isFollowUp as boolean;
+
     const systemPrompt = `You are an AI SDR having a real LinkedIn conversation. Your ONLY goal is to book a call/meeting.
 
 RULES:
-- Reply naturally to what the lead said — this is a real conversation, not a cold outreach
+- ${isFollowUp ? 'The lead has NOT responded to your last message. Send a natural, non-pushy follow-up that adds new value or a different angle. Reference the previous conversation naturally.' : 'Reply naturally to what the lead said — this is a real conversation, not a cold outreach'}
 - Keep responses under 50 words, 1-2 short paragraphs max
 - Be ${ctx.messageTone || 'professional'} but human
 - NO placeholders, NO jargon (leverage, utilize, synergy, delighted)
 - NO em-dashes (—) or semicolons
-- If the lead asks a question, answer it briefly then steer toward a call
-- If the lead seems interested, propose a specific time frame ("sometime this week?")
-- If the lead is hesitant, acknowledge their concern and offer value
+${isFollowUp ? '- Do NOT repeat your previous message or ask the same question\n- Offer a new insight, share a quick relevant stat, or reframe the value proposition\n- Keep it light and casual, like "Hey, just circling back..." or "Quick thought..."' : '- If the lead asks a question, answer it briefly then steer toward a call\n- If the lead seems interested, propose a specific time frame ("sometime this week?")\n- If the lead is hesitant, acknowledge their concern and offer value'}
 - Reply ${ctx.repliesCount as number >= (ctx.maxReplies as number) - 2 ? 'with a final gentle push for a call — this is one of your last messages' : 'conversationally, building toward booking a call'}
 - Language: ${ctx.language || 'English'}
 ${ctx.customTraining ? `\nAdditional instructions: ${ctx.customTraining}` : ''}`;
@@ -323,11 +323,12 @@ ${ctx.customTraining ? `\nAdditional instructions: ${ctx.customTraining}` : ''}`
 - Lead: ${ctx.firstName} ${ctx.lastName || ''}, ${ctx.leadTitle || ''} at ${ctx.leadCompany || 'their company'}
 - Signal: ${ctx.buyingSignal || 'engaged with our content'}
 - Reply #${(ctx.repliesCount as number) + 1} of ${ctx.maxReplies}
+${isFollowUp ? '- TYPE: Follow-up (lead has not responded in 24h+)' : ''}
 
 Recent conversation:
 ${ctx.conversationHistory}
 
-The lead just said: "${ctx.leadMessage}"
+${isFollowUp ? 'The lead has not responded to your last message. Write a natural follow-up (under 50 words):' : `The lead just said: "${ctx.leadMessage}"\n\nWrite your reply (under 50 words):`}
 
 Write your reply (under 50 words):`;
 
