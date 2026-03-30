@@ -356,14 +356,14 @@ async function handleKeywordPosts(
     } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
   }
 
-  // Get top 8 posts by engagement
+  // Get top 15 posts by engagement
   const topPosts = allPosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 8);
+    .slice(0, 15);
 
   for (const post of topPosts) {
     if (!hasTime()) break;
-    await delay(300);
+    await delay(200);
 
     const authorData = post.author || post.actor || post.author_detail || null;
     const authorId = post.author_id || authorData?.id || authorData?.provider_id || post.provider_id || post.actor_id;
