@@ -89,9 +89,12 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
 
   useEffect(() => {
     if (!open) return;
-    loadData();
-    if (editCampaignId) loadCampaign(editCampaignId);
-    else resetForm();
+    if (editCampaignId) {
+      loadData().then(() => loadCampaign(editCampaignId));
+    } else {
+      resetForm();
+      loadData();
+    }
   }, [open, editCampaignId]);
 
   // Auto-trigger AI analysis when entering step 2 with pre-filled website from onboarding
