@@ -88,9 +88,9 @@ Deno.serve(async (req) => {
           if (!user?.email) continue;
           const customers = await stripe.customers.list({ email: user.email, limit: 1 });
           if (customers.data.length === 0) continue;
-          const subs = await stripe.subscriptions.list({ customer: customers.data[0].id, status: 'active', limit: 1 });
-          const trials = await stripe.subscriptions.list({ customer: customers.data[0].id, status: 'trialing', limit: 1 });
-          if (subs.data.length > 0 || trials.data.length > 0) paidUsers.add(uid);
+          const subs = await stripe.subscriptions.list({ customer: customers.data[0].id, limit: 5 });
+          const hasActive = subs.data.some(s => s.status === 'active' || s.status === 'trialing');
+          if (hasActive) paidUsers.add(uid);
         } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
       }
       console.log(`Paid users: ${paidUsers.size}/${uniqueUserIds.length}`);
