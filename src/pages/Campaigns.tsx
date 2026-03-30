@@ -386,10 +386,10 @@ export default function CampaignsPage() {
               transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
               className={`group relative rounded-2xl overflow-hidden transition-all duration-300 ${
                 isFeatured
-                  ? "bg-cover bg-center ring-[3px] ring-inset ring-white/30"
+                  ? "ring-[3px] ring-inset ring-white/30"
                   : "bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-md-outline-variant/20 hover:border-md-primary/30 hover:shadow-lg hover:shadow-md-primary/5"
               }`}
-              style={isFeatured ? { backgroundImage: `url(${meshGradientBg})` } : undefined}
+              style={isFeatured ? { background: 'linear-gradient(to top, #212121, #444A4A)' } : undefined}
             >
               <div className="relative z-10 p-5 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
