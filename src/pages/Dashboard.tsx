@@ -563,7 +563,7 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
               return (
                 <div
                   key={i}
-                  className="group flex items-center justify-between p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer">
+                  className="group flex items-start justify-between p-3 rounded-xl bg-white/30 border border-transparent hover:border-white/60 hover:bg-white/60 transition-all duration-500 cursor-pointer">
                   
                     <div className="flex items-center gap-3">
                       <div className="relative">
