@@ -2223,7 +2223,7 @@ export default function CampaignDetail() {
                             {sm.isAi && !sm.message && (
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                <span className="italic">AI SDR will generate a unique message for this lead before sending</span>
+                                <span className="italic">AI SDR will generate a unique message when this lead reaches this step</span>
                               </div>
                             )}
                             {sm.isAi && sm.message && (
