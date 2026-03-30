@@ -191,36 +191,31 @@ export default function Dashboard() {
     staleTime: 30_000
   });
 
-  // ── Real leads for "Latest Hot Leads" (contacts table as primary) ──
+   // ── Real leads for "Latest Hot Leads" (contacts table, ordered by tier then recency) ──
   const { data: latestLeads, isLoading: leadsLoading } = useQuery({
     queryKey: ["dashboard-latest-leads"],
     queryFn: async () => {
-      // Try contacts first (user's main data)
-      const { data: contacts, error: cErr } = await supabase.
-      from("contacts").
-      select("first_name, last_name, title, company, ai_score, relevance_tier").
-      order("imported_at", { ascending: false }).
-      limit(5);
-      if (!cErr && contacts && contacts.length > 0) {
-        return contacts.map((c) => ({
-          name: [c.first_name, c.last_name].filter(Boolean).join(" "),
-          title: c.title,
-          company: c.company,
-          score: c.ai_score ?? 0
-        }));
-      }
-      // Fallback to leads table
-      const { data: campaigns } = await supabase.from("campaigns").select("id");
-      if (!campaigns || campaigns.length === 0) return [];
-      const campaignIds = campaigns.map((c) => c.id);
-      const { data, error } = await supabase.
-      from("leads").
-      select("name, title, company, score").
-      in("campaign_id", campaignIds).
-      order("created_at", { ascending: false }).
-      limit(5);
-      if (error) throw error;
-      return data ?? [];
+      const { data: contacts, error: cErr } = await supabase
+        .from("contacts")
+        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at")
+        .order("imported_at", { ascending: false })
+        .limit(50);
+      if (cErr || !contacts || contacts.length === 0) return [];
+      // Sort: hot first, then warm, then cold — within each tier, newest first
+      const tierOrder: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
+      const sorted = [...contacts].sort((a, b) => {
+        const ta = tierOrder[a.relevance_tier] ?? 2;
+        const tb = tierOrder[b.relevance_tier] ?? 2;
+        if (ta !== tb) return ta - tb;
+        return new Date(b.imported_at).getTime() - new Date(a.imported_at).getTime();
+      });
+      return sorted.slice(0, 5).map((c) => ({
+        name: [c.first_name, c.last_name].filter(Boolean).join(" "),
+        title: c.title,
+        company: c.company,
+        score: c.ai_score ?? 0,
+        relevance_tier: c.relevance_tier as string
+      }));
     },
     staleTime: 30_000
   });
@@ -563,7 +558,7 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
 
             (latestLeads ?? []).map((lead, i) => {
               const initials = lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-              const heat = (lead.score ?? 0) >= 80 ? 3 : (lead.score ?? 0) >= 50 ? 2 : 1;
+              const heat = lead.relevance_tier === 'hot' ? 3 : lead.relevance_tier === 'warm' ? 2 : 1;
               return (
                 <div
                   key={i}
