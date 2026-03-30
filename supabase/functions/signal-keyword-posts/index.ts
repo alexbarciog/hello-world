@@ -267,11 +267,19 @@ Deno.serve(async (req) => {
           if (reactionsRes.ok) {
             const reactionsData = await reactionsRes.json();
             const engagers = (reactionsData.items || []).slice(0, 20);
+            console.log(`[DEBUG] Post ${postId}: ${engagers.length} engagers`);
+            let engagerDebugCount = 0;
             for (const engager of engagers) {
               if (!hasTime()) break;
               const engagerProfile = engager.author || engager;
               const fullEngager = await fetchProfileIfNeeded(engagerProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!fullEngager) continue;
+              if (!fullEngager) { console.log(`[DEBUG] Engager fetch failed, raw keys: ${Object.keys(engagerProfile).join(',')}`); continue; }
+              if (engagerDebugCount < 3) {
+                const eMatch2 = scoreProfileAgainstICP(fullEngager, icp);
+                const eHl2 = fullEngager.headline || fullEngager.title || '';
+                console.log(`[DEBUG] Engager: ${fullEngager.first_name||'?'} ${fullEngager.last_name||''}, headline="${(eHl2||'NONE').slice(0,50)}", classify=${classifyContact(eMatch2,icp,eHl2)}, score=${eMatch2.score}`);
+                engagerDebugCount++;
+              }
               const eMatch = scoreProfileAgainstICP(fullEngager, icp);
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
