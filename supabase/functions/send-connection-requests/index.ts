@@ -243,8 +243,6 @@ async function processCampaign(
           unipile_request_id: inviteData.request_id || inviteData.id || null,
         });
       }
-        unipile_request_id: inviteData.request_id || inviteData.id || null,
-      });
 
       sentCount++;
 
