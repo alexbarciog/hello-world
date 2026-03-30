@@ -460,9 +460,7 @@ function jsonRes(payload: unknown, status = 200) {
   });
 }
 
-// ── AI SDR prompt builders ──
-
-function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number): string {
+// AI prompt builders moved to generate-daily-messages function
   const toneGuide: Record<string, string> = {
     professional: 'Use a professional but warm tone. Be polished and respectful.',
     conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer.',
