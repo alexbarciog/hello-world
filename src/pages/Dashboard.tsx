@@ -581,7 +581,7 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
                             </a>
                           )}
                         </div>
-                        <div className="text-xs font-light text-md-on-surface-variant">
+                        <div className="text-xs font-light text-md-on-surface-variant line-clamp-2">
                           {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                         </div>
                       </div>
