@@ -165,7 +165,7 @@ export default function CampaignDetail() {
           painPoints: campaign.pain_points || [],
           campaignGoal: campaign.campaign_goal || "",
           messageTone: campaign.message_tone || "conversational",
-          industry: campaign.industry || "",
+          industry: "",
           language: campaign.language || "English",
           customTraining: campaign.custom_training || "",
           firstName: sm.contactName.split(" ")[0] || "",
