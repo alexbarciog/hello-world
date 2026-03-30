@@ -545,6 +545,7 @@ export default function CampaignDetail() {
       message: newStepMessageMode === "ai" ? "" : newStepMessage,
       delay_days: newStepDelay,
       ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
+      ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
     };
     const updated = [...workflowSteps, newStep];
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
