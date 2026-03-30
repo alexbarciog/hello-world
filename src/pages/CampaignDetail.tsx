@@ -237,6 +237,8 @@ export default function CampaignDetail() {
     if (!data) { setLoading(false); navigate("/campaigns"); return; }
 
     const c = data as any as CampaignFull;
+    let loadedContactsTotal: number | null = null;
+
     setCampaign(c);
     setSettingsGoal(c.campaign_goal || "conversations");
     setSettingsTone(c.message_tone || "professional");
@@ -258,7 +260,11 @@ export default function CampaignDetail() {
       const { data: agentData } = await supabase.from("signal_agents").select("leads_list_name").eq("id", c.source_agent_id).single();
       if (agentData?.leads_list_name) {
         const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", agentData.leads_list_name).order("imported_at", { ascending: false });
-        if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
+        if (contactData) {
+          loadedContactsTotal = contactData.length;
+          setContacts(contactData as Contact[]);
+          setContactsCount(contactData.length);
+        }
         const { count } = await (supabase.from("lists") as any).select("id", { count: "exact", head: true }).eq("name", agentData.leads_list_name);
         setListsCount(count || 1);
       }
@@ -337,7 +343,7 @@ export default function CampaignDetail() {
         .in("status", ["sent", "accepted"]);
       setRemainingContacts(Math.max(0, currentContactIds.length - (sentForCurrentList || 0)));
     } else {
-      const totalContacts = contactsCount || 0;
+      const totalContacts = loadedContactsTotal ?? contactsCount ?? 0;
       const totalSent = sentCount || 0;
       setRemainingContacts(Math.max(0, totalContacts - totalSent));
     }
