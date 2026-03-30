@@ -54,6 +54,35 @@ export default function Contacts() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    const confirmed = window.confirm(`Are you sure you want to delete ${selectedIds.size} contact(s)? They will be removed from all lists and campaigns.`);
+    if (!confirmed) return;
+    setDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      // Delete from contact_lists junction
+      await supabase.from("contact_lists").delete().in("contact_id", ids);
+      // Delete from campaign_connection_requests
+      await supabase.from("campaign_connection_requests").delete().in("contact_id", ids);
+      // Delete scheduled_messages
+      await supabase.from("scheduled_messages").delete().in("contact_id", ids);
+      // Delete the contacts themselves
+      const { error } = await supabase.from("contacts").delete().in("id", ids);
+      if (error) throw error;
+      setSelectedIds(new Set());
+      toast.success(`${ids.length} contact(s) deleted successfully`);
+      fetchData();
+    } catch (err: any) {
+      console.error("Delete contacts error:", err);
+      toast.error("Failed to delete contacts: " + (err.message || "Unknown error"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0 };
     contacts.forEach((c) => { if (c.relevance_tier in counts) counts[c.relevance_tier]++; });
