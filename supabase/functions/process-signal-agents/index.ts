@@ -35,6 +35,12 @@ interface SignalsConfig {
 const START = Date.now();
 const MAX_RUNTIME_MS = 110_000; // 110s (Supabase timeout ~120s)
 function hasTime() { return Date.now() - START < MAX_RUNTIME_MS; }
+function elapsedMs() { return Date.now() - START; }
+
+// Per-signal time budget: ensures each signal type gets fair allocation
+function hasSignalTime(signalStartMs: number, budgetMs: number): boolean {
+  return hasTime() && (Date.now() - signalStartMs < budgetMs);
+}
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
