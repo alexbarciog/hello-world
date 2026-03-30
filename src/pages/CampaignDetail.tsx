@@ -50,6 +50,8 @@ type CampaignFull = {
   daily_connect_limit: number;
   custom_training: string | null;
   language: string | null;
+  conversational_ai: boolean;
+  max_ai_replies: number;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
