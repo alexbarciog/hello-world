@@ -56,9 +56,10 @@ Deno.serve(async (req) => {
 
 async function processCampaign(
   supabase: any,
-  campaign: { id: string; user_id: string; workflow_steps: any; source_list_id: string },
+  campaign: any,
   unipileApiKey: string,
-  unipileDsn: string
+  unipileDsn: string,
+  lovableApiKey: string | undefined
 ): Promise<{ accepted: number; messagesSent: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   if (workflowSteps.length < 2) {
