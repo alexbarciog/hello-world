@@ -12,6 +12,7 @@ Deno.serve(async (req) => {
     const {
       stepNumber,
       previousStepMessage,
+      previousMessages,
       companyName,
       valueProposition,
       painPoints,
@@ -19,6 +20,7 @@ Deno.serve(async (req) => {
       messageTone,
       industry,
       language,
+      customTraining,
     } = await req.json();
 
     if (!stepNumber || stepNumber < 2) {
