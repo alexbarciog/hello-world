@@ -559,29 +559,7 @@ async function handleHashtagEngagement(
     const postId = post.social_id || post.id || post.provider_id;
     if (!postId) continue;
 
-    // Also capture the post author
-    const authorData = post.author || post.actor || post.author_detail;
-    if (authorData) {
-      const name = authorData.first_name || authorData.name || '';
-      const nameParts = name.split(' ').filter(Boolean);
-      const authorProfile: any = {
-        first_name: authorData.first_name || nameParts[0] || 'Unknown',
-        last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
-        headline: authorData.headline || authorData.occupation || authorData.title || null,
-        company: authorData.company || authorData.current_company?.name || null,
-        public_id: authorData.public_identifier || authorData.public_id || authorData.vanity_name || null,
-        linkedin_url: authorData.profile_url || authorData.public_profile_url || null,
-        provider_id: authorData.provider_id || post.author_id || null,
-      };
-      const aMatch = scoreProfileAgainstICP(authorProfile, icp);
-      const aHl = authorProfile.headline || '';
-      if (matchesTitleOrIndustry(aMatch, icp, aHl) && !isExcluded(authorProfile, icp.excludeKeywords, icp.competitorCompanies)) {
-        const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-        const ok = await insertContact(supabase, authorProfile, userId, agentId, listName, aMatch, `Posted about ${post._hashtag}`, postUrl, icp);
-        if (ok) inserted++;
-      }
-    }
-
+    // Skip post authors — we only want people who ENGAGED with hashtag content
     try {
       const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
       if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
@@ -599,6 +577,11 @@ async function handleHashtagEngagement(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+        // Strict industry filter for hashtag engagers: must match user's ICP industries
+        if (icp.industries.length > 0 && !match.industryMatch) {
+          console.log(`hashtag_engagement: skipped "${fullProfile.first_name || ''}" — industry mismatch (${fullProfile.industry || 'unknown'})`);
+          continue;
+        }
         if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
