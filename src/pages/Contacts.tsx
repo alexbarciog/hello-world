@@ -17,6 +17,7 @@ export default function Contacts() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lists, setLists] = useState<ContactList[]>([]);
   const [contactListMap, setContactListMap] = useState<Record<string, string[]>>({});
+  const [lastActions, setLastActions] = useState<Record<string, { status: string; date: string }>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
