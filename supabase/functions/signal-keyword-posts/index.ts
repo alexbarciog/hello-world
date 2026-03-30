@@ -116,15 +116,32 @@ function unipileGet(path: string, apiKey: string, dsn: string) {
   return fetch(`https://${dsn}${path}`, { headers: { 'X-API-KEY': apiKey } });
 }
 
+function normalizeProfile(item: any): any {
+  // Ensure first_name/last_name from name field
+  if (!item.first_name && item.name) {
+    const parts = item.name.split(' ');
+    item.first_name = parts[0];
+    item.last_name = parts.slice(1).join(' ') || '';
+  }
+  return item;
+}
+
 async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
-  if (item.first_name && (item.headline || item.title)) return item;
-  const id = item.provider_id || item.id || item.public_id || item.public_identifier || item.author_id;
-  if (!id) return item.first_name ? item : null;
+  const norm = normalizeProfile({ ...item });
+  // If we already have name + headline, use directly (engagers/authors with data)
+  if (norm.first_name && (norm.headline || norm.title)) return norm;
+  // Try public_identifier first (works with profile API), then other IDs
+  const id = item.public_identifier || item.provider_id || item.public_id || item.author_id;
+  // Skip URN-style IDs for profile API (they don't work) 
+  const numericOrUrn = item.id;
+  const fetchId = id || (numericOrUrn && !String(numericOrUrn).startsWith('urn:') && !String(numericOrUrn).startsWith('ACo') ? numericOrUrn : null);
+  if (!fetchId) return norm.first_name ? norm : null;
   try {
-    const res = await unipileGet(`/api/v1/linkedin/profile/${id}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { await res.text(); return item.first_name ? item : null; }
-    return await res.json();
-  } catch { return item.first_name ? item : null; }
+    const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
+    if (!res.ok) { await res.text(); return norm.first_name ? norm : null; }
+    const fetched = await res.json();
+    return normalizeProfile(fetched);
+  } catch { return norm.first_name ? norm : null; }
 }
 
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
