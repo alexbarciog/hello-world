@@ -422,6 +422,7 @@ export default function CampaignDetail() {
           contactTitle: contact.title || "",
           contactCompany: contact.company || "",
           contactSignal: contact.signal || "",
+          contactLinkedinUrl: contact.linkedin_url || "",
           currentStep: 1,
           nextStepNum: 2,
           message: nextStep?.ai_icebreaker ? "" : (nextStep?.message || ""),
