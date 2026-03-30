@@ -161,6 +161,7 @@ export default function CampaignDetail() {
   const [settingsGoal, setSettingsGoal] = useState("");
   const [settingsTone, setSettingsTone] = useState("");
   const [settingsCustomTraining, setSettingsCustomTraining] = useState("");
+  const [settingsLanguage, setSettingsLanguage] = useState("English");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
