@@ -336,8 +336,8 @@ export default function CampaignsPage() {
       {/* Header */}
       <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-headline font-light tracking-tight text-md-on-surface mb-2">
-            Campaign Intelligence
+          <h1 className="text-3xl md:text-4xl font-headline tracking-tight text-md-on-surface mb-2 font-medium">
+            Outreach Campaigns
           </h1>
           <p className="text-md-on-surface-variant font-light">
             {loading ? "Loading..." : `${campaigns.length} / ${MAX_CAMPAIGNS} campaigns · `}
