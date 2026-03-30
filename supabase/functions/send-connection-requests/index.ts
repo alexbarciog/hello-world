@@ -23,16 +23,46 @@ Deno.serve(async (req) => {
 
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get all active campaigns that have a source_list_id
+    // Get all active campaigns (with source_list_id OR source_agent_id)
     const { data: campaigns, error: campErr } = await serviceClient
       .from('campaigns')
-      .select('id, user_id, source_list_id, daily_connect_limit')
-      .eq('status', 'active')
-      .not('source_list_id', 'is', null);
+      .select('id, user_id, source_list_id, source_agent_id, source_type, daily_connect_limit')
+      .eq('status', 'active');
 
     if (campErr) throw new Error(`Failed to fetch campaigns: ${campErr.message}`);
     if (!campaigns || campaigns.length === 0) {
       return jsonResponse({ status: 'no_active_campaigns', processed: 0 });
+    }
+
+    // Resolve source_list_id for agent-sourced campaigns
+    for (const campaign of campaigns) {
+      if (!campaign.source_list_id && campaign.source_agent_id) {
+        const { data: agent } = await serviceClient
+          .from('signal_agents')
+          .select('leads_list_name')
+          .eq('id', campaign.source_agent_id)
+          .single();
+
+        if (agent?.leads_list_name) {
+          const { data: list } = await serviceClient
+            .from('lists')
+            .select('id')
+            .eq('name', agent.leads_list_name)
+            .eq('user_id', campaign.user_id)
+            .single();
+
+          if (list) {
+            campaign.source_list_id = list.id;
+            console.log(`[campaign ${campaign.id}] resolved list from agent: ${list.id}`);
+          }
+        }
+      }
+    }
+
+    // Filter to only campaigns that now have a resolved list
+    const campaignsWithList = campaigns.filter((c: any) => c.source_list_id);
+    if (campaignsWithList.length === 0) {
+      return jsonResponse({ status: 'no_campaigns_with_contacts', processed: 0 });
     }
 
     let totalSent = 0;
