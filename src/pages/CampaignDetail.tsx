@@ -179,6 +179,7 @@ export default function CampaignDetail() {
     setCampaign(c);
     setSettingsGoal(c.campaign_goal || "conversations");
     setSettingsTone(c.message_tone || "professional");
+    setSettingsCustomTraining((c as any).custom_training || "");
     setSettingsDailyLimit((c as any).daily_connect_limit || 25);
 
     if (c.source_agent_id) {
