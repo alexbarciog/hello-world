@@ -591,6 +591,7 @@ async function handleCompetitorFollowers(
         const match = scoreProfileAgainstICP(profile, icp);
         const hl = profile.headline || profile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+        if (!matchesIndustry(profile, match, icp)) continue;
         if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
         const signal = `Follows ${companyName}`;
         const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
