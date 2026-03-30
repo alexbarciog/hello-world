@@ -911,6 +911,12 @@ export default function CampaignDetail() {
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">Active</span>
                                       </div>
                                       <p className="text-[11px] text-muted-foreground leading-relaxed">Each lead will receive a unique AI-generated message based on their role, company, signal & your business context.</p>
+                                      {ws.step_instructions && (
+                                        <div className="mt-2 p-2 bg-muted/40 rounded-lg border border-border">
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Custom Instructions:</p>
+                                          <p className="text-[11px] text-foreground leading-relaxed line-clamp-2">{ws.step_instructions}</p>
+                                        </div>
+                                      )}
                                     </div>
                                   ) : ws.message ? (
                                     <div>
