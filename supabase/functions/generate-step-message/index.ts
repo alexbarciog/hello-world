@@ -59,6 +59,7 @@ Your messages MUST:
 - ${toneGuide[messageTone] || toneGuide.professional}
 - ${goalGuide[campaignGoal] || goalGuide.conversations}
 ${language && language !== 'English (US)' ? `- Write the message in ${language}` : ''}
+${customTraining ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${customTraining}` : ''}
 
 About the sender's business:
 - Company: ${companyName || 'Our company'}
