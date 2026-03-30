@@ -585,6 +585,11 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
                         <div className="text-xs font-light text-md-on-surface-variant line-clamp-2">
                           {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                         </div>
+                        {lead.signal && (
+                          <div className="text-[10px] text-md-primary/70 line-clamp-1 mt-0.5 italic">
+                            ⚡ {lead.signal}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <HeatDots count={heat} />
