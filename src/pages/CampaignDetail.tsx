@@ -126,6 +126,7 @@ export default function CampaignDetail() {
   const [step1Accepted, setStep1Accepted] = useState(0);
   const [settingsDailyLimit, setSettingsDailyLimit] = useState(25);
   const [todaySentCount, setTodaySentCount] = useState(0);
+  const [todayRunCounts, setTodayRunCounts] = useState<Record<number, number>>({});
   const [remainingContacts, setRemainingContacts] = useState(0);
   const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number; updatedAt?: string }>>({});
 
