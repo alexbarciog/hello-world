@@ -164,9 +164,11 @@ Deno.serve(async (req) => {
             const hl = fullProfile.headline || fullProfile.title || '';
             if (!matchesTitleOrIndustry(match, icp, hl)) continue;
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+            const cls = classifyContact(match, icp, hl);
+            if (cls === 'cold' && !canInsertCold()) continue;
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
             const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
-            if (ok) { inserted++; console.log(`+1 "${fullProfile.first_name} ${fullProfile.last_name||''}" (${hl})`); }
+            if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
         }
       } else { await postsRes.text(); console.log('post_engagers: failed to fetch own posts'); }
