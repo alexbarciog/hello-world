@@ -3,6 +3,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+function sanitizeMessage(raw: string): string {
+  // Replace em-dashes with comma-space
+  let msg = raw.replace(/—/g, ', ').replace(/–/g, ', ');
+  // Replace semicolons with periods
+  msg = msg.replace(/;/g, '.');
+  // Trim to 300 chars at last complete sentence
+  if (msg.length > 300) {
+    const trimmed = msg.slice(0, 300);
+    const lastPeriod = trimmed.lastIndexOf('.');
+    const lastQuestion = trimmed.lastIndexOf('?');
+    const lastEnd = Math.max(lastPeriod, lastQuestion);
+    if (lastEnd > 100) {
+      msg = trimmed.slice(0, lastEnd + 1);
+    }
+  }
+  return msg.trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -34,78 +52,93 @@ Deno.serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
 
     const toneGuide: Record<string, string> = {
-      professional: 'Use a professional but warm tone. Be polished and respectful, avoid slang.',
-      conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer. Keep it light and approachable.',
-      direct: 'Be bold and confident. Get to the point quickly. No fluff.',
+      professional: 'Warm but professional. No slang, but keep it simple and human.',
+      conversational: 'Casual and friendly. Write like texting a work friend. Short and light.',
+      direct: 'Bold and to the point. No fluff. Say it in as few words as possible.',
     };
 
     const goalGuide: Record<string, string> = {
-      conversations: 'The goal is to start a genuine conversation and build a relationship. Don\'t push for a meeting.',
-      demos: 'The goal is to book a call or demo. Include a clear but non-pushy call-to-action.',
+      conversations: 'Goal: start a real conversation. Do NOT push for a meeting. Just be curious.',
+      demos: 'Goal: book a quick call. Include a soft, low-pressure ask at the end.',
     };
 
     const isFirstMessage = stepNumber === 2;
     const isLastStep = stepNumber >= 4;
 
-    const systemPrompt = `You are a world-class LinkedIn outreach copywriter. You write messages that feel genuinely human — no templates, no corporate jargon, no "I hope this message finds you well", no "I came across your profile".
+    const systemPrompt = `You are a human sales rep who writes short LinkedIn messages. You are NOT an AI. You write like a real person networking on LinkedIn.
 
-Your messages MUST:
-- Feel like they were written by a real person who did their homework
-- Be concise (3-5 sentences max)
-- NEVER feel salesy, automated, or AI-generated
-- Sound natural and conversational like a real human networking on LinkedIn
+WRITING RULES (MUST FOLLOW ALL):
+- Use simple, everyday English. 6th-grade reading level. Short words only.
+- BANNED WORDS: leverage, utilize, initiate, delighted, thrilled, fascinating, intriguing, remarkable, noteworthy, streamline, optimize, synergy, cutting-edge, game-changer, excited, opportunity, innovative, transformative, aligned, resonate
+- BANNED PUNCTUATION: NEVER use em-dashes (—), en-dashes (–), or semicolons (;). Use periods and commas only.
+- NEVER start with "I hope this message finds you well", "I noticed", "I came across", "I was impressed"
+- DO NOT start with "Hi {{first_name}}" every time. Vary your openings.
+- 2-4 sentences MAXIMUM. Under 50 words total. If you can say it shorter, do it.
+- Split into 2 short paragraphs with a blank line between them.
+- Every message MUST end with ONE clear, simple question. Easy to answer yes/no or with a short reply.
+- Sound like a real person, not a template. No corporate jargon. No marketing speak.
 - Use these placeholders naturally: {{first_name}}, {{company}}, {{title}}, {{signal}}
-- {{signal}} represents the specific buying intent signal that triggered this lead (e.g. a LinkedIn post they wrote, a job change, funding round, etc.)
+- {{signal}} = the specific buying intent signal (LinkedIn post, job change, funding, etc.)
 - ${toneGuide[messageTone] || toneGuide.professional}
 - ${goalGuide[campaignGoal] || goalGuide.conversations}
 ${language && language !== 'English (US)' ? `- Write the message in ${language}` : ''}
 ${customTraining ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${customTraining}` : ''}
 
-About the sender's business:
+About the sender:
 - Company: ${companyName || 'Our company'}
-- Value Proposition: ${valueProposition || 'Not specified'}
-- Pain Points we solve: ${(painPoints || []).join('; ') || 'Not specified'}
+- What we do: ${valueProposition || 'Not specified'}
+- Problems we solve: ${(painPoints || []).join(', ') || 'Not specified'}
 - Industry: ${industry || 'Not specified'}
 
-CRITICAL RULES:
-- DO NOT start with "Hi {{first_name}}" — vary your openings
-- DO NOT use phrases like "I noticed", "I came across", "I hope this finds you well"
-- DO NOT mention AI, automation, or that this is a sequence
-- Each message must feel like a standalone human message, not a follow-up template
-- Reference the lead's context ({{signal}}, {{company}}, {{title}}) naturally, not forcefully`;
+STYLE EXAMPLES:
+
+GOOD:
+"{{first_name}}, saw your post about scaling the sales team at {{company}}. We've been helping similar teams cut ramp time in half.
+
+Worth a quick chat?"
+
+GOOD:
+"Hey {{first_name}}, noticed {{company}} just raised a round. Congrats! We work with a few teams at that stage on outbound.
+
+Dealing with any hiring challenges right now?"
+
+BAD (too long, too fancy, uses em-dash):
+"I was truly fascinated to come across your remarkable insights regarding the intricacies of scaling — it's clear that you possess a deep understanding of the challenges that organizations face when navigating growth trajectories in today's competitive landscape."
+
+BAD (no question, wall of text):
+"Hi {{first_name}}, I wanted to reach out because I noticed your company is growing rapidly and I think our solution could really help streamline your operations and optimize your workflow to achieve better results across the board."`;
 
     let userPrompt = '';
     
-    // Build previous messages context
     const prevMsgsArray: string[] = Array.isArray(previousMessages) ? previousMessages : [];
     const historyBlock = prevMsgsArray.length > 0
-      ? `\nPREVIOUS MESSAGES SENT IN THIS CAMPAIGN (do NOT repeat or paraphrase these):\n${prevMsgsArray.map((m: string, i: number) => `Step ${i + 2}: "${m}"`).join('\n')}\n\nBuild naturally on the conversation above.`
+      ? `\nPREVIOUS MESSAGES (do NOT repeat these):\n${prevMsgsArray.map((m: string, i: number) => `Step ${i + 2}: "${m}"`).join('\n')}\n\nBuild on the conversation naturally.`
       : '';
 
     if (isFirstMessage) {
-      userPrompt = `Write the FIRST message to send after a LinkedIn connection was accepted (Step 2).
+      userPrompt = `Write the FIRST message after a LinkedIn connection was accepted (Step 2).
 
-This is the icebreaker. Reference {{signal}} — the buying intent signal that made us reach out to this lead. Make it feel personal, curious, and genuine. Ask a thoughtful question related to their signal or role.
+This is the icebreaker. Reference {{signal}}. Be curious. Ask one question about their work or signal.
 
-${previousStepMessage ? `The previous step was a connection request (no message was sent with it).` : ''}
+Keep it under 40 words. Two short paragraphs.
 
-Return ONLY the message text, nothing else.`;
+Return ONLY the message text.`;
     } else if (isLastStep) {
-      userPrompt = `Write a FINAL follow-up message (Step ${stepNumber}).${historyBlock}
+      userPrompt = `Write a FINAL follow-up (Step ${stepNumber}).${historyBlock}
 
-${previousStepMessage ? `The most recent message sent was:\n"${previousStepMessage}"\n\nThis follow-up should feel like a natural continuation.` : ''}
+${previousStepMessage ? `Last message sent:\n"${previousStepMessage}"` : ''}
 
-This is a short, low-pressure nudge. Acknowledge they're busy. ${campaignGoal === 'demos' ? 'Offer a specific low-commitment CTA (quick 10-min call).' : 'Keep the door open for future conversation without being pushy.'}
+Short, low-pressure nudge. Acknowledge they're busy. ${campaignGoal === 'demos' ? 'Offer a 10-min call.' : 'Keep the door open.'} Under 35 words.
 
-Return ONLY the message text, nothing else.`;
+Return ONLY the message text.`;
     } else {
-      userPrompt = `Write a follow-up message (Step ${stepNumber}).${historyBlock}
+      userPrompt = `Write a follow-up (Step ${stepNumber}).${historyBlock}
 
-${previousStepMessage ? `The most recent message sent was:\n"${previousStepMessage}"\n\nThis follow-up should feel like a natural continuation of that conversation.` : ''}
+${previousStepMessage ? `Last message sent:\n"${previousStepMessage}"` : ''}
 
-Build on the relationship. Reference a pain point relevant to {{title}} at {{company}}. Show you understand their world and challenges. Don't repeat what was said before.
+Reference a pain point relevant to {{title}} at {{company}}. Don't repeat previous messages. Under 45 words.
 
-Return ONLY the message text, nothing else.`;
+Return ONLY the message text.`;
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -144,9 +177,11 @@ Return ONLY the message text, nothing else.`;
     }
 
     const aiData = await response.json();
-    const message = aiData.choices?.[0]?.message?.content?.trim();
+    const rawMessage = aiData.choices?.[0]?.message?.content?.trim();
 
-    if (!message) throw new Error('No message generated');
+    if (!rawMessage) throw new Error('No message generated');
+
+    const message = sanitizeMessage(rawMessage);
 
     return new Response(JSON.stringify({ message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
