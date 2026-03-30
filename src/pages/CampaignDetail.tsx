@@ -469,15 +469,16 @@ export default function CampaignDetail() {
     // Reload connection request statuses for updated contact list
     const { data: connRequests } = await supabase
       .from("campaign_connection_requests" as any)
-      .select("contact_id, status, current_step")
+      .select("contact_id, status, current_step, step_completed_at, sent_at")
       .eq("campaign_id", campaign.id);
     if (connRequests) {
-      const statusMap: Record<string, { status: string; step: number }> = {};
+      const statusMap: Record<string, { status: string; step: number; updatedAt?: string }> = {};
       for (const cr of connRequests as any[]) {
         const isAccepted = cr.status === "accepted";
         statusMap[cr.contact_id] = {
           status: cr.status,
           step: isAccepted ? (cr.current_step || 1) : 0,
+          updatedAt: cr.step_completed_at || cr.sent_at || undefined,
         };
       }
       setContactStatuses(statusMap);
