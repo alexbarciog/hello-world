@@ -519,54 +519,26 @@ export default function CampaignDetail() {
     toast.success("Step added!");
   }
 
-  async function generateAiStepMessage(stepIndex: number) {
+  async function enableAiSdrForStep(stepIndex: number) {
     if (!campaign) return;
-    setGeneratingAiMessage(true);
     setEditModePickerStep(null);
-    setEditingStep(stepIndex);
 
     try {
-      const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
-      const stepNum = stepIndex + 2;
-      const previousStep = stepIndex > 0 ? nonInvSteps[stepIndex - 1] : null;
-      const previousMessage = previousStep?.message || "";
-
-      const { data, error } = await supabase.functions.invoke("generate-step-message", {
-        body: {
-          stepNumber: stepNum,
-          previousStepMessage: previousMessage,
-          companyName: campaign.company_name,
-          valueProposition: campaign.value_proposition,
-          painPoints: campaign.pain_points,
-          campaignGoal: campaign.campaign_goal || "conversations",
-          messageTone: campaign.message_tone || "professional",
-          industry: (campaign as any).industry || "",
-          language: (campaign as any).language || "",
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); setGeneratingAiMessage(false); return; }
-
-      const aiMessage = data?.message || "";
-      // Save directly to workflow
       const allSteps = [...workflowSteps];
       const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
       const actualIdx = nonInvMap[stepIndex]?.idx;
       if (actualIdx !== undefined) {
-        allSteps[actualIdx] = { ...allSteps[actualIdx], message: aiMessage, ai_icebreaker: true };
+        allSteps[actualIdx] = { ...allSteps[actualIdx], message: "", ai_icebreaker: true };
         const { error: updateErr } = await supabase.from("campaigns").update({ workflow_steps: allSteps as any } as any).eq("id", campaign.id);
-        if (updateErr) { toast.error("Failed to save AI message"); } else {
+        if (updateErr) { toast.error("Failed to save AI SDR mode"); } else {
           setCampaign({ ...campaign, workflow_steps: allSteps });
-          toast.success("AI message generated!");
+          toast.success("AI SDR enabled — each lead will receive a unique, personalized message at send time");
         }
       }
     } catch (e: any) {
-      console.error("AI message gen error:", e);
-      toast.error("Failed to generate AI message");
+      console.error("AI SDR enable error:", e);
+      toast.error("Failed to enable AI SDR");
     }
-    setGeneratingAiMessage(false);
-    setEditingStep(null);
   }
 
   const filteredContacts = useMemo(() => {
