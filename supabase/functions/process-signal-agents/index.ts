@@ -425,33 +425,23 @@ async function handleKeywordPosts(
 
     if (!authorData) continue;
 
-    const name = authorData.first_name || authorData.name || authorData.title || authorData.headline || '';
-    const nameParts = name.split(' ').filter(Boolean);
-    const profile: any = {
-      first_name: authorData.first_name || nameParts[0] || 'Unknown',
-      last_name: authorData.last_name || nameParts.slice(1).join(' ') || null,
-      headline: authorData.headline || authorData.occupation || authorData.title || null,
-      industry: authorData.industry || null,
-      location: authorData.location || authorData.geo_location || null,
-      company: authorData.company || authorData.current_company?.name || authorData.company_name || null,
-      public_id: authorData.public_identifier || authorData.public_id || authorData.vanity_name || authorId,
-      linkedin_url: authorData.profile_url || authorData.public_profile_url || authorData.url || (authorData.vanity_name ? `https://www.linkedin.com/in/${authorData.vanity_name}` : null),
-      provider_id: authorData.provider_id || authorId,
-    };
+    // Post search returns minimal author data — fetch full profile
+    const fullAuthor = await fetchProfileIfNeeded(authorData, accountId, apiKey, dsn);
+    if (!fullAuthor) continue;
 
-    const match = scoreProfileAgainstICP(profile, icp);
-    const hl = profile.headline || '';
+    const match = scoreProfileAgainstICP(fullAuthor, icp);
+    const hl = fullAuthor.headline || fullAuthor.title || '';
     const classification = classifyContact(match, icp, hl);
     if (!classification) {
-      console.log(`keyword_posts: REJECTED "${profile.first_name} ${profile.last_name || ''}" hl="${hl}" industry="${profile.industry || ''}" company="${profile.company || ''}" titleMatch=${match.titleMatch} score=${match.score}`);
+      console.log(`keyword_posts: SKIP "${fullAuthor.first_name || ''} ${fullAuthor.last_name || ''}" hl="${hl}"`);
       continue;
     }
-    if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+    if (isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
     const signal = `Posted about "${post._keyword}"`;
-    const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl, icp);
-    if (ok) { inserted++; console.log(`keyword_posts: +1 "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
+    const ok = await insertContact(supabase, fullAuthor, userId, agentId, listName, match, signal, postUrl, icp);
+    if (ok) { inserted++; console.log(`keyword_posts: +1 "${fullAuthor.first_name} ${fullAuthor.last_name || ''}" (${hl})`); }
 
     // Scan engagers on top 5 posts only (expensive)
     if (inserted <= 5) {
