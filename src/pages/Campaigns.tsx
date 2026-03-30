@@ -110,7 +110,7 @@ function CampaignCard({
         </div>
         <div className="flex items-center gap-2">
           <p className="text-xs text-md-on-surface-variant font-medium bg-md-surface-container px-2.5 py-0.5 rounded-full">
-            {c.campaign_goal === "demos" ? "Book demos" : "Start conversations"}
+            {c.campaign_goal === "demos" ? "Booking demos" : "Starting conversations"}
           </p>
           {c.status === "active" && (
             <div className="flex items-center gap-1">
