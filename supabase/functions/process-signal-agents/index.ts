@@ -468,7 +468,7 @@ async function handleKeywordPosts(
               const eMatch = scoreProfileAgainstICP(fullEngager, icp);
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
-              if (!matchesIndustry(fullEngager, eMatch, icp)) continue;
+              // For keyword engagers: the keyword IS the signal, no strict industry filter
               if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
               const eSignal = `Engaged with post about "${post._keyword}"`;
               const eOk = await insertContact(supabase, fullEngager, userId, agentId, listName, eMatch, eSignal, postUrl, icp);
