@@ -467,3 +467,66 @@ function jsonRes(payload: unknown, status = 200) {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
+
+// ── AI SDR prompt builders ──
+
+function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number): string {
+  const toneGuide: Record<string, string> = {
+    professional: 'Use a professional but warm tone. Be polished and respectful.',
+    conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer.',
+    direct: 'Be bold and confident. Get to the point quickly.',
+  };
+  const goalGuide: Record<string, string> = {
+    conversations: 'The goal is to start a genuine conversation. Don\'t push for a meeting.',
+    demos: 'The goal is to book a call or demo. Include a clear but non-pushy CTA.',
+  };
+
+  return `You are a world-class LinkedIn outreach copywriter writing a REAL message to a SPECIFIC person.
+
+TARGET PERSON:
+- Name: ${contact?.first_name || 'Unknown'} ${contact?.last_name || ''}
+- Title: ${contact?.title || 'Not specified'}
+- Company: ${contact?.company || 'Not specified'}
+- Buying Signal: ${contact?.signal || 'Not specified'}
+
+SENDER'S BUSINESS:
+- Company: ${campaign.company_name || 'Our company'}
+- Value Proposition: ${campaign.value_proposition || 'Not specified'}
+- Pain Points we solve: ${(campaign.pain_points || []).join('; ') || 'Not specified'}
+- Industry: ${campaign.industry || 'Not specified'}
+
+TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
+GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
+${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
+
+CRITICAL RULES:
+- Write 3-5 sentences MAX
+- This must feel like a genuine human message, NOT a template
+- Reference ${contact?.first_name || 'the person'}'s specific role, company, and buying signal naturally
+- DO NOT use generic openers like "I hope this finds you well" or "I came across your profile"
+- DO NOT mention AI, automation, or sequences
+- DO NOT start with "Hi ${contact?.first_name}" — vary your openings
+- Make this message UNIQUE to this person — it should NOT work for anyone else`;
+}
+
+function buildAiSdrUserPrompt(stepNumber: number, previousMessage: string, campaign: any, totalSteps: number): string {
+  const isFirst = stepNumber === 2;
+  const isLast = stepNumber >= totalSteps;
+
+  if (isFirst) {
+    return `Write the FIRST message after the LinkedIn connection was accepted (Step 2).
+This is the icebreaker. Reference the specific buying signal that made us reach out. Make it personal, curious, and genuine. Ask a thoughtful question.
+${previousMessage ? `The previous step was a connection request (no message sent).` : ''}
+Return ONLY the message text.`;
+  } else if (isLast) {
+    return `Write a FINAL follow-up message (Step ${stepNumber}).
+${previousMessage ? `Previous message sent: "${previousMessage}"` : ''}
+Short, low-pressure nudge. Acknowledge they're busy. ${campaign.campaign_goal === 'demos' ? 'Offer a quick 10-min call.' : 'Keep the door open.'}
+Return ONLY the message text.`;
+  } else {
+    return `Write a follow-up message (Step ${stepNumber}).
+${previousMessage ? `Previous message: "${previousMessage}"\nBuild naturally on that conversation.` : ''}
+Reference a pain point relevant to their role. Show you understand their challenges. Don't repeat previous content.
+Return ONLY the message text.`;
+  }
+}
