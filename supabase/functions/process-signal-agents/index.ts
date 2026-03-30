@@ -613,17 +613,16 @@ async function handleHashtagEngagement(
 async function handleCompetitorFollowers(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, urls: string[],
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   let inserted = 0;
-
-  for (const url of urls.slice(0, 5)) {
-    if (!hasTime()) break;
-    await delay(400);
+  for (const url of urls) {
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
     const companyName = extractCompanyName(url);
     if (!companyName) continue;
-
     console.log(`competitor_followers: searching "${companyName}"`);
-
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -634,22 +633,19 @@ async function handleCompetitorFollowers(
       const data = await res.json();
       const people = (data.items || data.results || []).slice(0, 30);
       console.log(`competitor_followers "${companyName}": ${people.length} people`);
-
       for (const person of people) {
-        if (!hasTime()) break;
+        if (!hasSignalTime(t0, budgetMs)) break;
         const profile = {
           ...person,
           title: person.headline || person.title || null,
           linkedin_url: person.profile_url || person.public_profile_url || null,
           public_id: person.public_identifier || person.id || null,
-          company: person.current_positions?.[0]?.company || null,
+          company: person.current_positions?.[0]?.company || person.company || null,
         };
-
         const match = scoreProfileAgainstICP(profile, icp);
         const hl = profile.headline || profile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
         const signal = `Follows ${companyName}`;
         const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, url, icp);
         if (ok) inserted++;
@@ -662,46 +658,40 @@ async function handleCompetitorFollowers(
 async function handleCompetitorPostEngagers(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, urls: string[],
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   let inserted = 0;
-
-  for (const url of urls.slice(0, 4)) {
-    if (!hasTime()) break;
-    await delay(400);
+  for (const url of urls) {
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
     const companyId = extractLinkedInId(url);
     const companyName = extractCompanyName(url);
     if (!companyId) continue;
-
     try {
       const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=5`, apiKey, dsn);
       if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
       const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-
       for (const post of posts) {
-        if (!hasTime()) break;
-        await delay(300);
+        if (!hasSignalTime(t0, budgetMs)) break;
+        await delay(150);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
-
         const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
         if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
         const engagers = (reactionsData.items || []).slice(0, 20);
-
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-
         for (const engager of engagers) {
-          if (!hasTime()) break;
+          if (!hasSignalTime(t0, budgetMs)) break;
           const profile = engager.author || engager;
           const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
           if (!fullProfile) continue;
-
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
           if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
           const signal = `Engaged with ${companyName || companyId}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
           if (ok) inserted++;
@@ -716,27 +706,24 @@ async function handleProfileEngagers(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string, profileUrls: string[],
   signalPrefix: string = 'Engaged with',
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   let inserted = 0;
-
-  for (const url of profileUrls.slice(0, 5)) {
-    if (!hasTime()) break;
-    await delay(300);
+  for (const url of profileUrls) {
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
     const profileId = extractLinkedInId(url);
     if (!profileId) continue;
-
     try {
-      // Check if it's a /in/ profile — do NOT use is_company
       const isCompany = url.includes('/company/');
       const postsEndpoint = isCompany
         ? `/api/v1/users/${profileId}/posts?account_id=${accountId}&is_company=true&limit=5`
         : `/api/v1/users/${profileId}/posts?account_id=${accountId}&limit=5`;
-
       const postsRes = await unipileGet(postsEndpoint, apiKey, dsn);
       if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
       const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-
       let profileName = profileId;
       if (!isCompany) {
         try {
@@ -749,33 +736,26 @@ async function handleProfileEngagers(
       } else {
         profileName = extractCompanyName(url) || profileId;
       }
-
       console.log(`profile_engagers "${profileName}": ${posts.length} posts found`);
-
       for (const post of posts) {
-        if (!hasTime()) break;
-        await delay(200);
+        if (!hasSignalTime(t0, budgetMs)) break;
+        await delay(150);
         const postId = post.social_id || post.id || post.provider_id;
         if (!postId) continue;
-
         const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
         if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
         const engagers = (reactionsData.items || []).slice(0, 20);
-
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-
         for (const engager of engagers) {
-          if (!hasTime()) break;
+          if (!hasSignalTime(t0, budgetMs)) break;
           const profile = engager.author || engager;
           const fullProfile = await fetchProfileIfNeeded(profile, accountId, apiKey, dsn);
           if (!fullProfile) continue;
-
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
           if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
           const signal = `${signalPrefix} ${profileName}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
           if (ok) inserted++;
@@ -786,31 +766,23 @@ async function handleProfileEngagers(
   return inserted;
 }
 
-// ─── Job Changes Handler ──────────────────────────────────────────────────────
-
 async function handleJobChanges(
   supabase: any, accountId: string, apiKey: string, dsn: string,
   icp: ICPFilters, userId: string, listName: string, agentId: string,
+  budgetMs: number = 30000,
 ): Promise<number> {
+  const t0 = Date.now();
   let inserted = 0;
-
-  // Search for people with job-change-related keywords combined with ICP titles
   const searchTerms: string[] = [];
   if (icp.jobTitles.length > 0) {
-    // Use ICP job titles as search terms
-    for (const title of icp.jobTitles.slice(0, 4)) {
-      searchTerms.push(title);
-    }
+    for (const title of icp.jobTitles.slice(0, 4)) searchTerms.push(title);
   } else {
     searchTerms.push('new role', 'just started', 'excited to announce');
   }
-
-  // Also search for keyword posts about job changes
-  const jobChangeKeywords = ['new role', 'just started', 'excited to join', 'new position', 'thrilled to announce', 'new chapter'];
-
+  const jobChangeKeywords = ['new role', 'just started', 'excited to join', 'new position', 'thrilled to announce'];
   for (const keyword of jobChangeKeywords.slice(0, 3)) {
-    if (!hasTime()) break;
-    await delay(300);
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -821,12 +793,10 @@ async function handleJobChanges(
       const data = await res.json();
       const posts = (data.items || data.results || []).slice(0, 10);
       console.log(`job_changes "${keyword}": ${posts.length} posts`);
-
       for (const post of posts) {
-        if (!hasTime()) break;
+        if (!hasSignalTime(t0, budgetMs)) break;
         const authorData = post.author || post.actor || post.author_detail;
         if (!authorData) continue;
-
         const name = authorData.first_name || authorData.name || authorData.title || '';
         const nameParts = name.split(' ').filter(Boolean);
         const profile: any = {
@@ -840,12 +810,10 @@ async function handleJobChanges(
           linkedin_url: authorData.profile_url || authorData.public_profile_url || authorData.url || null,
           provider_id: authorData.provider_id || post.author_id || null,
         };
-
         const match = scoreProfileAgainstICP(profile, icp);
         const hl = profile.headline || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
         const postUrl = post.url || post.share_url || post.permalink || null;
         const postText = post.text || post.commentary || '';
         const snippet = postText.length > 60 ? postText.slice(0, 57) + '...' : postText;
@@ -855,11 +823,9 @@ async function handleJobChanges(
       }
     } catch (e) { console.error(`Job changes "${keyword}":`, e); }
   }
-
-  // Also do a people search for ICP titles (recent job changers often update profiles)
   for (const title of searchTerms.slice(0, 3)) {
-    if (!hasTime()) break;
-    await delay(300);
+    if (!hasSignalTime(t0, budgetMs)) break;
+    await delay(150);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
@@ -870,9 +836,8 @@ async function handleJobChanges(
       const data = await res.json();
       const people = (data.items || data.results || []).slice(0, 15);
       console.log(`job_changes people "${title}": ${people.length} results`);
-
       for (const person of people) {
-        if (!hasTime()) break;
+        if (!hasSignalTime(t0, budgetMs)) break;
         const profile = {
           ...person,
           title: person.headline || person.title || null,
@@ -880,19 +845,16 @@ async function handleJobChanges(
           public_id: person.public_identifier || person.id || null,
           company: person.current_positions?.[0]?.company || person.company || null,
         };
-
         const match = scoreProfileAgainstICP(profile, icp);
         const hl = profile.headline || profile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
         if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-
         const signal = `ICP match: ${title}`;
         const ok = await insertContact(supabase, profile, userId, agentId, listName, match, signal, profile.linkedin_url, icp);
         if (ok) inserted++;
       }
     } catch (e) { console.error(`Job changes people "${title}":`, e); }
   }
-
   return inserted;
 }
 
