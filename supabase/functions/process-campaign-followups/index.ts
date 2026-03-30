@@ -438,7 +438,16 @@ async function processCampaign(
           if (existing) continue;
 
           console.log(`[followup][catch-up] Generating message for contact ${req.contact_id}, wfIdx ${nextWfIdx}`);
-          const gen = await generateNextStepMessage(supabase, campaign, req, nextWfIdx, workflowSteps, lovableApiKey);
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            nextWfIdx,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
           if (gen) generatedCount++;
         } catch (err) {
           console.error(`[followup][catch-up] error for ${req.contact_id}:`, err);
