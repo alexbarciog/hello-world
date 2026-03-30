@@ -133,7 +133,7 @@ async function processCampaignMessages(
             body: JSON.stringify({
               model: 'google/gemini-3-flash-preview',
               messages: [
-                { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length) },
+                { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length, nextStep.step_instructions) },
                 { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousMsgHistory, campaign, workflowSteps.length) },
               ],
             }),
