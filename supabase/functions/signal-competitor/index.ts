@@ -206,8 +206,10 @@ Deno.serve(async (req) => {
                 if (!matchesTitleOrIndustry(match, icp, hl)) continue;
                 if (!matchesIndustry(fp, match, icp)) continue;
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+                const cls2 = classifyContact(match, icp, hl);
+                if (cls2 === 'cold' && !canInsertCold()) continue;
                 const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${profileName}'s content`, postUrl, icp);
-                if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+                if (ok) { inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
               }
             }
           } catch(e) { console.error(`Profile engagers ${url}:`, e); }
