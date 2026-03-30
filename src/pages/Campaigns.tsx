@@ -108,16 +108,16 @@ function CampaignCard({
           </h3>
           <StatusBadge status={c.status} />
         </div>
-        <div className="flex items-center gap-2">
-          <p className="text-xs text-md-on-surface-variant font-medium bg-md-surface-container px-2.5 py-0.5 rounded-full">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-500">
+          <p className="text-xs text-emerald-600 font-medium">
             {c.campaign_goal === "demos" ? "Booking demos" : "Starting conversations"}
           </p>
           {c.status === "active" && (
-            <div className="flex items-center gap-1">
+            <>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: "150ms" }} />
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ animationDelay: "300ms" }} />
-            </div>
+            </>
           )}
         </div>
       </div>
