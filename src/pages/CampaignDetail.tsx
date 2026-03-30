@@ -153,6 +153,9 @@ export default function CampaignDetail() {
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
+  const [newStepInstructions, setNewStepInstructions] = useState("");
+  const [editStepInstructionsIdx, setEditStepInstructionsIdx] = useState<number | null>(null);
+  const [editStepInstructionsText, setEditStepInstructionsText] = useState("");
 
   
   const [settingsGoal, setSettingsGoal] = useState("");
@@ -500,6 +503,7 @@ export default function CampaignDetail() {
     setNewStepMessage("");
     setNewStepDelay(1);
     setNewStepMessageMode("manual");
+    setNewStepInstructions("");
     setAddStepPhase("choose");
     setAddStepOpen(true);
   }
@@ -543,6 +547,7 @@ export default function CampaignDetail() {
       message: newStepMessageMode === "ai" ? "" : newStepMessage,
       delay_days: newStepDelay,
       ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
+      ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
     };
     const updated = [...workflowSteps, newStep];
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
@@ -572,6 +577,27 @@ export default function CampaignDetail() {
       console.error("AI SDR enable error:", e);
       toast.error("Failed to enable AI SDR");
     }
+  }
+
+  function openEditStepInstructions(stepIndex: number) {
+    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+    const step = nonInvSteps[stepIndex];
+    setEditStepInstructionsText(step?.step_instructions || "");
+    setEditStepInstructionsIdx(stepIndex);
+  }
+
+  async function saveStepInstructions() {
+    if (!campaign || editStepInstructionsIdx === null) return;
+    const allSteps = [...workflowSteps];
+    const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const actualIdx = nonInvMap[editStepInstructionsIdx]?.idx;
+    if (actualIdx === undefined) return;
+    allSteps[actualIdx] = { ...allSteps[actualIdx], step_instructions: editStepInstructionsText.trim() || undefined };
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: allSteps as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to save instructions"); return; }
+    setCampaign({ ...campaign, workflow_steps: allSteps });
+    setEditStepInstructionsIdx(null);
+    toast.success("Step instructions saved!");
   }
 
   const filteredContacts = useMemo(() => {
@@ -908,6 +934,12 @@ export default function CampaignDetail() {
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">Active</span>
                                       </div>
                                       <p className="text-[11px] text-muted-foreground leading-relaxed">Each lead will receive a unique AI-generated message based on their role, company, signal & your business context.</p>
+                                      {ws.step_instructions && (
+                                        <div className="mt-2 p-2 bg-muted/40 rounded-lg border border-border">
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Custom Instructions:</p>
+                                          <p className="text-[11px] text-foreground leading-relaxed line-clamp-2">{ws.step_instructions}</p>
+                                        </div>
+                                      )}
                                     </div>
                                   ) : ws.message ? (
                                     <div>
@@ -925,6 +957,11 @@ export default function CampaignDetail() {
 
                                   <div className="flex gap-2 mt-3 pt-2 border-t border-border">
                                     <button className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">View Contacts</button>
+                                    {ws.ai_icebreaker && (
+                                      <button onClick={() => openEditStepInstructions(i)} className="text-xs font-medium text-amber-600 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors flex-1">
+                                        <span className="flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Instructions</span>
+                                      </button>
+                                    )}
                                     <button onClick={() => setEditModePickerStep(i)} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors flex-1">Edit</button>
                                   </div>
                                 </>
@@ -1049,7 +1086,18 @@ export default function CampaignDetail() {
                               <Sparkles className="w-4 h-4 text-amber-500" />
                               <span className="text-sm font-bold text-foreground">AI-Personalized Message</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">Each lead will receive a unique, personalized message generated by AI based on their profile, company, and signal data.</p>
+                            <p className="text-xs text-muted-foreground mb-3">Each lead will receive a unique, personalized message generated by AI based on their profile, company, and signal data.</p>
+                            <div className="mt-2">
+                              <label className="text-xs font-semibold text-foreground mb-1.5 block">Custom Instructions (optional)</label>
+                              <textarea
+                                value={newStepInstructions}
+                                onChange={(e) => setNewStepInstructions(e.target.value)}
+                                className="w-full min-h-[80px] text-xs border border-border rounded-lg p-2.5 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                                placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
+                                maxLength={500}
+                              />
+                              <p className="text-[10px] text-muted-foreground mt-1">{newStepInstructions.length}/500 — These instructions will guide the AI for this specific step only.</p>
+                            </div>
                           </div>
                         )}
 
@@ -1132,6 +1180,30 @@ export default function CampaignDetail() {
                         </p>
                       </div>
                     </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Edit Step Instructions Dialog */}
+              <Dialog open={editStepInstructionsIdx !== null} onOpenChange={(open) => { if (!open) setEditStepInstructionsIdx(null); }}>
+                <DialogContent className="sm:max-w-[480px] p-6 gap-0">
+                  <DialogHeader className="mb-4">
+                    <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" /> AI Step Instructions
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground">Add custom instructions for Step {(editStepInstructionsIdx ?? 0) + 2}. These will guide the AI when generating messages for this specific step.</p>
+                  </DialogHeader>
+                  <textarea
+                    value={editStepInstructionsText}
+                    onChange={(e) => setEditStepInstructionsText(e.target.value)}
+                    className="w-full min-h-[100px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                    placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
+                    maxLength={500}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1 mb-4">{editStepInstructionsText.length}/500</p>
+                  <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                    <button onClick={() => setEditStepInstructionsIdx(null)} className="text-sm font-medium text-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">Cancel</button>
+                    <button onClick={saveStepInstructions} className="text-sm font-bold text-white bg-primary rounded-lg px-5 py-2 hover:bg-primary/90 transition-colors">Save</button>
                   </div>
                 </DialogContent>
               </Dialog>
