@@ -218,6 +218,8 @@ export default function CampaignDetail() {
   const [settingsLanguage, setSettingsLanguage] = useState("English");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
+  const [settingsConversationalAi, setSettingsConversationalAi] = useState(false);
+  const [settingsMaxAiReplies, setSettingsMaxAiReplies] = useState(5);
   const [savingSettings, setSavingSettings] = useState(false);
   const [savedAnimation, setSavedAnimation] = useState(false);
 
