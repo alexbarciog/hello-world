@@ -319,7 +319,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`signal-keyword-posts: ${inserted} leads total (${Math.round((Date.now() - START) / 1000)}s)`);
+    console.log(`signal-keyword-posts: ${inserted} leads (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-keyword-posts error:', error);
