@@ -444,7 +444,7 @@ async function handleHashtagEngagement(
       });
       if (!res.ok) { await res.text(); continue; }
       const data = await res.json();
-      const items = (data.items || data.results || []).slice(0, 8);
+      const items = (data.items || data.results || []).slice(0, 15);
       console.log(`hashtag "${tag}": ${items.length} posts`);
       for (const item of items) allPosts.push({ ...item, _hashtag: tag });
     } catch (e) { console.error(`Hashtag "${tag}":`, e); }
@@ -452,19 +452,19 @@ async function handleHashtagEngagement(
 
   const topPosts = allPosts
     .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-    .slice(0, 5);
+    .slice(0, 10);
 
   for (const post of topPosts) {
     if (!hasTime()) break;
-    await delay(500);
+    await delay(300);
     const postId = post.social_id || post.id || post.provider_id;
     if (!postId) continue;
 
     try {
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
       if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 8);
+      const engagers = (reactionsData.items || []).slice(0, 20);
 
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
 
