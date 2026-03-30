@@ -389,7 +389,7 @@ export default function CampaignsPage() {
                   ? "ring-[3px] ring-inset ring-white/30"
                   : "bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-md-outline-variant/20 hover:border-md-primary/30 hover:shadow-lg hover:shadow-md-primary/5"
               }`}
-              style={isFeatured ? { background: 'linear-gradient(to top, #212121, #444A4A)' } : undefined}
+              style={isFeatured ? { background: 'linear-gradient(to top, #6A9BFE, #D0E0FF)' } : undefined}
             >
               <div className="relative z-10 p-5 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
