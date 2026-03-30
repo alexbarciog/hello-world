@@ -194,7 +194,16 @@ async function processCampaign(
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
           const wfIdx = getNextWorkflowIndex(1, workflowSteps);
-          const gen = await generateNextStepMessage(supabase, campaign, req, wfIdx, workflowSteps, lovableApiKey);
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            wfIdx,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
           if (gen) generatedCount++;
         }
 
