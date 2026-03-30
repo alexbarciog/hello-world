@@ -188,17 +188,73 @@ export default function CampaignsPage() {
     const withCounts: CampaignWithLeads[] = await Promise.all(
       rows.map(async (c) => {
         let leadsCount = 0;
+        let sentCount = 0;
+        let acceptedCount = 0;
+
         if (c.source_list_id) {
-          const { count } = await supabase.from("contact_lists").select("id", { count: "exact", head: true }).eq("list_id", c.source_list_id);
-          leadsCount = count ?? 0;
+          const { data: listLinks } = await supabase
+            .from("contact_lists")
+            .select("contact_id")
+            .eq("list_id", c.source_list_id);
+
+          const contactIds = (listLinks || []).map((link: any) => link.contact_id);
+          leadsCount = contactIds.length;
+
+          if (contactIds.length > 0) {
+            const { count: sentForList } = await supabase
+              .from("campaign_connection_requests" as any)
+              .select("id", { count: "exact", head: true })
+              .eq("campaign_id", c.id)
+              .in("contact_id", contactIds)
+              .in("status", ["sent", "accepted"]);
+
+            const { count: acceptedForList } = await supabase
+              .from("campaign_connection_requests" as any)
+              .select("id", { count: "exact", head: true })
+              .eq("campaign_id", c.id)
+              .in("contact_id", contactIds)
+              .eq("status", "accepted");
+
+            sentCount = sentForList ?? 0;
+            acceptedCount = acceptedForList ?? 0;
+          }
         } else if (c.source_agent_id) {
-          const { data: agentData } = await supabase.from("signal_agents").select("leads_list_name").eq("id", c.source_agent_id).single();
+          const { data: agentData } = await supabase
+            .from("signal_agents")
+            .select("leads_list_name")
+            .eq("id", c.source_agent_id)
+            .single();
+
           if (agentData?.leads_list_name) {
-            const { count } = await supabase.from("contacts").select("id", { count: "exact", head: true }).eq("list_name", agentData.leads_list_name);
+            const { count } = await supabase
+              .from("contacts")
+              .select("id", { count: "exact", head: true })
+              .eq("list_name", agentData.leads_list_name);
             leadsCount = count ?? 0;
           }
+
+          const { count: sentForCampaign } = await supabase
+            .from("campaign_connection_requests" as any)
+            .select("id", { count: "exact", head: true })
+            .eq("campaign_id", c.id)
+            .in("status", ["sent", "accepted"]);
+
+          const { count: acceptedForCampaign } = await supabase
+            .from("campaign_connection_requests" as any)
+            .select("id", { count: "exact", head: true })
+            .eq("campaign_id", c.id)
+            .eq("status", "accepted");
+
+          sentCount = sentForCampaign ?? 0;
+          acceptedCount = acceptedForCampaign ?? 0;
         }
-        return { ...c, leadsCount };
+
+        return {
+          ...c,
+          leadsCount,
+          invitations_sent: sentCount,
+          invitations_accepted: acceptedCount,
+        };
       })
     );
     setCampaigns(withCounts);
