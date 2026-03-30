@@ -489,12 +489,13 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({
       campaign_goal: settingsGoal,
       message_tone: settingsTone,
+      language: settingsLanguage,
       custom_training: settingsCustomTraining || null,
       daily_connect_limit: settingsDailyLimit,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
