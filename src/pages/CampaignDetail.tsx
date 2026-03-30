@@ -1342,7 +1342,7 @@ export default function CampaignDetail() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-border">
-                        {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "REVIEW"].map((h) => (
+                        {["CONTACT", "SIGNAL", "SCORE", "STATUS", "IMPORTED", "LAST ACTION"].map((h) => (
                           <th key={h} className="text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 py-3">{h}</th>
                         ))}
                       </tr>
@@ -1415,7 +1415,16 @@ export default function CampaignDetail() {
                                 </span>
                               </td>
                               <td className="px-3 py-3">
-                                <button className="text-xs font-medium text-red-600 border border-red-200 bg-red-50 rounded-lg px-3 py-1 hover:bg-red-100 transition-colors">Reject</button>
+                                {(() => {
+                                  const cs = contactStatuses[c.id];
+                                  if (!cs) return <span className="text-xs text-muted-foreground">—</span>;
+                                  const steps = campaign?.workflow_steps as any[] || [];
+                                  const stepIdx = (cs.step || 1) - 1;
+                                  const stepLabel = stepIdx === 0 ? "Invitation sent" : `Step ${cs.step} message`;
+                                  const stepType = steps[stepIdx]?.type;
+                                  const icon = stepType === "invitation" ? "📨" : "💬";
+                                  return <span className="text-xs text-muted-foreground">{icon} {stepLabel}</span>;
+                                })()}
                               </td>
                             </tr>
                           );
