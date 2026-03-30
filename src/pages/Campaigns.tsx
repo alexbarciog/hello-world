@@ -124,7 +124,7 @@ function CampaignCard({
         </div>
         <div>
           <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Connect</p>
-          <p className="text-lg font-light text-md-primary">{acceptRate}%</p>
+          <p className="text-lg text-md-primary font-semibold">{acceptRate}%</p>
         </div>
         <div>
           <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Reply</p>
