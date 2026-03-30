@@ -48,6 +48,7 @@ type CampaignFull = {
   messages_replied: number;
   daily_connect_limit: number;
   custom_training: string | null;
+  language: string | null;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
@@ -161,6 +162,7 @@ export default function CampaignDetail() {
   const [settingsGoal, setSettingsGoal] = useState("");
   const [settingsTone, setSettingsTone] = useState("");
   const [settingsCustomTraining, setSettingsCustomTraining] = useState("");
+  const [settingsLanguage, setSettingsLanguage] = useState("English");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -183,6 +185,7 @@ export default function CampaignDetail() {
     setCampaign(c);
     setSettingsGoal(c.campaign_goal || "conversations");
     setSettingsTone(c.message_tone || "professional");
+    setSettingsLanguage(c.language || "English");
     setSettingsCustomTraining((c as any).custom_training || "");
     setSettingsDailyLimit((c as any).daily_connect_limit || 25);
 
@@ -486,12 +489,13 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({
       campaign_goal: settingsGoal,
       message_tone: settingsTone,
+      language: settingsLanguage,
       custom_training: settingsCustomTraining || null,
       daily_connect_limit: settingsDailyLimit,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
@@ -1649,6 +1653,31 @@ export default function CampaignDetail() {
                                   <p className="text-sm font-bold text-foreground">{t.label}</p>
                                   <p className="text-xs text-muted-foreground">{t.desc}</p>
                                 </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Language */}
+                      <div>
+                        <p className="text-sm font-bold text-foreground mb-2.5">Language</p>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                          {["English", "Spanish", "French", "German", "Portuguese", "Italian", "Dutch", "Polish", "Swedish", "Romanian"].map((lang) => (
+                            <button
+                              key={lang}
+                              onClick={() => setSettingsLanguage(lang)}
+                              className={`text-left px-3 py-2.5 rounded-xl border-2 transition-all hover:scale-[1.01] ${
+                                settingsLanguage === lang
+                                  ? "border-foreground bg-foreground/5 shadow-sm"
+                                  : "border-border hover:bg-muted/50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-colors ${settingsLanguage === lang ? "border-foreground" : "border-muted-foreground/40"}`}>
+                                  {settingsLanguage === lang && <div className="w-1.5 h-1.5 rounded-full bg-foreground" />}
+                                </div>
+                                <p className="text-sm font-medium text-foreground">{lang}</p>
                               </div>
                             </button>
                           ))}
