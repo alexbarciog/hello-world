@@ -378,8 +378,8 @@ export default function CampaignsPage() {
         map((stat) =>
         <div key={stat.label} className="glass-card rounded-2xl p-6 ghost-border flex flex-col justify-between">
               <div className="flex justify-between items-start mb-4">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5 text-md-primary" />
+                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
+                  <stat.icon className="w-4 h-4 text-md-primary" />
                 </div>
               </div>
               <div>
