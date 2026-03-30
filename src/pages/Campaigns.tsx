@@ -384,7 +384,7 @@ export default function CampaignsPage() {
               </div>
               <div>
                 <p className="text-md-on-surface-variant text-sm mb-1 font-semibold">{stat.label}</p>
-                <p className="text-2xl font-headline tracking-tight text-md-on-surface">{stat.value}</p>
+                <p className="text-2xl font-headline tracking-tight text-md-on-surface font-semibold">{stat.value}</p>
               </div>
             </div>
         )}
