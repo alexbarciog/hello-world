@@ -117,6 +117,9 @@ Deno.serve(async (req) => {
     };
 
     let inserted = 0;
+    let hotWarmCount = 0; let coldCount = 0;
+    const COLD_CAP = 0.2;
+    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
     // Resolve user's LinkedIn ID if not provided
     let userLiId = linkedin_id;
@@ -161,9 +164,11 @@ Deno.serve(async (req) => {
             const hl = fullProfile.headline || fullProfile.title || '';
             if (!matchesTitleOrIndustry(match, icp, hl)) continue;
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+            const cls = classifyContact(match, icp, hl);
+            if (cls === 'cold' && !canInsertCold()) continue;
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
             const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
-            if (ok) { inserted++; console.log(`+1 "${fullProfile.first_name} ${fullProfile.last_name||''}" (${hl})`); }
+            if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
         }
       } else { await postsRes.text(); console.log('post_engagers: failed to fetch own posts'); }
@@ -207,8 +212,10 @@ Deno.serve(async (req) => {
               const hl = fp.headline||fp.title||'';
               if (!matchesTitleOrIndustry(match, icp, hl)) continue;
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const cls2 = classifyContact(match, icp, hl);
+              if (cls2 === 'cold' && !canInsertCold()) continue;
               const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp);
-              if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+              if (ok) { inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }
           }
         } catch(e) { console.error(`Profile engagers ${url}:`, e); }

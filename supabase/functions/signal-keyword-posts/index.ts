@@ -218,6 +218,10 @@ Deno.serve(async (req) => {
 
     console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}]`);
     let inserted = 0;
+    let hotWarmCount = 0;
+    let coldCount = 0;
+    const COLD_CAP = 0.2; // max 20% cold leads
+    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
     // Phase 1: Search posts for ALL keywords (use 40% of time)
@@ -269,10 +273,11 @@ Deno.serve(async (req) => {
         const classification = classifyContact(match, icp, hl);
         console.log(`[DEBUG] Match: score=${match.score}, fields=[${match.matchedFields}], classify=${classification}, titleMatch=${match.titleMatch}, industryMatch=${match.industryMatch}, excluded=${isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)}`);
         if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
+          if (classification === 'cold' && !canInsertCold()) continue;
           const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
           const signal = `Posted about "${post._keyword}"`;
           const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
-          if (ok) { inserted++; console.log(`+1 author "${fullAuthor.first_name} ${fullAuthor.last_name || ''}" (${hl})`); }
+          if (ok) { inserted++; if (classification === 'cold') coldCount++; else hotWarmCount++; }
         }
       }
 
@@ -302,17 +307,19 @@ Deno.serve(async (req) => {
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
               if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const eClass = classifyContact(eMatch, icp, eHl);
+              if (eClass === 'cold' && !canInsertCold()) continue;
               const eSignal = `Engaged with post about "${post._keyword}"`;
               const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
               const eOk = await insertContact(supabase, fullEngager, user_id, agent_id, list_name, eMatch, eSignal, postUrl, icp);
-              if (eOk) inserted++;
+              if (eOk) { inserted++; if (eClass === 'cold') coldCount++; else hotWarmCount++; }
             }
           } else { await reactionsRes.text(); }
         } catch (e) { console.error('engager scan:', e); }
       }
     }
 
-    console.log(`signal-keyword-posts: ${inserted} leads total (${Math.round((Date.now() - START) / 1000)}s)`);
+    console.log(`signal-keyword-posts: ${inserted} leads (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-keyword-posts error:', error);

@@ -134,6 +134,9 @@ Deno.serve(async (req) => {
     };
 
     let inserted = 0;
+    let hotWarmCount = 0; let coldCount = 0;
+    const COLD_CAP = 0.2;
+    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
     if (signal_type === 'competitor_followers') {
       // Search people associated with each competitor
@@ -164,8 +167,10 @@ Deno.serve(async (req) => {
               if (!matchesTitleOrIndustry(match, icp, hl)) continue;
               if (!matchesIndustry(profile, match, icp)) continue;
               if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const cls = classifyContact(match, icp, hl);
+              if (cls === 'cold' && !canInsertCold()) continue;
               const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
-              if (ok) { inserted++; console.log(`+1 "${profile.first_name} ${profile.last_name||''}" (${hl})`); }
+              if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
             }
           } catch (e) { console.error(`Competitor followers ${url}:`, e); }
         }
@@ -201,8 +206,10 @@ Deno.serve(async (req) => {
                 if (!matchesTitleOrIndustry(match, icp, hl)) continue;
                 if (!matchesIndustry(fp, match, icp)) continue;
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+                const cls2 = classifyContact(match, icp, hl);
+                if (cls2 === 'cold' && !canInsertCold()) continue;
                 const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${profileName}'s content`, postUrl, icp);
-                if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+                if (ok) { inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
               }
             }
           } catch(e) { console.error(`Profile engagers ${url}:`, e); }
@@ -248,9 +255,11 @@ Deno.serve(async (req) => {
               if (!matchesTitleOrIndustry(match, icp, hl)) continue;
               if (!matchesIndustry(fp, match, icp)) continue;
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const cls3 = classifyContact(match, icp, hl);
+              if (cls3 === 'cold' && !canInsertCold()) continue;
               const signal = `Engaged with ${companyName||companyId}'s post`;
               const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, postUrl, icp);
-              if (ok) { inserted++; console.log(`+1 "${fp.first_name} ${fp.last_name||''}" (${hl})`); }
+              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; }
             }
           }
         } catch(e) { console.error(`Competitor engagers ${url}:`, e); }

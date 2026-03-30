@@ -142,6 +142,9 @@ Deno.serve(async (req) => {
     };
 
     let inserted = 0;
+    let hotWarmCount = 0; let coldCount = 0;
+    const COLD_CAP = 0.2;
+    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
     // Phase 1: Search posts for all hashtags
@@ -192,9 +195,11 @@ Deno.serve(async (req) => {
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
           if (!matchesIndustry(fullProfile, match, icp)) continue;
           if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+          const cls = classifyContact(match, icp, hl);
+          if (cls === 'cold' && !canInsertCold()) continue;
           const signal = `Engaged with ${post._hashtag}`;
           const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
-          if (ok) { inserted++; console.log(`+1 "${fullProfile.first_name} ${fullProfile.last_name||''}" (${hl})`); }
+          if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
         }
       } catch (e) { console.error('Hashtag engager fetch:', e); }
     }
