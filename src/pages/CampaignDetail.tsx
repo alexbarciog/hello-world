@@ -143,8 +143,9 @@ export default function CampaignDetail() {
     isAi: boolean;
     scheduledDate: string;
     status: string;
-    scheduledMsgId?: string; // ID from scheduled_messages table
+    scheduledMsgId?: string;
     editedByUser?: boolean;
+    contactLinkedinUrl?: string;
   };
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
