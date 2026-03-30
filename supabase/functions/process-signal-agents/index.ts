@@ -394,16 +394,16 @@ async function handleKeywordPosts(
     const ok = await insertContact(supabase, { ...profile, _post: post }, userId, agentId, listName, match, signal, postUrl, icp);
     if (ok) { inserted++; console.log(`keyword_posts: +1 "${profile.first_name} ${profile.last_name || ''}" (${hl})`); }
 
-    // Scan engagers on top 3 posts only (to save time)
-    if (inserted <= 3) {
+    // Scan engagers on posts
+    {
       const postId = post.social_id || post.id || post.provider_id;
       if (postId && hasTime()) {
         try {
-          await delay(500);
-          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=10`, apiKey, dsn);
+          await delay(300);
+          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
           if (reactionsRes.ok) {
             const reactionsData = await reactionsRes.json();
-            const engagers = (reactionsData.items || []).slice(0, 8);
+            const engagers = (reactionsData.items || []).slice(0, 20);
             for (const engager of engagers) {
               if (!hasTime()) break;
               const engagerProfile = engager.author || engager;
