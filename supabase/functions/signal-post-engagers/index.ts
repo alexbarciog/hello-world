@@ -117,6 +117,9 @@ Deno.serve(async (req) => {
     };
 
     let inserted = 0;
+    let hotWarmCount = 0; let coldCount = 0;
+    const COLD_CAP = 0.2;
+    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
     // Resolve user's LinkedIn ID if not provided
     let userLiId = linkedin_id;
