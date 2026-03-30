@@ -476,6 +476,7 @@ export default function CampaignDetail() {
           contactTitle: contact.title || "",
           contactCompany: contact.company || "",
           contactSignal: contact.signal || "",
+          contactLinkedinUrl: contact.linkedin_url || "",
           currentStep,
           nextStepNum: currentStep + 1,
           message: msgPreview,
