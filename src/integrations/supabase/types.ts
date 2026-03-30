@@ -82,6 +82,7 @@ export type Database = {
           country: string | null
           created_at: string
           current_step: number | null
+          custom_training: string | null
           daily_connect_limit: number
           description: string | null
           discovery_keywords: string[] | null
@@ -131,6 +132,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_step?: number | null
+          custom_training?: string | null
           daily_connect_limit?: number
           description?: string | null
           discovery_keywords?: string[] | null
@@ -180,6 +182,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           current_step?: number | null
+          custom_training?: string | null
           daily_connect_limit?: number
           description?: string | null
           discovery_keywords?: string[] | null

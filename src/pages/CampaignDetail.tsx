@@ -1546,6 +1546,19 @@ export default function CampaignDetail() {
                           ))}
                         </div>
                       </div>
+
+                      {/* Custom AI Training */}
+                      <div>
+                        <p className="text-sm font-bold text-foreground mb-1">Custom AI Training <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
+                        <p className="text-xs text-muted-foreground mb-2.5">Give your AI SDR extra guidance — tone nuances, things to mention or avoid, specific instructions.</p>
+                        <textarea
+                          value={settingsCustomTraining}
+                          onChange={(e) => setSettingsCustomTraining(e.target.value)}
+                          placeholder="e.g. Always mention our free trial. Don't use emojis. Reference their recent LinkedIn posts when possible..."
+                          rows={4}
+                          className="flex w-full rounded-xl border-2 border-border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                        />
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </div>
