@@ -376,7 +376,13 @@ export default function Contacts() {
                       <td className="px-3 py-3">
                         {(() => {
                           const action = lastActions[c.id];
-                          if (!action) return <span className="text-xs text-muted-foreground">—</span>;
+                          if (!action) return (
+                            <div className="flex items-center gap-1.5">
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="text-xs font-medium text-muted-foreground">Lead added</span>
+                              <span className="text-[10px] text-muted-foreground">{timeAgo(c.imported_at)}</span>
+                            </div>
+                          );
                           const statusConfig: Record<string, { label: string; icon: typeof Send; color: string }> = {
                             pending: { label: "Invite sent", icon: Send, color: "text-blue-500" },
                             accepted: { label: "Accepted", icon: UserCheck, color: "text-emerald-500" },
