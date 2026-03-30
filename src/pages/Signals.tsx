@@ -338,29 +338,58 @@ export default function Signals() {
 
       {/* Active Agent Card */}
       {activeAgent && (
-        <div className="border border-gray-200 rounded-xl p-4 md:p-5 mb-5 max-w-md">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-              <Radio className="w-4 h-4 text-gray-500" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                <span className="font-semibold text-sm text-gray-900">{activeAgent.name}</span>
-                <span className="text-[11px] font-semibold text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">Active</span>
+        <div className="rounded-2xl border border-border bg-card shadow-sm p-5 md:p-6 mb-5 max-w-lg">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-md">
+                <Radio className="w-4.5 h-4.5 text-white" />
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">{timeAgo(activeAgent.last_launched_at || activeAgent.created_at)}</p>
+              <div>
+                <h3 className="font-bold text-foreground text-sm leading-tight">{activeAgent.name}</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Started {timeAgo(activeAgent.last_launched_at || activeAgent.created_at)}</p>
+              </div>
+            </div>
+            <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Active
+            </span>
+          </div>
+
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Type</p>
+              <p className="text-xs font-semibold text-foreground">{AGENT_TYPE_LABELS[activeAgent.agent_type] || activeAgent.agent_type}</p>
+            </div>
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Results</p>
+              <p className="text-xs font-semibold text-foreground">{activeAgent.results_count} leads found</p>
             </div>
           </div>
-          <div className="space-y-1 text-sm text-gray-700 mb-3">
-            <p><span className="font-medium">Type:</span> {AGENT_TYPE_LABELS[activeAgent.agent_type] || activeAgent.agent_type}</p>
-            <p><span className="font-medium">Keyword:</span>{" "}{activeAgent.keywords?.length ? activeAgent.keywords.map((k) => `"${k}"`).join(" OR ") : "No keywords set"}</p>
+
+          {/* Keywords */}
+          <div className="rounded-lg bg-muted/50 px-3 py-2.5 mb-4">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1.5">Keywords</p>
+            <div className="flex flex-wrap gap-1.5">
+              {activeAgent.keywords?.length ? activeAgent.keywords.map((k, idx) => (
+                <span key={idx} className="text-[11px] font-medium text-foreground bg-background border border-border rounded-full px-2 py-0.5">
+                  {k}
+                </span>
+              )) : (
+                <span className="text-[11px] text-muted-foreground italic">No keywords set</span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-            <span className="text-xs text-gray-500 ml-1">Hunting for high-quality leads...</span>
+
+          {/* Status bar */}
+          <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
+            <div className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse [animation-delay:0.2s]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse [animation-delay:0.4s]" />
+            </div>
+            <span className="text-xs font-medium text-emerald-700">Hunting for high-quality leads...</span>
           </div>
         </div>
       )}
