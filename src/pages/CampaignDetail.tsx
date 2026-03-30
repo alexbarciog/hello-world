@@ -1455,6 +1455,19 @@ export default function CampaignDetail() {
                                   return <span className={`inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{stepLabel}</span>;
                                 })()}
                               </td>
+                              <td className="px-3 py-3">
+                                {(() => {
+                                  const cs = contactStatuses[c.id];
+                                  const steps = workflowSteps as any[];
+                                  const currentStep = cs?.step || 0;
+                                  const nextStepIdx = currentStep; // next step index in workflow array
+                                  if (nextStepIdx >= steps.length) {
+                                    return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">✓ Completed</span>;
+                                  }
+                                  const nextLabel = nextStepIdx === 0 ? "Step 1 — Invitation" : `Step ${nextStepIdx + 1} — Message`;
+                                  return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-primary/10 text-primary ring-1 ring-primary/20">{nextLabel}</span>;
+                                })()}
+                              </td>
                             </tr>
                           );
                         })
