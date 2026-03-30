@@ -2360,14 +2360,13 @@ export default function CampaignDetail() {
                 const perRun = Math.max(1, Math.floor(dailyLimit / 5));
                 const pastRuns: { date: string; time: string; label: string; sent: number; status: string; emoji: string }[] = [];
 
-                runSlots.forEach((slot, idx) => {
+                runSlots.forEach((slot) => {
                   if (nowUTC >= slot.hour + 1) {
-                    const sentBefore = Math.min(idx * perRun, todaySentCount);
-                    const thisBatchSent = Math.min(perRun, Math.max(0, todaySentCount - sentBefore));
+                    const thisBatchSent = todayRunCounts[slot.hour] || 0;
                     pastRuns.push({
                       date: new Date().toISOString().slice(0, 10),
                       time: slot.time,
-                      label: `Run ${idx + 1}`,
+                      label: `Run ${runSlots.indexOf(slot) + 1}`,
                       sent: thisBatchSent,
                       status: thisBatchSent > 0 ? "completed" : "no_contacts",
                       emoji: slot.emoji,
