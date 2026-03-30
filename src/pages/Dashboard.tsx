@@ -558,7 +558,7 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
 
             (latestLeads ?? []).map((lead, i) => {
               const initials = lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-              const heat = (lead.score ?? 0) >= 80 ? 3 : (lead.score ?? 0) >= 50 ? 2 : 1;
+              const heat = lead.relevance_tier === 'hot' ? 3 : lead.relevance_tier === 'warm' ? 2 : 1;
               return (
                 <div
                   key={i}
