@@ -146,6 +146,7 @@ export default function CampaignDetail() {
     scheduledMsgId?: string;
     editedByUser?: boolean;
     contactLinkedinUrl?: string;
+    contactSignalUrl?: string;
   };
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
@@ -383,7 +384,7 @@ export default function CampaignDetail() {
     const contactIds = (connReqs as any[]).map((cr: any) => cr.contact_id);
     const { data: contactsData } = await supabase
       .from("contacts")
-      .select("id, first_name, last_name, title, company, signal, linkedin_url")
+      .select("id, first_name, last_name, title, company, signal, linkedin_url, signal_post_url")
       .in("id", contactIds);
     const contactMap: Record<string, any> = {};
     (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
@@ -423,6 +424,7 @@ export default function CampaignDetail() {
           contactCompany: contact.company || "",
           contactSignal: contact.signal || "",
           contactLinkedinUrl: contact.linkedin_url || "",
+          contactSignalUrl: contact.signal_post_url || "",
           currentStep: 1,
           nextStepNum: 2,
           message: nextStep?.ai_icebreaker ? "" : (nextStep?.message || ""),
@@ -477,6 +479,7 @@ export default function CampaignDetail() {
           contactCompany: contact.company || "",
           contactSignal: contact.signal || "",
           contactLinkedinUrl: contact.linkedin_url || "",
+          contactSignalUrl: contact.signal_post_url || "",
           currentStep,
           nextStepNum: currentStep + 1,
           message: msgPreview,
@@ -2224,7 +2227,14 @@ export default function CampaignDetail() {
                             <div className="mb-3 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
                               <p className="text-[10px] text-amber-700 font-medium flex items-center gap-1">
                                 <Flame className="w-3 h-3" /> 
-                                <span className="font-bold">Signal:</span> {sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal}
+                                <span className="font-bold">Signal:</span>{" "}
+                                {sm.contactSignalUrl ? (
+                                  <a href={sm.contactSignalUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-900 transition-colors">
+                                    {sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal}
+                                  </a>
+                                ) : (
+                                  sm.contactSignal.length > 120 ? sm.contactSignal.slice(0, 120) + "..." : sm.contactSignal
+                                )}
                               </p>
                             </div>
                           )}
