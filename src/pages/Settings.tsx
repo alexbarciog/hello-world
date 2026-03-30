@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Building2, User, Linkedin, Shield,
-  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock, Check, MessageSquare, UserPlus,
+  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock, Check, MessageSquare, UserPlus, Sparkles, Loader2,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
