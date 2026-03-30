@@ -369,26 +369,48 @@ export default function CampaignsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         
           {[
-        { label: "Total Leads", value: totalLeads, icon: Users, iconBg: "from-md-primary/10 to-md-secondary/10" },
-        { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, iconBg: "from-emerald-100/60 to-emerald-50/40" },
-        { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, iconBg: "from-md-secondary/10 to-md-primary/5" },
-        { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, iconBg: "from-md-tertiary-fixed/30 to-md-tertiary-fixed/10" }].
-        map((stat) =>
-        <div key={stat.label} className={`rounded-2xl p-6 flex flex-col justify-between ${stat.label === "Total Leads" ? "bg-cover bg-center text-white ring-4 ring-inset ring-white/40" : "glass-card ghost-border"}`} style={stat.label === "Total Leads" ? { backgroundImage: `url(${meshGradientBg})` } : undefined}>
-              <div className="flex items-center gap-2 mb-4">
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${stat.iconBg} flex items-center justify-center`}>
-                  <stat.icon className="w-4 h-4 text-md-primary" />
+        { label: "Total Leads", value: totalLeads, icon: Users, accent: "primary" as const },
+        { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, accent: "emerald" as const },
+        { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, accent: "secondary" as const },
+        { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, accent: "tertiary" as const }].
+        map((stat, index) => {
+          const isFeatured = stat.label === "Total Leads";
+          return (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              className={`group relative rounded-2xl overflow-hidden transition-all duration-300 ${
+                isFeatured
+                  ? "bg-cover bg-center ring-[3px] ring-inset ring-white/30"
+                  : "bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-md-outline-variant/20 hover:border-md-primary/30 hover:shadow-lg hover:shadow-md-primary/5"
+              }`}
+              style={isFeatured ? { backgroundImage: `url(${meshGradientBg})` } : undefined}
+            >
+              <div className="relative z-10 p-5 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <p className={`text-xs font-semibold uppercase tracking-widest ${
+                    isFeatured ? "text-white/80" : "text-md-on-surface-variant"
+                  }`}>{stat.label}</p>
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
+                    isFeatured
+                      ? "bg-white/20 backdrop-blur-sm"
+                      : "bg-md-surface-container"
+                  }`}>
+                    <stat.icon className={`w-4 h-4 ${isFeatured ? "text-white" : "text-md-primary"}`} />
+                  </div>
                 </div>
-                <p className="text-md-on-surface text-sm font-medium">{stat.label}</p>
+                <p className={`font-headline tracking-tight font-bold text-3xl ${
+                  isFeatured ? "text-white" : "text-md-on-surface"
+                }`}>{stat.value}</p>
               </div>
-              <div>
-                <p className={`font-headline tracking-tight font-semibold text-3xl ${stat.label === "Total Leads" ? "text-white" : "text-md-on-surface"}`}>{stat.value}</p>
-              </div>
-            </div>
-        )}
+            </motion.div>
+          );
+        })}
         </motion.div>
       }
 
