@@ -1841,18 +1841,6 @@ export default function CampaignDetail() {
                         </div>
                         <Switch checked={settingsExcludeFirst} onCheckedChange={setSettingsExcludeFirst} />
                       </div>
-                      <div className="flex items-center justify-between gap-4 rounded-xl bg-muted/20 p-4">
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="text-sm font-bold text-foreground flex items-center gap-2">
-                              Review Mode
-                              <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">BETA</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">Manually approve contacts before they enter the campaign</p>
-                          </div>
-                        </div>
-                        <Switch checked={settingsReviewMode} onCheckedChange={setSettingsReviewMode} />
-                      </div>
                       <div className="rounded-xl bg-muted/20 p-4">
                         <div className="flex items-center justify-between gap-4">
                           <div>
