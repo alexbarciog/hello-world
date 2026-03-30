@@ -77,6 +77,7 @@ async function processCampaign(
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
+  console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${workflowSteps[0]?.type === 'invitation'}`);
   if (messageStepsCount === 0) {
     console.log(`[followup][campaign ${campaign.id}] no message steps configured`);
     return { accepted: 0, messagesSent: 0, generated: 0 };
