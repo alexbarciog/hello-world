@@ -108,7 +108,7 @@ async function processCampaignReplies(
   // Get accepted/completed connection requests with chat_id that haven't been stopped
   const { data: connReqs } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, user_id')
+    .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id')
     .eq('campaign_id', campaign.id)
     .in('status', ['accepted', 'completed'])
     .eq('conversation_stopped', false)
@@ -157,40 +157,99 @@ async function processCampaignReplies(
 
       // Check if the latest message is from the lead (not from us)
       const isFromLead = !latestMessage.is_sender && latestMessage.sender_id !== accountId;
-      if (!isFromLead) continue;
+      const latestMsgTime = new Date(latestMessage.timestamp || latestMessage.date || latestMessage.created_at);
 
-      // Check if we already processed this message (compare timestamps)
-      const msgTimestamp = new Date(latestMessage.timestamp || latestMessage.date || latestMessage.created_at).toISOString();
-      if (cr.last_incoming_message_at && new Date(cr.last_incoming_message_at) >= new Date(msgTimestamp)) {
-        continue; // Already processed
+      // === CASE 1: Lead responded — reply to their message ===
+      if (isFromLead) {
+        const msgTimestamp = latestMsgTime.toISOString();
+        if (cr.last_incoming_message_at && new Date(cr.last_incoming_message_at) >= new Date(msgTimestamp)) {
+          // Check if we should do a 24h follow-up instead (fall through to case 2)
+        } else {
+          const leadMessage = (latestMessage.text || latestMessage.body || '').trim();
+          if (!leadMessage) continue;
+
+          // Smart stop: check for rejection
+          if (isRejection(leadMessage)) {
+            console.log(`[ai-replies] Rejection detected from contact ${cr.contact_id}: "${leadMessage.slice(0, 50)}"`);
+            await supabase.from('campaign_connection_requests')
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp })
+              .eq('id', cr.id);
+            stopped++;
+            continue;
+          }
+
+          // Get contact info
+          const { data: contact } = await supabase
+            .from('contacts')
+            .select('first_name, last_name, company, title, signal')
+            .eq('id', cr.contact_id)
+            .single();
+          if (!contact) continue;
+
+          const conversationHistory = sortedMessages
+            .slice(0, 8).reverse()
+            .map((m: any) => {
+              const sender = m.is_sender || m.sender_id === accountId ? 'You' : contact.first_name;
+              return `${sender}: ${(m.text || m.body || '').trim()}`;
+            })
+            .filter((line: string) => line.length > 5)
+            .join('\n');
+
+          const reply = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
+            conversationHistory, leadMessage,
+            companyName: campaign.company_name, valueProposition: campaign.value_proposition,
+            painPoints: campaign.pain_points || [], campaignGoal: campaign.campaign_goal,
+            messageTone: campaign.message_tone, industry: campaign.industry,
+            language: campaign.language, customTraining: campaign.custom_training,
+            firstName: contact.first_name, lastName: contact.last_name,
+            leadCompany: contact.company, leadTitle: contact.title,
+            buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
+            maxReplies: maxReplies, isFollowUp: false,
+          });
+
+          if (!reply.trim()) continue;
+
+          const sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(cr.chat_id)}/messages`,
+            { method: 'POST', headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ text: reply.trim() }) }
+          );
+          if (!sendRes.ok) { console.error(`[ai-replies] send failed for ${cr.contact_id}:`, sendRes.status); continue; }
+
+          console.log(`[ai-replies] Replied to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})`);
+          await supabase.from('campaign_connection_requests')
+            .update({ ai_replies_count: cr.ai_replies_count + 1, last_incoming_message_at: msgTimestamp, last_ai_reply_at: new Date().toISOString() })
+            .eq('id', cr.id);
+
+          const { data: currentCampaign } = await supabase.from('campaigns').select('messages_sent').eq('id', campaign.id).single();
+          await supabase.from('campaigns').update({ messages_sent: (currentCampaign?.messages_sent || 0) + 1 }).eq('id', campaign.id);
+          replied++;
+          await delay(2000 + Math.random() * 2000);
+          continue;
+        }
       }
 
-      const leadMessage = (latestMessage.text || latestMessage.body || '').trim();
-      if (!leadMessage) continue;
+      // === CASE 2: No response from lead for 24h+ — send follow-up ===
+      // The latest message is from us (or we already processed the lead's last message)
+      const lastReplyAt = cr.last_ai_reply_at ? new Date(cr.last_ai_reply_at) : null;
+      const hoursSinceLastReply = lastReplyAt ? (Date.now() - lastReplyAt.getTime()) / (1000 * 60 * 60) : null;
 
-      // Smart stop: check for rejection
-      if (isRejection(leadMessage)) {
-        console.log(`[ai-replies] Rejection detected from contact ${cr.contact_id}: "${leadMessage.slice(0, 50)}"`);
-        await supabase.from('campaign_connection_requests')
-          .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp })
-          .eq('id', cr.id);
-        stopped++;
-        continue;
-      }
+      // Only follow up if: we sent a reply before, it's been 24h+, and we haven't already followed up (check if latest msg is our follow-up)
+      if (!lastReplyAt || hoursSinceLastReply === null || hoursSinceLastReply < 24) continue;
 
-      // Get contact info
+      // Don't send more than 1 follow-up without a response (check if last 2 messages are both ours)
+      const lastTwoOurs = sortedMessages.slice(0, 2).every((m: any) => m.is_sender || m.sender_id === accountId);
+      if (lastTwoOurs) continue;
+
       const { data: contact } = await supabase
         .from('contacts')
         .select('first_name, last_name, company, title, signal')
         .eq('id', cr.contact_id)
         .single();
-
       if (!contact) continue;
 
-      // Build conversation history for context
       const conversationHistory = sortedMessages
-        .slice(0, 8)
-        .reverse()
+        .slice(0, 8).reverse()
         .map((m: any) => {
           const sender = m.is_sender || m.sender_id === accountId ? 'You' : contact.first_name;
           return `${sender}: ${(m.text || m.body || '').trim()}`;
@@ -198,75 +257,35 @@ async function processCampaignReplies(
         .filter((line: string) => line.length > 5)
         .join('\n');
 
-      // Generate AI reply
-      const reply = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
-        conversationHistory,
-        leadMessage,
-        companyName: campaign.company_name,
-        valueProposition: campaign.value_proposition,
-        painPoints: campaign.pain_points || [],
-        campaignGoal: campaign.campaign_goal,
-        messageTone: campaign.message_tone,
-        industry: campaign.industry,
-        language: campaign.language,
-        customTraining: campaign.custom_training,
-        firstName: contact.first_name,
-        lastName: contact.last_name,
-        leadCompany: contact.company,
-        leadTitle: contact.title,
-        buyingSignal: contact.signal,
-        repliesCount: cr.ai_replies_count,
-        maxReplies: maxReplies,
+      const followUp = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
+        conversationHistory, leadMessage: '',
+        companyName: campaign.company_name, valueProposition: campaign.value_proposition,
+        painPoints: campaign.pain_points || [], campaignGoal: campaign.campaign_goal,
+        messageTone: campaign.message_tone, industry: campaign.industry,
+        language: campaign.language, customTraining: campaign.custom_training,
+        firstName: contact.first_name, lastName: contact.last_name,
+        leadCompany: contact.company, leadTitle: contact.title,
+        buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
+        maxReplies: maxReplies, isFollowUp: true,
       });
 
-      if (!reply.trim()) {
-        console.error(`[ai-replies] Empty reply for contact ${cr.contact_id}`);
-        continue;
-      }
+      if (!followUp.trim()) continue;
 
-      // Send the reply via Unipile
       const sendRes = await fetch(
         `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(cr.chat_id)}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'X-API-KEY': unipileApiKey,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ text: reply.trim() }),
-        }
+        { method: 'POST', headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ text: followUp.trim() }) }
       );
+      if (!sendRes.ok) { console.error(`[ai-replies] follow-up send failed for ${cr.contact_id}:`, sendRes.status); continue; }
 
-      if (!sendRes.ok) {
-        console.error(`[ai-replies] send failed for ${cr.contact_id}:`, sendRes.status, await sendRes.text());
-        continue;
-      }
-
-      console.log(`[ai-replies] Replied to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})`);
-
-      // Update tracking
+      console.log(`[ai-replies] 24h follow-up sent to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})`);
       await supabase.from('campaign_connection_requests')
-        .update({
-          ai_replies_count: cr.ai_replies_count + 1,
-          last_incoming_message_at: msgTimestamp,
-        })
+        .update({ ai_replies_count: cr.ai_replies_count + 1, last_ai_reply_at: new Date().toISOString() })
         .eq('id', cr.id);
 
-      // Update campaign messages_sent counter
-      const { data: currentCampaign } = await supabase
-        .from('campaigns')
-        .select('messages_sent')
-        .eq('id', campaign.id)
-        .single();
-
-      await supabase.from('campaigns')
-        .update({ messages_sent: (currentCampaign?.messages_sent || 0) + 1 })
-        .eq('id', campaign.id);
-
+      const { data: currentCampaign } = await supabase.from('campaigns').select('messages_sent').eq('id', campaign.id).single();
+      await supabase.from('campaigns').update({ messages_sent: (currentCampaign?.messages_sent || 0) + 1 }).eq('id', campaign.id);
       replied++;
-
-      // Delay between replies to avoid rate limits
       await delay(2000 + Math.random() * 2000);
     } catch (err) {
       console.error(`[ai-replies] error for contact ${cr.contact_id}:`, err);
@@ -282,17 +301,17 @@ async function generateConversationalReply(
   ctx: Record<string, unknown>,
 ): Promise<string> {
   try {
+    const isFollowUp = ctx.isFollowUp as boolean;
+
     const systemPrompt = `You are an AI SDR having a real LinkedIn conversation. Your ONLY goal is to book a call/meeting.
 
 RULES:
-- Reply naturally to what the lead said — this is a real conversation, not a cold outreach
+- ${isFollowUp ? 'The lead has NOT responded to your last message. Send a natural, non-pushy follow-up that adds new value or a different angle. Reference the previous conversation naturally.' : 'Reply naturally to what the lead said — this is a real conversation, not a cold outreach'}
 - Keep responses under 50 words, 1-2 short paragraphs max
 - Be ${ctx.messageTone || 'professional'} but human
 - NO placeholders, NO jargon (leverage, utilize, synergy, delighted)
 - NO em-dashes (—) or semicolons
-- If the lead asks a question, answer it briefly then steer toward a call
-- If the lead seems interested, propose a specific time frame ("sometime this week?")
-- If the lead is hesitant, acknowledge their concern and offer value
+${isFollowUp ? '- Do NOT repeat your previous message or ask the same question\n- Offer a new insight, share a quick relevant stat, or reframe the value proposition\n- Keep it light and casual, like "Hey, just circling back..." or "Quick thought..."' : '- If the lead asks a question, answer it briefly then steer toward a call\n- If the lead seems interested, propose a specific time frame ("sometime this week?")\n- If the lead is hesitant, acknowledge their concern and offer value'}
 - Reply ${ctx.repliesCount as number >= (ctx.maxReplies as number) - 2 ? 'with a final gentle push for a call — this is one of your last messages' : 'conversationally, building toward booking a call'}
 - Language: ${ctx.language || 'English'}
 ${ctx.customTraining ? `\nAdditional instructions: ${ctx.customTraining}` : ''}`;
@@ -304,11 +323,12 @@ ${ctx.customTraining ? `\nAdditional instructions: ${ctx.customTraining}` : ''}`
 - Lead: ${ctx.firstName} ${ctx.lastName || ''}, ${ctx.leadTitle || ''} at ${ctx.leadCompany || 'their company'}
 - Signal: ${ctx.buyingSignal || 'engaged with our content'}
 - Reply #${(ctx.repliesCount as number) + 1} of ${ctx.maxReplies}
+${isFollowUp ? '- TYPE: Follow-up (lead has not responded in 24h+)' : ''}
 
 Recent conversation:
 ${ctx.conversationHistory}
 
-The lead just said: "${ctx.leadMessage}"
+${isFollowUp ? 'The lead has not responded to your last message. Write a natural follow-up (under 50 words):' : `The lead just said: "${ctx.leadMessage}"\n\nWrite your reply (under 50 words):`}
 
 Write your reply (under 50 words):`;
 
