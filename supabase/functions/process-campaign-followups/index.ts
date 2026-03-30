@@ -507,40 +507,39 @@ async function generateNextStepMessage(
       .in('status', ['sent', 'generated', 'edited'])
       .order('step_index', { ascending: true });
 
-    const previousMsgHistory = (previousMessages || []).map(
-      (m: any) => `Step ${hasInvitation ? m.step_index + 1 : m.step_index + 2}: "${m.message}"`
-    ).join('\n');
+    const previousMessagesArray = (previousMessages || [])
+      .map((m: any) => (m.message || '').trim())
+      .filter((m: string) => m.length > 0);
 
-    try {
-      const totalMessageSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
-      const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-flash-preview',
-          messages: [
-            { role: 'system', content: buildAiSdrPrompt(campaign, contact, displayStepNumber, totalMessageSteps + 1, nextStep.step_instructions) },
-            { role: 'user', content: buildAiSdrUserPrompt(displayStepNumber, previousMsgHistory, campaign, totalMessageSteps + 1) },
-          ],
-        }),
-      });
+    const previousStepMessage = previousMessagesArray.length > 0
+      ? previousMessagesArray[previousMessagesArray.length - 1]
+      : '';
 
-      if (aiRes.ok) {
-        const aiData = await aiRes.json();
-        message = aiData.choices?.[0]?.message?.content?.trim() || '';
-      } else {
-        console.error(`[followup] AI generation error: ${aiRes.status}`);
-        return false;
-      }
-    } catch (aiErr) {
-      console.error(`[followup] AI fetch error:`, aiErr);
+    message = await invokeGenerateStepMessage(supabaseUrl, supabaseServiceRoleKey, {
+      stepNumber: displayStepNumber,
+      previousStepMessage,
+      previousMessages: previousMessagesArray,
+      companyName: campaign.company_name,
+      valueProposition: campaign.value_proposition,
+      painPoints: campaign.pain_points || [],
+      campaignGoal: campaign.campaign_goal,
+      messageTone: campaign.message_tone,
+      industry: campaign.industry,
+      language: campaign.language,
+      customTraining: nextStep.step_instructions || campaign.custom_training || '',
+      firstName: contact.first_name,
+      lastName: contact.last_name,
+      leadCompany: contact.company,
+      leadTitle: contact.title,
+      buyingSignal: contact.signal,
+    });
+
+    if (!message.trim()) {
+      console.error(`[followup] generate-step-message returned empty for contact ${req.contact_id}`);
       return false;
     }
 
-    await delay(1500);
+    await delay(700);
   } else {
     message = nextStep.message || '';
     message = message
