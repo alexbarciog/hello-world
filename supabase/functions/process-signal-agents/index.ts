@@ -638,6 +638,7 @@ async function handleCompetitorPostEngagers(
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+          if (!matchesIndustry(fullProfile, match, icp)) continue;
           if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
           const signal = `Engaged with ${companyName || companyId}'s post`;
           const ok = await insertContact(supabase, fullProfile, userId, agentId, listName, match, signal, postUrl, icp);
