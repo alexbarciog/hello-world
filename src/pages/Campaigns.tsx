@@ -115,19 +115,19 @@ function CampaignCard({
       {/* Stats grid */}
       <div className="grid grid-cols-4 gap-8 md:gap-12 text-center items-center md:px-8">
         <div>
-          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Leads</p>
+          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Leads</p>
           <p className="text-lg font-light text-md-on-surface">{c.leadsCount}</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Sent</p>
+          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Sent</p>
           <p className="text-lg font-light text-md-on-surface">{c.invitations_sent || 0}</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Connect</p>
+          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Connect</p>
           <p className="text-lg font-light text-md-primary">{acceptRate}%</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline font-medium mb-1 uppercase tracking-widest">Reply</p>
+          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Reply</p>
           <p className="text-lg font-light text-md-secondary">{replyRate}%</p>
         </div>
       </div>
