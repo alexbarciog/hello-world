@@ -828,8 +828,32 @@ function fuzzyMatchList(value: string, candidates: string[]): boolean {
 function normalizeText(value: string): string {
   return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 }
+// Relaxed industry match: checks headline, company, and industry fields against ICP industries
+// Used as fallback when strict industry field matching fails (LinkedIn profiles often lack industry)
+function relaxedIndustryMatch(profile: any, industries: string[]): boolean {
+  if (industries.length === 0) return true;
+  const text = [
+    profile.industry || '',
+    profile.headline || profile.title || '',
+    profile.company || profile.current_company?.name || '',
+  ].join(' ').toLowerCase();
+  return industries.some(ind => {
+    const needle = normalizeText(ind);
+    if (!needle) return false;
+    // Check each word of the industry name (e.g. "recruitment" from "Recruitment Agency")
+    const words = needle.split(/\s+/).filter(w => w.length > 3);
+    return words.some(word => text.includes(word));
+  });
+}
 
-// ─── Contact Insertion ────────────────────────────────────────────────────────
+// Combined industry check: strict first (industry field), relaxed fallback (headline/company)
+function matchesIndustry(profile: any, match: MatchResult, icp: ICPFilters): boolean {
+  if (icp.industries.length === 0) return true;
+  if (match.industryMatch) return true; // strict match on industry field
+  return relaxedIndustryMatch(profile, icp.industries); // fallback to headline/company
+}
+
+
 
 async function ensureList(supabase: any, userId: string, listName: string, agentId: string): Promise<string | null> {
   const { data: existing } = await supabase
