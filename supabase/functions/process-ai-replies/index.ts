@@ -108,7 +108,7 @@ async function processCampaignReplies(
   // Get accepted/completed connection requests with chat_id that haven't been stopped
   const { data: connReqs } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, user_id')
+    .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id')
     .eq('campaign_id', campaign.id)
     .in('status', ['accepted', 'completed'])
     .eq('conversation_stopped', false)

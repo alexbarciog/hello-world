@@ -25,6 +25,7 @@ export type Database = {
           created_at: string
           current_step: number
           id: string
+          last_ai_reply_at: string | null
           last_incoming_message_at: string | null
           sent_at: string
           status: string
@@ -42,6 +43,7 @@ export type Database = {
           created_at?: string
           current_step?: number
           id?: string
+          last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
           sent_at?: string
           status?: string
@@ -59,6 +61,7 @@ export type Database = {
           created_at?: string
           current_step?: number
           id?: string
+          last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
           sent_at?: string
           status?: string
