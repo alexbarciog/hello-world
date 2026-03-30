@@ -289,22 +289,22 @@ async function handlePostEngagers(
   icp: ICPFilters, userId: string, listName: string, agentId: string, userLinkedInId: string,
 ): Promise<number> {
   try {
-    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=3`, apiKey, dsn);
+    const postsRes = await unipileGet(`/api/v1/users/${userLinkedInId}/posts?account_id=${accountId}&limit=5`, apiKey, dsn);
     if (!postsRes.ok) { await postsRes.text(); return 0; }
     const postsData = await postsRes.json();
-    const posts = (postsData.items || postsData.posts || []).slice(0, 3);
+    const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
     let inserted = 0;
     for (const post of posts) {
       if (!hasTime()) break;
-      await delay(800);
+      await delay(400);
       const postId = post.social_id || post.id || post.provider_id;
       if (!postId) continue;
 
-      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=15`, apiKey, dsn);
+      const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${accountId}&limit=25`, apiKey, dsn);
       if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
       const reactionsData = await reactionsRes.json();
-      const engagers = (reactionsData.items || []).slice(0, 10);
+      const engagers = (reactionsData.items || []).slice(0, 20);
 
       const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
       const postText = post.text || post.commentary || '';
