@@ -408,8 +408,15 @@ export default function CampaignDetail() {
     }
 
     scheduled.sort((a, b) => {
-      if (a.status === "ready" && b.status !== "ready") return -1;
-      if (b.status === "ready" && a.status !== "ready") return 1;
+      // Priority: ready first, then scheduled (soonest first), then waiting_acceptance last
+      const statusOrder: Record<string, number> = { ready: 0, scheduled: 1, waiting_acceptance: 2 };
+      const aOrder = statusOrder[a.status] ?? 1;
+      const bOrder = statusOrder[b.status] ?? 1;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      // Within same status, sort by scheduledDate (nearest first)
+      const aDate = new Date(a.scheduledDate).getTime();
+      const bDate = new Date(b.scheduledDate).getTime();
+      if (!isNaN(aDate) && !isNaN(bDate)) return aDate - bDate;
       return 0;
     });
 
