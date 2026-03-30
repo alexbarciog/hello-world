@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!UNIPILE_API_KEY || !UNIPILE_DSN) throw new Error('Unipile not configured');
 
@@ -22,7 +23,7 @@ Deno.serve(async (req) => {
 
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, source_list_id')
+      .select('id, user_id, workflow_steps, source_list_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language')
       .eq('status', 'active')
       .not('source_list_id', 'is', null);
 
@@ -37,7 +38,7 @@ Deno.serve(async (req) => {
 
     for (const campaign of campaigns) {
       try {
-        const result = await processCampaign(supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN);
+        const result = await processCampaign(supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN, LOVABLE_API_KEY);
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
       } catch (err) {
@@ -55,9 +56,10 @@ Deno.serve(async (req) => {
 
 async function processCampaign(
   supabase: any,
-  campaign: { id: string; user_id: string; workflow_steps: any; source_list_id: string },
+  campaign: any,
   unipileApiKey: string,
-  unipileDsn: string
+  unipileDsn: string,
+  lovableApiKey: string | undefined
 ): Promise<{ accepted: number; messagesSent: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   if (workflowSteps.length < 2) {
@@ -267,14 +269,50 @@ async function processCampaign(
           .eq('id', req.contact_id)
           .single();
 
-        let message = nextStep.message || '';
-        if (contact) {
-          message = message
-            .replace(/\{\{first_name\}\}/gi, contact.first_name || '')
-            .replace(/\{\{last_name\}\}/gi, contact.last_name || '')
-            .replace(/\{\{company\}\}/gi, contact.company || '')
-            .replace(/\{\{title\}\}/gi, contact.title || '')
-            .replace(/\{\{signal\}\}/gi, contact.signal || '');
+        let message = '';
+
+        // AI SDR mode: generate a unique message per lead
+        if (nextStep.ai_icebreaker && lovableApiKey) {
+          console.log(`[followup] AI SDR generating unique message for contact ${req.contact_id}, step ${nextStepIndex + 1}`);
+          const previousStepMsg = nextStepIndex > 1 ? workflowSteps[nextStepIndex - 1]?.message || '' : '';
+          try {
+            const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${lovableApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-3-flash-preview',
+                messages: [
+                  { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length) },
+                  { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousStepMsg, campaign, workflowSteps.length) },
+                ],
+              }),
+            });
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              message = aiData.choices?.[0]?.message?.content?.trim() || '';
+              console.log(`[followup] AI SDR generated message for ${contact?.first_name}: "${message.slice(0, 60)}..."`);
+            } else {
+              console.error(`[followup] AI SDR error: ${aiRes.status}`);
+            }
+          } catch (aiErr) {
+            console.error(`[followup] AI SDR fetch error:`, aiErr);
+          }
+        }
+
+        // Fallback to template message if AI didn't generate or not in AI mode
+        if (!message && nextStep.message) {
+          message = nextStep.message;
+          if (contact) {
+            message = message
+              .replace(/\{\{first_name\}\}/gi, contact?.first_name || '')
+              .replace(/\{\{last_name\}\}/gi, contact?.last_name || '')
+              .replace(/\{\{company\}\}/gi, contact?.company || '')
+              .replace(/\{\{title\}\}/gi, contact?.title || '')
+              .replace(/\{\{signal\}\}/gi, contact?.signal || '');
+          }
         }
 
         if (!message.trim()) {
@@ -428,4 +466,67 @@ function jsonRes(payload: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// ── AI SDR prompt builders ──
+
+function buildAiSdrPrompt(campaign: any, contact: any, stepNumber: number, totalSteps: number): string {
+  const toneGuide: Record<string, string> = {
+    professional: 'Use a professional but warm tone. Be polished and respectful.',
+    conversational: 'Use a casual, friendly tone. Write like you\'re talking to a peer.',
+    direct: 'Be bold and confident. Get to the point quickly.',
+  };
+  const goalGuide: Record<string, string> = {
+    conversations: 'The goal is to start a genuine conversation. Don\'t push for a meeting.',
+    demos: 'The goal is to book a call or demo. Include a clear but non-pushy CTA.',
+  };
+
+  return `You are a world-class LinkedIn outreach copywriter writing a REAL message to a SPECIFIC person.
+
+TARGET PERSON:
+- Name: ${contact?.first_name || 'Unknown'} ${contact?.last_name || ''}
+- Title: ${contact?.title || 'Not specified'}
+- Company: ${contact?.company || 'Not specified'}
+- Buying Signal: ${contact?.signal || 'Not specified'}
+
+SENDER'S BUSINESS:
+- Company: ${campaign.company_name || 'Our company'}
+- Value Proposition: ${campaign.value_proposition || 'Not specified'}
+- Pain Points we solve: ${(campaign.pain_points || []).join('; ') || 'Not specified'}
+- Industry: ${campaign.industry || 'Not specified'}
+
+TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
+GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
+${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
+
+CRITICAL RULES:
+- Write 3-5 sentences MAX
+- This must feel like a genuine human message, NOT a template
+- Reference ${contact?.first_name || 'the person'}'s specific role, company, and buying signal naturally
+- DO NOT use generic openers like "I hope this finds you well" or "I came across your profile"
+- DO NOT mention AI, automation, or sequences
+- DO NOT start with "Hi ${contact?.first_name}" — vary your openings
+- Make this message UNIQUE to this person — it should NOT work for anyone else`;
+}
+
+function buildAiSdrUserPrompt(stepNumber: number, previousMessage: string, campaign: any, totalSteps: number): string {
+  const isFirst = stepNumber === 2;
+  const isLast = stepNumber >= totalSteps;
+
+  if (isFirst) {
+    return `Write the FIRST message after the LinkedIn connection was accepted (Step 2).
+This is the icebreaker. Reference the specific buying signal that made us reach out. Make it personal, curious, and genuine. Ask a thoughtful question.
+${previousMessage ? `The previous step was a connection request (no message sent).` : ''}
+Return ONLY the message text.`;
+  } else if (isLast) {
+    return `Write a FINAL follow-up message (Step ${stepNumber}).
+${previousMessage ? `Previous message sent: "${previousMessage}"` : ''}
+Short, low-pressure nudge. Acknowledge they're busy. ${campaign.campaign_goal === 'demos' ? 'Offer a quick 10-min call.' : 'Keep the door open.'}
+Return ONLY the message text.`;
+  } else {
+    return `Write a follow-up message (Step ${stepNumber}).
+${previousMessage ? `Previous message: "${previousMessage}"\nBuild naturally on that conversation.` : ''}
+Reference a pain point relevant to their role. Show you understand their challenges. Don't repeat previous content.
+Return ONLY the message text.`;
+  }
 }

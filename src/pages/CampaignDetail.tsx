@@ -161,7 +161,7 @@ export default function CampaignDetail() {
 
   // Edit step mode popup state
   const [editModePickerStep, setEditModePickerStep] = useState<number | null>(null);
-  const [generatingAiMessage, setGeneratingAiMessage] = useState(false);
+  
 
   useEffect(() => {
     if (id) loadCampaign(id);
@@ -519,54 +519,26 @@ export default function CampaignDetail() {
     toast.success("Step added!");
   }
 
-  async function generateAiStepMessage(stepIndex: number) {
+  async function enableAiSdrForStep(stepIndex: number) {
     if (!campaign) return;
-    setGeneratingAiMessage(true);
     setEditModePickerStep(null);
-    setEditingStep(stepIndex);
 
     try {
-      const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
-      const stepNum = stepIndex + 2;
-      const previousStep = stepIndex > 0 ? nonInvSteps[stepIndex - 1] : null;
-      const previousMessage = previousStep?.message || "";
-
-      const { data, error } = await supabase.functions.invoke("generate-step-message", {
-        body: {
-          stepNumber: stepNum,
-          previousStepMessage: previousMessage,
-          companyName: campaign.company_name,
-          valueProposition: campaign.value_proposition,
-          painPoints: campaign.pain_points,
-          campaignGoal: campaign.campaign_goal || "conversations",
-          messageTone: campaign.message_tone || "professional",
-          industry: (campaign as any).industry || "",
-          language: (campaign as any).language || "",
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); setGeneratingAiMessage(false); return; }
-
-      const aiMessage = data?.message || "";
-      // Save directly to workflow
       const allSteps = [...workflowSteps];
       const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
       const actualIdx = nonInvMap[stepIndex]?.idx;
       if (actualIdx !== undefined) {
-        allSteps[actualIdx] = { ...allSteps[actualIdx], message: aiMessage, ai_icebreaker: true };
+        allSteps[actualIdx] = { ...allSteps[actualIdx], message: "", ai_icebreaker: true };
         const { error: updateErr } = await supabase.from("campaigns").update({ workflow_steps: allSteps as any } as any).eq("id", campaign.id);
-        if (updateErr) { toast.error("Failed to save AI message"); } else {
+        if (updateErr) { toast.error("Failed to save AI SDR mode"); } else {
           setCampaign({ ...campaign, workflow_steps: allSteps });
-          toast.success("AI message generated!");
+          toast.success("AI SDR enabled — each lead will receive a unique, personalized message at send time");
         }
       }
     } catch (e: any) {
-      console.error("AI message gen error:", e);
-      toast.error("Failed to generate AI message");
+      console.error("AI SDR enable error:", e);
+      toast.error("Failed to enable AI SDR");
     }
-    setGeneratingAiMessage(false);
-    setEditingStep(null);
   }
 
   const filteredContacts = useMemo(() => {
@@ -894,12 +866,15 @@ export default function CampaignDetail() {
                               ) : (
                                 <>
                                   {ws.ai_icebreaker ? (
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5 text-xs">
-                                        <Sparkles className="w-3.5 h-3.5 text-red-500" />
-                                        <span className="text-foreground font-bold">AI Icebreaker</span>
+                                    <div className="space-y-1.5">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-xs">
+                                          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                          <span className="text-foreground font-bold">AI SDR Mode</span>
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">Active</span>
                                       </div>
-                                      <AlertCircle className="w-3.5 h-3.5 text-muted-foreground/50" />
+                                      <p className="text-[11px] text-muted-foreground leading-relaxed">Each lead will receive a unique AI-generated message based on their role, company, signal & your business context.</p>
                                     </div>
                                   ) : ws.message ? (
                                     <div>
@@ -1088,9 +1063,8 @@ export default function CampaignDetail() {
                   </DialogHeader>
                   <div className="space-y-3">
                     <button
-                      disabled={generatingAiMessage}
                       onClick={() => {
-                        if (editModePickerStep !== null) generateAiStepMessage(editModePickerStep);
+                        if (editModePickerStep !== null) enableAiSdrForStep(editModePickerStep);
                       }}
                       className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
                     >
