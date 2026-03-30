@@ -250,6 +250,8 @@ export default function CampaignDetail() {
     setSettingsLanguage(c.language || "English");
     setSettingsCustomTraining((c as any).custom_training || "");
     setSettingsDailyLimit((c as any).daily_connect_limit || 25);
+    setSettingsConversationalAi((c as any).conversational_ai || false);
+    setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
 
     if (c.source_agent_id) {
       const { data: agent } = await supabase.from("signal_agents").select("name, status, results_count").eq("id", c.source_agent_id).single();
