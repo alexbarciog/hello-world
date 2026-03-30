@@ -258,16 +258,16 @@ export default function CampaignDetail() {
     // Load per-contact statuses from connection requests
     const { data: connRequests } = await supabase
       .from("campaign_connection_requests" as any)
-      .select("contact_id, status")
+      .select("contact_id, status, step_completed_at, sent_at")
       .eq("campaign_id", campaignId);
     if (connRequests) {
-      const statusMap: Record<string, { status: string; step: number }> = {};
+      const statusMap: Record<string, { status: string; step: number; updatedAt?: string }> = {};
       for (const cr of connRequests as any[]) {
-        // step 0 = invitation sent, accepted means they can receive messages
         const isAccepted = cr.status === "accepted";
         statusMap[cr.contact_id] = {
           status: cr.status,
-          step: isAccepted ? 1 : 0, // 0 = pending invite, 1 = ready for step 1 message
+          step: isAccepted ? 1 : 0,
+          updatedAt: cr.step_completed_at || cr.sent_at || undefined,
         };
       }
       setContactStatuses(statusMap);
