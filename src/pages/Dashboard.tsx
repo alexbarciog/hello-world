@@ -197,7 +197,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data: contacts, error: cErr } = await supabase
         .from("contacts")
-        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at")
+        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at, linkedin_url")
         .order("imported_at", { ascending: false })
         .limit(50);
       if (cErr || !contacts || contacts.length === 0) return [];
