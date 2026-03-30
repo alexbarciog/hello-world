@@ -2063,8 +2063,7 @@ export default function CampaignDetail() {
                       const isPast = nowUTC >= runHour + 1;
                       const isActive = nowUTC >= runHour && nowUTC < runHour + 1;
 
-                      const sentBefore = Math.min(idx * perRun, todaySentCount);
-                      const thisBatchSent = isPast ? Math.min(perRun, Math.max(0, todaySentCount - sentBefore)) : 0;
+                      const thisBatchSent = isPast ? (todayRunCounts[runHour] || 0) : 0;
                       const thisBatchPlanned = Math.min(perRun, remainingContacts > 0 ? perRun : 0);
 
                       return (
