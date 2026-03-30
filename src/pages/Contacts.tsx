@@ -385,6 +385,7 @@ export default function Contacts() {
                           );
                           const statusConfig: Record<string, { label: string; icon: typeof Send; color: string }> = {
                             pending: { label: "Invite sent", icon: Send, color: "text-blue-500" },
+                            sent: { label: "Invite sent", icon: Send, color: "text-blue-500" },
                             accepted: { label: "Accepted", icon: UserCheck, color: "text-emerald-500" },
                             messaged: { label: "Messaged", icon: MessageSquare, color: "text-violet-500" },
                           };
