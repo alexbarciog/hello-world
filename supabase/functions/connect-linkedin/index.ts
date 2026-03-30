@@ -14,8 +14,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
-    const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
+    const UNIPILE_API_KEY = normalizeSecret(Deno.env.get('UNIPILE_API_KEY'));
+    const UNIPILE_DSN = normalizeDsn(Deno.env.get('UNIPILE_DSN'));
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       const linkRes = await fetch(`https://${UNIPILE_DSN}/api/v1/hosted/accounts/link`, {
         method: 'POST',
         headers: {
-          'X-API-KEY': UNIPILE_API_KEY,
+          ...buildUnipileAuthHeaders(UNIPILE_API_KEY),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -75,10 +75,10 @@ Deno.serve(async (req) => {
         }),
       });
 
-      const linkData = await linkRes.json();
+      const linkData = await safeJson(linkRes);
 
       if (!linkRes.ok) {
-        console.error('Unipile hosted link error:', linkRes.status, JSON.stringify(linkData));
+        console.error('Unipile hosted link error:', linkRes.status, JSON.stringify(linkData), JSON.stringify(unipileDebugMetadata(UNIPILE_API_KEY, UNIPILE_DSN)));
         throw new Error(linkData.message || linkData.error || `Unipile error: ${linkRes.status}`);
       }
 
@@ -243,14 +243,14 @@ async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string
   try {
     const response = await fetch(`https://${unipileDsn}/api/v1/accounts`, {
       headers: {
-        'X-API-KEY': unipileApiKey,
+        ...buildUnipileAuthHeaders(unipileApiKey),
         'Accept': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[check_status] failed to list Unipile accounts:', response.status, errorText);
+      console.error('[check_status] failed to list Unipile accounts:', response.status, errorText, JSON.stringify(unipileDebugMetadata(unipileApiKey, unipileDsn)));
       return null;
     }
 
@@ -335,6 +335,60 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function normalizeSecret(value: string | undefined | null) {
+  if (!value) return '';
+  const trimmed = value.trim();
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+function normalizeDsn(value: string | undefined | null) {
+  const cleaned = normalizeSecret(value);
+  if (!cleaned) return '';
+
+  return cleaned
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '');
+}
+
+function buildUnipileAuthHeaders(apiKey: string) {
+  return {
+    'X-API-KEY': apiKey,
+    'Authorization': `Bearer ${apiKey}`,
+  };
+}
+
+function unipileDebugMetadata(apiKey: string, dsn: string) {
+  const safePrefix = apiKey.slice(0, 4);
+  const safeSuffix = apiKey.slice(-4);
+
+  return {
+    key_length: apiKey.length,
+    key_prefix: safePrefix,
+    key_suffix: safeSuffix,
+    dsn: dsn.replace(/\/.*/, ''),
+  };
+}
+
+async function safeJson(response: Response): Promise<Record<string, unknown>> {
+  try {
+    const payload = await response.json();
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      return payload as Record<string, unknown>;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
 async function saveAccountId(
   userId: string,
   accountId: string,
@@ -400,4 +454,3 @@ async function activatePendingAndDiscover(
     console.error('[activate] error:', err);
   }
 }
-
