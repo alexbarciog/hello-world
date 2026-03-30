@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Get all active campaigns with AI SDR steps
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language')
+      .select('id, user_id, workflow_steps, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
       .eq('status', 'active')
       .not('workflow_steps', 'is', null);
 
@@ -110,7 +110,18 @@ async function processCampaignMessages(
       // If AI SDR mode, generate unique message
       if (nextStep.ai_icebreaker) {
         console.log(`[daily-msg] Generating AI message for contact ${req.contact_id}, step ${nextStepIndex + 1}`);
-        const previousStepMsg = nextStepIndex > 1 ? workflowSteps[nextStepIndex - 1]?.message || '' : '';
+
+        // Fetch ALL previous messages sent to this lead in this campaign
+        const { data: previousMessages } = await supabase
+          .from('scheduled_messages')
+          .select('step_index, message, sent_at')
+          .eq('connection_request_id', req.id)
+          .in('status', ['sent', 'generated'])
+          .order('step_index', { ascending: true });
+
+        const previousMsgHistory = (previousMessages || []).map(
+          (m: any) => `Step ${m.step_index + 1}: "${m.message}"`
+        ).join('\n');
 
         try {
           const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -123,7 +134,7 @@ async function processCampaignMessages(
               model: 'google/gemini-3-flash-preview',
               messages: [
                 { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length) },
-                { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousStepMsg, campaign, workflowSteps.length) },
+                { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousMsgHistory, campaign, workflowSteps.length) },
               ],
             }),
           });
@@ -213,6 +224,7 @@ SENDER'S BUSINESS:
 TONE: ${toneGuide[campaign.message_tone] || toneGuide.professional}
 GOAL: ${goalGuide[campaign.campaign_goal] || goalGuide.conversations}
 ${campaign.language && campaign.language !== 'English (US)' ? `LANGUAGE: Write in ${campaign.language}` : ''}
+${campaign.custom_training ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${campaign.custom_training}` : ''}
 
 CRITICAL RULES:
 - Write 3-5 sentences MAX
@@ -224,22 +236,24 @@ CRITICAL RULES:
 - Make this message UNIQUE to this person — it should NOT work for anyone else`;
 }
 
-function buildAiSdrUserPrompt(stepNumber: number, previousMessage: string, campaign: any, totalSteps: number): string {
+function buildAiSdrUserPrompt(stepNumber: number, previousMessagesHistory: string, campaign: any, totalSteps: number): string {
   const isFirst = stepNumber === 2;
   const isLast = stepNumber >= totalSteps;
+
+  const historyBlock = previousMessagesHistory
+    ? `\nPREVIOUS MESSAGES SENT TO THIS LEAD (do NOT repeat or paraphrase these):\n${previousMessagesHistory}\n\nBuild naturally on the conversation above. Reference things differently.`
+    : '';
 
   if (isFirst) {
     return `Write the FIRST message after the LinkedIn connection was accepted (Step 2).
 This is the icebreaker. Reference the specific buying signal. Make it personal, curious, genuine. Ask a thoughtful question.
 Return ONLY the message text.`;
   } else if (isLast) {
-    return `Write a FINAL follow-up message (Step ${stepNumber}).
-${previousMessage ? `Previous message: "${previousMessage}"` : ''}
+    return `Write a FINAL follow-up message (Step ${stepNumber}).${historyBlock}
 Short, low-pressure nudge. ${campaign.campaign_goal === 'demos' ? 'Offer a quick 10-min call.' : 'Keep the door open.'}
 Return ONLY the message text.`;
   } else {
-    return `Write a follow-up message (Step ${stepNumber}).
-${previousMessage ? `Previous message: "${previousMessage}"\nBuild naturally on that.` : ''}
+    return `Write a follow-up message (Step ${stepNumber}).${historyBlock}
 Reference a pain point relevant to their role. Show understanding. Don't repeat previous content.
 Return ONLY the message text.`;
   }

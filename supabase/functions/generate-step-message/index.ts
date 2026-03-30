@@ -12,6 +12,7 @@ Deno.serve(async (req) => {
     const {
       stepNumber,
       previousStepMessage,
+      previousMessages,
       companyName,
       valueProposition,
       painPoints,
@@ -19,6 +20,7 @@ Deno.serve(async (req) => {
       messageTone,
       industry,
       language,
+      customTraining,
     } = await req.json();
 
     if (!stepNumber || stepNumber < 2) {
@@ -57,6 +59,7 @@ Your messages MUST:
 - ${toneGuide[messageTone] || toneGuide.professional}
 - ${goalGuide[campaignGoal] || goalGuide.conversations}
 ${language && language !== 'English (US)' ? `- Write the message in ${language}` : ''}
+${customTraining ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${customTraining}` : ''}
 
 About the sender's business:
 - Company: ${companyName || 'Our company'}
@@ -73,6 +76,12 @@ CRITICAL RULES:
 
     let userPrompt = '';
     
+    // Build previous messages context
+    const prevMsgsArray: string[] = Array.isArray(previousMessages) ? previousMessages : [];
+    const historyBlock = prevMsgsArray.length > 0
+      ? `\nPREVIOUS MESSAGES SENT IN THIS CAMPAIGN (do NOT repeat or paraphrase these):\n${prevMsgsArray.map((m: string, i: number) => `Step ${i + 2}: "${m}"`).join('\n')}\n\nBuild naturally on the conversation above.`
+      : '';
+
     if (isFirstMessage) {
       userPrompt = `Write the FIRST message to send after a LinkedIn connection was accepted (Step 2).
 
@@ -82,17 +91,17 @@ ${previousStepMessage ? `The previous step was a connection request (no message 
 
 Return ONLY the message text, nothing else.`;
     } else if (isLastStep) {
-      userPrompt = `Write a FINAL follow-up message (Step ${stepNumber}).
+      userPrompt = `Write a FINAL follow-up message (Step ${stepNumber}).${historyBlock}
 
-${previousStepMessage ? `The previous message sent was:\n"${previousStepMessage}"\n\nThis follow-up should feel like a natural continuation.` : ''}
+${previousStepMessage ? `The most recent message sent was:\n"${previousStepMessage}"\n\nThis follow-up should feel like a natural continuation.` : ''}
 
 This is a short, low-pressure nudge. Acknowledge they're busy. ${campaignGoal === 'demos' ? 'Offer a specific low-commitment CTA (quick 10-min call).' : 'Keep the door open for future conversation without being pushy.'}
 
 Return ONLY the message text, nothing else.`;
     } else {
-      userPrompt = `Write a follow-up message (Step ${stepNumber}).
+      userPrompt = `Write a follow-up message (Step ${stepNumber}).${historyBlock}
 
-${previousStepMessage ? `The previous message sent was:\n"${previousStepMessage}"\n\nThis follow-up should feel like a natural continuation of that conversation.` : ''}
+${previousStepMessage ? `The most recent message sent was:\n"${previousStepMessage}"\n\nThis follow-up should feel like a natural continuation of that conversation.` : ''}
 
 Build on the relationship. Reference a pain point relevant to {{title}} at {{company}}. Show you understand their world and challenges. Don't repeat what was said before.
 
