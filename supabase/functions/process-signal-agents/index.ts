@@ -441,8 +441,11 @@ async function handleKeywordPosts(
 
     const match = scoreProfileAgainstICP(profile, icp);
     const hl = profile.headline || '';
-    if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-    // For keyword_posts: the keyword IS the signal, no strict industry filter needed
+    const classification = classifyContact(match, icp, hl);
+    if (!classification) {
+      console.log(`keyword_posts: REJECTED "${profile.first_name} ${profile.last_name || ''}" hl="${hl}" industry="${profile.industry || ''}" company="${profile.company || ''}" titleMatch=${match.titleMatch} score=${match.score}`);
+      continue;
+    }
     if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
     const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
