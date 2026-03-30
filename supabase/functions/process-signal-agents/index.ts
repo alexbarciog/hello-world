@@ -261,13 +261,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── 8. Job Changes ──
-        if (hasTime() && enabled.includes('job_changes')) {
-          const t0 = Date.now();
-          const count = await handleJobChanges(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, timePerSignal);
-          console.log(`job_changes: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
-          await saveProgress(count);
-        }
+        // ── 8. Job Changes — REMOVED (not a signal we track) ──
 
         // Final update — count actual contacts in the agent's list for accuracy
         const { data: agentList } = await supabase.from('lists').select('id').eq('source_agent_id', agent.id).eq('user_id', agent.user_id).maybeSingle();
