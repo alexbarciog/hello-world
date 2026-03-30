@@ -725,7 +725,19 @@ function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: 
   return classifyContact(match, icp, headline) !== null;
 }
 
-function isExcluded(profile: any, excludeKeywords: string[]): boolean {
+function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
+  const company = (profile.company || profile.current_company?.name || '').toLowerCase().trim();
+
+  // CRITICAL: Never mark competitor employees as leads
+  if (competitorCompanies.length > 0 && company) {
+    for (const comp of competitorCompanies) {
+      if (company.includes(comp) || comp.includes(company)) {
+        console.log(`Excluded ${profile.first_name || ''} ${profile.last_name || ''}: works at competitor "${company}"`);
+        return true;
+      }
+    }
+  }
+
   if (excludeKeywords.length === 0) return false;
   const text = [profile.headline, profile.title, profile.company, profile.current_company?.name, profile.industry]
     .filter(Boolean).join(' ').toLowerCase();
