@@ -339,9 +339,9 @@ async function handleKeywordPosts(
   const allPosts: any[] = [];
 
   // Fetch all keyword searches with minimal delay
-  for (const keyword of keywords.slice(0, 5)) {
+  for (const keyword of keywords.slice(0, 8)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
