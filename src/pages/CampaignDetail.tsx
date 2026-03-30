@@ -1060,9 +1060,8 @@ export default function CampaignDetail() {
                   </DialogHeader>
                   <div className="space-y-3">
                     <button
-                      disabled={generatingAiMessage}
                       onClick={() => {
-                        if (editModePickerStep !== null) generateAiStepMessage(editModePickerStep);
+                        if (editModePickerStep !== null) enableAiSdrForStep(editModePickerStep);
                       }}
                       className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
                     >
