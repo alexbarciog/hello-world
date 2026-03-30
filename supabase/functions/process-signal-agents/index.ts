@@ -543,18 +543,18 @@ async function handleCompetitorPostEngagers(
 ): Promise<number> {
   let inserted = 0;
 
-  for (const url of urls.slice(0, 2)) {
+  for (const url of urls.slice(0, 4)) {
     if (!hasTime()) break;
-    await delay(800);
+    await delay(400);
     const companyId = extractLinkedInId(url);
     const companyName = extractCompanyName(url);
     if (!companyId) continue;
 
     try {
-      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=3`, apiKey, dsn);
+      const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${accountId}&is_company=true&limit=5`, apiKey, dsn);
       if (!postsRes.ok) { await postsRes.text(); continue; }
       const postsData = await postsRes.json();
-      const posts = (postsData.items || postsData.posts || []).slice(0, 3);
+      const posts = (postsData.items || postsData.posts || []).slice(0, 5);
 
       for (const post of posts) {
         if (!hasTime()) break;
