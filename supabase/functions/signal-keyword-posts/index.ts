@@ -307,10 +307,12 @@ Deno.serve(async (req) => {
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
               if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              const eClass = classifyContact(eMatch, icp, eHl);
+              if (eClass === 'cold' && !canInsertCold()) continue;
               const eSignal = `Engaged with post about "${post._keyword}"`;
               const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
               const eOk = await insertContact(supabase, fullEngager, user_id, agent_id, list_name, eMatch, eSignal, postUrl, icp);
-              if (eOk) inserted++;
+              if (eOk) { inserted++; if (eClass === 'cold') coldCount++; else hotWarmCount++; }
             }
           } else { await reactionsRes.text(); }
         } catch (e) { console.error('engager scan:', e); }
