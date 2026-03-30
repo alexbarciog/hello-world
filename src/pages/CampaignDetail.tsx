@@ -851,7 +851,7 @@ export default function CampaignDetail() {
                         </div>
                         <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
                           <button onClick={() => { setStepFilter("1"); setTab("contacts"); }} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
-                          <button className="text-xs font-medium text-white bg-foreground rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity w-full">Edit</button>
+                          <button onClick={() => { const invStep = workflowSteps.find((ws: any) => ws.type === "invitation"); setInvitationNoteMode(invStep?.connect_note ? "with" : "without"); setInvitationNote(invStep?.connect_note || ""); setEditInvitationOpen(true); }} className="text-xs font-bold text-white bg-foreground rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity w-full">Edit</button>
                         </div>
                       </div>
                     </motion.div>
