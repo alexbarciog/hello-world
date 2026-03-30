@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
       competitorCompanies: competitor_companies || [],
     };
 
-    let inserted = 0;
+    console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}]`);
     const allPosts: any[] = [];
 
     // Phase 1: Search posts for ALL keywords (use 40% of time)
