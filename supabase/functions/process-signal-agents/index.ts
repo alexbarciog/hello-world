@@ -733,12 +733,15 @@ function matchesTitleOrIndustry(match: MatchResult, icp: ICPFilters, headline?: 
 
 function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
   const company = (profile.company || profile.current_company?.name || '').toLowerCase().trim();
+  const headline = (profile.headline || profile.title || '').toLowerCase();
 
   // CRITICAL: Never mark competitor employees as leads
-  if (competitorCompanies.length > 0 && company) {
+  // Check both the company field AND the headline (title often contains "at CompanyName")
+  if (competitorCompanies.length > 0) {
+    const textToCheck = `${company} ${headline}`;
     for (const comp of competitorCompanies) {
-      if (company.includes(comp) || comp.includes(company)) {
-        console.log(`Excluded ${profile.first_name || ''} ${profile.last_name || ''}: works at competitor "${company}"`);
+      if (textToCheck.includes(comp)) {
+        console.log(`Excluded ${profile.first_name || ''} ${profile.last_name || ''}: competitor match "${comp}" in "${textToCheck.trim().slice(0, 80)}"`);
         return true;
       }
     }
