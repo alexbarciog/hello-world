@@ -197,7 +197,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data: contacts, error: cErr } = await supabase
         .from("contacts")
-        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at, linkedin_url")
+        .select("first_name, last_name, title, company, ai_score, relevance_tier, imported_at, linkedin_url, signal")
         .order("imported_at", { ascending: false })
         .limit(50);
       if (cErr || !contacts || contacts.length === 0) return [];
@@ -215,7 +215,8 @@ export default function Dashboard() {
         company: c.company,
         score: c.ai_score ?? 0,
         relevance_tier: c.relevance_tier as string,
-        linkedin_url: c.linkedin_url
+        linkedin_url: c.linkedin_url,
+        signal: c.signal
       }));
     },
     staleTime: 30_000
@@ -584,6 +585,11 @@ Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span
                         <div className="text-xs font-light text-md-on-surface-variant line-clamp-2">
                           {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                         </div>
+                        {lead.signal && (
+                          <div className="text-[10px] text-md-primary/70 line-clamp-1 mt-0.5 italic">
+                            ⚡ {lead.signal}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <HeatDots count={heat} />
