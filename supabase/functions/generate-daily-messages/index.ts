@@ -236,22 +236,24 @@ CRITICAL RULES:
 - Make this message UNIQUE to this person — it should NOT work for anyone else`;
 }
 
-function buildAiSdrUserPrompt(stepNumber: number, previousMessage: string, campaign: any, totalSteps: number): string {
+function buildAiSdrUserPrompt(stepNumber: number, previousMessagesHistory: string, campaign: any, totalSteps: number): string {
   const isFirst = stepNumber === 2;
   const isLast = stepNumber >= totalSteps;
+
+  const historyBlock = previousMessagesHistory
+    ? `\nPREVIOUS MESSAGES SENT TO THIS LEAD (do NOT repeat or paraphrase these):\n${previousMessagesHistory}\n\nBuild naturally on the conversation above. Reference things differently.`
+    : '';
 
   if (isFirst) {
     return `Write the FIRST message after the LinkedIn connection was accepted (Step 2).
 This is the icebreaker. Reference the specific buying signal. Make it personal, curious, genuine. Ask a thoughtful question.
 Return ONLY the message text.`;
   } else if (isLast) {
-    return `Write a FINAL follow-up message (Step ${stepNumber}).
-${previousMessage ? `Previous message: "${previousMessage}"` : ''}
+    return `Write a FINAL follow-up message (Step ${stepNumber}).${historyBlock}
 Short, low-pressure nudge. ${campaign.campaign_goal === 'demos' ? 'Offer a quick 10-min call.' : 'Keep the door open.'}
 Return ONLY the message text.`;
   } else {
-    return `Write a follow-up message (Step ${stepNumber}).
-${previousMessage ? `Previous message: "${previousMessage}"\nBuild naturally on that.` : ''}
+    return `Write a follow-up message (Step ${stepNumber}).${historyBlock}
 Reference a pain point relevant to their role. Show understanding. Don't repeat previous content.
 Return ONLY the message text.`;
   }
