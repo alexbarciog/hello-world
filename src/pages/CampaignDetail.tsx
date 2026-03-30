@@ -171,6 +171,11 @@ export default function CampaignDetail() {
 
   // Edit step mode popup state
   const [editModePickerStep, setEditModePickerStep] = useState<number | null>(null);
+
+  // Step 1 (invitation) edit dialog state
+  const [editInvitationOpen, setEditInvitationOpen] = useState(false);
+  const [invitationNoteMode, setInvitationNoteMode] = useState<"without" | "with">("without");
+  const [invitationNote, setInvitationNote] = useState("");
   
 
   useEffect(() => {
@@ -839,14 +844,21 @@ export default function CampaignDetail() {
                         <p className="text-xs opacity-80">Step 1</p>
                       </div>
                       <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
-                        <p className="text-xs text-muted-foreground italic">Invitation without message</p>
+                        {(() => { const invStep = workflowSteps.find((ws: any) => ws.type === "invitation"); return invStep?.connect_note ? (
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 tracking-wider">NOTE:</p>
+                            <p className="text-xs text-foreground leading-relaxed line-clamp-3">{invStep.connect_note}</p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">Invitation without note</p>
+                        ); })()}
                         <div className="flex items-center gap-3 mt-3 text-xs">
                           <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">{step1Sent} contact(s)</span>
                           <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">{step1Accepted} accepted</span>
                         </div>
                         <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
                           <button onClick={() => { setStepFilter("1"); setTab("contacts"); }} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
-                          <button className="text-xs font-medium text-white bg-foreground rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity w-full">Edit</button>
+                          <button onClick={() => { const invStep = workflowSteps.find((ws: any) => ws.type === "invitation"); setInvitationNoteMode(invStep?.connect_note ? "with" : "without"); setInvitationNote(invStep?.connect_note || ""); setEditInvitationOpen(true); }} className="text-xs font-bold text-white bg-foreground rounded-lg px-3 py-1.5 hover:opacity-90 transition-opacity w-full">Edit</button>
                         </div>
                       </div>
                     </motion.div>
@@ -1239,7 +1251,122 @@ export default function CampaignDetail() {
                 </DialogContent>
               </Dialog>
 
-              {/* Edit Step Instructions Dialog */}
+              {/* Edit Invitation (Step 1) Dialog */}
+              <Dialog open={editInvitationOpen} onOpenChange={setEditInvitationOpen}>
+                <DialogContent className="sm:max-w-[480px] p-6 gap-0">
+                  <DialogHeader className="mb-5">
+                    <DialogTitle className="text-lg font-bold">Edit Invitation</DialogTitle>
+                    <p className="text-sm text-muted-foreground">Choose how to send connection requests</p>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setInvitationNoteMode("without")}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${invitationNoteMode === "without" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-muted">
+                        <UserPlus className="w-5 h-5 text-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                          Without Note
+                          {invitationNoteMode === "without" && <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Send a blank connection request without any message</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setInvitationNoteMode("with")}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${invitationNoteMode === "with" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-primary/5"}`}
+                    >
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                        <MessageSquare className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                          With Note
+                          {invitationNoteMode === "with" && <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-full">Active</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Include a personalized note with your connection request</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <AnimatePresence>
+                    {invitationNoteMode === "with" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-4 space-y-2">
+                          <label className="text-xs font-bold text-foreground">Connection Note</label>
+                          <textarea
+                            id="invitation-note-textarea"
+                            value={invitationNote}
+                            onChange={(e) => setInvitationNote(e.target.value)}
+                            className="w-full text-xs border border-border rounded-lg p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                            rows={3}
+                            placeholder="Hi {{first_name}}, I'd love to connect..."
+                            maxLength={300}
+                          />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] text-muted-foreground font-medium">Insert:</span>
+                              {["first_name", "last_name", "company", "title"].map((v) => (
+                                <button
+                                  key={v}
+                                  onClick={() => {
+                                    const ta = document.getElementById("invitation-note-textarea") as HTMLTextAreaElement;
+                                    if (ta) {
+                                      const start = ta.selectionStart;
+                                      const end = ta.selectionEnd;
+                                      const val = ta.value;
+                                      const tag = `{{${v}}}`;
+                                      const newVal = val.substring(0, start) + tag + val.substring(end);
+                                      setInvitationNote(newVal);
+                                      setTimeout(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = start + tag.length; }, 0);
+                                    }
+                                  }}
+                                  className="text-[10px] font-semibold text-primary bg-primary/15 rounded px-2 py-0.5 hover:bg-primary/25 transition-colors"
+                                >
+                                  {`{{${v}}}`}
+                                </button>
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">{invitationNote.length}/300</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="flex gap-2 mt-5">
+                    <button
+                      onClick={async () => {
+                        if (!campaign) return;
+                        const updated = workflowSteps.map((ws: any) =>
+                          ws.type === "invitation"
+                            ? { ...ws, connect_note: invitationNoteMode === "with" ? invitationNote.trim() : null }
+                            : ws
+                        );
+                        const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+                        if (error) { toast.error("Failed to save"); return; }
+                        setCampaign({ ...campaign, workflow_steps: updated });
+                        setEditInvitationOpen(false);
+                        toast.success("Invitation step updated");
+                      }}
+                      className="text-xs font-bold text-white bg-primary rounded-lg px-4 py-2 hover:bg-primary/90 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button onClick={() => setEditInvitationOpen(false)} className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={editStepInstructionsIdx !== null} onOpenChange={(open) => { if (!open) setEditStepInstructionsIdx(null); }}>
                 <DialogContent className="sm:max-w-[480px] p-6 gap-0">
                   <DialogHeader className="mb-4">
