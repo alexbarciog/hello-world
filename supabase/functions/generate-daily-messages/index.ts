@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Get all active campaigns with AI SDR steps
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language')
+      .select('id, user_id, workflow_steps, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
       .eq('status', 'active')
       .not('workflow_steps', 'is', null);
 
