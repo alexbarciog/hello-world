@@ -110,7 +110,18 @@ async function processCampaignMessages(
       // If AI SDR mode, generate unique message
       if (nextStep.ai_icebreaker) {
         console.log(`[daily-msg] Generating AI message for contact ${req.contact_id}, step ${nextStepIndex + 1}`);
-        const previousStepMsg = nextStepIndex > 1 ? workflowSteps[nextStepIndex - 1]?.message || '' : '';
+
+        // Fetch ALL previous messages sent to this lead in this campaign
+        const { data: previousMessages } = await supabase
+          .from('scheduled_messages')
+          .select('step_index, message, sent_at')
+          .eq('connection_request_id', req.id)
+          .in('status', ['sent', 'generated'])
+          .order('step_index', { ascending: true });
+
+        const previousMsgHistory = (previousMessages || []).map(
+          (m: any) => `Step ${m.step_index + 1}: "${m.message}"`
+        ).join('\n');
 
         try {
           const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -123,7 +134,7 @@ async function processCampaignMessages(
               model: 'google/gemini-3-flash-preview',
               messages: [
                 { role: 'system', content: buildAiSdrPrompt(campaign, contact, nextStepIndex + 1, workflowSteps.length) },
-                { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousStepMsg, campaign, workflowSteps.length) },
+                { role: 'user', content: buildAiSdrUserPrompt(nextStepIndex + 1, previousMsgHistory, campaign, workflowSteps.length) },
               ],
             }),
           });
