@@ -589,6 +589,8 @@ export default function CampaignDetail() {
       language: settingsLanguage,
       custom_training: settingsCustomTraining || null,
       daily_connect_limit: settingsDailyLimit,
+      conversational_ai: settingsConversationalAi,
+      max_ai_replies: settingsMaxAiReplies,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
