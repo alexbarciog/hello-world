@@ -102,7 +102,7 @@ function CampaignCard({
       {/* Title & status */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-3 mb-1">
-          <h3 className="font-headline font-normal text-md-on-surface truncate">
+          <h3 className="font-headline text-md-on-surface truncate font-semibold">
             {c.company_name || "My Campaign"}
           </h3>
           <StatusBadge status={c.status} />
