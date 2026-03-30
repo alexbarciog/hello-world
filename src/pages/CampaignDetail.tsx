@@ -638,6 +638,12 @@ export default function CampaignDetail() {
         return (cs.step || 1) === stepNum;
       });
     }
+    // Sort by last updated (most recent first), contacts without status go last
+    list.sort((a, b) => {
+      const aTime = contactStatuses[a.id]?.updatedAt ? new Date(contactStatuses[a.id].updatedAt!).getTime() : 0;
+      const bTime = contactStatuses[b.id]?.updatedAt ? new Date(contactStatuses[b.id].updatedAt!).getTime() : 0;
+      return bTime - aTime;
+    });
     return list;
   }, [contacts, contactSearch, contactFilter, stepFilter, contactStatuses]);
 
