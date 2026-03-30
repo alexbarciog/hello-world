@@ -47,6 +47,7 @@ type CampaignFull = {
   messages_sent: number;
   messages_replied: number;
   daily_connect_limit: number;
+  custom_training: string | null;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
@@ -156,6 +157,7 @@ export default function CampaignDetail() {
   
   const [settingsGoal, setSettingsGoal] = useState("");
   const [settingsTone, setSettingsTone] = useState("");
+  const [settingsCustomTraining, setSettingsCustomTraining] = useState("");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -178,6 +180,7 @@ export default function CampaignDetail() {
     setCampaign(c);
     setSettingsGoal(c.campaign_goal || "conversations");
     setSettingsTone(c.message_tone || "professional");
+    setSettingsCustomTraining((c as any).custom_training || "");
     setSettingsDailyLimit((c as any).daily_connect_limit || 25);
 
     if (c.source_agent_id) {
@@ -480,11 +483,12 @@ export default function CampaignDetail() {
     const { error } = await supabase.from("campaigns").update({
       campaign_goal: settingsGoal,
       message_tone: settingsTone,
+      custom_training: settingsCustomTraining || null,
       daily_connect_limit: settingsDailyLimit,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, daily_connect_limit: settingsDailyLimit });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
@@ -1542,6 +1546,19 @@ export default function CampaignDetail() {
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      {/* Custom AI Training */}
+                      <div>
+                        <p className="text-sm font-bold text-foreground mb-1">Custom AI Training <span className="text-xs font-normal text-muted-foreground">(optional)</span></p>
+                        <p className="text-xs text-muted-foreground mb-2.5">Give your AI SDR extra guidance — tone nuances, things to mention or avoid, specific instructions.</p>
+                        <textarea
+                          value={settingsCustomTraining}
+                          onChange={(e) => setSettingsCustomTraining(e.target.value)}
+                          placeholder="e.g. Always mention our free trial. Don't use emojis. Reference their recent LinkedIn posts when possible..."
+                          rows={4}
+                          className="flex w-full rounded-xl border-2 border-border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+                        />
                       </div>
                     </div>
                   </CollapsibleContent>
