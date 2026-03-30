@@ -154,6 +154,8 @@ export default function CampaignDetail() {
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
   const [newStepInstructions, setNewStepInstructions] = useState("");
+  const [editStepInstructionsIdx, setEditStepInstructionsIdx] = useState<number | null>(null);
+  const [editStepInstructionsText, setEditStepInstructionsText] = useState("");
 
   
   const [settingsGoal, setSettingsGoal] = useState("");
