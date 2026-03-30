@@ -432,10 +432,10 @@ async function handleHashtagEngagement(
   let inserted = 0;
   const allPosts: any[] = [];
 
-  for (let tag of hashtags.slice(0, 3)) {
+  for (let tag of hashtags.slice(0, 5)) {
     if (!hasTime()) break;
     if (!tag.startsWith('#')) tag = `#${tag}`;
-    await delay(800);
+    await delay(400);
     try {
       const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
         method: 'POST',
