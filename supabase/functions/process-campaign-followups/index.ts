@@ -376,7 +376,16 @@ async function processCampaign(
 
         // Immediately generate next step message after sending
         if (lovableApiKey && hasMoreSteps) {
-          const gen = await generateNextStepMessage(supabase, campaign, req, newWfIdx, workflowSteps, lovableApiKey);
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            newWfIdx,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
           if (gen) generatedCount++;
         }
 
