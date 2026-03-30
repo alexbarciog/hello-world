@@ -3,12 +3,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-function sanitizeMessage(raw: string): string {
-  // Replace em-dashes with comma-space
-  let msg = raw.replace(/—/g, ', ').replace(/–/g, ', ');
-  // Replace semicolons with periods
-  msg = msg.replace(/;/g, '.');
-  // Trim to 300 chars at last complete sentence
+type LeadContext = {
+  firstName: string;
+  lastName: string;
+  company: string;
+  title: string;
+  signal: string;
+};
+
+function isJobChangeSignal(signal: string): boolean {
+  if (!signal) return false;
+  return /(new role|joined|promot|started|hired|appointed|moved to|transitioned)/i.test(signal);
+}
+
+function sanitizeMessage(raw: string, lead: LeadContext): string {
+  let msg = raw
+    .replace(/[—–]/g, ', ')
+    .replace(/;/g, '.')
+    .replace(/\{\{first_name\}\}/gi, lead.firstName || '')
+    .replace(/\{\{last_name\}\}/gi, lead.lastName || '')
+    .replace(/\{\{company\}\}/gi, lead.company || '')
+    .replace(/\{\{title\}\}/gi, lead.title || '')
+    .replace(/\{\{signal\}\}/gi, lead.signal || '')
+    .replace(/\{\{[^}]+\}\}/g, '');
+
+  msg = msg
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line, idx, arr) => line.length > 0 || (idx > 0 && arr[idx - 1].length > 0))
+    .join('\n');
+
   if (msg.length > 300) {
     const trimmed = msg.slice(0, 300);
     const lastPeriod = trimmed.lastIndexOf('.');
@@ -16,8 +40,15 @@ function sanitizeMessage(raw: string): string {
     const lastEnd = Math.max(lastPeriod, lastQuestion);
     if (lastEnd > 100) {
       msg = trimmed.slice(0, lastEnd + 1);
+    } else {
+      msg = trimmed;
     }
   }
+
+  if (!/[?]\s*$/.test(msg)) {
+    msg = `${msg}\n\nOpen to a quick chat?`;
+  }
+
   return msg.trim();
 }
 
@@ -39,6 +70,11 @@ Deno.serve(async (req) => {
       industry,
       language,
       customTraining,
+      firstName,
+      lastName,
+      leadCompany,
+      leadTitle,
+      buyingSignal,
     } = await req.json();
 
     if (!stepNumber || stepNumber < 2) {
@@ -51,92 +87,87 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
 
+    const lead: LeadContext = {
+      firstName: (firstName || '').trim(),
+      lastName: (lastName || '').trim(),
+      company: (leadCompany || '').trim(),
+      title: (leadTitle || '').trim(),
+      signal: (buyingSignal || '').trim(),
+    };
+
     const toneGuide: Record<string, string> = {
-      professional: 'Warm but professional. No slang, but keep it simple and human.',
-      conversational: 'Casual and friendly. Write like texting a work friend. Short and light.',
-      direct: 'Bold and to the point. No fluff. Say it in as few words as possible.',
+      professional: 'Warm but professional. Keep it simple and human.',
+      conversational: 'Casual and friendly. Write like a real peer.',
+      direct: 'Straight to the point. No fluff.',
     };
 
     const goalGuide: Record<string, string> = {
-      conversations: 'Goal: start a real conversation. Do NOT push for a meeting. Just be curious.',
-      demos: 'Goal: book a quick call. Include a soft, low-pressure ask at the end.',
+      conversations: 'Goal: start a real conversation, not a hard pitch.',
+      demos: 'Goal: get a quick call, but keep it low-pressure.',
     };
 
     const isFirstMessage = stepNumber === 2;
     const isLastStep = stepNumber >= 4;
+    const signalIsJobChange = isJobChangeSignal(lead.signal);
 
-    const systemPrompt = `You are a human sales rep who writes short LinkedIn messages. You are NOT an AI. You write like a real person networking on LinkedIn.
+    const systemPrompt = `You write one LinkedIn outreach message to a specific person. It must feel human.
 
-WRITING RULES (MUST FOLLOW ALL):
-- Use simple, everyday English. 6th-grade reading level. Short words only.
-- BANNED WORDS: leverage, utilize, initiate, delighted, thrilled, fascinating, intriguing, remarkable, noteworthy, streamline, optimize, synergy, cutting-edge, game-changer, excited, opportunity, innovative, transformative, aligned, resonate
-- BANNED PUNCTUATION: NEVER use em-dashes (—), en-dashes (–), or semicolons (;). Use periods and commas only.
-- NEVER start with "I hope this message finds you well", "I noticed", "I came across", "I was impressed"
-- DO NOT start with "Hi {{first_name}}" every time. Vary your openings.
-- 2-4 sentences MAXIMUM. Under 50 words total. If you can say it shorter, do it.
-- Split into 2 short paragraphs with a blank line between them.
-- Every message MUST end with ONE clear, simple question. Easy to answer yes/no or with a short reply.
-- Sound like a real person, not a template. No corporate jargon. No marketing speak.
-- Use these placeholders naturally: {{first_name}}, {{company}}, {{title}}, {{signal}}
-- {{signal}} = the specific buying intent signal (LinkedIn post, job change, funding, etc.)
-- ${toneGuide[messageTone] || toneGuide.professional}
-- ${goalGuide[campaignGoal] || goalGuide.conversations}
-${language && language !== 'English (US)' ? `- Write the message in ${language}` : ''}
-${customTraining ? `\nADDITIONAL INSTRUCTIONS FROM USER:\n${customTraining}` : ''}
+LEAD CONTEXT (use real values, never placeholders):
+- First name: ${lead.firstName || 'Not provided'}
+- Last name: ${lead.lastName || 'Not provided'}
+- Company: ${lead.company || 'Not provided'}
+- Title: ${lead.title || 'Not provided'}
+- Buying signal: ${lead.signal || 'Not provided'}
+- Signal type: ${signalIsJobChange ? 'job_change' : 'non_job_change'}
 
-About the sender:
+SENDER CONTEXT:
 - Company: ${companyName || 'Our company'}
-- What we do: ${valueProposition || 'Not specified'}
-- Problems we solve: ${(painPoints || []).join(', ') || 'Not specified'}
+- Value proposition: ${valueProposition || 'Not specified'}
+- Pain points solved: ${(painPoints || []).join(', ') || 'Not specified'}
 - Industry: ${industry || 'Not specified'}
 
-STYLE EXAMPLES:
+RULES (MUST FOLLOW):
+- Use simple everyday English. 2-4 short sentences. Under 55 words.
+- Split into 2 short paragraphs.
+- End with ONE clear question.
+- NEVER output placeholders like {{first_name}}, {{company}}, {{title}}, {{signal}}.
+- Use real values when available. If missing, write naturally without blanks.
+- Anchor message in buying signal first.
+- If signal type is non_job_change, DO NOT mention new role, promotion, or joining.
+- NEVER use em-dash (—) or semicolons.
+- Avoid AI-sounding phrases, buzzwords, and generic intros.
+- ${toneGuide[messageTone] || toneGuide.professional}
+- ${goalGuide[campaignGoal] || goalGuide.conversations}
+${language && language !== 'English (US)' ? `- Write in ${language}` : ''}
+${customTraining ? `\nEXTRA USER INSTRUCTIONS:\n${customTraining}` : ''}`;
 
-GOOD:
-"{{first_name}}, saw your post about scaling the sales team at {{company}}. We've been helping similar teams cut ramp time in half.
-
-Worth a quick chat?"
-
-GOOD:
-"Hey {{first_name}}, noticed {{company}} just raised a round. Congrats! We work with a few teams at that stage on outbound.
-
-Dealing with any hiring challenges right now?"
-
-BAD (too long, too fancy, uses em-dash):
-"I was truly fascinated to come across your remarkable insights regarding the intricacies of scaling — it's clear that you possess a deep understanding of the challenges that organizations face when navigating growth trajectories in today's competitive landscape."
-
-BAD (no question, wall of text):
-"Hi {{first_name}}, I wanted to reach out because I noticed your company is growing rapidly and I think our solution could really help streamline your operations and optimize your workflow to achieve better results across the board."`;
-
-    let userPrompt = '';
-    
     const prevMsgsArray: string[] = Array.isArray(previousMessages) ? previousMessages : [];
     const historyBlock = prevMsgsArray.length > 0
-      ? `\nPREVIOUS MESSAGES (do NOT repeat these):\n${prevMsgsArray.map((m: string, i: number) => `Step ${i + 2}: "${m}"`).join('\n')}\n\nBuild on the conversation naturally.`
+      ? `\nPrevious messages already sent (do not repeat):\n${prevMsgsArray.map((m: string, i: number) => `Step ${i + 2}: "${m}"`).join('\n')}`
       : '';
 
+    let userPrompt = '';
+
     if (isFirstMessage) {
-      userPrompt = `Write the FIRST message after a LinkedIn connection was accepted (Step 2).
+      userPrompt = `Write Step 2 (first message after connection acceptance).${historyBlock}
 
-This is the icebreaker. Reference {{signal}}. Be curious. Ask one question about their work or signal.
-
-Keep it under 40 words. Two short paragraphs.
+Make it personal to this lead's buying signal and role. Keep it concise and natural.
 
 Return ONLY the message text.`;
     } else if (isLastStep) {
-      userPrompt = `Write a FINAL follow-up (Step ${stepNumber}).${historyBlock}
+      userPrompt = `Write Step ${stepNumber} (final follow-up).${historyBlock}
 
 ${previousStepMessage ? `Last message sent:\n"${previousStepMessage}"` : ''}
 
-Short, low-pressure nudge. Acknowledge they're busy. ${campaignGoal === 'demos' ? 'Offer a 10-min call.' : 'Keep the door open.'} Under 35 words.
+Short nudge, low pressure, clear question.
 
 Return ONLY the message text.`;
     } else {
-      userPrompt = `Write a follow-up (Step ${stepNumber}).${historyBlock}
+      userPrompt = `Write Step ${stepNumber} follow-up.${historyBlock}
 
 ${previousStepMessage ? `Last message sent:\n"${previousStepMessage}"` : ''}
 
-Reference a pain point relevant to {{title}} at {{company}}. Don't repeat previous messages. Under 45 words.
+Build naturally, add one relevant pain point, and end with a clear question.
 
 Return ONLY the message text.`;
     }
@@ -181,7 +212,7 @@ Return ONLY the message text.`;
 
     if (!rawMessage) throw new Error('No message generated');
 
-    const message = sanitizeMessage(rawMessage);
+    const message = sanitizeMessage(rawMessage, lead);
 
     return new Response(JSON.stringify({ message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
