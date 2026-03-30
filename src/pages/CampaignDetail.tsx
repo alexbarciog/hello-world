@@ -301,15 +301,31 @@ export default function CampaignDetail() {
       .eq("status", "accepted");
     setStep1Accepted(acceptedCount || 0);
 
-    // Load today's sent count for scheduled view
+    // Load today's sent count and per-run breakdown
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
-    const { count: todaySent } = await supabase
+    const { data: todayRequests } = await supabase
       .from("campaign_connection_requests" as any)
-      .select("id", { count: "exact", head: true })
+      .select("id, sent_at")
       .eq("campaign_id", campaignId)
       .gte("sent_at", todayStart.toISOString());
-    setTodaySentCount(todaySent || 0);
+    
+    const todayReqs = (todayRequests || []) as { id: string; sent_at: string }[];
+    setTodaySentCount(todayReqs.length);
+
+    // Group by run time slots (UTC hours: 8,10,12,14,16)
+    const runHours = [8, 10, 12, 14, 16];
+    const runCounts: Record<number, number> = {};
+    for (const r of todayReqs) {
+      const h = new Date(r.sent_at).getUTCHours();
+      // Find which run slot this belongs to (the latest slot <= sent hour)
+      let slotHour = runHours[0];
+      for (const rh of runHours) {
+        if (h >= rh) slotHour = rh;
+      }
+      runCounts[slotHour] = (runCounts[slotHour] || 0) + 1;
+    }
+    setTodayRunCounts(runCounts);
 
     // Load per-contact statuses from connection requests
     const { data: connRequests } = await supabase
