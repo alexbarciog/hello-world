@@ -577,6 +577,11 @@ async function handleHashtagEngagement(
         const match = scoreProfileAgainstICP(fullProfile, icp);
         const hl = fullProfile.headline || fullProfile.title || '';
         if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+        // Strict industry filter for hashtag engagers: must match user's ICP industries
+        if (icp.industries.length > 0 && !match.industryMatch) {
+          console.log(`hashtag_engagement: skipped "${fullProfile.first_name || ''}" — industry mismatch (${fullProfile.industry || 'unknown'})`);
+          continue;
+        }
         if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
 
         const signal = `Engaged with ${post._hashtag}`;
