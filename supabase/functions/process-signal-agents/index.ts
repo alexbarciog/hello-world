@@ -166,6 +166,11 @@ Deno.serve(async (req) => {
           }).eq('id', agent.id);
         }
 
+        // Calculate per-signal time budget: divide remaining time equally
+        const activeSignals = enabled.filter((s: string) => s !== 'profile_viewers');
+        const timePerSignal = activeSignals.length > 0 ? Math.floor((MAX_RUNTIME_MS - elapsedMs() - 5000) / activeSignals.length) : 30000;
+        console.log(`Time budget: ${timePerSignal}ms per signal (${activeSignals.length} signals, ${Math.round((MAX_RUNTIME_MS - elapsedMs()) / 1000)}s remaining)`);
+
         // Resolve user's LinkedIn ID if needed
         let userLinkedInId: string | null = null;
         if (enabled.includes('post_engagers') || enabled.includes('profile_viewers')) {
@@ -179,7 +184,9 @@ Deno.serve(async (req) => {
 
         // ── 2. Post Engagers ──
         if (hasTime() && enabled.includes('post_engagers') && userLinkedInId) {
-          const count = await handlePostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, userLinkedInId);
+          const t0 = Date.now();
+          const count = await handlePostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, userLinkedInId, timePerSignal);
+          console.log(`post_engagers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
           await saveProgress(count);
         }
 
@@ -187,7 +194,9 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('keyword_posts')) {
           const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
           if (kws.length > 0) {
-            const count = await handleKeywordPosts(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws);
+            const t0 = Date.now();
+            const count = await handleKeywordPosts(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws, timePerSignal);
+            console.log(`keyword_posts: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
             await saveProgress(count);
           }
         }
@@ -196,7 +205,9 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('hashtag_engagement')) {
           const kws = signalKeywords['hashtag_engagement'] || [];
           if (kws.length > 0) {
-            const count = await handleHashtagEngagement(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws);
+            const t0 = Date.now();
+            const count = await handleHashtagEngagement(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, kws, timePerSignal);
+            console.log(`hashtag_engagement: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
             await saveProgress(count);
           }
         }
@@ -205,17 +216,17 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('competitor_followers')) {
           const urls = signalKeywords['competitor_followers'] || [];
           if (urls.length > 0) {
-            // Split into company URLs and personal profile URLs
+            const t0 = Date.now();
             const companyUrls = urls.filter((u: string) => u.includes('/company/'));
             const personUrls = urls.filter((u: string) => u.includes('/in/'));
             let count = 0;
             if (companyUrls.length > 0) {
-              count += await handleCompetitorFollowers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls);
+              count += await handleCompetitorFollowers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls, timePerSignal);
             }
-            // For personal profile URLs, treat as profile engagers (scan their post reactions)
             if (personUrls.length > 0 && hasTime()) {
-              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Follows');
+              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Follows', timePerSignal - (Date.now() - t0));
             }
+            console.log(`competitor_followers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
             await saveProgress(count);
           }
         }
@@ -224,16 +235,17 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('competitor_engagers')) {
           const urls = signalKeywords['competitor_engagers'] || [];
           if (urls.length > 0) {
+            const t0 = Date.now();
             const companyUrls = urls.filter((u: string) => u.includes('/company/'));
             const personUrls = urls.filter((u: string) => u.includes('/in/'));
             let count = 0;
             if (companyUrls.length > 0) {
-              count += await handleCompetitorPostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls);
+              count += await handleCompetitorPostEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, companyUrls, timePerSignal);
             }
-            // For personal profile URLs, scan their posts for engagers
             if (personUrls.length > 0 && hasTime()) {
-              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Engaged with');
+              count += await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, personUrls, 'Engaged with', timePerSignal - (Date.now() - t0));
             }
+            console.log(`competitor_engagers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
             await saveProgress(count);
           }
         }
@@ -242,14 +254,18 @@ Deno.serve(async (req) => {
         if (hasTime() && enabled.includes('profile_engagers')) {
           const urls = signalKeywords['profile_engagers'] || [];
           if (urls.length > 0) {
-            const count = await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls);
+            const t0 = Date.now();
+            const count = await handleProfileEngagers(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, urls, 'Engaged with', timePerSignal);
+            console.log(`profile_engagers: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
             await saveProgress(count);
           }
         }
 
         // ── 8. Job Changes ──
         if (hasTime() && enabled.includes('job_changes')) {
-          const count = await handleJobChanges(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id);
+          const t0 = Date.now();
+          const count = await handleJobChanges(supabase, accountId, UNIPILE_API_KEY, UNIPILE_DSN, icp, agent.user_id, listName, agent.id, timePerSignal);
+          console.log(`job_changes: ${count} leads in ${Math.round((Date.now() - t0) / 1000)}s`);
           await saveProgress(count);
         }
 
