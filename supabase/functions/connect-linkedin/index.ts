@@ -400,4 +400,4 @@ async function activatePendingAndDiscover(
     console.error('[activate] error:', err);
   }
 }
-}
+
