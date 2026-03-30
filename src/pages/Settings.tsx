@@ -470,7 +470,18 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
           </motion.div>
         </div>
         <motion.div custom={5} variants={fadeUp} initial="hidden" animate="visible" className="mb-4">
-          <label className={labelCls}>Description</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Description</label>
+            <button
+              type="button"
+              onClick={handleGenerateDescription}
+              disabled={generatingDesc || !form.website.trim()}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[hsl(var(--goji-coral))/10] text-[hsl(var(--goji-coral))] hover:bg-[hsl(var(--goji-coral))/20] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {generatingDesc ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {generatingDesc ? "Generating…" : "Generate with AI"}
+            </button>
+          </div>
           <textarea className={`${inputCls} resize-none`} rows={3} placeholder="Brief description of what your company does…" value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
         </motion.div>
         <motion.div custom={6} variants={fadeUp} initial="hidden" animate="visible" className="mb-6">
