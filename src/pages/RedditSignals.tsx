@@ -210,6 +210,10 @@ export default function RedditSignals() {
 
   // ── Manual re-scan ──
   const handleRescan = async () => {
+    if (sub.loading) {
+      toast.info("Checking subscription status, please try again in a moment.");
+      return;
+    }
     if (!sub.subscribed) {
       toast.error("Upgrade to a paid plan to scan Reddit", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
