@@ -201,10 +201,14 @@ async function processCampaignReplies(
 
           // Smart stop: check for rejection
           if (isRejection(leadMessage)) {
-            console.log(`[ai-replies] Rejection detected from contact ${cr.contact_id}: "${leadMessage.slice(0, 50)}"`);
+            console.log(`[ai-replies] Rejection detected from contact ${cr.contact_id}: "${leadMessage.slice(0, 80)}"`);
             await supabase.from('campaign_connection_requests')
-              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp })
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
               .eq('id', cr.id);
+            // Also flag the contact
+            await supabase.from('contacts')
+              .update({ lead_status: 'not_interested' })
+              .eq('id', cr.contact_id);
             stopped++;
             continue;
           }
