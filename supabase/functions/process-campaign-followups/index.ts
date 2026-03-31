@@ -321,6 +321,35 @@ async function processCampaign(
           continue;
         }
 
+        // ── GUARD: Skip pre-existing conversations ──
+        const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
+        try {
+          const checkMsgRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
+            { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
+          );
+          if (checkMsgRes.ok) {
+            const checkMsgData = await checkMsgRes.json();
+            const chatMessages = checkMsgData.items || checkMsgData || [];
+            if (Array.isArray(chatMessages) && chatMessages.length > 0) {
+              const sorted = [...chatMessages].sort((a: any, b: any) =>
+                new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
+                new Date(b.timestamp || b.date || b.created_at || 0).getTime()
+              );
+              const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
+              if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
+                console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation (oldest msg: ${oldestMsgTime.toISOString()}, CR: ${crCreatedAt.toISOString()})`);
+                await supabase.from('campaign_connection_requests')
+                  .update({ conversation_stopped: true })
+                  .eq('id', req.id);
+                continue;
+              }
+            }
+          }
+        } catch (guardErr) {
+          console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
+        }
+
         const { data: contact } = await supabase
           .from('contacts')
           .select('first_name, last_name, company, title, signal')
