@@ -250,27 +250,36 @@ async function processCampaign(
   if (acceptedRequests && acceptedRequests.length > 0) {
     for (const req of acceptedRequests) {
       try {
-        // Self-heal stale rows that were incorrectly marked accepted before
-        // acceptance detection was hardened.
+        // For accepted contacts without chat_id, try to find it now
         if (!req.chat_id) {
-          console.log(`[followup] reverting stale accepted request ${req.id} with no chat_id`);
-          await supabase
-            .from('scheduled_messages')
-            .delete()
-            .eq('connection_request_id', req.id)
-            .in('status', ['generated', 'edited']);
+          const { data: contact } = await supabase
+            .from('contacts')
+            .select('linkedin_profile_id, linkedin_url')
+            .eq('id', req.contact_id)
+            .single();
 
-          await supabase
-            .from('campaign_connection_requests')
-            .update({
-              status: 'sent',
-              accepted_at: null,
-              current_step: 1,
-              step_completed_at: null,
-            })
-            .eq('id', req.id);
+          if (contact) {
+            let pubId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+            if (pubId) {
+              try { pubId = decodeURIComponent(pubId); } catch { /* ok */ }
+              const pId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, pubId);
+              if (pId) {
+                const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, pId, null);
+                if (foundChat) {
+                  req.chat_id = foundChat;
+                  await supabase.from('campaign_connection_requests')
+                    .update({ chat_id: foundChat })
+                    .eq('id', req.id);
+                  console.log(`[followup] resolved chat_id for accepted contact ${req.contact_id}: ${foundChat}`);
+                }
+              }
+            }
+          }
 
-          continue;
+          if (!req.chat_id) {
+            console.log(`[followup] accepted contact ${req.contact_id} still has no chat_id, skipping send (will retry next run)`);
+            continue;
+          }
         }
 
         const currentStep = req.current_step || 1;
