@@ -118,6 +118,7 @@ async function processCampaign(
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
+  const today = new Date().toISOString().split('T')[0];
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
   console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${workflowSteps[0]?.type === 'invitation'}`);
