@@ -2745,13 +2745,16 @@ export default function CampaignDetail() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                                sm.status === "ready" 
+                                sm.status === "sent"
+                                  ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                                  : sm.status === "ready" 
                                   ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
                                   : sm.status === "waiting_acceptance"
                                   ? "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20"
                                   : "bg-muted text-muted-foreground ring-1 ring-border"
                               }`}>
-                                {sm.status === "ready" ? "Ready to send" 
+                                {sm.status === "sent" ? "✅ Sent"
+                                  : sm.status === "ready" ? "Ready to send" 
                                   : sm.status === "waiting_acceptance" ? "⏳ Awaiting accept" 
                                   : `📅 ${sm.scheduledDate}`}
                               </span>
