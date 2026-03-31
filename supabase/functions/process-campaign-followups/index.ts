@@ -499,7 +499,6 @@ async function processCampaign(
         messagesSent++;
 
         // Mark daily_scheduled_leads entry as sent (if exists)
-        const today = new Date().toISOString().split('T')[0];
         const actionType = `message_step_${newStep}`;
         await supabase
           .from('daily_scheduled_leads')
@@ -522,6 +521,41 @@ async function processCampaign(
             supabaseServiceRoleKey,
           );
           if (gen) generatedCount++;
+
+          // Add next step to daily queue if delay allows same-day
+          const futureStep = workflowSteps[newWfIdx];
+          if (futureStep && futureStep.type === 'message') {
+            const delayHours = futureStep.delay_hours || (futureStep.delay_days ? futureStep.delay_days * 24 : 24);
+            const readyAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+            const endOfToday = new Date(today + 'T23:59:59.999Z');
+            if (readyAt <= endOfToday) {
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('daily_messages_limit')
+                .eq('user_id', req.user_id)
+                .single();
+              const msgLimit = userProfile?.daily_messages_limit || 15;
+              const { count: msgToday } = await supabase
+                .from('daily_scheduled_leads')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', req.user_id)
+                .eq('scheduled_date', today)
+                .like('action_type', 'message_step_%');
+              if ((msgToday || 0) < msgLimit) {
+                const nextActionType = `message_step_${newStep + 1}`;
+                await supabase.from('daily_scheduled_leads').upsert({
+                  campaign_id: campaign.id,
+                  contact_id: req.contact_id,
+                  user_id: req.user_id,
+                  scheduled_date: today,
+                  action_type: nextActionType,
+                  step_index: newWfIdx,
+                  status: 'pending',
+                }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
+                console.log(`[followup] Queued ${nextActionType} for contact ${req.contact_id}`);
+              }
+            }
+          }
         }
 
         await delay(3000 + Math.random() * 2000);
