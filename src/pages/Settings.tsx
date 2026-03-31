@@ -489,22 +489,6 @@ function CompanyTab({ campaignData, onSave }: { campaignData: any; onSave: (data
           <input className={inputCls} placeholder="https://linkedin.com/company/yourcompany" value={form.linkedin} onChange={(e) => setForm((p) => ({ ...p, linkedin: e.target.value }))} />
         </motion.div>
 
-        <motion.div custom={7} variants={fadeUp} initial="hidden" animate="visible" className="mb-6 rounded-xl bg-muted/40 border border-border p-4 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Preferences</p>
-          {[
-            { key: "autoEnrich", label: "Auto-enrich email addresses", desc: "Automatically find emails for generated leads" },
-            { key: "preventDuplication", label: "Prevent contact duplication", desc: "AI agents won't import the same lead twice across team members" },
-          ].map((pref) => (
-            <label key={pref.key} className="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" className="mt-0.5 w-4 h-4 rounded border-border accent-[hsl(var(--goji-coral))]"
-                checked={(form as any)[pref.key]} onChange={(e) => setForm((p) => ({ ...p, [pref.key]: e.target.checked }))} />
-              <div>
-                <p className="text-sm font-medium text-foreground">{pref.label}</p>
-                <p className="text-xs text-muted-foreground">{pref.desc}</p>
-              </div>
-            </label>
-          ))}
-        </motion.div>
 
         <div className="flex items-center gap-3">
           <SaveButton saving={saving} saved={saved} onClick={handleSave} />
