@@ -188,6 +188,21 @@ async function processCampaignReplies(
         new Date(a.timestamp || a.date || a.created_at || 0).getTime()
       );
 
+      // ── GUARD: Check if this is a pre-existing conversation ──
+      // If the oldest message in this batch is from BEFORE the connection request,
+      // this is a personal conversation — DO NOT reply.
+      const oldestMessage = sortedMessages[sortedMessages.length - 1];
+      const oldestMsgTime = new Date(oldestMessage?.timestamp || oldestMessage?.date || oldestMessage?.created_at || 0);
+      if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
+        console.log(`[ai-replies] Skipping contact ${cr.contact_id} — pre-existing conversation detected (oldest msg: ${oldestMsgTime.toISOString()}, CR created: ${crCreatedAt.toISOString()})`);
+        // Mark as stopped so we don't keep checking
+        await supabase.from('campaign_connection_requests')
+          .update({ conversation_stopped: true })
+          .eq('id', cr.id);
+        stopped++;
+        continue;
+      }
+
       const latestMessage = sortedMessages[0];
       if (!latestMessage) continue;
 
