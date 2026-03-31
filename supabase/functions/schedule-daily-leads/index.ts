@@ -103,11 +103,8 @@ Deno.serve(async (req) => {
           if (!campaign.source_list_id) continue;
 
           // ── Schedule connection requests ──
-          const campaignConnLimit = campaign.daily_connect_limit || 25;
-          const remainingConnections = Math.min(
-            campaignConnLimit,
-            connectionsLimit - connectionsScheduled
-          );
+          // Use profile limit as the primary cap (user-level daily max)
+          const remainingConnections = connectionsLimit - connectionsScheduled;
 
           if (remainingConnections > 0) {
             // Get contacts in list
