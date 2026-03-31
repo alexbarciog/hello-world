@@ -185,7 +185,14 @@ async function processCampaign(
         // Accept if we found a chat OR if the profile shows FIRST_DEGREE connection
         const firstDegree = profileData ? isFirstDegree(profileData) : false;
 
-        if (chatId || firstDegree) {
+        // Fallback: check invitation API if profile check didn't confirm
+        let invitationAccepted = false;
+        if (!chatId && !firstDegree && providerId) {
+          console.log(`[followup] Profile check negative for ${req.contact_id}, trying invitation API fallback`);
+          invitationAccepted = await checkInvitationAccepted(unipileDsn, unipileApiKey, accountId, providerId);
+        }
+
+        if (chatId || firstDegree || invitationAccepted) {
           await supabase
             .from('campaign_connection_requests')
             .update({
@@ -198,9 +205,11 @@ async function processCampaign(
             .eq('id', req.id);
           acceptedCount++;
           wasAccepted = true;
-          console.log(`[followup] contact ${req.contact_id} accepted (chat: ${!!chatId}, firstDegree: ${firstDegree})`);
+          console.log(`[followup] contact ${req.contact_id} ACCEPTED (chat: ${!!chatId}, firstDegree: ${firstDegree}, invAPI: ${invitationAccepted})`);
+        } else {
+          console.warn(`[followup] contact ${req.contact_id} NOT accepted (providerId: ${providerId})`);
         }
-        await delay(800);
+        await delay(300);
 
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
@@ -218,7 +227,7 @@ async function processCampaign(
           if (gen) generatedCount++;
         }
 
-        await delay(1000 + Math.random() * 1000);
+        await delay(500);
       } catch (err) {
         console.error(`[followup] acceptance check error for ${req.contact_id}:`, err);
       }
