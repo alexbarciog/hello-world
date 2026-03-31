@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
 
     for (const [campaignId, leads] of Object.entries(byCampaign)) {
       try {
-        // Get campaign daily limit
+        // Get campaign and user profile limits
         const { data: campaign } = await serviceClient
           .from('campaigns')
           .select('daily_connect_limit, user_id')
@@ -67,7 +67,14 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const dailyLimit = campaign.daily_connect_limit || 25;
+        // Use profile daily_connections_limit as the authoritative cap
+        const { data: userProfile } = await serviceClient
+          .from('profiles')
+          .select('daily_connections_limit')
+          .eq('user_id', campaign.user_id)
+          .single();
+
+        const dailyLimit = userProfile?.daily_connections_limit || campaign.daily_connect_limit || 25;
         const batchSize = Math.max(1, Math.floor(dailyLimit / SEQUENCES_PER_DAY));
 
         // Count how many were already sent today

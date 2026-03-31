@@ -17,6 +17,32 @@ Deno.serve(async (req) => {
 
     const today = new Date().toISOString().split('T')[0];
 
+    // ── Cleanup: expire yesterday's (and older) pending entries ──
+    const { data: staleLeads } = await supabase
+      .from('daily_scheduled_leads')
+      .select('id, campaign_id, contact_id, user_id, action_type, step_index')
+      .lt('scheduled_date', today)
+      .eq('status', 'pending');
+
+    if (staleLeads && staleLeads.length > 0) {
+      console.log(`[schedule-daily] Expiring ${staleLeads.length} stale pending entries from previous days`);
+      const staleIds = staleLeads.map((s: any) => s.id);
+      // Mark them as expired in batches
+      for (let i = 0; i < staleIds.length; i += 50) {
+        await supabase
+          .from('daily_scheduled_leads')
+          .update({ status: 'expired' })
+          .in('id', staleIds.slice(i, i + 50));
+      }
+    }
+
+    // Also clean up sent/failed/skipped from previous days (housekeeping)
+    await supabase
+      .from('daily_scheduled_leads')
+      .delete()
+      .lt('scheduled_date', today)
+      .in('status', ['sent', 'failed', 'skipped', 'expired']);
+
     // Get all active campaigns
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
@@ -77,11 +103,8 @@ Deno.serve(async (req) => {
           if (!campaign.source_list_id) continue;
 
           // ── Schedule connection requests ──
-          const campaignConnLimit = campaign.daily_connect_limit || 25;
-          const remainingConnections = Math.min(
-            campaignConnLimit,
-            connectionsLimit - connectionsScheduled
-          );
+          // Use profile limit as the primary cap (user-level daily max)
+          const remainingConnections = connectionsLimit - connectionsScheduled;
 
           if (remainingConnections > 0) {
             // Get contacts in list
@@ -167,7 +190,7 @@ Deno.serve(async (req) => {
 
           for (const req of acceptedRequests) {
             if (msgScheduledThisCampaign >= remainingMessages) break;
-            if (!req.chat_id) continue;
+            // chat_id may not exist yet for newly accepted contacts — still schedule
 
             const currentStep = req.current_step || 1;
             const nextWfIdx = hasInvitation ? currentStep : currentStep - 1;
