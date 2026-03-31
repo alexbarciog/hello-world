@@ -641,7 +641,7 @@ export default function CampaignDetail() {
       .from("scheduled_messages" as any)
       .select("id, connection_request_id, step_index, message, status, edited_by_user")
       .in("connection_request_id", connReqIds)
-      .in("status", ["generated", "edited"]);
+      .in("status", ["generated", "edited", "sent"]);
     
     const preGenMap: Record<string, any> = {};
     (preGenMsgs || []).forEach((m: any) => {
