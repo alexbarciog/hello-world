@@ -260,7 +260,7 @@ async function getStoredAccountInfo(userId: string, supabaseUrl: string, service
   return { accountId: profile.unipile_account_id, displayName: profile.linkedin_display_name || null };
 }
 
-async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string, unipileDsn: string) {
+async function findRemoteLinkedinAccount(userId: string, unipileApiKey: string, unipileDsn: string): Promise<{ accountId: string; displayName: string | null } | null> {
   try {
     const response = await fetch(`https://${unipileDsn}/api/v1/accounts`, {
       headers: {
@@ -278,15 +278,19 @@ async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string
     const data = await response.json();
     const accounts = extractAccounts(data);
     const matchedAccount = accounts.find((account) => isMatchingLinkedinAccount(account, userId));
-    const accountId = matchedAccount ? getAccountId(matchedAccount) : null;
+    
+    if (!matchedAccount) {
+      console.log('[check_status] remote lookup', JSON.stringify({ userId, accountsFound: accounts.length, matched: false }));
+      return null;
+    }
 
-    console.log('[check_status] remote lookup', JSON.stringify({
-      userId,
-      accountsFound: accounts.length,
-      matched: Boolean(accountId),
-    }));
+    const accountId = getAccountId(matchedAccount);
+    if (!accountId) return null;
 
-    return accountId;
+    const displayName = getAccountDisplayName(matchedAccount);
+    console.log('[check_status] remote lookup', JSON.stringify({ userId, accountsFound: accounts.length, matched: true, displayName }));
+
+    return { accountId, displayName };
   } catch (error) {
     console.error('[check_status] remote lookup error:', error);
     return null;
