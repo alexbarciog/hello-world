@@ -232,7 +232,7 @@ async function processCampaign(
       .eq('id', campaign.id);
   }
 
-  // ── Phase 2: Send follow-up messages for accepted contacts (only when delay passed) ──
+  // ── Phase 2: Send follow-up messages for verified accepted contacts only ──
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
@@ -244,6 +244,29 @@ async function processCampaign(
   if (acceptedRequests && acceptedRequests.length > 0) {
     for (const req of acceptedRequests) {
       try {
+        // Self-heal stale rows that were incorrectly marked accepted before
+        // acceptance detection was hardened.
+        if (!req.chat_id) {
+          console.log(`[followup] reverting stale accepted request ${req.id} with no chat_id`);
+          await supabase
+            .from('scheduled_messages')
+            .delete()
+            .eq('connection_request_id', req.id)
+            .in('status', ['generated', 'edited']);
+
+          await supabase
+            .from('campaign_connection_requests')
+            .update({
+              status: 'sent',
+              accepted_at: null,
+              current_step: 1,
+              step_completed_at: null,
+            })
+            .eq('id', req.id);
+
+          continue;
+        }
+
         const currentStep = req.current_step || 1;
         const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
         const nextStep = workflowSteps[nextWfIdx];
@@ -301,12 +324,8 @@ async function processCampaign(
           }
         }
 
-        if (!chatId && providerId) {
-          // No chat exists yet — we'll send the first message directly via provider_id
-          // This will create a new chat automatically
-          console.log(`[followup] no chat for contact ${req.contact_id}, will send via provider_id ${providerId}`);
-        } else if (!chatId) {
-          console.log(`[followup] no chat and no provider_id for contact ${req.contact_id}, skipping`);
+        if (!chatId) {
+          console.log(`[followup] no verified chat for contact ${req.contact_id}, skipping`);
           continue;
         }
 
@@ -370,51 +389,18 @@ async function processCampaign(
 
         if (!message.trim()) continue;
 
-        let sendRes: Response;
-        if (chatId) {
-          // Send via existing chat
-          sendRes = await fetch(
-            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
-            {
-              method: 'POST',
-              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify({ text: message.trim() }),
-            }
-          );
-        } else {
-          // Send via provider_id — creates a new chat
-          sendRes = await fetch(
-            `https://${unipileDsn}/api/v1/chats`,
-            {
-              method: 'POST',
-              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify({
-                account_id: accountId,
-                attendees_ids: [providerId],
-                text: message.trim(),
-              }),
-            }
-          );
-        }
+        const sendRes = await fetch(
+          `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
+          {
+            method: 'POST',
+            headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ text: message.trim() }),
+          }
+        );
 
         if (!sendRes.ok) {
           console.error(`[followup] send failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           continue;
-        }
-
-        // If we created a new chat, extract the chat_id from the response
-        if (!chatId) {
-          try {
-            const sendData = await sendRes.json();
-            const newChatId = sendData.chat_id || sendData.id || null;
-            if (newChatId) {
-              chatId = newChatId;
-              await supabase.from('campaign_connection_requests')
-                .update({ chat_id: newChatId })
-                .eq('id', req.id);
-              console.log(`[followup] new chat created for ${req.contact_id}: ${newChatId}`);
-            }
-          } catch { /* ok, message was sent */ }
         }
 
         console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
@@ -476,18 +462,19 @@ async function processCampaign(
     }
   }
 
-  // ── Phase 3: Catch-up generation — generate messages for accepted contacts missing scheduled_messages ──
-  // This ensures messages are generated even if the contact was accepted before this code was deployed
+  // ── Phase 3: Catch-up generation — generate messages only for verified accepted contacts missing scheduled_messages ──
   if (lovableApiKey) {
     const { data: allAccepted } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, current_step, user_id')
+      .select('id, contact_id, current_step, user_id, chat_id')
       .eq('campaign_id', campaign.id)
       .eq('status', 'accepted');
 
     if (allAccepted && allAccepted.length > 0) {
       for (const req of allAccepted) {
         try {
+          if (!req.chat_id) continue;
+
           const currentStep = req.current_step || 1;
           const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
           const nextStep = workflowSteps[nextWfIdx];
