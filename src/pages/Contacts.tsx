@@ -121,7 +121,11 @@ export default function Contacts() {
 
   const filtered = useMemo(() => {
     let result = contacts;
-    if (tab !== "all") result = result.filter((c) => c.relevance_tier === tab);
+    if (tab === "not_interested") {
+      result = result.filter((c) => c.lead_status === 'not_interested');
+    } else if (tab !== "all") {
+      result = result.filter((c) => c.relevance_tier === tab);
+    }
     if (listFilter !== "all") {
       const contactIdsInList = new Set(
         Object.entries(contactListMap)
