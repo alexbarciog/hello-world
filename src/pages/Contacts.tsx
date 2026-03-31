@@ -100,8 +100,11 @@ export default function Contacts() {
   };
 
   const tierCounts = useMemo(() => {
-    const counts = { hot: 0, warm: 0, cold: 0 };
-    contacts.forEach((c) => { if (c.relevance_tier in counts) counts[c.relevance_tier]++; });
+    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0 };
+    contacts.forEach((c) => {
+      if (c.lead_status === 'not_interested') counts.not_interested++;
+      if (c.relevance_tier in counts) (counts as any)[c.relevance_tier]++;
+    });
     return counts;
   }, [contacts]);
 
