@@ -173,26 +173,12 @@ async function processCampaign(
 
         let wasAccepted = false;
 
+        // Only mark as accepted when a chat exists — this is the most reliable
+        // indicator that the connection request was truly accepted by the recipient.
+        // The isFirstDegree() fallback was producing false positives.
         const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
-        if (!providerId) {
-          const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
-          if (profileData && isFirstDegree(profileData)) {
-            await supabase
-              .from('campaign_connection_requests')
-              .update({
-                status: 'accepted',
-                accepted_at: new Date().toISOString(),
-                current_step: 1,
-                step_completed_at: new Date().toISOString(),
-              })
-              .eq('id', req.id);
-            acceptedCount++;
-            wasAccepted = true;
-          }
-          await delay(800);
-        } else {
+        if (providerId) {
           const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
-
           if (chatId) {
             await supabase
               .from('campaign_connection_requests')
@@ -206,23 +192,9 @@ async function processCampaign(
               .eq('id', req.id);
             acceptedCount++;
             wasAccepted = true;
-          } else {
-            const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
-            if (profileData && isFirstDegree(profileData)) {
-              await supabase
-                .from('campaign_connection_requests')
-                .update({
-                  status: 'accepted',
-                  accepted_at: new Date().toISOString(),
-                  current_step: 1,
-                  step_completed_at: new Date().toISOString(),
-                })
-                .eq('id', req.id);
-              acceptedCount++;
-              wasAccepted = true;
-            }
           }
         }
+        await delay(800);
 
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
