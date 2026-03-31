@@ -1657,9 +1657,13 @@ export default function CampaignDetail() {
                               </td>
                               <td className="px-3 py-3">
                                 <div className="flex gap-0.5">
-                                  {[c.signal_a_hit, c.signal_b_hit, c.signal_c_hit].map((hit, i) => (
-                                    <Flame key={i} className={`w-4 h-4 ${hit ? "text-orange-500" : "text-muted-foreground/20"}`} fill={hit ? "currentColor" : "none"} />
-                                  ))}
+                                  {(() => {
+                                    const tier = c.relevance_tier;
+                                    const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                                    return [0, 1, 2].map((i) => (
+                                      <Flame key={i} className={`w-4 h-4 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                                    ));
+                                  })()}
                                 </div>
                               </td>
                               <td className="px-3 py-3">
