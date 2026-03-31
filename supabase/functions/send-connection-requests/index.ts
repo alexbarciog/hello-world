@@ -100,9 +100,10 @@ Deno.serve(async (req) => {
         }
 
         const accountId = profile.unipile_account_id;
-        const batch = leads.slice(0, toSendNow);
+        let sentThisBatch = 0;
 
-        for (const sl of batch) {
+        for (const sl of leads) {
+          if (sentThisBatch >= toSendNow) break;
           try {
             const { data: contact } = await serviceClient
               .from('contacts')
@@ -188,6 +189,7 @@ Deno.serve(async (req) => {
             });
 
             totalSent++;
+            sentThisBatch++;
 
             // Small delay between requests
             await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));

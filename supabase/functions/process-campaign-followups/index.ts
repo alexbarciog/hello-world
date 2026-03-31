@@ -173,26 +173,32 @@ async function processCampaign(
 
         let wasAccepted = false;
 
-        // Only mark as accepted when a chat exists — this is the most reliable
-        // indicator that the connection request was truly accepted by the recipient.
-        // The isFirstDegree() fallback was producing false positives.
-        const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        // Check acceptance via chat_id OR FIRST_DEGREE network distance
+        const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
+        const providerId = profileData?.provider_id || null;
+        let chatId: string | null = null;
+
         if (providerId) {
-          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
-          if (chatId) {
-            await supabase
-              .from('campaign_connection_requests')
-              .update({
-                status: 'accepted',
-                accepted_at: new Date().toISOString(),
-                current_step: 1,
-                step_completed_at: new Date().toISOString(),
-                chat_id: chatId,
-              })
-              .eq('id', req.id);
-            acceptedCount++;
-            wasAccepted = true;
-          }
+          chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
+        }
+
+        // Accept if we found a chat OR if the profile shows FIRST_DEGREE connection
+        const firstDegree = profileData ? isFirstDegree(profileData) : false;
+
+        if (chatId || firstDegree) {
+          await supabase
+            .from('campaign_connection_requests')
+            .update({
+              status: 'accepted',
+              accepted_at: new Date().toISOString(),
+              current_step: 1,
+              step_completed_at: new Date().toISOString(),
+              chat_id: chatId || null,
+            })
+            .eq('id', req.id);
+          acceptedCount++;
+          wasAccepted = true;
+          console.log(`[followup] contact ${req.contact_id} accepted (chat: ${!!chatId}, firstDegree: ${firstDegree})`);
         }
         await delay(800);
 
@@ -244,27 +250,36 @@ async function processCampaign(
   if (acceptedRequests && acceptedRequests.length > 0) {
     for (const req of acceptedRequests) {
       try {
-        // Self-heal stale rows that were incorrectly marked accepted before
-        // acceptance detection was hardened.
+        // For accepted contacts without chat_id, try to find it now
         if (!req.chat_id) {
-          console.log(`[followup] reverting stale accepted request ${req.id} with no chat_id`);
-          await supabase
-            .from('scheduled_messages')
-            .delete()
-            .eq('connection_request_id', req.id)
-            .in('status', ['generated', 'edited']);
+          const { data: contact } = await supabase
+            .from('contacts')
+            .select('linkedin_profile_id, linkedin_url')
+            .eq('id', req.contact_id)
+            .single();
 
-          await supabase
-            .from('campaign_connection_requests')
-            .update({
-              status: 'sent',
-              accepted_at: null,
-              current_step: 1,
-              step_completed_at: null,
-            })
-            .eq('id', req.id);
+          if (contact) {
+            let pubId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+            if (pubId) {
+              try { pubId = decodeURIComponent(pubId); } catch { /* ok */ }
+              const pId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, pubId);
+              if (pId) {
+                const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, pId, null);
+                if (foundChat) {
+                  req.chat_id = foundChat;
+                  await supabase.from('campaign_connection_requests')
+                    .update({ chat_id: foundChat })
+                    .eq('id', req.id);
+                  console.log(`[followup] resolved chat_id for accepted contact ${req.contact_id}: ${foundChat}`);
+                }
+              }
+            }
+          }
 
-          continue;
+          if (!req.chat_id) {
+            console.log(`[followup] accepted contact ${req.contact_id} still has no chat_id, skipping send (will retry next run)`);
+            continue;
+          }
         }
 
         const currentStep = req.current_step || 1;
@@ -484,7 +499,7 @@ async function processCampaign(
     if (allAccepted && allAccepted.length > 0) {
       for (const req of allAccepted) {
         try {
-          if (!req.chat_id) continue;
+          // Generate message even without chat_id — chat will be resolved when sending
 
           const currentStep = req.current_step || 1;
           const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
