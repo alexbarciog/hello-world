@@ -36,7 +36,6 @@ Deno.serve(async (req) => {
     // Parse optional body params
     const body = await req.json().catch(() => ({}));
     const filterCampaignId: string | null = body.campaign_id || null;
-    const skipDelay: boolean = body.skip_delay === true;
 
     let query = supabase
       .from('campaigns')
@@ -93,7 +92,6 @@ Deno.serve(async (req) => {
           LOVABLE_API_KEY,
           SUPABASE_URL,
           SUPABASE_SERVICE_ROLE_KEY,
-          skipDelay,
         );
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
@@ -119,7 +117,6 @@ async function processCampaign(
   lovableApiKey: string | undefined,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
-  skipDelay: boolean = false,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
@@ -298,7 +295,7 @@ async function processCampaign(
         // Check delay before SENDING (not before generating)
         const delayDays = nextStep.delay_days || 1;
         const delayMs = delayDays * 24 * 60 * 60 * 1000;
-        if (!skipDelay && Date.now() - stepCompletedAt.getTime() < delayMs) continue;
+        if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
 
         const { data: contact } = await supabase
           .from('contacts')
