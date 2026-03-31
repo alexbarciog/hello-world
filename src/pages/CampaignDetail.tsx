@@ -414,7 +414,58 @@ export default function CampaignDetail() {
     // Load scheduled messages - contacts with their next pending step
     await loadScheduledMessages(campaignId, c.workflow_steps || []);
 
+    // Load today's scheduled queue
+    await loadDailyQueue(campaignId);
+
     setLoading(false);
+  }
+
+  async function loadDailyQueue(campaignId: string) {
+    setLoadingQueue(true);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const { data: queueData } = await supabase
+        .from("daily_scheduled_leads" as any)
+        .select("id, contact_id, action_type, step_index, status, sent_at")
+        .eq("campaign_id", campaignId)
+        .eq("scheduled_date", today)
+        .order("created_at", { ascending: true });
+
+      if (!queueData || queueData.length === 0) {
+        setDailyQueue([]);
+        setLoadingQueue(false);
+        return;
+      }
+
+      const contactIds = (queueData as any[]).map((q: any) => q.contact_id);
+      const { data: contactsData } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, company, title")
+        .in("id", contactIds);
+
+      const contactMap: Record<string, any> = {};
+      (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
+
+      const queue: DailyScheduledLead[] = (queueData as any[]).map((q: any) => {
+        const contact = contactMap[q.contact_id];
+        return {
+          id: q.id,
+          contactId: q.contact_id,
+          contactName: contact ? `${contact.first_name} ${contact.last_name || ""}`.trim() : "Unknown",
+          contactCompany: contact?.company || "",
+          contactTitle: contact?.title || "",
+          actionType: q.action_type,
+          stepIndex: q.step_index,
+          status: q.status,
+          sentAt: q.sent_at,
+        };
+      });
+
+      setDailyQueue(queue);
+    } catch (err) {
+      console.error("Failed to load daily queue:", err);
+    }
+    setLoadingQueue(false);
   }
 
   async function loadScheduledMessages(campaignId: string, steps: any[]) {
