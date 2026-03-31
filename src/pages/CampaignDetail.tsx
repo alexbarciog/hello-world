@@ -842,8 +842,9 @@ export default function CampaignDetail() {
 
   if (!campaign) return null;
 
-  const acceptanceRate = campaign.invitations_sent > 0 ? Math.round((campaign.invitations_accepted / campaign.invitations_sent) * 100) : 0;
-  const replyRate = campaign.messages_sent > 0 ? Math.round((campaign.messages_replied / campaign.messages_sent) * 100) : 0;
+  const acceptanceRate = step1Sent > 0 ? Math.round((step1Accepted / step1Sent) * 100) : 0;
+  const totalReplied = Object.values(stepMetrics).reduce((sum, m) => sum + m.answered, 0);
+  const replyRate = step1Sent > 0 ? Math.round((totalReplied / step1Sent) * 100) : 0;
 
   const tierCounts = {
     all: contacts.length,
