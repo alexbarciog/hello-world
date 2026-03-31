@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
           .single();
 
         const dailyLimit = userProfile?.daily_connections_limit || campaign.daily_connect_limit || 25;
-        const batchSize = Math.max(1, Math.floor(dailyLimit / SEQUENCES_PER_DAY));
+        const batchSize = Math.max(1, Math.ceil(dailyLimit / SEQUENCES_PER_DAY));
 
         // Count how many were already sent today
         const { count: sentToday } = await serviceClient
