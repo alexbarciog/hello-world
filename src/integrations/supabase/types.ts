@@ -613,6 +613,7 @@ export type Database = {
           daily_connections_limit: number
           daily_messages_limit: number
           id: string
+          linkedin_display_name: string | null
           onboarding_complete: boolean
           unipile_account_id: string | null
           updated_at: string
@@ -624,6 +625,7 @@ export type Database = {
           daily_connections_limit?: number
           daily_messages_limit?: number
           id?: string
+          linkedin_display_name?: string | null
           onboarding_complete?: boolean
           unipile_account_id?: string | null
           updated_at?: string
@@ -635,6 +637,7 @@ export type Database = {
           daily_connections_limit?: number
           daily_messages_limit?: number
           id?: string
+          linkedin_display_name?: string | null
           onboarding_complete?: boolean
           unipile_account_id?: string | null
           updated_at?: string

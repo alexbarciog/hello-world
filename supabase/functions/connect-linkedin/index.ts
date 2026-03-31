@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'check_status') {
-      const accountId = await resolveConnectedAccountId({
+      const result = await resolveConnectedAccount({
         userId,
         supabaseUrl: SUPABASE_URL,
         serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
@@ -97,10 +97,11 @@ Deno.serve(async (req) => {
         unipileDsn: UNIPILE_DSN,
       });
 
-      if (accountId) {
+      if (result) {
         return jsonResponse({
           status: 'connected',
-          account_id: accountId,
+          account_id: result.accountId,
+          display_name: result.displayName || null,
         });
       }
 
@@ -179,7 +180,26 @@ async function handleUnipileNotify(
     return jsonResponse({ status: 'ignored', reason: 'unsupported_status' });
   }
 
-  await saveAccountId(userId, accountId, supabaseUrl, serviceRoleKey);
+  // Try to fetch the LinkedIn display name from the Unipile account
+  let displayName: string | null = null;
+  try {
+    const UNIPILE_API_KEY = normalizeSecret(Deno.env.get('UNIPILE_API_KEY'));
+    const UNIPILE_DSN = normalizeDsn(Deno.env.get('UNIPILE_DSN'));
+    if (UNIPILE_API_KEY && UNIPILE_DSN) {
+      const acctRes = await fetch(`https://${UNIPILE_DSN}/api/v1/accounts/${accountId}`, {
+        headers: { ...buildUnipileAuthHeaders(UNIPILE_API_KEY), 'Accept': 'application/json' },
+      });
+      if (acctRes.ok) {
+        const acctData = await safeJson(acctRes);
+        displayName = getAccountDisplayName(acctData);
+        console.log('[unipile_notify] fetched display name:', displayName);
+      }
+    }
+  } catch (err) {
+    console.error('[unipile_notify] failed to fetch display name:', err);
+  }
+
+  await saveAccountInfo(userId, accountId, displayName, supabaseUrl, serviceRoleKey);
 
   // Activate pending campaigns & agents, then trigger lead discovery
   await activatePendingAndDiscover(userId, supabaseUrl, serviceRoleKey);
@@ -200,7 +220,7 @@ function buildRedirectUrl(returnUrl: string | undefined, linkedinStatus: 'succes
   }
 }
 
-async function resolveConnectedAccountId({
+async function resolveConnectedAccount({
   userId,
   supabaseUrl,
   serviceRoleKey,
@@ -212,22 +232,22 @@ async function resolveConnectedAccountId({
   serviceRoleKey: string;
   unipileApiKey: string;
   unipileDsn: string;
-}) {
-  const storedAccountId = await getStoredAccountId(userId, supabaseUrl, serviceRoleKey);
-  if (storedAccountId) return storedAccountId;
+}): Promise<{ accountId: string; displayName: string | null } | null> {
+  const stored = await getStoredAccountInfo(userId, supabaseUrl, serviceRoleKey);
+  if (stored?.accountId) return stored;
 
-  const remoteAccountId = await findRemoteLinkedinAccountId(userId, unipileApiKey, unipileDsn);
-  if (!remoteAccountId) return null;
+  const remote = await findRemoteLinkedinAccount(userId, unipileApiKey, unipileDsn);
+  if (!remote) return null;
 
-  await saveAccountId(userId, remoteAccountId, supabaseUrl, serviceRoleKey);
-  return remoteAccountId;
+  await saveAccountInfo(userId, remote.accountId, remote.displayName, supabaseUrl, serviceRoleKey);
+  return remote;
 }
 
-async function getStoredAccountId(userId: string, supabaseUrl: string, serviceRoleKey: string) {
+async function getStoredAccountInfo(userId: string, supabaseUrl: string, serviceRoleKey: string): Promise<{ accountId: string; displayName: string | null } | null> {
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
   const { data: profile, error } = await serviceClient
     .from('profiles')
-    .select('unipile_account_id')
+    .select('unipile_account_id, linkedin_display_name')
     .eq('user_id', userId)
     .single();
 
@@ -236,10 +256,11 @@ async function getStoredAccountId(userId: string, supabaseUrl: string, serviceRo
     return null;
   }
 
-  return profile?.unipile_account_id || null;
+  if (!profile?.unipile_account_id) return null;
+  return { accountId: profile.unipile_account_id, displayName: profile.linkedin_display_name || null };
 }
 
-async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string, unipileDsn: string) {
+async function findRemoteLinkedinAccount(userId: string, unipileApiKey: string, unipileDsn: string): Promise<{ accountId: string; displayName: string | null } | null> {
   try {
     const response = await fetch(`https://${unipileDsn}/api/v1/accounts`, {
       headers: {
@@ -257,15 +278,19 @@ async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string
     const data = await response.json();
     const accounts = extractAccounts(data);
     const matchedAccount = accounts.find((account) => isMatchingLinkedinAccount(account, userId));
-    const accountId = matchedAccount ? getAccountId(matchedAccount) : null;
+    
+    if (!matchedAccount) {
+      console.log('[check_status] remote lookup', JSON.stringify({ userId, accountsFound: accounts.length, matched: false }));
+      return null;
+    }
 
-    console.log('[check_status] remote lookup', JSON.stringify({
-      userId,
-      accountsFound: accounts.length,
-      matched: Boolean(accountId),
-    }));
+    const accountId = getAccountId(matchedAccount);
+    if (!accountId) return null;
 
-    return accountId;
+    const displayName = getAccountDisplayName(matchedAccount);
+    console.log('[check_status] remote lookup', JSON.stringify({ userId, accountsFound: accounts.length, matched: true, displayName }));
+
+    return { accountId, displayName };
   } catch (error) {
     console.error('[check_status] remote lookup error:', error);
     return null;
@@ -320,6 +345,31 @@ function getAccountId(account: UnipileAccount) {
     isRecord(account.account) ? account.account.account_id : undefined,
     isRecord(account.account) ? account.account.id : undefined,
   ) || null;
+}
+
+function getAccountDisplayName(account: UnipileAccount): string | null {
+  // The Unipile account object has a top-level "name" field with the LinkedIn display name
+  const name = getString(
+    account.name,
+    account.display_name,
+    account.displayName,
+    account.full_name,
+    account.fullName,
+  );
+
+  if (name) return name;
+  
+  // Fallback: try connection_params.im.username
+  if (isRecord(account.connection_params)) {
+    const cp = account.connection_params as Record<string, unknown>;
+    if (isRecord(cp.im)) {
+      const im = cp.im as Record<string, unknown>;
+      const imName = getString(im.username, im.full_name);
+      if (imName) return imName;
+    }
+  }
+  
+  return null;
 }
 
 function getString(...values: unknown[]) {
@@ -389,16 +439,20 @@ async function safeJson(response: Response): Promise<Record<string, unknown>> {
   }
 }
 
-async function saveAccountId(
+async function saveAccountInfo(
   userId: string,
   accountId: string,
+  displayName: string | null,
   supabaseUrl: string,
   serviceRoleKey: string
 ) {
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+  const updateData: Record<string, unknown> = { user_id: userId, unipile_account_id: accountId };
+  if (displayName) updateData.linkedin_display_name = displayName;
+  
   const { error } = await serviceClient
     .from('profiles')
-    .upsert({ user_id: userId, unipile_account_id: accountId }, { onConflict: 'user_id' });
+    .upsert(updateData, { onConflict: 'user_id' });
 
   if (error) {
     throw new Error(`Failed to save account: ${error.message}`);

@@ -587,6 +587,7 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [polling, setPolling] = useState(false);
   const [dailyMessages, setDailyMessages] = useState([15]);
@@ -660,6 +661,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
       const data = await callAPI({ action: "check_status" });
       const isConnected = data.status === "connected" && Boolean(data.account_id);
       setAccountId(isConnected ? data.account_id : null);
+      setDisplayName(isConnected && data.display_name ? data.display_name : null);
       return isConnected;
     } catch { return false; }
     finally { if (showLoader) setLoadingStatus(false); }
@@ -688,8 +690,9 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   async function handleDisconnect() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from("profiles").update({ unipile_account_id: null } as any).eq("user_id", user.id);
+    await supabase.from("profiles").update({ unipile_account_id: null, linkedin_display_name: null } as any).eq("user_id", user.id);
     setAccountId(null);
+    setDisplayName(null);
     toast.success("LinkedIn account disconnected");
   }
 
@@ -712,7 +715,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">LinkedIn Connected ✓</p>
-                  <p className="text-xs text-muted-foreground">Account ID: {accountId.slice(0, 12)}…</p>
+                  <p className="text-xs text-muted-foreground">{displayName || `Account ID: ${accountId.slice(0, 12)}…`}</p>
                 </div>
               </div>
               <button onClick={handleDisconnect} className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors">
