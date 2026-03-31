@@ -124,6 +124,7 @@ async function processCampaign(
     .eq('campaign_id', campaign.id)
     .gte('sent_at', todayStart.toISOString());
 
+  console.log(`[campaign ${campaign.id}] sentToday=${sentToday}, dailyLimit=${dailyLimit}, batchSize=${batchSize}`);
   const remainingToday = Math.max(0, dailyLimit - (sentToday || 0));
   const toSendNow = Math.min(batchSize, remainingToday);
 
