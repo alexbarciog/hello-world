@@ -717,37 +717,45 @@ async function findChat(
   existingChatId?: string | null,
 ): Promise<string | null> {
   try {
-    let cursor: string | null = null;
-
-    for (let page = 0; page < 5; page++) {
-      const url = new URL(`https://${dsn}/api/v1/chats`);
-      url.searchParams.set('account_id', accountId);
-      url.searchParams.set('limit', '100');
-      if (cursor) url.searchParams.set('cursor', cursor);
-
-      const res = await fetch(url.toString(), {
+    // Step 1: If we have an existing chat_id, validate it belongs to this provider
+    if (existingChatId) {
+      const validUrl = new URL(`https://${dsn}/api/v1/chats/${encodeURIComponent(existingChatId)}`);
+      const validRes = await fetch(validUrl.toString(), {
         headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
       });
-
-      if (!res.ok) return null;
-      const data = await res.json();
-      const chats = data?.items || data?.data || [];
-
-      const matchingChats = Array.isArray(chats)
-        ? chats.filter((chat: any) => chatMatchesProvider(chat, providerId))
-        : [];
-
-      if (existingChatId) {
-        const exactMatch = matchingChats.find((chat: any) => (chat.id || chat.chat_id) === existingChatId);
-        if (exactMatch) return exactMatch.id || exactMatch.chat_id || null;
+      if (validRes.ok) {
+        const chatData = await validRes.json();
+        if (chatMatchesProvider(chatData, providerId)) {
+          return existingChatId; // Existing chat is valid
+        }
+        console.log(`[findChat] existing chat ${existingChatId} does NOT belong to provider ${providerId}`);
+      } else {
+        await validRes.text(); // consume body
       }
+    }
 
-      if (matchingChats.length > 0) {
-        return matchingChats[0].id || matchingChats[0].chat_id || null;
-      }
+    // Step 2: Search for the correct chat using Unipile's filter
+    const url = new URL(`https://${dsn}/api/v1/chats`);
+    url.searchParams.set('account_id', accountId);
+    url.searchParams.set('attendee_provider_id', providerId);
+    url.searchParams.set('limit', '1');
 
-      cursor = data?.cursor || data?.next_cursor || null;
-      if (!cursor) break;
+    const res = await fetch(url.toString(), {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const chats = data?.items || data?.data || [];
+
+    if (!Array.isArray(chats) || chats.length === 0) return null;
+
+    const chat = chats[0];
+    const chatId = chat.id || chat.chat_id || null;
+
+    // Validate the returned chat actually has the right attendee
+    if (chatId && chatMatchesProvider(chat, providerId)) {
+      return chatId;
     }
 
     return null;
