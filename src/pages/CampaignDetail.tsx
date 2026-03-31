@@ -2511,109 +2511,108 @@ export default function CampaignDetail() {
             </motion.div>
           )}
 
-          {/* ── Last Launches Tab ── */}
-          {tab === "launches" && (
-            <motion.div key="launches" variants={tabVariant} initial="hidden" animate="visible" exit="exit" className="space-y-3">
-              {(() => {
-                const runSlots = [
-                  { time: "08:00", hour: 8, emoji: "🌅" },
-                  { time: "10:00", hour: 10, emoji: "☀️" },
-                  { time: "12:00", hour: 12, emoji: "🔆" },
-                  { time: "14:00", hour: 14, emoji: "🌤️" },
-                  { time: "16:00", hour: 16, emoji: "🌇" },
-                ];
-                const nowUTC = new Date().getUTCHours();
-                const dailyLimit = campaign.daily_connect_limit || 25;
-                const perRun = Math.max(1, Math.floor(dailyLimit / 5));
-                const pastRuns: { date: string; time: string; label: string; sent: number; status: string; emoji: string }[] = [];
+          {/* ── Today's Queue Tab ── */}
+          {tab === "todays_queue" && (
+            <motion.div key="todays_queue" variants={tabVariant} initial="hidden" animate="visible" exit="exit" className="space-y-3">
+              {loadingQueue ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : dailyQueue.length === 0 ? (
+                <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background to-muted/20 p-12 text-center">
+                  <div className="text-4xl mb-3">📋</div>
+                  <p className="text-sm font-bold text-foreground">No leads scheduled for today</p>
+                  <p className="text-xs text-muted-foreground mt-1">Leads are pre-selected at midnight UTC based on your daily limits</p>
+                </div>
+              ) : (
+                <>
+                  {/* Summary */}
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <span className="text-lg">📋</span>
+                    <h3 className="text-sm font-extrabold text-foreground tracking-tight">Today's Scheduled Leads</h3>
+                    <span className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md font-medium">
+                      {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="flex gap-3 mb-3">
+                    {(() => {
+                      const connections = dailyQueue.filter(q => q.actionType === "connection");
+                      const messages = dailyQueue.filter(q => q.actionType.startsWith("message_"));
+                      const sent = dailyQueue.filter(q => q.status === "sent").length;
+                      const pending = dailyQueue.filter(q => q.status === "pending").length;
+                      return (
+                        <>
+                          {connections.length > 0 && (
+                            <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-lg">
+                              {connections.length} connection{connections.length !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                          {messages.length > 0 && (
+                            <span className="text-[10px] font-semibold bg-accent/40 text-accent-foreground px-2.5 py-1 rounded-lg">
+                              {messages.length} message{messages.length !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {sent} sent · {pending} pending
+                          </span>
+                        </>
+                      );
+                    })()}
+                  </div>
 
-                runSlots.forEach((slot) => {
-                  if (nowUTC >= slot.hour + 1) {
-                    const thisBatchSent = todayRunCounts[slot.hour] || 0;
-                    pastRuns.push({
-                      date: new Date().toISOString().slice(0, 10),
-                      time: slot.time,
-                      label: `Run ${runSlots.indexOf(slot) + 1}`,
-                      sent: thisBatchSent,
-                      status: thisBatchSent > 0 ? "completed" : "no_contacts",
-                      emoji: slot.emoji,
-                    });
-                  }
-                });
-                pastRuns.reverse();
-
-                if (pastRuns.length === 0) {
-                  return (
-                    <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background to-muted/20 p-12 text-center">
-                      <div className="text-4xl mb-3">🕐</div>
-                      <p className="text-sm font-bold text-foreground">No launches yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Completed runs will appear here ✨</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <>
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <span className="text-lg">📋</span>
-                      <h3 className="text-sm font-extrabold text-foreground tracking-tight">Today's Completed Runs</h3>
-                      <span className="text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md font-medium">
-                        {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    </div>
-                    {pastRuns.map((run, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.08, type: "spring", stiffness: 300, damping: 24 }}
-                        whileHover={{ scale: 1.01, y: -1 }}
-                        className="relative overflow-hidden rounded-2xl p-4 cursor-default bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03] hover:shadow-lg hover:ring-border/60 transition-all duration-300"
-                      >
-                        {/* Glossy shine overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-
-                        <div className="relative flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${
-                              run.sent > 0
-                                ? "bg-gradient-to-br from-emerald-400/20 to-emerald-500/10 ring-1 ring-emerald-400/30"
-                                : "bg-gradient-to-br from-muted/60 to-muted/30 ring-1 ring-border/30"
-                            }`}>
-                              <span className="text-lg">🔥</span>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-extrabold text-foreground tracking-tight">{run.label}</span>
-                                <span className="text-[10px] text-muted-foreground font-bold bg-foreground/[0.04] backdrop-blur-sm px-2 py-0.5 rounded-lg ring-1 ring-foreground/[0.06]">
-                                  {utcHourToLocal(parseInt(run.time))}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-3 mt-1.5">
-                                <span className="text-[10px] text-[hsl(220,80%,55%)] flex items-center gap-1 font-medium">
-                                  {run.sent > 0 ? (
-                                    <><UserPlus className="w-3 h-3" /> {run.sent} invitation{run.sent !== 1 ? "s" : ""} sent</>
-                                  ) : (
-                                    "No contacts to process"
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <span className={`text-[10px] font-bold backdrop-blur-sm px-3 py-1.5 rounded-xl ring-1 shadow-sm ${
-                            run.sent > 0
-                              ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
-                              : "text-muted-foreground bg-muted/60 ring-border/30"
+                  {/* Lead cards */}
+                  {dailyQueue.map((item, idx) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
+                      className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
+                      <div className="relative flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
+                            item.status === "sent"
+                              ? "bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-400/30"
+                              : item.status === "failed"
+                              ? "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
+                              : "bg-primary/10 text-primary ring-1 ring-primary/20"
                           }`}>
-                            {run.sent > 0 ? "✓ Completed" : "⏭️ Skipped"}
+                            {item.contactName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-extrabold text-foreground tracking-tight">{item.contactName}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {item.contactTitle}{item.contactTitle && item.contactCompany ? " · " : ""}{item.contactCompany}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
+                            item.actionType === "connection"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-accent/40 text-accent-foreground"
+                          }`}>
+                            {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                            item.status === "sent"
+                              ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                              : item.status === "failed"
+                              ? "text-destructive bg-destructive/10 ring-destructive/20"
+                              : item.status === "skipped"
+                              ? "text-muted-foreground bg-muted/60 ring-border/30"
+                              : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
+                          }`}>
+                            {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
                           </span>
                         </div>
-                      </motion.div>
-                    ))}
-                  </>
-                );
-              })()}
+                      </div>
+                    </motion.div>
+                  ))}
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
