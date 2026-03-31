@@ -690,8 +690,9 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   async function handleDisconnect() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from("profiles").update({ unipile_account_id: null } as any).eq("user_id", user.id);
+    await supabase.from("profiles").update({ unipile_account_id: null, linkedin_display_name: null } as any).eq("user_id", user.id);
     setAccountId(null);
+    setDisplayName(null);
     toast.success("LinkedIn account disconnected");
   }
 
