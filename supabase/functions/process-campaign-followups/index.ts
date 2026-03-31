@@ -366,6 +366,8 @@ async function processCampaign(
           console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
         }
 
+        let message = '';
+
         // Check for pre-generated message
         const { data: scheduledMsg } = await supabase
           .from('scheduled_messages')
