@@ -270,171 +270,157 @@ export default function CampaignDetail() {
 
   async function loadCampaign(campaignId: string) {
     setLoading(true);
-    const { data } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
-    if (!data) { setLoading(false); navigate("/campaigns"); return; }
+    try {
+      const { data } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
+      if (!data) { setLoading(false); navigate("/campaigns"); return; }
 
-    const c = data as any as CampaignFull;
-    let loadedContactsTotal: number | null = null;
+      const c = data as any as CampaignFull;
+      let loadedContactsTotal: number | null = null;
 
-    setCampaign(c);
-    setSettingsGoal(c.campaign_goal || "conversations");
-    setSettingsTone(c.message_tone || "professional");
-    setSettingsLanguage(c.language || "English");
-    setSettingsCustomTraining((c as any).custom_training || "");
-    setSettingsDailyLimit((c as any).daily_connect_limit || 25);
-    setSettingsConversationalAi((c as any).conversational_ai || false);
-    setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
+      setCampaign(c);
+      setSettingsGoal(c.campaign_goal || "conversations");
+      setSettingsTone(c.message_tone || "professional");
+      setSettingsLanguage(c.language || "English");
+      setSettingsCustomTraining((c as any).custom_training || "");
+      setSettingsDailyLimit((c as any).daily_connect_limit || 25);
+      setSettingsConversationalAi((c as any).conversational_ai || false);
+      setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
 
-    // Fetch profile limits
-    const { data: authData } = await supabase.auth.getUser();
-    if (authData?.user) {
-      const { data: prof } = await supabase.from("profiles").select("daily_connections_limit, daily_messages_limit, linkedin_display_name").eq("user_id", authData.user.id).single();
-      if (prof) {
+      // Parallel batch 1: profile, agent, step1 counts, today's queue
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+      const todayDate = new Date().toISOString().split('T')[0];
+
+      const [profileRes, agentRes, sentCountRes, acceptedCountRes, todayScheduledRes, connRequestsRes] = await Promise.all([
+        userId ? supabase.from("profiles").select("daily_connections_limit, daily_messages_limit, linkedin_display_name").eq("user_id", userId).single() : Promise.resolve({ data: null }),
+        c.source_agent_id ? supabase.from("signal_agents").select("name, status, results_count, leads_list_name").eq("id", c.source_agent_id).single() : Promise.resolve({ data: null }),
+        supabase.from("campaign_connection_requests" as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).in("status", ["sent", "accepted", "completed"]),
+        supabase.from("campaign_connection_requests" as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).in("status", ["accepted", "completed"]),
+        supabase.from("daily_scheduled_leads").select("id, status, sent_at").eq("campaign_id", campaignId).eq("scheduled_date", todayDate).eq("action_type", "connection"),
+        supabase.from("campaign_connection_requests" as any).select("contact_id, status, current_step, step_completed_at, sent_at, ai_replies_count, last_incoming_message_at").eq("campaign_id", campaignId),
+      ]);
+
+      // Process profile
+      if (profileRes.data) {
+        const prof = profileRes.data as any;
         setProfileLimits({ daily_connections_limit: prof.daily_connections_limit, daily_messages_limit: prof.daily_messages_limit });
-        if ((prof as any).linkedin_display_name) setLinkedinDisplayName((prof as any).linkedin_display_name);
+        if (prof.linkedin_display_name) setLinkedinDisplayName(prof.linkedin_display_name);
       }
-    }
 
-    if (c.source_agent_id) {
-      const { data: agent } = await supabase.from("signal_agents").select("name, status, results_count").eq("id", c.source_agent_id).single();
-      if (agent) { setAgentName(agent.name); setAgentStatus(agent.status); }
-    }
+      // Process agent
+      if (agentRes.data) {
+        setAgentName((agentRes.data as any).name);
+        setAgentStatus((agentRes.data as any).status);
+      }
 
-    // Load contacts from source_list_id if set
-    if (c.source_list_id) {
-      setSelectedListId(c.source_list_id);
-      setListsCount(1);
-      await loadContactsForList(c.source_list_id);
-    } else if (c.source_agent_id) {
-      const { data: agentData } = await supabase.from("signal_agents").select("leads_list_name").eq("id", c.source_agent_id).single();
-      if (agentData?.leads_list_name) {
-        const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", agentData.leads_list_name).order("imported_at", { ascending: false });
-        if (contactData) {
-          loadedContactsTotal = contactData.length;
-          setContacts(contactData as Contact[]);
-          setContactsCount(contactData.length);
+      // Process step1 counts
+      const sentCount = sentCountRes.count || 0;
+      setStep1Sent(sentCount);
+      setStep1Accepted(acceptedCountRes.count || 0);
+
+      // Process today's sent count
+      const todayReqs = (todayScheduledRes.data || []).filter((r: any) => r.status === 'sent');
+      setTodaySentCount(todayReqs.length);
+
+      const runHours = [8, 10, 12, 14, 16];
+      const runCounts: Record<number, number> = {};
+      for (const r of todayReqs) {
+        const h = new Date((r as any).sent_at).getUTCHours();
+        let slotHour = runHours[0];
+        for (const rh of runHours) { if (h >= rh) slotHour = rh; }
+        runCounts[slotHour] = (runCounts[slotHour] || 0) + 1;
+      }
+      setTodayRunCounts(runCounts);
+
+      // Process connection requests statuses
+      if (connRequestsRes.data) {
+        const statusMap: Record<string, { status: string; step: number; updatedAt?: string }> = {};
+        const metrics: Record<number, { contacted: number; answered: number }> = {};
+        for (const cr of connRequestsRes.data as any[]) {
+          const isAccepted = cr.status === "accepted" || cr.status === "completed";
+          const currentStep = cr.current_step || 1;
+          statusMap[cr.contact_id] = {
+            status: cr.status,
+            step: isAccepted ? currentStep : 0,
+            updatedAt: cr.step_completed_at || cr.sent_at || undefined,
+          };
+          if ((isAccepted || cr.status === "completed") && currentStep >= 2) {
+            for (let s = 2; s <= currentStep; s++) {
+              if (!metrics[s]) metrics[s] = { contacted: 0, answered: 0 };
+              metrics[s].contacted++;
+            }
+          }
+          if ((isAccepted || cr.status === "completed") && currentStep >= 2 && cr.last_incoming_message_at) {
+            if (!metrics[2]) metrics[2] = { contacted: 0, answered: 0 };
+            metrics[2].answered++;
+          }
         }
-        const { count } = await (supabase.from("lists") as any).select("id", { count: "exact", head: true }).eq("name", agentData.leads_list_name);
-        setListsCount(count || 1);
+        setContactStatuses(statusMap);
+        setStepMetrics(metrics);
       }
-    }
 
-    // Load all available lists for the user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: lists } = await supabase.from("lists").select("id, name").eq("user_id", user.id).order("created_at", { ascending: false });
-      if (lists) {
+      // Load contacts from source
+      if (c.source_list_id) {
+        setSelectedListId(c.source_list_id);
+        setListsCount(1);
+        await loadContactsForList(c.source_list_id).catch(e => console.error("loadContactsForList error:", e));
+      } else if (c.source_agent_id && agentRes.data) {
+        const leadsListName = (agentRes.data as any).leads_list_name;
+        if (leadsListName) {
+          const [contactDataRes, listCountRes] = await Promise.all([
+            supabase.from("contacts").select("*").eq("list_name", leadsListName).order("imported_at", { ascending: false }),
+            (supabase.from("lists") as any).select("id", { count: "exact", head: true }).eq("name", leadsListName),
+          ]);
+          if (contactDataRes.data) {
+            loadedContactsTotal = contactDataRes.data.length;
+            setContacts(contactDataRes.data as Contact[]);
+            setContactsCount(contactDataRes.data.length);
+          }
+          setListsCount(listCountRes.count || 1);
+        }
+      }
+
+      // Parallel batch 2: lists, remaining contacts
+      const [listsRes, contactLinksRes] = await Promise.all([
+        userId ? supabase.from("lists").select("id, name").eq("user_id", userId).order("created_at", { ascending: false }) : Promise.resolve({ data: null }),
+        c.source_list_id ? supabase.from("contact_lists").select("contact_id").eq("list_id", c.source_list_id) : Promise.resolve({ data: null }),
+      ]);
+
+      if (listsRes.data) {
         const listsWithCounts = await Promise.all(
-          lists.map(async (l) => {
+          (listsRes.data as any[]).map(async (l: any) => {
             const { count } = await supabase.from("contact_lists").select("id", { count: "exact", head: true }).eq("list_id", l.id);
             return { id: l.id, name: l.name, contact_count: count || 0 };
           })
         );
         setAvailableLists(listsWithCounts);
       }
-    }
 
-    // Load step 1 connection request counters
-    const { count: sentCount } = await supabase
-      .from("campaign_connection_requests" as any)
-      .select("id", { count: "exact", head: true })
-      .eq("campaign_id", campaignId)
-      .in("status", ["sent", "accepted", "completed"]);
-    setStep1Sent(sentCount || 0);
-
-    const { count: acceptedCount } = await supabase
-      .from("campaign_connection_requests" as any)
-      .select("id", { count: "exact", head: true })
-      .eq("campaign_id", campaignId)
-      .in("status", ["accepted", "completed"]);
-    setStep1Accepted(acceptedCount || 0);
-
-    // Load today's sent count from daily_scheduled_leads (source of truth for daily queue)
-    const todayDate = new Date().toISOString().split('T')[0];
-    const { data: todayScheduled } = await supabase
-      .from("daily_scheduled_leads")
-      .select("id, status, sent_at")
-      .eq("campaign_id", campaignId)
-      .eq("scheduled_date", todayDate)
-      .eq("action_type", "connection");
-    
-    const todayReqs = (todayScheduled || []).filter((r: any) => r.status === 'sent');
-    setTodaySentCount(todayReqs.length);
-
-    // Group by run time slots (UTC hours: 8,10,12,14,16)
-    const runHours = [8, 10, 12, 14, 16];
-    const runCounts: Record<number, number> = {};
-    for (const r of todayReqs) {
-      const h = new Date(r.sent_at).getUTCHours();
-      // Find which run slot this belongs to (the latest slot <= sent hour)
-      let slotHour = runHours[0];
-      for (const rh of runHours) {
-        if (h >= rh) slotHour = rh;
+      if (c.source_list_id && contactLinksRes.data) {
+        const currentContactIds = (contactLinksRes.data as any[]).map((cl: any) => cl.contact_id);
+        const { count: sentForCurrentList } = await supabase
+          .from("campaign_connection_requests" as any)
+          .select("id", { count: "exact", head: true })
+          .eq("campaign_id", campaignId)
+          .in("contact_id", currentContactIds)
+          .in("status", ["sent", "accepted"]);
+        setRemainingContacts(Math.max(0, currentContactIds.length - (sentForCurrentList || 0)));
+      } else {
+        const totalContacts = loadedContactsTotal ?? contactsCount ?? 0;
+        const totalSent = sentCount || 0;
+        setRemainingContacts(Math.max(0, totalContacts - totalSent));
       }
-      runCounts[slotHour] = (runCounts[slotHour] || 0) + 1;
+
+      // Load scheduled messages and daily queue in parallel
+      await Promise.all([
+        loadScheduledMessages(campaignId, c.workflow_steps || []).catch(e => console.error("loadScheduledMessages error:", e)),
+        loadDailyQueue(campaignId).catch(e => console.error("loadDailyQueue error:", e)),
+      ]);
+    } catch (err) {
+      console.error("loadCampaign error:", err);
+    } finally {
+      setLoading(false);
     }
-    setTodayRunCounts(runCounts);
-
-    // Load per-contact statuses from connection requests
-    const { data: connRequests } = await supabase
-      .from("campaign_connection_requests" as any)
-      .select("contact_id, status, current_step, step_completed_at, sent_at, ai_replies_count, last_incoming_message_at")
-      .eq("campaign_id", campaignId);
-    if (connRequests) {
-      const statusMap: Record<string, { status: string; step: number; updatedAt?: string }> = {};
-      const metrics: Record<number, { contacted: number; answered: number }> = {};
-      for (const cr of connRequests as any[]) {
-        const isAccepted = cr.status === "accepted" || cr.status === "completed";
-        const currentStep = cr.current_step || 1;
-        statusMap[cr.contact_id] = {
-          status: cr.status,
-          step: isAccepted ? currentStep : 0,
-          updatedAt: cr.step_completed_at || cr.sent_at || undefined,
-        };
-        // Count per-step metrics: a contact at current_step N means steps 2..N were sent
-        if ((isAccepted || cr.status === "completed") && currentStep >= 2) {
-          for (let s = 2; s <= currentStep; s++) {
-            if (!metrics[s]) metrics[s] = { contacted: 0, answered: 0 };
-            metrics[s].contacted++;
-          }
-        }
-        // If lead has replied, count as answered on step 2 (first outreach step)
-        if ((isAccepted || cr.status === "completed") && currentStep >= 2 && cr.last_incoming_message_at) {
-          if (!metrics[2]) metrics[2] = { contacted: 0, answered: 0 };
-          metrics[2].answered++;
-        }
-      }
-      setContactStatuses(statusMap);
-      setStepMetrics(metrics);
-    }
-
-    // Remaining unsent contacts — count only sent requests for contacts currently in the list
-    if (c.source_list_id) {
-      const { data: currentContactLinks } = await supabase
-        .from("contact_lists")
-        .select("contact_id")
-        .eq("list_id", c.source_list_id);
-      const currentContactIds = (currentContactLinks || []).map((cl: any) => cl.contact_id);
-      const { count: sentForCurrentList } = await supabase
-        .from("campaign_connection_requests" as any)
-        .select("id", { count: "exact", head: true })
-        .eq("campaign_id", campaignId)
-        .in("contact_id", currentContactIds)
-        .in("status", ["sent", "accepted"]);
-      setRemainingContacts(Math.max(0, currentContactIds.length - (sentForCurrentList || 0)));
-    } else {
-      const totalContacts = loadedContactsTotal ?? contactsCount ?? 0;
-      const totalSent = sentCount || 0;
-      setRemainingContacts(Math.max(0, totalContacts - totalSent));
-    }
-
-    // Load scheduled messages - contacts with their next pending step
-    await loadScheduledMessages(campaignId, c.workflow_steps || []);
-
-    // Load today's scheduled queue
-    await loadDailyQueue(campaignId);
-
-    setLoading(false);
   }
 
   async function loadDailyQueue(campaignId: string) {
