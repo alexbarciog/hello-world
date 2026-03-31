@@ -88,6 +88,157 @@ interface FailedPair {
   subreddit: string;
 }
 
+interface CandidatePost {
+  userId: string;
+  keywordId: string;
+  keyword: string;
+  subreddit: string;
+  author: string;
+  title: string;
+  body: string | null;
+  url: string;
+  redditPostId: string;
+  score: number;
+  postedAt: string | null;
+}
+
+/* ── Keyword-in-text check ─────────────────────────────────────────── */
+
+function keywordInText(keyword: string, title: string, body: string | null): boolean {
+  const searchText = `${title} ${body || ''}`.toLowerCase();
+  return searchText.includes(keyword.toLowerCase());
+}
+
+/* ── AI Relevance Scoring ──────────────────────────────────────────── */
+
+async function scoreRelevance(
+  supabase: ReturnType<typeof createClient>,
+  candidates: CandidatePost[],
+  userId: string,
+): Promise<Map<number, number>> {
+  const scores = new Map<number, number>();
+  if (candidates.length === 0) return scores;
+
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.warn('[poll-reddit] LOVABLE_API_KEY not set, skipping AI relevance scoring');
+    // Return all as score 7 (pass through)
+    candidates.forEach((_, i) => scores.set(i, 7));
+    return scores;
+  }
+
+  // Fetch user's business context from campaigns
+  let businessContext = '';
+  try {
+    const { data: campaigns } = await supabase
+      .from('campaigns')
+      .select('company_name, description, value_proposition, industry, icp_job_titles, icp_industries, pain_points')
+      .eq('user_id', userId)
+      .limit(3);
+
+    if (campaigns && campaigns.length > 0) {
+      const c = campaigns[0];
+      const parts: string[] = [];
+      if (c.company_name) parts.push(`Company: ${c.company_name}`);
+      if (c.description) parts.push(`Description: ${c.description}`);
+      if (c.value_proposition) parts.push(`Value proposition: ${c.value_proposition}`);
+      if (c.industry) parts.push(`Industry: ${c.industry}`);
+      if (c.icp_job_titles?.length) parts.push(`Target roles: ${c.icp_job_titles.join(', ')}`);
+      if (c.icp_industries?.length) parts.push(`Target industries: ${c.icp_industries.join(', ')}`);
+      if (c.pain_points?.length) parts.push(`Pain points addressed: ${c.pain_points.join(', ')}`);
+      businessContext = parts.join('\n');
+    }
+  } catch (e) {
+    console.warn('[poll-reddit] Failed to fetch business context:', e);
+  }
+
+  if (!businessContext) {
+    businessContext = 'No business context available. Score based on general B2B/SaaS relevance.';
+  }
+
+  // Batch into groups of 15
+  const BATCH_SIZE = 15;
+  for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
+    const batch = candidates.slice(i, i + BATCH_SIZE);
+    const postsText = batch.map((c, idx) => {
+      const globalIdx = i + idx;
+      return `[${globalIdx}] Title: ${c.title}\nBody: ${(c.body || '').slice(0, 300)}`;
+    }).join('\n---\n');
+
+    const prompt = `You are a relevance scoring engine for a B2B lead generation tool. Score each Reddit post from 0-10 based on how relevant it is as a potential sales opportunity for this business:
+
+${businessContext}
+
+A high score (7-10) means the poster is likely:
+- Actively looking for a solution the business offers
+- Expressing pain points the business addresses
+- Asking for recommendations in the business's domain
+- Discussing topics where the business could add value
+
+A low score (0-3) means:
+- The post is unrelated to the business
+- The keyword match is coincidental
+- The post is about something completely different
+
+Score each post. Return ONLY a JSON object like: {"scores": {"0": 7, "1": 3, "2": 9, ...}}
+
+Posts to score:
+${postsText}`;
+
+    try {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'user', content: prompt },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn(`[poll-reddit] AI scoring failed: ${response.status}`);
+        // Default pass-through
+        batch.forEach((_, idx) => scores.set(i + idx, 7));
+        continue;
+      }
+
+      const aiData = await response.json();
+      const content = aiData.choices?.[0]?.message?.content?.trim() || '';
+      
+      // Extract JSON from response (might be wrapped in markdown)
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const scoreMap = parsed.scores || parsed;
+        for (const [key, value] of Object.entries(scoreMap)) {
+          const globalIdx = parseInt(key);
+          if (!isNaN(globalIdx) && typeof value === 'number') {
+            scores.set(globalIdx, Math.min(10, Math.max(0, Math.round(value))));
+          }
+        }
+      } else {
+        console.warn('[poll-reddit] Could not parse AI scores, defaulting to pass-through');
+        batch.forEach((_, idx) => scores.set(i + idx, 7));
+      }
+    } catch (e) {
+      console.warn('[poll-reddit] AI scoring error:', e);
+      batch.forEach((_, idx) => scores.set(i + idx, 7));
+    }
+
+    // Small delay between AI batches
+    if (i + BATCH_SIZE < candidates.length) {
+      await randomDelay(500, 1000);
+    }
+  }
+
+  return scores;
+}
+
 /* ── Main handler ──────────────────────────────────────────────────── */
 
 Deno.serve(async (req) => {
@@ -135,6 +286,9 @@ Deno.serve(async (req) => {
     const userInsertions: Record<string, number> = {};
     const failedPairs: FailedPair[] = [];
 
+    // Collect candidates per user for AI scoring
+    const candidatesByUser: Record<string, CandidatePost[]> = {};
+
     // Phase 1: Try RSS and JSON for each keyword/subreddit pair
     for (const kw of shuffledKeywords) {
       const subreddits = shuffle(kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS);
@@ -142,23 +296,20 @@ Deno.serve(async (req) => {
 
       for (const sub of subreddits) {
         try {
-          let inserted = await pollViaRSS(supabase, kw.user_id, kw.id, keyword, sub);
+          let candidates = await collectViaRSS(kw.user_id, kw.id, keyword, sub);
           requestCount++;
 
-          if (inserted === 0) {
+          if (candidates.length === 0) {
             await randomDelay(1500, 3500);
-            inserted = await pollViaJSON(supabase, kw.user_id, kw.id, keyword, sub);
+            candidates = await collectViaJSON(kw.user_id, kw.id, keyword, sub);
             requestCount++;
           }
 
-          if (inserted === 0) {
-            // Track this pair for batched Apify fallback
+          if (candidates.length === 0) {
             failedPairs.push({ userId: kw.user_id, keywordId: kw.id, keyword, subreddit: sub });
-          }
-
-          totalInserted += inserted;
-          if (inserted > 0) {
-            userInsertions[kw.user_id] = (userInsertions[kw.user_id] || 0) + inserted;
+          } else {
+            if (!candidatesByUser[kw.user_id]) candidatesByUser[kw.user_id] = [];
+            candidatesByUser[kw.user_id].push(...candidates);
           }
         } catch (err) {
           console.error(`[poll-reddit] Error polling r/${sub} for "${keyword}":`, err);
@@ -178,11 +329,58 @@ Deno.serve(async (req) => {
     // Phase 2: ONE batched Apify call for all failed pairs
     if (failedPairs.length > 0) {
       console.log(`[poll-reddit] ${failedPairs.length} pairs failed RSS/JSON, attempting single Apify batch call`);
-      const apifyInserted = await pollViaApifyBatch(supabase, failedPairs);
-      totalInserted += apifyInserted;
+      const apifyCandidates = await collectViaApifyBatch(failedPairs);
+      
+      for (const c of apifyCandidates) {
+        if (!candidatesByUser[c.userId]) candidatesByUser[c.userId] = [];
+        candidatesByUser[c.userId].push(c);
+      }
+    }
 
-      // Track per-user insertions from Apify
-      // (pollViaApifyBatch returns total; we attribute to users inside the function)
+    // Phase 3: AI relevance scoring per user, then insert
+    for (const [userId, candidates] of Object.entries(candidatesByUser)) {
+      console.log(`[poll-reddit] Scoring ${candidates.length} candidates for user ${userId.slice(0, 8)}...`);
+      
+      const scores = await scoreRelevance(supabase, candidates, userId);
+      
+      let userInserted = 0;
+      let skippedLowRelevance = 0;
+
+      for (let i = 0; i < candidates.length; i++) {
+        const relevanceScore = scores.get(i) ?? 7; // default pass-through
+        
+        if (relevanceScore < 6) {
+          skippedLowRelevance++;
+          continue;
+        }
+
+        const c = candidates[i];
+        const { error } = await supabase.from('reddit_mentions').upsert(
+          {
+            user_id: c.userId,
+            keyword_id: c.keywordId,
+            keyword_matched: c.keyword,
+            subreddit: c.subreddit,
+            author: c.author,
+            title: c.title,
+            body: c.body,
+            url: c.url,
+            reddit_post_id: c.redditPostId,
+            score: c.score,
+            posted_at: c.postedAt,
+            relevance_score: relevanceScore,
+          },
+          { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
+        );
+        if (!error) userInserted++;
+      }
+
+      console.log(`[poll-reddit] User ${userId.slice(0, 8)}: inserted ${userInserted}, skipped ${skippedLowRelevance} low-relevance`);
+      
+      if (userInserted > 0) {
+        totalInserted += userInserted;
+        userInsertions[userId] = (userInsertions[userId] || 0) + userInserted;
+      }
     }
 
     // Notifications
@@ -191,7 +389,7 @@ Deno.serve(async (req) => {
         await supabase.from('notifications').insert({
           user_id: userId,
           title: `🔴 ${count} new Reddit signal${count > 1 ? 's' : ''} found`,
-          body: `Your Reddit AI Agent discovered ${count} new post${count > 1 ? 's' : ''} matching your intent keywords.`,
+          body: `Your Reddit AI Agent discovered ${count} new relevant post${count > 1 ? 's' : ''} matching your intent keywords.`,
           type: 'reddit_signal',
           link: '/reddit-signals',
         });
@@ -208,15 +406,14 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── Poll via RSS feed ─────────────────────────────────────────────── */
+/* ── Collect candidates via RSS feed (no insert, just collect) ────── */
 
-async function pollViaRSS(
-  supabase: ReturnType<typeof createClient>,
+async function collectViaRSS(
   userId: string,
   keywordId: string,
   keyword: string,
   subreddit: string
-): Promise<number> {
+): Promise<CandidatePost[]> {
   const domain = randomRedditDomain();
   const timeRange = randomTimeRange();
   const sort = randomSort();
@@ -230,52 +427,54 @@ async function pollViaRSS(
 
   if (!res.ok) {
     console.warn(`[poll-reddit] RSS ${res.status} for r/${subreddit} "${keyword}"`);
-    return 0;
+    return [];
   }
 
   const xml = await res.text();
-  if (!xml || xml.length < 100) return 0;
+  if (!xml || xml.length < 100) return [];
 
   const entries = parseAtomFeed(xml);
-  if (entries.length === 0) return 0;
+  if (entries.length === 0) return [];
 
   console.log(`[poll-reddit] RSS: ${entries.length} entries in r/${subreddit} for "${keyword}"`);
 
-  let inserted = 0;
+  const candidates: CandidatePost[] = [];
   for (const entry of entries) {
+    // Keyword-in-text filter
+    if (!keywordInText(keyword, entry.title, entry.body)) {
+      continue;
+    }
+
     const postIdMatch = entry.link.match(/\/comments\/([a-z0-9]+)/i);
     const redditPostId = postIdMatch ? `t3_${postIdMatch[1]}` : `rss_${hashString(entry.link)}`;
 
-    const { error } = await supabase.from('reddit_mentions').upsert(
-      {
-        user_id: userId,
-        keyword_id: keywordId,
-        keyword_matched: keyword,
-        subreddit: entry.subreddit || subreddit,
-        author: entry.author || '[unknown]',
-        title: entry.title || 'No title',
-        body: (entry.body || '').slice(0, 1000) || null,
-        url: entry.link,
-        reddit_post_id: redditPostId,
-        score: 0,
-        posted_at: entry.published || null,
-      },
-      { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
-    );
-    if (!error) inserted++;
+    candidates.push({
+      userId,
+      keywordId,
+      keyword,
+      subreddit: entry.subreddit || subreddit,
+      author: entry.author || '[unknown]',
+      title: entry.title || 'No title',
+      body: (entry.body || '').slice(0, 1000) || null,
+      url: entry.link,
+      redditPostId,
+      score: 0,
+      postedAt: entry.published || null,
+    });
   }
-  return inserted;
+
+  console.log(`[poll-reddit] RSS: ${candidates.length}/${entries.length} passed keyword filter for "${keyword}"`);
+  return candidates;
 }
 
-/* ── Poll via JSON API (fallback) ──────────────────────────────────── */
+/* ── Collect candidates via JSON API ───────────────────────────────── */
 
-async function pollViaJSON(
-  supabase: ReturnType<typeof createClient>,
+async function collectViaJSON(
   userId: string,
   keywordId: string,
   keyword: string,
   subreddit: string
-): Promise<number> {
+): Promise<CandidatePost[]> {
   const domain = randomRedditDomain();
   const timeRange = randomTimeRange();
   const sort = randomSort();
@@ -289,60 +488,62 @@ async function pollViaJSON(
 
   if (!res.ok) {
     console.warn(`[poll-reddit] JSON ${res.status} for r/${subreddit} "${keyword}"`);
-    return 0;
+    return [];
   }
 
   const data = await res.json();
   const posts = data?.data?.children ?? [];
-  if (posts.length === 0) return 0;
+  if (posts.length === 0) return [];
 
   console.log(`[poll-reddit] JSON: ${posts.length} posts in r/${subreddit} for "${keyword}"`);
 
-  let inserted = 0;
+  const candidates: CandidatePost[] = [];
   for (const post of posts) {
     const p = post.data;
     if (!p || !p.id) continue;
 
-    const { error } = await supabase.from('reddit_mentions').upsert(
-      {
-        user_id: userId,
-        keyword_id: keywordId,
-        keyword_matched: keyword,
-        subreddit: p.subreddit || subreddit,
-        author: p.author || '[deleted]',
-        title: p.title || 'No title',
-        body: (p.selftext || '').slice(0, 1000) || null,
-        url: `https://www.reddit.com${p.permalink}`,
-        reddit_post_id: `t3_${p.id}`,
-        score: p.score ?? 0,
-        posted_at: p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null,
-      },
-      { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
-    );
-    if (!error) inserted++;
+    const title = p.title || 'No title';
+    const body = (p.selftext || '').slice(0, 1000) || null;
+
+    // Keyword-in-text filter
+    if (!keywordInText(keyword, title, body)) {
+      continue;
+    }
+
+    candidates.push({
+      userId,
+      keywordId,
+      keyword,
+      subreddit: p.subreddit || subreddit,
+      author: p.author || '[deleted]',
+      title,
+      body,
+      url: `https://www.reddit.com${p.permalink}`,
+      redditPostId: `t3_${p.id}`,
+      score: p.score ?? 0,
+      postedAt: p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null,
+    });
   }
-  return inserted;
+
+  console.log(`[poll-reddit] JSON: ${candidates.length}/${posts.length} passed keyword filter for "${keyword}"`);
+  return candidates;
 }
 
-/* ── Batched Apify fallback (ONE call for all failed pairs) ────────── */
+/* ── Batched Apify fallback (collect candidates, no insert) ────────── */
 
-async function pollViaApifyBatch(
-  supabase: ReturnType<typeof createClient>,
+async function collectViaApifyBatch(
   failedPairs: FailedPair[]
-): Promise<number> {
+): Promise<CandidatePost[]> {
   const APIFY_TOKEN = Deno.env.get('APIFY_TOKEN');
   if (!APIFY_TOKEN) {
     console.warn('[poll-reddit] APIFY_TOKEN not configured, skipping Apify fallback');
-    return 0;
+    return [];
   }
 
-  // Deduplicate keywords and subreddits
   const uniqueKeywords = [...new Set(failedPairs.map(p => p.keyword))];
   const uniqueSubreddits = [...new Set(failedPairs.map(p => p.subreddit))];
 
   console.log(`[poll-reddit] Apify batch: ${uniqueKeywords.length} keywords × ${uniqueSubreddits.length} subreddits`);
-  console.log(`[poll-reddit] Apify keywords: ${JSON.stringify(uniqueKeywords)}`);
-  console.log(`[poll-reddit] Apify subreddits: ${JSON.stringify(uniqueSubreddits)}`);
 
   const actorUrl = `https://api.apify.com/v2/acts/parseforge~reddit-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
 
@@ -368,36 +569,25 @@ async function pollViaApifyBatch(
     if (!res.ok) {
       const errText = await res.text();
       console.error(`[poll-reddit] Apify returned ${res.status}: ${errText.slice(0, 300)}`);
-      return 0;
+      return [];
     }
 
     const posts: any[] = await res.json();
     if (!Array.isArray(posts) || posts.length === 0) {
       console.log('[poll-reddit] Apify: 0 results returned');
-      return 0;
+      return [];
     }
 
-    // Filter out error objects
     const validPosts = posts.filter((p: any) => p && !p.error && (p.title || p.url || p.permalink));
-
     if (validPosts.length === 0) {
       console.log(`[poll-reddit] Apify: 0 valid posts (${posts.length} raw items filtered out)`);
-      if (posts[0]) {
-        console.warn(`[poll-reddit] Apify first item sample: ${JSON.stringify(posts[0]).slice(0, 300)}`);
-      }
-      return 0;
+      return [];
     }
 
-    // Log first valid post structure for debugging
     console.log(`[poll-reddit] Apify: ${validPosts.length} valid posts from batch call`);
-    console.log(`[poll-reddit] Apify sample keys: ${JSON.stringify(Object.keys(validPosts[0]))}`);
-    console.log(`[poll-reddit] Apify sample: ${JSON.stringify(validPosts[0]).slice(0, 500)}`);
 
-    // Build a lookup for keyword matching
-    // For each post, find which keyword it matches by checking title+body
     const keywordLower = uniqueKeywords.map(k => k.toLowerCase());
-
-    let totalInserted = 0;
+    const candidates: CandidatePost[] = [];
 
     for (const p of validPosts) {
       const title = p.title || '';
@@ -408,7 +598,6 @@ async function pollViaApifyBatch(
       const author = p.author || p.authorName || '[unknown]';
       const score = p.score ?? p.ups ?? p.upvoteScore ?? 0;
 
-      // Extract reddit post ID from permalink
       const postIdMatch = (permalink || postUrl).match(/\/comments\/([a-z0-9]+)/i);
       const rawId = p.id || p.postId || p.name;
       const redditPostId = postIdMatch
@@ -419,68 +608,51 @@ async function pollViaApifyBatch(
 
       const finalUrl = postUrl || `https://www.reddit.com${permalink}`;
 
-      // Parse posted_at from various possible fields
       let postedAt: string | null = null;
       const rawDate = p.createdAt || p.postedDate || p.created_utc || p.postedAt;
       if (rawDate) {
         if (typeof rawDate === 'number') {
-          // Unix timestamp (seconds or milliseconds)
           postedAt = new Date(rawDate > 1e12 ? rawDate : rawDate * 1000).toISOString();
         } else if (typeof rawDate === 'string') {
           postedAt = rawDate;
         }
       }
 
-      // Match post to keyword by checking title + body content
+      // Match to keyword
       const searchText = `${title} ${body}`.toLowerCase();
-      let matchedKeywordIdx = keywordLower.findIndex(k => searchText.includes(k));
-      if (matchedKeywordIdx === -1) {
-        // Post doesn't contain any of our keywords — skip it
-        continue;
-      }
+      const matchedKeywordIdx = keywordLower.findIndex(k => searchText.includes(k));
+      if (matchedKeywordIdx === -1) continue;
 
       const matchedKeyword = uniqueKeywords[matchedKeywordIdx];
-
-      // Find all failedPairs that match this keyword (could be multiple users)
       const matchingPairs = failedPairs.filter(fp => fp.keyword === matchedKeyword);
       if (matchingPairs.length === 0) continue;
 
-      // Insert for each user that had this keyword
       const seenUsers = new Set<string>();
       for (const pair of matchingPairs) {
         if (seenUsers.has(pair.userId)) continue;
         seenUsers.add(pair.userId);
 
-        const { error } = await supabase.from('reddit_mentions').upsert(
-          {
-            user_id: pair.userId,
-            keyword_id: pair.keywordId,
-            keyword_matched: matchedKeyword,
-            subreddit: postSubreddit || pair.subreddit,
-            author,
-            title: title || 'No title',
-            body: body || null,
-            url: finalUrl,
-            reddit_post_id: redditPostId,
-            score,
-            posted_at: postedAt,
-          },
-          { onConflict: 'user_id,reddit_post_id', ignoreDuplicates: true }
-        );
-
-        if (!error) {
-          totalInserted++;
-        } else {
-          console.warn(`[poll-reddit] Apify upsert error: ${error.message}`);
-        }
+        candidates.push({
+          userId: pair.userId,
+          keywordId: pair.keywordId,
+          keyword: matchedKeyword,
+          subreddit: postSubreddit || pair.subreddit,
+          author,
+          title: title || 'No title',
+          body: body || null,
+          url: finalUrl,
+          redditPostId,
+          score,
+          postedAt,
+        });
       }
     }
 
-    console.log(`[poll-reddit] Apify batch: inserted ${totalInserted} mentions`);
-    return totalInserted;
+    console.log(`[poll-reddit] Apify batch: ${candidates.length} candidates after keyword filter`);
+    return candidates;
   } catch (err) {
     console.error(`[poll-reddit] Apify batch error:`, err);
-    return 0;
+    return [];
   }
 }
 

@@ -30,6 +30,7 @@ interface RedditMention {
   found_at: string;
   dismissed: boolean;
   saved: boolean;
+  relevance_score: number | null;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
@@ -253,6 +254,11 @@ export default function RedditSignals() {
     .filter(m => viewMode === "saved" ? m.saved : true)
     .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true)
     .sort((a, b) => {
+      // Primary sort: relevance score (highest first) when available
+      const scoreA = a.relevance_score ?? 0;
+      const scoreB = b.relevance_score ?? 0;
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      // Secondary sort: date
       const dateA = new Date(a.posted_at || a.found_at).getTime();
       const dateB = new Date(b.posted_at || b.found_at).getTime();
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
@@ -641,6 +647,17 @@ export default function RedditSignals() {
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border font-medium">
                     {mention.keyword_matched}
                   </span>
+                  {mention.relevance_score != null && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold border ${
+                      mention.relevance_score >= 8
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : mention.relevance_score >= 6
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          : "bg-red-50 text-red-600 border-red-200"
+                    }`}>
+                      {mention.relevance_score >= 8 ? "🎯" : mention.relevance_score >= 6 ? "👍" : "🔻"} {mention.relevance_score}/10
+                    </span>
+                  )}
                 </div>
 
                 {/* Content */}

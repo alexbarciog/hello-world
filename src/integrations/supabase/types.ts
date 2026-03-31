@@ -683,6 +683,7 @@ export type Database = {
           keyword_matched: string
           posted_at: string | null
           reddit_post_id: string
+          relevance_score: number | null
           saved: boolean
           score: number | null
           subreddit: string
@@ -700,6 +701,7 @@ export type Database = {
           keyword_matched: string
           posted_at?: string | null
           reddit_post_id: string
+          relevance_score?: number | null
           saved?: boolean
           score?: number | null
           subreddit: string
@@ -717,6 +719,7 @@ export type Database = {
           keyword_matched?: string
           posted_at?: string | null
           reddit_post_id?: string
+          relevance_score?: number | null
           saved?: boolean
           score?: number | null
           subreddit?: string
