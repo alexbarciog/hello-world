@@ -755,6 +755,14 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                               className={`flex-1 ${inputCls} !py-1.5 !text-xs`}
                                             />
                                             <button onClick={() => addSignalKeyword(sub.id)} className="text-xs font-medium text-foreground px-2">Add</button>
+                                            <button
+                                              onClick={() => generateSignalKeywords(sub.id)}
+                                              disabled={generatingKeywords[sub.id]}
+                                              className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+                                            >
+                                              <Sparkles className="w-3 h-3" />
+                                              {generatingKeywords[sub.id] ? "..." : "AI"}
+                                            </button>
                                           </div>
                                           {(signalKeywords[sub.id] || []).length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1.5">
