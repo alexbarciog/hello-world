@@ -541,7 +541,7 @@ export default function XSignals() {
 
           {/* Keyword filter chips */}
           {keywords.length > 1 && (
-            <div className="ml-2 min-w-0 max-w-full overflow-x-auto overflow-y-hidden scrollbar-none">
+            <div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-none">
               <div className="flex w-max items-center gap-1 pr-2">
                 <button
                   onClick={() => setFilterKeyword(null)}
