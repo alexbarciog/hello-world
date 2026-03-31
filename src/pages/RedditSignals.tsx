@@ -647,6 +647,17 @@ export default function RedditSignals() {
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border font-medium">
                     {mention.keyword_matched}
                   </span>
+                  {mention.relevance_score != null && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold border ${
+                      mention.relevance_score >= 8
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : mention.relevance_score >= 6
+                          ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          : "bg-red-50 text-red-600 border-red-200"
+                    }`}>
+                      {mention.relevance_score >= 8 ? "🎯" : mention.relevance_score >= 6 ? "👍" : "🔻"} {mention.relevance_score}/10
+                    </span>
+                  )}
                 </div>
 
                 {/* Content */}
