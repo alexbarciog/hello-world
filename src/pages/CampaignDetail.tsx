@@ -2684,21 +2684,33 @@ export default function CampaignDetail() {
 
               {/* Upcoming Messages Preview */}
               {scheduledMessages.length > 0 && (
-                <div className="rounded-2xl border border-border/60 bg-card p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-base font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-primary" />
-                        Upcoming Messages
-                      </h3>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">Preview and edit messages before they're sent</p>
+                <div className="rounded-xl border border-border/50 overflow-hidden">
+                  <button
+                    onClick={() => setUpcomingMsgsAccordionOpen(!upcomingMsgsAccordionOpen)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-bold text-foreground">Upcoming Messages</span>
+                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-lg ring-1 ring-primary/20">
+                        {scheduledMessages.length}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">Preview and edit before they're sent</span>
                     </div>
-                    <span className="text-[11px] font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
-                      {scheduledMessages.length} contact(s)
-                    </span>
-                  </div>
-
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    <motion.div animate={{ rotate: upcomingMsgsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                      <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                    </motion.div>
+                  </button>
+                  <AnimatePresence>
+                    {upcomingMsgsAccordionOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                  <div className="p-3 space-y-3 max-h-[500px] overflow-y-auto">
                     {scheduledMessages.map((sm, idx) => {
                       const isEditing = editingScheduledIdx === idx;
                       const initials = sm.contactName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
