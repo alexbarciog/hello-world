@@ -2284,7 +2284,7 @@ export default function CampaignDetail() {
                 <div className="mb-6 rounded-xl bg-muted/40 p-3.5">
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-medium text-muted-foreground flex items-center gap-1.5">⚡ Daily progress</span>
-                    <span className="font-extrabold text-foreground">{todaySentCount} / {campaign.daily_connect_limit || 25}</span>
+                    <span className="font-extrabold text-foreground">{todaySentCount} / {profileLimits.daily_connections_limit}</span>
                   </div>
                   <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
                     <motion.div
