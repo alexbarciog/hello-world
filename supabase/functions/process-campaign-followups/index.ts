@@ -33,10 +33,18 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: campaigns, error: campErr } = await supabase
+    // Parse optional body params
+    const body = await req.json().catch(() => ({}));
+    const filterCampaignId: string | null = body.campaign_id || null;
+    const skipDelay: boolean = body.skip_delay === true;
+
+    let query = supabase
       .from('campaigns')
       .select('id, user_id, workflow_steps, source_list_id, source_agent_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
       .eq('status', 'active');
+    if (filterCampaignId) query = query.eq('id', filterCampaignId);
+
+    const { data: campaigns, error: campErr } = await query;
 
     // Resolve source_list_id for agent-sourced campaigns
     if (campaigns) {
