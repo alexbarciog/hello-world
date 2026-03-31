@@ -401,22 +401,51 @@ async function processCampaign(
 
         if (!message.trim()) continue;
 
-        const sendRes = await fetch(
-          `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
-          {
-            method: 'POST',
-            headers: {
-              'X-API-KEY': unipileApiKey,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ text: message.trim() }),
-          }
-        );
+        let sendRes: Response;
+        if (chatId) {
+          // Send via existing chat
+          sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ text: message.trim() }),
+            }
+          );
+        } else {
+          // Send via provider_id — creates a new chat
+          sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                account_id: accountId,
+                attendees_ids: [providerId],
+                text: message.trim(),
+              }),
+            }
+          );
+        }
 
         if (!sendRes.ok) {
           console.error(`[followup] send failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           continue;
+        }
+
+        // If we created a new chat, extract the chat_id from the response
+        if (!chatId) {
+          try {
+            const sendData = await sendRes.json();
+            const newChatId = sendData.chat_id || sendData.id || null;
+            if (newChatId) {
+              chatId = newChatId;
+              await supabase.from('campaign_connection_requests')
+                .update({ chat_id: newChatId })
+                .eq('id', req.id);
+              console.log(`[followup] new chat created for ${req.contact_id}: ${newChatId}`);
+            }
+          } catch { /* ok, message was sent */ }
         }
 
         console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
