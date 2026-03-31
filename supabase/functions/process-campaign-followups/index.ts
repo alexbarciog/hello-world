@@ -427,6 +427,17 @@ async function processCampaign(
 
         messagesSent++;
 
+        // Mark daily_scheduled_leads entry as sent (if exists)
+        const today = new Date().toISOString().split('T')[0];
+        const actionType = `message_step_${newStep}`;
+        await supabase
+          .from('daily_scheduled_leads')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('campaign_id', campaign.id)
+          .eq('contact_id', req.contact_id)
+          .eq('scheduled_date', today)
+          .eq('action_type', actionType);
+
         // Immediately generate next step message after sending
         if (lovableApiKey && hasMoreSteps) {
           const gen = await generateNextStepMessage(
