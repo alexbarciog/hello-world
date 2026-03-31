@@ -75,9 +75,11 @@ Deno.serve(async (req) => {
       leadCompany,
       leadTitle,
       buyingSignal,
+      isConversationalReply,
     } = await req.json();
 
-    if (!stepNumber || stepNumber < 2) {
+    // Allow stepNumber=0 for conversational AI replies
+    if (!isConversationalReply && (!stepNumber || stepNumber < 2)) {
       return new Response(JSON.stringify({ error: 'stepNumber must be >= 2' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
