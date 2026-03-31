@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
             <td style="padding:40px;">
               <p style="margin:0 0 16px;color:#374151;font-size:16px;">Hey ${userName} 👋</p>
               <p style="margin:0 0 8px;color:#111827;font-size:18px;font-weight:600;">${escapeHtml(title)}</p>
-              ${notifBody ? `<p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">${escapeHtml(notifBody)}</p>` : ''}
+              <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">You have a new update waiting for you in your dashboard.</p>
               <a href="${fullLink}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;">
                 View in Intentsly →
               </a>
