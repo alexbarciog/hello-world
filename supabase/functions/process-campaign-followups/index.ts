@@ -33,10 +33,18 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: campaigns, error: campErr } = await supabase
+    // Parse optional body params
+    const body = await req.json().catch(() => ({}));
+    const filterCampaignId: string | null = body.campaign_id || null;
+    const skipDelay: boolean = body.skip_delay === true;
+
+    let query = supabase
       .from('campaigns')
       .select('id, user_id, workflow_steps, source_list_id, source_agent_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
       .eq('status', 'active');
+    if (filterCampaignId) query = query.eq('id', filterCampaignId);
+
+    const { data: campaigns, error: campErr } = await query;
 
     // Resolve source_list_id for agent-sourced campaigns
     if (campaigns) {
@@ -85,6 +93,7 @@ Deno.serve(async (req) => {
           LOVABLE_API_KEY,
           SUPABASE_URL,
           SUPABASE_SERVICE_ROLE_KEY,
+          skipDelay,
         );
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
@@ -110,6 +119,7 @@ async function processCampaign(
   lovableApiKey: string | undefined,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
+  skipDelay: boolean = false,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
@@ -184,7 +194,7 @@ async function processCampaign(
           }
           await delay(800);
         } else {
-          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
+          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
 
           if (chatId) {
             await supabase
@@ -288,7 +298,7 @@ async function processCampaign(
         // Check delay before SENDING (not before generating)
         const delayDays = nextStep.delay_days || 1;
         const delayMs = delayDays * 24 * 60 * 60 * 1000;
-        if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
+        if (!skipDelay && Date.now() - stepCompletedAt.getTime() < delayMs) continue;
 
         const { data: contact } = await supabase
           .from('contacts')
@@ -322,8 +332,12 @@ async function processCampaign(
           }
         }
 
-        if (!chatId) {
-          console.log(`[followup] no validated chat for contact ${req.contact_id}, can't send message`);
+        if (!chatId && providerId) {
+          // No chat exists yet — we'll send the first message directly via provider_id
+          // This will create a new chat automatically
+          console.log(`[followup] no chat for contact ${req.contact_id}, will send via provider_id ${providerId}`);
+        } else if (!chatId) {
+          console.log(`[followup] no chat and no provider_id for contact ${req.contact_id}, skipping`);
           continue;
         }
 
@@ -356,6 +370,8 @@ async function processCampaign(
           console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
         }
 
+        let message = '';
+
         // Check for pre-generated message
         const { data: scheduledMsg } = await supabase
           .from('scheduled_messages')
@@ -385,22 +401,51 @@ async function processCampaign(
 
         if (!message.trim()) continue;
 
-        const sendRes = await fetch(
-          `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
-          {
-            method: 'POST',
-            headers: {
-              'X-API-KEY': unipileApiKey,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ text: message.trim() }),
-          }
-        );
+        let sendRes: Response;
+        if (chatId) {
+          // Send via existing chat
+          sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ text: message.trim() }),
+            }
+          );
+        } else {
+          // Send via provider_id — creates a new chat
+          sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                account_id: accountId,
+                attendees_ids: [providerId],
+                text: message.trim(),
+              }),
+            }
+          );
+        }
 
         if (!sendRes.ok) {
           console.error(`[followup] send failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           continue;
+        }
+
+        // If we created a new chat, extract the chat_id from the response
+        if (!chatId) {
+          try {
+            const sendData = await sendRes.json();
+            const newChatId = sendData.chat_id || sendData.id || null;
+            if (newChatId) {
+              chatId = newChatId;
+              await supabase.from('campaign_connection_requests')
+                .update({ chat_id: newChatId })
+                .eq('id', req.id);
+              console.log(`[followup] new chat created for ${req.contact_id}: ${newChatId}`);
+            }
+          } catch { /* ok, message was sent */ }
         }
 
         console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
@@ -707,37 +752,45 @@ async function findChat(
   existingChatId?: string | null,
 ): Promise<string | null> {
   try {
-    let cursor: string | null = null;
-
-    for (let page = 0; page < 5; page++) {
-      const url = new URL(`https://${dsn}/api/v1/chats`);
-      url.searchParams.set('account_id', accountId);
-      url.searchParams.set('limit', '100');
-      if (cursor) url.searchParams.set('cursor', cursor);
-
-      const res = await fetch(url.toString(), {
+    // Step 1: If we have an existing chat_id, validate it belongs to this provider
+    if (existingChatId) {
+      const validUrl = new URL(`https://${dsn}/api/v1/chats/${encodeURIComponent(existingChatId)}`);
+      const validRes = await fetch(validUrl.toString(), {
         headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
       });
-
-      if (!res.ok) return null;
-      const data = await res.json();
-      const chats = data?.items || data?.data || [];
-
-      const matchingChats = Array.isArray(chats)
-        ? chats.filter((chat: any) => chatMatchesProvider(chat, providerId))
-        : [];
-
-      if (existingChatId) {
-        const exactMatch = matchingChats.find((chat: any) => (chat.id || chat.chat_id) === existingChatId);
-        if (exactMatch) return exactMatch.id || exactMatch.chat_id || null;
+      if (validRes.ok) {
+        const chatData = await validRes.json();
+        if (chatMatchesProvider(chatData, providerId)) {
+          return existingChatId; // Existing chat is valid
+        }
+        console.log(`[findChat] existing chat ${existingChatId} does NOT belong to provider ${providerId}`);
+      } else {
+        await validRes.text(); // consume body
       }
+    }
 
-      if (matchingChats.length > 0) {
-        return matchingChats[0].id || matchingChats[0].chat_id || null;
-      }
+    // Step 2: Search for the correct chat using Unipile's filter
+    const url = new URL(`https://${dsn}/api/v1/chats`);
+    url.searchParams.set('account_id', accountId);
+    url.searchParams.set('attendee_provider_id', providerId);
+    url.searchParams.set('limit', '1');
 
-      cursor = data?.cursor || data?.next_cursor || null;
-      if (!cursor) break;
+    const res = await fetch(url.toString(), {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const chats = data?.items || data?.data || [];
+
+    if (!Array.isArray(chats) || chats.length === 0) return null;
+
+    const chat = chats[0];
+    const chatId = chat.id || chat.chat_id || null;
+
+    // Validate the returned chat actually has the right attendee
+    if (chatId && chatMatchesProvider(chat, providerId)) {
+      return chatId;
     }
 
     return null;
