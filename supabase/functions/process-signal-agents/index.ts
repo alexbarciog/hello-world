@@ -3,8 +3,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Stripe from 'https://esm.sh/stripe@18.5.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import Stripe from 'https://esm.sh/stripe@17.7.0';
 
 // ─── Sequential Dispatcher ───────────────────────────────────────────────────
 // Invokes separate edge functions for each signal type, one at a time.
