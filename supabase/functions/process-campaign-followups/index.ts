@@ -117,7 +117,6 @@ async function processCampaign(
   lovableApiKey: string | undefined,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
-  skipDelay: boolean = false,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
