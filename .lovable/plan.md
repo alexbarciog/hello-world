@@ -2,48 +2,79 @@
 
 ## Problem
 
-Currently `send-connection-requests` runs 5 times/day at fixed 2-hour slots (08, 10, 12, 14, 16 UTC), sending `dailyLimit / 5` connections per batch. With a limit of 30, that's 6 connections fired in bursts — not very human-like and leaves big gaps between batches.
+The current "Run 1–5" cards are static placeholders that don't reflect real activity. You want to see **which specific leads are scheduled for today** — both connection requests and follow-up messages — pre-selected at midnight based on daily limits.
 
 ## Solution
 
-Align `send-connection-requests` with the same 30-minute cadence we just set for follow-ups, but **restrict it to business hours** (08:00–18:00 UTC) so connections aren't sent at odd hours. This gives **20 slots/day**, meaning a daily limit of 30 sends ~1-2 connections per slot — much more natural-looking to LinkedIn.
+### 1. New database table: `daily_scheduled_leads`
 
-### Changes
-
-**1. Update `send-connection-requests/index.ts`**
-
-- Change `SEQUENCES_PER_DAY` from `5` to `20` (20 half-hour slots across 10 business hours)
-- Add a business-hours guard at the top: if the current UTC hour is outside 08–18, return early with no work done
-- This ensures batch sizes are small and spread evenly (e.g., 30 limit ÷ 20 slots = 1-2 per run)
-
-**2. Database migration — update cron schedule**
-
-Replace the current 5 fixed cron entries for `send-connection-requests` with a single entry running every 30 minutes:
+Stores the pre-selected leads for each day per campaign:
 
 ```sql
--- Remove existing 5 entries
-SELECT cron.unschedule('send-connection-requests-run-1');
--- ... through run-5
-
--- New: every 30 minutes
-SELECT cron.schedule(
-  'send-connection-requests',
-  '*/30 * * * *',
-  ...
+CREATE TABLE public.daily_scheduled_leads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id uuid NOT NULL,
+  contact_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  scheduled_date date NOT NULL DEFAULT CURRENT_DATE,
+  action_type text NOT NULL, -- 'connection' or 'message_step_2', 'message_step_3', etc.
+  step_index integer NOT NULL DEFAULT 1,
+  status text NOT NULL DEFAULT 'pending', -- pending, sent, failed, skipped
+  sent_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(campaign_id, contact_id, scheduled_date, action_type)
 );
 ```
 
-The business-hours check in the edge function itself will skip execution outside 08–18 UTC, so the cron can safely fire 24/7.
+With RLS for authenticated users (`user_id = auth.uid()`) and service role full access.
 
-**3. No other changes needed**
+### 2. New edge function: `schedule-daily-leads`
 
-The daily limit guard (line 128) already prevents over-sending regardless of how often the function runs. The batch size calculation automatically adjusts based on `SEQUENCES_PER_DAY`.
+Runs once daily at **00:05 UTC** via pg_cron. For each active campaign:
 
-### How it works in practice
+- **Connections**: Pick up to `daily_connections_limit` unsent contacts (prioritized by relevance_tier: hot → warm → cold), insert as `action_type = 'connection'`
+- **Messages**: For each accepted lead whose `delay_hours` has elapsed or will elapse today, insert as `action_type = 'message_step_N'`, up to `daily_messages_limit`
+- Reads limits from `profiles.daily_connections_limit` and `profiles.daily_messages_limit`
 
-With a daily limit of 30 and 20 business-hour slots:
-- Each slot sends ~1-2 connection requests
-- Connections are spread across 08:00–18:00 UTC every 30 minutes
-- Looks much more natural to LinkedIn than 6-connection bursts
-- Daily limit is still strictly enforced
+### 3. Update `send-connection-requests` to use pre-scheduled leads
+
+Instead of picking contacts on-the-fly, it reads from `daily_scheduled_leads` where `scheduled_date = TODAY` and `action_type = 'connection'` and `status = 'pending'`. After sending, updates status to `'sent'`. Batch size stays at `dailyLimit / 20` per run.
+
+### 4. Update `process-campaign-followups` to use pre-scheduled leads
+
+Same pattern — reads message-type entries from `daily_scheduled_leads` for today, sends them, marks as sent.
+
+### 5. Replace Run cards in UI with scheduled leads list
+
+Replace the "Run 1–5" section in `CampaignDetail.tsx` with a query to `daily_scheduled_leads` for today's campaign. Display:
+
+- Each lead's name, company, avatar
+- Action type badge: "Send Connection" or "Step 2 Message", etc.
+- Status indicator: pending (⏳), sent (✓), failed (✗)
+- Group by action type with counts
+
+Shows a "No leads scheduled for today" state when empty, and a summary like "12 connections + 5 messages scheduled today".
+
+### 6. Cron job migration
+
+```sql
+SELECT cron.schedule(
+  'schedule-daily-leads',
+  '5 0 * * *',  -- 00:05 UTC daily
+  $$ SELECT net.http_post(...schedule-daily-leads...) $$
+);
+```
+
+## How it works in practice
+
+1. At 00:05 UTC, `schedule-daily-leads` pre-selects today's leads per campaign based on limits
+2. Throughout the day, `send-connection-requests` (every 30 min, business hours) picks pending connection entries in small batches and sends them
+3. `process-campaign-followups` (every 30 min) picks pending message entries and sends them
+4. The UI shows the real scheduled leads list with live status updates
+
+## Technical details
+
+- **Files to create**: `supabase/functions/schedule-daily-leads/index.ts`, 1 migration for table + cron
+- **Files to modify**: `send-connection-requests/index.ts` (read from daily_scheduled_leads instead of contacts), `process-campaign-followups/index.ts` (same), `src/pages/CampaignDetail.tsx` (replace run cards with scheduled leads UI)
+- The `schedule-daily-leads` function is idempotent — re-running it won't duplicate entries due to the UNIQUE constraint
 
