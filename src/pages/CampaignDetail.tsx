@@ -874,9 +874,9 @@ export default function CampaignDetail() {
                     <span className="text-sm text-muted-foreground font-medium">Sender:</span>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</div>
                     <span className="text-sm font-bold text-foreground">Alexandru Barciog</span>
-                    <span className="text-xs font-bold text-green-600 bg-green-50 px-2.5 py-0.5 rounded-full">Connected</span>
-                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">🔥 14/day</span>
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">✉️ 20/day</span>
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">Connected</span>
+                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">🔥 {profileLimits.daily_connections_limit}/day</span>
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">✉️ {profileLimits.daily_messages_limit}/day</span>
                   </div>
                   <button onClick={() => navigate("/settings?tab=linkedin")} className="text-muted-foreground hover:text-foreground"><SettingsIcon className="w-4 h-4" /></button>
                 </div>
