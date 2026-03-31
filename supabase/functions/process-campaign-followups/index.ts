@@ -749,8 +749,8 @@ async function fetchUserProfile(
 }
 
 function isFirstDegree(profileData: any): boolean {
-  // Original checks
-  if (profileData.network_distance === 1 || profileData.network_distance === '1') return true;
+  // Original checks — network_distance can be number (1) or string ("1", "FIRST_DEGREE")
+  if (profileData.network_distance === 1 || profileData.network_distance === '1' || profileData.network_distance === 'FIRST_DEGREE' || profileData.network_distance === 'first_degree') return true;
   if (profileData.is_connection === true || profileData.is_connection === 'true') return true;
   if (profileData.relation_type === 'FIRST_DEGREE' || profileData.relation_type === 'first_degree') return true;
   if (profileData.distance === 'DISTANCE_1' || profileData.distance === 1 || profileData.distance === '1') return true;
