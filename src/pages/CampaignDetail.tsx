@@ -2278,26 +2278,40 @@ export default function CampaignDetail() {
                                 )}
                               </div>
                             </div>
-                            {/* Action & status badges */}
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
-                                item.actionType === "connection"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-accent/40 text-accent-foreground"
-                              }`}>
-                                {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
-                              </span>
-                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
-                                item.status === "sent"
-                                  ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
-                                  : item.status === "failed"
-                                  ? "text-destructive bg-destructive/10 ring-destructive/20"
-                                  : item.status === "skipped"
-                                  ? "text-muted-foreground bg-muted/60 ring-border/30"
-                                  : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
-                              }`}>
-                                {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
-                              </span>
+                            <div className="flex items-center justify-between gap-3 flex-wrap">
+                              {/* Signal link */}
+                              <div className="min-w-0 flex-1">
+                                {item.contactSignal && (
+                                  item.contactSignalPostUrl ? (
+                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[260px]">
+                                      {item.contactSignal}
+                                    </a>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground truncate block max-w-[260px]">{item.contactSignal}</span>
+                                  )
+                                )}
+                              </div>
+                              {/* Action & status badges */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
+                                  item.actionType === "connection"
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-accent/40 text-accent-foreground"
+                                }`}>
+                                  {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
+                                </span>
+                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                  item.status === "sent"
+                                    ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                    : item.status === "failed"
+                                    ? "text-destructive bg-destructive/10 ring-destructive/20"
+                                    : item.status === "skipped"
+                                    ? "text-muted-foreground bg-muted/60 ring-border/30"
+                                    : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
+                                }`}>
+                                  {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
