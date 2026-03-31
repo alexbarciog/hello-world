@@ -2290,7 +2290,16 @@ export default function CampaignDetail() {
                               </div>
                             </div>
                             {/* Right: Action & status badges — vertically centered */}
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <div className="flex items-center gap-0.5">
+                                {[0, 1, 2].map((i) => {
+                                  const tier = item.contactRelevanceTier?.toLowerCase();
+                                  const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                                  return (
+                                    <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                                  );
+                                })}
+                              </div>
                               <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
                                 item.actionType === "connection"
                                   ? "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20"
