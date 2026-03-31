@@ -216,7 +216,7 @@ export default function CampaignsPage() {
               .select("id", { count: "exact", head: true })
               .eq("campaign_id", c.id)
               .in("contact_id", contactIds)
-              .in("status", ["sent", "accepted"]);
+              .in("status", ["sent", "accepted", "completed"]);
 
             const { count: acceptedForList } = await supabase
               .from("campaign_connection_requests" as any)
@@ -247,7 +247,7 @@ export default function CampaignsPage() {
             .from("campaign_connection_requests" as any)
             .select("id", { count: "exact", head: true })
             .eq("campaign_id", c.id)
-            .in("status", ["sent", "accepted"]);
+            .in("status", ["sent", "accepted", "completed"]);
 
           const { count: acceptedForCampaign } = await supabase
             .from("campaign_connection_requests" as any)
