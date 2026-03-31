@@ -54,7 +54,7 @@ type CampaignFull = {
   max_ai_replies: number;
 };
 
-type Tab = "workflow" | "scheduled" | "contacts" | "todays_queue" | "insights" | "settings";
+type Tab = "workflow" | "scheduled" | "contacts" | "insights" | "settings";
 
 const TABS: { key: Tab; label: string; icon: any }[] = [
   { key: "workflow", label: "Workflow", icon: GitBranch },
