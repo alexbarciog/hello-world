@@ -515,8 +515,8 @@ export default function XSignals() {
       )}
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4 gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {/* View mode toggle */}
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
@@ -541,7 +541,7 @@ export default function XSignals() {
 
           {/* Keyword filter chips */}
           {keywords.length > 1 && (
-            <div className="ml-2 min-w-0 max-w-full overflow-x-auto overflow-y-hidden scrollbar-none">
+            <div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-none">
               <div className="flex w-max items-center gap-1 pr-2">
                 <button
                   onClick={() => setFilterKeyword(null)}
