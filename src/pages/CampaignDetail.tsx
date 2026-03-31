@@ -2290,7 +2290,7 @@ export default function CampaignDetail() {
                     <motion.div
                       className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
                       initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (todaySentCount / (campaign.daily_connect_limit || 25)) * 100)}%` }}
+                      animate={{ width: `${Math.min(100, (todaySentCount / profileLimits.daily_connections_limit) * 100)}%` }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
                     />
                   </div>
