@@ -254,6 +254,11 @@ export default function RedditSignals() {
     .filter(m => viewMode === "saved" ? m.saved : true)
     .filter(m => filterKeyword ? m.keyword_matched === filterKeyword : true)
     .sort((a, b) => {
+      // Primary sort: relevance score (highest first) when available
+      const scoreA = a.relevance_score ?? 0;
+      const scoreB = b.relevance_score ?? 0;
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      // Secondary sort: date
       const dateA = new Date(a.posted_at || a.found_at).getTime();
       const dateB = new Date(b.posted_at || b.found_at).getTime();
       return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
