@@ -226,6 +226,52 @@ async function processCampaign(
             supabaseServiceRoleKey,
           );
           if (gen) generatedCount++;
+
+          // Add to daily_scheduled_leads if delay allows same-day execution
+          const nextStep = workflowSteps[wfIdx];
+          if (nextStep && nextStep.type === 'message') {
+            const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
+            const readyAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+            const endOfToday = new Date(today + 'T23:59:59.999Z');
+
+            if (readyAt <= endOfToday) {
+              // Check user's daily message limit
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('daily_messages_limit')
+                .eq('user_id', req.user_id)
+                .single();
+
+              const messagesLimit = userProfile?.daily_messages_limit || 15;
+
+              const { count: msgScheduledToday } = await supabase
+                .from('daily_scheduled_leads')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', req.user_id)
+                .eq('scheduled_date', today)
+                .like('action_type', 'message_step_%');
+
+              if ((msgScheduledToday || 0) < messagesLimit) {
+                const actionType = `message_step_2`;
+                await supabase
+                  .from('daily_scheduled_leads')
+                  .upsert({
+                    campaign_id: campaign.id,
+                    contact_id: req.contact_id,
+                    user_id: req.user_id,
+                    scheduled_date: today,
+                    action_type: actionType,
+                    step_index: wfIdx,
+                    status: 'pending',
+                  }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
+                console.log(`[followup] Added ${actionType} to daily queue for contact ${req.contact_id}`);
+              } else {
+                console.log(`[followup] Daily message limit reached for user ${req.user_id}, will schedule tomorrow`);
+              }
+            } else {
+              console.log(`[followup] Next step for ${req.contact_id} not ready until ${readyAt.toISOString()}, will be scheduled tomorrow`);
+            }
+          }
         }
 
         await delay(500);
