@@ -347,6 +347,38 @@ function getAccountId(account: UnipileAccount) {
   ) || null;
 }
 
+function getAccountDisplayName(account: UnipileAccount): string | null {
+  // Try various fields where Unipile might store the display name
+  const name = getString(
+    account.display_name,
+    account.displayName,
+    account.full_name,
+    account.fullName,
+    isRecord(account.account) ? (account.account as Record<string, unknown>).display_name : undefined,
+    isRecord(account.account) ? (account.account as Record<string, unknown>).full_name : undefined,
+    isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).full_name : undefined,
+    isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).im_username : undefined,
+  );
+  
+  // If no specific display name field, try to construct from first/last
+  if (!name) {
+    const first = getString(
+      account.first_name,
+      account.firstName,
+      isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).first_name : undefined,
+    );
+    const last = getString(
+      account.last_name,
+      account.lastName,
+      isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).last_name : undefined,
+    );
+    const constructed = [first, last].filter(Boolean).join(' ');
+    return constructed || null;
+  }
+  
+  return name || null;
+}
+
 function getString(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === 'string' && value.trim()) {
