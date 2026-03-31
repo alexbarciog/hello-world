@@ -26,7 +26,35 @@ const REJECTION_PATTERNS = [
   /\bnot looking\b/i,
   /\bplease don'?t\b/i,
   /\bgo away\b/i,
+  /\bnot at the moment\b/i,
+  /\bnot right now\b/i,
+  /\bmaybe later\b/i,
+  /\bnot a good time\b/i,
+  /\bin the middle of something\b/i,
+  /\btoo busy\b/i,
+  /\bdon'?t have time\b/i,
+  /\bnot for me\b/i,
+  /\bno need\b/i,
+  /\bwe'?re (all )?set\b/i,
+  /\ball good\b/i,
+  /\bpass\b/i,
+  /\bi'?ll pass\b/i,
+  /\bnot relevant\b/i,
 ];
+
+// Check for soft rejection: lead has declined twice in the conversation
+function isSoftRejection(conversationHistory: string): boolean {
+  const lines = conversationHistory.split('\n');
+  let rejectionCount = 0;
+  for (const line of lines) {
+    // Only check lead messages (not "You:" lines)
+    if (line.startsWith('You:')) continue;
+    if (REJECTION_PATTERNS.some(p => p.test(line))) {
+      rejectionCount++;
+    }
+  }
+  return rejectionCount >= 2;
+}
 
 function isRejection(text: string): boolean {
   return REJECTION_PATTERNS.some(p => p.test(text));
