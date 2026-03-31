@@ -5,7 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SEQUENCES_PER_DAY = 5;
+const SEQUENCES_PER_DAY = 20;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,6 +13,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Business-hours guard: only send between 08:00–18:00 UTC
+    const currentHour = new Date().getUTCHours();
+    if (currentHour < 8 || currentHour >= 18) {
+      return jsonResponse({ status: 'outside_business_hours', hour: currentHour });
+    }
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
