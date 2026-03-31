@@ -144,6 +144,8 @@ export default function CampaignDetail() {
     contactLinkedinUrl: string | null;
     contactRelevanceTier: string;
     contactCompanyIconColor: string | null;
+    contactSignal: string | null;
+    contactSignalPostUrl: string | null;
     actionType: string;
     stepIndex: number;
     status: string;
@@ -444,7 +446,7 @@ export default function CampaignDetail() {
       const contactIds = (queueData as any[]).map((q: any) => q.contact_id);
       const { data: contactsData } = await supabase
         .from("contacts")
-        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, company_icon_color")
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, company_icon_color, signal, signal_post_url")
         .in("id", contactIds);
 
       const contactMap: Record<string, any> = {};
@@ -463,6 +465,8 @@ export default function CampaignDetail() {
           contactLinkedinUrl: contact?.linkedin_url || null,
           contactRelevanceTier: contact?.relevance_tier || "warm",
           contactCompanyIconColor: contact?.company_icon_color || null,
+          contactSignal: contact?.signal || null,
+          contactSignalPostUrl: contact?.signal_post_url || null,
           actionType: q.action_type,
           stepIndex: q.step_index,
           status: q.status,
@@ -2239,8 +2243,8 @@ export default function CampaignDetail() {
                           className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
                         >
                           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                          <div className="relative flex items-center justify-between">
-                            {/* Contact info — matches contacts table */}
+                          <div className="relative space-y-2.5">
+                            {/* Row 1: Contact info */}
                             <div className="flex items-center gap-3">
                               <div className="relative shrink-0">
                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
@@ -2250,7 +2254,7 @@ export default function CampaignDetail() {
                                   item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
                                 }`} />
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
                                   {item.contactLinkedinUrl ? (
                                     <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
@@ -2274,26 +2278,39 @@ export default function CampaignDetail() {
                                 )}
                               </div>
                             </div>
-                            {/* Action & status badges */}
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
-                                item.actionType === "connection"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-accent/40 text-accent-foreground"
-                              }`}>
-                                {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
-                              </span>
-                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
-                                item.status === "sent"
-                                  ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
-                                  : item.status === "failed"
-                                  ? "text-destructive bg-destructive/10 ring-destructive/20"
-                                  : item.status === "skipped"
-                                  ? "text-muted-foreground bg-muted/60 ring-border/30"
-                                  : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
-                              }`}>
-                                {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
-                              </span>
+                            {/* Row 2: Signal + action/status badges */}
+                            <div className="flex items-center justify-between gap-3 pl-12">
+                              <div className="min-w-0 flex-1">
+                                {item.contactSignal ? (
+                                  item.contactSignalPostUrl ? (
+                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[280px]">
+                                      {item.contactSignal}
+                                    </a>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
+                                  )
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
+                                  item.actionType === "connection"
+                                    ? "bg-primary/10 text-primary"
+                                    : "bg-accent/40 text-accent-foreground"
+                                }`}>
+                                  {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
+                                </span>
+                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                  item.status === "sent"
+                                    ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                    : item.status === "failed"
+                                    ? "text-destructive bg-destructive/10 ring-destructive/20"
+                                    : item.status === "skipped"
+                                    ? "text-muted-foreground bg-muted/60 ring-border/30"
+                                    : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
+                                }`}>
+                                  {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </motion.div>
