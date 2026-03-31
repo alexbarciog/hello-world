@@ -257,9 +257,9 @@ export default function CampaignDetail() {
     setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
 
     // Fetch profile limits
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: prof } = await supabase.from("profiles").select("daily_connections_limit, daily_messages_limit").eq("user_id", user.id).single();
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user) {
+      const { data: prof } = await supabase.from("profiles").select("daily_connections_limit, daily_messages_limit").eq("user_id", authData.user.id).single();
       if (prof) setProfileLimits({ daily_connections_limit: prof.daily_connections_limit, daily_messages_limit: prof.daily_messages_limit });
     }
 
