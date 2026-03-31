@@ -1,50 +1,56 @@
 
 
-## Plan: Improve Reddit Signal Relevance
+## Plan: Reduce Reddit Signal Compute Usage for High-Keyword Users
 
 ### Problem
-Reddit's search API returns loosely matched posts. Many results don't contain the keyword at all or aren't relevant to the user's services. The current system inserts everything Reddit returns without any relevance check (RSS/JSON paths don't filter; only the Apify path checks if the keyword appears in the text).
+Users with 30-40 keywords trigger a massive Apify call: `maxItems = keywords * subreddits * 5` can reach 30 × 6 × 5 = 900 items. This consumes huge Apify compute (residential proxies are expensive) and risks hitting the edge function's 110s timeout.
 
-### Root Causes
-1. **RSS and JSON paths have zero content filtering** — every result from Reddit's search endpoint is inserted, regardless of whether the keyword actually appears in the post
-2. **No relevance scoring** — even when a keyword appears, the post may be unrelated to the user's business (e.g., keyword "sales" matches someone selling a couch)
-3. **Broad default subreddits** — `SaaS`, `startups`, `Entrepreneur`, etc. produce high-volume, low-relevance noise
+### Strategy: Keyword Batching with a Per-User Cap
+
+Instead of sending all keywords in one giant Apify call, limit and rotate which keywords get processed per run.
 
 ### Implementation
 
-#### 1. Add keyword-in-text filtering to RSS and JSON paths
-In `supabase/functions/poll-reddit-signals/index.ts`, before inserting each post from RSS/JSON, check that the keyword actually appears in the title or body (case-insensitive). This matches what the Apify path already does. Skip posts that don't contain the keyword.
+#### 1. Cap keywords per user per run (max 10)
+- Each run, select up to 10 keywords per user using round-robin rotation
+- Track which keywords were last polled using a `last_polled_at` column on `reddit_keywords`
+- Pick the 10 keywords with the oldest `last_polled_at` (or null = never polled)
+- After processing, update `last_polled_at` on those keywords
 
-#### 2. Add AI relevance scoring as a post-processing step
-After collecting all candidate posts (from RSS, JSON, or Apify), batch them through an AI call that scores each post's relevance to the user's business context. This requires:
+This means a user with 40 keywords gets full coverage across 4 runs (2 days at current 2x/day schedule).
 
-- Fetching the user's company description and ICP from their profile/campaigns to build context
-- Sending batches of post titles+bodies to the AI gateway with a scoring prompt
-- Only inserting posts that score above a relevance threshold (e.g., 6/10)
-- Storing the relevance score in a new `relevance_score` column on `reddit_mentions`
+#### 2. Reduce maxItems calculation
+- Change from `keywords * subreddits * 5` to a flat cap: `min(200, keywords * 10)`
+- This drastically cuts Apify compute while still returning enough posts per keyword
 
-#### 3. Migration: add relevance_score column
-Add `relevance_score integer default null` to `reddit_mentions` table.
+#### 3. Cap `postsPerSource` to 10 (down from 50)
+- 50 posts per source is excessive; most relevant posts appear in the top 10
 
-#### 4. Surface relevance in the UI
-In `src/pages/RedditSignals.tsx`, sort results by relevance score (highest first) when available, and show a relevance indicator badge on each post.
+#### 4. Migration: add `last_polled_at` to `reddit_keywords`
+```sql
+ALTER TABLE reddit_keywords ADD COLUMN last_polled_at timestamptz DEFAULT NULL;
+```
 
 ### Files to Change
-- `supabase/functions/poll-reddit-signals/index.ts` — keyword filtering + AI relevance scoring
-- `src/pages/RedditSignals.tsx` — display relevance score, sort by it
-- New migration — add `relevance_score` column
+- `supabase/functions/poll-reddit-signals/index.ts` — keyword rotation logic, reduced limits
+- New migration — add `last_polled_at` column
 
 ### Technical Flow
 ```text
-Current:
-  Reddit search → insert all results
+Current (40 keywords):
+  All 40 keywords → Apify (maxItems=1200, postsPerSource=50)
+  = massive compute, often times out
 
-Proposed:
-  Reddit search → filter: keyword in title/body?
-    → YES → collect candidate
-    → NO  → skip
-  All candidates → AI batch scoring (with user's ICP context)
-    → score >= 6 → insert with relevance_score
-    → score < 6  → discard
+Proposed (40 keywords):
+  Pick 10 oldest-polled → Apify (maxItems=100, postsPerSource=10)
+  Update last_polled_at on those 10
+  Next run picks next 10 oldest
+  Full rotation every 4 runs (2 days)
 ```
+
+### Impact
+- Apify compute reduced ~90% per run (from ~1200 items to ~100)
+- Edge function stays well within 110s budget
+- All keywords still get polled every 2 days
+- No user-facing changes needed
 
