@@ -84,7 +84,7 @@ function CampaignCard({
   const navigate = useNavigate();
   const isActive = c.status === "active";
   const acceptRate = c.invitations_sent > 0 ? Math.round((c.invitations_accepted || 0) / c.invitations_sent * 100) : 0;
-  const replyRate = c.messages_sent > 0 ? Math.round((c.messages_replied || 0) / c.messages_sent * 100) : 0;
+  const replyRate = c.invitations_sent > 0 ? Math.round((c.messages_replied || 0) / c.invitations_sent * 100) : 0;
 
   return (
     <motion.div
@@ -259,11 +259,20 @@ export default function CampaignsPage() {
           acceptedCount = acceptedForCampaign ?? 0;
         }
 
+        // Count replies: connection requests where lead_status indicates a reply
+        const { count: repliedCount } = await supabase
+          .from("campaign_connection_requests" as any)
+          .select("id", { count: "exact", head: true })
+          .eq("campaign_id", c.id)
+          .in("lead_status", ["interested", "not_interested", "maybe_later"]);
+
         return {
           ...c,
           leadsCount,
           invitations_sent: sentCount,
           invitations_accepted: acceptedCount,
+          messages_sent: sentCount,
+          messages_replied: repliedCount ?? 0,
         };
       })
     );
