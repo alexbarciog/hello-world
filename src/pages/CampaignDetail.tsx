@@ -397,7 +397,7 @@ export default function CampaignDetail() {
   async function loadScheduledMessages(campaignId: string, steps: any[]) {
     const { data: connReqs } = await supabase
       .from("campaign_connection_requests" as any)
-      .select("id, contact_id, status, current_step, accepted_at, step_completed_at")
+      .select("id, contact_id, status, current_step, accepted_at, step_completed_at, chat_id")
       .eq("campaign_id", campaignId);
     if (!connReqs || connReqs.length === 0) { setScheduledMessages([]); return; }
 
@@ -430,72 +430,71 @@ export default function CampaignDetail() {
       const contact = contactMap[cr.contact_id];
       if (!contact) continue;
 
+      // Only show verified accepted contacts. Older bad rows could be marked
+      // accepted without a LinkedIn chat, which should never appear here.
+      if (cr.status !== "accepted" || !cr.chat_id) continue;
+
       const currentStep = cr.current_step || 1;
       const nextStepIdx = currentStep - 1;
-      
       if (nextStepIdx >= nonInvSteps.length) continue;
-      // Only show accepted contacts in upcoming messages
-      if (cr.status !== "accepted") continue;
 
-      if (nextStepIdx < nonInvSteps.length) {
-        const nextStep = nonInvSteps[nextStepIdx];
-        const hasInvitation = (steps || []).length > 0 && (steps || [])[0]?.type === "invitation";
-        const stepIndexInWorkflow = hasInvitation ? nextStepIdx + 1 : nextStepIdx; // matches step_index stored by edge function
-        const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
-        const scheduledDate = new Date(acceptedDate);
-        
-        let totalDelay = 0;
-        for (let j = 0; j <= nextStepIdx; j++) {
-          totalDelay += nonInvSteps[j]?.delay_days || 1;
-        }
-        scheduledDate.setDate(acceptedDate.getDate() + totalDelay);
-
-        // Check for pre-generated message
-        const preGen = preGenMap[`${cr.id}_${stepIndexInWorkflow}`];
-        let msgPreview = "";
-        let scheduledMsgId: string | undefined;
-        let editedByUser = false;
-
-        if (preGen) {
-          // Use pre-generated message
-          msgPreview = preGen.message;
-          scheduledMsgId = preGen.id;
-          editedByUser = preGen.edited_by_user;
-        } else if (nextStep?.ai_icebreaker) {
-          // AI SDR mode but not yet generated
-          msgPreview = "";
-        } else {
-          // Template message — personalize
-          msgPreview = nextStep?.message || "";
-          msgPreview = msgPreview
-            .replace(/\{\{first_name\}\}/g, contact.first_name)
-            .replace(/\{\{company\}\}/g, contact.company || "their company")
-            .replace(/\{\{title\}\}/g, contact.title || "their role")
-            .replace(/\{\{signal\}\}/g, contact.signal || "their recent activity");
-        }
-
-        scheduled.push({
-          contactId: cr.contact_id,
-          contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
-          contactTitle: contact.title || "",
-          contactCompany: contact.company || "",
-          contactSignal: contact.signal || "",
-          contactLinkedinUrl: contact.linkedin_url || "",
-          contactSignalUrl: contact.signal_post_url || "",
-          currentStep,
-          nextStepNum: currentStep + 1,
-          message: msgPreview,
-          isAi: !!nextStep?.ai_icebreaker,
-          scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          status: scheduledDate <= new Date() ? "ready" : "scheduled",
-          scheduledMsgId,
-          editedByUser,
-        });
+      const nextStep = nonInvSteps[nextStepIdx];
+      const hasInvitation = (steps || []).length > 0 && (steps || [])[0]?.type === "invitation";
+      const stepIndexInWorkflow = hasInvitation ? nextStepIdx + 1 : nextStepIdx; // matches step_index stored by edge function
+      const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
+      const scheduledDate = new Date(acceptedDate);
+      
+      let totalDelay = 0;
+      for (let j = 0; j <= nextStepIdx; j++) {
+        totalDelay += nonInvSteps[j]?.delay_days || 1;
       }
+      scheduledDate.setDate(acceptedDate.getDate() + totalDelay);
+
+      // Check for pre-generated message
+      const preGen = preGenMap[`${cr.id}_${stepIndexInWorkflow}`];
+      let msgPreview = "";
+      let scheduledMsgId: string | undefined;
+      let editedByUser = false;
+
+      if (preGen) {
+        // Use pre-generated message
+        msgPreview = preGen.message;
+        scheduledMsgId = preGen.id;
+        editedByUser = preGen.edited_by_user;
+      } else if (nextStep?.ai_icebreaker) {
+        // AI SDR mode but not yet generated
+        msgPreview = "";
+      } else {
+        // Template message — personalize
+        msgPreview = nextStep?.message || "";
+        msgPreview = msgPreview
+          .replace(/\{\{first_name\}\}/g, contact.first_name)
+          .replace(/\{\{company\}\}/g, contact.company || "their company")
+          .replace(/\{\{title\}\}/g, contact.title || "their role")
+          .replace(/\{\{signal\}\}/g, contact.signal || "their recent activity");
+      }
+
+      scheduled.push({
+        contactId: cr.contact_id,
+        contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
+        contactTitle: contact.title || "",
+        contactCompany: contact.company || "",
+        contactSignal: contact.signal || "",
+        contactLinkedinUrl: contact.linkedin_url || "",
+        contactSignalUrl: contact.signal_post_url || "",
+        currentStep,
+        nextStepNum: currentStep + 1,
+        message: msgPreview,
+        isAi: !!nextStep?.ai_icebreaker,
+        scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        status: scheduledDate <= new Date() ? "ready" : "scheduled",
+        scheduledMsgId,
+        editedByUser,
+      });
     }
 
     scheduled.sort((a, b) => {
-      // Priority: ready first, then scheduled (soonest first), then waiting_acceptance last
+      // Priority: ready first, then scheduled (soonest first)
       const statusOrder: Record<string, number> = { ready: 0, scheduled: 1, waiting_acceptance: 2 };
       const aOrder = statusOrder[a.status] ?? 1;
       const bOrder = statusOrder[b.status] ?? 1;
