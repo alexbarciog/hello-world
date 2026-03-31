@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
     if (currentHour < 8 || currentHour >= 18) {
       return jsonResponse({ status: 'outside_business_hours', hour: currentHour });
     }
+
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -27,62 +28,190 @@ Deno.serve(async (req) => {
     if (!UNIPILE_DSN) throw new Error('UNIPILE_DSN not configured');
 
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const today = new Date().toISOString().split('T')[0];
 
-    // Get all active campaigns (with source_list_id OR source_agent_id)
-    const { data: campaigns, error: campErr } = await serviceClient
-      .from('campaigns')
-      .select('id, user_id, source_list_id, source_agent_id, source_type, daily_connect_limit')
-      .eq('status', 'active');
+    // Get pending connection entries from daily_scheduled_leads for today
+    const { data: scheduledLeads, error: slErr } = await serviceClient
+      .from('daily_scheduled_leads')
+      .select('id, campaign_id, contact_id, user_id')
+      .eq('scheduled_date', today)
+      .eq('action_type', 'connection')
+      .eq('status', 'pending');
 
-    if (campErr) throw new Error(`Failed to fetch campaigns: ${campErr.message}`);
-    if (!campaigns || campaigns.length === 0) {
-      return jsonResponse({ status: 'no_active_campaigns', processed: 0 });
+    if (slErr) throw new Error(`Failed to fetch scheduled leads: ${slErr.message}`);
+    if (!scheduledLeads || scheduledLeads.length === 0) {
+      return jsonResponse({ status: 'no_pending_connections', processed: 0 });
     }
 
-    // Resolve source_list_id for agent-sourced campaigns
-    for (const campaign of campaigns) {
-      if (!campaign.source_list_id && campaign.source_agent_id) {
-        const { data: agent } = await serviceClient
-          .from('signal_agents')
-          .select('leads_list_name')
-          .eq('id', campaign.source_agent_id)
-          .single();
-
-        if (agent?.leads_list_name) {
-          const { data: list } = await serviceClient
-            .from('lists')
-            .select('id')
-            .eq('name', agent.leads_list_name)
-            .eq('user_id', campaign.user_id)
-            .single();
-
-          if (list) {
-            campaign.source_list_id = list.id;
-            console.log(`[campaign ${campaign.id}] resolved list from agent: ${list.id}`);
-          }
-        }
-      }
-    }
-
-    // Filter to only campaigns that now have a resolved list
-    const campaignsWithList = campaigns.filter((c: any) => c.source_list_id);
-    if (campaignsWithList.length === 0) {
-      return jsonResponse({ status: 'no_campaigns_with_contacts', processed: 0 });
+    // Group by campaign
+    const byCampaign: Record<string, typeof scheduledLeads> = {};
+    for (const sl of scheduledLeads) {
+      if (!byCampaign[sl.campaign_id]) byCampaign[sl.campaign_id] = [];
+      byCampaign[sl.campaign_id].push(sl);
     }
 
     let totalSent = 0;
 
-    for (const campaign of campaignsWithList) {
+    for (const [campaignId, leads] of Object.entries(byCampaign)) {
       try {
-        const sent = await processCampaign(
-          serviceClient,
-          campaign,
-          UNIPILE_API_KEY,
-          UNIPILE_DSN
-        );
-        totalSent += sent;
+        // Get campaign daily limit
+        const { data: campaign } = await serviceClient
+          .from('campaigns')
+          .select('daily_connect_limit, user_id')
+          .eq('id', campaignId)
+          .eq('status', 'active')
+          .single();
+
+        if (!campaign) {
+          console.log(`[send-conn] campaign ${campaignId} not active, skipping`);
+          continue;
+        }
+
+        const dailyLimit = campaign.daily_connect_limit || 25;
+        const batchSize = Math.max(1, Math.floor(dailyLimit / SEQUENCES_PER_DAY));
+
+        // Count how many were already sent today
+        const { count: sentToday } = await serviceClient
+          .from('daily_scheduled_leads')
+          .select('id', { count: 'exact', head: true })
+          .eq('campaign_id', campaignId)
+          .eq('scheduled_date', today)
+          .eq('action_type', 'connection')
+          .eq('status', 'sent');
+
+        const remainingToday = Math.max(0, dailyLimit - (sentToday || 0));
+        const toSendNow = Math.min(batchSize, remainingToday, leads.length);
+
+        if (toSendNow === 0) {
+          console.log(`[send-conn] campaign ${campaignId} daily limit reached`);
+          continue;
+        }
+
+        // Get user's Unipile account_id
+        const { data: profile } = await serviceClient
+          .from('profiles')
+          .select('unipile_account_id')
+          .eq('user_id', campaign.user_id)
+          .single();
+
+        if (!profile?.unipile_account_id) {
+          console.log(`[send-conn] campaign ${campaignId} no unipile account, skipping`);
+          continue;
+        }
+
+        const accountId = profile.unipile_account_id;
+        const batch = leads.slice(0, toSendNow);
+
+        for (const sl of batch) {
+          try {
+            const { data: contact } = await serviceClient
+              .from('contacts')
+              .select('id, first_name, last_name, linkedin_profile_id, linkedin_url')
+              .eq('id', sl.contact_id)
+              .single();
+
+            if (!contact) {
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped');
+              continue;
+            }
+
+            const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+            if (!publicId) {
+              console.log(`[send-conn] contact ${contact.id} has no linkedin ID, skipping`);
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped');
+              // Also record in campaign_connection_requests
+              await serviceClient.from('campaign_connection_requests').insert({
+                campaign_id: campaignId,
+                contact_id: contact.id,
+                user_id: sl.user_id,
+                status: 'skipped',
+              });
+              continue;
+            }
+
+            // Step 1: Resolve public identifier to Unipile provider_id
+            const resolveRes = await fetch(
+              `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
+              { headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' } }
+            );
+            const resolveData = await resolveRes.json();
+
+            if (!resolveRes.ok || !resolveData.provider_id) {
+              console.error(`[send-conn] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status);
+              await updateScheduledStatus(serviceClient, sl.id, 'failed');
+              await serviceClient.from('campaign_connection_requests').insert({
+                campaign_id: campaignId,
+                contact_id: contact.id,
+                user_id: sl.user_id,
+                status: 'failed',
+              });
+              continue;
+            }
+
+            const providerId = resolveData.provider_id;
+
+            // Step 2: Send invitation via Unipile
+            const inviteRes = await fetch(`https://${UNIPILE_DSN}/api/v1/users/invite`, {
+              method: 'POST',
+              headers: {
+                'X-API-KEY': UNIPILE_API_KEY,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                account_id: accountId,
+                provider_id: providerId,
+              }),
+            });
+
+            const inviteData = await inviteRes.json();
+
+            if (!inviteRes.ok) {
+              console.error(`[send-conn] invite failed for ${contact.id}:`, inviteRes.status);
+              await updateScheduledStatus(serviceClient, sl.id, 'failed');
+              await serviceClient.from('campaign_connection_requests').insert({
+                campaign_id: campaignId,
+                contact_id: contact.id,
+                user_id: sl.user_id,
+                status: 'failed',
+              });
+              continue;
+            }
+
+            // Record successful send
+            await updateScheduledStatus(serviceClient, sl.id, 'sent');
+            await serviceClient.from('campaign_connection_requests').insert({
+              campaign_id: campaignId,
+              contact_id: contact.id,
+              user_id: sl.user_id,
+              status: 'sent',
+              unipile_request_id: inviteData.request_id || inviteData.id || null,
+            });
+
+            totalSent++;
+
+            // Small delay between requests
+            await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
+          } catch (err) {
+            console.error(`[send-conn] error sending to ${sl.contact_id}:`, err);
+            await updateScheduledStatus(serviceClient, sl.id, 'failed');
+          }
+        }
+
+        // Update campaign invitations_sent counter
+        if (totalSent > 0) {
+          const { data: currentCampaign } = await serviceClient
+            .from('campaigns')
+            .select('invitations_sent')
+            .eq('id', campaignId)
+            .single();
+
+          await serviceClient
+            .from('campaigns')
+            .update({ invitations_sent: (currentCampaign?.invitations_sent || 0) + totalSent })
+            .eq('id', campaignId);
+        }
       } catch (err) {
-        console.error(`[campaign ${campaign.id}] error:`, err);
+        console.error(`[send-conn] campaign ${campaignId} error:`, err);
       }
     }
 
@@ -96,231 +225,18 @@ Deno.serve(async (req) => {
   }
 });
 
-async function processCampaign(
-  serviceClient: any,
-  campaign: { id: string; user_id: string; source_list_id: string; daily_connect_limit: number },
-  unipileApiKey: string,
-  unipileDsn: string
-): Promise<number> {
-  const dailyLimit = campaign.daily_connect_limit || 25;
-  const batchSize = Math.max(1, Math.floor(dailyLimit / SEQUENCES_PER_DAY));
-
-  // Get user's Unipile account_id
-  const { data: profile } = await serviceClient
-    .from('profiles')
-    .select('unipile_account_id')
-    .eq('user_id', campaign.user_id)
-    .single();
-
-  if (!profile?.unipile_account_id) {
-    console.log(`[campaign ${campaign.id}] no unipile account, skipping`);
-    return 0;
-  }
-
-  const accountId = profile.unipile_account_id;
-
-  // Count how many requests were already sent TODAY for this campaign
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
-
-  const { count: sentToday } = await serviceClient
-    .from('campaign_connection_requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('campaign_id', campaign.id)
-    .gte('sent_at', todayStart.toISOString());
-
-  console.log(`[campaign ${campaign.id}] sentToday=${sentToday}, dailyLimit=${dailyLimit}, batchSize=${batchSize}`);
-  const remainingToday = Math.max(0, dailyLimit - (sentToday || 0));
-  const toSendNow = Math.min(batchSize, remainingToday);
-
-  if (toSendNow === 0) {
-    console.log(`[campaign ${campaign.id}] daily limit reached (${sentToday}/${dailyLimit})`);
-    return 0;
-  }
-
-  // Get contacts from the list that haven't been sent a request yet
-  const { data: contactLinks } = await serviceClient
-    .from('contact_lists')
-    .select('contact_id')
-    .eq('list_id', campaign.source_list_id);
-
-  if (!contactLinks || contactLinks.length === 0) {
-    console.log(`[campaign ${campaign.id}] no contacts in list`);
-    return 0;
-  }
-
-  const allContactIds = contactLinks.map((cl: any) => cl.contact_id);
-
-  // Get already-sent contact IDs for this campaign (only exclude successful ones)
-  const { data: alreadySent } = await serviceClient
-    .from('campaign_connection_requests')
-    .select('contact_id, status')
-    .eq('campaign_id', campaign.id);
-
-  // Only skip contacts that were successfully sent or accepted — retry skipped/failed ones
-  const successSet = new Set(
-    (alreadySent || [])
-      .filter((r: any) => r.status === 'sent' || r.status === 'accepted' || r.status === 'pending' || r.status === 'completed')
-      .map((r: any) => r.contact_id)
-  );
-  const retryContactIds = (alreadySent || [])
-    .filter((r: any) => r.status === 'skipped' || r.status === 'failed')
-    .map((r: any) => r.contact_id);
-  const retrySet = new Set(retryContactIds);
-  
-  const unseenContactIds = allContactIds.filter((cid: string) => !successSet.has(cid));
-
-  if (unseenContactIds.length === 0) {
-    console.log(`[campaign ${campaign.id}] all contacts already processed`);
-    return 0;
-  }
-
-  // Fetch contacts with relevance_tier to prioritize hot/warm over cold
-  const { data: contactsWithTier } = await serviceClient
-    .from('contacts')
-    .select('id, first_name, last_name, linkedin_profile_id, linkedin_url, relevance_tier')
-    .in('id', unseenContactIds);
-
-  if (!contactsWithTier || contactsWithTier.length === 0) return 0;
-
-  // Sort: hot first, then warm, then cold
-  const tierOrder: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
-  contactsWithTier.sort((a: any, b: any) => {
-    const aOrder = tierOrder[a.relevance_tier] ?? 2;
-    const bOrder = tierOrder[b.relevance_tier] ?? 2;
-    return aOrder - bOrder;
-  });
-
-  // Take only the batch we need (already sorted by priority)
-  const contactsData = contactsWithTier.slice(0, toSendNow);
-  console.log(`[campaign ${campaign.id}] batch: ${contactsData.map((c: any) => c.relevance_tier).join(',')}`);
-
-  if (contactsData.length === 0) return 0;
-
-  let sentCount = 0;
-
-  for (const contact of contactsData) {
-    const isRetry = retrySet.has(contact.id);
-    try {
-      const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-      if (!publicId) {
-        console.log(`[campaign ${campaign.id}] contact ${contact.id} has no linkedin ID, skipping`);
-        if (!isRetry) {
-          await serviceClient.from('campaign_connection_requests').insert({
-            campaign_id: campaign.id,
-            contact_id: contact.id,
-            user_id: campaign.user_id,
-            status: 'skipped',
-          });
-        }
-        continue;
-      }
-
-      // Step 1: Resolve public identifier to Unipile provider_id
-      const resolveRes = await fetch(
-        `https://${unipileDsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
-        { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
-      );
-      const resolveData = await resolveRes.json();
-
-      if (!resolveRes.ok || !resolveData.provider_id) {
-        console.error(`[campaign ${campaign.id}] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status, JSON.stringify(resolveData));
-        if (!isRetry) {
-          await serviceClient.from('campaign_connection_requests').insert({
-            campaign_id: campaign.id,
-            contact_id: contact.id,
-            user_id: campaign.user_id,
-            status: 'failed',
-          });
-        }
-        continue;
-      }
-
-      const providerId = resolveData.provider_id;
-
-      // Step 2: Send invitation via Unipile with the resolved provider_id
-      const inviteRes = await fetch(`https://${unipileDsn}/api/v1/users/invite`, {
-        method: 'POST',
-        headers: {
-          'X-API-KEY': unipileApiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          account_id: accountId,
-          provider_id: providerId,
-        }),
-      });
-
-      const inviteData = await inviteRes.json();
-
-      if (!inviteRes.ok) {
-        console.error(`[campaign ${campaign.id}] invite failed for ${contact.id}:`, inviteRes.status, JSON.stringify(inviteData));
-        if (isRetry) {
-          await serviceClient.from('campaign_connection_requests')
-            .update({ status: 'failed', sent_at: new Date().toISOString() })
-            .eq('campaign_id', campaign.id)
-            .eq('contact_id', contact.id);
-        } else {
-          await serviceClient.from('campaign_connection_requests').insert({
-            campaign_id: campaign.id,
-            contact_id: contact.id,
-            user_id: campaign.user_id,
-            status: 'failed',
-          });
-        }
-        continue;
-      }
-
-      // Record successful send (update if retry, insert if new)
-      if (isRetry) {
-        await serviceClient.from('campaign_connection_requests')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            unipile_request_id: inviteData.request_id || inviteData.id || null,
-          })
-          .eq('campaign_id', campaign.id)
-          .eq('contact_id', contact.id);
-      } else {
-        await serviceClient.from('campaign_connection_requests').insert({
-          campaign_id: campaign.id,
-          contact_id: contact.id,
-          user_id: campaign.user_id,
-          status: 'sent',
-          unipile_request_id: inviteData.request_id || inviteData.id || null,
-        });
-      }
-
-      sentCount++;
-
-      // Small delay between requests to avoid rate limiting (2-4 seconds random)
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
-    } catch (err) {
-      console.error(`[campaign ${campaign.id}] error sending to ${contact.id}:`, err);
-    }
-  }
-
-  // Update campaign invitations_sent counter
-  if (sentCount > 0) {
-    const { data: currentCampaign } = await serviceClient
-      .from('campaigns')
-      .select('invitations_sent')
-      .eq('id', campaign.id)
-      .single();
-
-    await serviceClient
-      .from('campaigns')
-      .update({ invitations_sent: (currentCampaign?.invitations_sent || 0) + sentCount })
-      .eq('id', campaign.id);
-  }
-
-  console.log(`[campaign ${campaign.id}] sent ${sentCount} invitations (batch of ${toSendNow})`);
-  return sentCount;
+async function updateScheduledStatus(client: any, id: string, status: string) {
+  await client
+    .from('daily_scheduled_leads')
+    .update({
+      status,
+      sent_at: status === 'sent' ? new Date().toISOString() : null,
+    })
+    .eq('id', id);
 }
 
 function extractLinkedinId(url: string | null): string | null {
   if (!url) return null;
-  // Extract profile ID from LinkedIn URL like linkedin.com/in/username
   const match = url.match(/linkedin\.com\/in\/([^\/\?]+)/);
   return match ? match[1] : null;
 }
