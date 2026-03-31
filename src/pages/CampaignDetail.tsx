@@ -161,9 +161,9 @@ export default function CampaignDetail() {
   const [editingQueueIdx, setEditingQueueIdx] = useState<number | null>(null);
   const [editingQueueMsg, setEditingQueueMsg] = useState("");
   const [regeneratingQueueIdx, setRegeneratingQueueIdx] = useState<number | null>(null);
-  const [connectionsAccordionOpen, setConnectionsAccordionOpen] = useState(true);
-  const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(true);
-  const [upcomingMsgsAccordionOpen, setUpcomingMsgsAccordionOpen] = useState(true);
+  const [connectionsAccordionOpen, setConnectionsAccordionOpen] = useState(false);
+  const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(false);
+  const [upcomingMsgsAccordionOpen, setUpcomingMsgsAccordionOpen] = useState(false);
 
   // Scheduled messages state
   type ScheduledMessage = {
@@ -2331,8 +2331,9 @@ export default function CampaignDetail() {
                     👥 {remainingContacts} contacts remaining in queue
                   </p>
                 </div>
+              </div>
 
-                {/* LinkedIn Connections Accordion */}
+              {/* LinkedIn Connections & Messages Accordions — outside the overview card */}
                 {(() => {
                   const connections = dailyQueue.filter(q => q.actionType === "connection");
                   const messages = dailyQueue.filter(q => q.actionType.startsWith("message_"));
@@ -2680,7 +2681,6 @@ export default function CampaignDetail() {
                     </div>
                   );
                 })()}
-              </div>
 
               {/* Upcoming Messages Preview */}
               {scheduledMessages.length > 0 && (
