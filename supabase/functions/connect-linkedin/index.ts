@@ -446,16 +446,20 @@ async function safeJson(response: Response): Promise<Record<string, unknown>> {
   }
 }
 
-async function saveAccountId(
+async function saveAccountInfo(
   userId: string,
   accountId: string,
+  displayName: string | null,
   supabaseUrl: string,
   serviceRoleKey: string
 ) {
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+  const updateData: Record<string, unknown> = { user_id: userId, unipile_account_id: accountId };
+  if (displayName) updateData.linkedin_display_name = displayName;
+  
   const { error } = await serviceClient
     .from('profiles')
-    .upsert({ user_id: userId, unipile_account_id: accountId }, { onConflict: 'user_id' });
+    .upsert(updateData, { onConflict: 'user_id' });
 
   if (error) {
     throw new Error(`Failed to save account: ${error.message}`);
