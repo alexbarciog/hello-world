@@ -400,13 +400,50 @@ export default function XSignals() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setInlineAdding(true)}
-                  className="w-6 h-6 rounded-full border border-dashed border-blue-300 text-blue-400 hover:text-blue-600 hover:border-blue-400 flex items-center justify-center transition-colors"
-                  title="Add keyword"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setInlineAdding(true)}
+                    className="w-6 h-6 rounded-full border border-dashed border-blue-300 text-blue-400 hover:text-blue-600 hover:border-blue-400 flex items-center justify-center transition-colors"
+                    title="Add keyword"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) return;
+                        const { data: redditKws } = await supabase
+                          .from("reddit_keywords")
+                          .select("keyword")
+                          .eq("user_id", user.id)
+                          .eq("active", true);
+                        if (!redditKws || redditKws.length === 0) {
+                          toast.error("No Reddit keywords found");
+                          return;
+                        }
+                        const existingSet = new Set(keywords.map(k => k.keyword.toLowerCase()));
+                        const newKws = redditKws.filter(rk => !existingSet.has(rk.keyword.toLowerCase()));
+                        if (newKws.length === 0) {
+                          toast("All Reddit keywords already added");
+                          return;
+                        }
+                        const inserts = newKws.map(rk => ({ keyword: rk.keyword, user_id: user.id, active: true }));
+                        const { error } = await supabase.from("x_keywords").insert(inserts as any);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["x-keywords"] });
+                        toast.success(`Added ${newKws.length} keyword(s) from Reddit`);
+                      } catch (err: any) {
+                        toast.error(err.message || "Failed to copy Reddit keywords");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border border-orange-200 text-orange-600 hover:bg-orange-50 transition-colors"
+                    title="Copy keywords from Reddit Spy Agent"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Use same as Reddit
+                  </button>
+                </div>
               )}
             </div>
           </div>
