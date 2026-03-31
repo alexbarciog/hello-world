@@ -26,7 +26,35 @@ const REJECTION_PATTERNS = [
   /\bnot looking\b/i,
   /\bplease don'?t\b/i,
   /\bgo away\b/i,
+  /\bnot at the moment\b/i,
+  /\bnot right now\b/i,
+  /\bmaybe later\b/i,
+  /\bnot a good time\b/i,
+  /\bin the middle of something\b/i,
+  /\btoo busy\b/i,
+  /\bdon'?t have time\b/i,
+  /\bnot for me\b/i,
+  /\bno need\b/i,
+  /\bwe'?re (all )?set\b/i,
+  /\ball good\b/i,
+  /\bpass\b/i,
+  /\bi'?ll pass\b/i,
+  /\bnot relevant\b/i,
 ];
+
+// Check for soft rejection: lead has declined twice in the conversation
+function isSoftRejection(conversationHistory: string): boolean {
+  const lines = conversationHistory.split('\n');
+  let rejectionCount = 0;
+  for (const line of lines) {
+    // Only check lead messages (not "You:" lines)
+    if (line.startsWith('You:')) continue;
+    if (REJECTION_PATTERNS.some(p => p.test(line))) {
+      rejectionCount++;
+    }
+  }
+  return rejectionCount >= 2;
+}
 
 function isRejection(text: string): boolean {
   return REJECTION_PATTERNS.some(p => p.test(text));
@@ -173,10 +201,14 @@ async function processCampaignReplies(
 
           // Smart stop: check for rejection
           if (isRejection(leadMessage)) {
-            console.log(`[ai-replies] Rejection detected from contact ${cr.contact_id}: "${leadMessage.slice(0, 50)}"`);
+            console.log(`[ai-replies] Rejection detected from contact ${cr.contact_id}: "${leadMessage.slice(0, 80)}"`);
             await supabase.from('campaign_connection_requests')
-              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp })
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
               .eq('id', cr.id);
+            // Also flag the contact
+            await supabase.from('contacts')
+              .update({ lead_status: 'not_interested' })
+              .eq('id', cr.contact_id);
             stopped++;
             continue;
           }
@@ -198,7 +230,19 @@ async function processCampaignReplies(
             .filter((line: string) => line.length > 5)
             .join('\n');
 
-          const reply = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
+          // Check for soft rejection: lead has shown disinterest multiple times across the conversation
+          if (isSoftRejection(conversationHistory)) {
+            console.log(`[ai-replies] Soft rejection detected (2+ signals) from contact ${cr.contact_id}`);
+            await supabase.from('campaign_connection_requests')
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
+              .eq('id', cr.id);
+            await supabase.from('contacts')
+              .update({ lead_status: 'not_interested' })
+              .eq('id', cr.contact_id);
+            stopped++;
+            continue;
+          }
+
             conversationHistory, leadMessage,
             companyName: campaign.company_name, valueProposition: campaign.value_proposition,
             painPoints: campaign.pain_points || [], campaignGoal: campaign.campaign_goal,
