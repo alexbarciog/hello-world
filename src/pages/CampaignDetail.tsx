@@ -632,15 +632,14 @@ export default function CampaignDetail() {
     setNewStepMessage(prev => prev + `{{${v}}}`);
   }
 
-  async function saveDelayDays(stepIndex: number, newDelay: number) {
+  async function saveDelay(stepIndex: number, value: number, unit: "hours" | "days") {
     if (!campaign) return;
     const updated = [...workflowSteps];
-    // stepIndex is the index in the filtered (non-invitation) steps, 
-    // but we need the actual index in workflowSteps
     const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
-    updated[actualIdx] = { ...updated[actualIdx], delay_days: Math.max(1, newDelay) };
+    const delayHours = unit === "days" ? value * 24 : value;
+    updated[actualIdx] = { ...updated[actualIdx], delay_hours: Math.max(1, delayHours), delay_days: unit === "days" ? Math.max(1, value) : undefined };
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to update delay"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
@@ -981,29 +980,53 @@ export default function CampaignDetail() {
                         <div key={i} className="flex items-start">
                           {/* Connector + delay badge */}
                           <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
-                            {editingDelayStep === i ? (
-                              <div className="flex items-center gap-1 mb-2">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  max={30}
-                                  defaultValue={ws.delay_days}
-                                  autoFocus
-                                  className="w-12 text-center text-[10px] font-bold border border-primary rounded-full px-1 py-0.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") saveDelayDays(i, parseInt((e.target as HTMLInputElement).value) || 1);
-                                    if (e.key === "Escape") setEditingDelayStep(null);
-                                  }}
-                                  onBlur={(e) => saveDelayDays(i, parseInt(e.target.value) || 1)}
-                                />
-                                <span className="text-[10px] text-muted-foreground">days</span>
-                              </div>
-                            ) : (
+                            {editingDelayStep === i ? (() => {
+                              const currentHours = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
+                              const initialUnit = currentHours >= 24 && currentHours % 24 === 0 ? "days" : "hours";
+                              const initialValue = initialUnit === "days" ? currentHours / 24 : currentHours;
+                              return (
+                                <div className="flex items-center gap-1 mb-2">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={initialUnit === "days" ? 30 : 720}
+                                    defaultValue={initialValue}
+                                    autoFocus
+                                    id={`delay-value-${i}`}
+                                    className="w-10 text-center text-[10px] font-bold border border-primary rounded-full px-1 py-0.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        const val = parseInt((e.target as HTMLInputElement).value) || 1;
+                                        const unitEl = document.getElementById(`delay-unit-${i}`) as HTMLSelectElement;
+                                        saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
+                                      }
+                                      if (e.key === "Escape") setEditingDelayStep(null);
+                                    }}
+                                    onBlur={(e) => {
+                                      const val = parseInt(e.target.value) || 1;
+                                      const unitEl = document.getElementById(`delay-unit-${i}`) as HTMLSelectElement;
+                                      saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
+                                    }}
+                                  />
+                                  <select
+                                    id={`delay-unit-${i}`}
+                                    defaultValue={initialUnit}
+                                    className="text-[10px] font-bold border border-primary rounded-full px-1 py-0.5 bg-background text-foreground focus:outline-none"
+                                  >
+                                    <option value="hours">hrs</option>
+                                    <option value="days">days</option>
+                                  </select>
+                                </div>
+                              );
+                            })() : (
                               <button
                                 onClick={() => setEditingDelayStep(i)}
                                 className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm hover:border-primary hover:text-primary transition-colors cursor-pointer"
                               >
-                                + {ws.delay_days} days
+                                {(() => {
+                                  const h = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
+                                  return h >= 24 && h % 24 === 0 ? `+ ${h / 24} day${h / 24 !== 1 ? "s" : ""}` : `+ ${h} hr${h !== 1 ? "s" : ""}`;
+                                })()}
                               </button>
                             )}
                             <svg width="60" height="2" className="text-primary">
