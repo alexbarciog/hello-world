@@ -661,6 +661,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
       const data = await callAPI({ action: "check_status" });
       const isConnected = data.status === "connected" && Boolean(data.account_id);
       setAccountId(isConnected ? data.account_id : null);
+      setDisplayName(isConnected && data.display_name ? data.display_name : null);
       return isConnected;
     } catch { return false; }
     finally { if (showLoader) setLoadingStatus(false); }
