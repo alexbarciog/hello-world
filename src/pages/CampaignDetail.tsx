@@ -1693,32 +1693,48 @@ export default function CampaignDetail() {
                                 </span>
                               </td>
                               <td className="px-3 py-3">
-                                {(() => {
-                                  const cs = contactStatuses[c.id];
-                                  if (!cs) return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-muted text-muted-foreground ring-1 ring-border">Added to campaign</span>;
-                                  const chipColors = [
-                                    "bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20",
-                                    "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20",
-                                    "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20",
-                                    "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20",
-                                  ];
-                                  if (cs.status === "skipped" || cs.status === "failed") {
-                                    return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-red-500/10 text-red-600 ring-1 ring-red-500/20">Invite skipped</span>;
-                                  }
-                                  if (cs.status === "pending") {
-                                    return <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${chipColors[0]}`}>Invitation sent</span>;
-                                  }
-                                  if (cs.status === "accepted") {
-                                    const stepNum = cs.step || 1;
-                                    const label = stepNum === 1 ? "Invite accepted" : `Step ${stepNum} sent`;
-                                    const colorClass = chipColors[(stepNum) % chipColors.length];
-                                    return <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{label}</span>;
-                                  }
-                                  if (cs.status === "sent") {
-                                    return <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${chipColors[0]}`}>Invitation sent</span>;
-                                  }
-                                  return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-muted text-muted-foreground ring-1 ring-border">{cs.status}</span>;
-                                })()}
+                {(() => {
+                                   const cs = contactStatuses[c.id];
+                                   const formatTime = (d?: string) => {
+                                     if (!d) return null;
+                                     const date = new Date(d);
+                                     const now = new Date();
+                                     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+                                     if (diff < 60) return `${diff}s ago`;
+                                     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+                                     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+                                     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                   };
+                                   const timeLabel = formatTime(cs?.updatedAt);
+                                   if (!cs) return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-muted text-muted-foreground ring-1 ring-border">Added to campaign</span>;
+                                   const chipColors = [
+                                     "bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20",
+                                     "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20",
+                                     "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20",
+                                     "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20",
+                                   ];
+                                   let badge: React.ReactNode;
+                                   if (cs.status === "skipped" || cs.status === "failed") {
+                                     badge = <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-red-500/10 text-red-600 ring-1 ring-red-500/20">Invite skipped</span>;
+                                   } else if (cs.status === "pending") {
+                                     badge = <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${chipColors[0]}`}>Invitation sent</span>;
+                                   } else if (cs.status === "accepted") {
+                                     const stepNum = cs.step || 1;
+                                     const label = stepNum === 1 ? "Invite accepted" : `Step ${stepNum} sent`;
+                                     const colorClass = chipColors[(stepNum) % chipColors.length];
+                                     badge = <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${colorClass}`}>{label}</span>;
+                                   } else if (cs.status === "sent") {
+                                     badge = <span className={`inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 ${chipColors[0]}`}>Invitation sent</span>;
+                                   } else {
+                                     badge = <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-muted text-muted-foreground ring-1 ring-border">{cs.status}</span>;
+                                   }
+                                   return (
+                                     <div className="flex flex-col gap-0.5">
+                                       {badge}
+                                       {timeLabel && <span className="text-[10px] text-muted-foreground pl-1">{timeLabel}</span>}
+                                     </div>
+                                   );
+                                 })()}
                               </td>
                               <td className="px-3 py-3">
                                 {(() => {
