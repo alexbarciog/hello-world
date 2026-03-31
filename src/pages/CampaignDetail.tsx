@@ -2840,7 +2840,7 @@ export default function CampaignDetail() {
                           </div>
 
                           {/* Actions */}
-                          {(sm.message || (sm.isAi && sm.scheduledMsgId)) && !isEditing && (
+                          {(sm.message || (sm.isAi && sm.scheduledMsgId)) && !isEditing && sm.status !== "sent" && (
                             <div className="flex gap-2 mt-3">
                               <button
                                 onClick={() => {
