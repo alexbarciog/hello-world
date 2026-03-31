@@ -194,7 +194,7 @@ async function processCampaign(
           }
           await delay(800);
         } else {
-          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
+          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
 
           if (chatId) {
             await supabase
