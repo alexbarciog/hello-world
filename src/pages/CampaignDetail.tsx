@@ -136,9 +136,14 @@ export default function CampaignDetail() {
   type DailyScheduledLead = {
     id: string;
     contactId: string;
+    contactFirstName: string;
+    contactLastName: string;
     contactName: string;
     contactCompany: string;
     contactTitle: string;
+    contactLinkedinUrl: string | null;
+    contactRelevanceTier: string;
+    contactCompanyIconColor: string | null;
     actionType: string;
     stepIndex: number;
     status: string;
@@ -439,7 +444,7 @@ export default function CampaignDetail() {
       const contactIds = (queueData as any[]).map((q: any) => q.contact_id);
       const { data: contactsData } = await supabase
         .from("contacts")
-        .select("id, first_name, last_name, company, title")
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, company_icon_color")
         .in("id", contactIds);
 
       const contactMap: Record<string, any> = {};
@@ -450,9 +455,14 @@ export default function CampaignDetail() {
         return {
           id: q.id,
           contactId: q.contact_id,
+          contactFirstName: contact?.first_name || "Unknown",
+          contactLastName: contact?.last_name || "",
           contactName: contact ? `${contact.first_name} ${contact.last_name || ""}`.trim() : "Unknown",
           contactCompany: contact?.company || "",
           contactTitle: contact?.title || "",
+          contactLinkedinUrl: contact?.linkedin_url || null,
+          contactRelevanceTier: contact?.relevance_tier || "warm",
+          contactCompanyIconColor: contact?.company_icon_color || null,
           actionType: q.action_type,
           stepIndex: q.step_index,
           status: q.status,
@@ -2230,23 +2240,41 @@ export default function CampaignDetail() {
                         >
                           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
                           <div className="relative flex items-center justify-between">
+                            {/* Contact info — matches contacts table */}
                             <div className="flex items-center gap-3">
-                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
-                                item.status === "sent"
-                                  ? "bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-400/30"
-                                  : item.status === "failed"
-                                  ? "bg-destructive/15 text-destructive ring-1 ring-destructive/30"
-                                  : "bg-primary/10 text-primary ring-1 ring-primary/20"
-                              }`}>
-                                {item.contactName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                              <div className="relative shrink-0">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
+                                  {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
+                                </div>
+                                <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                                  item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
+                                }`} />
                               </div>
-                              <div>
-                                <p className="text-[13px] font-extrabold text-foreground tracking-tight">{item.contactName}</p>
-                                <p className="text-[10px] text-muted-foreground">
-                                  {item.contactTitle}{item.contactTitle && item.contactCompany ? " · " : ""}{item.contactCompany}
-                                </p>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  {item.contactLinkedinUrl ? (
+                                    <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                      {item.contactName}
+                                    </a>
+                                  ) : (
+                                    <span className="text-sm font-semibold text-foreground truncate">{item.contactName}</span>
+                                  )}
+                                  {item.contactLinkedinUrl && (
+                                    <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                      <LinkedInIcon />
+                                    </a>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground truncate max-w-[180px]">{item.contactTitle}</p>
+                                {item.contactCompany && (
+                                  <div className="flex items-center gap-1 mt-0.5">
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[item.contactCompanyIconColor || ""] || "bg-muted-foreground"}`} />
+                                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">{item.contactCompany}</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
+                            {/* Action & status badges */}
                             <div className="flex items-center gap-2">
                               <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
                                 item.actionType === "connection"
