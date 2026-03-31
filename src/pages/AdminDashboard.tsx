@@ -48,17 +48,6 @@ export default function AdminDashboard() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // ── Fetch all data ──
-  const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async () => {
-      const { data: profiles } = await supabase.from("profiles").select("*");
-      // Get emails from auth - we need an edge function for this
-      // For now, use profiles data
-      return profiles ?? [];
-    },
-    enabled: isAdmin === true,
-  });
-
   const { data: allUsers = [] } = useQuery({
     queryKey: ["admin-auth-users"],
     queryFn: async () => {
