@@ -198,6 +198,33 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     setSignalKeywordInputs({ ...signalKeywordInputs, [signalId]: "" });
   }
 
+  async function generateSignalKeywords(signalId: string) {
+    setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-signal-keywords", {
+        body: {
+          signalType: signalId,
+          jobTitles,
+          industries: selectedIndustries,
+          companyTypes: selectedCompanyTypes,
+          locations: selectedLocations,
+        },
+      });
+      if (error) throw error;
+      if (data?.keywords?.length) {
+        const current = signalKeywords[signalId] || [];
+        const merged = [...new Set([...current, ...data.keywords])];
+        setSignalKeywords({ ...signalKeywords, [signalId]: merged });
+        toast.success(`Generated ${data.keywords.length} keywords!`);
+      }
+    } catch (e) {
+      console.error("Failed to generate keywords:", e);
+      toast.error("Failed to generate keywords");
+    }
+    setGeneratingKeywords((prev) => ({ ...prev, [signalId]: false }));
+  }
+  }
+
   // ── ICP Validation ────────────────────────────────────────────────────────
   function validateICP(): boolean {
     if (jobTitles.length === 0) { setValidationError("Add at least one target job title"); return false; }
