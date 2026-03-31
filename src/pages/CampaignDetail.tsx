@@ -2862,6 +2862,9 @@ export default function CampaignDetail() {
                       );
                     })}
                   </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
