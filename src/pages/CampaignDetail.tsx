@@ -2331,8 +2331,9 @@ export default function CampaignDetail() {
                     👥 {remainingContacts} contacts remaining in queue
                   </p>
                 </div>
+              </div>
 
-                {/* LinkedIn Connections Accordion */}
+              {/* LinkedIn Connections & Messages Accordions — outside the overview card */}
                 {(() => {
                   const connections = dailyQueue.filter(q => q.actionType === "connection");
                   const messages = dailyQueue.filter(q => q.actionType.startsWith("message_"));
