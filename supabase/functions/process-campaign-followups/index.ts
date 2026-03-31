@@ -173,26 +173,32 @@ async function processCampaign(
 
         let wasAccepted = false;
 
-        // Only mark as accepted when a chat exists — this is the most reliable
-        // indicator that the connection request was truly accepted by the recipient.
-        // The isFirstDegree() fallback was producing false positives.
-        const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        // Check acceptance via chat_id OR FIRST_DEGREE network distance
+        const profileData = await fetchUserProfile(unipileDsn, unipileApiKey, accountId, publicId);
+        const providerId = profileData?.provider_id || null;
+        let chatId: string | null = null;
+
         if (providerId) {
-          const chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
-          if (chatId) {
-            await supabase
-              .from('campaign_connection_requests')
-              .update({
-                status: 'accepted',
-                accepted_at: new Date().toISOString(),
-                current_step: 1,
-                step_completed_at: new Date().toISOString(),
-                chat_id: chatId,
-              })
-              .eq('id', req.id);
-            acceptedCount++;
-            wasAccepted = true;
-          }
+          chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId, null);
+        }
+
+        // Accept if we found a chat OR if the profile shows FIRST_DEGREE connection
+        const firstDegree = profileData ? isFirstDegree(profileData) : false;
+
+        if (chatId || firstDegree) {
+          await supabase
+            .from('campaign_connection_requests')
+            .update({
+              status: 'accepted',
+              accepted_at: new Date().toISOString(),
+              current_step: 1,
+              step_completed_at: new Date().toISOString(),
+              chat_id: chatId || null,
+            })
+            .eq('id', req.id);
+          acceptedCount++;
+          wasAccepted = true;
+          console.log(`[followup] contact ${req.contact_id} accepted (chat: ${!!chatId}, firstDegree: ${firstDegree})`);
         }
         await delay(800);
 
