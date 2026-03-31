@@ -223,7 +223,7 @@ export default function CampaignsPage() {
               .select("id", { count: "exact", head: true })
               .eq("campaign_id", c.id)
               .in("contact_id", contactIds)
-              .eq("status", "accepted");
+              .in("status", ["accepted", "completed"]);
 
             sentCount = sentForList ?? 0;
             acceptedCount = acceptedForList ?? 0;
