@@ -1,0 +1,1 @@
+ALTER TABLE public.reddit_mentions ADD COLUMN IF NOT EXISTS relevance_score integer DEFAULT NULL;
