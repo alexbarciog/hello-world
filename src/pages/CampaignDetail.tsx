@@ -712,7 +712,7 @@ export default function CampaignDetail() {
         message: msgPreview,
         isAi: !!nextStep?.ai_icebreaker,
         scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        status: scheduledDate <= new Date() ? "ready" : "scheduled",
+        status: preGen?.status === "sent" ? "sent" : scheduledDate <= new Date() ? "ready" : "scheduled",
         scheduledMsgId,
         editedByUser,
       });
