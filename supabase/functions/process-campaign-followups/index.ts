@@ -292,9 +292,9 @@ async function processCampaign(
         const stepCompletedAt = req.step_completed_at ? new Date(req.step_completed_at) : null;
         if (!stepCompletedAt) continue;
 
-        // Check delay before SENDING (not before generating)
-        const delayDays = nextStep.delay_days || 1;
-        const delayMs = delayDays * 24 * 60 * 60 * 1000;
+        // Check delay before SENDING — supports delay_hours (preferred) or delay_days (legacy)
+        const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
+        const delayMs = delayHours * 60 * 60 * 1000;
         if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
 
         const { data: contact } = await supabase
