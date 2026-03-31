@@ -180,7 +180,26 @@ async function handleUnipileNotify(
     return jsonResponse({ status: 'ignored', reason: 'unsupported_status' });
   }
 
-  await saveAccountId(userId, accountId, supabaseUrl, serviceRoleKey);
+  // Try to fetch the LinkedIn display name from the Unipile account
+  let displayName: string | null = null;
+  try {
+    const UNIPILE_API_KEY = normalizeSecret(Deno.env.get('UNIPILE_API_KEY'));
+    const UNIPILE_DSN = normalizeDsn(Deno.env.get('UNIPILE_DSN'));
+    if (UNIPILE_API_KEY && UNIPILE_DSN) {
+      const acctRes = await fetch(`https://${UNIPILE_DSN}/api/v1/accounts/${accountId}`, {
+        headers: { ...buildUnipileAuthHeaders(UNIPILE_API_KEY), 'Accept': 'application/json' },
+      });
+      if (acctRes.ok) {
+        const acctData = await safeJson(acctRes);
+        displayName = getAccountDisplayName(acctData);
+        console.log('[unipile_notify] fetched display name:', displayName);
+      }
+    }
+  } catch (err) {
+    console.error('[unipile_notify] failed to fetch display name:', err);
+  }
+
+  await saveAccountInfo(userId, accountId, displayName, supabaseUrl, serviceRoleKey);
 
   // Activate pending campaigns & agents, then trigger lead discovery
   await activatePendingAndDiscover(userId, supabaseUrl, serviceRoleKey);
