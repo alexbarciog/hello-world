@@ -290,34 +290,40 @@ async function processCampaign(
         const delayMs = delayDays * 24 * 60 * 60 * 1000;
         if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
 
-        let chatId = req.chat_id;
-        if (!chatId) {
-          const { data: contact } = await supabase
-            .from('contacts')
-            .select('linkedin_profile_id, linkedin_url')
-            .eq('id', req.contact_id)
-            .single();
+        const { data: contact } = await supabase
+          .from('contacts')
+          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
+          .eq('id', req.contact_id)
+          .single();
 
-          if (contact) {
-            let pid = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-            if (pid) {
-              try { pid = decodeURIComponent(pid); } catch { /* ok */ }
-              const providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, pid);
-              if (providerId) {
-                chatId = await findChat(unipileDsn, unipileApiKey, accountId, providerId);
-                if (chatId) {
-                  await supabase
-                    .from('campaign_connection_requests')
-                    .update({ chat_id: chatId })
-                    .eq('id', req.id);
-                }
-              }
-            }
+        if (!contact) continue;
+
+        let providerId: string | null = null;
+        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+        if (publicId) {
+          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
+          providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        }
+
+        let chatId = providerId
+          ? await findChat(unipileDsn, unipileApiKey, accountId, providerId, req.chat_id)
+          : req.chat_id;
+
+        if (chatId !== req.chat_id) {
+          await supabase
+            .from('campaign_connection_requests')
+            .update({ chat_id: chatId })
+            .eq('id', req.id);
+
+          if (chatId) {
+            console.log(`[followup] corrected chat for contact ${req.contact_id}: ${req.chat_id || 'none'} -> ${chatId}`);
+          } else if (req.chat_id) {
+            console.log(`[followup] cleared invalid chat for contact ${req.contact_id}: ${req.chat_id}`);
           }
         }
 
         if (!chatId) {
-          console.log(`[followup] no chat for contact ${req.contact_id}, can't send message`);
+          console.log(`[followup] no validated chat for contact ${req.contact_id}, can't send message`);
           continue;
         }
 
@@ -349,14 +355,6 @@ async function processCampaign(
         } catch (guardErr) {
           console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
         }
-
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('first_name, last_name, company, title, signal')
-          .eq('id', req.contact_id)
-          .single();
-
-        let message = '';
 
         // Check for pre-generated message
         const { data: scheduledMsg } = await supabase
@@ -702,25 +700,63 @@ function isFirstDegree(profileData: any): boolean {
 }
 
 async function findChat(
-  dsn: string, apiKey: string, accountId: string, providerId: string
+  dsn: string,
+  apiKey: string,
+  accountId: string,
+  providerId: string,
+  existingChatId?: string | null,
 ): Promise<string | null> {
   try {
-    const url = new URL(`https://${dsn}/api/v1/chats`);
-    url.searchParams.set('account_id', accountId);
-    url.searchParams.set('attendee_provider_id', providerId);
-    url.searchParams.set('limit', '1');
+    let cursor: string | null = null;
 
-    const res = await fetch(url.toString(), {
-      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
-    });
+    for (let page = 0; page < 5; page++) {
+      const url = new URL(`https://${dsn}/api/v1/chats`);
+      url.searchParams.set('account_id', accountId);
+      url.searchParams.set('limit', '100');
+      if (cursor) url.searchParams.set('cursor', cursor);
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    const chats = data?.items || data?.data || [];
-    return chats.length > 0 ? (chats[0].id || chats[0].chat_id || null) : null;
+      const res = await fetch(url.toString(), {
+        headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+      });
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      const chats = data?.items || data?.data || [];
+
+      const matchingChats = Array.isArray(chats)
+        ? chats.filter((chat: any) => chatMatchesProvider(chat, providerId))
+        : [];
+
+      if (existingChatId) {
+        const exactMatch = matchingChats.find((chat: any) => (chat.id || chat.chat_id) === existingChatId);
+        if (exactMatch) return exactMatch.id || exactMatch.chat_id || null;
+      }
+
+      if (matchingChats.length > 0) {
+        return matchingChats[0].id || matchingChats[0].chat_id || null;
+      }
+
+      cursor = data?.cursor || data?.next_cursor || null;
+      if (!cursor) break;
+    }
+
+    return null;
   } catch {
     return null;
   }
+}
+
+function chatMatchesProvider(chat: any, providerId: string): boolean {
+  if (!chat || !providerId) return false;
+  if (chat.attendee_provider_id === providerId) return true;
+  if (chat.provider_id === providerId) return true;
+
+  const attendees = Array.isArray(chat.attendees) ? chat.attendees : [];
+  return attendees.some((attendee: any) =>
+    attendee?.provider_id === providerId ||
+    attendee?.attendee_provider_id === providerId ||
+    attendee?.id === providerId
+  );
 }
 
 function extractLinkedinId(url: string | null): string | null {
