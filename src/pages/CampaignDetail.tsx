@@ -338,19 +338,35 @@ export default function CampaignDetail() {
     // Load per-contact statuses from connection requests
     const { data: connRequests } = await supabase
       .from("campaign_connection_requests" as any)
-      .select("contact_id, status, step_completed_at, sent_at")
+      .select("contact_id, status, current_step, step_completed_at, sent_at, ai_replies_count, last_incoming_message_at")
       .eq("campaign_id", campaignId);
     if (connRequests) {
       const statusMap: Record<string, { status: string; step: number; updatedAt?: string }> = {};
+      const metrics: Record<number, { contacted: number; answered: number }> = {};
       for (const cr of connRequests as any[]) {
-        const isAccepted = cr.status === "accepted";
+        const isAccepted = cr.status === "accepted" || cr.status === "completed";
+        const currentStep = cr.current_step || 1;
         statusMap[cr.contact_id] = {
           status: cr.status,
-          step: isAccepted ? 1 : 0,
+          step: isAccepted ? currentStep : 0,
           updatedAt: cr.step_completed_at || cr.sent_at || undefined,
         };
+        // Count per-step metrics: a contact at current_step N means steps 2..N were sent
+        if (isAccepted && currentStep >= 2) {
+          for (let s = 2; s <= currentStep; s++) {
+            if (!metrics[s]) metrics[s] = { contacted: 0, answered: 0 };
+            metrics[s].contacted++;
+          }
+        }
+        // If lead has replied (has incoming messages), count as answered for the latest step
+        if (isAccepted && currentStep >= 2 && cr.last_incoming_message_at) {
+          const answerStep = currentStep;
+          if (!metrics[answerStep]) metrics[answerStep] = { contacted: 0, answered: 0 };
+          metrics[answerStep].answered++;
+        }
       }
       setContactStatuses(statusMap);
+      setStepMetrics(metrics);
     }
 
     // Remaining unsent contacts — count only sent requests for contacts currently in the list
