@@ -151,10 +151,7 @@ export default function AdminDashboard() {
   }
 
   // ── Merge user data ──
-  const mergedUsers = (allUsers.length > 0 ? allUsers : users).map((u: any) => {
-    const profile = users.find((p: any) => p.user_id === (u.id || u.user_id));
-    return { ...u, ...profile, email: u.email || (u as any).email || "N/A" };
-  });
+  const mergedUsers = allUsers;
 
   const tabs: TabDef[] = [
     { id: "users", label: "Users", icon: <Users className="w-4 h-4" />, count: mergedUsers.length },
