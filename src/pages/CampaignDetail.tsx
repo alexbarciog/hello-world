@@ -136,9 +136,14 @@ export default function CampaignDetail() {
   type DailyScheduledLead = {
     id: string;
     contactId: string;
+    contactFirstName: string;
+    contactLastName: string;
     contactName: string;
     contactCompany: string;
     contactTitle: string;
+    contactLinkedinUrl: string | null;
+    contactRelevanceTier: string;
+    contactCompanyIconColor: string | null;
     actionType: string;
     stepIndex: number;
     status: string;
