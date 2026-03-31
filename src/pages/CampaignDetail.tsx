@@ -314,7 +314,7 @@ export default function CampaignDetail() {
       .from("campaign_connection_requests" as any)
       .select("id", { count: "exact", head: true })
       .eq("campaign_id", campaignId)
-      .eq("status", "accepted");
+      .not("accepted_at", "is", null);
     setStep1Accepted(acceptedCount || 0);
 
     // Load today's sent count and per-run breakdown
