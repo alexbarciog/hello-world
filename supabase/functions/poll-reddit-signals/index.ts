@@ -242,11 +242,36 @@ Deno.serve(async (req) => {
       return json({ inserted: 0, message: 'No paid users' });
     }
 
+    // ── Keyword rotation: cap 10 per user ──
+    const MAX_KEYWORDS_PER_USER = 10;
+    const paidUserKwMap = new Map<string, typeof allKeywords>();
+    for (const kw of paidUserKeywords) {
+      const list = paidUserKwMap.get(kw.user_id) || [];
+      list.push(kw);
+      paidUserKwMap.set(kw.user_id, list);
+    }
+
+    const selectedKeywords: typeof allKeywords = [];
+    for (const [userId, kws] of paidUserKwMap) {
+      if (kws.length <= MAX_KEYWORDS_PER_USER) {
+        selectedKeywords.push(...kws);
+      } else {
+        // Pick the 10 with oldest last_polled_at (null = never polled, highest priority)
+        const sorted = [...kws].sort((a, b) => {
+          const aTime = a.last_polled_at ? new Date(a.last_polled_at).getTime() : 0;
+          const bTime = b.last_polled_at ? new Date(b.last_polled_at).getTime() : 0;
+          return aTime - bTime;
+        });
+        selectedKeywords.push(...sorted.slice(0, MAX_KEYWORDS_PER_USER));
+        console.log(`[poll-reddit] User ${userId.slice(0, 8)}: rotated ${kws.length} keywords → selected ${MAX_KEYWORDS_PER_USER}`);
+      }
+    }
+
     // Collect unique keywords and subreddits for Apify batch
-    const uniqueKeywords = [...new Set(paidUserKeywords.map(k => k.keyword))];
+    const uniqueKeywords = [...new Set(selectedKeywords.map(k => k.keyword))];
     const DEFAULT_SUBREDDITS = ['SaaS', 'startups', 'Entrepreneur', 'smallbusiness', 'marketing', 'sales'];
     const allSubreddits = new Set<string>();
-    for (const kw of paidUserKeywords) {
+    for (const kw of selectedKeywords) {
       const subs = kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS;
       subs.forEach((s: string) => allSubreddits.add(s));
     }
@@ -254,8 +279,8 @@ Deno.serve(async (req) => {
 
     console.log(`[poll-reddit] Searching via Apify: ${uniqueKeywords.length} keywords, ${uniqueSubreddits.length} subreddits`);
 
-    // Single Apify batch call (like poll-x-signals)
-    const maxItems = Math.max(50, uniqueKeywords.length * uniqueSubreddits.length * 5);
+    // Single Apify batch call with reduced limits
+    const maxItems = Math.min(200, uniqueKeywords.length * 10);
     const apifyUrl = `https://api.apify.com/v2/acts/parseforge~reddit-posts-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`;
 
     const apifyRes = await fetch(apifyUrl, {
@@ -267,7 +292,7 @@ Deno.serve(async (req) => {
         sort: 'new',
         time: 'week',
         maxItems,
-        postsPerSource: 50,
+        postsPerSource: 10,
         includeNSFW: false,
         proxyConfiguration: {
           useApifyProxy: true,
