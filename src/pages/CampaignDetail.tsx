@@ -256,6 +256,13 @@ export default function CampaignDetail() {
     setSettingsConversationalAi((c as any).conversational_ai || false);
     setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
 
+    // Fetch profile limits
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: prof } = await supabase.from("profiles").select("daily_connections_limit, daily_messages_limit").eq("user_id", user.id).single();
+      if (prof) setProfileLimits({ daily_connections_limit: prof.daily_connections_limit, daily_messages_limit: prof.daily_messages_limit });
+    }
+
     if (c.source_agent_id) {
       const { data: agent } = await supabase.from("signal_agents").select("name, status, results_count").eq("id", c.source_agent_id).single();
       if (agent) { setAgentName(agent.name); setAgentStatus(agent.status); }
