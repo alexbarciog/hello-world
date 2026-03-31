@@ -2243,10 +2243,10 @@ export default function CampaignDetail() {
                           className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
                         >
                           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                          <div className="relative space-y-2.5">
-                            {/* Row 1: Contact info */}
-                            <div className="flex items-center gap-3">
-                              <div className="relative shrink-0">
+                          <div className="relative flex items-center justify-between gap-4">
+                            {/* Left: Contact info + signal */}
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                              <div className="relative shrink-0 mt-0.5">
                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
                                   {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
                                 </div>
@@ -2254,7 +2254,7 @@ export default function CampaignDetail() {
                                   item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
                                 }`} />
                               </div>
-                              <div className="min-w-0 flex-1">
+                              <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
                                   {item.contactLinkedinUrl ? (
                                     <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
@@ -2276,42 +2276,41 @@ export default function CampaignDetail() {
                                     <span className="text-xs text-muted-foreground truncate max-w-[160px]">{item.contactCompany}</span>
                                   </div>
                                 )}
+                                {item.contactSignal && (
+                                  <div className="mt-1">
+                                    {item.contactSignalPostUrl ? (
+                                      <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
+                                        {item.contactSignal}
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            {/* Row 2: Signal + action/status badges */}
-                            <div className="flex items-center justify-between gap-3 pl-12">
-                              <div className="min-w-0 flex-1">
-                                {item.contactSignal ? (
-                                  item.contactSignalPostUrl ? (
-                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
-                                      {item.contactSignal}
-                                    </a>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
-                                  )
-                                ) : null}
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
-                                  item.actionType === "connection"
-                                    ? "bg-primary/10 text-primary"
-                                    : "bg-accent/40 text-accent-foreground"
-                                }`}>
-                                  {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
-                                </span>
-                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
-                                  item.status === "sent"
-                                    ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
-                                    : item.status === "failed"
-                                    ? "text-destructive bg-destructive/10 ring-destructive/20"
-                                    : item.status === "skipped"
-                                    ? "text-muted-foreground bg-muted/60 ring-border/30"
-                                    : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
-                                }`}>
-                                  {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
-                                </span>
-                              </div>
+                            {/* Right: Action & status badges — vertically centered */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
+                                item.actionType === "connection"
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-accent/40 text-accent-foreground"
+                              }`}>
+                                {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
+                              </span>
+                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                item.status === "sent"
+                                  ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                  : item.status === "failed"
+                                  ? "text-destructive bg-destructive/10 ring-destructive/20"
+                                  : item.status === "skipped"
+                                  ? "text-muted-foreground bg-muted/60 ring-border/30"
+                                  : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
+                              }`}>
+                                {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                              </span>
                             </div>
+                          </div>
                           </div>
                         </motion.div>
                       ))}
