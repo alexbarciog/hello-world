@@ -130,6 +130,7 @@ export default function CampaignDetail() {
   const [todayRunCounts, setTodayRunCounts] = useState<Record<number, number>>({});
   const [remainingContacts, setRemainingContacts] = useState(0);
   const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number; updatedAt?: string }>>({});
+  const [stepMetrics, setStepMetrics] = useState<Record<number, { contacted: number; answered: number }>>({});
 
   // Scheduled messages state
   type ScheduledMessage = {
