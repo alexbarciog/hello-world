@@ -641,7 +641,7 @@ export default function CampaignDetail() {
       .from("scheduled_messages" as any)
       .select("id, connection_request_id, step_index, message, status, edited_by_user")
       .in("connection_request_id", connReqIds)
-      .in("status", ["generated", "edited"]);
+      .in("status", ["generated", "edited", "sent"]);
     
     const preGenMap: Record<string, any> = {};
     (preGenMsgs || []).forEach((m: any) => {
@@ -712,7 +712,7 @@ export default function CampaignDetail() {
         message: msgPreview,
         isAi: !!nextStep?.ai_icebreaker,
         scheduledDate: scheduledDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        status: scheduledDate <= new Date() ? "ready" : "scheduled",
+        status: preGen?.status === "sent" ? "sent" : scheduledDate <= new Date() ? "ready" : "scheduled",
         scheduledMsgId,
         editedByUser,
       });
@@ -2745,13 +2745,16 @@ export default function CampaignDetail() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                                sm.status === "ready" 
+                                sm.status === "sent"
+                                  ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                                  : sm.status === "ready" 
                                   ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
                                   : sm.status === "waiting_acceptance"
                                   ? "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20"
                                   : "bg-muted text-muted-foreground ring-1 ring-border"
                               }`}>
-                                {sm.status === "ready" ? "Ready to send" 
+                                {sm.status === "sent" ? "✅ Sent"
+                                  : sm.status === "ready" ? "Ready to send" 
                                   : sm.status === "waiting_acceptance" ? "⏳ Awaiting accept" 
                                   : `📅 ${sm.scheduledDate}`}
                               </span>
@@ -2837,7 +2840,7 @@ export default function CampaignDetail() {
                           </div>
 
                           {/* Actions */}
-                          {(sm.message || (sm.isAi && sm.scheduledMsgId)) && !isEditing && (
+                          {(sm.message || (sm.isAi && sm.scheduledMsgId)) && !isEditing && sm.status !== "sent" && (
                             <div className="flex gap-2 mt-3">
                               <button
                                 onClick={() => {
