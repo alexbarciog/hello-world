@@ -434,29 +434,10 @@ export default function CampaignDetail() {
       const nextStepIdx = currentStep - 1;
       
       if (nextStepIdx >= nonInvSteps.length) continue;
-      if (cr.status === "pending") continue;
-      
-      if (currentStep === 1 && cr.status !== "accepted") {
-        const nextStep = nonInvSteps[0];
-        scheduled.push({
-          contactId: cr.contact_id,
-          contactName: `${contact.first_name} ${contact.last_name || ""}`.trim(),
-          contactTitle: contact.title || "",
-          contactCompany: contact.company || "",
-          contactSignal: contact.signal || "",
-          contactLinkedinUrl: contact.linkedin_url || "",
-          contactSignalUrl: contact.signal_post_url || "",
-          currentStep: 1,
-          nextStepNum: 2,
-          message: nextStep?.ai_icebreaker ? "" : (nextStep?.message || ""),
-          isAi: !!nextStep?.ai_icebreaker,
-          scheduledDate: "After acceptance",
-          status: "waiting_acceptance",
-        });
-        continue;
-      }
+      // Only show accepted contacts in upcoming messages
+      if (cr.status !== "accepted") continue;
 
-      if (cr.status === "accepted" && nextStepIdx < nonInvSteps.length) {
+      if (nextStepIdx < nonInvSteps.length) {
         const nextStep = nonInvSteps[nextStepIdx];
         const hasInvitation = (steps || []).length > 0 && (steps || [])[0]?.type === "invitation";
         const stepIndexInWorkflow = hasInvitation ? nextStepIdx + 1 : nextStepIdx; // matches step_index stored by edge function
