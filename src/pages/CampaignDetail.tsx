@@ -161,9 +161,9 @@ export default function CampaignDetail() {
   const [editingQueueIdx, setEditingQueueIdx] = useState<number | null>(null);
   const [editingQueueMsg, setEditingQueueMsg] = useState("");
   const [regeneratingQueueIdx, setRegeneratingQueueIdx] = useState<number | null>(null);
-  const [connectionsAccordionOpen, setConnectionsAccordionOpen] = useState(true);
-  const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(true);
-  const [upcomingMsgsAccordionOpen, setUpcomingMsgsAccordionOpen] = useState(true);
+  const [connectionsAccordionOpen, setConnectionsAccordionOpen] = useState(false);
+  const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(false);
+  const [upcomingMsgsAccordionOpen, setUpcomingMsgsAccordionOpen] = useState(false);
 
   // Scheduled messages state
   type ScheduledMessage = {
