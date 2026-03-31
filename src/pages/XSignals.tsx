@@ -541,22 +541,24 @@ export default function XSignals() {
 
           {/* Keyword filter chips */}
           {keywords.length > 1 && (
-            <div className="flex items-center gap-1 ml-2 overflow-x-auto scrollbar-none">
-              <button
-                onClick={() => setFilterKeyword(null)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border whitespace-nowrap shrink-0 ${!filterKeyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
-              >
-                All
-              </button>
-              {keywords.map(kw => (
+            <div className="ml-2 min-w-0 max-w-full overflow-x-auto overflow-y-hidden scrollbar-none">
+              <div className="flex w-max items-center gap-1 pr-2">
                 <button
-                  key={kw.id}
-                  onClick={() => setFilterKeyword(filterKeyword === kw.keyword ? null : kw.keyword)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border whitespace-nowrap shrink-0 ${filterKeyword === kw.keyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
+                  onClick={() => setFilterKeyword(null)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border whitespace-nowrap shrink-0 ${!filterKeyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
                 >
-                  {kw.keyword}
+                  All
                 </button>
-              ))}
+                {keywords.map(kw => (
+                  <button
+                    key={kw.id}
+                    onClick={() => setFilterKeyword(filterKeyword === kw.keyword ? null : kw.keyword)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border whitespace-nowrap shrink-0 ${filterKeyword === kw.keyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
+                  >
+                    {kw.keyword}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
