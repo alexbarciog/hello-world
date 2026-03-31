@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
       if (matchedIdx === -1) continue;
 
       const matchedKeyword = uniqueKeywords[matchedIdx];
-      const matchingKws = paidUserKeywords.filter(k => k.keyword === matchedKeyword);
+      const matchingKws = selectedKeywords.filter(k => k.keyword === matchedKeyword);
       const seenUsers = new Set<string>();
 
       for (const kw of matchingKws) {
