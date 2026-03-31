@@ -30,6 +30,7 @@ interface RedditMention {
   found_at: string;
   dismissed: boolean;
   saved: boolean;
+  relevance_score: number | null;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
