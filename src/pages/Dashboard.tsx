@@ -174,17 +174,14 @@ export default function Dashboard() {
     staleTime: 30_000
   });
 
-  // ── Hot opportunities (leads) ──
+  // ── Hot opportunities (contacts with relevance_tier = 'hot') ──
   const { data: hotOppsData, isLoading: hotOppsLoading } = useQuery({
     queryKey: ["dashboard-hot-opps"],
     queryFn: async () => {
-      const { data: campaigns } = await supabase.from("campaigns").select("id");
-      if (!campaigns || campaigns.length === 0) return { count: 0 };
-      const campaignIds = campaigns.map((c) => c.id);
-      const { count, error } = await supabase.
-      from("leads").
-      select("id", { count: "exact", head: true }).
-      in("campaign_id", campaignIds);
+      const { count, error } = await supabase
+        .from("contacts")
+        .select("id", { count: "exact", head: true })
+        .eq("relevance_tier", "hot");
       if (error) throw error;
       return { count: count ?? 0 };
     },
