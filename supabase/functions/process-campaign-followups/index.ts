@@ -499,7 +499,7 @@ async function processCampaign(
     if (allAccepted && allAccepted.length > 0) {
       for (const req of allAccepted) {
         try {
-          if (!req.chat_id) continue;
+          // Generate message even without chat_id — chat will be resolved when sending
 
           const currentStep = req.current_step || 1;
           const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
