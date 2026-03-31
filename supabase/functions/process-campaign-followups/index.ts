@@ -332,8 +332,12 @@ async function processCampaign(
           }
         }
 
-        if (!chatId) {
-          console.log(`[followup] no validated chat for contact ${req.contact_id}, can't send message`);
+        if (!chatId && providerId) {
+          // No chat exists yet — we'll send the first message directly via provider_id
+          // This will create a new chat automatically
+          console.log(`[followup] no chat for contact ${req.contact_id}, will send via provider_id ${providerId}`);
+        } else if (!chatId) {
+          console.log(`[followup] no chat and no provider_id for contact ${req.contact_id}, skipping`);
           continue;
         }
 
