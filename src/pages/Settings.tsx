@@ -715,7 +715,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">LinkedIn Connected ✓</p>
-                  <p className="text-xs text-muted-foreground">Account ID: {accountId.slice(0, 12)}…</p>
+                  <p className="text-xs text-muted-foreground">{displayName || `Account ID: ${accountId.slice(0, 12)}…`}</p>
                 </div>
               </div>
               <button onClick={handleDisconnect} className="text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-1.5 hover:bg-destructive/10 transition-colors">
