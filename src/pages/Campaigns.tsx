@@ -224,17 +224,25 @@ export default function CampaignsPage() {
 
         const { data: requestData } = await supabase
           .from("campaign_connection_requests" as any)
-          .select("status, last_incoming_message_at")
+          .select("status, current_step, last_incoming_message_at")
           .eq("campaign_id", c.id);
 
-        const requests = (requestData || []) as { status: string; last_incoming_message_at: string | null }[];
+        const requests = ((requestData ?? []) as unknown[]) as {
+          status: string;
+          current_step: number | null;
+          last_incoming_message_at: string | null;
+        }[];
         const sentCount = requests.filter((request) =>
           ["sent", "accepted", "completed"].includes(request.status)
         ).length;
         const acceptedCount = requests.filter((request) =>
           ["accepted", "completed"].includes(request.status)
         ).length;
-        const repliedCount = requests.filter((request) => Boolean(request.last_incoming_message_at)).length;
+        const repliedCount = requests.filter((request) =>
+          ["accepted", "completed"].includes(request.status) &&
+          (request.current_step ?? 0) >= 2 &&
+          Boolean(request.last_incoming_message_at)
+        ).length;
 
         return {
           ...c,
