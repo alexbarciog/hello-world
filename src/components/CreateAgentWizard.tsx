@@ -116,6 +116,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [signalKeywords, setSignalKeywords] = useState<Record<string, string[]>>({});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [signalKeywordInputs, setSignalKeywordInputs] = useState<Record<string, string>>({});
+  const [generatingKeywords, setGeneratingKeywords] = useState<Record<string, boolean>>({});
 
   // Step 3: Leads
   const [leadsListName, setLeadsListName] = useState("");
@@ -195,6 +196,32 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       setSignalKeywords({ ...signalKeywords, [signalId]: [...current, input] });
     }
     setSignalKeywordInputs({ ...signalKeywordInputs, [signalId]: "" });
+  }
+
+  async function generateSignalKeywords(signalId: string) {
+    setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-signal-keywords", {
+        body: {
+          signalType: signalId,
+          jobTitles,
+          industries: selectedIndustries,
+          companyTypes: selectedCompanyTypes,
+          locations: selectedLocations,
+        },
+      });
+      if (error) throw error;
+      if (data?.keywords?.length) {
+        const current = signalKeywords[signalId] || [];
+        const merged = [...new Set([...current, ...data.keywords])];
+        setSignalKeywords({ ...signalKeywords, [signalId]: merged });
+        toast.success(`Generated ${data.keywords.length} keywords!`);
+      }
+    } catch (e) {
+      console.error("Failed to generate keywords:", e);
+      toast.error("Failed to generate keywords");
+    }
+    setGeneratingKeywords((prev) => ({ ...prev, [signalId]: false }));
   }
 
   // ── ICP Validation ────────────────────────────────────────────────────────
@@ -728,6 +755,14 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                               className={`flex-1 ${inputCls} !py-1.5 !text-xs`}
                                             />
                                             <button onClick={() => addSignalKeyword(sub.id)} className="text-xs font-medium text-foreground px-2">Add</button>
+                                            <button
+                                              onClick={() => generateSignalKeywords(sub.id)}
+                                              disabled={generatingKeywords[sub.id]}
+                                              className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+                                            >
+                                              <Sparkles className="w-3 h-3" />
+                                              {generatingKeywords[sub.id] ? "..." : "AI"}
+                                            </button>
                                           </div>
                                           {(signalKeywords[sub.id] || []).length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1.5">
