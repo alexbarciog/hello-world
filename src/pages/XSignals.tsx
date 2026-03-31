@@ -185,6 +185,7 @@ export default function XSignals() {
 
   // ── Start AI Agent ──
   const handleStartAgent = async () => {
+    if (sub.loading) { toast.info("Checking subscription status, please try again in a moment."); return; }
     if (!sub.subscribed) {
       toast.error("Upgrade to a paid plan to run the X agent", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
