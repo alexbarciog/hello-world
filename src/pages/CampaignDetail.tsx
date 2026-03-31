@@ -2293,8 +2293,8 @@ export default function CampaignDetail() {
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
                                 item.actionType === "connection"
-                                  ? "bg-primary/10 text-primary"
-                                  : "bg-accent/40 text-accent-foreground"
+                                  ? "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20"
+                                  : "bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20"
                               }`}>
                                 {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
                               </span>
