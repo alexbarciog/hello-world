@@ -17,6 +17,7 @@ export interface Contact {
   list_name: string | null;
   imported_at: string;
   relevance_tier: 'hot' | 'warm' | 'cold';
+  lead_status: string;
 }
 
 export interface ContactList {
