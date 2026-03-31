@@ -38,15 +38,15 @@ Bad examples: "looking for tools", "need help with sales" (these are phrases, no
 Return single-word or CamelCase compound hashtags only. No spaces, no # symbol.`,
     };
 
-    const prompt = \`Target Job Titles: \${(jobTitles || []).join(', ') || 'Unknown'}
-Target Industries: \${(industries || []).join(', ') || 'Unknown'}
-Target Company Types: \${(companyTypes || []).join(', ') || 'Unknown'}
-Target Locations: \${(locations || []).join(', ') || 'Unknown'}
+    const prompt = `Target Job Titles: ${(jobTitles || []).join(', ') || 'Unknown'}
+Target Industries: ${(industries || []).join(', ') || 'Unknown'}
+Target Company Types: ${(companyTypes || []).join(', ') || 'Unknown'}
+Target Locations: ${(locations || []).join(', ') || 'Unknown'}
 
-Signal type: \${signalType}
-Goal: \${signalDescriptions[signalType] || 'Generate relevant keywords for this signal type.'}
+Signal type: ${signalType}
+Goal: ${signalDescriptions[signalType] || 'Generate relevant keywords for this signal type.'}
 
-\${extraInstructions[signalType] || 'Generate exactly 5 short, specific keyword phrases (3-6 words each) relevant to this signal type and ICP.'}\`;
+${extraInstructions[signalType] || 'Generate exactly 5 short, specific keyword phrases (3-6 words each) relevant to this signal type and ICP.'}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
