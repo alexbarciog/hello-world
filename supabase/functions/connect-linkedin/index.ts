@@ -220,7 +220,7 @@ function buildRedirectUrl(returnUrl: string | undefined, linkedinStatus: 'succes
   }
 }
 
-async function resolveConnectedAccountId({
+async function resolveConnectedAccount({
   userId,
   supabaseUrl,
   serviceRoleKey,
@@ -232,15 +232,15 @@ async function resolveConnectedAccountId({
   serviceRoleKey: string;
   unipileApiKey: string;
   unipileDsn: string;
-}) {
-  const storedAccountId = await getStoredAccountId(userId, supabaseUrl, serviceRoleKey);
-  if (storedAccountId) return storedAccountId;
+}): Promise<{ accountId: string; displayName: string | null } | null> {
+  const stored = await getStoredAccountInfo(userId, supabaseUrl, serviceRoleKey);
+  if (stored?.accountId) return stored;
 
-  const remoteAccountId = await findRemoteLinkedinAccountId(userId, unipileApiKey, unipileDsn);
-  if (!remoteAccountId) return null;
+  const remote = await findRemoteLinkedinAccount(userId, unipileApiKey, unipileDsn);
+  if (!remote) return null;
 
-  await saveAccountId(userId, remoteAccountId, supabaseUrl, serviceRoleKey);
-  return remoteAccountId;
+  await saveAccountInfo(userId, remote.accountId, remote.displayName, supabaseUrl, serviceRoleKey);
+  return remote;
 }
 
 async function getStoredAccountId(userId: string, supabaseUrl: string, serviceRoleKey: string) {
