@@ -27,6 +27,7 @@ export type Database = {
           id: string
           last_ai_reply_at: string | null
           last_incoming_message_at: string | null
+          lead_status: string
           sent_at: string
           status: string
           step_completed_at: string | null
@@ -45,6 +46,7 @@ export type Database = {
           id?: string
           last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
+          lead_status?: string
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           id?: string
           last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
+          lead_status?: string
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -307,6 +310,7 @@ export type Database = {
           id: string
           imported_at: string
           last_name: string | null
+          lead_status: string
           linkedin_profile_id: string | null
           linkedin_url: string | null
           list_name: string | null
@@ -330,6 +334,7 @@ export type Database = {
           id?: string
           imported_at?: string
           last_name?: string | null
+          lead_status?: string
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
@@ -353,6 +358,7 @@ export type Database = {
           id?: string
           imported_at?: string
           last_name?: string | null
+          lead_status?: string
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
