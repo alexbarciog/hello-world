@@ -2340,7 +2340,13 @@ export default function CampaignDetail() {
                           );
                         })()}
                       </div>
-                      {dailyQueue.map((item, idx) => (
+                      {dailyQueue.map((item, idx) => {
+                        const isMessage = item.actionType.startsWith("message_");
+                        const isExpanded = expandedQueueIdx === idx;
+                        const isEditingThis = editingQueueIdx === idx;
+                        const isRegenerating = regeneratingQueueIdx === idx;
+
+                        return (
                         <motion.div
                           key={item.id}
                           initial={{ opacity: 0, y: 12 }}
@@ -2413,6 +2419,15 @@ export default function CampaignDetail() {
                               }`}>
                                 {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
                               </span>
+                              {isMessage && item.message && (
+                                <button
+                                  onClick={() => setExpandedQueueIdx(isExpanded ? null : idx)}
+                                  className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  {isExpanded ? "Hide" : "Preview"}
+                                </button>
+                              )}
                               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
                                 item.status === "sent"
                                   ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
@@ -2426,8 +2441,67 @@ export default function CampaignDetail() {
                               </span>
                             </div>
                           </div>
+
+                          {/* Message preview / edit section */}
+                          <AnimatePresence>
+                            {isMessage && isExpanded && item.message && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="relative overflow-hidden"
+                              >
+                                <div className="mt-3 pt-3 border-t border-border/40">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                      <MessageSquare className="w-3 h-3" /> AI Message
+                                    </span>
+                                    {item.status === "pending" && (
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          onClick={() => {
+                                            if (isEditingThis) {
+                                              handleSaveQueueMessage(idx);
+                                            } else {
+                                              setEditingQueueIdx(idx);
+                                              setEditingQueueMsg(item.message || "");
+                                            }
+                                          }}
+                                          className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60"
+                                        >
+                                          {isEditingThis ? <><Check className="w-3 h-3" /> Save</> : <><Pencil className="w-3 h-3" /> Edit</>}
+                                        </button>
+                                        <button
+                                          onClick={() => handleRegenerateQueueMessage(idx)}
+                                          disabled={isRegenerating}
+                                          className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60 disabled:opacity-50"
+                                        >
+                                          {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                          {isRegenerating ? "Regenerating..." : "Regenerate"}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {isEditingThis ? (
+                                    <textarea
+                                      value={editingQueueMsg}
+                                      onChange={(e) => setEditingQueueMsg(e.target.value)}
+                                      className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
+                                      rows={4}
+                                    />
+                                  ) : (
+                                    <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap bg-muted/20 rounded-lg p-3">
+                                      {item.message}
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </>
                   )}
                 </div>
