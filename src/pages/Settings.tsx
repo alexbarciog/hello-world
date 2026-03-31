@@ -587,6 +587,7 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [polling, setPolling] = useState(false);
   const [dailyMessages, setDailyMessages] = useState([15]);
