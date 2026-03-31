@@ -348,35 +348,28 @@ function getAccountId(account: UnipileAccount) {
 }
 
 function getAccountDisplayName(account: UnipileAccount): string | null {
-  // Try various fields where Unipile might store the display name
+  // The Unipile account object has a top-level "name" field with the LinkedIn display name
   const name = getString(
+    account.name,
     account.display_name,
     account.displayName,
     account.full_name,
     account.fullName,
-    isRecord(account.account) ? (account.account as Record<string, unknown>).display_name : undefined,
-    isRecord(account.account) ? (account.account as Record<string, unknown>).full_name : undefined,
-    isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).full_name : undefined,
-    isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).im_username : undefined,
   );
+
+  if (name) return name;
   
-  // If no specific display name field, try to construct from first/last
-  if (!name) {
-    const first = getString(
-      account.first_name,
-      account.firstName,
-      isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).first_name : undefined,
-    );
-    const last = getString(
-      account.last_name,
-      account.lastName,
-      isRecord(account.connection_params) ? (account.connection_params as Record<string, unknown>).last_name : undefined,
-    );
-    const constructed = [first, last].filter(Boolean).join(' ');
-    return constructed || null;
+  // Fallback: try connection_params.im.username
+  if (isRecord(account.connection_params)) {
+    const cp = account.connection_params as Record<string, unknown>;
+    if (isRecord(cp.im)) {
+      const im = cp.im as Record<string, unknown>;
+      const imName = getString(im.username, im.full_name);
+      if (imName) return imName;
+    }
   }
   
-  return name || null;
+  return null;
 }
 
 function getString(...values: unknown[]) {
