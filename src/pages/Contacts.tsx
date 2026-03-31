@@ -374,31 +374,39 @@ export default function Contacts() {
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        {(() => {
-                          const action = lastActions[c.id];
-                          if (!action) return (
-                            <div className="flex items-center gap-1.5">
-                              <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium text-muted-foreground">Lead added</span>
-                              <span className="text-[10px] text-muted-foreground">{timeAgo(c.imported_at)}</span>
+                        <div className="flex flex-col gap-1">
+                          {c.lead_status === 'not_interested' && (
+                            <div className="flex items-center gap-1">
+                              <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
+                              <span className="text-[10px] font-semibold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">Not Interested</span>
                             </div>
-                          );
-                          const statusConfig: Record<string, { label: string; icon: typeof Send; color: string }> = {
-                            pending: { label: "Invite sent", icon: Send, color: "text-blue-500" },
-                            sent: { label: "Invite sent", icon: Send, color: "text-blue-500" },
-                            accepted: { label: "Accepted", icon: UserCheck, color: "text-emerald-500" },
-                            messaged: { label: "Messaged", icon: MessageSquare, color: "text-violet-500" },
-                          };
-                          const cfg = statusConfig[action.status] || { label: action.status, icon: Clock, color: "text-muted-foreground" };
-                          const ActionIcon = cfg.icon;
-                          return (
-                            <div className="flex items-center gap-1.5">
-                              <ActionIcon className={`w-3.5 h-3.5 ${cfg.color}`} />
-                              <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
-                              <span className="text-[10px] text-muted-foreground">{timeAgo(action.date)}</span>
-                            </div>
-                          );
-                        })()}
+                          )}
+                          {(() => {
+                            const action = lastActions[c.id];
+                            if (!action) return (
+                              <div className="flex items-center gap-1.5">
+                                <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground">Lead added</span>
+                                <span className="text-[10px] text-muted-foreground">{timeAgo(c.imported_at)}</span>
+                              </div>
+                            );
+                            const statusConfig: Record<string, { label: string; icon: typeof Send; color: string }> = {
+                              pending: { label: "Invite sent", icon: Send, color: "text-blue-500" },
+                              sent: { label: "Invite sent", icon: Send, color: "text-blue-500" },
+                              accepted: { label: "Accepted", icon: UserCheck, color: "text-emerald-500" },
+                              messaged: { label: "Messaged", icon: MessageSquare, color: "text-violet-500" },
+                            };
+                            const cfg = statusConfig[action.status] || { label: action.status, icon: Clock, color: "text-muted-foreground" };
+                            const ActionIcon = cfg.icon;
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                <ActionIcon className={`w-3.5 h-3.5 ${cfg.color}`} />
+                                <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                                <span className="text-[10px] text-muted-foreground">{timeAgo(action.date)}</span>
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </td>
                       <td className="px-3 py-3">
                         <span className="text-xs text-muted-foreground">{timeAgo(c.imported_at)}</span>
