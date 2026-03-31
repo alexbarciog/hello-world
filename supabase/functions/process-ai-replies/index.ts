@@ -161,6 +161,11 @@ async function processCampaignReplies(
         continue;
       }
 
+      // ── GUARD: Skip pre-existing conversations ──
+      // If this chat had messages BEFORE the connection request was created,
+      // it means it's a personal/existing conversation — AI must NOT intervene.
+      const crCreatedAt = new Date(cr.created_at || cr.sent_at || 0);
+
       // Fetch recent messages from this chat
       const messagesRes = await fetch(
         `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(cr.chat_id)}/messages?limit=10`,
