@@ -307,7 +307,7 @@ export default function CampaignDetail() {
       .from("campaign_connection_requests" as any)
       .select("id", { count: "exact", head: true })
       .eq("campaign_id", campaignId)
-      .in("status", ["sent", "accepted"]);
+      .in("status", ["sent", "accepted", "completed"]);
     setStep1Sent(sentCount || 0);
 
     const { count: acceptedCount } = await supabase
