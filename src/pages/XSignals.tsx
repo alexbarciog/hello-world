@@ -541,10 +541,10 @@ export default function XSignals() {
 
           {/* Keyword filter chips */}
           {keywords.length > 1 && (
-            <div className="flex items-center gap-1 ml-2">
+            <div className="flex items-center gap-1 ml-2 overflow-x-auto scrollbar-none">
               <button
                 onClick={() => setFilterKeyword(null)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border ${!filterKeyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border whitespace-nowrap shrink-0 ${!filterKeyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
               >
                 All
               </button>
@@ -552,7 +552,7 @@ export default function XSignals() {
                 <button
                   key={kw.id}
                   onClick={() => setFilterKeyword(filterKeyword === kw.keyword ? null : kw.keyword)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border ${filterKeyword === kw.keyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors border whitespace-nowrap shrink-0 ${filterKeyword === kw.keyword ? "bg-foreground text-white border-foreground" : "text-muted-foreground border-border hover:bg-muted"}`}
                 >
                   {kw.keyword}
                 </button>
