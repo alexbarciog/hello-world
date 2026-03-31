@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
         }
 
         // Final count from DB for accuracy
-        const { data: agentList } = await supabase.from('lists').select('id').eq('source_agent_id', agent.id).eq('user_id', agent.user_id).maybeSingle();
+        const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agent.user_id).eq('name', listName).maybeSingle();
         let actualCount = (agent.results_count || 0) + agentLeads;
         if (agentList) {
           const { count: listContactCount } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
