@@ -36,16 +36,36 @@ Deno.serve(async (req) => {
 
     if (!roleData) throw new Error("Not an admin");
 
-    // List all users
-    const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-    if (error) throw error;
+    // Fetch all data in parallel using service role (bypasses RLS)
+    const [usersRes, profilesRes, campaignsRes] = await Promise.all([
+      adminClient.auth.admin.listUsers({ perPage: 1000 }),
+      adminClient.from("profiles").select("*"),
+      adminClient.from("campaigns").select("user_id, website"),
+    ]);
 
-    const safeUsers = (users ?? []).map((u) => ({
-      id: u.id,
-      email: u.email,
-      created_at: u.created_at,
-      raw_user_meta_data: u.user_metadata,
-    }));
+    if (usersRes.error) throw usersRes.error;
+
+    const profiles = profilesRes.data ?? [];
+    const campaignsList = campaignsRes.data ?? [];
+
+    const safeUsers = (usersRes.data?.users ?? []).map((u) => {
+      const profile = profiles.find((p: any) => p.user_id === u.id);
+      const campaign = campaignsList.find((c: any) => c.user_id === u.id && c.website);
+      return {
+        id: u.id,
+        email: u.email,
+        created_at: u.created_at,
+        raw_user_meta_data: u.user_metadata,
+        // Profile fields
+        onboarding_complete: profile?.onboarding_complete ?? false,
+        credits: profile?.credits ?? 0,
+        daily_messages_limit: profile?.daily_messages_limit ?? null,
+        daily_connections_limit: profile?.daily_connections_limit ?? null,
+        unipile_account_id: profile?.unipile_account_id ?? null,
+        // Website from campaigns
+        website: campaign?.website ?? null,
+      };
+    });
 
     return new Response(JSON.stringify({ users: safeUsers }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

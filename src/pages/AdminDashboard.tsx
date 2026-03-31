@@ -48,17 +48,6 @@ export default function AdminDashboard() {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // ── Fetch all data ──
-  const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: async () => {
-      const { data: profiles } = await supabase.from("profiles").select("*");
-      // Get emails from auth - we need an edge function for this
-      // For now, use profiles data
-      return profiles ?? [];
-    },
-    enabled: isAdmin === true,
-  });
-
   const { data: allUsers = [] } = useQuery({
     queryKey: ["admin-auth-users"],
     queryFn: async () => {
@@ -162,10 +151,7 @@ export default function AdminDashboard() {
   }
 
   // ── Merge user data ──
-  const mergedUsers = (allUsers.length > 0 ? allUsers : users).map((u: any) => {
-    const profile = users.find((p: any) => p.user_id === (u.id || u.user_id));
-    return { ...u, ...profile, email: u.email || (u as any).email || "N/A" };
-  });
+  const mergedUsers = allUsers;
 
   const tabs: TabDef[] = [
     { id: "users", label: "Users", icon: <Users className="w-4 h-4" />, count: mergedUsers.length },
@@ -252,7 +238,7 @@ export default function AdminDashboard() {
 
       {/* Content */}
       <div className="overflow-x-auto rounded-xl border border-md-outline-variant/30">
-        {activeTab === "users" && <UsersTable data={filterData(mergedUsers)} expandedRow={expandedRow} setExpandedRow={setExpandedRow} campaigns={campaigns} />}
+        {activeTab === "users" && <UsersTable data={filterData(mergedUsers)} expandedRow={expandedRow} setExpandedRow={setExpandedRow} />}
         {activeTab === "campaigns" && <CampaignsTable data={filterData(campaigns)} />}
         {activeTab === "contacts" && <ContactsTable data={filterData(contacts)} />}
         {activeTab === "agents" && <AgentsTable data={filterData(agents)} />}
@@ -308,12 +294,7 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
   return <td className={`px-4 py-3 text-sm text-md-on-surface ${className}`}>{children}</td>;
 }
 
-function UsersTable({ data, expandedRow, setExpandedRow, campaigns }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void; campaigns: any[] }) {
-  const getUserWebsite = (userId: string) => {
-    const campaign = campaigns.find((c: any) => c.user_id === userId && c.website);
-    return campaign?.website || null;
-  };
-
+function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
   return (
     <table className="w-full">
       <thead>
@@ -324,7 +305,7 @@ function UsersTable({ data, expandedRow, setExpandedRow, campaigns }: { data: an
           const id = u.id || u.user_id;
           const name = [u.raw_user_meta_data?.first_name, u.raw_user_meta_data?.last_name].filter(Boolean).join(" ") || "—";
           const isExpanded = expandedRow === id;
-          const website = getUserWebsite(id);
+          const website = u.website || null;
           const isPaid = (u.credits ?? 0) >= 100;
           return (
             <>
