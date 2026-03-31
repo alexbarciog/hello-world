@@ -84,7 +84,7 @@ function CampaignCard({
   const navigate = useNavigate();
   const isActive = c.status === "active";
   const acceptRate = c.invitations_sent > 0 ? Math.round((c.invitations_accepted || 0) / c.invitations_sent * 100) : 0;
-  const replyRate = c.messages_sent > 0 ? Math.round((c.messages_replied || 0) / c.messages_sent * 100) : 0;
+  const replyRate = c.invitations_sent > 0 ? Math.round((c.messages_replied || 0) / c.invitations_sent * 100) : 0;
 
   return (
     <motion.div
