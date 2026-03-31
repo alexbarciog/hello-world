@@ -1894,7 +1894,7 @@ export default function CampaignDetail() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="text-xl font-bold text-green-600">{campaign.messages_replied}</p>
+                        <p className="text-xl font-bold text-green-600">{totalReplied}</p>
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase">Replied</p>
                       </div>
                       <div className="h-8 w-px bg-border" />
