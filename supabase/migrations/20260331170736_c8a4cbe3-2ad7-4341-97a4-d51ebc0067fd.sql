@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN linkedin_display_name text DEFAULT null;
