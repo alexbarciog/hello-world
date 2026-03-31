@@ -5,7 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SEQUENCES_PER_DAY = 20;
+const SEQUENCES_PER_DAY = 20; // 20 x 30-min slots between 08:00-18:00
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
