@@ -3,8 +3,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Stripe from 'https://esm.sh/stripe@18.5.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+import Stripe from 'https://esm.sh/stripe@17.7.0';
 
 // ─── Sequential Dispatcher ───────────────────────────────────────────────────
 // Invokes separate edge functions for each signal type, one at a time.
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     const paidUsers = new Set<string>();
     if (stripeKey) {
-      const stripe = new Stripe(stripeKey, { apiVersion: '2025-08-27.basil' });
+      const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
       const uniqueUserIds = [...new Set(agents.map((a: any) => a.user_id))];
       for (const uid of uniqueUserIds) {
         try {
@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
         }
 
         // Final count from DB for accuracy
-        const { data: agentList } = await supabase.from('lists').select('id').eq('source_agent_id', agent.id).eq('user_id', agent.user_id).maybeSingle();
+        const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agent.user_id).eq('name', listName).maybeSingle();
         let actualCount = (agent.results_count || 0) + agentLeads;
         if (agentList) {
           const { count: listContactCount } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
