@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     const failedPairs: FailedPair[] = [];
 
     // Phase 1: Try RSS and JSON for each keyword/subreddit pair
-    for (const kw of paidKeywords) {
+    for (const kw of shuffledKeywords) {
       const subreddits = shuffle(kw.subreddits?.length > 0 ? kw.subreddits : DEFAULT_SUBREDDITS);
       const keyword = kw.keyword;
 
