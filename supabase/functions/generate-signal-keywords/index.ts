@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     const signalDescriptions: Record<string, string> = {
       keyword_posts: 'LinkedIn post phrases that indicate buying intent. Examples: "looking for a CRM", "need help with lead gen", "recommendations for sales tools", "struggling with outbound". Focus on action-oriented phrases people write when they have a problem to solve or are actively searching for a solution.',
-      hashtag_engagement: 'LinkedIn hashtags that buyers use when discussing problems or seeking solutions (without #). Focus on pain-point and solution-seeking hashtags.',
+      hashtag_engagement: 'LinkedIn hashtags (without the # symbol) that are directly relevant to the company\'s services and industry. These should be hashtags that the company\'s ideal buyers follow or use. Examples: "SalesAutomation", "LeadGeneration", "B2BSales", "GrowthHacking". Focus on hashtags related to the business services, not buying intent phrases.',
       profile_engagers: 'LinkedIn profile URLs of industry thought leaders, influencers, or competitors whose followers would be ideal prospects.',
       competitor_followers: 'LinkedIn company page URLs of competitors whose followers would be ideal prospects.',
       competitor_engagers: 'LinkedIn company page URLs of competitors whose post engagers would be ideal prospects.',
