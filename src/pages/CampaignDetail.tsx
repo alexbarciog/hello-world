@@ -654,7 +654,7 @@ export default function CampaignDetail() {
 
       // Only show verified accepted contacts. Older bad rows could be marked
       // accepted without a LinkedIn chat, which should never appear here.
-      if (cr.status !== "accepted" || !cr.chat_id) continue;
+      if (cr.status !== "accepted") continue;
 
       const currentStep = cr.current_step || 1;
       const nextStepIdx = currentStep - 1;

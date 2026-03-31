@@ -231,7 +231,9 @@ async function processCampaign(
           const nextStep = workflowSteps[wfIdx];
           if (nextStep && nextStep.type === 'message') {
             const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
-            const readyAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+            // Use step_completed_at (just set above) as the base for readiness calculation
+            const stepCompletedNow = new Date();
+            const readyAt = new Date(stepCompletedNow.getTime() + delayHours * 60 * 60 * 1000);
             const endOfToday = new Date(today + 'T23:59:59.999Z');
 
             if (readyAt <= endOfToday) {
