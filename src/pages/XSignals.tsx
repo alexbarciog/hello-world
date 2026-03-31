@@ -515,8 +515,8 @@ export default function XSignals() {
       )}
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4 gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {/* View mode toggle */}
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
