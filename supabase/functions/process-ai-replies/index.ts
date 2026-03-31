@@ -181,10 +181,10 @@ async function processCampaignReplies(
             continue;
           }
 
-          // Get contact info
+          // Get full contact info for rich context
           const { data: contact } = await supabase
             .from('contacts')
-            .select('first_name, last_name, company, title, signal')
+            .select('first_name, last_name, company, title, signal, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
             .eq('id', cr.contact_id)
             .single();
           if (!contact) continue;
