@@ -138,7 +138,7 @@ async function processCampaignReplies(
     // This prevents the conversational AI from replying before the scheduled workflow messages
     const { data: connReqs } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step')
+      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step, created_at, sent_at')
       .eq('campaign_id', campaign.id)
       .in('status', ['accepted', 'completed'])
       .eq('conversation_stopped', false)
@@ -161,6 +161,11 @@ async function processCampaignReplies(
         continue;
       }
 
+      // ── GUARD: Skip pre-existing conversations ──
+      // If this chat had messages BEFORE the connection request was created,
+      // it means it's a personal/existing conversation — AI must NOT intervene.
+      const crCreatedAt = new Date(cr.created_at || cr.sent_at || 0);
+
       // Fetch recent messages from this chat
       const messagesRes = await fetch(
         `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(cr.chat_id)}/messages?limit=10`,
@@ -182,6 +187,21 @@ async function processCampaignReplies(
         new Date(b.timestamp || b.date || b.created_at || 0).getTime() - 
         new Date(a.timestamp || a.date || a.created_at || 0).getTime()
       );
+
+      // ── GUARD: Check if this is a pre-existing conversation ──
+      // If the oldest message in this batch is from BEFORE the connection request,
+      // this is a personal conversation — DO NOT reply.
+      const oldestMessage = sortedMessages[sortedMessages.length - 1];
+      const oldestMsgTime = new Date(oldestMessage?.timestamp || oldestMessage?.date || oldestMessage?.created_at || 0);
+      if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
+        console.log(`[ai-replies] Skipping contact ${cr.contact_id} — pre-existing conversation detected (oldest msg: ${oldestMsgTime.toISOString()}, CR created: ${crCreatedAt.toISOString()})`);
+        // Mark as stopped so we don't keep checking
+        await supabase.from('campaign_connection_requests')
+          .update({ conversation_stopped: true })
+          .eq('id', cr.id);
+        stopped++;
+        continue;
+      }
 
       const latestMessage = sortedMessages[0];
       if (!latestMessage) continue;
