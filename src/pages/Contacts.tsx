@@ -10,7 +10,7 @@ import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 import { toast } from "sonner";
 
-type Tab = "all" | "hot" | "warm" | "cold";
+type Tab = "all" | "hot" | "warm" | "cold" | "not_interested";
 
 export default function Contacts() {
   const [tab, setTab] = useState<Tab>("all");
