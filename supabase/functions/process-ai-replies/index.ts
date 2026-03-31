@@ -230,7 +230,19 @@ async function processCampaignReplies(
             .filter((line: string) => line.length > 5)
             .join('\n');
 
-          const reply = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
+          // Check for soft rejection: lead has shown disinterest multiple times across the conversation
+          if (isSoftRejection(conversationHistory)) {
+            console.log(`[ai-replies] Soft rejection detected (2+ signals) from contact ${cr.contact_id}`);
+            await supabase.from('campaign_connection_requests')
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
+              .eq('id', cr.id);
+            await supabase.from('contacts')
+              .update({ lead_status: 'not_interested' })
+              .eq('id', cr.contact_id);
+            stopped++;
+            continue;
+          }
+
             conversationHistory, leadMessage,
             companyName: campaign.company_name, valueProposition: campaign.value_proposition,
             painPoints: campaign.pain_points || [], campaignGoal: campaign.campaign_goal,
