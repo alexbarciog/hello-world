@@ -151,9 +151,16 @@ export default function CampaignDetail() {
     stepIndex: number;
     status: string;
     sentAt: string | null;
+    message: string | null;
+    scheduledMsgId: string | null;
+    connectionRequestId: string | null;
   };
   const [dailyQueue, setDailyQueue] = useState<DailyScheduledLead[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(false);
+  const [expandedQueueIdx, setExpandedQueueIdx] = useState<number | null>(null);
+  const [editingQueueIdx, setEditingQueueIdx] = useState<number | null>(null);
+  const [editingQueueMsg, setEditingQueueMsg] = useState("");
+  const [regeneratingQueueIdx, setRegeneratingQueueIdx] = useState<number | null>(null);
 
   // Scheduled messages state
   type ScheduledMessage = {
@@ -456,8 +463,34 @@ export default function CampaignDetail() {
       const contactMap: Record<string, any> = {};
       (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
 
+      // Fetch connection requests to map contact_id -> connection_request_id
+      const { data: connReqs } = await supabase
+        .from("campaign_connection_requests" as any)
+        .select("id, contact_id")
+        .eq("campaign_id", campaignId)
+        .in("contact_id", contactIds);
+      const connReqMap: Record<string, string> = {};
+      (connReqs || []).forEach((cr: any) => { connReqMap[cr.contact_id] = cr.id; });
+
+      // Fetch scheduled messages for these connection requests
+      const connReqIds = Object.values(connReqMap);
+      let scheduledMsgMap: Record<string, any> = {};
+      if (connReqIds.length > 0) {
+        const { data: msgs } = await supabase
+          .from("scheduled_messages" as any)
+          .select("id, connection_request_id, step_index, message, status, edited_by_user")
+          .in("connection_request_id", connReqIds)
+          .in("status", ["generated", "edited"]);
+        (msgs || []).forEach((m: any) => {
+          scheduledMsgMap[`${m.connection_request_id}_${m.step_index}`] = m;
+        });
+      }
+
       const queue: DailyScheduledLead[] = (queueData as any[]).map((q: any) => {
         const contact = contactMap[q.contact_id];
+        const crId = connReqMap[q.contact_id] || null;
+        const msgKey = crId ? `${crId}_${q.step_index}` : null;
+        const scheduledMsg = msgKey ? scheduledMsgMap[msgKey] : null;
         return {
           id: q.id,
           contactId: q.contact_id,
@@ -475,6 +508,9 @@ export default function CampaignDetail() {
           stepIndex: q.step_index,
           status: q.status,
           sentAt: q.sent_at,
+          message: scheduledMsg?.message || null,
+          scheduledMsgId: scheduledMsg?.id || null,
+          connectionRequestId: crId,
         };
       });
 
@@ -483,6 +519,71 @@ export default function CampaignDetail() {
       console.error("Failed to load daily queue:", err);
     }
     setLoadingQueue(false);
+  }
+
+  async function handleRegenerateQueueMessage(idx: number) {
+    const item = dailyQueue[idx];
+    if (!item || !campaign) return;
+    setRegeneratingQueueIdx(idx);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-step-message', {
+        body: {
+          stepNumber: item.stepIndex,
+          previousStepMessage: "",
+          previousMessages: [],
+          companyName: campaign.company_name || "",
+          valueProposition: campaign.value_proposition || "",
+          painPoints: campaign.pain_points || [],
+          campaignGoal: campaign.campaign_goal || "",
+          messageTone: campaign.message_tone || "conversational",
+          industry: "",
+          language: campaign.language || "English",
+          customTraining: campaign.custom_training || "",
+          firstName: item.contactFirstName || "",
+          lastName: item.contactLastName || "",
+          leadCompany: item.contactCompany || "",
+          leadTitle: item.contactTitle || "",
+          buyingSignal: item.contactSignal || "",
+        },
+      });
+      if (error) throw error;
+      const newMessage = data?.message || "";
+      if (!newMessage) { toast.error("AI returned an empty message"); return; }
+
+      const updated = [...dailyQueue];
+      updated[idx] = { ...updated[idx], message: newMessage };
+      setDailyQueue(updated);
+
+      if (item.scheduledMsgId) {
+        await supabase
+          .from("scheduled_messages" as any)
+          .update({ message: newMessage, edited_by_user: false, generated_at: new Date().toISOString(), status: "generated" } as any)
+          .eq("id", item.scheduledMsgId);
+      }
+      toast.success("Message regenerated!");
+    } catch (e: any) {
+      console.error("Regenerate error:", e);
+      toast.error(e?.message || "Failed to regenerate message");
+    } finally {
+      setRegeneratingQueueIdx(null);
+    }
+  }
+
+  async function handleSaveQueueMessage(idx: number) {
+    const item = dailyQueue[idx];
+    if (!item || !editingQueueMsg.trim()) return;
+    const updated = [...dailyQueue];
+    updated[idx] = { ...updated[idx], message: editingQueueMsg.trim() };
+    setDailyQueue(updated);
+    setEditingQueueIdx(null);
+
+    if (item.scheduledMsgId) {
+      await supabase
+        .from("scheduled_messages" as any)
+        .update({ message: editingQueueMsg.trim(), edited_by_user: true, status: "edited" } as any)
+        .eq("id", item.scheduledMsgId);
+    }
+    toast.success("Message saved!");
   }
 
   async function loadScheduledMessages(campaignId: string, steps: any[]) {
@@ -2239,7 +2340,13 @@ export default function CampaignDetail() {
                           );
                         })()}
                       </div>
-                      {dailyQueue.map((item, idx) => (
+                      {dailyQueue.map((item, idx) => {
+                        const isMessage = item.actionType.startsWith("message_");
+                        const isExpanded = expandedQueueIdx === idx;
+                        const isEditingThis = editingQueueIdx === idx;
+                        const isRegenerating = regeneratingQueueIdx === idx;
+
+                        return (
                         <motion.div
                           key={item.id}
                           initial={{ opacity: 0, y: 12 }}
@@ -2312,6 +2419,15 @@ export default function CampaignDetail() {
                               }`}>
                                 {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
                               </span>
+                              {isMessage && item.message && (
+                                <button
+                                  onClick={() => setExpandedQueueIdx(isExpanded ? null : idx)}
+                                  className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  {isExpanded ? "Hide" : "Preview"}
+                                </button>
+                              )}
                               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
                                 item.status === "sent"
                                   ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
@@ -2325,8 +2441,67 @@ export default function CampaignDetail() {
                               </span>
                             </div>
                           </div>
+
+                          {/* Message preview / edit section */}
+                          <AnimatePresence>
+                            {isMessage && isExpanded && item.message && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="relative overflow-hidden"
+                              >
+                                <div className="mt-3 pt-3 border-t border-border/40">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                      <MessageSquare className="w-3 h-3" /> AI Message
+                                    </span>
+                                    {item.status === "pending" && (
+                                      <div className="flex items-center gap-1.5">
+                                        <button
+                                          onClick={() => {
+                                            if (isEditingThis) {
+                                              handleSaveQueueMessage(idx);
+                                            } else {
+                                              setEditingQueueIdx(idx);
+                                              setEditingQueueMsg(item.message || "");
+                                            }
+                                          }}
+                                          className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60"
+                                        >
+                                          {isEditingThis ? <><Check className="w-3 h-3" /> Save</> : <><Pencil className="w-3 h-3" /> Edit</>}
+                                        </button>
+                                        <button
+                                          onClick={() => handleRegenerateQueueMessage(idx)}
+                                          disabled={isRegenerating}
+                                          className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60 disabled:opacity-50"
+                                        >
+                                          {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                          {isRegenerating ? "Regenerating..." : "Regenerate"}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {isEditingThis ? (
+                                    <textarea
+                                      value={editingQueueMsg}
+                                      onChange={(e) => setEditingQueueMsg(e.target.value)}
+                                      className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
+                                      rows={4}
+                                    />
+                                  ) : (
+                                    <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap bg-muted/20 rounded-lg p-3">
+                                      {item.message}
+                                    </p>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </>
                   )}
                 </div>
