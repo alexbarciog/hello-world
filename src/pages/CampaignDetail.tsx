@@ -131,6 +131,7 @@ export default function CampaignDetail() {
   const [remainingContacts, setRemainingContacts] = useState(0);
   const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number; updatedAt?: string }>>({});
   const [stepMetrics, setStepMetrics] = useState<Record<number, { contacted: number; answered: number }>>({});
+  const [profileLimits, setProfileLimits] = useState<{ daily_connections_limit: number; daily_messages_limit: number }>({ daily_connections_limit: 25, daily_messages_limit: 25 });
 
   // Scheduled messages state
   type ScheduledMessage = {
