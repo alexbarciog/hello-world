@@ -133,6 +133,21 @@ export default function CampaignDetail() {
   const [stepMetrics, setStepMetrics] = useState<Record<number, { contacted: number; answered: number }>>({});
   const [profileLimits, setProfileLimits] = useState<{ daily_connections_limit: number; daily_messages_limit: number }>({ daily_connections_limit: 25, daily_messages_limit: 25 });
 
+  // Today's queue state
+  type DailyScheduledLead = {
+    id: string;
+    contactId: string;
+    contactName: string;
+    contactCompany: string;
+    contactTitle: string;
+    actionType: string;
+    stepIndex: number;
+    status: string;
+    sentAt: string | null;
+  };
+  const [dailyQueue, setDailyQueue] = useState<DailyScheduledLead[]>([]);
+  const [loadingQueue, setLoadingQueue] = useState(false);
+
   // Scheduled messages state
   type ScheduledMessage = {
     contactId: string;
