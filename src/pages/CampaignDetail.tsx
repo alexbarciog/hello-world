@@ -465,6 +465,8 @@ export default function CampaignDetail() {
           contactLinkedinUrl: contact?.linkedin_url || null,
           contactRelevanceTier: contact?.relevance_tier || "warm",
           contactCompanyIconColor: contact?.company_icon_color || null,
+          contactSignal: contact?.signal || null,
+          contactSignalPostUrl: contact?.signal_post_url || null,
           actionType: q.action_type,
           stepIndex: q.step_index,
           status: q.status,
