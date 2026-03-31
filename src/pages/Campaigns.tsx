@@ -223,7 +223,7 @@ export default function CampaignsPage() {
               .select("id", { count: "exact", head: true })
               .eq("campaign_id", c.id)
               .in("contact_id", contactIds)
-              .eq("status", "accepted");
+              .in("status", ["accepted", "completed"]);
 
             sentCount = sentForList ?? 0;
             acceptedCount = acceptedForList ?? 0;
@@ -253,7 +253,7 @@ export default function CampaignsPage() {
             .from("campaign_connection_requests" as any)
             .select("id", { count: "exact", head: true })
             .eq("campaign_id", c.id)
-            .eq("status", "accepted");
+            .in("status", ["accepted", "completed"]);
 
           sentCount = sentForCampaign ?? 0;
           acceptedCount = acceptedForCampaign ?? 0;
