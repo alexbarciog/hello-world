@@ -349,16 +349,16 @@ export default function CampaignDetail() {
       .in("status", ["accepted", "completed"]);
     setStep1Accepted(acceptedCount || 0);
 
-    // Load today's sent count and per-run breakdown
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const { data: todayRequests } = await supabase
-      .from("campaign_connection_requests" as any)
-      .select("id, sent_at")
+    // Load today's sent count from daily_scheduled_leads (source of truth for daily queue)
+    const todayDate = new Date().toISOString().split('T')[0];
+    const { data: todayScheduled } = await supabase
+      .from("daily_scheduled_leads")
+      .select("id, status, sent_at")
       .eq("campaign_id", campaignId)
-      .gte("sent_at", todayStart.toISOString());
+      .eq("scheduled_date", todayDate)
+      .eq("action_type", "connection");
     
-    const todayReqs = (todayRequests || []) as unknown as { id: string; sent_at: string }[];
+    const todayReqs = (todayScheduled || []).filter((r: any) => r.status === 'sent');
     setTodaySentCount(todayReqs.length);
 
     // Group by run time slots (UTC hours: 8,10,12,14,16)
