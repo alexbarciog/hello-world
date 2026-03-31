@@ -842,8 +842,9 @@ export default function CampaignDetail() {
 
   if (!campaign) return null;
 
-  const acceptanceRate = campaign.invitations_sent > 0 ? Math.round((campaign.invitations_accepted / campaign.invitations_sent) * 100) : 0;
-  const replyRate = campaign.messages_sent > 0 ? Math.round((campaign.messages_replied / campaign.messages_sent) * 100) : 0;
+  const acceptanceRate = step1Sent > 0 ? Math.round((step1Accepted / step1Sent) * 100) : 0;
+  const totalReplied = Object.values(stepMetrics).reduce((sum, m) => sum + m.answered, 0);
+  const replyRate = step1Sent > 0 ? Math.round((totalReplied / step1Sent) * 100) : 0;
 
   const tierCounts = {
     all: contacts.length,
@@ -888,7 +889,7 @@ export default function CampaignDetail() {
             {/* Inline metrics */}
             <div className="hidden md:flex items-center gap-2">
               <MetricChip label="Leads" value={contactsCount} icon={Users} color="hsl(var(--foreground))" />
-              <MetricChip label="Sent" value={campaign.invitations_sent} icon={Send} color="hsl(217 91% 60%)" />
+              <MetricChip label="Sent" value={step1Sent} icon={Send} color="hsl(217 91% 60%)" />
               <MetricChip label="Reply" value={`${replyRate}%`} icon={MessageSquare} color="hsl(142 70% 45%)" />
             </div>
             <button
@@ -1858,12 +1859,12 @@ export default function CampaignDetail() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-3xl font-black text-foreground">{campaign.invitations_sent}</p>
+                      <p className="text-3xl font-black text-foreground">{step1Sent}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Total sent</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="text-xl font-bold text-green-600">{campaign.invitations_accepted}</p>
+                        <p className="text-xl font-bold text-green-600">{step1Accepted}</p>
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase">Accepted</p>
                       </div>
                       <div className="h-8 w-px bg-border" />
@@ -1888,12 +1889,12 @@ export default function CampaignDetail() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-3xl font-black text-foreground">{campaign.messages_sent}</p>
+                      <p className="text-3xl font-black text-foreground">{Object.values(stepMetrics).reduce((s, m) => s + m.contacted, 0)}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Leads contacted</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="text-xl font-bold text-green-600">{campaign.messages_replied}</p>
+                        <p className="text-xl font-bold text-green-600">{totalReplied}</p>
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase">Replied</p>
                       </div>
                       <div className="h-8 w-px bg-border" />
