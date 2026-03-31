@@ -23,6 +23,21 @@ Deno.serve(async (req) => {
       competitor_engagers: 'LinkedIn company page URLs of competitors whose post engagers would be ideal prospects.',
     };
 
+    const extraInstructions: Record<string, string> = {
+      keyword_posts: `Generate exactly 5 keyword phrases that demonstrate BUYING INTENT. Each phrase should sound like something a real person would type in a LinkedIn post when they are actively looking for a solution, asking for recommendations, or expressing a pain point.
+
+Good examples: "looking for a tool to", "need help with", "any recommendations for", "struggling with", "searching for a solution"
+Bad examples: "sales automation", "B2B marketing", "lead generation" (these are too broad/generic)
+
+Make them specific to the ICP above. Each phrase should be 3-6 words.`,
+      hashtag_engagement: `Generate exactly 5 LinkedIn hashtags (WITHOUT the # symbol) that are directly related to the services and industry described above. These should be hashtags that professionals in this space actively use and follow.
+
+Good examples: "SalesAutomation", "LeadGeneration", "B2BSales", "OutboundSales", "RevOps"
+Bad examples: "looking for tools", "need help with sales" (these are phrases, not hashtags)
+
+Return single-word or CamelCase compound hashtags only. No spaces, no # symbol.`,
+    };
+
     const prompt = `Target Job Titles: ${(jobTitles || []).join(', ') || 'Unknown'}
 Target Industries: ${(industries || []).join(', ') || 'Unknown'}
 Target Company Types: ${(companyTypes || []).join(', ') || 'Unknown'}
@@ -31,12 +46,7 @@ Target Locations: ${(locations || []).join(', ') || 'Unknown'}
 Signal type: ${signalType}
 Goal: ${signalDescriptions[signalType] || 'Generate relevant keywords for this signal type.'}
 
-Generate exactly 5 keyword phrases that demonstrate BUYING INTENT. Each phrase should sound like something a real person would type in a LinkedIn post when they are actively looking for a solution, asking for recommendations, or expressing a pain point.
-
-Good examples: "looking for a tool to", "need help with", "any recommendations for", "struggling with", "searching for a solution"
-Bad examples: "sales automation", "B2B marketing", "lead generation" (these are too broad/generic)
-
-Make them specific to the ICP above. Each phrase should be 3-6 words.`;
+${extraInstructions[signalType] || 'Generate exactly 5 short, specific keyword phrases (3-6 words each) relevant to this signal type and ICP.'}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
