@@ -320,7 +320,7 @@ export default function Signals() {
             </span>
             <span className="text-gray-400">|</span>
             <span>{maxAgents} max</span>
-            <Settings className="w-4 h-4 text-gray-400" />
+            
           </div>
         </div>
         <button
