@@ -189,6 +189,7 @@ Deno.serve(async (req) => {
             });
 
             totalSent++;
+            sentThisBatch++;
 
             // Small delay between requests
             await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
