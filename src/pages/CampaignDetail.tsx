@@ -1889,7 +1889,7 @@ export default function CampaignDetail() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-3xl font-black text-foreground">{campaign.messages_sent}</p>
+                      <p className="text-3xl font-black text-foreground">{Object.values(stepMetrics).reduce((s, m) => s + m.contacted, 0)}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Leads contacted</p>
                     </div>
                     <div className="flex items-center gap-4">
