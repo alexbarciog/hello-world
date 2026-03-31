@@ -5,7 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SEQUENCES_PER_DAY = 20;
+const SEQUENCES_PER_DAY = 20; // 20 x 30-min slots between 08:00-18:00
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -74,8 +74,8 @@ Deno.serve(async (req) => {
           .eq('user_id', campaign.user_id)
           .single();
 
-        const dailyLimit = userProfile?.daily_connections_limit || campaign.daily_connect_limit || 25;
-        const batchSize = Math.max(1, Math.floor(dailyLimit / SEQUENCES_PER_DAY));
+        const dailyLimit = userProfile?.daily_connections_limit || 25;
+        const batchSize = Math.max(1, Math.ceil(dailyLimit / SEQUENCES_PER_DAY));
 
         // Count how many were already sent today
         const { count: sentToday } = await serviceClient

@@ -118,6 +118,7 @@ async function processCampaign(
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
+  const today = new Date().toISOString().split('T')[0];
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
   console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${workflowSteps[0]?.type === 'invitation'}`);
@@ -225,6 +226,52 @@ async function processCampaign(
             supabaseServiceRoleKey,
           );
           if (gen) generatedCount++;
+
+          // Add to daily_scheduled_leads if delay allows same-day execution
+          const nextStep = workflowSteps[wfIdx];
+          if (nextStep && nextStep.type === 'message') {
+            const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
+            const readyAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+            const endOfToday = new Date(today + 'T23:59:59.999Z');
+
+            if (readyAt <= endOfToday) {
+              // Check user's daily message limit
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('daily_messages_limit')
+                .eq('user_id', req.user_id)
+                .single();
+
+              const messagesLimit = userProfile?.daily_messages_limit || 15;
+
+              const { count: msgScheduledToday } = await supabase
+                .from('daily_scheduled_leads')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', req.user_id)
+                .eq('scheduled_date', today)
+                .like('action_type', 'message_step_%');
+
+              if ((msgScheduledToday || 0) < messagesLimit) {
+                const actionType = `message_step_2`;
+                await supabase
+                  .from('daily_scheduled_leads')
+                  .upsert({
+                    campaign_id: campaign.id,
+                    contact_id: req.contact_id,
+                    user_id: req.user_id,
+                    scheduled_date: today,
+                    action_type: actionType,
+                    step_index: wfIdx,
+                    status: 'pending',
+                  }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
+                console.log(`[followup] Added ${actionType} to daily queue for contact ${req.contact_id}`);
+              } else {
+                console.log(`[followup] Daily message limit reached for user ${req.user_id}, will schedule tomorrow`);
+              }
+            } else {
+              console.log(`[followup] Next step for ${req.contact_id} not ready until ${readyAt.toISOString()}, will be scheduled tomorrow`);
+            }
+          }
         }
 
         await delay(500);
@@ -452,7 +499,6 @@ async function processCampaign(
         messagesSent++;
 
         // Mark daily_scheduled_leads entry as sent (if exists)
-        const today = new Date().toISOString().split('T')[0];
         const actionType = `message_step_${newStep}`;
         await supabase
           .from('daily_scheduled_leads')
@@ -475,6 +521,41 @@ async function processCampaign(
             supabaseServiceRoleKey,
           );
           if (gen) generatedCount++;
+
+          // Add next step to daily queue if delay allows same-day
+          const futureStep = workflowSteps[newWfIdx];
+          if (futureStep && futureStep.type === 'message') {
+            const delayHours = futureStep.delay_hours || (futureStep.delay_days ? futureStep.delay_days * 24 : 24);
+            const readyAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
+            const endOfToday = new Date(today + 'T23:59:59.999Z');
+            if (readyAt <= endOfToday) {
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('daily_messages_limit')
+                .eq('user_id', req.user_id)
+                .single();
+              const msgLimit = userProfile?.daily_messages_limit || 15;
+              const { count: msgToday } = await supabase
+                .from('daily_scheduled_leads')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', req.user_id)
+                .eq('scheduled_date', today)
+                .like('action_type', 'message_step_%');
+              if ((msgToday || 0) < msgLimit) {
+                const nextActionType = `message_step_${newStep + 1}`;
+                await supabase.from('daily_scheduled_leads').upsert({
+                  campaign_id: campaign.id,
+                  contact_id: req.contact_id,
+                  user_id: req.user_id,
+                  scheduled_date: today,
+                  action_type: nextActionType,
+                  step_index: newWfIdx,
+                  status: 'pending',
+                }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
+                console.log(`[followup] Queued ${nextActionType} for contact ${req.contact_id}`);
+              }
+            }
+          }
         }
 
         await delay(3000 + Math.random() * 2000);
