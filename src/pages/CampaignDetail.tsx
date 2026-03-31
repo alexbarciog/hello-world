@@ -2283,7 +2283,7 @@ export default function CampaignDetail() {
                               <div className="min-w-0 flex-1">
                                 {item.contactSignal ? (
                                   item.contactSignalPostUrl ? (
-                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[280px]">
+                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
                                       {item.contactSignal}
                                     </a>
                                   ) : (
