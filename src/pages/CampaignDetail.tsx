@@ -1859,7 +1859,7 @@ export default function CampaignDetail() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-3xl font-black text-foreground">{campaign.invitations_sent}</p>
+                      <p className="text-3xl font-black text-foreground">{step1Sent}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Total sent</p>
                     </div>
                     <div className="flex items-center gap-4">
