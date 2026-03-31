@@ -587,32 +587,36 @@ export default function RedditSignals() {
             </div>
 
             {/* Sort + Keyword filter chips */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={() => setSortOrder(sortOrder === "newest" ? "oldest" : "newest")}
-                className="px-3 py-1 rounded-full text-xs font-medium border border-border bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                className="px-3 py-1 rounded-full text-xs font-medium border border-border bg-muted text-muted-foreground hover:bg-muted/80 transition-colors shrink-0"
               >
                 {sortOrder === "newest" ? "↓ Newest" : "↑ Oldest"}
               </button>
-              <button
-                onClick={() => setFilterKeyword(null)}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  !filterKeyword ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-                }`}
-              >
-                All keywords
-              </button>
-              {[...new Set(mentions.map(m => m.keyword_matched))].map(kw => (
-                <button
-                  key={kw}
-                  onClick={() => setFilterKeyword(filterKeyword === kw ? null : kw)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    filterKeyword === kw ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
-                  }`}
-                >
-                  {kw}
-                </button>
-              ))}
+              <div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden scrollbar-none">
+                <div className="flex w-max items-center gap-1 pr-2">
+                  <button
+                    onClick={() => setFilterKeyword(null)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                      !filterKeyword ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                    }`}
+                  >
+                    All keywords
+                  </button>
+                  {keywords.map(kw => (
+                    <button
+                      key={kw.id}
+                      onClick={() => setFilterKeyword(filterKeyword === kw.keyword ? null : kw.keyword)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
+                        filterKeyword === kw.keyword ? "bg-orange-100 text-orange-700 border-orange-300" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                      }`}
+                    >
+                      {kw.keyword}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
