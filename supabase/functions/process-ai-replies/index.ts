@@ -105,14 +105,17 @@ async function processCampaignReplies(
   if (!profile?.unipile_account_id) return { replied: 0, stopped: 0 };
   const accountId = profile.unipile_account_id;
 
-  // Get accepted/completed connection requests with chat_id that haven't been stopped
-  const { data: connReqs } = await supabase
-    .from('campaign_connection_requests')
-    .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id')
-    .eq('campaign_id', campaign.id)
-    .in('status', ['accepted', 'completed'])
-    .eq('conversation_stopped', false)
-    .not('chat_id', 'is', null);
+   // Get accepted/completed connection requests with chat_id that haven't been stopped
+    // IMPORTANT: Only engage contacts where current_step >= 2 (at least one outreach message has been sent)
+    // This prevents the conversational AI from replying before the scheduled workflow messages
+    const { data: connReqs } = await supabase
+      .from('campaign_connection_requests')
+      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step')
+      .eq('campaign_id', campaign.id)
+      .in('status', ['accepted', 'completed'])
+      .eq('conversation_stopped', false)
+      .gte('current_step', 2)
+      .not('chat_id', 'is', null);
 
   if (!connReqs || connReqs.length === 0) return { replied: 0, stopped: 0 };
 
