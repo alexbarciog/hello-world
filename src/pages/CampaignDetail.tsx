@@ -54,13 +54,13 @@ type CampaignFull = {
   max_ai_replies: number;
 };
 
-type Tab = "workflow" | "scheduled" | "contacts" | "launches" | "insights" | "settings";
+type Tab = "workflow" | "scheduled" | "contacts" | "todays_queue" | "insights" | "settings";
 
 const TABS: { key: Tab; label: string; icon: any }[] = [
   { key: "workflow", label: "Workflow", icon: GitBranch },
   { key: "scheduled", label: "Scheduled", icon: Clock },
   { key: "contacts", label: "Contacts", icon: Users },
-  { key: "launches", label: "Last Launches", icon: Clock },
+  { key: "todays_queue", label: "Today's Queue", icon: Clock },
   { key: "insights", label: "Insights", icon: BarChart3 },
   { key: "settings", label: "Settings", icon: SettingsIcon },
 ];
