@@ -243,11 +243,11 @@ async function resolveConnectedAccount({
   return remote;
 }
 
-async function getStoredAccountId(userId: string, supabaseUrl: string, serviceRoleKey: string) {
+async function getStoredAccountInfo(userId: string, supabaseUrl: string, serviceRoleKey: string): Promise<{ accountId: string; displayName: string | null } | null> {
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
   const { data: profile, error } = await serviceClient
     .from('profiles')
-    .select('unipile_account_id')
+    .select('unipile_account_id, linkedin_display_name')
     .eq('user_id', userId)
     .single();
 
@@ -256,7 +256,8 @@ async function getStoredAccountId(userId: string, supabaseUrl: string, serviceRo
     return null;
   }
 
-  return profile?.unipile_account_id || null;
+  if (!profile?.unipile_account_id) return null;
+  return { accountId: profile.unipile_account_id, displayName: profile.linkedin_display_name || null };
 }
 
 async function findRemoteLinkedinAccountId(userId: string, unipileApiKey: string, unipileDsn: string) {
