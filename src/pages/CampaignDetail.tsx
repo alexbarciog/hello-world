@@ -2305,7 +2305,7 @@ export default function CampaignDetail() {
                                   ? "text-destructive bg-destructive/10 ring-destructive/20"
                                   : item.status === "skipped"
                                   ? "text-muted-foreground bg-muted/60 ring-border/30"
-                                  : "text-amber-600 bg-amber-500/10 ring-amber-500/20"
+                                  : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
                               }`}>
                                 {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
                               </span>
