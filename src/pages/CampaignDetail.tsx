@@ -2311,7 +2311,6 @@ export default function CampaignDetail() {
                               </span>
                             </div>
                           </div>
-                          </div>
                         </motion.div>
                       ))}
                     </>
