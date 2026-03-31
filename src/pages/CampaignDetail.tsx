@@ -1117,8 +1117,8 @@ export default function CampaignDetail() {
                                   )}
 
                                   <div className="flex items-center gap-3 mt-3 text-xs">
-                                    <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">0 contact(s)</span>
-                                    <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">0 answer(s)</span>
+                                    <span className="font-medium text-muted-foreground border border-border rounded-full px-2 py-0.5">{stepMetrics[stepNum]?.contacted || 0} contact(s)</span>
+                                    <span className="font-medium text-green-600 border border-green-200 rounded-full px-2 py-0.5">{stepMetrics[stepNum]?.answered || 0} answer(s)</span>
                                   </div>
 
                                   <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
