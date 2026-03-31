@@ -2,44 +2,48 @@
 
 ## Problem
 
-The workflow step delays (e.g., "+1 hr", "+2 hrs") are configured per-step, but `process-campaign-followups` only runs 5 times/day (every ~2 hours). This means a 1-hour delay could actually take up to 3 hours because the function must wait for the next cron slot.
+Currently `send-connection-requests` runs 5 times/day at fixed 2-hour slots (08, 10, 12, 14, 16 UTC), sending `dailyLimit / 5` connections per batch. With a limit of 30, that's 6 connections fired in bursts — not very human-like and leaves big gaps between batches.
 
 ## Solution
 
-Increase the `process-campaign-followups` cron frequency to **every 30 minutes** so follow-ups fire close to their configured delay time. The function already has the delay check built in (line 291-293), so no logic changes are needed — just more frequent polling.
+Align `send-connection-requests` with the same 30-minute cadence we just set for follow-ups, but **restrict it to business hours** (08:00–18:00 UTC) so connections aren't sent at odd hours. This gives **20 slots/day**, meaning a daily limit of 30 sends ~1-2 connections per slot — much more natural-looking to LinkedIn.
 
 ### Changes
 
-**1. Database migration — update cron schedule**
+**1. Update `send-connection-requests/index.ts`**
 
-Replace the current 5x/day cron for `process-campaign-followups` with a single entry running every 30 minutes:
+- Change `SEQUENCES_PER_DAY` from `5` to `20` (20 half-hour slots across 10 business hours)
+- Add a business-hours guard at the top: if the current UTC hour is outside 08–18, return early with no work done
+- This ensures batch sizes are small and spread evenly (e.g., 30 limit ÷ 20 slots = 1-2 per run)
+
+**2. Database migration — update cron schedule**
+
+Replace the current 5 fixed cron entries for `send-connection-requests` with a single entry running every 30 minutes:
 
 ```sql
--- Remove existing 5 separate cron entries
-SELECT cron.unschedule('invoke-process-campaign-followups-1');
-SELECT cron.unschedule('invoke-process-campaign-followups-2');
-SELECT cron.unschedule('invoke-process-campaign-followups-3');
-SELECT cron.unschedule('invoke-process-campaign-followups-4');
-SELECT cron.unschedule('invoke-process-campaign-followups-5');
+-- Remove existing 5 entries
+SELECT cron.unschedule('send-connection-requests-run-1');
+-- ... through run-5
 
--- Schedule every 30 minutes
+-- New: every 30 minutes
 SELECT cron.schedule(
-  'invoke-process-campaign-followups',
+  'send-connection-requests',
   '*/30 * * * *',
   ...
 );
 ```
 
-**2. No edge function changes needed**
+The business-hours check in the edge function itself will skip execution outside 08–18 UTC, so the cron can safely fire 24/7.
 
-The existing `process-campaign-followups` already:
-- Checks `delay_hours` against `step_completed_at` (line 291-293)
-- Only sends when the delay has elapsed
-- Is idempotent (safe to run frequently)
+**3. No other changes needed**
 
-Running every 30 minutes means a configured 1-hour delay will fire within 1h–1h30m instead of potentially 3+ hours.
+The daily limit guard (line 128) already prevents over-sending regardless of how often the function runs. The batch size calculation automatically adjusts based on `SEQUENCES_PER_DAY`.
 
-### Technical note
+### How it works in practice
 
-The function is lightweight when there's nothing to do (just queries + skips), so running every 30 minutes won't cause issues.
+With a daily limit of 30 and 20 business-hour slots:
+- Each slot sends ~1-2 connection requests
+- Connections are spread across 08:00–18:00 UTC every 30 minutes
+- Looks much more natural to LinkedIn than 6-connection bursts
+- Daily limit is still strictly enforced
 
