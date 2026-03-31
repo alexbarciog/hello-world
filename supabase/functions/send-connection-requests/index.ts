@@ -154,7 +154,7 @@ async function processCampaign(
   // Only skip contacts that were successfully sent or accepted — retry skipped/failed ones
   const successSet = new Set(
     (alreadySent || [])
-      .filter((r: any) => r.status === 'sent' || r.status === 'accepted' || r.status === 'pending')
+      .filter((r: any) => r.status === 'sent' || r.status === 'accepted' || r.status === 'pending' || r.status === 'completed')
       .map((r: any) => r.contact_id)
   );
   const retryContactIds = (alreadySent || [])
