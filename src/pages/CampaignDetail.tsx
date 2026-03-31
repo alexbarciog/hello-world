@@ -60,7 +60,6 @@ const TABS: { key: Tab; label: string; icon: any }[] = [
   { key: "workflow", label: "Workflow", icon: GitBranch },
   { key: "scheduled", label: "Scheduled", icon: Clock },
   { key: "contacts", label: "Contacts", icon: Users },
-  { key: "todays_queue", label: "Today's Queue", icon: Clock },
   { key: "insights", label: "Insights", icon: BarChart3 },
   { key: "settings", label: "Settings", icon: SettingsIcon },
 ];
