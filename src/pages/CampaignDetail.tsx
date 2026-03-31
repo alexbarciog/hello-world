@@ -2681,7 +2681,6 @@ export default function CampaignDetail() {
                     </div>
                   );
                 })()}
-              </div>
 
               {/* Upcoming Messages Preview */}
               {scheduledMessages.length > 0 && (
