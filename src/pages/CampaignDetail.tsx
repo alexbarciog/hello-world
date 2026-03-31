@@ -889,7 +889,7 @@ export default function CampaignDetail() {
             {/* Inline metrics */}
             <div className="hidden md:flex items-center gap-2">
               <MetricChip label="Leads" value={contactsCount} icon={Users} color="hsl(var(--foreground))" />
-              <MetricChip label="Sent" value={campaign.invitations_sent} icon={Send} color="hsl(217 91% 60%)" />
+              <MetricChip label="Sent" value={step1Sent} icon={Send} color="hsl(217 91% 60%)" />
               <MetricChip label="Reply" value={`${replyRate}%`} icon={MessageSquare} color="hsl(142 70% 45%)" />
             </div>
             <button
