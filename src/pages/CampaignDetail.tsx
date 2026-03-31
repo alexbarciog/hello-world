@@ -349,16 +349,16 @@ export default function CampaignDetail() {
       .in("status", ["accepted", "completed"]);
     setStep1Accepted(acceptedCount || 0);
 
-    // Load today's sent count and per-run breakdown
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const { data: todayRequests } = await supabase
-      .from("campaign_connection_requests" as any)
-      .select("id, sent_at")
+    // Load today's sent count from daily_scheduled_leads (source of truth for daily queue)
+    const todayDate = new Date().toISOString().split('T')[0];
+    const { data: todayScheduled } = await supabase
+      .from("daily_scheduled_leads")
+      .select("id, status, sent_at")
       .eq("campaign_id", campaignId)
-      .gte("sent_at", todayStart.toISOString());
+      .eq("scheduled_date", todayDate)
+      .eq("action_type", "connection");
     
-    const todayReqs = (todayRequests || []) as unknown as { id: string; sent_at: string }[];
+    const todayReqs = (todayScheduled || []).filter((r: any) => r.status === 'sent');
     setTodaySentCount(todayReqs.length);
 
     // Group by run time slots (UTC hours: 8,10,12,14,16)
@@ -2284,13 +2284,13 @@ export default function CampaignDetail() {
                 <div className="mb-6 rounded-xl bg-muted/40 p-3.5">
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-medium text-muted-foreground flex items-center gap-1.5">⚡ Daily progress</span>
-                    <span className="font-extrabold text-foreground">{todaySentCount} / {campaign.daily_connect_limit || 25}</span>
+                    <span className="font-extrabold text-foreground">{todaySentCount} / {profileLimits.daily_connections_limit}</span>
                   </div>
                   <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
                     <motion.div
                       className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
                       initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (todaySentCount / (campaign.daily_connect_limit || 25)) * 100)}%` }}
+                      animate={{ width: `${Math.min(100, (todaySentCount / profileLimits.daily_connections_limit) * 100)}%` }}
                       transition={{ duration: 0.8, ease: "easeOut" }}
                     />
                   </div>
