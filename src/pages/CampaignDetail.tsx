@@ -985,7 +985,14 @@ export default function CampaignDetail() {
                               const initialUnit = currentHours >= 24 && currentHours % 24 === 0 ? "days" : "hours";
                               const initialValue = initialUnit === "days" ? currentHours / 24 : currentHours;
                               return (
-                                <div className="flex items-center gap-1 mb-2">
+                                <div className="flex items-center gap-1 mb-2" onBlur={(e) => {
+                                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                                    const valEl = document.getElementById(`delay-value-${i}`) as HTMLInputElement;
+                                    const unitEl = document.getElementById(`delay-unit-${i}`) as HTMLSelectElement;
+                                    const val = parseInt(valEl?.value) || 1;
+                                    saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
+                                  }
+                                }}>
                                   <input
                                     type="number"
                                     min={1}
@@ -1001,11 +1008,6 @@ export default function CampaignDetail() {
                                         saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
                                       }
                                       if (e.key === "Escape") setEditingDelayStep(null);
-                                    }}
-                                    onBlur={(e) => {
-                                      const val = parseInt(e.target.value) || 1;
-                                      const unitEl = document.getElementById(`delay-unit-${i}`) as HTMLSelectElement;
-                                      saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
                                     }}
                                   />
                                   <select
