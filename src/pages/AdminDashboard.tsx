@@ -294,12 +294,7 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
   return <td className={`px-4 py-3 text-sm text-md-on-surface ${className}`}>{children}</td>;
 }
 
-function UsersTable({ data, expandedRow, setExpandedRow, campaigns }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void; campaigns: any[] }) {
-  const getUserWebsite = (userId: string) => {
-    const campaign = campaigns.find((c: any) => c.user_id === userId && c.website);
-    return campaign?.website || null;
-  };
-
+function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
   return (
     <table className="w-full">
       <thead>
@@ -310,7 +305,7 @@ function UsersTable({ data, expandedRow, setExpandedRow, campaigns }: { data: an
           const id = u.id || u.user_id;
           const name = [u.raw_user_meta_data?.first_name, u.raw_user_meta_data?.last_name].filter(Boolean).join(" ") || "—";
           const isExpanded = expandedRow === id;
-          const website = getUserWebsite(id);
+          const website = u.website || null;
           const isPaid = (u.credits ?? 0) >= 100;
           return (
             <>
