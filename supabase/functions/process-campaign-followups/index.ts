@@ -710,20 +710,84 @@ async function fetchUserProfile(
     const res = await fetch(url, {
       headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
     });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[fetchUserProfile] FAILED for ${publicId}: HTTP ${res.status}, body: ${errBody.substring(0, 300)}`);
+      return null;
+    }
+    const data = await res.json();
+    // Diagnostic: log ALL connection-related fields
+    console.log(`[fetchUserProfile] ${publicId} => ${JSON.stringify({
+      provider_id: data.provider_id,
+      network_distance: data.network_distance,
+      is_connection: data.is_connection,
+      relation_type: data.relation_type,
+      distance: data.distance,
+      connection_degree: data.connection_degree,
+      network: data.network,
+      degree: data.degree,
+      relationship: data.relationship,
+      connected: data.connected,
+      is_first_degree: data.is_first_degree,
+      member_distance: data.member_distance,
+      connection_status: data.connection_status,
+    })}`);
+    return data;
+  } catch (err) {
+    console.error(`[fetchUserProfile] exception for ${publicId}:`, err);
     return null;
   }
 }
 
 function isFirstDegree(profileData: any): boolean {
-  if (profileData.network_distance === 1) return true;
-  if (profileData.is_connection === true) return true;
-  if (profileData.relation_type === 'FIRST_DEGREE') return true;
-  if (profileData.distance === 'DISTANCE_1') return true;
-  if (profileData.connection_degree === 1) return true;
+  // Original checks
+  if (profileData.network_distance === 1 || profileData.network_distance === '1') return true;
+  if (profileData.is_connection === true || profileData.is_connection === 'true') return true;
+  if (profileData.relation_type === 'FIRST_DEGREE' || profileData.relation_type === 'first_degree') return true;
+  if (profileData.distance === 'DISTANCE_1' || profileData.distance === 1 || profileData.distance === '1') return true;
+  if (profileData.connection_degree === 1 || profileData.connection_degree === '1' || profileData.connection_degree === '1st') return true;
+  // Expanded checks
+  if (profileData.network === 'FIRST' || profileData.network === 'first' || profileData.network === 1) return true;
+  if (profileData.degree === 1 || profileData.degree === '1' || profileData.degree === 'FIRST') return true;
+  if (profileData.connected === true || profileData.connected === 'true') return true;
+  if (profileData.is_first_degree === true || profileData.is_first_degree === 'true') return true;
+  if (profileData.member_distance?.value === 'DISTANCE_1') return true;
+  if (profileData.connection_status === 'CONNECTED' || profileData.connection_status === 'connected') return true;
+  // Nested network object
+  if (profileData.network?.distance === 'FIRST' || profileData.network?.distance === 1 || profileData.network?.distance === '1') return true;
+  if (profileData.connection?.type === 'FIRST_DEGREE') return true;
   return false;
+}
+
+async function checkInvitationAccepted(
+  dsn: string, apiKey: string, accountId: string, providerId: string
+): Promise<boolean> {
+  try {
+    const url = new URL(`https://${dsn}/api/v1/users/invitations`);
+    url.searchParams.set('account_id', accountId);
+    url.searchParams.set('limit', '50');
+    const res = await fetch(url.toString(), {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`[checkInvitationAccepted] HTTP ${res.status}`);
+      return false;
+    }
+    const data = await res.json();
+    const items = data?.items || data?.data || (Array.isArray(data) ? data : []);
+    for (const inv of items) {
+      const invProviderId = inv.provider_id || inv.attendee_provider_id || inv.user_provider_id;
+      if (invProviderId === providerId) {
+        const status = (inv.status || '').toLowerCase();
+        console.log(`[checkInvitationAccepted] Found invitation for ${providerId}: status=${status}`);
+        if (status === 'accepted' || status === 'connected') return true;
+      }
+    }
+    return false;
+  } catch (err) {
+    console.error(`[checkInvitationAccepted] error:`, err);
+    return false;
+  }
 }
 
 async function findChat(
