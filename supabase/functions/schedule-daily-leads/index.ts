@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
 
           for (const req of acceptedRequests) {
             if (msgScheduledThisCampaign >= remainingMessages) break;
-            if (!req.chat_id) continue;
+            // chat_id may not exist yet for newly accepted contacts — still schedule
 
             const currentStep = req.current_step || 1;
             const nextWfIdx = hasInvitation ? currentStep : currentStep - 1;
