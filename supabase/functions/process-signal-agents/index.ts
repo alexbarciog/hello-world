@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     const paidUsers = new Set<string>();
     if (stripeKey) {
-      const stripe = new Stripe(stripeKey, { apiVersion: '2025-08-27.basil' });
+      const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
       const uniqueUserIds = [...new Set(agents.map((a: any) => a.user_id))];
       for (const uid of uniqueUserIds) {
         try {
