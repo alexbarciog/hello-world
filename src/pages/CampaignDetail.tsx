@@ -463,8 +463,34 @@ export default function CampaignDetail() {
       const contactMap: Record<string, any> = {};
       (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
 
+      // Fetch connection requests to map contact_id -> connection_request_id
+      const { data: connReqs } = await supabase
+        .from("campaign_connection_requests" as any)
+        .select("id, contact_id")
+        .eq("campaign_id", campaignId)
+        .in("contact_id", contactIds);
+      const connReqMap: Record<string, string> = {};
+      (connReqs || []).forEach((cr: any) => { connReqMap[cr.contact_id] = cr.id; });
+
+      // Fetch scheduled messages for these connection requests
+      const connReqIds = Object.values(connReqMap);
+      let scheduledMsgMap: Record<string, any> = {};
+      if (connReqIds.length > 0) {
+        const { data: msgs } = await supabase
+          .from("scheduled_messages" as any)
+          .select("id, connection_request_id, step_index, message, status, edited_by_user")
+          .in("connection_request_id", connReqIds)
+          .in("status", ["generated", "edited"]);
+        (msgs || []).forEach((m: any) => {
+          scheduledMsgMap[`${m.connection_request_id}_${m.step_index}`] = m;
+        });
+      }
+
       const queue: DailyScheduledLead[] = (queueData as any[]).map((q: any) => {
         const contact = contactMap[q.contact_id];
+        const crId = connReqMap[q.contact_id] || null;
+        const msgKey = crId ? `${crId}_${q.step_index}` : null;
+        const scheduledMsg = msgKey ? scheduledMsgMap[msgKey] : null;
         return {
           id: q.id,
           contactId: q.contact_id,
@@ -482,6 +508,9 @@ export default function CampaignDetail() {
           stepIndex: q.step_index,
           status: q.status,
           sentAt: q.sent_at,
+          message: scheduledMsg?.message || null,
+          scheduledMsgId: scheduledMsg?.id || null,
+          connectionRequestId: crId,
         };
       });
 
@@ -490,6 +519,71 @@ export default function CampaignDetail() {
       console.error("Failed to load daily queue:", err);
     }
     setLoadingQueue(false);
+  }
+
+  async function handleRegenerateQueueMessage(idx: number) {
+    const item = dailyQueue[idx];
+    if (!item || !campaign) return;
+    setRegeneratingQueueIdx(idx);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-step-message', {
+        body: {
+          stepNumber: item.stepIndex,
+          previousStepMessage: "",
+          previousMessages: [],
+          companyName: campaign.company_name || "",
+          valueProposition: campaign.value_proposition || "",
+          painPoints: campaign.pain_points || [],
+          campaignGoal: campaign.campaign_goal || "",
+          messageTone: campaign.message_tone || "conversational",
+          industry: "",
+          language: campaign.language || "English",
+          customTraining: campaign.custom_training || "",
+          firstName: item.contactFirstName || "",
+          lastName: item.contactLastName || "",
+          leadCompany: item.contactCompany || "",
+          leadTitle: item.contactTitle || "",
+          buyingSignal: item.contactSignal || "",
+        },
+      });
+      if (error) throw error;
+      const newMessage = data?.message || "";
+      if (!newMessage) { toast.error("AI returned an empty message"); return; }
+
+      const updated = [...dailyQueue];
+      updated[idx] = { ...updated[idx], message: newMessage };
+      setDailyQueue(updated);
+
+      if (item.scheduledMsgId) {
+        await supabase
+          .from("scheduled_messages" as any)
+          .update({ message: newMessage, edited_by_user: false, generated_at: new Date().toISOString(), status: "generated" } as any)
+          .eq("id", item.scheduledMsgId);
+      }
+      toast.success("Message regenerated!");
+    } catch (e: any) {
+      console.error("Regenerate error:", e);
+      toast.error(e?.message || "Failed to regenerate message");
+    } finally {
+      setRegeneratingQueueIdx(null);
+    }
+  }
+
+  async function handleSaveQueueMessage(idx: number) {
+    const item = dailyQueue[idx];
+    if (!item || !editingQueueMsg.trim()) return;
+    const updated = [...dailyQueue];
+    updated[idx] = { ...updated[idx], message: editingQueueMsg.trim() };
+    setDailyQueue(updated);
+    setEditingQueueIdx(null);
+
+    if (item.scheduledMsgId) {
+      await supabase
+        .from("scheduled_messages" as any)
+        .update({ message: editingQueueMsg.trim(), edited_by_user: true, status: "edited" } as any)
+        .eq("id", item.scheduledMsgId);
+    }
+    toast.success("Message saved!");
   }
 
   async function loadScheduledMessages(campaignId: string, steps: any[]) {
