@@ -1864,7 +1864,7 @@ export default function CampaignDetail() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="text-xl font-bold text-green-600">{campaign.invitations_accepted}</p>
+                        <p className="text-xl font-bold text-green-600">{step1Accepted}</p>
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase">Accepted</p>
                       </div>
                       <div className="h-8 w-px bg-border" />
