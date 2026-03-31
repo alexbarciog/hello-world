@@ -1971,7 +1971,7 @@ export default function CampaignDetail() {
                           className="w-full max-w-xs rounded-xl border-2 border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-foreground transition-colors appearance-none cursor-pointer"
                           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                         >
-                          {["English", "Spanish", "French", "German", "Portuguese", "Italian", "Dutch", "Polish", "Swedish", "Romanian"].map((lang) => (
+                          {["English (US)", "English (UK)", "Spanish", "French", "German", "Portuguese", "Italian", "Dutch", "Polish", "Swedish", "Romanian"].map((lang) => (
                             <option key={lang} value={lang}>{lang}</option>
                           ))}
                         </select>
