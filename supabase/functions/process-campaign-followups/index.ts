@@ -256,7 +256,7 @@ async function processCampaign(
   // ── Phase 2: Send follow-up messages for accepted contacts (only when delay passed) ──
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id')
+    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
     .eq('campaign_id', campaign.id)
     .eq('status', 'accepted');
 
