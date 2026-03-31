@@ -198,8 +198,6 @@ export default function CampaignsPage() {
     const withCounts: CampaignWithLeads[] = await Promise.all(
       rows.map(async (c) => {
         let leadsCount = 0;
-        let sentCount = 0;
-        let acceptedCount = 0;
 
         if (c.source_list_id) {
           const { data: listLinks } = await supabase
@@ -207,27 +205,7 @@ export default function CampaignsPage() {
             .select("contact_id")
             .eq("list_id", c.source_list_id);
 
-          const contactIds = (listLinks || []).map((link: any) => link.contact_id);
-          leadsCount = contactIds.length;
-
-          if (contactIds.length > 0) {
-            const { count: sentForList } = await supabase
-              .from("campaign_connection_requests" as any)
-              .select("id", { count: "exact", head: true })
-              .eq("campaign_id", c.id)
-              .in("contact_id", contactIds)
-              .in("status", ["sent", "accepted", "completed"]);
-
-            const { count: acceptedForList } = await supabase
-              .from("campaign_connection_requests" as any)
-              .select("id", { count: "exact", head: true })
-              .eq("campaign_id", c.id)
-              .in("contact_id", contactIds)
-              .in("status", ["accepted", "completed"]);
-
-            sentCount = sentForList ?? 0;
-            acceptedCount = acceptedForList ?? 0;
-          }
+          leadsCount = (listLinks || []).length;
         } else if (c.source_agent_id) {
           const { data: agentData } = await supabase
             .from("signal_agents")
@@ -242,29 +220,29 @@ export default function CampaignsPage() {
               .eq("list_name", agentData.leads_list_name);
             leadsCount = count ?? 0;
           }
-
-          const { count: sentForCampaign } = await supabase
-            .from("campaign_connection_requests" as any)
-            .select("id", { count: "exact", head: true })
-            .eq("campaign_id", c.id)
-            .in("status", ["sent", "accepted", "completed"]);
-
-          const { count: acceptedForCampaign } = await supabase
-            .from("campaign_connection_requests" as any)
-            .select("id", { count: "exact", head: true })
-            .eq("campaign_id", c.id)
-            .in("status", ["accepted", "completed"]);
-
-          sentCount = sentForCampaign ?? 0;
-          acceptedCount = acceptedForCampaign ?? 0;
         }
 
-        // Count replies: connection requests where lead_status indicates a reply
-        const { count: repliedCount } = await supabase
+        const { data: requestData } = await supabase
           .from("campaign_connection_requests" as any)
-          .select("id", { count: "exact", head: true })
-          .eq("campaign_id", c.id)
-          .in("lead_status", ["interested", "not_interested", "maybe_later"]);
+          .select("status, current_step, last_incoming_message_at")
+          .eq("campaign_id", c.id);
+
+        const requests = ((requestData ?? []) as unknown[]) as {
+          status: string;
+          current_step: number | null;
+          last_incoming_message_at: string | null;
+        }[];
+        const sentCount = requests.filter((request) =>
+          ["sent", "accepted", "completed"].includes(request.status)
+        ).length;
+        const acceptedCount = requests.filter((request) =>
+          ["accepted", "completed"].includes(request.status)
+        ).length;
+        const repliedCount = requests.filter((request) =>
+          ["accepted", "completed"].includes(request.status) &&
+          (request.current_step ?? 0) >= 2 &&
+          Boolean(request.last_incoming_message_at)
+        ).length;
 
         return {
           ...c,
@@ -272,7 +250,7 @@ export default function CampaignsPage() {
           invitations_sent: sentCount,
           invitations_accepted: acceptedCount,
           messages_sent: sentCount,
-          messages_replied: repliedCount ?? 0,
+          messages_replied: repliedCount,
         };
       })
     );
