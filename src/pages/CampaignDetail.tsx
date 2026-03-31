@@ -2243,8 +2243,8 @@ export default function CampaignDetail() {
                           className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
                         >
                           <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                          <div className="relative flex items-center justify-between">
-                            {/* Contact info — matches contacts table */}
+                          <div className="relative space-y-2.5">
+                            {/* Row 1: Contact info */}
                             <div className="flex items-center gap-3">
                               <div className="relative shrink-0">
                                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
@@ -2254,7 +2254,7 @@ export default function CampaignDetail() {
                                   item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
                                 }`} />
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
                                   {item.contactLinkedinUrl ? (
                                     <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
@@ -2278,20 +2278,19 @@ export default function CampaignDetail() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex items-center justify-between gap-3 flex-wrap">
-                              {/* Signal link */}
+                            {/* Row 2: Signal + action/status badges */}
+                            <div className="flex items-center justify-between gap-3 pl-12">
                               <div className="min-w-0 flex-1">
-                                {item.contactSignal && (
+                                {item.contactSignal ? (
                                   item.contactSignalPostUrl ? (
-                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[260px]">
+                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[280px]">
                                       {item.contactSignal}
                                     </a>
                                   ) : (
-                                    <span className="text-xs text-muted-foreground truncate block max-w-[260px]">{item.contactSignal}</span>
+                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
                                   )
-                                )}
+                                ) : null}
                               </div>
-                              {/* Action & status badges */}
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
                                   item.actionType === "connection"
