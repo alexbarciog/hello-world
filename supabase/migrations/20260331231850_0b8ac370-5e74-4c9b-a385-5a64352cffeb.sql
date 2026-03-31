@@ -1,0 +1,1 @@
+ALTER TABLE reddit_keywords ADD COLUMN last_polled_at timestamptz DEFAULT NULL;
