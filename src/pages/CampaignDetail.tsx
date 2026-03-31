@@ -144,6 +144,8 @@ export default function CampaignDetail() {
     contactLinkedinUrl: string | null;
     contactRelevanceTier: string;
     contactCompanyIconColor: string | null;
+    contactSignal: string | null;
+    contactSignalPostUrl: string | null;
     actionType: string;
     stepIndex: number;
     status: string;
