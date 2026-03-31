@@ -243,6 +243,7 @@ async function processCampaignReplies(
             continue;
           }
 
+          const reply = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
             conversationHistory, leadMessage,
             companyName: campaign.company_name, valueProposition: campaign.value_proposition,
             painPoints: campaign.pain_points || [], campaignGoal: campaign.campaign_goal,
