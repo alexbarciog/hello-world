@@ -281,8 +281,11 @@ export default function CampaignDetail() {
     // Fetch profile limits
     const { data: authData } = await supabase.auth.getUser();
     if (authData?.user) {
-      const { data: prof } = await supabase.from("profiles").select("daily_connections_limit, daily_messages_limit").eq("user_id", authData.user.id).single();
-      if (prof) setProfileLimits({ daily_connections_limit: prof.daily_connections_limit, daily_messages_limit: prof.daily_messages_limit });
+      const { data: prof } = await supabase.from("profiles").select("daily_connections_limit, daily_messages_limit, linkedin_display_name").eq("user_id", authData.user.id).single();
+      if (prof) {
+        setProfileLimits({ daily_connections_limit: prof.daily_connections_limit, daily_messages_limit: prof.daily_messages_limit });
+        if ((prof as any).linkedin_display_name) setLinkedinDisplayName((prof as any).linkedin_display_name);
+      }
     }
 
     if (c.source_agent_id) {
