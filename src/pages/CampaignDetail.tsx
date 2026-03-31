@@ -151,9 +151,16 @@ export default function CampaignDetail() {
     stepIndex: number;
     status: string;
     sentAt: string | null;
+    message: string | null;
+    scheduledMsgId: string | null;
+    connectionRequestId: string | null;
   };
   const [dailyQueue, setDailyQueue] = useState<DailyScheduledLead[]>([]);
   const [loadingQueue, setLoadingQueue] = useState(false);
+  const [expandedQueueIdx, setExpandedQueueIdx] = useState<number | null>(null);
+  const [editingQueueIdx, setEditingQueueIdx] = useState<number | null>(null);
+  const [editingQueueMsg, setEditingQueueMsg] = useState("");
+  const [regeneratingQueueIdx, setRegeneratingQueueIdx] = useState<number | null>(null);
 
   // Scheduled messages state
   type ScheduledMessage = {
