@@ -352,17 +352,16 @@ export default function CampaignDetail() {
           updatedAt: cr.step_completed_at || cr.sent_at || undefined,
         };
         // Count per-step metrics: a contact at current_step N means steps 2..N were sent
-        if (isAccepted && currentStep >= 2) {
+        if ((isAccepted || cr.status === "completed") && currentStep >= 2) {
           for (let s = 2; s <= currentStep; s++) {
             if (!metrics[s]) metrics[s] = { contacted: 0, answered: 0 };
             metrics[s].contacted++;
           }
         }
-        // If lead has replied (has incoming messages), count as answered for the latest step
-        if (isAccepted && currentStep >= 2 && cr.last_incoming_message_at) {
-          const answerStep = currentStep;
-          if (!metrics[answerStep]) metrics[answerStep] = { contacted: 0, answered: 0 };
-          metrics[answerStep].answered++;
+        // If lead has replied, count as answered on step 2 (first outreach step)
+        if ((isAccepted || cr.status === "completed") && currentStep >= 2 && cr.last_incoming_message_at) {
+          if (!metrics[2]) metrics[2] = { contacted: 0, answered: 0 };
+          metrics[2].answered++;
         }
       }
       setContactStatuses(statusMap);
