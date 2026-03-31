@@ -957,7 +957,7 @@ export default function CampaignDetail() {
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground font-medium">Sender:</span>
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">👤</div>
-                    <span className="text-sm font-bold text-foreground">Alexandru Barciog</span>
+                    <span className="text-sm font-bold text-foreground">{linkedinDisplayName || "LinkedIn Account"}</span>
                     <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">Connected</span>
                     <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full">🔥 {profileLimits.daily_connections_limit}/day</span>
                     <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">✉️ {profileLimits.daily_messages_limit}/day</span>
