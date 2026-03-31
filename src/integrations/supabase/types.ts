@@ -374,6 +374,45 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_scheduled_leads: {
+        Row: {
+          action_type: string
+          campaign_id: string
+          contact_id: string
+          created_at: string
+          id: string
+          scheduled_date: string
+          sent_at: string | null
+          status: string
+          step_index: number
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          campaign_id: string
+          contact_id: string
+          created_at?: string
+          id?: string
+          scheduled_date?: string
+          sent_at?: string | null
+          status?: string
+          step_index?: number
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          campaign_id?: string
+          contact_id?: string
+          created_at?: string
+          id?: string
+          scheduled_date?: string
+          sent_at?: string | null
+          status?: string
+          step_index?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
