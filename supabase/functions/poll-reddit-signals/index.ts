@@ -441,6 +441,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Update last_polled_at for rotated keywords
+    const selectedIds = selectedKeywords.map(k => k.id);
+    if (selectedIds.length > 0) {
+      const { error: updateErr } = await supabase
+        .from('reddit_keywords')
+        .update({ last_polled_at: new Date().toISOString() })
+        .in('id', selectedIds);
+      if (updateErr) console.warn('[poll-reddit] Failed to update last_polled_at:', updateErr.message);
+      else console.log(`[poll-reddit] Updated last_polled_at for ${selectedIds.length} keywords`);
+    }
+
     console.log(`[poll-reddit] Done. Inserted ${totalInserted} mentions.`);
     return json({ inserted: totalInserted, posts: validPosts.length });
   } catch (error) {
