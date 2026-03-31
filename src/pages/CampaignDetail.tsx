@@ -161,6 +161,8 @@ export default function CampaignDetail() {
   const [editingQueueIdx, setEditingQueueIdx] = useState<number | null>(null);
   const [editingQueueMsg, setEditingQueueMsg] = useState("");
   const [regeneratingQueueIdx, setRegeneratingQueueIdx] = useState<number | null>(null);
+  const [connectionsAccordionOpen, setConnectionsAccordionOpen] = useState(true);
+  const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(true);
 
   // Scheduled messages state
   type ScheduledMessage = {
@@ -2329,219 +2331,354 @@ export default function CampaignDetail() {
                   </p>
                 </div>
 
-                {/* Today's Scheduled Leads */}
-                <div className="space-y-2">
-                  {loadingQueue ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : dailyQueue.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="text-3xl mb-2">📋</div>
-                      <p className="text-sm font-bold text-foreground">No leads scheduled for today</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Leads are pre-selected at midnight UTC based on your daily limits
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex gap-3 mb-2">
-                        {(() => {
-                          const connections = dailyQueue.filter(q => q.actionType === "connection");
-                          const messages = dailyQueue.filter(q => q.actionType.startsWith("message_"));
-                          const sent = dailyQueue.filter(q => q.status === "sent").length;
-                          const pending = dailyQueue.filter(q => q.status === "pending").length;
-                          return (
-                            <>
-                              {connections.length > 0 && (
-                                <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-lg">
-                                  {connections.length} connection{connections.length !== 1 ? "s" : ""}
-                                </span>
-                              )}
-                              {messages.length > 0 && (
-                                <span className="text-[10px] font-semibold bg-accent/40 text-accent-foreground px-2.5 py-1 rounded-lg">
-                                  {messages.length} message{messages.length !== 1 ? "s" : ""}
-                                </span>
-                              )}
-                              <span className="text-[10px] text-muted-foreground font-medium">
-                                {sent} sent · {pending} pending
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                      {dailyQueue.map((item, idx) => {
-                        const isMessage = item.actionType.startsWith("message_");
-                        const isExpanded = expandedQueueIdx === idx;
-                        const isEditingThis = editingQueueIdx === idx;
-                        const isRegenerating = regeneratingQueueIdx === idx;
+                {/* LinkedIn Connections Accordion */}
+                {(() => {
+                  const connections = dailyQueue.filter(q => q.actionType === "connection");
+                  const messages = dailyQueue.filter(q => q.actionType.startsWith("message_"));
+                  const connectionsSent = connections.filter(q => q.status === "sent").length;
+                  const connectionsPending = connections.filter(q => q.status === "pending").length;
+                  const messagesSentCount = messages.filter(q => q.status === "sent").length;
+                  const messagesPending = messages.filter(q => q.status === "pending").length;
 
-                        return (
-                        <motion.div
-                          key={item.id}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
-                          className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                          <div className="relative flex items-center justify-between gap-4">
-                            {/* Left: Contact info + signal */}
-                            <div className="flex items-start gap-3 min-w-0 flex-1">
-                              <div className="relative shrink-0 mt-0.5">
-                                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
-                                  {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
-                                </div>
-                                <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
-                                  item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
-                                }`} />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  {item.contactLinkedinUrl ? (
-                                    <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
-                                      {item.contactName}
-                                    </a>
-                                  ) : (
-                                    <span className="text-sm font-semibold text-foreground truncate">{item.contactName}</span>
-                                  )}
-                                  {item.contactLinkedinUrl && (
-                                    <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
-                                      <LinkedInIcon />
-                                    </a>
-                                  )}
-                                </div>
-                                <p className="text-xs text-muted-foreground truncate max-w-[280px]">{item.contactTitle}</p>
-                                {item.contactCompany && (
-                                  <div className="flex items-center gap-1 mt-0.5">
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[item.contactCompanyIconColor || ""] || "bg-muted-foreground"}`} />
-                                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">{item.contactCompany}</span>
-                                  </div>
-                                )}
-                                {item.contactSignal && (
-                                  <div className="mt-1">
-                                    {item.contactSignalPostUrl ? (
-                                      <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
-                                        {item.contactSignal}
-                                      </a>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {/* Right: Action & status badges — vertically centered */}
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              <div className="flex items-center gap-0.5">
-                                {[0, 1, 2].map((i) => {
-                                  const tier = item.contactRelevanceTier?.toLowerCase();
-                                  const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
-                                  return (
-                                    <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
-                                  );
-                                })}
-                              </div>
-                              <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg ${
-                                item.actionType === "connection"
-                                  ? "bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20"
-                                  : "bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20"
-                              }`}>
-                                {item.actionType === "connection" ? "Send Connection" : `Step ${item.actionType.replace("message_step_", "")} Message`}
+                  return (
+                    <div className="space-y-3">
+                      {/* Connections accordion */}
+                      {connections.length > 0 && (
+                        <div className="rounded-xl border border-border/50 overflow-hidden">
+                          <button
+                            onClick={() => setConnectionsAccordionOpen(!connectionsAccordionOpen)}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <UserPlus className="w-4 h-4 text-violet-500" />
+                              <span className="text-sm font-bold text-foreground">LinkedIn Connections</span>
+                              <span className="text-[10px] font-semibold bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-lg ring-1 ring-violet-500/20">
+                                {connections.length}
                               </span>
-                              {isMessage && item.message && (
-                                <button
-                                  onClick={() => setExpandedQueueIdx(isExpanded ? null : idx)}
-                                  className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-                                >
-                                  <Eye className="w-3 h-3" />
-                                  {isExpanded ? "Hide" : "Preview"}
-                                </button>
-                              )}
-                              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
-                                item.status === "sent"
-                                  ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
-                                  : item.status === "failed"
-                                  ? "text-destructive bg-destructive/10 ring-destructive/20"
-                                  : item.status === "skipped"
-                                  ? "text-muted-foreground bg-muted/60 ring-border/30"
-                                  : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
-                              }`}>
-                                {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                              <span className="text-[10px] text-muted-foreground">
+                                {connectionsSent} sent · {connectionsPending} pending
                               </span>
-                              {item.status === "sent" && item.sentAt && (() => {
-                                const diff = Date.now() - new Date(item.sentAt).getTime();
-                                const mins = Math.floor(diff / 60000);
-                                const hrs = Math.floor(mins / 60);
-                                const label = hrs >= 24 ? `${Math.floor(hrs / 24)}d ago` : hrs >= 1 ? `${hrs}h ago` : mins >= 1 ? `${mins}m ago` : "just now";
-                                return <span className="text-[10px] text-muted-foreground">{label}</span>;
-                              })()}
                             </div>
-                          </div>
-
-                          {/* Message preview / edit section */}
+                            <motion.div animate={{ rotate: connectionsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                              <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                            </motion.div>
+                          </button>
                           <AnimatePresence>
-                            {isMessage && isExpanded && item.message && (
+                            {connectionsAccordionOpen && (
                               <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="relative overflow-hidden"
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden"
                               >
-                                <div className="mt-3 pt-3 border-t border-border/40">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                                      <MessageSquare className="w-3 h-3" /> AI Message
-                                    </span>
-                                    {item.status === "pending" && (
-                                      <div className="flex items-center gap-1.5">
-                                        <button
-                                          onClick={() => {
-                                            if (isEditingThis) {
-                                              handleSaveQueueMessage(idx);
-                                            } else {
-                                              setEditingQueueIdx(idx);
-                                              setEditingQueueMsg(item.message || "");
-                                            }
-                                          }}
-                                          className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60"
-                                        >
-                                          {isEditingThis ? <><Check className="w-3 h-3" /> Save</> : <><Pencil className="w-3 h-3" /> Edit</>}
-                                        </button>
-                                        <button
-                                          onClick={() => handleRegenerateQueueMessage(idx)}
-                                          disabled={isRegenerating}
-                                          className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60 disabled:opacity-50"
-                                        >
-                                          {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                                          {isRegenerating ? "Regenerating..." : "Regenerate"}
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                  {isEditingThis ? (
-                                    <textarea
-                                      value={editingQueueMsg}
-                                      onChange={(e) => setEditingQueueMsg(e.target.value)}
-                                      className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
-                                      rows={4}
-                                    />
-                                  ) : (
-                                    <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap bg-muted/20 rounded-lg p-3">
-                                      {item.message}
-                                    </p>
-                                  )}
+                                <div className="p-3 space-y-2">
+                                  {connections.map((item, idx) => {
+                                    const globalIdx = dailyQueue.indexOf(item);
+                                    return (
+                                      <motion.div
+                                        key={item.id}
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
+                                        className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
+                                      >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
+                                        <div className="relative flex items-center justify-between gap-4">
+                                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                                            <div className="relative shrink-0 mt-0.5">
+                                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
+                                                {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
+                                              </div>
+                                              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                                                item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
+                                              }`} />
+                                            </div>
+                                            <div className="min-w-0">
+                                              <div className="flex items-center gap-1.5">
+                                                {item.contactLinkedinUrl ? (
+                                                  <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                                    {item.contactName}
+                                                  </a>
+                                                ) : (
+                                                  <span className="text-sm font-semibold text-foreground truncate">{item.contactName}</span>
+                                                )}
+                                                {item.contactLinkedinUrl && (
+                                                  <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                                    <LinkedInIcon />
+                                                  </a>
+                                                )}
+                                              </div>
+                                              <p className="text-xs text-muted-foreground truncate max-w-[280px]">{item.contactTitle}</p>
+                                              {item.contactSignal && (
+                                                <div className="mt-1">
+                                                  {item.contactSignalPostUrl ? (
+                                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
+                                                      {item.contactSignal}
+                                                    </a>
+                                                  ) : (
+                                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2.5 shrink-0">
+                                            <div className="flex items-center gap-0.5">
+                                              {[0, 1, 2].map((i) => {
+                                                const tier = item.contactRelevanceTier?.toLowerCase();
+                                                const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                                                return (
+                                                  <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                                                );
+                                              })}
+                                            </div>
+                                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20">
+                                              Send Connection
+                                            </span>
+                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                              item.status === "sent"
+                                                ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                                : item.status === "failed"
+                                                ? "text-destructive bg-destructive/10 ring-destructive/20"
+                                                : item.status === "skipped"
+                                                ? "text-muted-foreground bg-muted/60 ring-border/30"
+                                                : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
+                                            }`}>
+                                              {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                                            </span>
+                                            {item.status === "sent" && item.sentAt && (() => {
+                                              const diff = Date.now() - new Date(item.sentAt).getTime();
+                                              const mins = Math.floor(diff / 60000);
+                                              const hrs = Math.floor(mins / 60);
+                                              const label = hrs >= 24 ? `${Math.floor(hrs / 24)}d ago` : hrs >= 1 ? `${hrs}h ago` : mins >= 1 ? `${mins}m ago` : "just now";
+                                              return <span className="text-[10px] text-muted-foreground">{label}</span>;
+                                            })()}
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    );
+                                  })}
                                 </div>
                               </motion.div>
                             )}
                           </AnimatePresence>
-                        </motion.div>
-                        );
-                      })}
-                    </>
-                  )}
-                </div>
+                        </div>
+                      )}
+
+                      {/* Messages accordion */}
+                      {messages.length > 0 && (
+                        <div className="rounded-xl border border-border/50 overflow-hidden">
+                          <button
+                            onClick={() => setMessagesAccordionOpen(!messagesAccordionOpen)}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <MessageSquare className="w-4 h-4 text-teal-500" />
+                              <span className="text-sm font-bold text-foreground">Upcoming Messages</span>
+                              <span className="text-[10px] font-semibold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-lg ring-1 ring-teal-500/20">
+                                {messages.length}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {messagesSentCount} sent · {messagesPending} pending
+                              </span>
+                            </div>
+                            <motion.div animate={{ rotate: messagesAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                              <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                            </motion.div>
+                          </button>
+                          <AnimatePresence>
+                            {messagesAccordionOpen && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="p-3 space-y-2">
+                                  {messages.map((item, idx) => {
+                                    const globalIdx = dailyQueue.indexOf(item);
+                                    const isMessage = true;
+                                    const isExpanded = expandedQueueIdx === globalIdx;
+                                    const isEditingThis = editingQueueIdx === globalIdx;
+                                    const isRegenerating = regeneratingQueueIdx === globalIdx;
+
+                                    return (
+                                      <motion.div
+                                        key={item.id}
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
+                                        className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
+                                      >
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
+                                        <div className="relative flex items-center justify-between gap-4">
+                                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                                            <div className="relative shrink-0 mt-0.5">
+                                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
+                                                {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
+                                              </div>
+                                              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                                                item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
+                                              }`} />
+                                            </div>
+                                            <div className="min-w-0">
+                                              <div className="flex items-center gap-1.5">
+                                                {item.contactLinkedinUrl ? (
+                                                  <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                                    {item.contactName}
+                                                  </a>
+                                                ) : (
+                                                  <span className="text-sm font-semibold text-foreground truncate">{item.contactName}</span>
+                                                )}
+                                                {item.contactLinkedinUrl && (
+                                                  <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                                    <LinkedInIcon />
+                                                  </a>
+                                                )}
+                                              </div>
+                                              <p className="text-xs text-muted-foreground truncate max-w-[280px]">{item.contactTitle}</p>
+                                              {item.contactSignal && (
+                                                <div className="mt-1">
+                                                  {item.contactSignalPostUrl ? (
+                                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
+                                                      {item.contactSignal}
+                                                    </a>
+                                                  ) : (
+                                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2.5 shrink-0">
+                                            <div className="flex items-center gap-0.5">
+                                              {[0, 1, 2].map((i) => {
+                                                const tier = item.contactRelevanceTier?.toLowerCase();
+                                                const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                                                return (
+                                                  <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                                                );
+                                              })}
+                                            </div>
+                                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20">
+                                              Step {item.actionType.replace("message_step_", "")} Message
+                                            </span>
+                                            {item.message && (
+                                              <button
+                                                onClick={() => setExpandedQueueIdx(isExpanded ? null : globalIdx)}
+                                                className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+                                              >
+                                                <Eye className="w-3 h-3" />
+                                                {isExpanded ? "Hide" : "Preview"}
+                                              </button>
+                                            )}
+                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                              item.status === "sent"
+                                                ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                                : item.status === "failed"
+                                                ? "text-destructive bg-destructive/10 ring-destructive/20"
+                                                : item.status === "skipped"
+                                                ? "text-muted-foreground bg-muted/60 ring-border/30"
+                                                : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
+                                            }`}>
+                                              {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                                            </span>
+                                            {item.status === "sent" && item.sentAt && (() => {
+                                              const diff = Date.now() - new Date(item.sentAt).getTime();
+                                              const mins = Math.floor(diff / 60000);
+                                              const hrs = Math.floor(mins / 60);
+                                              const label = hrs >= 24 ? `${Math.floor(hrs / 24)}d ago` : hrs >= 1 ? `${hrs}h ago` : mins >= 1 ? `${mins}m ago` : "just now";
+                                              return <span className="text-[10px] text-muted-foreground">{label}</span>;
+                                            })()}
+                                          </div>
+                                        </div>
+
+                                        {/* Message preview / edit section */}
+                                        <AnimatePresence>
+                                          {isExpanded && item.message && (
+                                            <motion.div
+                                              initial={{ height: 0, opacity: 0 }}
+                                              animate={{ height: "auto", opacity: 1 }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              transition={{ duration: 0.2 }}
+                                              className="relative overflow-hidden"
+                                            >
+                                              <div className="mt-3 pt-3 border-t border-border/40">
+                                                <div className="flex items-center justify-between mb-2">
+                                                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                                                    <MessageSquare className="w-3 h-3" /> AI Message
+                                                  </span>
+                                                  {item.status === "pending" && (
+                                                    <div className="flex items-center gap-1.5">
+                                                      <button
+                                                        onClick={() => {
+                                                          if (isEditingThis) {
+                                                            handleSaveQueueMessage(globalIdx);
+                                                          } else {
+                                                            setEditingQueueIdx(globalIdx);
+                                                            setEditingQueueMsg(item.message || "");
+                                                          }
+                                                        }}
+                                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60"
+                                                      >
+                                                        {isEditingThis ? <><Check className="w-3 h-3" /> Save</> : <><Pencil className="w-3 h-3" /> Edit</>}
+                                                      </button>
+                                                      <button
+                                                        onClick={() => handleRegenerateQueueMessage(globalIdx)}
+                                                        disabled={isRegenerating}
+                                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60 disabled:opacity-50"
+                                                      >
+                                                        {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                                                        {isRegenerating ? "Regenerating..." : "Regenerate"}
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                {isEditingThis ? (
+                                                  <textarea
+                                                    value={editingQueueMsg}
+                                                    onChange={(e) => setEditingQueueMsg(e.target.value)}
+                                                    className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
+                                                    rows={4}
+                                                  />
+                                                ) : (
+                                                  <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap bg-muted/20 rounded-lg p-3">
+                                                    {item.message}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </motion.div>
+                                          )}
+                                        </AnimatePresence>
+                                      </motion.div>
+                                    );
+                                  })}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
+                      {/* Empty state */}
+                      {loadingQueue ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : connections.length === 0 && messages.length === 0 && (
+                        <div className="text-center py-8">
+                          <div className="text-3xl mb-2">📋</div>
+                          <p className="text-sm font-bold text-foreground">No leads scheduled for today</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Leads are pre-selected at midnight UTC based on your daily limits
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Upcoming Messages Preview */}
