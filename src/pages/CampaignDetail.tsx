@@ -131,6 +131,7 @@ export default function CampaignDetail() {
   const [contactStatuses, setContactStatuses] = useState<Record<string, { status: string; step: number; updatedAt?: string }>>({});
   const [stepMetrics, setStepMetrics] = useState<Record<number, { contacted: number; answered: number }>>({});
   const [profileLimits, setProfileLimits] = useState<{ daily_connections_limit: number; daily_messages_limit: number }>({ daily_connections_limit: 25, daily_messages_limit: 25 });
+  const [linkedinDisplayName, setLinkedinDisplayName] = useState<string | null>(null);
 
   // Today's queue state
   type DailyScheduledLead = {
