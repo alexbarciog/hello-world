@@ -92,7 +92,6 @@ Deno.serve(async (req) => {
           LOVABLE_API_KEY,
           SUPABASE_URL,
           SUPABASE_SERVICE_ROLE_KEY,
-          skipDelay,
         );
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
