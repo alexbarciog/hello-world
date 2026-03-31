@@ -36,7 +36,6 @@ Deno.serve(async (req) => {
     // Parse optional body params
     const body = await req.json().catch(() => ({}));
     const filterCampaignId: string | null = body.campaign_id || null;
-    const skipDelay: boolean = body.skip_delay === true;
 
     let query = supabase
       .from('campaigns')
