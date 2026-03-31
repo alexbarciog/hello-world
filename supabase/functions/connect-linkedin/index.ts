@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'check_status') {
-      const accountId = await resolveConnectedAccountId({
+      const result = await resolveConnectedAccount({
         userId,
         supabaseUrl: SUPABASE_URL,
         serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY,
@@ -97,10 +97,11 @@ Deno.serve(async (req) => {
         unipileDsn: UNIPILE_DSN,
       });
 
-      if (accountId) {
+      if (result) {
         return jsonResponse({
           status: 'connected',
-          account_id: accountId,
+          account_id: result.accountId,
+          display_name: result.displayName || null,
         });
       }
 
