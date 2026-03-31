@@ -295,7 +295,7 @@ async function processCampaign(
         // Check delay before SENDING (not before generating)
         const delayDays = nextStep.delay_days || 1;
         const delayMs = delayDays * 24 * 60 * 60 * 1000;
-        if (!skipDelay && Date.now() - stepCompletedAt.getTime() < delayMs) continue;
+        if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
 
         const { data: contact } = await supabase
           .from('contacts')
