@@ -2265,7 +2265,7 @@ export default function CampaignDetail() {
                                     </a>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground truncate max-w-[180px]">{item.contactTitle}</p>
+                                <p className="text-xs text-muted-foreground truncate max-w-[280px]">{item.contactTitle}</p>
                                 {item.contactCompany && (
                                   <div className="flex items-center gap-1 mt-0.5">
                                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[item.contactCompanyIconColor || ""] || "bg-muted-foreground"}`} />
