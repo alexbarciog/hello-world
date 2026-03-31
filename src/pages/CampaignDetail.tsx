@@ -444,7 +444,7 @@ export default function CampaignDetail() {
       const contactIds = (queueData as any[]).map((q: any) => q.contact_id);
       const { data: contactsData } = await supabase
         .from("contacts")
-        .select("id, first_name, last_name, company, title")
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, company_icon_color")
         .in("id", contactIds);
 
       const contactMap: Record<string, any> = {};
