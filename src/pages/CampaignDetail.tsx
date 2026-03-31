@@ -2439,6 +2439,13 @@ export default function CampaignDetail() {
                               }`}>
                                 {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
                               </span>
+                              {item.status === "sent" && item.sentAt && (() => {
+                                const diff = Date.now() - new Date(item.sentAt).getTime();
+                                const mins = Math.floor(diff / 60000);
+                                const hrs = Math.floor(mins / 60);
+                                const label = hrs >= 24 ? `${Math.floor(hrs / 24)}d ago` : hrs >= 1 ? `${hrs}h ago` : mins >= 1 ? `${mins}m ago` : "just now";
+                                return <span className="text-[10px] text-muted-foreground">{label}</span>;
+                              })()}
                             </div>
                           </div>
 
