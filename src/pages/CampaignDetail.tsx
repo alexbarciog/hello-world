@@ -268,6 +268,50 @@ export default function CampaignDetail() {
     if (id) loadCampaign(id);
   }, [id]);
 
+  // Realtime subscriptions + polling for live queue updates
+  useEffect(() => {
+    if (!id) return;
+    const refresh = () => {
+      loadDailyQueue(id).catch(e => console.error("realtime loadDailyQueue error:", e));
+      if (campaign?.workflow_steps) {
+        loadScheduledMessages(id, campaign.workflow_steps).catch(e => console.error("realtime loadScheduledMessages error:", e));
+      }
+      // Also refresh connection request statuses
+      supabase
+        .from("campaign_connection_requests" as any)
+        .select("contact_id, status, current_step, step_completed_at, sent_at, ai_replies_count, last_incoming_message_at")
+        .eq("campaign_id", id)
+        .then(({ data }) => {
+          if (data) {
+            const statusMap: Record<string, { status: string; step: number; updatedAt?: string }> = {};
+            for (const cr of data as any[]) {
+              const isAccepted = cr.status === "accepted" || cr.status === "completed";
+              statusMap[cr.contact_id] = {
+                status: cr.status,
+                step: isAccepted ? (cr.current_step || 1) : 0,
+                updatedAt: cr.step_completed_at || cr.sent_at || undefined,
+              };
+            }
+            setContactStatuses(statusMap);
+          }
+        });
+    };
+
+    const channel = supabase
+      .channel(`campaign-live-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_scheduled_leads', filter: `campaign_id=eq.${id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scheduled_messages', filter: `campaign_id=eq.${id}` }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'campaign_connection_requests', filter: `campaign_id=eq.${id}` }, refresh)
+      .subscribe();
+
+    const interval = setInterval(refresh, 30000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
+  }, [id, campaign?.workflow_steps]);
+
   async function loadCampaign(campaignId: string) {
     setLoading(true);
     try {
@@ -610,7 +654,7 @@ export default function CampaignDetail() {
 
       // Only show verified accepted contacts. Older bad rows could be marked
       // accepted without a LinkedIn chat, which should never appear here.
-      if (cr.status !== "accepted" || !cr.chat_id) continue;
+      if (cr.status !== "accepted") continue;
 
       const currentStep = cr.current_step || 1;
       const nextStepIdx = currentStep - 1;
