@@ -223,7 +223,6 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     }
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: false }));
   }
-  }
 
   // ── ICP Validation ────────────────────────────────────────────────────────
   function validateICP(): boolean {
