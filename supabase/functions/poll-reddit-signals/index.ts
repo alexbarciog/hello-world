@@ -155,7 +155,7 @@ ${postsText}`;
 async function fetchPostsForKeyword(
   keyword: string,
   apifyToken: string,
-  maxItems = 20,
+  desiredItems = 20,
 ): Promise<any[]> {
   const apifyUrl = `https://api.apify.com/v2/acts/easyapi~reddit-posts-search-scraper/run-sync-get-dataset-items?token=${apifyToken}`;
 
@@ -167,7 +167,7 @@ async function fetchPostsForKeyword(
         query: keyword,
         sort: 'relevance',
         time: 'week',
-        maxItems,
+        maxItems: 100,
       }),
     });
 
