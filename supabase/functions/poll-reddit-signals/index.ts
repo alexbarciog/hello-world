@@ -159,6 +159,9 @@ async function fetchPostsForKeyword(
 ): Promise<any[]> {
   const apifyUrl = `https://api.apify.com/v2/acts/easyapi~reddit-posts-search-scraper/run-sync-get-dataset-items?token=${apifyToken}`;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout per keyword
+
   try {
     const res = await fetch(apifyUrl, {
       method: 'POST',
@@ -169,7 +172,10 @@ async function fetchPostsForKeyword(
         time: 'week',
         maxItems: 100,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!res.ok) {
       const errText = await res.text();
@@ -181,6 +187,7 @@ async function fetchPostsForKeyword(
     const items = Array.isArray(data) ? data : [];
     return items.slice(0, desiredItems);
   } catch (e) {
+    clearTimeout(timeout);
     console.error(`[poll-reddit] Apify fetch error for "${keyword}":`, e);
     return [];
   }
@@ -277,7 +284,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Keyword rotation: cap 10 per user ──
-    const MAX_KEYWORDS_PER_USER = 10;
+    const MAX_KEYWORDS_PER_USER = 3;
     const paidUserKwMap = new Map<string, typeof allKeywords>();
     for (const kw of paidUserKeywords) {
       const list = paidUserKwMap.get(kw.user_id) || [];
