@@ -178,7 +178,8 @@ async function fetchPostsForKeyword(
     }
 
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    const items = Array.isArray(data) ? data : [];
+    return items.slice(0, desiredItems);
   } catch (e) {
     console.error(`[poll-reddit] Apify fetch error for "${keyword}":`, e);
     return [];
