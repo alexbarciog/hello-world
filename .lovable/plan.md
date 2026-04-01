@@ -1,56 +1,59 @@
 
 
-## Plan: Reduce Reddit Signal Compute Usage for High-Keyword Users
+## Plan: Overhaul Reddit Signal Discovery for Relevance
 
 ### Problem
-Users with 30-40 keywords trigger a massive Apify call: `maxItems = keywords * subreddits * 5` can reach 30 × 6 × 5 = 900 items. This consumes huge Apify compute (residential proxies are expensive) and risks hitting the edge function's 110s timeout.
+The current approach has a fundamental conflict:
+1. The Apify actor (`parseforge~reddit-posts-scraper`) returns posts that Reddit's search engine considers related but often don't contain the exact keywords
+2. The 80% keyword-word-match filter then removes most of these posts because the words don't literally appear
+3. If we loosen the filter, noise gets through; if we tighten it, relevant posts get filtered out
+4. Result: customers get either zero signals or irrelevant ones
 
-### Strategy: Keyword Batching with a Per-User Cap
+### Solution: Two Key Changes
 
-Instead of sending all keywords in one giant Apify call, limit and rotate which keywords get processed per run.
+#### 1. Switch Apify Actor
+Replace `parseforge~reddit-posts-scraper` with **`easyapi/reddit-posts-search-scraper`**.
 
-### Implementation
+Why this actor:
+- Uses Reddit's native search API with **relevance sorting** (not just "new")
+- Simpler input: just `query`, `sort`, `time`, `maxItems`
+- Returns rich metadata: `post_id`, `subreddit`, `author_id`, `title`, `body`, `score`, `created_time`
+- High success rate (100% on Apify stats), actively maintained
+- No subreddit restriction needed — Reddit's relevance algorithm handles this
 
-#### 1. Cap keywords per user per run (max 10)
-- Each run, select up to 10 keywords per user using round-robin rotation
-- Track which keywords were last polled using a `last_polled_at` column on `reddit_keywords`
-- Pick the 10 keywords with the oldest `last_polled_at` (or null = never polled)
-- After processing, update `last_polled_at` on those keywords
+#### 2. Remove Keyword Text Matching, Rely on AI Only
+The current two-step filter (keyword match → AI score) is the root cause. Posts found via a search for "trying to get sales" ARE about getting sales — they just don't contain those exact words.
 
-This means a user with 40 keywords gets full coverage across 4 runs (2 days at current 2x/day schedule).
+New flow:
+- **No keyword text matching** — every post returned by Reddit's relevance search is a candidate
+- **AI scoring only** — score all candidates against the user's business context
+- **Threshold: 6+** (lowered from 7, since Reddit's relevance sort already pre-filters)
 
-#### 2. Reduce maxItems calculation
-- Change from `keywords * subreddits * 5` to a flat cap: `min(200, keywords * 10)`
-- This drastically cuts Apify compute while still returning enough posts per keyword
-
-#### 3. Cap `postsPerSource` to 10 (down from 50)
-- 50 posts per source is excessive; most relevant posts appear in the top 10
-
-#### 4. Migration: add `last_polled_at` to `reddit_keywords`
-```sql
-ALTER TABLE reddit_keywords ADD COLUMN last_polled_at timestamptz DEFAULT NULL;
-```
-
-### Files to Change
-- `supabase/functions/poll-reddit-signals/index.ts` — keyword rotation logic, reduced limits
-- New migration — add `last_polled_at` column
+#### 3. One Apify Call Per Keyword (not batched)
+The current batch approach mixes all keywords into one call, making it impossible to track which keyword returned which result. The new actor takes a single `query`, so we loop keywords (max 10 per user via rotation) with `maxItems: 20` each.
 
 ### Technical Flow
 ```text
-Current (40 keywords):
-  All 40 keywords → Apify (maxItems=1200, postsPerSource=50)
-  = massive compute, often times out
+Current:
+  All keywords → single Apify batch → keyword text filter (80%) → AI score ≥7
+  Problem: text filter kills relevant posts, OR lets through noise
 
-Proposed (40 keywords):
-  Pick 10 oldest-polled → Apify (maxItems=100, postsPerSource=10)
-  Update last_polled_at on those 10
-  Next run picks next 10 oldest
-  Full rotation every 4 runs (2 days)
+New:
+  For each keyword (max 10, rotated):
+    → Apify search (sort=relevance, maxItems=20)
+    → ALL results become candidates (no text filter)
+    → AI batch scoring with business context
+    → score ≥ 6 → insert
+  Total Apify items: max 10 × 20 = 200 (same budget)
 ```
 
+### Files to Change
+- **`supabase/functions/poll-reddit-signals/index.ts`** — Replace Apify actor, remove keyword text matching, loop per-keyword, adjust scoring threshold
+
 ### Impact
-- Apify compute reduced ~90% per run (from ~1200 items to ~100)
-- Edge function stays well within 110s budget
-- All keywords still get polled every 2 days
-- No user-facing changes needed
+- Posts returned by Reddit's relevance search are inherently more relevant to the query
+- No more false negatives from text matching (the #1 complaint)
+- AI scoring catches remaining noise
+- Same compute budget (200 items max)
+- No database changes needed
 
