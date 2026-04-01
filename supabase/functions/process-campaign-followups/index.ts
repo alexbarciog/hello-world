@@ -617,26 +617,43 @@ async function processCampaign(
     }
   }
 
-  // ── Phase 3: Catch-up generation — generate messages only for verified accepted contacts missing scheduled_messages ──
+  // ── Phase 3: Catch-up generation — generate messages ONLY when previous step is sent ──
+  // Rule: Step 2 can be generated when connection is accepted (current_step=1).
+  // Step 3+ can only be generated AFTER the previous step's message has status='sent'.
   if (lovableApiKey) {
     const { data: allAccepted } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, current_step, user_id, chat_id')
+      .select('id, contact_id, current_step, user_id, chat_id, step_completed_at')
       .eq('campaign_id', campaign.id)
       .eq('status', 'accepted');
 
     if (allAccepted && allAccepted.length > 0) {
       for (const req of allAccepted) {
         try {
-          // Generate message even without chat_id — chat will be resolved when sending
-
           const currentStep = req.current_step || 1;
           const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
           const nextStep = workflowSteps[nextWfIdx];
 
           if (!nextStep || nextStep.type !== 'message') continue;
 
-          // Check if message already exists
+          // GUARD: For step 3+, only generate if previous step's message was SENT
+          if (currentStep > 1) {
+            const prevWfIdx = getNextWorkflowIndex(currentStep - 1, workflowSteps);
+            // Verify previous step's scheduled_message exists AND is sent
+            const { data: prevMsg } = await supabase
+              .from('scheduled_messages')
+              .select('id, status')
+              .eq('connection_request_id', req.id)
+              .eq('step_index', prevWfIdx)
+              .maybeSingle();
+
+            if (!prevMsg || prevMsg.status !== 'sent') {
+              // Previous step not sent yet — do NOT generate this step
+              continue;
+            }
+          }
+
+          // Check if message already exists for this step
           const { data: existing } = await supabase
             .from('scheduled_messages')
             .select('id')
@@ -646,7 +663,7 @@ async function processCampaign(
 
           if (existing) continue;
 
-          console.log(`[followup][catch-up] Generating message for contact ${req.contact_id}, wfIdx ${nextWfIdx}`);
+          console.log(`[followup][catch-up] Generating message for contact ${req.contact_id}, wfIdx ${nextWfIdx} (prev step confirmed sent)`);
           const gen = await generateNextStepMessage(
             supabase,
             campaign,
