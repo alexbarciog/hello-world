@@ -79,9 +79,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: isAdmin } = useAdminCheck();
   const [showAgentTooltip, setShowAgentTooltip] = useState(false);
 
-  const allNavItems = isAdmin
-    ? [...navItems, { label: "Admin", icon: Shield, path: "/admin" }]
-    : navItems;
+  const navItems = isAdmin
+    ? [...baseNavItems, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
+    : baseNavItems;
+
+  const allNavItems = navItems;
 
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
