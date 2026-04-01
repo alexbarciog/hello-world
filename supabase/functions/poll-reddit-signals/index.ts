@@ -51,7 +51,7 @@ async function scoreRelevance(
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) {
     console.warn('[poll-reddit] LOVABLE_API_KEY not set, skipping AI scoring');
-    candidates.forEach((_, i) => scores.set(i, 7));
+    candidates.forEach((_, i) => scores.set(i, 5));
     return scores;
   }
 
