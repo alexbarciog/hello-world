@@ -276,6 +276,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             };
             setSignals(migrated);
           }
+        }
         if (row.step_6_data) {
           setObjectives(row.step_6_data as ObjectivesData);
         }
