@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Keyword rotation: cap 10 per user ──
-    const MAX_KEYWORDS_PER_USER = 10;
+    const MAX_KEYWORDS_PER_USER = 3;
     const paidUserKwMap = new Map<string, typeof allKeywords>();
     for (const kw of paidUserKeywords) {
       const list = paidUserKwMap.get(kw.user_id) || [];
