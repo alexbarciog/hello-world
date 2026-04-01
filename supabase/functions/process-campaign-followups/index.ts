@@ -597,7 +597,7 @@ async function processCampaign(
           }
         }
 
-        await delay(3000 + Math.random() * 2000);
+        await delay(500);
       } catch (err) {
         console.error(`[followup] message error for ${req.contact_id}:`, err);
       }
