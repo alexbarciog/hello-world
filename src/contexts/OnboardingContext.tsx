@@ -148,12 +148,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       stepPayload.precision_mode = pr;
     } else if (step === 5) {
       stepPayload.step_5_data = si;
-      stepPayload.engagement_keywords = si.engagementKeywords;
-      stepPayload.trigger_top_active = si.triggerTopActive;
-      stepPayload.trigger_job_changes = si.triggerJobChanges;
-      stepPayload.trigger_funded_companies = si.triggerFundedCompanies;
-      stepPayload.influencer_profiles = si.influencerProfiles;
-      stepPayload.competitor_pages = si.competitorPages;
+      // Extract flat fields from the new structured format for campaign columns
+      const enabledList = Object.entries(si.enabledSignals).filter(([, v]) => v).map(([k]) => k);
+      stepPayload.engagement_keywords = si.signalKeywords?.keyword_posts ?? [];
+      stepPayload.trigger_top_active = enabledList.includes("post_engagers");
+      stepPayload.trigger_job_changes = enabledList.includes("job_changes");
+      stepPayload.trigger_funded_companies = enabledList.includes("funding_events");
+      stepPayload.influencer_profiles = si.signalKeywords?.profile_engagers ?? [];
+      stepPayload.competitor_pages = [
+        ...(si.signalKeywords?.competitor_followers ?? []),
+        ...(si.signalKeywords?.competitor_engagers ?? []),
+      ].filter((v, i, a) => a.indexOf(v) === i);
     } else if (step === 6) {
       stepPayload.step_6_data = ob;
       stepPayload.pain_points = ob.painPoints

@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, ArrowRight, MapPin, Sparkles, X, Loader2 } from "lucide-react";
+import {
+  ArrowLeft, ArrowRight, MapPin, Sparkles, X, Loader2,
+  ChevronDown, Building2, MessageSquare, Users, Briefcase,
+  Eye, UserPlus, ThumbsUp, Search, TrendingUp,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import { CardShell } from "./CardShell";
@@ -11,22 +15,70 @@ import type { ICPData } from "./Step3ICP";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type IntentSignalsData = {
-  engagementKeywords: string[];
-  triggerTopActive: boolean;
-  triggerJobChanges: boolean;
-  triggerFundedCompanies: boolean;
-  influencerProfiles: string[];
-  competitorPages: string[];
+  enabledSignals: Record<string, boolean>;
+  signalKeywords: Record<string, string[]>;
 };
 
 export const INITIAL_INTENT_SIGNALS: IntentSignalsData = {
-  engagementKeywords: [],
-  triggerTopActive: true,
-  triggerJobChanges: true,
-  triggerFundedCompanies: false,
-  influencerProfiles: [],
-  competitorPages: [],
+  enabledSignals: { keyword_posts: true, job_changes: true },
+  signalKeywords: {},
 };
+
+// ─── Signal categories (same as CreateAgentWizard) ────────────────────────────
+
+const SIGNAL_CATEGORIES = [
+  {
+    id: "you_company",
+    title: "You & Your company",
+    desc: "Detect people engaging with your company or your team",
+    icon: <Building2 className="w-5 h-5" />,
+    subSignals: [
+      { id: "profile_viewers", label: "People who viewed your profile", icon: <Eye className="w-3.5 h-3.5" /> },
+      { id: "company_followers", label: "New company page followers", icon: <UserPlus className="w-3.5 h-3.5" /> },
+      { id: "post_engagers", label: "People who liked/commented your posts", icon: <ThumbsUp className="w-3.5 h-3.5" /> },
+    ],
+  },
+  {
+    id: "engagement",
+    title: "Engagement & Interest",
+    desc: "Find people who recently engaged with relevant content on LinkedIn",
+    icon: <MessageSquare className="w-5 h-5" />,
+    subSignals: [
+      { id: "keyword_posts", label: "People posting about specific keywords", icon: <Search className="w-3.5 h-3.5" />, hasKeywords: true },
+      { id: "hashtag_engagement", label: "People engaging with relevant hashtags", icon: <TrendingUp className="w-3.5 h-3.5" />, hasKeywords: true },
+    ],
+  },
+  {
+    id: "linkedin_profiles",
+    title: "LinkedIn Profiles",
+    desc: "Spot people engaging with relevant LinkedIn profiles in your niche",
+    icon: <Users className="w-5 h-5" />,
+    subSignals: [
+      { id: "profile_engagers", label: "People engaging with specific profiles", icon: <ThumbsUp className="w-3.5 h-3.5" />, hasKeywords: true, keywordPlaceholder: "LinkedIn profile URL..." },
+    ],
+  },
+  {
+    id: "change_trigger",
+    title: "Change & Trigger Events",
+    desc: "Job changes, new hires, or funding announcements that suggest buying intent",
+    icon: <Briefcase className="w-5 h-5" />,
+    subSignals: [
+      { id: "job_changes", label: "Recently changed jobs", icon: <Briefcase className="w-3.5 h-3.5" /> },
+      { id: "new_hires", label: "Companies with new hires", icon: <UserPlus className="w-3.5 h-3.5" /> },
+      { id: "funding_events", label: "Recently funded companies", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    ],
+  },
+  {
+    id: "competitors",
+    title: "Companies & Competitors",
+    desc: "Track leads following or interacting with competitors",
+    icon: <Building2 className="w-5 h-5" />,
+    subSignals: [
+      { id: "competitor_followers", label: "People following competitor pages", icon: <Eye className="w-3.5 h-3.5" />, hasKeywords: true, keywordPlaceholder: "Competitor company page URL..." },
+      { id: "competitor_engagers", label: "People engaging with competitor posts", icon: <ThumbsUp className="w-3.5 h-3.5" />, hasKeywords: true, keywordPlaceholder: "Competitor company page URL..." },
+    ],
+  },
+];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -48,58 +100,6 @@ const Tag = ({ label, onRemove }: { label: string; onRemove: () => void }) => (
       <X className="w-2.5 h-2.5" />
     </button>
   </span>
-);
-
-const TagInput = ({ placeholder, onAdd }: { placeholder: string; onAdd: (val: string) => void }) => {
-  const [val, setVal] = useState("");
-  function submit() {
-    const t = val.trim();
-    if (t) { onAdd(t); setVal(""); }
-  }
-  return (
-    <div className="flex gap-2">
-      <Input
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), submit())}
-        placeholder={placeholder}
-        className="rounded-xl h-9 text-xs border-border flex-1"
-      />
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!val.trim()}
-        className="btn-cta h-9 px-3.5 text-xs disabled:opacity-40 disabled:pointer-events-none"
-      >
-        Add
-      </button>
-    </div>
-  );
-};
-
-const SignalCardShell = ({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) => (
-  <CardShell>
-    <div className="flex items-start gap-3 mb-3">
-      <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain shrink-0 mt-0.5" />
-      <div>
-        <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>
-          {title}
-        </p>
-        <p className="text-xs leading-relaxed mt-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
-          {description}
-        </p>
-      </div>
-    </div>
-    {children}
-  </CardShell>
 );
 
 const CardSkeleton = () => (
@@ -144,17 +144,27 @@ export const Step5IntentSignals = ({
 }: Props) => {
   const [loading, setLoading] = useState(false);
   const [aiGenerated, setAiGenerated] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [keywordInputs, setKeywordInputs] = useState<Record<string, string>>({});
+  const [generatingKeywords, setGeneratingKeywords] = useState<Record<string, boolean>>({});
   const hasFetched = useRef(false);
 
+  // Auto-generate keywords for keyword_posts on mount
   useEffect(() => {
     if (hasFetched.current) return;
     if (!data.description && !data.industry) return;
+    // Only generate if no keywords exist yet
+    const existing = signals.signalKeywords?.keyword_posts;
+    if (existing && existing.length > 0) {
+      setAiGenerated(true);
+      return;
+    }
     hasFetched.current = true;
-    generateKeywords();
+    generateInitialKeywords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function generateKeywords() {
+  async function generateInitialKeywords() {
     setLoading(true);
     try {
       const { data: fnData, error } = await supabase.functions.invoke("generate-intent-signals", {
@@ -168,54 +178,99 @@ export const Step5IntentSignals = ({
       });
       if (error) throw error;
       const result = fnData as { keywords?: string[] };
-      onSignalsChange({ engagementKeywords: result.keywords ?? [] });
+      if (result.keywords?.length) {
+        onSignalsChange({
+          signalKeywords: {
+            ...signals.signalKeywords,
+            keyword_posts: result.keywords,
+          },
+        });
+      }
       setAiGenerated(true);
     } catch (err) {
       console.error("Intent signals generation failed:", err);
-      onSignalsChange({ engagementKeywords: data.industry ? [data.industry] : [] });
+      if (data.industry) {
+        onSignalsChange({
+          signalKeywords: {
+            ...signals.signalKeywords,
+            keyword_posts: [data.industry],
+          },
+        });
+      }
       setAiGenerated(true);
     } finally {
       setLoading(false);
     }
   }
 
-  function addKeyword(kw: string) {
-    if (!signals.engagementKeywords.includes(kw))
-      onSignalsChange({ engagementKeywords: [...signals.engagementKeywords, kw] });
+  function toggleSubSignal(id: string) {
+    onSignalsChange({
+      enabledSignals: { ...signals.enabledSignals, [id]: !signals.enabledSignals[id] },
+    });
   }
-  function removeKeyword(kw: string) {
-    onSignalsChange({ engagementKeywords: signals.engagementKeywords.filter((k) => k !== kw) });
+
+  function addSignalKeyword(signalId: string) {
+    const input = keywordInputs[signalId]?.trim();
+    if (!input) return;
+    const current = signals.signalKeywords[signalId] || [];
+    if (!current.includes(input)) {
+      onSignalsChange({
+        signalKeywords: { ...signals.signalKeywords, [signalId]: [...current, input] },
+      });
+    }
+    setKeywordInputs({ ...keywordInputs, [signalId]: "" });
   }
-  function addInfluencer(url: string) {
-    if (!signals.influencerProfiles.includes(url))
-      onSignalsChange({ influencerProfiles: [...signals.influencerProfiles, url] });
+
+  function removeSignalKeyword(signalId: string, kw: string) {
+    const current = signals.signalKeywords[signalId] || [];
+    onSignalsChange({
+      signalKeywords: { ...signals.signalKeywords, [signalId]: current.filter((x) => x !== kw) },
+    });
   }
-  function removeInfluencer(url: string) {
-    onSignalsChange({ influencerProfiles: signals.influencerProfiles.filter((u) => u !== url) });
+
+  async function generateSignalKeywords(signalId: string) {
+    setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
+    try {
+      const { data: fnData, error } = await supabase.functions.invoke("generate-signal-keywords", {
+        body: {
+          signalType: signalId,
+          jobTitles: icp.jobTitles,
+          industries: icp.targetIndustries,
+          companyTypes: icp.companyTypes,
+          locations: icp.targetLocations,
+        },
+      });
+      if (error) throw error;
+      if (fnData?.keywords?.length) {
+        const current = signals.signalKeywords[signalId] || [];
+        const merged = [...new Set([...current, ...fnData.keywords])];
+        onSignalsChange({
+          signalKeywords: { ...signals.signalKeywords, [signalId]: merged },
+        });
+      }
+    } catch (e) {
+      console.error("Failed to generate keywords:", e);
+    }
+    setGeneratingKeywords((prev) => ({ ...prev, [signalId]: false }));
   }
-  function addCompetitor(url: string) {
-    if (!signals.competitorPages.includes(url))
-      onSignalsChange({ competitorPages: [...signals.competitorPages, url] });
-  }
-  function removeCompetitor(url: string) {
-    onSignalsChange({ competitorPages: signals.competitorPages.filter((u) => u !== url) });
-  }
+
+  const totalEnabled = Object.values(signals.enabledSignals).filter(Boolean).length;
 
   return (
     <div>
       {/* Header */}
-      <div className="relative mb-7 text-center">
+      <div className="relative mb-5 text-center">
         <h1
           className="text-2xl font-normal tracking-tight mb-1.5"
           style={{ color: "hsl(var(--foreground))" }}
         >
-          What IntentslyAI will detect for you
+          Configure Intent Signals
         </h1>
         <p className="text-sm leading-relaxed" style={{ color: "hsl(var(--muted-foreground))" }}>
-          We've pre-selected the most relevant buying-intent signals for your business and ideal customer.
+          Enable the signals your agent should monitor. Expand each category to configure.
         </p>
 
-        {aiGenerated && !loading && (
+        {totalEnabled > 0 && (
           <div
             className="absolute -top-1 right-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
             style={{
@@ -224,105 +279,153 @@ export const Step5IntentSignals = ({
               boxShadow: "0 2px 12px hsl(0 0% 0% / 0.2)",
             }}
           >
-            <Sparkles className="w-3 h-3" />
-            AI-generated
+            {totalEnabled} signals active
           </div>
         )}
       </div>
 
-      {/* 2×2 Grid */}
+      {/* Signal categories */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <CardSkeleton />
+        <div className="space-y-3 mb-5">
           <CardSkeleton />
           <CardSkeleton />
           <CardSkeleton />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <div className="animate-fade-in-up" style={{ animationDelay: "0s" }}>
-            <SignalCardShell title="Engagement & Interest" description="Find people who recently engaged with relevant content on LinkedIn">
-              <div>
-                <p className="text-xs font-medium mb-1.5" style={{ color: "hsl(var(--foreground))" }}>Track Keywords</p>
-                <TagInput placeholder="e.g., AI, sales automation" onAdd={addKeyword} />
-                {signals.engagementKeywords.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {signals.engagementKeywords.map((kw) => (
-                      <Tag key={kw} label={kw} onRemove={() => removeKeyword(kw)} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </SignalCardShell>
-          </div>
+        <div className="space-y-2.5 mb-5">
+          {SIGNAL_CATEGORIES.map((cat) => {
+            const isExpanded = expandedCategory === cat.id;
+            const activeSubs = cat.subSignals.filter((s) => signals.enabledSignals[s.id]).length;
 
-          <div className="animate-fade-in-up" style={{ animationDelay: "0.05s" }}>
-            <SignalCardShell title="Change & Trigger Events" description="Job changes, funding, and other signals that suggest buying intent">
-              <div className="space-y-2.5">
-                {[
-                  { key: "triggerTopActive" as const, label: "Top 5% active profiles" },
-                  { key: "triggerJobChanges" as const, label: "Recent job changes (< 90 days)" },
-                  { key: "triggerFundedCompanies" as const, label: "Companies that raised funds" },
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2.5 cursor-pointer">
-                    <div
-                      className="relative w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all duration-150"
-                      style={{
-                        background: signals[key] ? "hsl(0 0% 0%)" : "hsl(0 0% 100%)",
-                        border: signals[key] ? "1.5px solid hsl(0 0% 0%)" : "1.5px solid hsl(var(--border))",
-                      }}
-                      onClick={() => onSignalsChange({ [key]: !signals[key] })}
-                    >
-                      {signals[key] && (
-                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+            return (
+              <div
+                key={cat.id}
+                className="rounded-2xl overflow-hidden transition-all duration-200"
+                style={{
+                  background: "hsl(0 0% 100%)",
+                  border: isExpanded ? "1.5px solid hsl(var(--border))" : "1.5px solid hsl(0 0% 94%)",
+                }}
+              >
+                {/* Category header */}
+                <button
+                  onClick={() => setExpandedCategory(isExpanded ? null : cat.id)}
+                  className="w-full flex items-center gap-3 p-3.5 text-left transition-colors hover:bg-muted/30"
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    style={{ background: "hsl(0 0% 96%)", color: "hsl(var(--foreground))" }}
+                  >
+                    {cat.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm" style={{ color: "hsl(var(--foreground))" }}>
+                        {cat.title}
+                      </span>
+                      {activeSubs > 0 && (
+                        <span
+                          className="text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                          style={{ background: "hsl(var(--foreground))", color: "hsl(var(--background))" }}
+                        >
+                          {activeSubs}
+                        </span>
                       )}
                     </div>
-                    <span
-                      className="text-xs font-medium"
-                      style={{ color: "hsl(var(--foreground))" }}
-                      onClick={() => onSignalsChange({ [key]: !signals[key] })}
-                    >
-                      {label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </SignalCardShell>
-          </div>
+                    <p className="text-xs mt-0.5" style={{ color: "hsl(var(--muted-foreground))" }}>
+                      {cat.desc}
+                    </p>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    style={{ color: "hsl(var(--muted-foreground))" }}
+                  />
+                </button>
 
-          <div className="animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-            <SignalCardShell title="LinkedIn Profiles" description="Track people engaging with influencers and thought leaders in your niche">
-              <div>
-                <p className="text-xs font-medium mb-1.5" style={{ color: "hsl(var(--foreground))" }}>Track Influencer Profiles</p>
-                <TagInput placeholder="https://linkedin.com/in/influencer-profile" onAdd={addInfluencer} />
-                {signals.influencerProfiles.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {signals.influencerProfiles.map((url) => (
-                      <Tag key={url} label={url} onRemove={() => removeInfluencer(url)} />
+                {/* Expanded sub-signals */}
+                {isExpanded && (
+                  <div className="px-3.5 pb-3.5 space-y-2 border-t pt-3" style={{ borderColor: "hsl(0 0% 94%)" }}>
+                    {cat.subSignals.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="rounded-xl p-3 transition-colors"
+                        style={{
+                          border: signals.enabledSignals[sub.id]
+                            ? "1px solid hsl(var(--foreground) / 0.2)"
+                            : "1px solid hsl(var(--border))",
+                          background: signals.enabledSignals[sub.id] ? "hsl(0 0% 98%)" : "transparent",
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <span style={{ color: "hsl(var(--muted-foreground))" }}>{sub.icon}</span>
+                            <span className="text-xs font-medium" style={{ color: "hsl(var(--foreground))" }}>
+                              {sub.label}
+                            </span>
+                          </div>
+                          <div
+                            onClick={() => toggleSubSignal(sub.id)}
+                            className="w-9 h-5 rounded-full cursor-pointer transition-colors relative"
+                            style={{
+                              background: signals.enabledSignals[sub.id] ? "hsl(var(--foreground))" : "hsl(var(--border))",
+                            }}
+                          >
+                            <div
+                              className="absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform"
+                              style={{
+                                background: "hsl(var(--background))",
+                                transform: signals.enabledSignals[sub.id] ? "translateX(16px)" : "translateX(2px)",
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Keyword input for signals that need it */}
+                        {sub.hasKeywords && signals.enabledSignals[sub.id] && (
+                          <div className="mt-2.5">
+                            <div className="flex gap-2">
+                              <Input
+                                value={keywordInputs[sub.id] || ""}
+                                onChange={(e) => setKeywordInputs({ ...keywordInputs, [sub.id]: e.target.value })}
+                                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSignalKeyword(sub.id))}
+                                placeholder={sub.keywordPlaceholder || "Add keyword..."}
+                                className="rounded-xl h-8 text-xs border-border flex-1"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => addSignalKeyword(sub.id)}
+                                className="text-xs font-medium px-2"
+                                style={{ color: "hsl(var(--foreground))" }}
+                              >
+                                Add
+                              </button>
+                              {!["competitor_followers", "competitor_engagers"].includes(sub.id) && (
+                                <button
+                                  type="button"
+                                  onClick={() => generateSignalKeywords(sub.id)}
+                                  disabled={generatingKeywords[sub.id]}
+                                  className="btn-cta h-8 px-2.5 text-xs disabled:opacity-50 flex items-center gap-1"
+                                >
+                                  <Sparkles className="w-3 h-3" />
+                                  {generatingKeywords[sub.id] ? "..." : "AI"}
+                                </button>
+                              )}
+                            </div>
+                            {(signals.signalKeywords[sub.id] || []).length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {signals.signalKeywords[sub.id].map((kw) => (
+                                  <Tag key={kw} label={kw} onRemove={() => removeSignalKeyword(sub.id, kw)} />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
-            </SignalCardShell>
-          </div>
-
-          <div className="animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
-            <SignalCardShell title="Competitor Engagement" description="Track people following or interacting with competitors">
-              <div>
-                <p className="text-xs font-medium mb-1.5" style={{ color: "hsl(var(--foreground))" }}>Monitor Competitor LinkedIn Pages</p>
-                <TagInput placeholder="https://linkedin.com/company/competitor" onAdd={addCompetitor} />
-                {signals.competitorPages.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    {signals.competitorPages.map((url) => (
-                      <Tag key={url} label={url} onRemove={() => removeCompetitor(url)} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </SignalCardShell>
-          </div>
+            );
+          })}
         </div>
       )}
 
