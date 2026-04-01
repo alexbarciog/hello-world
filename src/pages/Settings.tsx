@@ -860,7 +860,9 @@ export default function Settings() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setUserEmail(user.email || "");
-    setUserName(user.user_metadata?.full_name || user.email?.split("@")[0] || "User");
+    const meta = user.user_metadata || {};
+    const fullName = [meta.first_name, meta.last_name].filter(Boolean).join(" ") || meta.full_name || user.email?.split("@")[0] || "User";
+    setUserName(fullName);
     const { data } = await supabase.from("campaigns").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1).single();
     if (data) { setCampaignData(data); setCampaignId(data.id); }
   }
