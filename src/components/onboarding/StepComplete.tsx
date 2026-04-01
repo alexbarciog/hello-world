@@ -89,6 +89,9 @@ export const StepComplete = ({
 
       let campaignId: string | null = existingCampaignId ?? null;
 
+      // Derive flat fields from structured signals
+      const enabledList = Object.entries(signals.enabledSignals).filter(([, v]) => v).map(([k]) => k);
+
       try {
         const fullPayload = {
           user_id: userId,
@@ -106,12 +109,15 @@ export const StepComplete = ({
           icp_company_sizes: icp.companySizes,
           icp_exclude_keywords: icp.excludeKeywords,
           precision_mode: precision,
-          engagement_keywords: signals.engagementKeywords,
-          trigger_top_active: signals.triggerTopActive,
-          trigger_job_changes: signals.triggerJobChanges,
-          trigger_funded_companies: signals.triggerFundedCompanies,
-          influencer_profiles: signals.influencerProfiles,
-          competitor_pages: signals.competitorPages,
+          engagement_keywords: signals.signalKeywords?.keyword_posts ?? [],
+          trigger_top_active: enabledList.includes("post_engagers"),
+          trigger_job_changes: enabledList.includes("job_changes"),
+          trigger_funded_companies: enabledList.includes("funding_events"),
+          influencer_profiles: signals.signalKeywords?.profile_engagers ?? [],
+          competitor_pages: [
+            ...(signals.signalKeywords?.competitor_followers ?? []),
+            ...(signals.signalKeywords?.competitor_engagers ?? []),
+          ].filter((v, i, a) => a.indexOf(v) === i),
           pain_points: objectives.painPoints ? objectives.painPoints.split("\n").map(s => s.trim()).filter(Boolean) : [],
           campaign_goal: objectives.campaignGoal,
           message_tone: objectives.messageTone,
@@ -146,7 +152,7 @@ export const StepComplete = ({
             name: `${data.companyName || "My"} Lead Agent`,
             agent_type: "signals",
             status: initialStatus,
-            keywords: signals.engagementKeywords || [],
+            keywords: signals.signalKeywords?.keyword_posts || [],
             icp_job_titles: icp.jobTitles,
             icp_locations: icp.targetLocations,
             icp_industries: icp.targetIndustries,
@@ -156,11 +162,8 @@ export const StepComplete = ({
             precision_mode: precision,
             leads_list_name: `${data.companyName || "Campaign"} Leads`,
             signals_config: {
-              triggerTopActive: signals.triggerTopActive,
-              triggerJobChanges: signals.triggerJobChanges,
-              triggerFundedCompanies: signals.triggerFundedCompanies,
-              influencerProfiles: signals.influencerProfiles,
-              competitorPages: signals.competitorPages,
+              enabled: enabledList,
+              keywords: signals.signalKeywords,
             },
           };
 

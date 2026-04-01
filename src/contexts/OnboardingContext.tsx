@@ -148,12 +148,17 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       stepPayload.precision_mode = pr;
     } else if (step === 5) {
       stepPayload.step_5_data = si;
-      stepPayload.engagement_keywords = si.engagementKeywords;
-      stepPayload.trigger_top_active = si.triggerTopActive;
-      stepPayload.trigger_job_changes = si.triggerJobChanges;
-      stepPayload.trigger_funded_companies = si.triggerFundedCompanies;
-      stepPayload.influencer_profiles = si.influencerProfiles;
-      stepPayload.competitor_pages = si.competitorPages;
+      // Extract flat fields from the new structured format for campaign columns
+      const enabledList = Object.entries(si.enabledSignals).filter(([, v]) => v).map(([k]) => k);
+      stepPayload.engagement_keywords = si.signalKeywords?.keyword_posts ?? [];
+      stepPayload.trigger_top_active = enabledList.includes("post_engagers");
+      stepPayload.trigger_job_changes = enabledList.includes("job_changes");
+      stepPayload.trigger_funded_companies = enabledList.includes("funding_events");
+      stepPayload.influencer_profiles = si.signalKeywords?.profile_engagers ?? [];
+      stepPayload.competitor_pages = [
+        ...(si.signalKeywords?.competitor_followers ?? []),
+        ...(si.signalKeywords?.competitor_engagers ?? []),
+      ].filter((v, i, a) => a.indexOf(v) === i);
     } else if (step === 6) {
       stepPayload.step_6_data = ob;
       stepPayload.pain_points = ob.painPoints
@@ -248,7 +253,29 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           setPrecision(s4.precision ?? "discovery");
         }
         if (row.step_5_data) {
-          setSignals(row.step_5_data as IntentSignalsData);
+          const s5 = row.step_5_data as any;
+          // Handle both old flat format and new structured format
+          if (s5.enabledSignals) {
+            setSignals(s5 as IntentSignalsData);
+          } else {
+            // Migrate old format to new
+            const migrated: IntentSignalsData = {
+              enabledSignals: {
+                keyword_posts: true,
+                post_engagers: s5.triggerTopActive ?? true,
+                job_changes: s5.triggerJobChanges ?? true,
+                funding_events: s5.triggerFundedCompanies ?? false,
+                ...(s5.influencerProfiles?.length ? { profile_engagers: true } : {}),
+                ...(s5.competitorPages?.length ? { competitor_followers: true, competitor_engagers: true } : {}),
+              },
+              signalKeywords: {
+                keyword_posts: s5.engagementKeywords ?? [],
+                ...(s5.influencerProfiles?.length ? { profile_engagers: s5.influencerProfiles } : {}),
+                ...(s5.competitorPages?.length ? { competitor_followers: s5.competitorPages, competitor_engagers: s5.competitorPages } : {}),
+              },
+            };
+            setSignals(migrated);
+          }
         }
         if (row.step_6_data) {
           setObjectives(row.step_6_data as ObjectivesData);
