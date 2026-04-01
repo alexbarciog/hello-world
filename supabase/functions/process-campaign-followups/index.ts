@@ -216,7 +216,7 @@ async function processCampaign(
         } else {
           console.warn(`[followup] contact ${req.contact_id} NOT accepted (providerId: ${providerId})`);
         }
-        await delay(300);
+        await delay(100);
 
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
