@@ -350,15 +350,18 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Match to keyword (all words from the keyword must appear in title+body)
-      const searchText = `${title} ${body}`.toLowerCase();
+      // Match to keyword — strict: exact phrase OR at least 80% of words must appear
+      const searchText = `${title} ${body}`.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ');
       const matchedIdx = keywordLower.findIndex(k => {
-        // First try exact phrase match
-        if (searchText.includes(k)) return true;
-        // Fallback: all significant words (3+ chars) must appear
-        const words = k.split(/\s+/).filter(w => w.length >= 3);
-        if (words.length === 0) return false;
-        return words.every(word => searchText.includes(word));
+        // Exact phrase match
+        const normalizedK = k.replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+        if (searchText.includes(normalizedK)) return true;
+        // Fallback: at least 80% of ALL words must appear
+        const words = normalizedK.split(/\s+/).filter(w => w.length >= 2);
+        if (words.length <= 1) return searchText.includes(normalizedK);
+        const matchCount = words.filter(word => searchText.includes(word)).length;
+        const matchRatio = matchCount / words.length;
+        return matchRatio >= 0.8;
       });
       if (matchedIdx === -1) continue;
 
