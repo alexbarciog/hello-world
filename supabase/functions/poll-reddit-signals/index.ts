@@ -91,18 +91,16 @@ async function scoreRelevance(
       return `[${globalIdx}] Title: ${c.title}\nBody: ${(c.body || '').slice(0, 300)}`;
     }).join('\n---\n');
 
-    const prompt = `You are a relevance scoring engine for a B2B lead generation tool. Score each Reddit post from 0-10 based on how relevant it is as a potential sales opportunity for this business:
+    const prompt = `You are a strict relevance scoring engine for a B2B sales tool. Score each Reddit post 0-10 based on whether the poster could REALISTICALLY become a customer for this business:
 
 ${businessContext}
 
-A high score (7-10) means the poster is likely:
-- Actively looking for a solution the business offers
-- Expressing pain points the business addresses
-- Asking for recommendations in the business's domain
+SCORING CRITERIA (be strict):
+- 8-10: The poster is ACTIVELY seeking a solution/service this business sells, or describing a pain point this business directly solves. They would likely pay for the service.
+- 5-7: The post is somewhat related to the business domain but the poster is NOT clearly looking to buy. General discussion, sharing news, or tangentially related topics.
+- 0-4: The post is unrelated, the keyword match is coincidental, or the poster would never buy this service (e.g., they sell a competing product, they're just venting, off-topic).
 
-A low score (0-3) means:
-- The post is unrelated to the business
-- The keyword match is coincidental
+IMPORTANT: Be HARSH. Most posts from Reddit search are noise. Only score 8+ if the poster genuinely needs what this business offers. A post mentioning similar words but in an unrelated context should score 3 or below.
 
 Score each post. Return ONLY a JSON object like: {"scores": {"0": 7, "1": 3, "2": 9, ...}}
 
