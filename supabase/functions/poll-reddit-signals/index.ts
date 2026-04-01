@@ -400,8 +400,8 @@ Deno.serve(async (req) => {
       let skippedLowRelevance = 0;
 
       for (let i = 0; i < candidates.length; i++) {
-        const relevanceScore = scores.get(i) ?? 7;
-        if (relevanceScore < 6) {
+        const relevanceScore = scores.get(i) ?? 5;
+        if (relevanceScore < 7) {
           skippedLowRelevance++;
           continue;
         }
