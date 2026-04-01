@@ -43,15 +43,18 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const navItems = [
+const baseNavItems = [
   { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
-  { label: "Reddit Signals", icon: RedditIcon,      path: "/reddit-signals", badge: "Beta" },
-  { label: "X Signals",      icon: XIcon,           path: "/x-signals", badge: "Beta" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
+];
+
+const adminOnlyNavItems = [
+  { label: "Reddit Signals", icon: RedditIcon,      path: "/reddit-signals", badge: "Beta" },
+  { label: "X Signals",      icon: XIcon,           path: "/x-signals", badge: "Beta" },
 ];
 
 // Bottom nav shows only the 5 most important items on mobile
@@ -76,9 +79,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: isAdmin } = useAdminCheck();
   const [showAgentTooltip, setShowAgentTooltip] = useState(false);
 
-  const allNavItems = isAdmin
-    ? [...navItems, { label: "Admin", icon: Shield, path: "/admin" }]
-    : navItems;
+  const navItems = isAdmin
+    ? [...baseNavItems, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
+    : baseNavItems;
+
+  const allNavItems = navItems;
 
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
