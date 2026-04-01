@@ -143,8 +143,8 @@ async function processCampaign(
 
   // ── Phase 1: Check pending invitations for acceptance ──
   // Cap per run to avoid edge function timeout (~60s)
-  const MAX_ACCEPTANCE_CHECKS = 3;
-  const MAX_MESSAGE_SENDS = 3;
+  const MAX_ACCEPTANCE_CHECKS = 15;
+  const MAX_MESSAGE_SENDS = 10;
 
   const { data: pendingRequests } = await supabase
     .from('campaign_connection_requests')
