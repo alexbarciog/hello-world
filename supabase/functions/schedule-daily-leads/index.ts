@@ -107,43 +107,67 @@ Deno.serve(async (req) => {
           const remainingConnections = connectionsLimit - connectionsScheduled;
 
           if (remainingConnections > 0) {
-            // Get contacts in list
-            const { data: contactLinks } = await supabase
-              .from('contact_lists')
-              .select('contact_id')
-              .eq('list_id', campaign.source_list_id);
+            // Get contacts in list — batch to avoid URL length limits
+            let allContactIds: string[] = [];
+            let offset = 0;
+            const PAGE_SIZE = 500;
+            while (true) {
+              const { data: contactLinks } = await supabase
+                .from('contact_lists')
+                .select('contact_id')
+                .eq('list_id', campaign.source_list_id)
+                .range(offset, offset + PAGE_SIZE - 1);
+              if (!contactLinks || contactLinks.length === 0) break;
+              allContactIds.push(...contactLinks.map((cl: any) => cl.contact_id));
+              if (contactLinks.length < PAGE_SIZE) break;
+              offset += PAGE_SIZE;
+            }
 
-            if (contactLinks && contactLinks.length > 0) {
-              const allContactIds = contactLinks.map((cl: any) => cl.contact_id);
-
-              // Exclude already sent/accepted/completed contacts
-              const { data: alreadySent } = await supabase
-                .from('campaign_connection_requests')
-                .select('contact_id, status')
-                .eq('campaign_id', campaign.id);
+            if (allContactIds.length > 0) {
+              // Exclude already sent/accepted/completed contacts — batch query
+              let alreadySent: any[] = [];
+              for (let i = 0; i < allContactIds.length; i += 100) {
+                const batch = allContactIds.slice(i, i + 100);
+                const { data } = await supabase
+                  .from('campaign_connection_requests')
+                  .select('contact_id, status')
+                  .eq('campaign_id', campaign.id)
+                  .in('contact_id', batch);
+                if (data) alreadySent.push(...data);
+              }
 
               const doneSet = new Set(
-                (alreadySent || [])
+                alreadySent
                   .filter((r: any) => ['sent', 'accepted', 'pending', 'completed'].includes(r.status))
                   .map((r: any) => r.contact_id)
               );
 
               const unseenIds = allContactIds.filter((id: string) => !doneSet.has(id));
+              console.log(`[schedule-daily] campaign ${campaign.id}: ${allContactIds.length} total, ${doneSet.size} done, ${unseenIds.length} unseen`);
 
               if (unseenIds.length > 0) {
-                // Fetch with relevance tier for prioritization
-                const { data: contactsWithTier } = await supabase
-                  .from('contacts')
-                  .select('id, relevance_tier')
-                  .in('id', unseenIds);
+                // Fetch with relevance tier — batch in chunks of 100
+                let contactsWithTier: any[] = [];
+                for (let i = 0; i < unseenIds.length; i += 100) {
+                  const batch = unseenIds.slice(i, i + 100);
+                  const { data, error: tierErr } = await supabase
+                    .from('contacts')
+                    .select('id, relevance_tier')
+                    .in('id', batch);
+                  if (tierErr) {
+                    console.error(`[schedule-daily] contacts batch error:`, tierErr.message);
+                  }
+                  if (data) contactsWithTier.push(...data);
+                }
 
-                if (contactsWithTier && contactsWithTier.length > 0) {
+                if (contactsWithTier.length > 0) {
                   const tierOrder: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
                   contactsWithTier.sort((a: any, b: any) =>
                     (tierOrder[a.relevance_tier] ?? 2) - (tierOrder[b.relevance_tier] ?? 2)
                   );
 
                   const toSchedule = contactsWithTier.slice(0, remainingConnections);
+                  console.log(`[schedule-daily] campaign ${campaign.id}: scheduling ${toSchedule.length} connections`);
 
                   for (const contact of toSchedule) {
                     const { error } = await supabase
@@ -158,13 +182,19 @@ Deno.serve(async (req) => {
                         status: 'pending',
                       }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
 
-                    if (!error) {
+                    if (error) {
+                      console.error(`[schedule-daily] upsert error for ${contact.id}:`, error.message);
+                    } else {
                       connectionsScheduled++;
                       totalScheduled++;
                     }
                   }
+                } else {
+                  console.log(`[schedule-daily] campaign ${campaign.id}: no contacts with tier data found`);
                 }
               }
+            } else {
+              console.log(`[schedule-daily] campaign ${campaign.id}: no contacts in list ${campaign.source_list_id}`);
             }
           }
 
