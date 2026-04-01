@@ -396,33 +396,35 @@ async function processCampaign(
           continue;
         }
 
-        // ── GUARD: Skip pre-existing conversations ──
-        const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
-        try {
-          const checkMsgRes = await fetch(
-            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
-            { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
-          );
-          if (checkMsgRes.ok) {
-            const checkMsgData = await checkMsgRes.json();
-            const chatMessages = checkMsgData.items || checkMsgData || [];
-            if (Array.isArray(chatMessages) && chatMessages.length > 0) {
-              const sorted = [...chatMessages].sort((a: any, b: any) =>
-                new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
-                new Date(b.timestamp || b.date || b.created_at || 0).getTime()
-              );
-              const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
-              if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
-                console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation (oldest msg: ${oldestMsgTime.toISOString()}, CR: ${crCreatedAt.toISOString()})`);
-                await supabase.from('campaign_connection_requests')
-                  .update({ conversation_stopped: true })
-                  .eq('id', req.id);
-                continue;
+        // ── GUARD: Skip pre-existing conversations (only if we have a chat) ──
+        if (chatId) {
+          const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
+          try {
+            const checkMsgRes = await fetch(
+              `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
+              { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
+            );
+            if (checkMsgRes.ok) {
+              const checkMsgData = await checkMsgRes.json();
+              const chatMessages = checkMsgData.items || checkMsgData || [];
+              if (Array.isArray(chatMessages) && chatMessages.length > 0) {
+                const sorted = [...chatMessages].sort((a: any, b: any) =>
+                  new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
+                  new Date(b.timestamp || b.date || b.created_at || 0).getTime()
+                );
+                const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
+                if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
+                  console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation`);
+                  await supabase.from('campaign_connection_requests')
+                    .update({ conversation_stopped: true })
+                    .eq('id', req.id);
+                  continue;
+                }
               }
             }
+          } catch (guardErr) {
+            console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
           }
-        } catch (guardErr) {
-          console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
         }
 
         let message = '';
@@ -456,17 +458,58 @@ async function processCampaign(
 
         if (!message.trim()) continue;
 
-        const sendRes = await fetch(
-          `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
-          {
-            method: 'POST',
-            headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ text: message.trim() }),
+        // ── Send message: use existing chat or create new one ──
+        let sendOk = false;
+        if (chatId) {
+          // Send to existing chat
+          const sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ text: message.trim() }),
+            }
+          );
+          if (sendRes.ok) {
+            sendOk = true;
+          } else {
+            console.error(`[followup] send via chat failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           }
-        );
+        }
 
-        if (!sendRes.ok) {
-          console.error(`[followup] send failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
+        if (!sendOk && resolvedProviderId) {
+          // Create new chat and send message via POST /api/v1/chats
+          console.log(`[followup] Creating new chat for contact ${req.contact_id} via provider_id ${resolvedProviderId}`);
+          const newChatRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                account_id: accountId,
+                attendees_ids: [resolvedProviderId],
+                text: message.trim(),
+              }),
+            }
+          );
+          if (newChatRes.ok) {
+            const newChatData = await newChatRes.json();
+            const newChatId = newChatData.chat_id || newChatData.id || null;
+            if (newChatId) {
+              chatId = newChatId;
+              await supabase.from('campaign_connection_requests')
+                .update({ chat_id: newChatId })
+                .eq('id', req.id);
+              console.log(`[followup] Created new chat ${newChatId} for contact ${req.contact_id}`);
+            }
+            sendOk = true;
+          } else {
+            console.error(`[followup] create chat failed for ${req.contact_id}:`, newChatRes.status, await newChatRes.text());
+          }
+        }
+
+        if (!sendOk) {
+          console.log(`[followup] failed to send message to contact ${req.contact_id}`);
           continue;
         }
 
