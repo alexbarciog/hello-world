@@ -317,36 +317,37 @@ async function processCampaign(
     console.log(`[followup][campaign ${campaign.id}] processing ${acceptedRequests.length} accepted contacts for messages (capped at ${MAX_MESSAGE_SENDS})`);
     for (const req of acceptedRequests) {
       try {
-        // For accepted contacts without chat_id, try to find it now
-        if (!req.chat_id) {
-          const { data: contact } = await supabase
-            .from('contacts')
-            .select('linkedin_profile_id, linkedin_url')
-            .eq('id', req.contact_id)
-            .single();
+        // Resolve provider_id early — needed for both chat lookup and new chat creation
+        let resolvedProviderId: string | null = null;
+        const { data: contact } = await supabase
+          .from('contacts')
+          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
+          .eq('id', req.contact_id)
+          .single();
+        if (!contact) continue;
 
-          if (contact) {
-            let pubId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-            if (pubId) {
-              try { pubId = decodeURIComponent(pubId); } catch { /* ok */ }
-              const pId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, pubId);
-              if (pId) {
-                const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, pId, null);
-                if (foundChat) {
-                  req.chat_id = foundChat;
-                  await supabase.from('campaign_connection_requests')
-                    .update({ chat_id: foundChat })
-                    .eq('id', req.id);
-                  console.log(`[followup] resolved chat_id for accepted contact ${req.contact_id}: ${foundChat}`);
-                }
-              }
-            }
-          }
+        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+        if (publicId) {
+          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
+          resolvedProviderId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        }
 
-          if (!req.chat_id) {
-            console.log(`[followup] accepted contact ${req.contact_id} still has no chat_id, skipping send (will retry next run)`);
-            continue;
+        // Try to find existing chat_id
+        if (!req.chat_id && resolvedProviderId) {
+          const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, null);
+          if (foundChat) {
+            req.chat_id = foundChat;
+            await supabase.from('campaign_connection_requests')
+              .update({ chat_id: foundChat })
+              .eq('id', req.id);
+            console.log(`[followup] resolved chat_id for contact ${req.contact_id}: ${foundChat}`);
           }
+        }
+
+        // If still no chat_id AND no provider_id, skip
+        if (!req.chat_id && !resolvedProviderId) {
+          console.log(`[followup] contact ${req.contact_id} no chat_id and no provider_id, skipping`);
+          continue;
         }
 
         const currentStep = req.current_step || 1;
@@ -354,9 +355,8 @@ async function processCampaign(
         const nextStep = workflowSteps[nextWfIdx];
 
         if (!nextStep || nextStep.type !== 'message') {
-          // Check if completed
           const totalSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
-          const completedMsgSteps = currentStep - 1; // steps done after invitation
+          const completedMsgSteps = currentStep - 1;
           if (completedMsgSteps >= totalSteps) {
             await supabase
               .from('campaign_connection_requests')
@@ -369,45 +369,30 @@ async function processCampaign(
         const stepCompletedAt = req.step_completed_at ? new Date(req.step_completed_at) : null;
         if (!stepCompletedAt) continue;
 
-        // Check delay before SENDING — supports delay_hours (preferred) or delay_days (legacy)
+        // Check delay before SENDING
         const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
         const delayMs = delayHours * 60 * 60 * 1000;
-        if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
-
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
-          .eq('id', req.contact_id)
-          .single();
-
-        if (!contact) continue;
-
-        let providerId: string | null = null;
-        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-        if (publicId) {
-          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
-          providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        if (Date.now() - stepCompletedAt.getTime() < delayMs) {
+          console.log(`[followup] contact ${req.contact_id} delay not elapsed yet (${delayHours}h), skipping`);
+          continue;
         }
 
-        let chatId = providerId
-          ? await findChat(unipileDsn, unipileApiKey, accountId, providerId, req.chat_id)
-          : req.chat_id;
-
-        if (chatId !== req.chat_id) {
-          await supabase
-            .from('campaign_connection_requests')
-            .update({ chat_id: chatId })
-            .eq('id', req.id);
-
-          if (chatId) {
-            console.log(`[followup] corrected chat for contact ${req.contact_id}: ${req.chat_id || 'none'} -> ${chatId}`);
-          } else if (req.chat_id) {
-            console.log(`[followup] cleared invalid chat for contact ${req.contact_id}: ${req.chat_id}`);
+        // Validate/update chat_id if we have one
+        let chatId = req.chat_id;
+        if (chatId && resolvedProviderId) {
+          const verifiedChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, chatId);
+          if (verifiedChat !== chatId) {
+            chatId = verifiedChat;
+            await supabase.from('campaign_connection_requests')
+              .update({ chat_id: chatId })
+              .eq('id', req.id);
           }
         }
 
-        if (!chatId) {
-          console.log(`[followup] no verified chat for contact ${req.contact_id}, skipping`);
+        // No chat_id — we'll create a new chat when sending (using POST /api/v1/chats)
+        if (!chatId && !resolvedProviderId) {
+          console.log(`[followup] no chat and no provider for contact ${req.contact_id}, skipping`);
+          continue;
           continue;
         }
 
