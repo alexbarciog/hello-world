@@ -122,7 +122,7 @@ ${postsText}`;
 
       if (!response.ok) {
         console.warn(`[poll-reddit] AI scoring failed: ${response.status}`);
-        batch.forEach((_, idx) => scores.set(i + idx, 7));
+        batch.forEach((_, idx) => scores.set(i + idx, 5));
         continue;
       }
 
