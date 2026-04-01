@@ -253,8 +253,29 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           setPrecision(s4.precision ?? "discovery");
         }
         if (row.step_5_data) {
-          setSignals(row.step_5_data as IntentSignalsData);
-        }
+          const s5 = row.step_5_data as any;
+          // Handle both old flat format and new structured format
+          if (s5.enabledSignals) {
+            setSignals(s5 as IntentSignalsData);
+          } else {
+            // Migrate old format to new
+            const migrated: IntentSignalsData = {
+              enabledSignals: {
+                keyword_posts: true,
+                post_engagers: s5.triggerTopActive ?? true,
+                job_changes: s5.triggerJobChanges ?? true,
+                funding_events: s5.triggerFundedCompanies ?? false,
+                ...(s5.influencerProfiles?.length ? { profile_engagers: true } : {}),
+                ...(s5.competitorPages?.length ? { competitor_followers: true, competitor_engagers: true } : {}),
+              },
+              signalKeywords: {
+                keyword_posts: s5.engagementKeywords ?? [],
+                ...(s5.influencerProfiles?.length ? { profile_engagers: s5.influencerProfiles } : {}),
+                ...(s5.competitorPages?.length ? { competitor_followers: s5.competitorPages, competitor_engagers: s5.competitorPages } : {}),
+              },
+            };
+            setSignals(migrated);
+          }
         if (row.step_6_data) {
           setObjectives(row.step_6_data as ObjectivesData);
         }
