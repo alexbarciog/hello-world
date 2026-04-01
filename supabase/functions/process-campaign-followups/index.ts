@@ -142,17 +142,23 @@ async function processCampaign(
   let generatedCount = 0;
 
   // ── Phase 1: Check pending invitations for acceptance ──
+  // Cap per run to avoid edge function timeout (~60s)
+  const MAX_ACCEPTANCE_CHECKS = 3;
+  const MAX_MESSAGE_SENDS = 3;
+
   const { data: pendingRequests } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, status, current_step, user_id')
     .eq('campaign_id', campaign.id)
     .eq('status', 'sent')
-    .eq('current_step', 1);
+    .eq('current_step', 1)
+    .order('created_at', { ascending: true })
+    .limit(MAX_ACCEPTANCE_CHECKS);
 
   let acceptedCount = 0;
 
   if (pendingRequests && pendingRequests.length > 0) {
-    console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations`);
+    console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (capped at ${MAX_ACCEPTANCE_CHECKS})`);
 
     for (const req of pendingRequests) {
       try {
@@ -210,7 +216,7 @@ async function processCampaign(
         } else {
           console.warn(`[followup] contact ${req.contact_id} NOT accepted (providerId: ${providerId})`);
         }
-        await delay(300);
+        await delay(100);
 
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
@@ -276,7 +282,7 @@ async function processCampaign(
           }
         }
 
-        await delay(500);
+        await delay(100);
       } catch (err) {
         console.error(`[followup] acceptance check error for ${req.contact_id}:`, err);
       }
@@ -301,43 +307,47 @@ async function processCampaign(
     .from('campaign_connection_requests')
     .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
     .eq('campaign_id', campaign.id)
-    .eq('status', 'accepted');
+    .eq('status', 'accepted')
+    .order('step_completed_at', { ascending: true })
+    .limit(MAX_MESSAGE_SENDS);
 
   let messagesSent = 0;
 
   if (acceptedRequests && acceptedRequests.length > 0) {
+    console.log(`[followup][campaign ${campaign.id}] processing ${acceptedRequests.length} accepted contacts for messages (capped at ${MAX_MESSAGE_SENDS})`);
     for (const req of acceptedRequests) {
       try {
-        // For accepted contacts without chat_id, try to find it now
-        if (!req.chat_id) {
-          const { data: contact } = await supabase
-            .from('contacts')
-            .select('linkedin_profile_id, linkedin_url')
-            .eq('id', req.contact_id)
-            .single();
+        // Resolve provider_id early — needed for both chat lookup and new chat creation
+        let resolvedProviderId: string | null = null;
+        const { data: contact } = await supabase
+          .from('contacts')
+          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
+          .eq('id', req.contact_id)
+          .single();
+        if (!contact) continue;
 
-          if (contact) {
-            let pubId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-            if (pubId) {
-              try { pubId = decodeURIComponent(pubId); } catch { /* ok */ }
-              const pId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, pubId);
-              if (pId) {
-                const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, pId, null);
-                if (foundChat) {
-                  req.chat_id = foundChat;
-                  await supabase.from('campaign_connection_requests')
-                    .update({ chat_id: foundChat })
-                    .eq('id', req.id);
-                  console.log(`[followup] resolved chat_id for accepted contact ${req.contact_id}: ${foundChat}`);
-                }
-              }
-            }
-          }
+        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+        if (publicId) {
+          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
+          resolvedProviderId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        }
 
-          if (!req.chat_id) {
-            console.log(`[followup] accepted contact ${req.contact_id} still has no chat_id, skipping send (will retry next run)`);
-            continue;
+        // Try to find existing chat_id
+        if (!req.chat_id && resolvedProviderId) {
+          const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, null);
+          if (foundChat) {
+            req.chat_id = foundChat;
+            await supabase.from('campaign_connection_requests')
+              .update({ chat_id: foundChat })
+              .eq('id', req.id);
+            console.log(`[followup] resolved chat_id for contact ${req.contact_id}: ${foundChat}`);
           }
+        }
+
+        // If still no chat_id AND no provider_id, skip
+        if (!req.chat_id && !resolvedProviderId) {
+          console.log(`[followup] contact ${req.contact_id} no chat_id and no provider_id, skipping`);
+          continue;
         }
 
         const currentStep = req.current_step || 1;
@@ -345,9 +355,8 @@ async function processCampaign(
         const nextStep = workflowSteps[nextWfIdx];
 
         if (!nextStep || nextStep.type !== 'message') {
-          // Check if completed
           const totalSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
-          const completedMsgSteps = currentStep - 1; // steps done after invitation
+          const completedMsgSteps = currentStep - 1;
           if (completedMsgSteps >= totalSteps) {
             await supabase
               .from('campaign_connection_requests')
@@ -360,75 +369,62 @@ async function processCampaign(
         const stepCompletedAt = req.step_completed_at ? new Date(req.step_completed_at) : null;
         if (!stepCompletedAt) continue;
 
-        // Check delay before SENDING — supports delay_hours (preferred) or delay_days (legacy)
+        // Check delay before SENDING
         const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
         const delayMs = delayHours * 60 * 60 * 1000;
-        if (Date.now() - stepCompletedAt.getTime() < delayMs) continue;
-
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
-          .eq('id', req.contact_id)
-          .single();
-
-        if (!contact) continue;
-
-        let providerId: string | null = null;
-        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-        if (publicId) {
-          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
-          providerId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
-        }
-
-        let chatId = providerId
-          ? await findChat(unipileDsn, unipileApiKey, accountId, providerId, req.chat_id)
-          : req.chat_id;
-
-        if (chatId !== req.chat_id) {
-          await supabase
-            .from('campaign_connection_requests')
-            .update({ chat_id: chatId })
-            .eq('id', req.id);
-
-          if (chatId) {
-            console.log(`[followup] corrected chat for contact ${req.contact_id}: ${req.chat_id || 'none'} -> ${chatId}`);
-          } else if (req.chat_id) {
-            console.log(`[followup] cleared invalid chat for contact ${req.contact_id}: ${req.chat_id}`);
-          }
-        }
-
-        if (!chatId) {
-          console.log(`[followup] no verified chat for contact ${req.contact_id}, skipping`);
+        if (Date.now() - stepCompletedAt.getTime() < delayMs) {
+          console.log(`[followup] contact ${req.contact_id} delay not elapsed yet (${delayHours}h), skipping`);
           continue;
         }
 
-        // ── GUARD: Skip pre-existing conversations ──
-        const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
-        try {
-          const checkMsgRes = await fetch(
-            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
-            { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
-          );
-          if (checkMsgRes.ok) {
-            const checkMsgData = await checkMsgRes.json();
-            const chatMessages = checkMsgData.items || checkMsgData || [];
-            if (Array.isArray(chatMessages) && chatMessages.length > 0) {
-              const sorted = [...chatMessages].sort((a: any, b: any) =>
-                new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
-                new Date(b.timestamp || b.date || b.created_at || 0).getTime()
-              );
-              const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
-              if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
-                console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation (oldest msg: ${oldestMsgTime.toISOString()}, CR: ${crCreatedAt.toISOString()})`);
-                await supabase.from('campaign_connection_requests')
-                  .update({ conversation_stopped: true })
-                  .eq('id', req.id);
-                continue;
+        // Validate/update chat_id if we have one
+        let chatId = req.chat_id;
+        if (chatId && resolvedProviderId) {
+          const verifiedChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, chatId);
+          if (verifiedChat !== chatId) {
+            chatId = verifiedChat;
+            await supabase.from('campaign_connection_requests')
+              .update({ chat_id: chatId })
+              .eq('id', req.id);
+          }
+        }
+
+        // No chat_id — we'll create a new chat when sending (using POST /api/v1/chats)
+        if (!chatId && !resolvedProviderId) {
+          console.log(`[followup] no chat and no provider for contact ${req.contact_id}, skipping`);
+          continue;
+          continue;
+        }
+
+        // ── GUARD: Skip pre-existing conversations (only if we have a chat) ──
+        if (chatId) {
+          const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
+          try {
+            const checkMsgRes = await fetch(
+              `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
+              { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
+            );
+            if (checkMsgRes.ok) {
+              const checkMsgData = await checkMsgRes.json();
+              const chatMessages = checkMsgData.items || checkMsgData || [];
+              if (Array.isArray(chatMessages) && chatMessages.length > 0) {
+                const sorted = [...chatMessages].sort((a: any, b: any) =>
+                  new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
+                  new Date(b.timestamp || b.date || b.created_at || 0).getTime()
+                );
+                const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
+                if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
+                  console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation`);
+                  await supabase.from('campaign_connection_requests')
+                    .update({ conversation_stopped: true })
+                    .eq('id', req.id);
+                  continue;
+                }
               }
             }
+          } catch (guardErr) {
+            console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
           }
-        } catch (guardErr) {
-          console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
         }
 
         let message = '';
@@ -462,17 +458,58 @@ async function processCampaign(
 
         if (!message.trim()) continue;
 
-        const sendRes = await fetch(
-          `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
-          {
-            method: 'POST',
-            headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ text: message.trim() }),
+        // ── Send message: use existing chat or create new one ──
+        let sendOk = false;
+        if (chatId) {
+          // Send to existing chat
+          const sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ text: message.trim() }),
+            }
+          );
+          if (sendRes.ok) {
+            sendOk = true;
+          } else {
+            console.error(`[followup] send via chat failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           }
-        );
+        }
 
-        if (!sendRes.ok) {
-          console.error(`[followup] send failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
+        if (!sendOk && resolvedProviderId) {
+          // Create new chat and send message via POST /api/v1/chats
+          console.log(`[followup] Creating new chat for contact ${req.contact_id} via provider_id ${resolvedProviderId}`);
+          const newChatRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                account_id: accountId,
+                attendees_ids: [resolvedProviderId],
+                text: message.trim(),
+              }),
+            }
+          );
+          if (newChatRes.ok) {
+            const newChatData = await newChatRes.json();
+            const newChatId = newChatData.chat_id || newChatData.id || null;
+            if (newChatId) {
+              chatId = newChatId;
+              await supabase.from('campaign_connection_requests')
+                .update({ chat_id: newChatId })
+                .eq('id', req.id);
+              console.log(`[followup] Created new chat ${newChatId} for contact ${req.contact_id}`);
+            }
+            sendOk = true;
+          } else {
+            console.error(`[followup] create chat failed for ${req.contact_id}:`, newChatRes.status, await newChatRes.text());
+          }
+        }
+
+        if (!sendOk) {
+          console.log(`[followup] failed to send message to contact ${req.contact_id}`);
           continue;
         }
 
@@ -560,7 +597,7 @@ async function processCampaign(
           }
         }
 
-        await delay(3000 + Math.random() * 2000);
+        await delay(500);
       } catch (err) {
         console.error(`[followup] message error for ${req.contact_id}:`, err);
       }
