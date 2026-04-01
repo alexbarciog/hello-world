@@ -307,11 +307,14 @@ async function processCampaign(
     .from('campaign_connection_requests')
     .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
     .eq('campaign_id', campaign.id)
-    .eq('status', 'accepted');
+    .eq('status', 'accepted')
+    .order('step_completed_at', { ascending: true })
+    .limit(MAX_MESSAGE_SENDS);
 
   let messagesSent = 0;
 
   if (acceptedRequests && acceptedRequests.length > 0) {
+    console.log(`[followup][campaign ${campaign.id}] processing ${acceptedRequests.length} accepted contacts for messages (capped at ${MAX_MESSAGE_SENDS})`);
     for (const req of acceptedRequests) {
       try {
         // For accepted contacts without chat_id, try to find it now
