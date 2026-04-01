@@ -152,7 +152,7 @@ export const StepComplete = ({
             name: `${data.companyName || "My"} Lead Agent`,
             agent_type: "signals",
             status: initialStatus,
-            keywords: signals.engagementKeywords || [],
+            keywords: signals.signalKeywords?.keyword_posts || [],
             icp_job_titles: icp.jobTitles,
             icp_locations: icp.targetLocations,
             icp_industries: icp.targetIndustries,
@@ -162,11 +162,8 @@ export const StepComplete = ({
             precision_mode: precision,
             leads_list_name: `${data.companyName || "Campaign"} Leads`,
             signals_config: {
-              triggerTopActive: signals.triggerTopActive,
-              triggerJobChanges: signals.triggerJobChanges,
-              triggerFundedCompanies: signals.triggerFundedCompanies,
-              influencerProfiles: signals.influencerProfiles,
-              competitorPages: signals.competitorPages,
+              enabled: enabledList,
+              keywords: signals.signalKeywords,
             },
           };
 
