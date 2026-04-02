@@ -465,10 +465,21 @@ export default function CampaignDetail() {
         setRemainingContacts(Math.max(0, totalContacts - totalSent));
       }
 
-      // Load scheduled messages and daily queue in parallel
+      // Load scheduled messages, daily queue, and meetings in parallel
+      const userId2 = (await supabase.auth.getUser()).data.user?.id;
       await Promise.all([
         loadScheduledMessages(campaignId, c.workflow_steps || []).catch(e => console.error("loadScheduledMessages error:", e)),
         loadDailyQueue(campaignId).catch(e => console.error("loadDailyQueue error:", e)),
+        (async () => {
+          if (userId2) {
+            const { data: meetingsData } = await supabase.from("meetings" as any).select("*").eq("user_id", userId2);
+            if (meetingsData) {
+              const mMap: Record<string, any> = {};
+              for (const m of meetingsData as any[]) { mMap[m.contact_id] = m; }
+              setMeetingsMap(mMap);
+            }
+          }
+        })(),
       ]);
     } catch (err) {
       console.error("loadCampaign error:", err);
