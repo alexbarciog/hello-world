@@ -143,22 +143,44 @@ async function processCampaign(
 
   // ── Phase 1: Check pending invitations for acceptance ──
   // Cap per run to avoid edge function timeout (~60s)
-  const MAX_ACCEPTANCE_CHECKS = 15;
-  const MAX_MESSAGE_SENDS = 10;
+  const MAX_ACCEPTANCE_CHECKS = 50;
+  const MAX_MESSAGE_SENDS = 15;
 
-  const { data: pendingRequests } = await supabase
+  // Two-pass strategy: check recent invitations first (most likely to have new accepts),
+  // then check older ones. This prevents fresh accepts from being stuck behind stale pending.
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: recentPending } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, status, current_step, user_id')
     .eq('campaign_id', campaign.id)
     .eq('status', 'sent')
     .eq('current_step', 1)
-    .order('created_at', { ascending: true })
-    .limit(MAX_ACCEPTANCE_CHECKS);
+    .gte('sent_at', oneDayAgo)
+    .order('sent_at', { ascending: false })
+    .limit(20);
+
+  const { data: olderPending } = await supabase
+    .from('campaign_connection_requests')
+    .select('id, contact_id, status, current_step, user_id')
+    .eq('campaign_id', campaign.id)
+    .eq('status', 'sent')
+    .eq('current_step', 1)
+    .lt('sent_at', oneDayAgo)
+    .order('sent_at', { ascending: true })
+    .limit(MAX_ACCEPTANCE_CHECKS - (recentPending?.length || 0));
+
+  // Merge: recent first, then older
+  const recentIds = new Set((recentPending || []).map((r: any) => r.id));
+  const pendingRequests = [
+    ...(recentPending || []),
+    ...(olderPending || []).filter((r: any) => !recentIds.has(r.id)),
+  ];
 
   let acceptedCount = 0;
 
-  if (pendingRequests && pendingRequests.length > 0) {
-    console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (capped at ${MAX_ACCEPTANCE_CHECKS})`);
+  if (pendingRequests.length > 0) {
+    console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (${recentPending?.length || 0} recent + ${olderPending?.length || 0} older)`);
 
     for (const req of pendingRequests) {
       try {
@@ -192,10 +214,14 @@ async function processCampaign(
         // Accept if we found a chat OR if the profile shows FIRST_DEGREE connection
         const firstDegree = profileData ? isFirstDegree(profileData) : false;
 
-        // Fallback: check invitation API if profile check didn't confirm
+        // Fallback: only check invitation API if profile data is ambiguous
+        // If network_distance is clearly SECOND/THIRD/OUT_OF_NETWORK, skip the fallback
         let invitationAccepted = false;
-        if (!chatId && !firstDegree && providerId) {
-          console.log(`[followup] Profile check negative for ${req.contact_id}, trying invitation API fallback`);
+        const networkDist = profileData?.network_distance || '';
+        const isDefinitelyNotConnected = /^(SECOND|THIRD|OUT_OF)/i.test(String(networkDist));
+
+        if (!chatId && !firstDegree && providerId && !isDefinitelyNotConnected) {
+          console.log(`[followup] Profile ambiguous for ${req.contact_id} (distance: ${networkDist}), trying invitation API fallback`);
           invitationAccepted = await checkInvitationAccepted(unipileDsn, unipileApiKey, accountId, providerId);
         }
 
@@ -216,7 +242,7 @@ async function processCampaign(
         } else {
           console.warn(`[followup] contact ${req.contact_id} NOT accepted (providerId: ${providerId})`);
         }
-        await delay(100);
+        await delay(50);
 
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
@@ -282,7 +308,7 @@ async function processCampaign(
           }
         }
 
-        await delay(100);
+        await delay(50);
       } catch (err) {
         console.error(`[followup] acceptance check error for ${req.contact_id}:`, err);
       }
