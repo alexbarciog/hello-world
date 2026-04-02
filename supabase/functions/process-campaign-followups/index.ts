@@ -282,7 +282,7 @@ async function processCampaign(
           }
         }
 
-        await delay(100);
+        await delay(50);
       } catch (err) {
         console.error(`[followup] acceptance check error for ${req.contact_id}:`, err);
       }
