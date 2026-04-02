@@ -1,67 +1,86 @@
 
 
-## Plan: Fix AI SDR Conversational Reply Quality
+## Plan: Add "Meeting Booked" Status + Meeting Prep Research
 
-### Problem
-The conversational AI reply is terrible because of an architectural shortcut: `process-ai-replies` builds a good conversational prompt but then passes it via the `customTraining` field to `generate-step-message`, which wraps it with its own **cold outreach system prompt** (50-word outreach rules, "anchor in buying signal", etc.). The conversational instructions end up buried as "EXTRA USER INSTRUCTIONS" and the AI defaults to writing a sales pitch.
+### What we're building
+1. A new `meeting_booked` lead status with an optional meeting date/time
+2. A new database table to store meeting details
+3. UI to mark a lead as "meeting booked" and set the date
+4. A "Meeting Prep" feature that generates AI research/insights about the lead before the meeting
+5. A new tab in Contacts to filter leads with meetings booked
 
-The example proves this — "Hi, Alexandru" gets a 3-paragraph sales pitch about "automating buying intent" instead of a natural 1-line reply.
+### Database Changes
 
-### Root Cause
-`generate-step-message/index.ts` has no separate code path for conversational replies. It always uses the cold outreach system prompt, ignoring the `conversationHistory` and `leadMessage` fields entirely.
+**New table: `meetings`**
+```sql
+create table public.meetings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  contact_id uuid not null,
+  campaign_id uuid,
+  scheduled_at timestamptz not null,
+  notes text,
+  prep_research jsonb,
+  prep_generated_at timestamptz,
+  status text not null default 'scheduled',
+  created_at timestamptz not null default now()
+);
+alter table public.meetings enable row level security;
+-- RLS policies for authenticated users on own data
+```
 
-### Solution: Add a dedicated conversational reply path in `generate-step-message`
+**Columns in `prep_research` (jsonb):**
+- `company_summary` — what the company does, size, funding
+- `lead_bio` — role, background, LinkedIn activity
+- `talking_points` — personalized conversation starters based on signals/pain points
+- `potential_objections` — likely concerns and how to address them
+- `recent_activity` — recent LinkedIn posts/engagement if available
 
-When `isConversationalReply === true`, bypass the cold outreach prompt entirely and use a purpose-built conversational prompt.
+### UI Changes
 
-#### New Conversational Prompt Design
+**File: `src/pages/Contacts.tsx`**
+- Add a new tab: "📅 Meeting Booked" that filters contacts with `lead_status === 'meeting_booked'`
+- In the Last Action column, show a calendar icon + meeting date for contacts with meetings
+- Add a right-click or button action "Book Meeting" that opens a dialog to set date/time
 
-**System prompt principles:**
-- You are replying in an ongoing LinkedIn DM conversation, NOT writing cold outreach
-- Mirror the lead's energy and length — if they wrote 3 words, reply with ~10-15 words
-- Maximum 30 words (not 50) — shorter is always better
-- ONE short paragraph only, no double paragraph structure
-- Never pitch unprompted — only mention your product if the lead asks
-- If the lead says "Hi" or a greeting, just greet back warmly and ask a simple question
-- Goal: keep the conversation alive naturally, steer toward a call only when the moment is right
-- No buzzwords, no value propositions unless asked, no pain points monologues
+**File: `src/components/contacts/BookMeetingDialog.tsx`** (new)
+- Simple dialog with date/time picker and optional notes field
+- On save: inserts into `meetings` table and updates `contacts.lead_status` to `meeting_booked`
 
-**Greeting detection:** If the lead's message is a simple greeting (hi, hello, hey, etc.), the AI should respond with a warm greeting + a light conversational question — no product mention at all.
+**File: `src/components/contacts/MeetingPrepPanel.tsx`** (new)
+- Slide-out panel or dialog showing AI-generated research for a specific meeting
+- Sections: Company Overview, Lead Background, Talking Points, Potential Objections
+- "Generate Insights" button that calls the edge function
+- Loading state while generating, then displays structured results
 
-**Reply calibration by reply count:**
-- Reply 1-2: Pure relationship building, zero sales
-- Reply 3-4: Light mention of what you do IF relevant
-- Reply 5+: Gentle call suggestion
+**File: `src/pages/Contacts.tsx`** — status config update
+- Add `meeting_booked` to the `statusConfig` map with a Calendar icon and appropriate color
+- Update tier counts to include meeting_booked count
 
-#### Example behavior after fix
+**File: `src/pages/CampaignDetail.tsx`**
+- Show meeting status badge in campaign contacts tab
+- Add "Book Meeting" action for accepted/messaged leads
 
-Lead: "Hi, Alexandru"
-AI: "Hey Shruti! How's your week going?"
+### Edge Function
 
-Lead: "Good thanks, what do you do?"
-AI: "We help growth teams spot buying signals on social. Curious what channels you're focused on right now?"
+**File: `supabase/functions/generate-meeting-prep/index.ts`** (new)
+- Accepts: `contactId`, `meetingId`, `userId`
+- Fetches: contact data, campaign data (company info, value prop, pain points), conversation history from Unipile (if chat_id exists)
+- Calls AI (via Lovable API key) with a structured prompt to generate:
+  - Company research summary (uses Firecrawl to scrape company website if available)
+  - Lead background analysis based on title/signal/LinkedIn
+  - 5 personalized talking points
+  - 3 potential objections with rebuttals
+  - Conversation summary (from chat history)
+- Saves result to `meetings.prep_research` jsonb column
+- Returns the research to the frontend
 
-### Technical Changes
-
-**File: `supabase/functions/generate-step-message/index.ts`**
-
-1. Add a new code branch after input parsing: if `isConversationalReply === true`, use a completely separate system prompt and user prompt
-2. The conversational system prompt will be ~15 lines focused on natural DM replies
-3. Include greeting detection logic in the prompt
-4. Use `conversationHistory` and `leadMessage` directly (they're already passed but ignored)
-5. Reduce `sanitizeMessage` max length to 150 chars for conversational replies (instead of 300)
-6. Remove the "Open to a quick chat?" auto-append for conversational replies — the prompt handles CTA timing based on reply count
-
-**File: `supabase/functions/process-ai-replies/index.ts`**
-
-1. Stop stuffing the prompt into `customTraining` — pass `conversationHistory` and `leadMessage` as dedicated fields (already done, but now they'll actually be used)
-2. Remove the local `systemPrompt` and `userPrompt` construction from `generateConversationalReply` since the logic moves to `generate-step-message`
-3. Pass `repliesCount` and `maxReplies` so the message generator can calibrate sales intensity
-4. Pass `isFollowUp` flag for the 24h follow-up case
-
-### Impact
-- Conversational replies will be 10-30 words instead of 50-80
-- Greetings get greeting responses, not sales pitches
-- Sales intensity scales with conversation depth
-- No prompt collision between cold outreach and conversation modes
+### Files to Create/Modify
+1. **Migration** — `meetings` table + RLS policies
+2. **`supabase/functions/generate-meeting-prep/index.ts`** — new edge function
+3. **`src/components/contacts/BookMeetingDialog.tsx`** — new booking dialog
+4. **`src/components/contacts/MeetingPrepPanel.tsx`** — new research panel
+5. **`src/pages/Contacts.tsx`** — add Meeting Booked tab, booking action, prep button
+6. **`src/pages/CampaignDetail.tsx`** — add meeting status + booking action in contacts tab
+7. **`src/components/contacts/types.ts`** — update Contact type if needed
 
