@@ -139,6 +139,8 @@ export default function Contacts() {
     let result = contacts;
     if (tab === "not_interested") {
       result = result.filter((c) => c.lead_status === 'not_interested');
+    } else if (tab === "meeting_booked") {
+      result = result.filter((c) => c.lead_status === 'meeting_booked');
     } else if (tab !== "all") {
       result = result.filter((c) => c.relevance_tier === tab);
     }
