@@ -2774,6 +2774,21 @@ export default function CampaignDetail() {
 
         </AnimatePresence>
       </div>
+
+      {/* Meeting Dialogs */}
+      <BookMeetingDialog
+        open={!!bookMeetingContact}
+        onOpenChange={(v) => { if (!v) setBookMeetingContact(null); }}
+        contact={bookMeetingContact}
+        campaignId={id}
+        onBooked={() => { if (id) loadCampaign(id); }}
+      />
+      <MeetingPrepPanel
+        open={!!meetingPrepData}
+        onOpenChange={(v) => { if (!v) setMeetingPrepData(null); }}
+        meeting={meetingPrepData}
+        onUpdated={() => { if (id) loadCampaign(id); }}
+      />
     </div>
   );
 }
