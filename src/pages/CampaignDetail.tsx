@@ -735,11 +735,24 @@ export default function CampaignDetail() {
   }
 
   async function loadContactsForList(listId: string) {
+    // Use batched approach to avoid PostgREST URL length limits with large .in() queries
     const { data: contactLinks } = await supabase.from("contact_lists").select("contact_id").eq("list_id", listId);
     if (contactLinks && contactLinks.length > 0) {
       const contactIds = contactLinks.map(cl => cl.contact_id);
-      const { data: contactData } = await supabase.from("contacts").select("*").in("id", contactIds).order("imported_at", { ascending: false });
-      if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
+      
+      // Batch into chunks of 200 to stay within URL length limits
+      const BATCH_SIZE = 200;
+      const allContacts: any[] = [];
+      for (let i = 0; i < contactIds.length; i += BATCH_SIZE) {
+        const batch = contactIds.slice(i, i + BATCH_SIZE);
+        const { data: contactData } = await supabase.from("contacts").select("*").in("id", batch);
+        if (contactData) allContacts.push(...contactData);
+      }
+      
+      // Sort by imported_at descending
+      allContacts.sort((a, b) => new Date(b.imported_at).getTime() - new Date(a.imported_at).getTime());
+      setContacts(allContacts as Contact[]);
+      setContactsCount(allContacts.length);
     } else {
       // Fallback: try by list name
       const { data: listData } = await supabase.from("lists").select("name").eq("id", listId).single();
