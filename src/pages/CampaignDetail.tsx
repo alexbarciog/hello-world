@@ -267,7 +267,12 @@ export default function CampaignDetail() {
   const [editInvitationOpen, setEditInvitationOpen] = useState(false);
   const [invitationNoteMode, setInvitationNoteMode] = useState<"without" | "with">("without");
   const [invitationNote, setInvitationNote] = useState("");
-  
+
+  // Meeting booking state
+  const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
+  const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
+  const [meetingsMap, setMeetingsMap] = useState<Record<string, any>>({});
+
 
   useEffect(() => {
     if (id) loadCampaign(id);
