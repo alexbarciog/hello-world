@@ -1979,12 +1979,42 @@ export default function CampaignDetail() {
                                   const cs = contactStatuses[c.id];
                                   const steps = workflowSteps as any[];
                                   const currentStep = cs?.step || 0;
-                                  const nextStepIdx = currentStep; // next step index in workflow array
-                                  if (nextStepIdx >= steps.length) {
-                                    return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">✓ Completed</span>;
-                                  }
-                                  const nextLabel = nextStepIdx === 0 ? "Step 1 — Invitation" : `Step ${nextStepIdx + 1} — Message`;
-                                  return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-primary/10 text-primary ring-1 ring-primary/20">{nextLabel}</span>;
+                                  const nextStepIdx = currentStep;
+                                  const meeting = meetingsMap[c.id];
+
+                                  return (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {nextStepIdx >= steps.length ? (
+                                        <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">✓ Completed</span>
+                                      ) : (
+                                        <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-primary/10 text-primary ring-1 ring-primary/20">
+                                          {nextStepIdx === 0 ? "Step 1 — Invitation" : `Step ${nextStepIdx + 1} — Message`}
+                                        </span>
+                                      )}
+                                      {cs && (cs.status === "accepted" || cs.status === "completed") && !meeting && (
+                                        <button
+                                          onClick={() => setBookMeetingContact(c)}
+                                          className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full transition-colors"
+                                        >
+                                          <CalendarDays className="w-3 h-3" /> Book
+                                        </button>
+                                      )}
+                                      {meeting && (
+                                        <button
+                                          onClick={() => setMeetingPrepData({
+                                            id: meeting.id,
+                                            contact_id: c.id,
+                                            contact_name: `${c.first_name} ${c.last_name || ''}`.trim(),
+                                            scheduled_at: meeting.scheduled_at,
+                                            prep_research: meeting.prep_research,
+                                          })}
+                                          className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-full transition-colors"
+                                        >
+                                          <Sparkles className="w-3 h-3" /> Prep
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
                                 })()}
                               </td>
                             </tr>
