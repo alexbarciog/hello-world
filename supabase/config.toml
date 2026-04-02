@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.generate-step-message]
 verify_jwt = false
+
+[functions.generate-meeting-prep]
+verify_jwt = false
