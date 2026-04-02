@@ -82,6 +82,7 @@ async function handleConversationalReply(
     leadCompany?: string;
     leadTitle?: string;
     buyingSignal?: string;
+    meetingContext?: string;
   },
   LOVABLE_API_KEY: string,
 ): Promise<Response> {
