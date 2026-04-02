@@ -9,7 +9,7 @@ import {
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
-  RefreshCw, Loader2, MessageCircle,
+  RefreshCw, Loader2, MessageCircle, CalendarDays,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
