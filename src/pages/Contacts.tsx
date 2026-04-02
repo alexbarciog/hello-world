@@ -402,6 +402,14 @@ export default function Contacts() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col gap-1">
+                          {c.lead_status === 'meeting_booked' && meetings[c.id] && (
+                            <div className="flex items-center gap-1">
+                              <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                Meeting {new Date(meetings[c.id].scheduled_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                          )}
                           {c.lead_status === 'not_interested' && (
                             <div className="flex items-center gap-1">
                               <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
@@ -447,6 +455,34 @@ export default function Contacts() {
                           )) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1">
+                          {c.lead_status !== 'meeting_booked' ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setBookMeetingContact(c); }}
+                              className="text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
+                            >
+                              📅 Book
+                            </button>
+                          ) : meetings[c.id] ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMeetingPrepData({
+                                  id: meetings[c.id].id,
+                                  contact_id: c.id,
+                                  contact_name: `${c.first_name} ${c.last_name || ''}`.trim(),
+                                  scheduled_at: meetings[c.id].scheduled_at,
+                                  prep_research: meetings[c.id].prep_research,
+                                });
+                              }}
+                              className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                            >
+                              <Sparkles className="w-3 h-3" /> Prep
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
