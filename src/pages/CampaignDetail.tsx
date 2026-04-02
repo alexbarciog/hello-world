@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Contact, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
+import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
+import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
