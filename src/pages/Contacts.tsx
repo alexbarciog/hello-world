@@ -3,14 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
-  Send, UserCheck, MessageSquare, Clock, ThumbsDown,
+  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
+import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
+import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { toast } from "sonner";
 
-type Tab = "all" | "hot" | "warm" | "cold" | "not_interested";
+type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
 
 export default function Contacts() {
   const [tab, setTab] = useState<Tab>("all");
