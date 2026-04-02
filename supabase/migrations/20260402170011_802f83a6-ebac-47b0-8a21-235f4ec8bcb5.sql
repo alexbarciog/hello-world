@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_connection_requests ADD COLUMN next_followup_at timestamp with time zone DEFAULT NULL;
