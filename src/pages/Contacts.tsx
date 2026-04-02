@@ -27,6 +27,9 @@ export default function Contacts() {
   const [page, setPage] = useState(1);
   const [listFilter, setListFilter] = useState<string>("all");
   const [showCreateList, setShowCreateList] = useState(false);
+  const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
+  const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
+  const [meetings, setMeetings] = useState<Record<string, any>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
