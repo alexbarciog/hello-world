@@ -143,22 +143,44 @@ async function processCampaign(
 
   // ── Phase 1: Check pending invitations for acceptance ──
   // Cap per run to avoid edge function timeout (~60s)
-  const MAX_ACCEPTANCE_CHECKS = 40;
+  const MAX_ACCEPTANCE_CHECKS = 50;
   const MAX_MESSAGE_SENDS = 15;
 
-  const { data: pendingRequests } = await supabase
+  // Two-pass strategy: check recent invitations first (most likely to have new accepts),
+  // then check older ones. This prevents fresh accepts from being stuck behind stale pending.
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: recentPending } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, status, current_step, user_id')
     .eq('campaign_id', campaign.id)
     .eq('status', 'sent')
     .eq('current_step', 1)
+    .gte('sent_at', oneDayAgo)
+    .order('sent_at', { ascending: false })
+    .limit(20);
+
+  const { data: olderPending } = await supabase
+    .from('campaign_connection_requests')
+    .select('id, contact_id, status, current_step, user_id')
+    .eq('campaign_id', campaign.id)
+    .eq('status', 'sent')
+    .eq('current_step', 1)
+    .lt('sent_at', oneDayAgo)
     .order('sent_at', { ascending: true })
-    .limit(MAX_ACCEPTANCE_CHECKS);
+    .limit(MAX_ACCEPTANCE_CHECKS - (recentPending?.length || 0));
+
+  // Merge: recent first, then older
+  const recentIds = new Set((recentPending || []).map((r: any) => r.id));
+  const pendingRequests = [
+    ...(recentPending || []),
+    ...(olderPending || []).filter((r: any) => !recentIds.has(r.id)),
+  ];
 
   let acceptedCount = 0;
 
-  if (pendingRequests && pendingRequests.length > 0) {
-    console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (capped at ${MAX_ACCEPTANCE_CHECKS})`);
+  if (pendingRequests.length > 0) {
+    console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (${recentPending?.length || 0} recent + ${olderPending?.length || 0} older)`);
 
     for (const req of pendingRequests) {
       try {
