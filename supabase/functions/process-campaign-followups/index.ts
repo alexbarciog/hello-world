@@ -192,10 +192,14 @@ async function processCampaign(
         // Accept if we found a chat OR if the profile shows FIRST_DEGREE connection
         const firstDegree = profileData ? isFirstDegree(profileData) : false;
 
-        // Fallback: check invitation API if profile check didn't confirm
+        // Fallback: only check invitation API if profile data is ambiguous
+        // If network_distance is clearly SECOND/THIRD/OUT_OF_NETWORK, skip the fallback
         let invitationAccepted = false;
-        if (!chatId && !firstDegree && providerId) {
-          console.log(`[followup] Profile check negative for ${req.contact_id}, trying invitation API fallback`);
+        const networkDist = profileData?.network_distance || '';
+        const isDefinitelyNotConnected = /^(SECOND|THIRD|OUT_OF)/i.test(String(networkDist));
+
+        if (!chatId && !firstDegree && providerId && !isDefinitelyNotConnected) {
+          console.log(`[followup] Profile ambiguous for ${req.contact_id} (distance: ${networkDist}), trying invitation API fallback`);
           invitationAccepted = await checkInvitationAccepted(unipileDsn, unipileApiKey, accountId, providerId);
         }
 
