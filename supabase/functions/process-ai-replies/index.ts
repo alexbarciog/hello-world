@@ -369,37 +369,6 @@ async function generateConversationalReply(
   ctx: Record<string, unknown>,
 ): Promise<string> {
   try {
-    const isFollowUp = ctx.isFollowUp as boolean;
-
-    const systemPrompt = `You are an AI SDR having a real LinkedIn conversation. Your ONLY goal is to book a call/meeting.
-
-RULES:
-- ${isFollowUp ? 'The lead has NOT responded to your last message. Send a natural, non-pushy follow-up that adds new value or a different angle. Reference the previous conversation naturally.' : 'Reply naturally to what the lead said — this is a real conversation, not a cold outreach'}
-- Keep responses under 50 words, 1-2 short paragraphs max
-- Be ${ctx.messageTone || 'professional'} but human
-- NO placeholders, NO jargon (leverage, utilize, synergy, delighted)
-- NO em-dashes (—) or semicolons
-${isFollowUp ? '- Do NOT repeat your previous message or ask the same question\n- Offer a new insight, share a quick relevant stat, or reframe the value proposition\n- Keep it light and casual, like "Hey, just circling back..." or "Quick thought..."' : '- If the lead asks a question, answer it briefly then steer toward a call\n- If the lead seems interested, propose a specific time frame ("sometime this week?")\n- If the lead is hesitant, acknowledge their concern and offer value'}
-- Reply ${ctx.repliesCount as number >= (ctx.maxReplies as number) - 2 ? 'with a final gentle push for a call — this is one of your last messages' : 'conversationally, building toward booking a call'}
-- Language: ${ctx.language || 'English'}
-${ctx.customTraining ? `\nAdditional instructions: ${ctx.customTraining}` : ''}`;
-
-    const userPrompt = `Context:
-- Your company: ${ctx.companyName || 'our company'}
-- Value proposition: ${ctx.valueProposition || 'We help businesses grow'}
-- Campaign goal: ${ctx.campaignGoal || 'Book a demo call'}
-- Lead: ${ctx.firstName} ${ctx.lastName || ''}, ${ctx.leadTitle || ''} at ${ctx.leadCompany || 'their company'}
-- Signal: ${ctx.buyingSignal || 'engaged with our content'}
-- Reply #${(ctx.repliesCount as number) + 1} of ${ctx.maxReplies}
-${isFollowUp ? '- TYPE: Follow-up (lead has not responded in 24h+)' : ''}
-
-Recent conversation:
-${ctx.conversationHistory}
-
-${isFollowUp ? 'The lead has not responded to your last message. Write a natural follow-up (under 50 words):' : `The lead just said: "${ctx.leadMessage}"\n\nWrite your reply (under 50 words):`}
-
-Write your reply (under 50 words):`;
-
     const response = await fetch(`${supabaseUrl}/functions/v1/generate-step-message`, {
       method: 'POST',
       headers: {
@@ -408,25 +377,24 @@ Write your reply (under 50 words):`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        stepNumber: 0, // Indicates conversational reply
-        previousStepMessage: '',
-        previousMessages: [],
+        isConversationalReply: true,
+        conversationHistory: ctx.conversationHistory,
+        leadMessage: ctx.leadMessage,
+        repliesCount: ctx.repliesCount,
+        maxReplies: ctx.maxReplies,
+        isFollowUp: ctx.isFollowUp,
         companyName: ctx.companyName,
         valueProposition: ctx.valueProposition,
-        painPoints: ctx.painPoints,
         campaignGoal: ctx.campaignGoal,
         messageTone: ctx.messageTone,
         industry: ctx.industry,
         language: ctx.language,
-        customTraining: `${systemPrompt}\n\n${userPrompt}`,
+        customTraining: ctx.customTraining,
         firstName: ctx.firstName,
         lastName: ctx.lastName,
         leadCompany: ctx.leadCompany,
         leadTitle: ctx.leadTitle,
         buyingSignal: ctx.buyingSignal,
-        isConversationalReply: true,
-        conversationHistory: ctx.conversationHistory,
-        leadMessage: ctx.leadMessage,
       }),
     });
 
