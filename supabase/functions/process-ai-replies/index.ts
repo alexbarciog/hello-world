@@ -10,6 +10,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  * Polls Unipile for new incoming messages on active campaigns with conversational_ai=true.
  * Generates context-aware replies focused on booking a call.
  * Smart stop: detects rejection / opt-out and stops replying.
+ * Meeting detection: auto-books meetings when leads agree to schedule.
+ * Smart follow-up: parses temporal cues for intelligent follow-up timing.
  * Max replies: configurable per campaign (default 5).
  */
 
@@ -41,6 +43,119 @@ const REJECTION_PATTERNS = [
   /\bi'?ll pass\b/i,
   /\bnot relevant\b/i,
 ];
+
+// ── Meeting intent detection ──
+const MEETING_INTENT_PATTERNS = [
+  /\blet'?s?\s+(schedule|book|set up|plan|arrange)\b/i,
+  /\bschedule\s+a?\s*(call|meeting|chat|demo|session|zoom|teams)\b/i,
+  /\bbook\s+a?\s*(call|meeting|time|slot|demo)\b/i,
+  /\bset\s+up\s+a?\s*(call|meeting|time|chat)\b/i,
+  /\blet'?s?\s+(talk|chat|connect|catch up|hop on|jump on)\b/i,
+  /\bhappy\s+to\s+(chat|talk|connect|discuss|jump on|hop on)\b/i,
+  /\bsure,?\s*(let'?s|we can|i'?m? (down|open|free|available))\b/i,
+  /\bsounds?\s+good\b/i,
+  /\bsounds?\s+great\b/i,
+  /\bi'?m?\s+(open|free|available|down|interested)\b/i,
+  /\bwhen\s+(are you|works?|is good|can we|should we)\b/i,
+  /\bwhat\s+time\s+(works?|is good)\b/i,
+  /\bpick\s+a\s+time\b/i,
+  /\bsend\s+(me\s+)?(your\s+)?calendar\b/i,
+  /\bcalendly\b/i,
+  /\byes,?\s*(let'?s|i'?d love|absolutely|definitely)\b/i,
+  /\bdefinitely\s*(interested|down|open)\b/i,
+  /\babsolutely\b/i,
+  /\bfor sure\b/i,
+  /\bcount me in\b/i,
+  /\blooking forward\b/i,
+];
+
+// ── Temporal cue parsing ──
+// Returns a Date for when the follow-up should happen, or null
+function parseTemporalCue(text: string): Date | null {
+  const now = new Date();
+  const lower = text.toLowerCase();
+
+  // "tomorrow"
+  if (/\btomorrow\b/i.test(lower)) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 1);
+    d.setHours(9, 0, 0, 0); // 9 AM next day
+    return d;
+  }
+
+  // "next week"
+  if (/\bnext\s+week\b/i.test(lower)) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); // Next Monday
+    d.setHours(9, 0, 0, 0);
+    return d;
+  }
+
+  // "Monday", "Tuesday", etc.
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  for (let i = 0; i < dayNames.length; i++) {
+    const regex = new RegExp(`\\b${dayNames[i]}\\b`, 'i');
+    if (regex.test(lower)) {
+      const d = new Date(now);
+      const currentDay = d.getDay();
+      let daysAhead = i - currentDay;
+      if (daysAhead <= 0) daysAhead += 7;
+      d.setDate(d.getDate() + daysAhead);
+      d.setHours(9, 0, 0, 0);
+      return d;
+    }
+  }
+
+  // "in X days"
+  const inDaysMatch = lower.match(/\bin\s+(\d+)\s+days?\b/i);
+  if (inDaysMatch) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + parseInt(inDaysMatch[1]));
+    d.setHours(9, 0, 0, 0);
+    return d;
+  }
+
+  // "couple of days" / "few days"
+  if (/\b(couple|few)\s+(of\s+)?days?\b/i.test(lower)) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 2);
+    d.setHours(9, 0, 0, 0);
+    return d;
+  }
+
+  // "end of (the) week"
+  if (/\bend\s+of\s+(the\s+)?week\b/i.test(lower)) {
+    const d = new Date(now);
+    const currentDay = d.getDay();
+    const daysToFriday = (5 - currentDay + 7) % 7 || 7;
+    d.setDate(d.getDate() + daysToFriday);
+    d.setHours(9, 0, 0, 0);
+    return d;
+  }
+
+  return null;
+}
+
+function hasMeetingIntent(text: string): boolean {
+  return MEETING_INTENT_PATTERNS.some(p => p.test(text));
+}
+
+// Also check conversation history for meeting intent (lead + AI agreed)
+function conversationHasMeetingAgreement(conversationHistory: string, latestLeadMessage: string): boolean {
+  // Check if the latest lead message shows meeting intent
+  if (hasMeetingIntent(latestLeadMessage)) return true;
+
+  // Check if there's been a back-and-forth about scheduling
+  const lines = conversationHistory.split('\n');
+  let meetingMentions = 0;
+  for (const line of lines) {
+    if (MEETING_INTENT_PATTERNS.some(p => p.test(line))) {
+      meetingMentions++;
+    }
+  }
+  // If meeting was mentioned 2+ times in conversation, likely agreed
+  return meetingMentions >= 2;
+}
 
 // Check for soft rejection: lead has declined twice in the conversation
 function isSoftRejection(conversationHistory: string): boolean {
@@ -91,6 +206,7 @@ Deno.serve(async (req) => {
 
     let totalReplied = 0;
     let totalStopped = 0;
+    let totalMeetingsBooked = 0;
 
     for (const campaign of campaigns) {
       try {
@@ -99,13 +215,14 @@ Deno.serve(async (req) => {
         );
         totalReplied += result.replied;
         totalStopped += result.stopped;
+        totalMeetingsBooked += result.meetingsBooked;
       } catch (err) {
         console.error(`[ai-replies][campaign ${campaign.id}] error:`, err);
       }
     }
 
-    console.log(`[ai-replies] Done. Replied: ${totalReplied}, Stopped: ${totalStopped}`);
-    return jsonRes({ status: 'ok', replied: totalReplied, stopped: totalStopped });
+    console.log(`[ai-replies] Done. Replied: ${totalReplied}, Stopped: ${totalStopped}, Meetings: ${totalMeetingsBooked}`);
+    return jsonRes({ status: 'ok', replied: totalReplied, stopped: totalStopped, meetingsBooked: totalMeetingsBooked });
   } catch (error) {
     console.error('[ai-replies] Fatal error:', error);
     return jsonRes({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
@@ -120,7 +237,7 @@ async function processCampaignReplies(
   lovableApiKey: string,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
-): Promise<{ replied: number; stopped: number }> {
+): Promise<{ replied: number; stopped: number; meetingsBooked: number }> {
   const maxReplies = campaign.max_ai_replies || 5;
 
   // Get user's Unipile account
@@ -130,30 +247,29 @@ async function processCampaignReplies(
     .eq('user_id', campaign.user_id)
     .single();
 
-  if (!profile?.unipile_account_id) return { replied: 0, stopped: 0 };
+  if (!profile?.unipile_account_id) return { replied: 0, stopped: 0, meetingsBooked: 0 };
   const accountId = profile.unipile_account_id;
 
    // Get accepted/completed connection requests with chat_id that haven't been stopped
     // IMPORTANT: Only engage contacts where current_step >= 2 (at least one outreach message has been sent)
-    // This prevents the conversational AI from replying before the scheduled workflow messages
     const { data: connReqs } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step, created_at, sent_at')
+      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step, created_at, sent_at, next_followup_at')
       .eq('campaign_id', campaign.id)
       .in('status', ['accepted', 'completed'])
       .eq('conversation_stopped', false)
       .gte('current_step', 2)
       .not('chat_id', 'is', null);
 
-  if (!connReqs || connReqs.length === 0) return { replied: 0, stopped: 0 };
+  if (!connReqs || connReqs.length === 0) return { replied: 0, stopped: 0, meetingsBooked: 0 };
 
   let replied = 0;
   let stopped = 0;
+  let meetingsBooked = 0;
 
   for (const cr of connReqs) {
     try {
       if (cr.ai_replies_count >= maxReplies) {
-        // Max replies reached, stop
         await supabase.from('campaign_connection_requests')
           .update({ conversation_stopped: true })
           .eq('id', cr.id);
@@ -162,8 +278,6 @@ async function processCampaignReplies(
       }
 
       // ── GUARD: Skip pre-existing conversations ──
-      // If this chat had messages BEFORE the connection request was created,
-      // it means it's a personal/existing conversation — AI must NOT intervene.
       const crCreatedAt = new Date(cr.created_at || cr.sent_at || 0);
 
       // Fetch recent messages from this chat
@@ -182,20 +296,16 @@ async function processCampaignReplies(
 
       if (!Array.isArray(messages) || messages.length === 0) continue;
 
-      // Find the most recent message
       const sortedMessages = [...messages].sort((a: any, b: any) => 
         new Date(b.timestamp || b.date || b.created_at || 0).getTime() - 
         new Date(a.timestamp || a.date || a.created_at || 0).getTime()
       );
 
       // ── GUARD: Check if this is a pre-existing conversation ──
-      // If the oldest message in this batch is from BEFORE the connection request,
-      // this is a personal conversation — DO NOT reply.
       const oldestMessage = sortedMessages[sortedMessages.length - 1];
       const oldestMsgTime = new Date(oldestMessage?.timestamp || oldestMessage?.date || oldestMessage?.created_at || 0);
       if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
-        console.log(`[ai-replies] Skipping contact ${cr.contact_id} — pre-existing conversation detected (oldest msg: ${oldestMsgTime.toISOString()}, CR created: ${crCreatedAt.toISOString()})`);
-        // Mark as stopped so we don't keep checking
+        console.log(`[ai-replies] Skipping contact ${cr.contact_id} — pre-existing conversation detected`);
         await supabase.from('campaign_connection_requests')
           .update({ conversation_stopped: true })
           .eq('id', cr.id);
@@ -206,7 +316,6 @@ async function processCampaignReplies(
       const latestMessage = sortedMessages[0];
       if (!latestMessage) continue;
 
-      // Check if the latest message is from the lead (not from us)
       const isFromLead = !latestMessage.is_sender && latestMessage.sender_id !== accountId;
       const latestMsgTime = new Date(latestMessage.timestamp || latestMessage.date || latestMessage.created_at);
 
@@ -214,7 +323,7 @@ async function processCampaignReplies(
       if (isFromLead) {
         const msgTimestamp = latestMsgTime.toISOString();
         if (cr.last_incoming_message_at && new Date(cr.last_incoming_message_at) >= new Date(msgTimestamp)) {
-          // Check if we should do a 24h follow-up instead (fall through to case 2)
+          // Already processed — fall through to case 2
         } else {
           const leadMessage = (latestMessage.text || latestMessage.body || '').trim();
           if (!leadMessage) continue;
@@ -225,7 +334,6 @@ async function processCampaignReplies(
             await supabase.from('campaign_connection_requests')
               .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
               .eq('id', cr.id);
-            // Also flag the contact
             await supabase.from('contacts')
               .update({ lead_status: 'not_interested' })
               .eq('id', cr.contact_id);
@@ -233,7 +341,7 @@ async function processCampaignReplies(
             continue;
           }
 
-          // Get full contact info for rich context
+          // Get full contact info
           const { data: contact } = await supabase
             .from('contacts')
             .select('first_name, last_name, company, title, signal, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
@@ -250,7 +358,7 @@ async function processCampaignReplies(
             .filter((line: string) => line.length > 5)
             .join('\n');
 
-          // Check for soft rejection: lead has shown disinterest multiple times across the conversation
+          // Check for soft rejection
           if (isSoftRejection(conversationHistory)) {
             console.log(`[ai-replies] Soft rejection detected (2+ signals) from contact ${cr.contact_id}`);
             await supabase.from('campaign_connection_requests')
@@ -263,6 +371,58 @@ async function processCampaignReplies(
             continue;
           }
 
+          // ── MEETING INTENT DETECTION ──
+          const meetingAgreed = conversationHasMeetingAgreement(conversationHistory, leadMessage);
+          let meetingContext = '';
+
+          if (meetingAgreed) {
+            console.log(`[ai-replies] 🎯 Meeting intent detected from ${contact.first_name} ${contact.last_name || ''}: "${leadMessage.slice(0, 100)}"`);
+
+            // Parse temporal cue for scheduling
+            const followUpDate = parseTemporalCue(leadMessage);
+
+            // Auto-create meeting record
+            const scheduledAt = followUpDate || new Date(Date.now() + 24 * 60 * 60 * 1000); // Default: tomorrow
+            const { error: meetingErr } = await supabase
+              .from('meetings')
+              .insert({
+                user_id: cr.user_id,
+                contact_id: cr.contact_id,
+                campaign_id: campaign.id,
+                scheduled_at: scheduledAt.toISOString(),
+                status: 'scheduled',
+                notes: `Auto-detected from conversation. Lead said: "${leadMessage.slice(0, 200)}"`,
+              });
+
+            if (meetingErr) {
+              console.error(`[ai-replies] Failed to create meeting for ${cr.contact_id}:`, meetingErr);
+            } else {
+              console.log(`[ai-replies] ✅ Meeting auto-booked for ${contact.first_name} on ${scheduledAt.toISOString()}`);
+              meetingsBooked++;
+
+              // Update lead status to meeting_booked
+              await supabase.from('contacts')
+                .update({ lead_status: 'meeting_booked' })
+                .eq('id', cr.contact_id);
+
+              await supabase.from('campaign_connection_requests')
+                .update({ lead_status: 'meeting_booked' })
+                .eq('id', cr.id);
+            }
+
+            meetingContext = `MEETING CONFIRMED: The lead has agreed to a meeting/call. Respond warmly confirming the plan. If they mentioned a specific time (${followUpDate ? followUpDate.toISOString() : 'not specified'}), confirm it. Keep it brief and enthusiastic.`;
+          }
+
+          // ── TEMPORAL CUE: Set smart follow-up timing ──
+          const temporalFollowUp = parseTemporalCue(leadMessage);
+          if (temporalFollowUp && !meetingAgreed) {
+            // Lead said something like "let's talk next week" without explicit meeting agreement
+            await supabase.from('campaign_connection_requests')
+              .update({ next_followup_at: temporalFollowUp.toISOString() })
+              .eq('id', cr.id);
+            console.log(`[ai-replies] ⏰ Smart follow-up set for ${contact.first_name} at ${temporalFollowUp.toISOString()}`);
+          }
+
           const reply = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
             conversationHistory, leadMessage,
             companyName: campaign.company_name, valueProposition: campaign.value_proposition,
@@ -273,6 +433,7 @@ async function processCampaignReplies(
             leadCompany: contact.company, leadTitle: contact.title,
             buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
             maxReplies: maxReplies, isFollowUp: false,
+            meetingContext: meetingContext,
           });
 
           if (!reply.trim()) continue;
@@ -284,9 +445,21 @@ async function processCampaignReplies(
           );
           if (!sendRes.ok) { console.error(`[ai-replies] send failed for ${cr.contact_id}:`, sendRes.status); continue; }
 
-          console.log(`[ai-replies] Replied to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})`);
+          console.log(`[ai-replies] Replied to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})${meetingAgreed ? ' [MEETING]' : ''}`);
+          
+          const updateData: any = {
+            ai_replies_count: cr.ai_replies_count + 1,
+            last_incoming_message_at: msgTimestamp,
+            last_ai_reply_at: new Date().toISOString(),
+          };
+          
+          // If meeting was booked and lead mentioned a date, set follow-up for that date
+          if (meetingAgreed && temporalFollowUp) {
+            updateData.next_followup_at = temporalFollowUp.toISOString();
+          }
+          
           await supabase.from('campaign_connection_requests')
-            .update({ ai_replies_count: cr.ai_replies_count + 1, last_incoming_message_at: msgTimestamp, last_ai_reply_at: new Date().toISOString() })
+            .update(updateData)
             .eq('id', cr.id);
 
           const { data: currentCampaign } = await supabase.from('campaigns').select('messages_sent').eq('id', campaign.id).single();
@@ -297,15 +470,29 @@ async function processCampaignReplies(
         }
       }
 
-      // === CASE 2: No response from lead for 24h+ — send follow-up ===
-      // The latest message is from us (or we already processed the lead's last message)
+      // === CASE 2: No response from lead — send follow-up ===
       const lastReplyAt = cr.last_ai_reply_at ? new Date(cr.last_ai_reply_at) : null;
-      const hoursSinceLastReply = lastReplyAt ? (Date.now() - lastReplyAt.getTime()) / (1000 * 60 * 60) : null;
+      const now = Date.now();
 
-      // Only follow up if: we sent a reply before, it's been 24h+, and we haven't already followed up (check if latest msg is our follow-up)
-      if (!lastReplyAt || hoursSinceLastReply === null || hoursSinceLastReply < 24) continue;
+      // Smart follow-up: if next_followup_at is set, use that instead of 24h default
+      if (cr.next_followup_at) {
+        const followUpTime = new Date(cr.next_followup_at);
+        if (now < followUpTime.getTime()) {
+          // Not yet time for the smart follow-up
+          continue;
+        }
+        // Time has come — clear the next_followup_at and proceed with follow-up
+        await supabase.from('campaign_connection_requests')
+          .update({ next_followup_at: null })
+          .eq('id', cr.id);
+        console.log(`[ai-replies] ⏰ Smart follow-up triggered for contact ${cr.contact_id}`);
+      } else {
+        // Default 24h follow-up logic
+        const hoursSinceLastReply = lastReplyAt ? (now - lastReplyAt.getTime()) / (1000 * 60 * 60) : null;
+        if (!lastReplyAt || hoursSinceLastReply === null || hoursSinceLastReply < 24) continue;
+      }
 
-      // Don't send more than 1 follow-up without a response (check if last 2 messages are both ours)
+      // Don't send more than 1 follow-up without a response
       const lastTwoOurs = sortedMessages.slice(0, 2).every((m: any) => m.is_sender || m.sender_id === accountId);
       if (lastTwoOurs) continue;
 
@@ -325,6 +512,23 @@ async function processCampaignReplies(
         .filter((line: string) => line.length > 5)
         .join('\n');
 
+      // Check if there's a meeting booked — adjust follow-up context
+      const { data: existingMeeting } = await supabase
+        .from('meetings')
+        .select('id, scheduled_at, status')
+        .eq('contact_id', cr.contact_id)
+        .eq('user_id', cr.user_id)
+        .eq('status', 'scheduled')
+        .order('scheduled_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      let meetingContext = '';
+      if (existingMeeting) {
+        const meetingDate = new Date(existingMeeting.scheduled_at);
+        meetingContext = `MEETING SCHEDULED: You have a meeting booked with this lead on ${meetingDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}. This follow-up should gently confirm the meeting or share something useful before it.`;
+      }
+
       const followUp = await generateConversationalReply(supabaseUrl, supabaseServiceRoleKey, {
         conversationHistory, leadMessage: '',
         companyName: campaign.company_name, valueProposition: campaign.value_proposition,
@@ -335,6 +539,7 @@ async function processCampaignReplies(
         leadCompany: contact.company, leadTitle: contact.title,
         buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
         maxReplies: maxReplies, isFollowUp: true,
+        meetingContext: meetingContext,
       });
 
       if (!followUp.trim()) continue;
@@ -346,7 +551,7 @@ async function processCampaignReplies(
       );
       if (!sendRes.ok) { console.error(`[ai-replies] follow-up send failed for ${cr.contact_id}:`, sendRes.status); continue; }
 
-      console.log(`[ai-replies] 24h follow-up sent to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})`);
+      console.log(`[ai-replies] Follow-up sent to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})${existingMeeting ? ' [PRE-MEETING]' : ''}`);
       await supabase.from('campaign_connection_requests')
         .update({ ai_replies_count: cr.ai_replies_count + 1, last_ai_reply_at: new Date().toISOString() })
         .eq('id', cr.id);
@@ -360,7 +565,7 @@ async function processCampaignReplies(
     }
   }
 
-  return { replied, stopped };
+  return { replied, stopped, meetingsBooked };
 }
 
 async function generateConversationalReply(
@@ -395,6 +600,7 @@ async function generateConversationalReply(
         leadCompany: ctx.leadCompany,
         leadTitle: ctx.leadTitle,
         buyingSignal: ctx.buyingSignal,
+        meetingContext: ctx.meetingContext,
       }),
     });
 
@@ -412,11 +618,11 @@ async function generateConversationalReply(
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function jsonRes(payload: unknown, status = 200) {
-  return new Response(JSON.stringify(payload), {
+function jsonRes(data: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(data), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });

@@ -28,6 +28,7 @@ export type Database = {
           last_ai_reply_at: string | null
           last_incoming_message_at: string | null
           lead_status: string
+          next_followup_at: string | null
           sent_at: string
           status: string
           step_completed_at: string | null
@@ -47,6 +48,7 @@ export type Database = {
           last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
           lead_status?: string
+          next_followup_at?: string | null
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -66,6 +68,7 @@ export type Database = {
           last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
           lead_status?: string
+          next_followup_at?: string | null
           sent_at?: string
           status?: string
           step_completed_at?: string | null

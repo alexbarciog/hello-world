@@ -82,6 +82,7 @@ async function handleConversationalReply(
     leadCompany?: string;
     leadTitle?: string;
     buyingSignal?: string;
+    meetingContext?: string;
   },
   LOVABLE_API_KEY: string,
 ): Promise<Response> {
@@ -98,9 +99,13 @@ async function handleConversationalReply(
   const isFollowUp = req.isFollowUp || false;
   const leadMessage = (req.leadMessage || '').trim();
   const leadIsGreeting = isGreeting(leadMessage);
+  const meetingContext = (req.meetingContext || '').trim();
 
   let replyPhase: string;
-  if (repliesCount <= 1) {
+  if (meetingContext) {
+    // Override phase when meeting is in play
+    replyPhase = 'PHASE: Meeting coordination. Be warm, confirm logistics, keep it brief.';
+  } else if (repliesCount <= 1) {
     replyPhase = 'PHASE: Relationship building. Do NOT mention your product, company, or what you do. Just be friendly and curious about them.';
   } else if (repliesCount <= 3) {
     replyPhase = 'PHASE: Light discovery. You may briefly mention what you do ONLY if the lead asks. Otherwise, keep asking about their work.';
@@ -120,7 +125,9 @@ RULES:
 - No "I noticed", "I saw", "I came across" openers.
 - Sound like a real human texting a colleague, not a salesperson.
 ${leadIsGreeting ? '- The lead sent a GREETING. Just greet them back warmly and ask ONE simple personal question (how their week is going, etc). Nothing else.' : ''}
-${isFollowUp ? '- The lead has NOT responded in 24h+. Send a very short, casual nudge. Max 15 words. Do NOT repeat your previous message. Try a new angle or a simple question.' : ''}
+${isFollowUp && !meetingContext ? '- The lead has NOT responded in 24h+. Send a very short, casual nudge. Max 15 words. Do NOT repeat your previous message. Try a new angle or a simple question.' : ''}
+${isFollowUp && meetingContext ? '- This is a scheduled follow-up related to a meeting. Gently confirm the meeting or ask if the time still works. Max 15 words.' : ''}
+${meetingContext ? `- ${meetingContext}` : ''}
 - ${replyPhase}
 - Language: ${req.language || 'English'}
 ${req.customTraining ? `- Additional context: ${req.customTraining}` : ''}`;
