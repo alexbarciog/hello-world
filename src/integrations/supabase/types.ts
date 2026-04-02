@@ -546,6 +546,60 @@ export type Database = {
           },
         ]
       }
+      meetings: {
+        Row: {
+          campaign_id: string | null
+          contact_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          prep_generated_at: string | null
+          prep_research: Json | null
+          scheduled_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          contact_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          prep_generated_at?: string | null
+          prep_research?: Json | null
+          scheduled_at: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          contact_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          prep_generated_at?: string | null
+          prep_research?: Json | null
+          scheduled_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
