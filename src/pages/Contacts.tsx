@@ -230,6 +230,7 @@ export default function Contacts() {
             { key: "hot" as Tab, label: "🔥 Hot", count: tierCounts.hot },
             { key: "warm" as Tab, label: "☀️ Warm", count: tierCounts.warm },
             { key: "cold" as Tab, label: "❄️ Cold", count: tierCounts.cold },
+            { key: "meeting_booked" as Tab, label: "📅 Meeting", count: tierCounts.meeting_booked },
             { key: "not_interested" as Tab, label: "👎 Not Interested", count: tierCounts.not_interested },
           ]).map((t) => (
             <button
