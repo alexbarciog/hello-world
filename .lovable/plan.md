@@ -1,59 +1,67 @@
 
 
-## Plan: Overhaul Reddit Signal Discovery for Relevance
+## Plan: Fix AI SDR Conversational Reply Quality
 
 ### Problem
-The current approach has a fundamental conflict:
-1. The Apify actor (`parseforge~reddit-posts-scraper`) returns posts that Reddit's search engine considers related but often don't contain the exact keywords
-2. The 80% keyword-word-match filter then removes most of these posts because the words don't literally appear
-3. If we loosen the filter, noise gets through; if we tighten it, relevant posts get filtered out
-4. Result: customers get either zero signals or irrelevant ones
+The conversational AI reply is terrible because of an architectural shortcut: `process-ai-replies` builds a good conversational prompt but then passes it via the `customTraining` field to `generate-step-message`, which wraps it with its own **cold outreach system prompt** (50-word outreach rules, "anchor in buying signal", etc.). The conversational instructions end up buried as "EXTRA USER INSTRUCTIONS" and the AI defaults to writing a sales pitch.
 
-### Solution: Two Key Changes
+The example proves this — "Hi, Alexandru" gets a 3-paragraph sales pitch about "automating buying intent" instead of a natural 1-line reply.
 
-#### 1. Switch Apify Actor
-Replace `parseforge~reddit-posts-scraper` with **`easyapi/reddit-posts-search-scraper`**.
+### Root Cause
+`generate-step-message/index.ts` has no separate code path for conversational replies. It always uses the cold outreach system prompt, ignoring the `conversationHistory` and `leadMessage` fields entirely.
 
-Why this actor:
-- Uses Reddit's native search API with **relevance sorting** (not just "new")
-- Simpler input: just `query`, `sort`, `time`, `maxItems`
-- Returns rich metadata: `post_id`, `subreddit`, `author_id`, `title`, `body`, `score`, `created_time`
-- High success rate (100% on Apify stats), actively maintained
-- No subreddit restriction needed — Reddit's relevance algorithm handles this
+### Solution: Add a dedicated conversational reply path in `generate-step-message`
 
-#### 2. Remove Keyword Text Matching, Rely on AI Only
-The current two-step filter (keyword match → AI score) is the root cause. Posts found via a search for "trying to get sales" ARE about getting sales — they just don't contain those exact words.
+When `isConversationalReply === true`, bypass the cold outreach prompt entirely and use a purpose-built conversational prompt.
 
-New flow:
-- **No keyword text matching** — every post returned by Reddit's relevance search is a candidate
-- **AI scoring only** — score all candidates against the user's business context
-- **Threshold: 6+** (lowered from 7, since Reddit's relevance sort already pre-filters)
+#### New Conversational Prompt Design
 
-#### 3. One Apify Call Per Keyword (not batched)
-The current batch approach mixes all keywords into one call, making it impossible to track which keyword returned which result. The new actor takes a single `query`, so we loop keywords (max 10 per user via rotation) with `maxItems: 20` each.
+**System prompt principles:**
+- You are replying in an ongoing LinkedIn DM conversation, NOT writing cold outreach
+- Mirror the lead's energy and length — if they wrote 3 words, reply with ~10-15 words
+- Maximum 30 words (not 50) — shorter is always better
+- ONE short paragraph only, no double paragraph structure
+- Never pitch unprompted — only mention your product if the lead asks
+- If the lead says "Hi" or a greeting, just greet back warmly and ask a simple question
+- Goal: keep the conversation alive naturally, steer toward a call only when the moment is right
+- No buzzwords, no value propositions unless asked, no pain points monologues
 
-### Technical Flow
-```text
-Current:
-  All keywords → single Apify batch → keyword text filter (80%) → AI score ≥7
-  Problem: text filter kills relevant posts, OR lets through noise
+**Greeting detection:** If the lead's message is a simple greeting (hi, hello, hey, etc.), the AI should respond with a warm greeting + a light conversational question — no product mention at all.
 
-New:
-  For each keyword (max 10, rotated):
-    → Apify search (sort=relevance, maxItems=20)
-    → ALL results become candidates (no text filter)
-    → AI batch scoring with business context
-    → score ≥ 6 → insert
-  Total Apify items: max 10 × 20 = 200 (same budget)
-```
+**Reply calibration by reply count:**
+- Reply 1-2: Pure relationship building, zero sales
+- Reply 3-4: Light mention of what you do IF relevant
+- Reply 5+: Gentle call suggestion
 
-### Files to Change
-- **`supabase/functions/poll-reddit-signals/index.ts`** — Replace Apify actor, remove keyword text matching, loop per-keyword, adjust scoring threshold
+#### Example behavior after fix
+
+Lead: "Hi, Alexandru"
+AI: "Hey Shruti! How's your week going?"
+
+Lead: "Good thanks, what do you do?"
+AI: "We help growth teams spot buying signals on social. Curious what channels you're focused on right now?"
+
+### Technical Changes
+
+**File: `supabase/functions/generate-step-message/index.ts`**
+
+1. Add a new code branch after input parsing: if `isConversationalReply === true`, use a completely separate system prompt and user prompt
+2. The conversational system prompt will be ~15 lines focused on natural DM replies
+3. Include greeting detection logic in the prompt
+4. Use `conversationHistory` and `leadMessage` directly (they're already passed but ignored)
+5. Reduce `sanitizeMessage` max length to 150 chars for conversational replies (instead of 300)
+6. Remove the "Open to a quick chat?" auto-append for conversational replies — the prompt handles CTA timing based on reply count
+
+**File: `supabase/functions/process-ai-replies/index.ts`**
+
+1. Stop stuffing the prompt into `customTraining` — pass `conversationHistory` and `leadMessage` as dedicated fields (already done, but now they'll actually be used)
+2. Remove the local `systemPrompt` and `userPrompt` construction from `generateConversationalReply` since the logic moves to `generate-step-message`
+3. Pass `repliesCount` and `maxReplies` so the message generator can calibrate sales intensity
+4. Pass `isFollowUp` flag for the 24h follow-up case
 
 ### Impact
-- Posts returned by Reddit's relevance search are inherently more relevant to the query
-- No more false negatives from text matching (the #1 complaint)
-- AI scoring catches remaining noise
-- Same compute budget (200 items max)
-- No database changes needed
+- Conversational replies will be 10-30 words instead of 50-80
+- Greetings get greeting responses, not sales pitches
+- Sales intensity scales with conversation depth
+- No prompt collision between cold outreach and conversation modes
 
