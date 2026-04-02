@@ -9,7 +9,7 @@ import {
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
-  RefreshCw, Loader2, MessageCircle,
+  RefreshCw, Loader2, MessageCircle, CalendarDays,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Contact, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
+import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
+import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts";
@@ -265,7 +267,12 @@ export default function CampaignDetail() {
   const [editInvitationOpen, setEditInvitationOpen] = useState(false);
   const [invitationNoteMode, setInvitationNoteMode] = useState<"without" | "with">("without");
   const [invitationNote, setInvitationNote] = useState("");
-  
+
+  // Meeting booking state
+  const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
+  const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
+  const [meetingsMap, setMeetingsMap] = useState<Record<string, any>>({});
+
 
   useEffect(() => {
     if (id) loadCampaign(id);
@@ -458,10 +465,21 @@ export default function CampaignDetail() {
         setRemainingContacts(Math.max(0, totalContacts - totalSent));
       }
 
-      // Load scheduled messages and daily queue in parallel
+      // Load scheduled messages, daily queue, and meetings in parallel
+      const userId2 = (await supabase.auth.getUser()).data.user?.id;
       await Promise.all([
         loadScheduledMessages(campaignId, c.workflow_steps || []).catch(e => console.error("loadScheduledMessages error:", e)),
         loadDailyQueue(campaignId).catch(e => console.error("loadDailyQueue error:", e)),
+        (async () => {
+          if (userId2) {
+            const { data: meetingsData } = await supabase.from("meetings" as any).select("*").eq("user_id", userId2);
+            if (meetingsData) {
+              const mMap: Record<string, any> = {};
+              for (const m of meetingsData as any[]) { mMap[m.contact_id] = m; }
+              setMeetingsMap(mMap);
+            }
+          }
+        })(),
       ]);
     } catch (err) {
       console.error("loadCampaign error:", err);
@@ -1972,12 +1990,42 @@ export default function CampaignDetail() {
                                   const cs = contactStatuses[c.id];
                                   const steps = workflowSteps as any[];
                                   const currentStep = cs?.step || 0;
-                                  const nextStepIdx = currentStep; // next step index in workflow array
-                                  if (nextStepIdx >= steps.length) {
-                                    return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">✓ Completed</span>;
-                                  }
-                                  const nextLabel = nextStepIdx === 0 ? "Step 1 — Invitation" : `Step ${nextStepIdx + 1} — Message`;
-                                  return <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-primary/10 text-primary ring-1 ring-primary/20">{nextLabel}</span>;
+                                  const nextStepIdx = currentStep;
+                                  const meeting = meetingsMap[c.id];
+
+                                  return (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      {nextStepIdx >= steps.length ? (
+                                        <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">✓ Completed</span>
+                                      ) : (
+                                        <span className="inline-flex items-center text-[11px] font-bold whitespace-nowrap rounded-full px-2.5 py-0.5 bg-primary/10 text-primary ring-1 ring-primary/20">
+                                          {nextStepIdx === 0 ? "Step 1 — Invitation" : `Step ${nextStepIdx + 1} — Message`}
+                                        </span>
+                                      )}
+                                      {cs && (cs.status === "accepted" || cs.status === "completed") && !meeting && (
+                                        <button
+                                          onClick={() => setBookMeetingContact(c)}
+                                          className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full transition-colors"
+                                        >
+                                          <CalendarDays className="w-3 h-3" /> Book
+                                        </button>
+                                      )}
+                                      {meeting && (
+                                        <button
+                                          onClick={() => setMeetingPrepData({
+                                            id: meeting.id,
+                                            contact_id: c.id,
+                                            contact_name: `${c.first_name} ${c.last_name || ''}`.trim(),
+                                            scheduled_at: meeting.scheduled_at,
+                                            prep_research: meeting.prep_research,
+                                          })}
+                                          className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-full transition-colors"
+                                        >
+                                          <Sparkles className="w-3 h-3" /> Prep
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
                                 })()}
                               </td>
                             </tr>
@@ -2737,6 +2785,21 @@ export default function CampaignDetail() {
 
         </AnimatePresence>
       </div>
+
+      {/* Meeting Dialogs */}
+      <BookMeetingDialog
+        open={!!bookMeetingContact}
+        onOpenChange={(v) => { if (!v) setBookMeetingContact(null); }}
+        contact={bookMeetingContact}
+        campaignId={id}
+        onBooked={() => { if (id) loadCampaign(id); }}
+      />
+      <MeetingPrepPanel
+        open={!!meetingPrepData}
+        onOpenChange={(v) => { if (!v) setMeetingPrepData(null); }}
+        meeting={meetingPrepData}
+        onUpdated={() => { if (id) loadCampaign(id); }}
+      />
     </div>
   );
 }

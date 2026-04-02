@@ -3,14 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
-  Send, UserCheck, MessageSquare, Clock, ThumbsDown,
+  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
+import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
+import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { toast } from "sonner";
 
-type Tab = "all" | "hot" | "warm" | "cold" | "not_interested";
+type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
 
 export default function Contacts() {
   const [tab, setTab] = useState<Tab>("all");
@@ -25,6 +27,9 @@ export default function Contacts() {
   const [page, setPage] = useState(1);
   const [listFilter, setListFilter] = useState<string>("all");
   const [showCreateList, setShowCreateList] = useState(false);
+  const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
+  const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
+  const [meetings, setMeetings] = useState<Record<string, any>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -32,15 +37,25 @@ export default function Contacts() {
     if (!user) { setLoading(false); return; }
 
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes, connReqRes] = await Promise.all([
+    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes] = await Promise.all([
       supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
       supabase.from("campaign_connection_requests").select("contact_id, status, sent_at, accepted_at, current_step").eq("user_id", user.id).order("sent_at", { ascending: false }),
+      supabase.from("meetings" as any).select("*").eq("user_id", user.id).order("scheduled_at", { ascending: true }),
     ]);
 
     if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
     if (listsRes.data) setLists(listsRes.data as ContactList[]);
+
+    // Build meetings map by contact_id
+    if (meetingsRes.data) {
+      const mMap: Record<string, any> = {};
+      for (const m of meetingsRes.data as any[]) {
+        mMap[m.contact_id] = m;
+      }
+      setMeetings(mMap);
+    }
 
     // Build contact -> list_ids map
     if (junctionRes.data) {
@@ -100,9 +115,10 @@ export default function Contacts() {
   };
 
   const tierCounts = useMemo(() => {
-    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0 };
+    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0 };
     contacts.forEach((c) => {
       if (c.lead_status === 'not_interested') counts.not_interested++;
+      if (c.lead_status === 'meeting_booked') counts.meeting_booked++;
       if (c.relevance_tier in counts) (counts as any)[c.relevance_tier]++;
     });
     return counts;
@@ -123,6 +139,8 @@ export default function Contacts() {
     let result = contacts;
     if (tab === "not_interested") {
       result = result.filter((c) => c.lead_status === 'not_interested');
+    } else if (tab === "meeting_booked") {
+      result = result.filter((c) => c.lead_status === 'meeting_booked');
     } else if (tab !== "all") {
       result = result.filter((c) => c.relevance_tier === tab);
     }
@@ -212,6 +230,7 @@ export default function Contacts() {
             { key: "hot" as Tab, label: "🔥 Hot", count: tierCounts.hot },
             { key: "warm" as Tab, label: "☀️ Warm", count: tierCounts.warm },
             { key: "cold" as Tab, label: "❄️ Cold", count: tierCounts.cold },
+            { key: "meeting_booked" as Tab, label: "📅 Meeting", count: tierCounts.meeting_booked },
             { key: "not_interested" as Tab, label: "👎 Not Interested", count: tierCounts.not_interested },
           ]).map((t) => (
             <button
@@ -309,7 +328,7 @@ export default function Contacts() {
                         className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                       />
                     </th>
-                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists"].map((h) => (
+                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
                         {h}
                       </th>
@@ -383,6 +402,14 @@ export default function Contacts() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col gap-1">
+                          {c.lead_status === 'meeting_booked' && meetings[c.id] && (
+                            <div className="flex items-center gap-1">
+                              <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                              <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                Meeting {new Date(meetings[c.id].scheduled_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                          )}
                           {c.lead_status === 'not_interested' && (
                             <div className="flex items-center gap-1">
                               <ThumbsDown className="w-3.5 h-3.5 text-destructive" />
@@ -428,6 +455,34 @@ export default function Contacts() {
                           )) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1">
+                          {c.lead_status !== 'meeting_booked' ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setBookMeetingContact(c); }}
+                              className="text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
+                            >
+                              📅 Book
+                            </button>
+                          ) : meetings[c.id] ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMeetingPrepData({
+                                  id: meetings[c.id].id,
+                                  contact_id: c.id,
+                                  contact_name: `${c.first_name} ${c.last_name || ''}`.trim(),
+                                  scheduled_at: meetings[c.id].scheduled_at,
+                                  prep_research: meetings[c.id].prep_research,
+                                });
+                              }}
+                              className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                            >
+                              <Sparkles className="w-3 h-3" /> Prep
+                            </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -579,6 +634,22 @@ export default function Contacts() {
         selectedContactIds={selectedIds}
         existingLists={lists}
         onCreated={() => { fetchData(); setSelectedIds(new Set()); }}
+      />
+
+      {/* ── Book Meeting Dialog ── */}
+      <BookMeetingDialog
+        open={!!bookMeetingContact}
+        onOpenChange={(v) => { if (!v) setBookMeetingContact(null); }}
+        contact={bookMeetingContact}
+        onBooked={fetchData}
+      />
+
+      {/* ── Meeting Prep Panel ── */}
+      <MeetingPrepPanel
+        open={!!meetingPrepData}
+        onOpenChange={(v) => { if (!v) setMeetingPrepData(null); }}
+        meeting={meetingPrepData}
+        onUpdated={fetchData}
       />
     </div>
   );
