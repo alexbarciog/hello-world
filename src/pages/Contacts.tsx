@@ -635,6 +635,22 @@ export default function Contacts() {
         existingLists={lists}
         onCreated={() => { fetchData(); setSelectedIds(new Set()); }}
       />
+
+      {/* ── Book Meeting Dialog ── */}
+      <BookMeetingDialog
+        open={!!bookMeetingContact}
+        onOpenChange={(v) => { if (!v) setBookMeetingContact(null); }}
+        contact={bookMeetingContact}
+        onBooked={fetchData}
+      />
+
+      {/* ── Meeting Prep Panel ── */}
+      <MeetingPrepPanel
+        open={!!meetingPrepData}
+        onOpenChange={(v) => { if (!v) setMeetingPrepData(null); }}
+        meeting={meetingPrepData}
+        onUpdated={fetchData}
+      />
     </div>
   );
 }
