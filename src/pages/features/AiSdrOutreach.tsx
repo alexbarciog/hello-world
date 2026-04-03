@@ -1,6 +1,7 @@
 import heroBg from "@/assets/mesh-gradient-1.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import { ttqViewContent } from "@/lib/tiktok-pixel";
 import { ArrowUpRight, ArrowRight, Bot, Target, Send, MessageSquare, TrendingUp } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
