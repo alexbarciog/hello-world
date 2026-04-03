@@ -1,7 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Globe, MessageSquareMore, Twitter, Hash, Bell, TrendingUp, ArrowRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, Globe, MessageSquareMore, Twitter, Bell } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { CTASection, Footer } from "@/components/CTAFooter";
+
+function useInView(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
 
 const platforms = [
   {
@@ -35,98 +52,137 @@ const useCases = [
 
 export default function RedditXMonitoring() {
   const navigate = useNavigate();
+  const heroRef = useInView(0.2);
+  const platformsRef = useInView(0.2);
+  const useCasesRef = useInView(0.2);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-sans">
       <Navbar />
 
-      <section className="pt-32 pb-20 px-6 md:px-10">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-sm font-medium mb-6">
-              <Globe className="w-4 h-4" />
-              Reddit & X Monitoring
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight leading-tight">
-              Capture buying signals across the web
-            </h1>
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Monitor Reddit and X for real-time conversations about your industry, competitors, and the problems you solve.
-            </p>
-            <div className="mt-8">
-              <button onClick={() => navigate("/register")} className="btn-cta text-base px-8 py-3.5">
-                Start Monitoring <ArrowRight className="w-4 h-4 ml-2 inline" />
-              </button>
-            </div>
-          </motion.div>
+      {/* Hero */}
+      <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden pt-20 pb-16">
+        <video className="absolute inset-0 w-full h-full object-cover z-0" src="/videos/hero-gradient.webm" autoPlay loop muted playsInline />
+        <div
+          ref={heroRef.ref}
+          className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto"
+          style={{
+            opacity: heroRef.visible ? 1 : 0,
+            transform: heroRef.visible ? "translateY(0)" : "translateY(24px)",
+            transition: "all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)",
+          }}
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/40 bg-white/50 backdrop-blur-sm text-sm font-medium text-foreground mb-8">
+            <Globe className="w-4 h-4" />
+            Reddit & X Monitoring
+          </div>
+          <h1 className="text-5xl md:text-7xl font-light text-foreground leading-[1.1] tracking-tight mb-6">
+            Capture buying signals<br />across the web
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
+            Monitor Reddit and X for real-time conversations about your industry, competitors, and the problems you solve.
+          </p>
+          <a href="/register" className="btn-cta text-base">
+            Launch your AI Agent for free
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
         </div>
       </section>
 
       {/* Platform cards */}
-      <section className="py-20 px-6 md:px-10">
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
-          {platforms.map((p, i) => (
-            <motion.div
-              key={i}
-              className="rounded-2xl border border-border/60 bg-card p-8"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
-            >
-              <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-5">
-                <p.icon className="w-6 h-6 text-orange-600" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-4">{p.title}</h3>
-              <ul className="space-y-3">
-                {p.features.map((f, j) => (
-                  <li key={j} className="flex items-start gap-3 text-sm text-muted-foreground">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+      <section className="px-8 md:px-16 py-24 md:py-32" style={{ background: "hsl(0 0% 100%)" }}>
+        <div className="max-w-6xl mx-auto">
+          <div
+            ref={platformsRef.ref}
+            className="flex items-center justify-center pb-16 text-center"
+            style={{
+              opacity: platformsRef.visible ? 1 : 0,
+              transform: platformsRef.visible ? "translateY(0)" : "translateY(24px)",
+              transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
+            }}
+          >
+            <h2 className="text-5xl md:text-6xl font-normal text-foreground leading-tight tracking-tight max-w-2xl">
+              Platforms we monitor
+            </h2>
+          </div>
 
-      {/* Use cases */}
-      <section className="py-20 px-6 md:px-10 bg-muted/30">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-4">What you can catch</h2>
-          <p className="text-muted-foreground text-center max-w-xl mx-auto mb-12">
-            Real examples of signals that turn into revenue opportunities.
-          </p>
-          <div className="grid md:grid-cols-2 gap-6">
-            {useCases.map((u, i) => (
-              <motion.div
-                key={i}
-                className="rounded-2xl border border-border/60 bg-card p-6"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <h3 className="font-semibold text-foreground">{u.title}</h3>
-                <p className="text-sm text-muted-foreground mt-2">{u.desc}</p>
-              </motion.div>
-            ))}
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {platforms.map((p, i) => {
+              const card = useInView(0.15);
+              return (
+                <div
+                  key={i}
+                  ref={card.ref}
+                  className="rounded-[28px] border border-border/60 p-8"
+                  style={{
+                    background: "hsl(0 0% 98%)",
+                    opacity: card.visible ? 1 : 0,
+                    transform: card.visible ? "translateY(0)" : "translateY(28px)",
+                    transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 120}ms`,
+                  }}
+                >
+                  <div className="w-12 h-12 rounded-2xl border border-border/60 flex items-center justify-center mb-5" style={{ background: "hsl(0 0% 100%)" }}>
+                    <p.icon className="w-5 h-5 text-foreground/60" />
+                  </div>
+                  <h3 className="text-2xl font-normal text-foreground tracking-tight mb-5">{p.title}</h3>
+                  <ul className="space-y-3">
+                    {p.features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
+                        <div className="w-1.5 h-1.5 rounded-full bg-foreground/30 mt-1.5 flex-shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-6 md:px-10">
-        <div className="max-w-3xl mx-auto text-center rounded-3xl bg-primary/5 border border-primary/10 p-12">
-          <Bell className="w-8 h-8 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Never miss a buying signal</h2>
-          <p className="text-muted-foreground mt-3 mb-8">Available on the Pro plan. Start capturing intent signals from Reddit and X today.</p>
-          <button onClick={() => navigate("/register")} className="btn-cta text-base px-8 py-3.5">
-            Get Started Free <ArrowRight className="w-4 h-4 ml-2 inline" />
-          </button>
+      {/* Use cases */}
+      <section className="px-8 md:px-16 py-24 md:py-32 border-t border-border/40">
+        <div className="max-w-6xl mx-auto">
+          <div
+            ref={useCasesRef.ref}
+            className="flex items-center justify-center pb-16 text-center"
+            style={{
+              opacity: useCasesRef.visible ? 1 : 0,
+              transform: useCasesRef.visible ? "translateY(0)" : "translateY(24px)",
+              transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
+            }}
+          >
+            <h2 className="text-5xl md:text-6xl font-normal text-foreground leading-tight tracking-tight max-w-2xl">
+              What you can catch
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {useCases.map((u, i) => {
+              const card = useInView(0.15);
+              return (
+                <div
+                  key={i}
+                  ref={card.ref}
+                  className="rounded-[28px] border border-border/60 p-8"
+                  style={{
+                    background: "hsl(0 0% 98%)",
+                    opacity: card.visible ? 1 : 0,
+                    transform: card.visible ? "translateY(0)" : "translateY(28px)",
+                    transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 80}ms`,
+                  }}
+                >
+                  <h3 className="text-xl font-normal text-foreground tracking-tight">{u.title}</h3>
+                  <p className="text-base text-muted-foreground mt-3 leading-relaxed">{u.desc}</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
+
+      <CTASection />
+      <Footer />
     </div>
   );
 }
