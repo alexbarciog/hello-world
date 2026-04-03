@@ -253,22 +253,26 @@ Deno.serve(async (req) => {
 
         try {
           const postsEndpoint = isCompany
-            ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=5`
-            : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=5`;
+            ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=10`
+            : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
           const postsRes = await unipileGet(postsEndpoint, UNIPILE_API_KEY, UNIPILE_DSN);
           if (!postsRes.ok) { await postsRes.text(); continue; }
           const postsData = await postsRes.json();
-          const posts = (postsData.items || postsData.posts || []).slice(0, 8);
+          const posts = (postsData.items || postsData.posts || []).slice(0, 10);
           console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts`);
 
           for (const post of posts) {
             if (!hasTime()) break;
             await delay(150);
             const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-            const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
-            if (!rr.ok) { await rr.text(); continue; }
-            const rd = await rr.json();
-            const engagers = (rd.items||[]).slice(0, 25);
+            // Fetch both reactions AND comments
+            const [rr, cr2] = await Promise.all([
+              unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
+              unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
+            ]);
+            const engagers: any[] = [];
+            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
+            if (cr2.ok) { const cd = await cr2.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr2.text(); }
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
 
             for (const engager of engagers) {

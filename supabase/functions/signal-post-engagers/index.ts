@@ -216,12 +216,12 @@ Deno.serve(async (req) => {
         const profileId = extractLinkedInId(url);
         if (!profileId) continue;
         const isCompany = url.includes('/company/');
-        const ep = isCompany ? `/api/v1/users/${profileId}/posts?account_id=${account_id}&is_company=true&limit=5` : `/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=5`;
+        const ep = isCompany ? `/api/v1/users/${profileId}/posts?account_id=${account_id}&is_company=true&limit=10` : `/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=10`;
         try {
           const pr = await unipileGet(ep, UNIPILE_API_KEY, UNIPILE_DSN);
           if (!pr.ok) { await pr.text(); continue; }
           const pd = await pr.json();
-          const posts = (pd.items || pd.posts || []).slice(0, 5);
+          const posts = (pd.items || pd.posts || []).slice(0, 10);
           let profileName = isCompany ? (extractCompanyName(url)||profileId) : profileId;
           if (!isCompany) { try { const r = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN); if(r.ok){const d=await r.json();profileName=[d.first_name,d.last_name].filter(Boolean).join(' ')||profileId;}else await r.text(); } catch(_){} }
           console.log(`profile_engagers "${profileName}": ${posts.length} posts`);
@@ -229,10 +229,14 @@ Deno.serve(async (req) => {
             if (!hasTime()) break;
             await delay(150);
             const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-            const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
-            if (!rr.ok) { await rr.text(); continue; }
-            const rd = await rr.json();
-            const engagers = (rd.items||[]).slice(0, 25);
+            // Fetch both reactions AND comments
+            const [rr, cr] = await Promise.all([
+              unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
+              unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
+            ]);
+            const engagers: any[] = [];
+            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
+            if (cr.ok) { const cd = await cr.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr.text(); }
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
             for (const engager of engagers) {
               if (!hasTime()) break;
