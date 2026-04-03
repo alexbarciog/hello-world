@@ -141,17 +141,19 @@ async function processCampaign(
   const accountId = profile.unipile_account_id;
   let generatedCount = 0;
   const MAX_ACCEPTANCE_CHECKS = 30;
-  const MAX_MESSAGE_SENDS = 15;
+  const MAX_MESSAGE_SENDS = 30;
 
   // ── Phase A: Send follow-up messages FIRST (highest priority) ──
   // This runs before acceptance checking to ensure messages are never blocked by timeout
   let messagesSent = 0;
 
+  // Order by current_step ASC so step 1 contacts (short delay) are processed before step 2+ (long delay)
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
     .eq('campaign_id', campaign.id)
     .eq('status', 'accepted')
+    .order('current_step', { ascending: true })
     .order('step_completed_at', { ascending: true })
     .limit(MAX_MESSAGE_SENDS);
 
