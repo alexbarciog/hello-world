@@ -179,9 +179,36 @@ export default function Contacts() {
   }
 
   function toggleAll() {
-    if (selectedIds.size === paged.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(paged.map((c) => c.id)));
+    if (selectedIds.size > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setShowSelectPopover(true);
+    }
   }
+
+  function applySelection() {
+    if (selectMode === "page") {
+      setSelectedIds(new Set(paged.map((c) => c.id)));
+    } else if (selectMode === "all") {
+      setSelectedIds(new Set(filtered.map((c) => c.id)));
+    } else {
+      const count = Math.min(Math.max(1, selectNumber), filtered.length);
+      setSelectedIds(new Set(filtered.slice(0, count).map((c) => c.id)));
+    }
+    setShowSelectPopover(false);
+  }
+
+  // Close popover on click outside
+  useEffect(() => {
+    if (!showSelectPopover) return;
+    function handleClick(e: MouseEvent) {
+      if (selectPopoverRef.current && !selectPopoverRef.current.contains(e.target as Node)) {
+        setShowSelectPopover(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showSelectPopover]);
 
   function getContactListNames(contactId: string): string[] {
     const listIds = contactListMap[contactId] || [];
