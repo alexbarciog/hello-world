@@ -1,12 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
-import footerGradient from "@/assets/footer-gradient.svg";
+import ctaBg from "@/assets/cta-bg.png";
 
 const CTASection = () => {
   return (
-    <section className="py-28 px-4 relative overflow-hidden bg-[#A0BBFF]">
-      {/* SVG gradient background */}
+    <section className="py-28 px-4 relative overflow-hidden bg-white">
+      {/* Background image */}
       <img
-        src={footerGradient}
+        src={ctaBg}
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" />
       
