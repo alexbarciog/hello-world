@@ -3,6 +3,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+// Blacklist of overly broad/generic terms that match personal posts
+const GENERIC_BLACKLIST = new Set([
+  'sales', 'marketing', 'leadership', 'motivation', 'success', 'growth',
+  'entrepreneur', 'business', 'innovation', 'networking', 'mindset',
+  'hustle', 'grateful', 'blessed', 'family', 'weekend', 'vacation',
+  'holiday', 'inspiration', 'grind', 'lifestyle', 'love', 'happiness',
+  'thankful', 'morning', 'coffee', 'fitness', 'health', 'travel',
+]);
+
+function isBlacklisted(keyword: string): boolean {
+  const clean = keyword.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  // Single-word exact match
+  if (GENERIC_BLACKLIST.has(clean)) return true;
+  // For CamelCase hashtags, split and check if ALL words are blacklisted
+  const words = clean.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  return words.length > 0 && words.every(w => GENERIC_BLACKLIST.has(w));
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -24,18 +42,51 @@ Deno.serve(async (req) => {
     };
 
     const extraInstructions: Record<string, string> = {
-      keyword_posts: `Generate exactly 5 keyword phrases that demonstrate BUYING INTENT. Each phrase should sound like something a real person would type in a LinkedIn post when they are actively looking for a solution, asking for recommendations, or expressing a pain point.
+      keyword_posts: `Generate exactly 7 keyword phrases that demonstrate BUYING INTENT. Each phrase should sound like something a real person would type in a LinkedIn post when they are actively looking for a solution, asking for recommendations, or expressing a pain point.
 
-Good examples: "looking for a tool to", "need help with", "any recommendations for", "struggling with", "searching for a solution"
-Bad examples: "sales automation", "B2B marketing", "lead generation" (these are too broad/generic)
+CRITICAL RULES:
+- Each phrase MUST be 3-6 words and action-oriented
+- Phrases MUST indicate someone actively seeking a solution or experiencing a business problem
+- NEVER generate single generic words like "sales", "marketing", "growth", "leadership", "business"
+- NEVER generate motivational/lifestyle phrases that could appear in personal posts
+- AVOID broad industry terms that people use in personal/weekend/family posts with a random business hashtag
 
-Make them specific to the ICP above. Each phrase should be 3-6 words.`,
-      hashtag_engagement: `Generate exactly 5 LinkedIn hashtags (WITHOUT the # symbol) that are directly related to the services and industry described above. These should be hashtags that professionals in this space actively use and follow.
+GOOD examples (specific, action-oriented, buying intent):
+- "looking for a tool to"
+- "need help with outbound"
+- "any recommendations for CRM"
+- "struggling with lead generation"
+- "switching from our current"
+- "evaluating solutions for"
+- "budget approved for new"
 
-Good examples: "SalesAutomation", "LeadGeneration", "B2BSales", "OutboundSales", "RevOps"
-Bad examples: "looking for tools", "need help with sales" (these are phrases, not hashtags)
+BAD examples (too generic, match personal posts):
+- "sales" (matches "took a break from sales this weekend")
+- "marketing tips" (matches lifestyle/motivational posts)
+- "growth mindset" (matches personal development posts)
+- "business success" (matches inspirational quotes)
 
-Return single-word or CamelCase compound hashtags only. No spaces, no # symbol.`,
+Make them specific to the ICP above. We will filter out any generic single-word results.`,
+
+      hashtag_engagement: `Generate exactly 7 LinkedIn hashtags (WITHOUT the # symbol) that are NICHE and SPECIFIC to the services and industry described above.
+
+CRITICAL RULES:
+- Return CamelCase compound hashtags only (no spaces, no # symbol)
+- NEVER return generic/broad hashtags that personal/lifestyle posts commonly use
+- Prefer tool-specific, methodology-specific, or problem-specific hashtags
+- The hashtag should be specific enough that personal/family/vacation posts would NEVER use it
+
+BANNED hashtags (too generic, appear in personal posts): Sales, Marketing, Leadership, Motivation, Success, Growth, Entrepreneur, Business, Innovation, Networking, Mindset, Hustle, Inspiration
+
+GOOD examples (niche, professional-only):
+- "SalesAutomation", "ABMStrategy", "RevOps", "DemandGen"
+- "MarTech", "SalesEnablement", "PipelineManagement"
+- "ColdOutreach", "AccountBasedMarketing", "SalesOps"
+
+BAD examples (too broad):
+- "Sales", "Marketing", "Leadership", "Motivation", "Success"
+
+Make them specific to the ICP above. We will automatically filter out any generic results.`,
     };
 
     const prompt = `Target Job Titles: ${(jobTitles || []).join(', ') || 'Unknown'}
@@ -57,7 +108,7 @@ ${extraInstructions[signalType] || 'Generate exactly 5 short, specific keyword p
       body: JSON.stringify({
         model: 'google/gemini-3-flash-preview',
         messages: [
-          { role: 'system', content: 'You are a B2B sales intelligence expert. Generate precise, actionable keywords for LinkedIn signal monitoring.' },
+          { role: 'system', content: 'You are a B2B sales intelligence expert specializing in LinkedIn signal monitoring. Generate precise, actionable, NICHE keywords that will match professional buying-intent content — NOT personal or lifestyle posts. Every keyword must pass the test: "Would a person posting about their weekend or family EVER use this term?" If yes, do NOT include it.' },
           { role: 'user', content: prompt },
         ],
         tools: [{
@@ -68,7 +119,7 @@ ${extraInstructions[signalType] || 'Generate exactly 5 short, specific keyword p
             parameters: {
               type: 'object',
               properties: {
-                keywords: { type: 'array', items: { type: 'string' }, description: '5 keyword phrases' },
+                keywords: { type: 'array', items: { type: 'string' }, description: '5-7 keyword phrases' },
               },
               required: ['keywords'],
               additionalProperties: false,
@@ -90,7 +141,17 @@ ${extraInstructions[signalType] || 'Generate exactly 5 short, specific keyword p
     if (!toolCall) throw new Error('No tool call returned from AI');
 
     const result = JSON.parse(toolCall.function.arguments);
-    const keywords = (result.keywords || []).slice(0, 5);
+    let keywords = (result.keywords || []).slice(0, 7);
+    
+    // Post-filter: remove any blacklisted generic terms that slipped through
+    const beforeCount = keywords.length;
+    keywords = keywords.filter((kw: string) => !isBlacklisted(kw));
+    if (keywords.length < beforeCount) {
+      console.log(`[BLACKLIST] Filtered out ${beforeCount - keywords.length} generic keywords`);
+    }
+    
+    // Take top 5 after filtering
+    keywords = keywords.slice(0, 5);
 
     return new Response(JSON.stringify({ keywords }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
