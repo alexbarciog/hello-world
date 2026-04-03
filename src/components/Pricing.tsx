@@ -21,8 +21,8 @@ const proFeatures = [
   "AI-powered smart lead scoring",
 ];
 
-const STARTER_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
-const PRO_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo"; // TODO: replace with actual Pro price ID
+const STARTER_PRICE_ID = "price_1TIByxFsgTpFMX56JNwbw3TA";
+const PRO_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
 
 const Pricing = () => {
   const { toast } = useToast();
