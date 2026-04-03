@@ -45,11 +45,26 @@ function classifyContact(m: MatchResult,icp: ICPFilters,hl?:string): 'hot'|'warm
 }
 function matchesTitleOrIndustry(m: MatchResult,icp: ICPFilters,hl?:string): boolean { return classifyContact(m,icp,hl)!==null; }
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
-  const co=(p.company||p.current_company?.name||'').toLowerCase().trim();
-  const hl=(p.headline||p.title||'').toLowerCase();
-  if(cc.length>0){const t=`${co} ${hl}`;for(const c of cc){if(t.includes(c)) return true;}}
+  const companyFields: string[] = [];
+  if (p.company) companyFields.push(p.company);
+  if (p.current_company?.name) companyFields.push(p.current_company.name);
+  if (p.headline) companyFields.push(p.headline);
+  if (p.title) companyFields.push(p.title);
+  const positions = p.current_positions || p.positions || p.experience || [];
+  if (Array.isArray(positions)) {
+    for (const pos of positions) {
+      if (pos.company) companyFields.push(typeof pos.company === 'string' ? pos.company : pos.company.name || '');
+      if (pos.company_name) companyFields.push(pos.company_name);
+      if (pos.organization) companyFields.push(pos.organization);
+    }
+  }
+  const profileUrl = (p.linkedin_url || p.public_url || p.profile_url || '').toLowerCase();
+  if(cc.length>0){
+    const allText = companyFields.map(f => f.toLowerCase()).join(' ') + ' ' + profileUrl;
+    for(const c of cc){if(allText.includes(c)) return true;}
+  }
   if(!ek.length) return false;
-  const text=[p.headline,p.title,p.company,p.current_company?.name,p.industry].filter(Boolean).join(' ').toLowerCase();
+  const text=[...companyFields,p.industry].filter(Boolean).join(' ').toLowerCase();
   return ek.some(kw=>text.includes(kw));
 }
 function unipileGet(path: string,apiKey: string,dsn: string){return fetch(`https://${dsn}${path}`,{headers:{'X-API-KEY':apiKey}});}
