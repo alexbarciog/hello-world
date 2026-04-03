@@ -85,7 +85,7 @@ Return structured data using the provided tool.`,
               parameters: {
                 type: "object",
                 properties: {
-                  job_titles: { type: "array", items: { type: "string" }, description: "Target job titles (5-8 items)" },
+                  job_titles: { type: "array", items: { type: "string" }, description: "5-8 specific job titles of people who would BUY this product. Focus on budget owners and pain-point holders in the relevant department, not generic C-suite titles. Each title must pass: 'Would this person evaluate or purchase this type of solution?'" },
                   locations: { type: "array", items: { type: "string" }, description: "Target geographic locations (3-5 items)" },
                   industries: { type: "array", items: { type: "string" }, description: "Target industries (3-6 items)" },
                   company_types: { type: "array", items: { type: "string" }, description: "Company types like Startup, Enterprise, SMB (2-4 items)" },
