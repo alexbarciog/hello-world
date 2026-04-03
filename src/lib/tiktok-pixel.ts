@@ -3,6 +3,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+const PIXEL_ID = "D780ID3C77UCM5J7I8T0";
+
 declare global {
   interface Window {
     ttq?: {
@@ -15,6 +17,13 @@ declare global {
 
 function ttq() {
   return window.ttq;
+}
+
+// ---- SPA virtual-pageview helper ----
+// Must be called on every client-side route change so the SDK
+// associates subsequent track() calls with the correct page.
+export function ttqPage() {
+  ttq()?.page();
 }
 
 // ---- Client-side pixel helpers ----
@@ -36,11 +45,14 @@ export function ttqTrack(
     search_string?: string;
   }
 ) {
-  // Fire client-side pixel
-  ttq()?.track(event, params);
+  // Shared event_id for deduplication between pixel and S2S
+  const eventId = crypto.randomUUID();
 
-  // Fire server-side event (fire-and-forget)
-  sendServerEvent(event, params).catch(() => {});
+  // Fire client-side pixel with event_id
+  ttq()?.track(event, params, { event_id: eventId });
+
+  // Fire server-side event with same event_id (fire-and-forget)
+  sendServerEvent(event, params, eventId).catch(() => {});
 }
 
 // ---- Server-side S2S helper ----
@@ -52,12 +64,13 @@ async function sendServerEvent(
     value?: number;
     currency?: string;
     search_string?: string;
-  }
+  },
+  eventId?: string
 ) {
   try {
     const payload: Record<string, unknown> = {
       event,
-      event_id: crypto.randomUUID(),
+      event_id: eventId || crypto.randomUUID(),
       url: window.location.href,
       user_agent: navigator.userAgent,
     };
