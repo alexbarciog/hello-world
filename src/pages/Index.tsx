@@ -16,6 +16,7 @@ const Index = () => {
   const [searchParams] = useSearchParams();
   const campaignId = searchParams.get("campaign_id");
   const showCampaigns = isOnboardingComplete();
+  useEffect(() => { ttqViewContent("Landing Page", "landing"); }, []);
 
   return (
     <div className="min-h-screen bg-background font-sans">
