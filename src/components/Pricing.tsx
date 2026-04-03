@@ -33,8 +33,9 @@ const Pricing = () => {
   const [loading, setLoading] = useState(false);
   const sub = useSubscription();
 
-  const handleCheckout = async (priceId: string) => {
+  const handleCheckout = async (priceId: string, planName: string = "Plan", planValue?: number) => {
     setLoading(true);
+    ttqInitiateCheckout(planName, planValue);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
