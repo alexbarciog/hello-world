@@ -162,9 +162,15 @@ const Pricing = () => {
 
           {/* Pro — $99/mo */}
           <div className="relative rounded-3xl bg-card overflow-hidden shadow-lg ring-2 ring-primary">
-            <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
-              Popular
-            </div>
+            {activePlan === "pro" ? (
+              <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
+                Your Plan
+              </div>
+            ) : (
+              <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
+                Popular
+              </div>
+            )}
             <div
               className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
               style={{ backgroundImage: `url(${pricingGradientBg})` }}
