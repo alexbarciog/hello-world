@@ -312,15 +312,15 @@ Deno.serve(async (req) => {
     // Sort by engagement, take top posts
     const topPosts = allPosts
       .sort((a, b) => ((b.likes_count||0)+(b.comments_count||0)) - ((a.likes_count||0)+(a.comments_count||0)))
-      .slice(0, 20);
+      .slice(0, 60);
 
-    // ─── AI Relevance Filter: remove personal/lifestyle posts ───────────
+    // ─── AI Relevance Filter: buyer-intent classification ───────────
     const postsForFilter = topPosts.map(p => ({
       id: p.social_id || p.id || p.provider_id || String(Math.random()),
       text: extractPostText(p),
       hashtag: p._hashtag || '',
     }));
-    const relevantPostIds = await filterIrrelevantPosts(postsForFilter);
+    const relevantPostIds = await filterIrrelevantPosts(postsForFilter, business_context || '');
     const filteredPosts = topPosts.filter(p => {
       const id = p.social_id || p.id || p.provider_id;
       return relevantPostIds.has(id);
