@@ -104,7 +104,18 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, linkedin_id, icp: icpRaw, competitor_companies, profile_urls } = await req.json();
+    const {
+      agent_id,
+      account_id,
+      user_id,
+      list_name,
+      linkedin_id,
+      icp: icpRaw,
+      competitor_companies,
+      profile_urls,
+      run_own_posts = true,
+      run_profile_engagers = true,
+    } = await req.json();
     if (!agent_id || !account_id) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
@@ -124,6 +135,8 @@ Deno.serve(async (req) => {
     const COLD_CAP = 0.2;
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
+    console.log(`signal-post-engagers: run_own_posts=${run_own_posts}, run_profile_engagers=${run_profile_engagers}, profile_urls=${profile_urls?.length || 0}`);
+
     // Resolve user's LinkedIn ID if not provided
     let userLiId = linkedin_id;
     if (!userLiId) {
@@ -137,7 +150,7 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('resolveUserLinkedInId:', e); }
     }
 
-    if (userLiId) {
+    if (run_own_posts && userLiId) {
       // Scan own posts
       const postsRes = await unipileGet(`/api/v1/users/${userLiId}/posts?account_id=${account_id}&limit=5`, UNIPILE_API_KEY, UNIPILE_DSN);
       if (postsRes.ok) {
@@ -178,7 +191,7 @@ Deno.serve(async (req) => {
     }
 
     // Also scan profile_engagers (influencer profiles) if provided
-    if (profile_urls?.length > 0) {
+    if (run_profile_engagers && profile_urls?.length > 0) {
       function extractLinkedInId(url: string): string|null { if(!url) return null; const m=url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/); if(m) return m[1]; return url.replace(/^https?:\/\//,'').replace(/\/$/,'')||null; }
       function extractCompanyName(url: string): string|null { const id=extractLinkedInId(url); if(!id) return null; return id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
