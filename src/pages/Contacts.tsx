@@ -226,6 +226,17 @@ export default function Contacts() {
     return listIds.map((lid) => lists.find((l) => l.id === lid)?.name).filter(Boolean) as string[];
   }
 
+  function getContactAgentName(contactId: string): string | null {
+    const listIds = contactListMap[contactId] || [];
+    for (const lid of listIds) {
+      const list = lists.find((l) => l.id === lid);
+      if (list?.source_agent_id && agents[list.source_agent_id]) {
+        return agents[list.source_agent_id];
+      }
+    }
+    return null;
+  }
+
   return (
     <div className="min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
 
