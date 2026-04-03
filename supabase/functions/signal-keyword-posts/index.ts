@@ -48,6 +48,15 @@ const REJECT_TITLES = [
   'receptionist', 'administrative assistant', 'office assistant',
 ];
 
+// ─── Blacklist of generic/lifestyle terms that produce false positives ────────
+const GENERIC_BLACKLIST = new Set([
+  'sales', 'marketing', 'leadership', 'motivation', 'success', 'growth',
+  'entrepreneur', 'business', 'innovation', 'networking', 'mindset',
+  'hustle', 'grateful', 'blessed', 'family', 'weekend', 'vacation',
+  'holiday', 'inspiration', 'grind', 'lifestyle', 'love', 'happiness',
+  'thankful', 'morning', 'coffee', 'fitness', 'health', 'travel',
+]);
+
 function normalizeText(value: string): string {
   return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 }
@@ -117,7 +126,6 @@ function unipileGet(path: string, apiKey: string, dsn: string) {
 }
 
 function normalizeProfile(item: any): any {
-  // Ensure first_name/last_name from name field
   if (!item.first_name && item.name) {
     const parts = item.name.split(' ');
     item.first_name = parts[0];
@@ -128,11 +136,8 @@ function normalizeProfile(item: any): any {
 
 async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
   const norm = normalizeProfile({ ...item });
-  // If we already have name + headline, use directly (engagers/authors with data)
   if (norm.first_name && (norm.headline || norm.title)) return norm;
-  // Try public_identifier first (works with profile API), then other IDs
   const id = item.public_identifier || item.provider_id || item.public_id || item.author_id;
-  // Skip URN-style IDs for profile API (they don't work) 
   const numericOrUrn = item.id;
   const fetchId = id || (numericOrUrn && !String(numericOrUrn).startsWith('urn:') && !String(numericOrUrn).startsWith('ACo') ? numericOrUrn : null);
   if (!fetchId) return norm.first_name ? norm : null;
@@ -191,6 +196,152 @@ async function insertContact(
   return true;
 }
 
+// ─── AI Post Relevance Filter ─────────────────────────────────────────────────
+
+function extractPostText(post: any): string {
+  return (post.text || post.commentary || post.description || post.title || '').trim();
+}
+
+function isBlacklistOnlyMatch(keyword: string): boolean {
+  const words = normalizeText(keyword).split(/\s+/).filter(w => w.length > 0);
+  return words.length > 0 && words.every(w => GENERIC_BLACKLIST.has(w));
+}
+
+async function filterIrrelevantPosts(posts: { id: string; text: string; keyword: string }[]): Promise<Set<string>> {
+  const validIds = new Set<string>();
+  
+  // Posts with no text are automatically skipped
+  const postsWithText = posts.filter(p => {
+    if (!p.text || p.text.length < 20) {
+      console.log(`[RELEVANCE] Skipped post ${p.id}: no text or too short (${p.text?.length || 0} chars)`);
+      return false;
+    }
+    return true;
+  });
+
+  // Posts matched only by blacklisted generic terms get extra scrutiny
+  const needsAICheck = postsWithText.filter(p => {
+    if (!isBlacklistOnlyMatch(p.keyword)) {
+      // Matched by a specific non-generic keyword — probably relevant
+      validIds.add(p.id);
+      return false;
+    }
+    return true;
+  });
+
+  if (needsAICheck.length === 0) return validIds;
+
+  // Batch AI relevance check
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.warn('[RELEVANCE] No LOVABLE_API_KEY — skipping AI filter, allowing all posts');
+    needsAICheck.forEach(p => validIds.add(p.id));
+    return validIds;
+  }
+
+  // Process in batches of 10
+  for (let i = 0; i < needsAICheck.length; i += 10) {
+    const batch = needsAICheck.slice(i, i + 10);
+    const postList = batch.map((p, idx) => `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 300)}`).join('\n\n');
+
+    try {
+      const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a LinkedIn post relevance classifier for B2B sales prospecting. Your job is to determine if LinkedIn posts contain genuine BUSINESS/PROFESSIONAL content with potential buying intent, or if they are personal/lifestyle posts that happen to use business hashtags.
+
+RELEVANT posts discuss: business challenges, product needs, industry trends, professional achievements, company updates, hiring, tool comparisons, case studies, ROI, strategy, pain points, buying decisions.
+
+IRRELEVANT posts discuss: family time, vacations, personal milestones, motivational quotes, weekend activities, fitness, food, personal reflections, gratitude posts, humble brags about personal life, inspirational stories unrelated to business.
+
+Be strict: if the post is primarily personal/lifestyle content even with a business hashtag thrown in, mark it as NOT relevant.`,
+            },
+            {
+              role: 'user',
+              content: `Classify each post as relevant (true) or irrelevant (false) for B2B sales prospecting:\n\n${postList}`,
+            },
+          ],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'classify_posts',
+              description: 'Return relevance classification for each post',
+              parameters: {
+                type: 'object',
+                properties: {
+                  results: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string', description: 'The post id' },
+                        relevant: { type: 'boolean', description: 'true if business-relevant, false if personal/lifestyle' },
+                      },
+                      required: ['id', 'relevant'],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ['results'],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: 'function', function: { name: 'classify_posts' } },
+        }),
+      });
+
+      if (!res.ok) {
+        console.error(`[RELEVANCE] AI error ${res.status}, allowing all posts in batch`);
+        await res.text();
+        batch.forEach(p => validIds.add(p.id));
+        continue;
+      }
+
+      const aiData = await res.json();
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) {
+        console.warn('[RELEVANCE] No tool call returned, allowing all posts in batch');
+        batch.forEach(p => validIds.add(p.id));
+        continue;
+      }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      const classifications = result.results || [];
+      let relevant = 0, irrelevant = 0;
+      
+      for (const cls of classifications) {
+        if (cls.relevant) {
+          validIds.add(cls.id);
+          relevant++;
+        } else {
+          console.log(`[RELEVANCE] Filtered out post ${cls.id} as personal/lifestyle content`);
+          irrelevant++;
+        }
+      }
+      
+      // Add any posts that weren't classified (safety net)
+      for (const p of batch) {
+        if (!classifications.some((c: any) => c.id === p.id)) {
+          validIds.add(p.id);
+        }
+      }
+      
+      console.log(`[RELEVANCE] Batch: ${relevant} relevant, ${irrelevant} filtered out`);
+    } catch (e) {
+      console.error('[RELEVANCE] AI call failed:', e);
+      batch.forEach(p => validIds.add(p.id));
+    }
+  }
+
+  return validIds;
+}
+
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -220,7 +371,7 @@ Deno.serve(async (req) => {
     let inserted = 0;
     let hotWarmCount = 0;
     let coldCount = 0;
-    const COLD_CAP = 0.2; // max 20% cold leads
+    const COLD_CAP = 0.2;
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
@@ -254,24 +405,33 @@ Deno.serve(async (req) => {
       .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
       .slice(0, 30);
 
+    // ─── AI Relevance Filter: remove personal/lifestyle posts ───────────
+    const postsForFilter = topPosts.map(p => ({
+      id: p.social_id || p.id || p.provider_id || String(Math.random()),
+      text: extractPostText(p),
+      keyword: p._keyword || '',
+    }));
+    const relevantPostIds = await filterIrrelevantPosts(postsForFilter);
+    const filteredPosts = topPosts.filter(p => {
+      const id = p.social_id || p.id || p.provider_id;
+      return relevantPostIds.has(id);
+    });
+    console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
+
     // Phase 2: Process each post — fetch author profile + scan engagers
-    for (const post of topPosts) {
+    for (const post of filteredPosts) {
       if (!hasTime()) break;
       await delay(100);
 
       const authorData = post.author || post.actor || post.author_detail || null;
       if (!authorData) continue;
 
-      // Fetch full author profile (post search returns minimal data)
       const authorId = authorData.provider_id || authorData.id || authorData.public_id || authorData.public_identifier || authorData.author_id;
-      console.log(`[DEBUG] Post author raw keys: ${Object.keys(authorData).join(',')}, id=${authorId}, first_name=${authorData.first_name||'?'}, headline=${(authorData.headline||authorData.title||'NONE').slice(0,50)}`);
       const fullAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
       if (fullAuthor) {
-        console.log(`[DEBUG] Enriched author: first_name=${fullAuthor.first_name||'?'}, headline=${(fullAuthor.headline||fullAuthor.title||'NONE').slice(0,60)}, industry=${fullAuthor.industry||'NONE'}, company=${fullAuthor.company||fullAuthor.current_company?.name||'NONE'}`);
         const match = scoreProfileAgainstICP(fullAuthor, icp);
         const hl = fullAuthor.headline || fullAuthor.title || '';
         const classification = classifyContact(match, icp, hl);
-        console.log(`[DEBUG] Match: score=${match.score}, fields=[${match.matchedFields}], classify=${classification}, titleMatch=${match.titleMatch}, industryMatch=${match.industryMatch}, excluded=${isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)}`);
         if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
           if (classification === 'cold' && !canInsertCold()) continue;
           const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
@@ -290,19 +450,11 @@ Deno.serve(async (req) => {
           if (reactionsRes.ok) {
             const reactionsData = await reactionsRes.json();
             const engagers = (reactionsData.items || []).slice(0, 20);
-            console.log(`[DEBUG] Post ${postId}: ${engagers.length} engagers`);
-            let engagerDebugCount = 0;
             for (const engager of engagers) {
               if (!hasTime()) break;
               const engagerProfile = engager.author || engager;
               const fullEngager = await fetchProfileIfNeeded(engagerProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!fullEngager) { console.log(`[DEBUG] Engager fetch failed, raw keys: ${Object.keys(engagerProfile).join(',')}`); continue; }
-              if (engagerDebugCount < 3) {
-                const eMatch2 = scoreProfileAgainstICP(fullEngager, icp);
-                const eHl2 = fullEngager.headline || fullEngager.title || '';
-                console.log(`[DEBUG] Engager: ${fullEngager.first_name||'?'} ${fullEngager.last_name||''}, headline="${(eHl2||'NONE').slice(0,50)}", classify=${classifyContact(eMatch2,icp,eHl2)}, score=${eMatch2.score}`);
-                engagerDebugCount++;
-              }
+              if (!fullEngager) continue;
               const eMatch = scoreProfileAgainstICP(fullEngager, icp);
               const eHl = fullEngager.headline || fullEngager.title || '';
               if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;

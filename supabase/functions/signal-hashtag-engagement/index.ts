@@ -17,6 +17,15 @@ function hasTime() { return Date.now() - START < MAX_RUNTIME_MS; }
 const BUYING_INTENT_KEYWORDS = ['ceo','cto','coo','cfo','cmo','cro','cpo','cio','founder','co-founder','cofounder','owner','partner','president','principal','vp','vice president','director','head of','chief','general manager','managing director','svp','evp','avp'];
 const REJECT_TITLES = ['software developer','software engineer','frontend developer','backend developer','full stack developer','fullstack developer','web developer','mobile developer','junior developer','senior developer','staff engineer','intern','data analyst','qa engineer','test engineer','devops engineer','graphic designer','ui designer','ux designer','student','fresher','trainee','apprentice','accountant','bookkeeper','cashier','clerk','receptionist','administrative assistant','office assistant'];
 
+// ─── Blacklist of generic/lifestyle hashtags that produce false positives ─────
+const GENERIC_BLACKLIST = new Set([
+  'sales', 'marketing', 'leadership', 'motivation', 'success', 'growth',
+  'entrepreneur', 'business', 'innovation', 'networking', 'mindset',
+  'hustle', 'grateful', 'blessed', 'family', 'weekend', 'vacation',
+  'holiday', 'inspiration', 'grind', 'lifestyle', 'love', 'happiness',
+  'thankful', 'morning', 'coffee', 'fitness', 'health', 'travel',
+]);
+
 function normalizeText(value: string): string { return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim(); }
 function fuzzyMatchList(value: string, candidates: string[]): boolean { const h = normalizeText(value); if (!h) return false; return candidates.some(c => { const n = normalizeText(c); return n ? (h.includes(n) || n.includes(h)) : false; }); }
 
@@ -120,6 +129,131 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
   return true;
 }
 
+// ─── AI Post Relevance Filter ─────────────────────────────────────────────────
+
+function extractPostText(post: any): string {
+  return (post.text || post.commentary || post.description || post.title || '').trim();
+}
+
+function isBlacklistOnlyMatch(hashtag: string): boolean {
+  const clean = normalizeText(hashtag.replace(/^#/, ''));
+  // Check if the hashtag itself is a blacklisted generic term
+  // For CamelCase hashtags, split and check each word
+  const words = clean.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  return words.length > 0 && words.every(w => GENERIC_BLACKLIST.has(w));
+}
+
+async function filterIrrelevantPosts(posts: { id: string; text: string; hashtag: string }[]): Promise<Set<string>> {
+  const validIds = new Set<string>();
+
+  const postsWithText = posts.filter(p => {
+    if (!p.text || p.text.length < 20) {
+      console.log(`[RELEVANCE] Skipped post ${p.id}: no/short text (${p.text?.length || 0} chars)`);
+      return false;
+    }
+    return true;
+  });
+
+  const needsAICheck = postsWithText.filter(p => {
+    if (!isBlacklistOnlyMatch(p.hashtag)) {
+      validIds.add(p.id);
+      return false;
+    }
+    return true;
+  });
+
+  if (needsAICheck.length === 0) return validIds;
+
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) {
+    console.warn('[RELEVANCE] No LOVABLE_API_KEY — skipping AI filter');
+    needsAICheck.forEach(p => validIds.add(p.id));
+    return validIds;
+  }
+
+  for (let i = 0; i < needsAICheck.length; i += 10) {
+    const batch = needsAICheck.slice(i, i + 10);
+    const postList = batch.map((p, idx) => `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 300)}`).join('\n\n');
+
+    try {
+      const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a LinkedIn post relevance classifier for B2B sales prospecting. Determine if posts contain genuine BUSINESS/PROFESSIONAL content with potential buying intent, or if they are personal/lifestyle posts using business hashtags.
+
+RELEVANT: business challenges, product needs, industry trends, professional achievements, company updates, hiring, tool comparisons, case studies, ROI, strategy, pain points, buying decisions.
+IRRELEVANT: family time, vacations, personal milestones, motivational quotes, weekend activities, fitness, food, personal reflections, gratitude posts, humble brags, inspirational stories unrelated to business.
+
+Be strict: if primarily personal/lifestyle even with a business hashtag, mark NOT relevant.`,
+            },
+            { role: 'user', content: `Classify each post as relevant (true) or irrelevant (false) for B2B sales prospecting:\n\n${postList}` },
+          ],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'classify_posts',
+              description: 'Return relevance classification for each post',
+              parameters: {
+                type: 'object',
+                properties: {
+                  results: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        relevant: { type: 'boolean' },
+                      },
+                      required: ['id', 'relevant'],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ['results'],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: 'function', function: { name: 'classify_posts' } },
+        }),
+      });
+
+      if (!res.ok) {
+        console.error(`[RELEVANCE] AI error ${res.status}`);
+        await res.text();
+        batch.forEach(p => validIds.add(p.id));
+        continue;
+      }
+
+      const aiData = await res.json();
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) { batch.forEach(p => validIds.add(p.id)); continue; }
+
+      const result = JSON.parse(toolCall.function.arguments);
+      const classifications = result.results || [];
+      let relevant = 0, irrelevant = 0;
+      for (const cls of classifications) {
+        if (cls.relevant) { validIds.add(cls.id); relevant++; }
+        else { console.log(`[RELEVANCE] Filtered out post ${cls.id}`); irrelevant++; }
+      }
+      for (const p of batch) {
+        if (!classifications.some((c: any) => c.id === p.id)) validIds.add(p.id);
+      }
+      console.log(`[RELEVANCE] Batch: ${relevant} relevant, ${irrelevant} filtered`);
+    } catch (e) {
+      console.error('[RELEVANCE] AI call failed:', e);
+      batch.forEach(p => validIds.add(p.id));
+    }
+  }
+
+  return validIds;
+}
+
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -171,8 +305,21 @@ Deno.serve(async (req) => {
       .sort((a, b) => ((b.likes_count||0)+(b.comments_count||0)) - ((a.likes_count||0)+(a.comments_count||0)))
       .slice(0, 20);
 
-    // Phase 2: Scan engagers on each post (skip authors — we only want engagers)
-    for (const post of topPosts) {
+    // ─── AI Relevance Filter: remove personal/lifestyle posts ───────────
+    const postsForFilter = topPosts.map(p => ({
+      id: p.social_id || p.id || p.provider_id || String(Math.random()),
+      text: extractPostText(p),
+      hashtag: p._hashtag || '',
+    }));
+    const relevantPostIds = await filterIrrelevantPosts(postsForFilter);
+    const filteredPosts = topPosts.filter(p => {
+      const id = p.social_id || p.id || p.provider_id;
+      return relevantPostIds.has(id);
+    });
+    console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
+
+    // Phase 2: Scan engagers on each filtered post
+    for (const post of filteredPosts) {
       if (!hasTime()) break;
       await delay(150);
       const postId = post.social_id || post.id || post.provider_id;
