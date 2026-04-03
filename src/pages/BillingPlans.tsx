@@ -12,6 +12,7 @@ export default function BillingPlans() {
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       setShowSuccess(true);
+      ttqPlaceAnOrder("Subscription");
       ttqPurchase("Subscription");
       // Clean URL
       searchParams.delete("success");
