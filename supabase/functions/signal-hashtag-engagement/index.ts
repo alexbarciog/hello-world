@@ -157,13 +157,8 @@ async function filterIrrelevantPosts(posts: { id: string; text: string; hashtag:
     return true;
   });
 
-  const needsAICheck = postsWithText.filter(p => {
-    if (!isBlacklistOnlyMatch(p.hashtag)) {
-      validIds.add(p.id);
-      return false;
-    }
-    return true;
-  });
+  // ALL posts with text go through AI relevance check — no bypass
+  const needsAICheck = postsWithText;
 
   if (needsAICheck.length === 0) return validIds;
 

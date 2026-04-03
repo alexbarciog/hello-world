@@ -224,15 +224,8 @@ async function filterIrrelevantPosts(posts: { id: string; text: string; keyword:
     return true;
   });
 
-  // Posts matched only by blacklisted generic terms get extra scrutiny
-  const needsAICheck = postsWithText.filter(p => {
-    if (!isBlacklistOnlyMatch(p.keyword)) {
-      // Matched by a specific non-generic keyword — probably relevant
-      validIds.add(p.id);
-      return false;
-    }
-    return true;
-  });
+  // ALL posts with text go through AI relevance check — no bypass
+  const needsAICheck = postsWithText;
 
   if (needsAICheck.length === 0) return validIds;
 
