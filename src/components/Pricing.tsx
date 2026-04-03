@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
+import { ttqInitiateCheckout } from "@/lib/tiktok-pixel";
 
 const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
@@ -32,8 +33,9 @@ const Pricing = () => {
   const [loading, setLoading] = useState(false);
   const sub = useSubscription();
 
-  const handleCheckout = async (priceId: string) => {
+  const handleCheckout = async (priceId: string, planName: string = "Plan", planValue?: number) => {
     setLoading(true);
+    ttqInitiateCheckout(planName, planValue);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -71,7 +73,7 @@ const Pricing = () => {
     : "other"
     : null;
 
-  const renderButton = (plan: "starter" | "pro", priceId: string) => {
+  const renderButton = (plan: "starter" | "pro", priceId: string, planLabel = "Plan", planValue = 0) => {
     if (activePlan === plan) {
       return (
         <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
@@ -84,7 +86,7 @@ const Pricing = () => {
     if (activePlan === "pro" && plan === "starter") {
       return (
         <button
-          onClick={() => handleCheckout(priceId)}
+          onClick={() => handleCheckout(priceId, planLabel, planValue)}
           disabled={loading}
           className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
         >
@@ -97,7 +99,7 @@ const Pricing = () => {
     if (activePlan === "starter" && plan === "pro") {
       return (
         <button
-          onClick={() => handleCheckout(priceId)}
+          onClick={() => handleCheckout(priceId, planLabel, planValue)}
           disabled={loading}
           className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
@@ -109,7 +111,7 @@ const Pricing = () => {
 
     return (
       <button
-        onClick={() => handleCheckout(priceId)}
+        onClick={() => handleCheckout(priceId, planLabel, planValue)}
         disabled={loading}
         className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
       >
@@ -145,7 +147,7 @@ const Pricing = () => {
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                {renderButton("starter", STARTER_PRICE_ID)}
+                {renderButton("starter", STARTER_PRICE_ID, "Starter", 59)}
               </div>
             </div>
             <div className="px-8 pt-8 pb-8">
@@ -181,7 +183,7 @@ const Pricing = () => {
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                {renderButton("pro", PRO_PRICE_ID)}
+                {renderButton("pro", PRO_PRICE_ID, "Pro", 99)}
               </div>
             </div>
             <div className="px-8 pt-8 pb-8">
