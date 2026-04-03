@@ -5,6 +5,7 @@ export interface SubscriptionState {
   subscribed: boolean;
   hadSubscription: boolean;
   subscriptionEnd: string | null;
+  productId: string | null;
   credits: number;
   loading: boolean;
 }
