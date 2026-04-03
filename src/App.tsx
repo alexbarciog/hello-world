@@ -43,6 +43,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/features/ai-sdr" element={<AiSdrOutreach />} />
+          <Route path="/features/conversational-ai" element={<ConversationalAi />} />
+          <Route path="/features/linkedin-signals" element={<LinkedInSignals />} />
+          <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
           <Route
             path="/dashboard"
