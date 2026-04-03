@@ -183,7 +183,7 @@ const Pricing = () => {
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                {renderButton("pro", PRO_PRICE_ID)}
+                {renderButton("pro", PRO_PRICE_ID, "Pro", 99)}
               </div>
             </div>
             <div className="px-8 pt-8 pb-8">
