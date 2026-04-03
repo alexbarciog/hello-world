@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
         });
         if (!res.ok) { await res.text(); continue; }
         const data = await res.json();
-        const items = (data.items || data.results || []).slice(0, 15);
+        const items = (data.items || data.results || []).slice(0, 40);
         console.log(`hashtag "${tag}": ${items.length} posts`);
         for (const item of items) allPosts.push({ ...item, _hashtag: tag });
       } catch (e) { console.error(`Hashtag "${tag}":`, e); }
