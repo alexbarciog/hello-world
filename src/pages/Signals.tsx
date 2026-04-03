@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
-import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import {
@@ -99,11 +100,15 @@ function AgentCard({
   onToggle,
   onDelete,
   onEdit,
+  onRun,
+  isAdmin,
 }: {
   agent: SignalAgent;
   onToggle: () => void;
   onDelete: () => void;
   onEdit: () => void;
+  onRun?: () => void;
+  isAdmin?: boolean;
 }) {
   const isActive = agent.status === "active";
 
@@ -135,6 +140,11 @@ function AgentCard({
             <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
               {isActive ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
             </DropdownMenuItem>
+            {isAdmin && onRun && (
+              <DropdownMenuItem onClick={onRun} className="gap-2 text-sm text-primary">
+                <Zap className="w-3.5 h-3.5" />Run now
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="gap-2 text-sm text-destructive focus:text-destructive">
               <Trash2 className="w-3.5 h-3.5" />Delete
@@ -169,6 +179,7 @@ function AgentCard({
 export default function Signals() {
   const navigate = useNavigate();
   const sub = useSubscription();
+  const { data: isAdmin } = useAdminCheck();
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -244,6 +255,20 @@ export default function Signals() {
   async function deleteAgent(id: string) {
     await supabase.from("signal_agents").delete().eq("id", id);
     fetchAgents();
+  }
+
+  async function runAgentNow(agent: SignalAgent) {
+    toast.info(`Running "${agent.name}" now...`);
+    const { data, error } = await supabase.functions.invoke("process-signal-agents", {
+      body: { agent_id: agent.id },
+    });
+    if (error) {
+      console.error("Run agent error:", error);
+      toast.error(`Failed to run agent: ${error.message}`);
+    } else {
+      toast.success(`"${agent.name}" finished — ${data?.leads_inserted ?? 0} new leads found`);
+      fetchAgents();
+    }
   }
 
   function timeAgo(dateStr: string | null) {
@@ -408,6 +433,8 @@ export default function Signals() {
               onToggle={() => toggleAgentStatus(agent)}
               onDelete={() => deleteAgent(agent.id)}
               onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
+              onRun={() => runAgentNow(agent)}
+              isAdmin={!!isAdmin}
             />
           ))
         )}
@@ -478,6 +505,11 @@ export default function Signals() {
                           <DropdownMenuItem onClick={() => toggleAgentStatus(agent)} className="gap-2 text-sm">
                             {agent.status === "active" ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
                           </DropdownMenuItem>
+                          {isAdmin && (
+                            <DropdownMenuItem onClick={() => runAgentNow(agent)} className="gap-2 text-sm text-primary">
+                              <Zap className="w-3.5 h-3.5" />Run now
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => deleteAgent(agent.id)} className="gap-2 text-sm text-destructive focus:text-destructive">
                             <Trash2 className="w-3.5 h-3.5" />Delete
