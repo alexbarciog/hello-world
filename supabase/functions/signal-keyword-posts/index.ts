@@ -446,34 +446,9 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Scan engagers on this post
-      const postId = post.social_id || post.id || post.provider_id;
-      if (postId && hasTime()) {
-        try {
-          await delay(150);
-          const reactionsRes = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (reactionsRes.ok) {
-            const reactionsData = await reactionsRes.json();
-            const engagers = (reactionsData.items || []).slice(0, 20);
-            for (const engager of engagers) {
-              if (!hasTime()) break;
-              const engagerProfile = engager.author || engager;
-              const fullEngager = await fetchProfileIfNeeded(engagerProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!fullEngager) continue;
-              const eMatch = scoreProfileAgainstICP(fullEngager, icp);
-              const eHl = fullEngager.headline || fullEngager.title || '';
-              if (!matchesTitleOrIndustry(eMatch, icp, eHl)) continue;
-              if (isExcluded(fullEngager, icp.excludeKeywords, icp.competitorCompanies)) continue;
-              const eClass = classifyContact(eMatch, icp, eHl);
-              if (eClass === 'cold' && !canInsertCold()) continue;
-              const eSignal = `Engaged with post about "${post._keyword}"`;
-              const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
-              const eOk = await insertContact(supabase, fullEngager, user_id, agent_id, list_name, eMatch, eSignal, postUrl, icp);
-              if (eOk) { inserted++; if (eClass === 'cold') coldCount++; else hotWarmCount++; }
-            }
-          } else { await reactionsRes.text(); }
-        } catch (e) { console.error('engager scan:', e); }
-      }
+      // NOTE: We intentionally do NOT scan engagers here.
+      // "keyword_posts" captures only post AUTHORS who wrote about these keywords.
+      // Engager scanning is handled by separate signals (post_engagers, hashtag_engagement).
     }
 
     console.log(`signal-keyword-posts: ${inserted} leads (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
