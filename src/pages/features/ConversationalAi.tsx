@@ -1,3 +1,4 @@
+import heroBg from "@/assets/mesh-gradient-2.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, MessageCircle, Brain, Calendar, Shield, Sparkles } from "lucide-react";

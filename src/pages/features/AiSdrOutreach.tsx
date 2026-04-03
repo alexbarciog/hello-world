@@ -1,3 +1,4 @@
+import heroBg from "@/assets/mesh-gradient-1.png";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, ArrowRight, Bot, Target, Send, MessageSquare, TrendingUp } from "lucide-react";
