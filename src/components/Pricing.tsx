@@ -5,15 +5,24 @@ import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
 
-const features = [
-  "30+ Intent Signals",
+const starterFeatures = [
+  "LinkedIn Intent Signals",
+  "LinkedIn Automated Outreach",
+  "AI SDR Conversational Replies",
+  "Unlimited Warm Leads",
   "2 LinkedIn senders",
-  "Unlimited LinkedIn campaigns",
-  "Unlimited Warm leads",
+];
+
+const proFeatures = [
+  "Everything in Starter",
+  "Reddit Signal Monitoring",
+  "X (Twitter) Signal Monitoring",
+  "30+ Cross-platform Signals",
   "AI-powered smart lead scoring",
 ];
 
-const PLUS_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
+const STARTER_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
+const PRO_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo"; // TODO: replace with actual Pro price ID
 
 const Pricing = () => {
   const { toast } = useToast();
