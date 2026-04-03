@@ -15,6 +15,7 @@ export function useSubscription() {
     subscribed: false,
     hadSubscription: false,
     subscriptionEnd: null,
+    productId: null,
     credits: 0,
     loading: true,
   });
