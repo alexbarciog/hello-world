@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ArrowUp, ArrowDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
+
+const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
+const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
 
 const starterFeatures = [
   "LinkedIn Intent Signals",
