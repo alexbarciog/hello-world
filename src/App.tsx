@@ -25,6 +25,10 @@ import BillingPlans from "./pages/BillingPlans.tsx";
 import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import VideoShowcase from "./pages/VideoShowcase.tsx";
+import AiSdrOutreach from "./pages/features/AiSdrOutreach.tsx";
+import ConversationalAi from "./pages/features/ConversationalAi.tsx";
+import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
+import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import { Navigate } from "react-router-dom";
@@ -39,6 +43,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/features/ai-sdr" element={<AiSdrOutreach />} />
+          <Route path="/features/conversational-ai" element={<ConversationalAi />} />
+          <Route path="/features/linkedin-signals" element={<LinkedInSignals />} />
+          <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
           <Route
             path="/dashboard"
