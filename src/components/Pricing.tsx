@@ -65,8 +65,14 @@ const Pricing = () => {
     }
   };
 
-  const renderButton = (priceId: string) => {
-    if (sub.subscribed) {
+  const activePlan = sub.subscribed
+    ? sub.productId === STARTER_PRODUCT_ID ? "starter"
+    : sub.productId === PRO_PRODUCT_ID ? "pro"
+    : "other"
+    : null;
+
+  const renderButton = (plan: "starter" | "pro", priceId: string) => {
+    if (activePlan === plan) {
       return (
         <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
           <Check className="w-4 h-4 mr-2" />
@@ -74,6 +80,33 @@ const Pricing = () => {
         </div>
       );
     }
+
+    if (activePlan === "pro" && plan === "starter") {
+      return (
+        <button
+          onClick={() => handleCheckout(priceId)}
+          disabled={loading}
+          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          <ArrowDown className="w-4 h-4 mr-2" />
+          {loading ? "Redirecting..." : "Downgrade"}
+        </button>
+      );
+    }
+
+    if (activePlan === "starter" && plan === "pro") {
+      return (
+        <button
+          onClick={() => handleCheckout(priceId)}
+          disabled={loading}
+          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          <ArrowUp className="w-4 h-4 mr-2" />
+          {loading ? "Redirecting..." : "Upgrade"}
+        </button>
+      );
+    }
+
     return (
       <button
         onClick={() => handleCheckout(priceId)}
