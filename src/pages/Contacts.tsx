@@ -87,6 +87,15 @@ export default function Contacts() {
       setLastActions(actionMap);
     }
 
+    // Build agents map (id -> name)
+    if (agentsRes.data) {
+      const aMap: Record<string, string> = {};
+      for (const a of agentsRes.data as { id: string; name: string }[]) {
+        aMap[a.id] = a.name;
+      }
+      setAgents(aMap);
+    }
+
     setLoading(false);
   }, []);
 
