@@ -393,7 +393,7 @@ Deno.serve(async (req) => {
         });
         if (!res.ok) { await res.text(); continue; }
         const data = await res.json();
-        const items = (data.items || data.results || []).slice(0, 20);
+        const items = (data.items || data.results || []).slice(0, 50);
         console.log(`keyword_posts "${keyword}": ${items.length} posts`);
         for (const item of items) allPosts.push({ ...item, _keyword: keyword });
       } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
