@@ -140,6 +140,11 @@ function AgentCard({
             <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
               {isActive ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
             </DropdownMenuItem>
+            {isAdmin && onRun && (
+              <DropdownMenuItem onClick={onRun} className="gap-2 text-sm text-primary">
+                <Zap className="w-3.5 h-3.5" />Run now
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="gap-2 text-sm text-destructive focus:text-destructive">
               <Trash2 className="w-3.5 h-3.5" />Delete
