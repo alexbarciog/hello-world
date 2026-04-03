@@ -103,14 +103,18 @@ Deno.serve(async (req) => {
         let agentLeads = 0;
         console.log(`Agent ${agent.id}: signals=[${enabled.join(',')}]`);
 
-        // ── 1. Post Engagers (your own posts + profile_engagers) ──
-        if (enabled.includes('post_engagers') || enabled.includes('profile_engagers')) {
-          const profileUrls = signalKeywords['profile_engagers'] || [];
+        // ── 1. Post Engagers / Profile Engagers ──
+        const runOwnPostEngagers = enabled.includes('post_engagers');
+        const runProfileEngagers = enabled.includes('profile_engagers');
+        if (runOwnPostEngagers || runProfileEngagers) {
+          const profileUrls = runProfileEngagers ? (signalKeywords['profile_engagers'] || []) : [];
           const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-post-engagers', {
             ...basePayload,
             profile_urls: profileUrls,
+            run_own_posts: runOwnPostEngagers,
+            run_profile_engagers: runProfileEngagers,
           });
-          console.log(`post_engagers: ${leads} leads`);
+          console.log(`signal-post-engagers: ${leads} leads (own_posts=${runOwnPostEngagers}, profile_engagers=${runProfileEngagers})`);
           agentLeads += leads;
           await saveAgentProgress(supabase, agent, agentLeads);
         }
