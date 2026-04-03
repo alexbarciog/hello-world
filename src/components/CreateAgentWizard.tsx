@@ -14,7 +14,23 @@ interface CreateAgentWizardProps {
   editAgentId?: string | null;
 }
 
-const INDUSTRIES = ["Technology", "Healthcare", "Finance", "Retail", "Manufacturing", "Education", "Real Estate", "Marketing", "Consulting", "SaaS"];
+const INDUSTRIES = [
+  "Accounting", "Advertising", "Aerospace", "Agriculture", "AI & Machine Learning",
+  "Automotive", "Banking", "Biotech", "Blockchain & Crypto", "Chemical",
+  "Civil Engineering", "Clean Energy", "Cloud Computing", "Construction",
+  "Consulting", "Consumer Electronics", "Cybersecurity", "Data Analytics",
+  "Defense", "E-commerce", "Education", "Energy & Utilities", "Entertainment",
+  "Environmental Services", "Event Management", "Fashion & Apparel",
+  "Finance", "Fintech", "Food & Beverage", "Gaming", "Government",
+  "Healthcare", "Hospitality & Tourism", "HR & Recruiting", "Insurance",
+  "Interior Design", "IoT", "Legal", "Logistics & Supply Chain",
+  "Manufacturing", "Marketing", "Media & Publishing", "Medical Devices",
+  "Mining", "Non-Profit", "Oil & Gas", "Pharmaceutical", "Photography",
+  "PropTech", "Public Relations", "Real Estate", "Renewable Energy",
+  "Retail", "Robotics", "SaaS", "Semiconductors", "Sports & Fitness",
+  "Staffing", "Technology", "Telecommunications", "Transportation",
+  "Travel", "Venture Capital & Private Equity", "Warehousing", "Wellness & Health",
+];
 const COMPANY_TYPES = ["Startup", "SMB", "Mid-Market", "Enterprise", "Agency", "Non-Profit"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
 const LOCATIONS = ["United States", "United Kingdom", "Germany", "France", "Canada", "Australia", "Netherlands", "Spain", "Italy", "India"];
