@@ -140,11 +140,320 @@ async function processCampaign(
 
   const accountId = profile.unipile_account_id;
   let generatedCount = 0;
+  const MAX_ACCEPTANCE_CHECKS = 30;
+  const MAX_MESSAGE_SENDS = 30;
 
-  // ── Phase 1: Check pending invitations for acceptance ──
-  // Cap per run to avoid edge function timeout (~60s)
-  const MAX_ACCEPTANCE_CHECKS = 50;
-  const MAX_MESSAGE_SENDS = 15;
+  // ── Phase A: Send follow-up messages FIRST (highest priority) ──
+  // This runs before acceptance checking to ensure messages are never blocked by timeout
+  let messagesSent = 0;
+
+  // Order by current_step ASC so step 1 contacts (short delay) are processed before step 2+ (long delay)
+  const { data: acceptedRequests } = await supabase
+    .from('campaign_connection_requests')
+    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
+    .eq('campaign_id', campaign.id)
+    .eq('status', 'accepted')
+    .order('current_step', { ascending: true })
+    .order('step_completed_at', { ascending: true })
+    .limit(MAX_MESSAGE_SENDS);
+
+  if (acceptedRequests && acceptedRequests.length > 0) {
+    console.log(`[followup][campaign ${campaign.id}] Phase A: processing ${acceptedRequests.length} accepted contacts for messages`);
+    for (const req of acceptedRequests) {
+      try {
+        // Resolve provider_id early
+        let resolvedProviderId: string | null = null;
+        const { data: contact } = await supabase
+          .from('contacts')
+          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
+          .eq('id', req.contact_id)
+          .single();
+        if (!contact) continue;
+
+        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
+        if (publicId) {
+          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
+          resolvedProviderId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
+        }
+
+        // Try to find existing chat_id
+        if (!req.chat_id && resolvedProviderId) {
+          const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, null);
+          if (foundChat) {
+            req.chat_id = foundChat;
+            await supabase.from('campaign_connection_requests')
+              .update({ chat_id: foundChat })
+              .eq('id', req.id);
+            console.log(`[followup] resolved chat_id for contact ${req.contact_id}: ${foundChat}`);
+          }
+        }
+
+        if (!req.chat_id && !resolvedProviderId) {
+          console.log(`[followup] contact ${req.contact_id} no chat_id and no provider_id, skipping`);
+          continue;
+        }
+
+        const currentStep = req.current_step || 1;
+        const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
+        const nextStep = workflowSteps[nextWfIdx];
+
+        if (!nextStep || nextStep.type !== 'message') {
+          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
+          const completedMsgSteps = currentStep - 1;
+          if (completedMsgSteps >= totalSteps) {
+            await supabase
+              .from('campaign_connection_requests')
+              .update({ status: 'completed' })
+              .eq('id', req.id);
+          }
+          continue;
+        }
+
+        const stepCompletedAt = req.step_completed_at ? new Date(req.step_completed_at) : null;
+        if (!stepCompletedAt) continue;
+
+        // Check delay before SENDING
+        const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
+        const delayMs = delayHours * 60 * 60 * 1000;
+        if (Date.now() - stepCompletedAt.getTime() < delayMs) {
+          console.log(`[followup] contact ${req.contact_id} delay not elapsed yet (${delayHours}h), skipping`);
+          continue;
+        }
+
+        // Validate/update chat_id
+        let chatId = req.chat_id;
+        if (chatId && resolvedProviderId) {
+          const verifiedChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, chatId);
+          if (verifiedChat !== chatId) {
+            chatId = verifiedChat;
+            await supabase.from('campaign_connection_requests')
+              .update({ chat_id: chatId })
+              .eq('id', req.id);
+          }
+        }
+
+        if (!chatId && !resolvedProviderId) {
+          console.log(`[followup] no chat and no provider for contact ${req.contact_id}, skipping`);
+          continue;
+        }
+
+        // ── GUARD: Skip pre-existing conversations ──
+        if (chatId) {
+          const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
+          try {
+            const checkMsgRes = await fetch(
+              `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
+              { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
+            );
+            if (checkMsgRes.ok) {
+              const checkMsgData = await checkMsgRes.json();
+              const chatMessages = checkMsgData.items || checkMsgData || [];
+              if (Array.isArray(chatMessages) && chatMessages.length > 0) {
+                const sorted = [...chatMessages].sort((a: any, b: any) =>
+                  new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
+                  new Date(b.timestamp || b.date || b.created_at || 0).getTime()
+                );
+                const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
+                if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
+                  console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation`);
+                  await supabase.from('campaign_connection_requests')
+                    .update({ conversation_stopped: true })
+                    .eq('id', req.id);
+                  continue;
+                }
+              }
+            }
+          } catch (guardErr) {
+            console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
+          }
+        }
+
+        let message = '';
+        const { data: scheduledMsg } = await supabase
+          .from('scheduled_messages')
+          .select('id, message, status')
+          .eq('connection_request_id', req.id)
+          .eq('step_index', nextWfIdx)
+          .in('status', ['generated', 'edited'])
+          .maybeSingle();
+
+        if (scheduledMsg && scheduledMsg.message) {
+          message = scheduledMsg.message;
+          console.log(`[followup] Using pre-generated message for contact ${req.contact_id} (${scheduledMsg.status})`);
+        } else if (!nextStep.ai_icebreaker && nextStep.message) {
+          message = nextStep.message;
+          if (contact) {
+            message = message
+              .replace(/\{\{first_name\}\}/gi, contact?.first_name || '')
+              .replace(/\{\{last_name\}\}/gi, contact?.last_name || '')
+              .replace(/\{\{company\}\}/gi, contact?.company || '')
+              .replace(/\{\{title\}\}/gi, contact?.title || '')
+              .replace(/\{\{signal\}\}/gi, contact?.signal || '');
+          }
+        } else {
+          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextWfIdx + 1} — waiting for generation`);
+          continue;
+        }
+
+        if (!message.trim()) continue;
+
+        // ── Send message ──
+        let sendOk = false;
+        if (chatId) {
+          const sendRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({ text: message.trim() }),
+            }
+          );
+          if (sendRes.ok) {
+            sendOk = true;
+          } else {
+            console.error(`[followup] send via chat failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
+          }
+        }
+
+        if (!sendOk && resolvedProviderId) {
+          console.log(`[followup] Creating new chat for contact ${req.contact_id} via provider_id ${resolvedProviderId}`);
+          const newChatRes = await fetch(
+            `https://${unipileDsn}/api/v1/chats`,
+            {
+              method: 'POST',
+              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify({
+                account_id: accountId,
+                attendees_ids: [resolvedProviderId],
+                text: message.trim(),
+              }),
+            }
+          );
+          if (newChatRes.ok) {
+            const newChatData = await newChatRes.json();
+            const newChatId = newChatData.chat_id || newChatData.id || null;
+            if (newChatId) {
+              chatId = newChatId;
+              await supabase.from('campaign_connection_requests')
+                .update({ chat_id: newChatId })
+                .eq('id', req.id);
+              console.log(`[followup] Created new chat ${newChatId} for contact ${req.contact_id}`);
+            }
+            sendOk = true;
+          } else {
+            console.error(`[followup] create chat failed for ${req.contact_id}:`, newChatRes.status, await newChatRes.text());
+          }
+        }
+
+        if (!sendOk) {
+          console.log(`[followup] failed to send message to contact ${req.contact_id}`);
+          continue;
+        }
+
+        console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
+
+        if (scheduledMsg) {
+          await supabase
+            .from('scheduled_messages')
+            .update({ status: 'sent', sent_at: new Date().toISOString() })
+            .eq('id', scheduledMsg.id);
+        }
+
+        const newStep = currentStep + 1;
+        const newWfIdx2 = getNextWorkflowIndex(newStep, workflowSteps);
+        const hasMoreSteps = newWfIdx2 < workflowSteps.length && workflowSteps[newWfIdx2]?.type === 'message';
+
+        await supabase
+          .from('campaign_connection_requests')
+          .update({
+            current_step: newStep,
+            step_completed_at: new Date().toISOString(),
+            status: hasMoreSteps ? 'accepted' : 'completed',
+          })
+          .eq('id', req.id);
+
+        messagesSent++;
+
+        // Mark daily_scheduled_leads entry as sent
+        const actionType = `message_step_${newStep}`;
+        await supabase
+          .from('daily_scheduled_leads')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('campaign_id', campaign.id)
+          .eq('contact_id', req.contact_id)
+          .eq('scheduled_date', today)
+          .eq('action_type', actionType);
+
+        // Generate next step message after sending
+        if (lovableApiKey && hasMoreSteps) {
+          const gen = await generateNextStepMessage(
+            supabase,
+            campaign,
+            req,
+            newWfIdx2,
+            workflowSteps,
+            lovableApiKey,
+            supabaseUrl,
+            supabaseServiceRoleKey,
+          );
+          if (gen) generatedCount++;
+
+          const futureStep = workflowSteps[newWfIdx2];
+          if (futureStep && futureStep.type === 'message') {
+            const futureDelayHours = futureStep.delay_hours || (futureStep.delay_days ? futureStep.delay_days * 24 : 24);
+            const readyAt = new Date(Date.now() + futureDelayHours * 60 * 60 * 1000);
+            const endOfToday = new Date(today + 'T23:59:59.999Z');
+            if (readyAt <= endOfToday) {
+              const { data: userProfile2 } = await supabase
+                .from('profiles')
+                .select('daily_messages_limit')
+                .eq('user_id', req.user_id)
+                .single();
+              const msgLimit = userProfile2?.daily_messages_limit || 15;
+              const { count: msgToday } = await supabase
+                .from('daily_scheduled_leads')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', req.user_id)
+                .eq('scheduled_date', today)
+                .like('action_type', 'message_step_%');
+              if ((msgToday || 0) < msgLimit) {
+                const nextActionType = `message_step_${newStep + 1}`;
+                await supabase.from('daily_scheduled_leads').upsert({
+                  campaign_id: campaign.id,
+                  contact_id: req.contact_id,
+                  user_id: req.user_id,
+                  scheduled_date: today,
+                  action_type: nextActionType,
+                  step_index: newWfIdx2,
+                  status: 'pending',
+                }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
+                console.log(`[followup] Queued ${nextActionType} for contact ${req.contact_id}`);
+              }
+            }
+          }
+        }
+
+        await delay(500);
+      } catch (err) {
+        console.error(`[followup] message error for ${req.contact_id}:`, err);
+      }
+    }
+
+    if (messagesSent > 0) {
+      const { data: currentCampaign } = await supabase
+        .from('campaigns')
+        .select('messages_sent')
+        .eq('id', campaign.id)
+        .single();
+
+      await supabase
+        .from('campaigns')
+        .update({ messages_sent: (currentCampaign?.messages_sent || 0) + messagesSent })
+        .eq('id', campaign.id);
+    }
+  }
+
+  // ── Phase B: Check pending invitations for acceptance ──
 
   // Two-pass strategy: check recent invitations first (most likely to have new accepts),
   // then check older ones. This prevents fresh accepts from being stuck behind stale pending.
@@ -328,320 +637,7 @@ async function processCampaign(
       .eq('id', campaign.id);
   }
 
-  // ── Phase 2: Send follow-up messages for verified accepted contacts only ──
-  const { data: acceptedRequests } = await supabase
-    .from('campaign_connection_requests')
-    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
-    .eq('campaign_id', campaign.id)
-    .eq('status', 'accepted')
-    .order('step_completed_at', { ascending: true })
-    .limit(MAX_MESSAGE_SENDS);
-
-  let messagesSent = 0;
-
-  if (acceptedRequests && acceptedRequests.length > 0) {
-    console.log(`[followup][campaign ${campaign.id}] processing ${acceptedRequests.length} accepted contacts for messages (capped at ${MAX_MESSAGE_SENDS})`);
-    for (const req of acceptedRequests) {
-      try {
-        // Resolve provider_id early — needed for both chat lookup and new chat creation
-        let resolvedProviderId: string | null = null;
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
-          .eq('id', req.contact_id)
-          .single();
-        if (!contact) continue;
-
-        let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
-        if (publicId) {
-          try { publicId = decodeURIComponent(publicId); } catch { /* ok */ }
-          resolvedProviderId = await resolveProviderId(unipileDsn, unipileApiKey, accountId, publicId);
-        }
-
-        // Try to find existing chat_id
-        if (!req.chat_id && resolvedProviderId) {
-          const foundChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, null);
-          if (foundChat) {
-            req.chat_id = foundChat;
-            await supabase.from('campaign_connection_requests')
-              .update({ chat_id: foundChat })
-              .eq('id', req.id);
-            console.log(`[followup] resolved chat_id for contact ${req.contact_id}: ${foundChat}`);
-          }
-        }
-
-        // If still no chat_id AND no provider_id, skip
-        if (!req.chat_id && !resolvedProviderId) {
-          console.log(`[followup] contact ${req.contact_id} no chat_id and no provider_id, skipping`);
-          continue;
-        }
-
-        const currentStep = req.current_step || 1;
-        const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
-        const nextStep = workflowSteps[nextWfIdx];
-
-        if (!nextStep || nextStep.type !== 'message') {
-          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
-          const completedMsgSteps = currentStep - 1;
-          if (completedMsgSteps >= totalSteps) {
-            await supabase
-              .from('campaign_connection_requests')
-              .update({ status: 'completed' })
-              .eq('id', req.id);
-          }
-          continue;
-        }
-
-        const stepCompletedAt = req.step_completed_at ? new Date(req.step_completed_at) : null;
-        if (!stepCompletedAt) continue;
-
-        // Check delay before SENDING
-        const delayHours = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 24);
-        const delayMs = delayHours * 60 * 60 * 1000;
-        if (Date.now() - stepCompletedAt.getTime() < delayMs) {
-          console.log(`[followup] contact ${req.contact_id} delay not elapsed yet (${delayHours}h), skipping`);
-          continue;
-        }
-
-        // Validate/update chat_id if we have one
-        let chatId = req.chat_id;
-        if (chatId && resolvedProviderId) {
-          const verifiedChat = await findChat(unipileDsn, unipileApiKey, accountId, resolvedProviderId, chatId);
-          if (verifiedChat !== chatId) {
-            chatId = verifiedChat;
-            await supabase.from('campaign_connection_requests')
-              .update({ chat_id: chatId })
-              .eq('id', req.id);
-          }
-        }
-
-        // No chat_id — we'll create a new chat when sending (using POST /api/v1/chats)
-        if (!chatId && !resolvedProviderId) {
-          console.log(`[followup] no chat and no provider for contact ${req.contact_id}, skipping`);
-          continue;
-          continue;
-        }
-
-        // ── GUARD: Skip pre-existing conversations (only if we have a chat) ──
-        if (chatId) {
-          const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
-          try {
-            const checkMsgRes = await fetch(
-              `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages?limit=10`,
-              { headers: { 'X-API-KEY': unipileApiKey, 'Accept': 'application/json' } }
-            );
-            if (checkMsgRes.ok) {
-              const checkMsgData = await checkMsgRes.json();
-              const chatMessages = checkMsgData.items || checkMsgData || [];
-              if (Array.isArray(chatMessages) && chatMessages.length > 0) {
-                const sorted = [...chatMessages].sort((a: any, b: any) =>
-                  new Date(a.timestamp || a.date || a.created_at || 0).getTime() -
-                  new Date(b.timestamp || b.date || b.created_at || 0).getTime()
-                );
-                const oldestMsgTime = new Date(sorted[0]?.timestamp || sorted[0]?.date || sorted[0]?.created_at || 0);
-                if (oldestMsgTime.getTime() > 0 && oldestMsgTime < crCreatedAt) {
-                  console.log(`[followup] Skipping contact ${req.contact_id} — pre-existing conversation`);
-                  await supabase.from('campaign_connection_requests')
-                    .update({ conversation_stopped: true })
-                    .eq('id', req.id);
-                  continue;
-                }
-              }
-            }
-          } catch (guardErr) {
-            console.error(`[followup] pre-existing guard error for ${req.contact_id}:`, guardErr);
-          }
-        }
-
-        let message = '';
-
-        // Check for pre-generated message
-        const { data: scheduledMsg } = await supabase
-          .from('scheduled_messages')
-          .select('id, message, status')
-          .eq('connection_request_id', req.id)
-          .eq('step_index', nextWfIdx)
-          .in('status', ['generated', 'edited'])
-          .maybeSingle();
-
-        if (scheduledMsg && scheduledMsg.message) {
-          message = scheduledMsg.message;
-          console.log(`[followup] Using pre-generated message for contact ${req.contact_id} (${scheduledMsg.status})`);
-        } else if (!nextStep.ai_icebreaker && nextStep.message) {
-          message = nextStep.message;
-          if (contact) {
-            message = message
-              .replace(/\{\{first_name\}\}/gi, contact?.first_name || '')
-              .replace(/\{\{last_name\}\}/gi, contact?.last_name || '')
-              .replace(/\{\{company\}\}/gi, contact?.company || '')
-              .replace(/\{\{title\}\}/gi, contact?.title || '')
-              .replace(/\{\{signal\}\}/gi, contact?.signal || '');
-          }
-        } else {
-          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextWfIdx + 1} — waiting for generation`);
-          continue;
-        }
-
-        if (!message.trim()) continue;
-
-        // ── Send message: use existing chat or create new one ──
-        let sendOk = false;
-        if (chatId) {
-          // Send to existing chat
-          const sendRes = await fetch(
-            `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`,
-            {
-              method: 'POST',
-              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify({ text: message.trim() }),
-            }
-          );
-          if (sendRes.ok) {
-            sendOk = true;
-          } else {
-            console.error(`[followup] send via chat failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
-          }
-        }
-
-        if (!sendOk && resolvedProviderId) {
-          // Create new chat and send message via POST /api/v1/chats
-          console.log(`[followup] Creating new chat for contact ${req.contact_id} via provider_id ${resolvedProviderId}`);
-          const newChatRes = await fetch(
-            `https://${unipileDsn}/api/v1/chats`,
-            {
-              method: 'POST',
-              headers: { 'X-API-KEY': unipileApiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-              body: JSON.stringify({
-                account_id: accountId,
-                attendees_ids: [resolvedProviderId],
-                text: message.trim(),
-              }),
-            }
-          );
-          if (newChatRes.ok) {
-            const newChatData = await newChatRes.json();
-            const newChatId = newChatData.chat_id || newChatData.id || null;
-            if (newChatId) {
-              chatId = newChatId;
-              await supabase.from('campaign_connection_requests')
-                .update({ chat_id: newChatId })
-                .eq('id', req.id);
-              console.log(`[followup] Created new chat ${newChatId} for contact ${req.contact_id}`);
-            }
-            sendOk = true;
-          } else {
-            console.error(`[followup] create chat failed for ${req.contact_id}:`, newChatRes.status, await newChatRes.text());
-          }
-        }
-
-        if (!sendOk) {
-          console.log(`[followup] failed to send message to contact ${req.contact_id}`);
-          continue;
-        }
-
-        console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
-
-        if (scheduledMsg) {
-          await supabase
-            .from('scheduled_messages')
-            .update({ status: 'sent', sent_at: new Date().toISOString() })
-            .eq('id', scheduledMsg.id);
-        }
-
-        const newStep = currentStep + 1;
-        const newWfIdx = getNextWorkflowIndex(newStep, workflowSteps);
-        const hasMoreSteps = newWfIdx < workflowSteps.length && workflowSteps[newWfIdx]?.type === 'message';
-
-        await supabase
-          .from('campaign_connection_requests')
-          .update({
-            current_step: newStep,
-            step_completed_at: new Date().toISOString(),
-            status: hasMoreSteps ? 'accepted' : 'completed',
-          })
-          .eq('id', req.id);
-
-        messagesSent++;
-
-        // Mark daily_scheduled_leads entry as sent (if exists)
-        const actionType = `message_step_${newStep}`;
-        await supabase
-          .from('daily_scheduled_leads')
-          .update({ status: 'sent', sent_at: new Date().toISOString() })
-          .eq('campaign_id', campaign.id)
-          .eq('contact_id', req.contact_id)
-          .eq('scheduled_date', today)
-          .eq('action_type', actionType);
-
-        // Immediately generate next step message after sending
-        if (lovableApiKey && hasMoreSteps) {
-          const gen = await generateNextStepMessage(
-            supabase,
-            campaign,
-            req,
-            newWfIdx,
-            workflowSteps,
-            lovableApiKey,
-            supabaseUrl,
-            supabaseServiceRoleKey,
-          );
-          if (gen) generatedCount++;
-
-          // Add next step to daily queue if delay allows same-day
-          const futureStep = workflowSteps[newWfIdx];
-          if (futureStep && futureStep.type === 'message') {
-            const delayHours = futureStep.delay_hours || (futureStep.delay_days ? futureStep.delay_days * 24 : 24);
-            const readyAt = new Date(Date.now() + delayHours * 60 * 60 * 1000);
-            const endOfToday = new Date(today + 'T23:59:59.999Z');
-            if (readyAt <= endOfToday) {
-              const { data: userProfile } = await supabase
-                .from('profiles')
-                .select('daily_messages_limit')
-                .eq('user_id', req.user_id)
-                .single();
-              const msgLimit = userProfile?.daily_messages_limit || 15;
-              const { count: msgToday } = await supabase
-                .from('daily_scheduled_leads')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', req.user_id)
-                .eq('scheduled_date', today)
-                .like('action_type', 'message_step_%');
-              if ((msgToday || 0) < msgLimit) {
-                const nextActionType = `message_step_${newStep + 1}`;
-                await supabase.from('daily_scheduled_leads').upsert({
-                  campaign_id: campaign.id,
-                  contact_id: req.contact_id,
-                  user_id: req.user_id,
-                  scheduled_date: today,
-                  action_type: nextActionType,
-                  step_index: newWfIdx,
-                  status: 'pending',
-                }, { onConflict: 'campaign_id,contact_id,scheduled_date,action_type' });
-                console.log(`[followup] Queued ${nextActionType} for contact ${req.contact_id}`);
-              }
-            }
-          }
-        }
-
-        await delay(500);
-      } catch (err) {
-        console.error(`[followup] message error for ${req.contact_id}:`, err);
-      }
-    }
-
-    if (messagesSent > 0) {
-      const { data: currentCampaign } = await supabase
-        .from('campaigns')
-        .select('messages_sent')
-        .eq('id', campaign.id)
-        .single();
-
-      await supabase
-        .from('campaigns')
-        .update({ messages_sent: (currentCampaign?.messages_sent || 0) + messagesSent })
-        .eq('id', campaign.id);
-    }
-  }
+  // (Phase 2 is now Phase A above — runs first to avoid timeout blocking message delivery)
 
   // ── Phase 3: Catch-up generation — generate messages ONLY when previous step is sent ──
   // Rule: Step 2 can be generated when connection is accepted (current_step=1).
