@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,8 +32,30 @@ import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import { Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { ttqPage, ttqIdentify } from "@/lib/tiktok-pixel";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
+
+// Fires ttq.page() on every SPA route change and identifies logged-in users
+function TikTokPageTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    ttqPage();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        ttqIdentify({ email: user.email, external_id: user.id });
+      }
+    });
+  }, []);
+
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,6 +63,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <TikTokPageTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/features/ai-sdr" element={<AiSdrOutreach />} />
