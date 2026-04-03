@@ -36,6 +36,7 @@ export function useSubscription() {
         subscribed: data?.subscribed ?? false,
         hadSubscription: data?.had_subscription ?? false,
         subscriptionEnd: data?.subscription_end ?? null,
+        productId: data?.product_id ?? null,
         credits: data?.credits ?? 0,
         loading: false,
       });
