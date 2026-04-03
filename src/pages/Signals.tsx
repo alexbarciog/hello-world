@@ -100,11 +100,15 @@ function AgentCard({
   onToggle,
   onDelete,
   onEdit,
+  onRun,
+  isAdmin,
 }: {
   agent: SignalAgent;
   onToggle: () => void;
   onDelete: () => void;
   onEdit: () => void;
+  onRun?: () => void;
+  isAdmin?: boolean;
 }) {
   const isActive = agent.status === "active";
 
