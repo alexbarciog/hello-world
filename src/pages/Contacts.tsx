@@ -34,6 +34,7 @@ export default function Contacts() {
   const [selectMode, setSelectMode] = useState<"number" | "page" | "all">("number");
   const [selectNumber, setSelectNumber] = useState(25);
   const selectPopoverRef = useRef<HTMLDivElement>(null);
+  const [agents, setAgents] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -41,12 +42,13 @@ export default function Contacts() {
     if (!user) { setLoading(false); return; }
 
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes] = await Promise.all([
+    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes] = await Promise.all([
       supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
       supabase.from("campaign_connection_requests").select("contact_id, status, sent_at, accepted_at, current_step").eq("user_id", user.id).order("sent_at", { ascending: false }),
       supabase.from("meetings" as any).select("*").eq("user_id", user.id).order("scheduled_at", { ascending: true }),
+      supabase.from("signal_agents").select("id, name").eq("user_id", user.id),
     ]);
 
     if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
@@ -83,6 +85,15 @@ export default function Contacts() {
         }
       }
       setLastActions(actionMap);
+    }
+
+    // Build agents map (id -> name)
+    if (agentsRes.data) {
+      const aMap: Record<string, string> = {};
+      for (const a of agentsRes.data as { id: string; name: string }[]) {
+        aMap[a.id] = a.name;
+      }
+      setAgents(aMap);
     }
 
     setLoading(false);
@@ -213,6 +224,17 @@ export default function Contacts() {
   function getContactListNames(contactId: string): string[] {
     const listIds = contactListMap[contactId] || [];
     return listIds.map((lid) => lists.find((l) => l.id === lid)?.name).filter(Boolean) as string[];
+  }
+
+  function getContactAgentName(contactId: string): string | null {
+    const listIds = contactListMap[contactId] || [];
+    for (const lid of listIds) {
+      const list = lists.find((l) => l.id === lid);
+      if (list?.source_agent_id && agents[list.source_agent_id]) {
+        return agents[list.source_agent_id];
+      }
+    }
+    return null;
   }
 
   return (
@@ -433,7 +455,7 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", ""].map((h) => (
+                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
                         {h}
                       </th>
@@ -561,6 +583,18 @@ export default function Contacts() {
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        {(() => {
+                          const agentName = getContactAgentName(c.id);
+                          return agentName ? (
+                            <span className="text-[10px] font-medium text-accent-foreground bg-accent px-2 py-0.5 rounded-full truncate max-w-[120px] block">
+                              {agentName}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          );
+                        })()}
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1">
