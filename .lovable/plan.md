@@ -1,86 +1,66 @@
 
 
-## Plan: Add "Meeting Booked" Status + Meeting Prep Research
+# Plan: AI-Powered Post Relevance Filter + Better Keyword Generation
 
-### What we're building
-1. A new `meeting_booked` lead status with an optional meeting date/time
-2. A new database table to store meeting details
-3. UI to mark a lead as "meeting booked" and set the date
-4. A "Meeting Prep" feature that generates AI research/insights about the lead before the meeting
-5. A new tab in Contacts to filter leads with meetings booked
+## Problem
+Signal agents find posts via hashtags/keywords, but many matched posts are personal/lifestyle content (e.g., "took a break with family" tagged #sales). The agents then harvest engagers from these irrelevant posts as leads -- producing low-quality, non-buying-intent contacts.
 
-### Database Changes
+## Solution: Two-Part Fix
 
-**New table: `meetings`**
-```sql
-create table public.meetings (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  contact_id uuid not null,
-  campaign_id uuid,
-  scheduled_at timestamptz not null,
-  notes text,
-  prep_research jsonb,
-  prep_generated_at timestamptz,
-  status text not null default 'scheduled',
-  created_at timestamptz not null default now()
-);
-alter table public.meetings enable row level security;
--- RLS policies for authenticated users on own data
+### Part 1: Post Content Relevance Filter (AI-powered)
+
+Add an AI relevance check that scores each post's **text content** before harvesting its engagers. This runs inside the edge functions before the engager-scanning phase.
+
+**New shared helper `isPostBusinessRelevant()`** added to both `signal-keyword-posts` and `signal-hashtag-engagement`:
+
+- Extract the post text (`post.text || post.commentary || post.description`)
+- Call Lovable AI (Gemini Flash) with a focused prompt:
+  - "Is this LinkedIn post about a genuine business topic, professional problem, or buying intent? Or is it personal/lifestyle content that happens to use business hashtags?"
+  - Use tool calling to return `{ relevant: boolean, reason: string }`
+- Posts scored as **not relevant** are skipped entirely -- no engagers are harvested
+- To stay within runtime limits, batch posts (send 5-10 post texts in one AI call) and cache results
+- Posts with no text content are also skipped (hashtag-only posts with no substance)
+
+**Implementation across 2 edge functions:**
+- `signal-keyword-posts/index.ts` -- filter posts after Phase 1 search, before Phase 2 engager scan
+- `signal-hashtag-engagement/index.ts` -- filter posts after hashtag search, before engager scan
+- `signal-post-engagers/index.ts` -- no change needed (scans your own posts, which are inherently relevant)
+
+### Part 2: Smarter Keyword & Hashtag Generation
+
+Improve `generate-signal-keywords/index.ts` prompts to produce keywords that inherently filter for buying intent:
+
+**For `keyword_posts`:**
+- Strengthen the prompt to emphasize action-oriented buying language
+- Add negative examples: "Do NOT generate broad industry terms like 'sales', 'marketing', 'growth'. These match personal posts. Instead generate phrases that ONLY appear in professional buying context."
+- Add examples of what to avoid: single-word generic hashtags, motivational/lifestyle terms
+
+**For `hashtag_engagement`:**
+- Add guidance to avoid generic hashtags (#sales, #marketing, #leadership, #motivation)
+- Instruct AI to prefer niche, tool-specific, or problem-specific hashtags that personal posts would never use
+- Add a blacklist of overly broad hashtags that get filtered out automatically
+
+**Blacklist of generic hashtags/keywords** hardcoded in both signal functions:
+- `sales`, `marketing`, `leadership`, `motivation`, `success`, `growth`, `entrepreneur`, `business`, `innovation`, `networking`, `mindset`, `hustle`, `grateful`, `blessed`, `family`, `weekend`, `vacation`, `holiday`
+- Any post found only via a blacklisted term gets extra scrutiny from the AI filter
+
+## Technical Details
+
+### AI Batch Relevance Check (new helper in edge functions)
+```text
+Input: Array of { postId, text } (up to 10 posts)
+AI Prompt: "Score each post: is this professional/business content 
+            with buying intent, or personal/lifestyle content?"
+Output: { results: [{ postId, relevant: boolean }] }
+Cost: ~1 AI call per 10 posts (fast, cheap with Gemini Flash)
+Runtime: ~1-2 seconds per batch
 ```
 
-**Columns in `prep_research` (jsonb):**
-- `company_summary` — what the company does, size, funding
-- `lead_bio` — role, background, LinkedIn activity
-- `talking_points` — personalized conversation starters based on signals/pain points
-- `potential_objections` — likely concerns and how to address them
-- `recent_activity` — recent LinkedIn posts/engagement if available
+### Files Modified
+1. `supabase/functions/signal-keyword-posts/index.ts` -- add AI relevance filter before engager scan
+2. `supabase/functions/signal-hashtag-engagement/index.ts` -- add AI relevance filter before engager scan
+3. `supabase/functions/generate-signal-keywords/index.ts` -- improve prompts + add blacklist filtering
 
-### UI Changes
-
-**File: `src/pages/Contacts.tsx`**
-- Add a new tab: "📅 Meeting Booked" that filters contacts with `lead_status === 'meeting_booked'`
-- In the Last Action column, show a calendar icon + meeting date for contacts with meetings
-- Add a right-click or button action "Book Meeting" that opens a dialog to set date/time
-
-**File: `src/components/contacts/BookMeetingDialog.tsx`** (new)
-- Simple dialog with date/time picker and optional notes field
-- On save: inserts into `meetings` table and updates `contacts.lead_status` to `meeting_booked`
-
-**File: `src/components/contacts/MeetingPrepPanel.tsx`** (new)
-- Slide-out panel or dialog showing AI-generated research for a specific meeting
-- Sections: Company Overview, Lead Background, Talking Points, Potential Objections
-- "Generate Insights" button that calls the edge function
-- Loading state while generating, then displays structured results
-
-**File: `src/pages/Contacts.tsx`** — status config update
-- Add `meeting_booked` to the `statusConfig` map with a Calendar icon and appropriate color
-- Update tier counts to include meeting_booked count
-
-**File: `src/pages/CampaignDetail.tsx`**
-- Show meeting status badge in campaign contacts tab
-- Add "Book Meeting" action for accepted/messaged leads
-
-### Edge Function
-
-**File: `supabase/functions/generate-meeting-prep/index.ts`** (new)
-- Accepts: `contactId`, `meetingId`, `userId`
-- Fetches: contact data, campaign data (company info, value prop, pain points), conversation history from Unipile (if chat_id exists)
-- Calls AI (via Lovable API key) with a structured prompt to generate:
-  - Company research summary (uses Firecrawl to scrape company website if available)
-  - Lead background analysis based on title/signal/LinkedIn
-  - 5 personalized talking points
-  - 3 potential objections with rebuttals
-  - Conversation summary (from chat history)
-- Saves result to `meetings.prep_research` jsonb column
-- Returns the research to the frontend
-
-### Files to Create/Modify
-1. **Migration** — `meetings` table + RLS policies
-2. **`supabase/functions/generate-meeting-prep/index.ts`** — new edge function
-3. **`src/components/contacts/BookMeetingDialog.tsx`** — new booking dialog
-4. **`src/components/contacts/MeetingPrepPanel.tsx`** — new research panel
-5. **`src/pages/Contacts.tsx`** — add Meeting Booked tab, booking action, prep button
-6. **`src/pages/CampaignDetail.tsx`** — add meeting status + booking action in contacts tab
-7. **`src/components/contacts/types.ts`** — update Contact type if needed
+### Runtime Budget
+Current functions have ~105s budget. The AI relevance check adds ~2-4 seconds total (1-2 batch calls). This is well within budget and saves significant time by not scanning engagers on irrelevant posts.
 
