@@ -212,10 +212,9 @@ function isBlacklistOnlyMatch(keyword: string): boolean {
   return words.length > 0 && words.every(w => GENERIC_BLACKLIST.has(w));
 }
 
-async function filterIrrelevantPosts(posts: { id: string; text: string; keyword: string }[]): Promise<Set<string>> {
+async function filterIrrelevantPosts(posts: { id: string; text: string; keyword: string }[], businessContext: string): Promise<Set<string>> {
   const validIds = new Set<string>();
   
-  // Posts with no text are automatically skipped
   const postsWithText = posts.filter(p => {
     if (!p.text || p.text.length < 20) {
       console.log(`[RELEVANCE] Skipped post ${p.id}: no text or too short (${p.text?.length || 0} chars)`);
@@ -224,23 +223,43 @@ async function filterIrrelevantPosts(posts: { id: string; text: string; keyword:
     return true;
   });
 
-  // ALL posts with text go through AI relevance check — no bypass
-  const needsAICheck = postsWithText;
+  if (postsWithText.length === 0) return validIds;
 
-  if (needsAICheck.length === 0) return validIds;
-
-  // Batch AI relevance check
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) {
     console.warn('[RELEVANCE] No LOVABLE_API_KEY — skipping AI filter, allowing all posts');
-    needsAICheck.forEach(p => validIds.add(p.id));
+    postsWithText.forEach(p => validIds.add(p.id));
     return validIds;
   }
 
-  // Process in batches of 10
-  for (let i = 0; i < needsAICheck.length; i += 10) {
-    const batch = needsAICheck.slice(i, i + 10);
-    const postList = batch.map((p, idx) => `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 300)}`).join('\n\n');
+  const systemPrompt = businessContext
+    ? `You are a LinkedIn buying-intent classifier for B2B sales prospecting.
+
+The user's company sells: "${businessContext}"
+
+For each LinkedIn post, classify the post author into one of three categories:
+
+1. BUYER_INTENT (relevant=true) — The post author has a genuine problem, need, challenge, or interest that the user's company could solve. They are expressing a pain point, asking for recommendations, sharing struggles, or discussing topics where the user's product/service would be valuable. They are a POTENTIAL CUSTOMER.
+
+2. SELF_PROMOTER (relevant=false) — The post author is promoting, advertising, or selling their OWN similar service, product, or tool. They are a competitor or fellow seller trying to attract clients — NOT a buyer. This includes posts like "We help companies with X", "Our platform does Y", "Check out our solution", case studies about their own product, etc.
+
+3. IRRELEVANT (relevant=false) — Personal content, motivational fluff, lifestyle posts, metaphorical stories, or content completely unrelated to what the user sells. Also includes generic thought leadership that doesn't indicate any buying need.
+
+CRITICAL RULES:
+- Only mark as relevant=true if the author would realistically BUY "${businessContext}". 
+- Someone selling a competing service is NOT a buyer — mark as relevant=false.
+- A metaphorical or storytelling post that uses business terms but isn't about an actual business need = relevant=false.
+- When in doubt, mark as relevant=false. Quality over quantity.`
+    : `You are a LinkedIn post relevance classifier for B2B sales prospecting. Determine if posts contain genuine BUSINESS/PROFESSIONAL content with potential buying intent.
+
+RELEVANT: business challenges, product needs, industry trends, tool comparisons, pain points, buying decisions.
+IRRELEVANT: family, vacations, motivational quotes, personal milestones, self-promotion of own services, metaphorical stories, lifestyle content.
+
+Be strict: if primarily personal/lifestyle or self-promotional, mark NOT relevant.`;
+
+  for (let i = 0; i < postsWithText.length; i += 10) {
+    const batch = postsWithText.slice(i, i + 10);
+    const postList = batch.map((p, idx) => `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 400)}`).join('\n\n');
 
     try {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -249,20 +268,8 @@ async function filterIrrelevantPosts(posts: { id: string; text: string; keyword:
         body: JSON.stringify({
           model: 'google/gemini-3-flash-preview',
           messages: [
-            {
-              role: 'system',
-              content: `You are a LinkedIn post relevance classifier for B2B sales prospecting. Your job is to determine if LinkedIn posts contain genuine BUSINESS/PROFESSIONAL content with potential buying intent, or if they are personal/lifestyle posts that happen to use business hashtags.
-
-RELEVANT posts discuss: business challenges, product needs, industry trends, professional achievements, company updates, hiring, tool comparisons, case studies, ROI, strategy, pain points, buying decisions.
-
-IRRELEVANT posts discuss: family time, vacations, personal milestones, motivational quotes, weekend activities, fitness, food, personal reflections, gratitude posts, humble brags about personal life, inspirational stories unrelated to business.
-
-Be strict: if the post is primarily personal/lifestyle content even with a business hashtag thrown in, mark it as NOT relevant.`,
-            },
-            {
-              role: 'user',
-              content: `Classify each post as relevant (true) or irrelevant (false) for B2B sales prospecting:\n\n${postList}`,
-            },
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Classify each post. Remember: only BUYER_INTENT = relevant=true. Self-promoters and irrelevant = relevant=false.\n\n${postList}` },
           ],
           tools: [{
             type: 'function',
@@ -278,9 +285,10 @@ Be strict: if the post is primarily personal/lifestyle content even with a busin
                       type: 'object',
                       properties: {
                         id: { type: 'string', description: 'The post id' },
-                        relevant: { type: 'boolean', description: 'true if business-relevant, false if personal/lifestyle' },
+                        relevant: { type: 'boolean', description: 'true only if buyer_intent, false for self_promoter or irrelevant' },
+                        reason: { type: 'string', description: 'Brief reason: buyer_intent, self_promoter, or irrelevant' },
                       },
-                      required: ['id', 'relevant'],
+                      required: ['id', 'relevant', 'reason'],
                       additionalProperties: false,
                     },
                   },
@@ -317,20 +325,20 @@ Be strict: if the post is primarily personal/lifestyle content even with a busin
         if (cls.relevant) {
           validIds.add(cls.id);
           relevant++;
+          console.log(`[RELEVANCE] ✅ ${cls.id}: ${cls.reason}`);
         } else {
-          console.log(`[RELEVANCE] Filtered out post ${cls.id} as personal/lifestyle content`);
+          console.log(`[RELEVANCE] ❌ Filtered ${cls.id}: ${cls.reason}`);
           irrelevant++;
         }
       }
       
-      // Add any posts that weren't classified (safety net)
       for (const p of batch) {
         if (!classifications.some((c: any) => c.id === p.id)) {
           validIds.add(p.id);
         }
       }
       
-      console.log(`[RELEVANCE] Batch: ${relevant} relevant, ${irrelevant} filtered out`);
+      console.log(`[RELEVANCE] Batch: ${relevant} buyer_intent, ${irrelevant} filtered (self_promoter/irrelevant)`);
     } catch (e) {
       console.error('[RELEVANCE] AI call failed:', e);
       batch.forEach(p => validIds.add(p.id));
