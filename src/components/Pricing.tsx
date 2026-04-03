@@ -132,7 +132,14 @@ const Pricing = () => {
               className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
               style={{ backgroundImage: `url(${pricingGradientBg})` }}
             >
-              <h3 className="text-2xl font-semibold text-foreground">Starter</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-semibold text-foreground">Starter</h3>
+                {activePlan === "starter" && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
+                    Your Plan
+                  </span>
+                )}
+              </div>
               <div className="flex items-baseline gap-2 mt-3">
                 <span className="text-5xl font-bold text-foreground tracking-tight">$59</span>
                 <span className="text-sm text-foreground/70">/month</span>
