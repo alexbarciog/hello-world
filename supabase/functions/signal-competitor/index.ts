@@ -83,8 +83,11 @@ function extractLinkedInId(url: string): string|null { if(!url) return null; con
 function extractCompanyName(url: string): string|null { const id=extractLinkedInId(url); if(!id) return null; return id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
 async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<string|null>{
-  const{data:e}=await sb.from('lists').select('id').eq('user_id',uid).eq('name',ln).limit(1);
-  if(e?.length>0) return e[0].id;
+  const{data:e}=await sb.from('lists').select('id, source_agent_id').eq('user_id',uid).eq('name',ln).limit(1);
+  if(e?.length>0) {
+    if(!e[0].source_agent_id) await sb.from('lists').update({source_agent_id:aid}).eq('id',e[0].id);
+    return e[0].id;
+  }
   const{data:c,error}=await sb.from('lists').insert({user_id:uid,name:ln,source_agent_id:aid}).select('id').single();
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }

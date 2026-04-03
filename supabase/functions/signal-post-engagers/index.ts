@@ -69,8 +69,11 @@ async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,d
 function delay(ms: number){return new Promise(r=>setTimeout(r,ms));}
 
 async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<string|null>{
-  const{data:e}=await sb.from('lists').select('id').eq('user_id',uid).eq('name',ln).limit(1);
-  if(e?.length>0) return e[0].id;
+  const{data:e}=await sb.from('lists').select('id, source_agent_id').eq('user_id',uid).eq('name',ln).limit(1);
+  if(e?.length>0) {
+    if(!e[0].source_agent_id) await sb.from('lists').update({source_agent_id:aid}).eq('id',e[0].id);
+    return e[0].id;
+  }
   const{data:c,error}=await sb.from('lists').insert({user_id:uid,name:ln,source_agent_id:aid}).select('id').single();
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }

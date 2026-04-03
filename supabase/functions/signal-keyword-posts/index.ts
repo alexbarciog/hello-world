@@ -152,8 +152,13 @@ async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 async function ensureList(supabase: any, userId: string, listName: string, agentId: string): Promise<string | null> {
-  const { data: existing } = await supabase.from('lists').select('id').eq('user_id', userId).eq('name', listName).limit(1);
-  if (existing && existing.length > 0) return existing[0].id;
+  const { data: existing } = await supabase.from('lists').select('id, source_agent_id').eq('user_id', userId).eq('name', listName).limit(1);
+  if (existing && existing.length > 0) {
+    if (!existing[0].source_agent_id) {
+      await supabase.from('lists').update({ source_agent_id: agentId }).eq('id', existing[0].id);
+    }
+    return existing[0].id;
+  }
   const { data: created, error } = await supabase.from('lists').insert({ user_id: userId, name: listName, source_agent_id: agentId }).select('id').single();
   if (error) { console.error(`Create list error: ${error.message}`); return null; }
   return created?.id || null;
