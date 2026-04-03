@@ -38,6 +38,7 @@ const howItWorks = [
 
 export default function LinkedInSignals() {
   const navigate = useNavigate();
+  useEffect(() => { ttqViewContent("LinkedIn Intent Signals"); }, []);
   const heroRef = useInView(0.2);
   const signalsHeadingRef = useInView(0.2);
   const flowHeadingRef = useInView(0.2);

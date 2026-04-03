@@ -39,6 +39,7 @@ const stats = [
 
 export default function AiSdrOutreach() {
   const navigate = useNavigate();
+  useEffect(() => { ttqViewContent("AI SDR & Outreach"); }, []);
   const heroRef = useInView(0.2);
   const statsRef = useInView(0.2);
   const stepsHeadingRef = useInView(0.2);

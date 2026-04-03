@@ -54,6 +54,7 @@ const useCases = [
 
 export default function RedditXMonitoring() {
   const navigate = useNavigate();
+  useEffect(() => { ttqViewContent("Reddit & X Monitoring"); }, []);
   const heroRef = useInView(0.2);
   const platformsRef = useInView(0.2);
   const useCasesRef = useInView(0.2);
