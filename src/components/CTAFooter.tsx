@@ -12,7 +12,7 @@ const CTASection = () => {
       
 
       <div className="relative max-w-3xl mx-auto text-center z-10">
-        <h2 className="text-5xl md:text-7xl tracking-tight leading-tight mb-6 font-medium"
+        <h2 className="text-5xl md:text-7xl font-light tracking-tight leading-[1.1] mb-6"
         style={{ color: "hsl(228 60% 18%)" }}>
           More High-Intent Leads = Your New Growth Engine.
         </h2>
