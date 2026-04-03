@@ -455,7 +455,7 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", ""].map((h) => (
+                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
                         {h}
                       </th>
