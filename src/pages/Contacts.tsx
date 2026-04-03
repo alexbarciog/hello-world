@@ -34,6 +34,7 @@ export default function Contacts() {
   const [selectMode, setSelectMode] = useState<"number" | "page" | "all">("number");
   const [selectNumber, setSelectNumber] = useState(25);
   const selectPopoverRef = useRef<HTMLDivElement>(null);
+  const [agents, setAgents] = useState<Record<string, string>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
