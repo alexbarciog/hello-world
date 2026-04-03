@@ -73,7 +73,7 @@ const Pricing = () => {
     : "other"
     : null;
 
-  const renderButton = (plan: "starter" | "pro", priceId: string) => {
+  const renderButton = (plan: "starter" | "pro", priceId: string, planLabel = "Plan", planValue = 0) => {
     if (activePlan === plan) {
       return (
         <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
