@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { ttqCompleteRegistration } from "@/lib/tiktok-pixel";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
 import registerBg from "@/assets/register-bg.png";
