@@ -30,6 +30,10 @@ export default function Contacts() {
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
   const [meetings, setMeetings] = useState<Record<string, any>>({});
+  const [showSelectPopover, setShowSelectPopover] = useState(false);
+  const [selectMode, setSelectMode] = useState<"number" | "page" | "all">("number");
+  const [selectNumber, setSelectNumber] = useState(25);
+  const selectPopoverRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
