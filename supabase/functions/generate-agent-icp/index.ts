@@ -52,7 +52,27 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are an expert B2B sales strategist. Generate an Ideal Customer Profile (ICP) for a signal agent based on the business context provided. Return structured data using the provided tool.",
+            content: `You are an expert B2B sales strategist specializing in identifying decision-makers and budget holders.
+
+Your task: Generate an Ideal Customer Profile (ICP) for a signal agent. The most critical part is JOB TITLES.
+
+## Job Title Strategy
+Think step-by-step about WHO would actually BUY what this company sells:
+1. Understand what the company sells (product/service/solution)
+2. Identify who OWNS THE BUDGET for that type of purchase
+3. Identify who FEELS THE PAIN that the product solves
+4. Identify who INFLUENCES the buying decision
+5. Generate job titles for those specific people — not generic titles
+
+## Job Title Rules
+- Focus on the BUYER persona: the person who signs off on purchasing this exact type of solution
+- Include both the decision-maker (VP/Director/Head of) AND the hands-on user who champions the purchase
+- Be SPECIFIC: "VP of Revenue Operations" is better than "VP" or "Executive"
+- Think about the DEPARTMENT that would use this product, not just C-suite
+- Avoid overly generic titles like "CEO", "COO", "Managing Director" unless the product specifically targets top executives
+- Each title should pass this test: "Would this person actively search for or evaluate a product like what this company sells?"
+
+Return structured data using the provided tool.`,
           },
           { role: "user", content: userPrompt },
         ],
