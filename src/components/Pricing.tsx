@@ -86,7 +86,7 @@ const Pricing = () => {
     if (activePlan === "pro" && plan === "starter") {
       return (
         <button
-          onClick={() => handleCheckout(priceId)}
+          onClick={() => handleCheckout(priceId, plan === "starter" ? "Starter" : "Pro", plan === "starter" ? 59 : 99)}
           disabled={loading}
           className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
         >
