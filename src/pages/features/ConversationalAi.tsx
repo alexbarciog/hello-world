@@ -56,7 +56,7 @@ export default function ConversationalAi() {
 
       {/* Hero */}
       <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden pt-20 pb-16">
-        <video className="absolute inset-0 w-full h-full object-cover z-0" src="/videos/hero-gradient.webm" autoPlay loop muted playsInline />
+        <img src={heroBg} aria-hidden="true" className="absolute inset-0 w-full h-full object-cover z-0" />
         <div
           ref={heroRef.ref}
           className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto"
