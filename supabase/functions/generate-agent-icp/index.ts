@@ -94,6 +94,13 @@ serve(async (req) => {
     if (!toolCall) throw new Error("No tool call in response");
 
     const icp = JSON.parse(toolCall.function.arguments);
+    // Filter to only allowed values
+    const allowedSet = new Set(ALLOWED_INDUSTRIES);
+    const allowedTypesSet = new Set(ALLOWED_COMPANY_TYPES);
+    const allowedSizesSet = new Set(ALLOWED_COMPANY_SIZES);
+    if (icp.industries) icp.industries = icp.industries.filter((i: string) => allowedSet.has(i));
+    if (icp.company_types) icp.company_types = icp.company_types.filter((t: string) => allowedTypesSet.has(t));
+    if (icp.company_sizes) icp.company_sizes = icp.company_sizes.filter((s: string) => allowedSizesSet.has(s));
     return new Response(JSON.stringify(icp), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
