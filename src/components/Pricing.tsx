@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
+import { ttqInitiateCheckout } from "@/lib/tiktok-pixel";
 
 const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
