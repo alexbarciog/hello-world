@@ -120,6 +120,7 @@ export default function Register() {
     }
 
     setLoading(false);
+    ttqCompleteRegistration();
     toast.success("Account created! Let's set up your first campaign.");
     navigate("/onboarding");
   };
