@@ -248,6 +248,20 @@ export default function Signals() {
     fetchAgents();
   }
 
+  async function runAgentNow(agent: SignalAgent) {
+    toast.info(`Running "${agent.name}" now...`);
+    const { data, error } = await supabase.functions.invoke("process-signal-agents", {
+      body: { agent_id: agent.id },
+    });
+    if (error) {
+      console.error("Run agent error:", error);
+      toast.error(`Failed to run agent: ${error.message}`);
+    } else {
+      toast.success(`"${agent.name}" finished — ${data?.leads_inserted ?? 0} new leads found`);
+      fetchAgents();
+    }
+  }
+
   function timeAgo(dateStr: string | null) {
     if (!dateStr) return "";
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
