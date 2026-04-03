@@ -1,0 +1,1 @@
+UPDATE lists l SET source_agent_id = sa.id FROM signal_agents sa WHERE sa.user_id = l.user_id AND sa.leads_list_name = l.name AND l.source_agent_id IS NULL;
