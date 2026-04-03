@@ -1,11 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Bot, Sparkles, Linkedin, Globe, ChevronDown } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+
+const featureItems = [
+  {
+    icon: Bot,
+    label: "AI SDR & Outreach",
+    desc: "Automated LinkedIn outreach campaigns",
+    href: "/features/ai-sdr",
+  },
+  {
+    icon: Sparkles,
+    label: "Conversational AI",
+    desc: "Smart replies that book meetings",
+    href: "/features/conversational-ai",
+  },
+  {
+    icon: Linkedin,
+    label: "LinkedIn Intent Signals",
+    desc: "Find high-intent leads from engagement",
+    href: "/features/linkedin-signals",
+  },
+  {
+    icon: Globe,
+    label: "Reddit & X Monitoring",
+    desc: "Cross-platform buying signal detection",
+    href: "/features/reddit-x-signals",
+  },
+];
 
 const navLinks = [
   { label: "Solution", href: "#features" },
-  { label: "Features", href: "#features" },
   { label: "Pricing", href: "#pricing" },
   { label: "Help Center", href: "/help", isRoute: true },
 ];
@@ -13,9 +40,11 @@ const navLinks = [
 const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Controls whether the mobile bubble shows logo (true) or hamburger (false)
+  const [featuresOpen, setFeaturesOpen] = useState(false);
   const [showLogo, setShowLogo] = useState(true);
   const navigate = useNavigate();
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -23,19 +52,26 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // After 1.6s, fade logo → hamburger icon
   useEffect(() => {
     const timer = setTimeout(() => setShowLogo(false), 1600);
     return () => clearTimeout(timer);
   }, []);
 
-  // Lock body scroll when menu is open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
   const close = () => setMenuOpen(false);
+
+  const handleFeaturesEnter = () => {
+    clearTimeout(timeoutRef.current);
+    setFeaturesOpen(true);
+  };
+
+  const handleFeaturesLeave = () => {
+    timeoutRef.current = setTimeout(() => setFeaturesOpen(false), 150);
+  };
 
   return (
     <>
@@ -53,7 +89,51 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
 
           <div className="flex items-center gap-8">
             <a href="#features" className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">Solution</a>
-            <a href="#features" className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">Features</a>
+
+            {/* Features with mega menu */}
+            <div
+              ref={featuresRef}
+              className="relative"
+              onMouseEnter={handleFeaturesEnter}
+              onMouseLeave={handleFeaturesLeave}
+            >
+              <button className="flex items-center gap-1 text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">
+                Features
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${featuresOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {featuresOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-[420px] rounded-2xl bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl p-2"
+                  >
+                    {featureItems.map((item, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setFeaturesOpen(false);
+                          navigate(item.href);
+                        }}
+                        className="w-full flex items-start gap-3.5 px-4 py-3 rounded-xl hover:bg-muted/60 transition-colors text-left group"
+                      >
+                        <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center mt-0.5 group-hover:bg-primary/15 transition-colors">
+                          <item.icon className="w-4.5 h-4.5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-foreground">{item.label}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{item.desc}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <a href="#pricing" className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">Pricing</a>
             <button onClick={() => navigate("/dashboard")} className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">Dashboard</button>
             <button onClick={(e) => { e.preventDefault(); navigate("/help"); }} className="text-sm font-medium text-goji-dark hover:opacity-70 transition-opacity">Help Center</button>
@@ -67,7 +147,6 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
       </nav>
 
       {/* ── Mobile floating bubble ──────────────────────────────────────── */}
-      {/* Only visible on mobile (md:hidden) */}
       <motion.button
         className="fixed top-4 right-5 z-50 md:hidden w-11 h-11 rounded-full flex items-center justify-center overflow-hidden"
         style={{
@@ -117,7 +196,6 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
       <AnimatePresence>
         {menuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               key="overlay"
               className="fixed inset-0 z-[60] md:hidden"
@@ -129,10 +207,9 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
               onClick={close}
             />
 
-            {/* Popup panel */}
             <motion.div
               key="menu"
-              className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[260px] rounded-[22px]"
+              className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[280px] rounded-[22px]"
               style={{
                 background: "rgba(255,253,245,0.92)",
                 backdropFilter: "blur(20px)",
@@ -161,8 +238,44 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
                 </motion.button>
               </div>
 
-              <div className="px-4 pb-2 flex flex-col">
-                {navLinks.map((link, i) => (
+              <div className="px-4 pb-1 flex flex-col">
+                <motion.a
+                  href="#features"
+                  onClick={close}
+                  className="flex items-center text-sm font-medium text-goji-dark hover:text-foreground transition-colors"
+                  style={{ minHeight: "44px" }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12, duration: 0.26 }}
+                >
+                  Solution
+                </motion.a>
+
+                {/* Mobile feature items */}
+                <motion.div
+                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-0 pt-2 pb-1"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.16, duration: 0.26 }}
+                >
+                  Features
+                </motion.div>
+                {featureItems.map((item, i) => (
+                  <motion.button
+                    key={i}
+                    onClick={() => { close(); navigate(item.href); }}
+                    className="flex items-center gap-3 text-sm font-medium text-goji-dark hover:text-foreground transition-colors text-left"
+                    style={{ minHeight: "40px" }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.18 + i * 0.05, duration: 0.26 }}
+                  >
+                    <item.icon className="w-4 h-4 text-primary" />
+                    {item.label}
+                  </motion.button>
+                ))}
+
+                {navLinks.filter(l => l.label !== "Solution").map((link, i) => (
                   <motion.a
                     key={link.label}
                     href={link.isRoute ? undefined : link.href}
@@ -174,7 +287,7 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
                     style={{ minHeight: "44px" }}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.12 + i * 0.055, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ delay: 0.36 + i * 0.055, duration: 0.26 }}
                   >
                     {link.label}
                   </motion.a>
@@ -187,14 +300,10 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
                 <motion.button
                   onClick={() => { close(); navigate("/login"); }}
                   className="w-full text-sm font-medium rounded-2xl transition-colors"
-                  style={{
-                    minHeight: "44px",
-                    background: "rgba(0,0,0,0.05)",
-                    color: "hsl(var(--goji-dark))",
-                  }}
+                  style={{ minHeight: "44px", background: "rgba(0,0,0,0.05)", color: "hsl(var(--goji-dark))" }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.33, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ delay: 0.4, duration: 0.26 }}
                   whileHover={{ background: "rgba(0,0,0,0.09)" } as never}
                   whileTap={{ scale: 0.97 }}
                 >
@@ -203,14 +312,10 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
                 <motion.button
                   onClick={() => { close(); navigate("/register"); }}
                   className="w-full text-sm font-medium rounded-2xl text-white transition-all"
-                  style={{
-                    minHeight: "44px",
-                    background: "linear-gradient(135deg, #7C93E6 0%, #F7C459 100%)",
-                    boxShadow: "0 4px 16px rgba(124,147,230,0.35)",
-                  }}
+                  style={{ minHeight: "44px", background: "linear-gradient(135deg, #7C93E6 0%, #F7C459 100%)", boxShadow: "0 4px 16px rgba(124,147,230,0.35)" }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.39, duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ delay: 0.46, duration: 0.26 }}
                   whileTap={{ scale: 0.97 }}
                 >
                   Start for Free →
