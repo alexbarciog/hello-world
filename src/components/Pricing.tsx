@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ArrowUp, ArrowDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
+
+const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
+const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
 
 const starterFeatures = [
   "LinkedIn Intent Signals",
@@ -62,8 +65,14 @@ const Pricing = () => {
     }
   };
 
-  const renderButton = (priceId: string) => {
-    if (sub.subscribed) {
+  const activePlan = sub.subscribed
+    ? sub.productId === STARTER_PRODUCT_ID ? "starter"
+    : sub.productId === PRO_PRODUCT_ID ? "pro"
+    : "other"
+    : null;
+
+  const renderButton = (plan: "starter" | "pro", priceId: string) => {
+    if (activePlan === plan) {
       return (
         <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
           <Check className="w-4 h-4 mr-2" />
@@ -71,6 +80,33 @@ const Pricing = () => {
         </div>
       );
     }
+
+    if (activePlan === "pro" && plan === "starter") {
+      return (
+        <button
+          onClick={() => handleCheckout(priceId)}
+          disabled={loading}
+          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+        >
+          <ArrowDown className="w-4 h-4 mr-2" />
+          {loading ? "Redirecting..." : "Downgrade"}
+        </button>
+      );
+    }
+
+    if (activePlan === "starter" && plan === "pro") {
+      return (
+        <button
+          onClick={() => handleCheckout(priceId)}
+          disabled={loading}
+          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          <ArrowUp className="w-4 h-4 mr-2" />
+          {loading ? "Redirecting..." : "Upgrade"}
+        </button>
+      );
+    }
+
     return (
       <button
         onClick={() => handleCheckout(priceId)}
@@ -96,13 +132,20 @@ const Pricing = () => {
               className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
               style={{ backgroundImage: `url(${pricingGradientBg})` }}
             >
-              <h3 className="text-2xl font-semibold text-foreground">Starter</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-semibold text-foreground">Starter</h3>
+                {activePlan === "starter" && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
+                    Your Plan
+                  </span>
+                )}
+              </div>
               <div className="flex items-baseline gap-2 mt-3">
                 <span className="text-5xl font-bold text-foreground tracking-tight">$59</span>
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                {renderButton(STARTER_PRICE_ID)}
+                {renderButton("starter", STARTER_PRICE_ID)}
               </div>
             </div>
             <div className="px-8 pt-8 pb-8">
@@ -119,9 +162,15 @@ const Pricing = () => {
 
           {/* Pro — $99/mo */}
           <div className="relative rounded-3xl bg-card overflow-hidden shadow-lg ring-2 ring-primary">
-            <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
-              Popular
-            </div>
+            {activePlan === "pro" ? (
+              <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
+                Your Plan
+              </div>
+            ) : (
+              <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
+                Popular
+              </div>
+            )}
             <div
               className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
               style={{ backgroundImage: `url(${pricingGradientBg})` }}
@@ -132,7 +181,7 @@ const Pricing = () => {
                 <span className="text-sm text-foreground/70">/month</span>
               </div>
               <div className="mt-4">
-                {renderButton(PRO_PRICE_ID)}
+                {renderButton("pro", PRO_PRICE_ID)}
               </div>
             </div>
             <div className="px-8 pt-8 pb-8">
