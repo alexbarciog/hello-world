@@ -585,6 +585,18 @@ export default function Contacts() {
                         </div>
                       </td>
                       <td className="px-3 py-3">
+                        {(() => {
+                          const agentName = getContactAgentName(c.id);
+                          return agentName ? (
+                            <span className="text-[10px] font-medium text-accent-foreground bg-accent px-2 py-0.5 rounded-full truncate max-w-[120px] block">
+                              {agentName}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-3 py-3">
                         <div className="flex items-center gap-1">
                           {c.lead_status !== 'meeting_booked' ? (
                             <button
