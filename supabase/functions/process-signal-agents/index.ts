@@ -82,6 +82,31 @@ Deno.serve(async (req) => {
           }
         }
 
+        // ── Fetch business context for AI relevance filter ──
+        let businessContext = '';
+        const { data: campaigns } = await supabase
+          .from('campaigns')
+          .select('description, value_proposition, company_name, website, industry')
+          .eq('user_id', agent.user_id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (campaigns && campaigns.length > 0) {
+          const c = campaigns[0];
+          const parts = [
+            c.company_name ? `Company: ${c.company_name}` : '',
+            c.description ? `What they sell: ${c.description}` : '',
+            c.value_proposition ? `Value proposition: ${c.value_proposition}` : '',
+            c.industry ? `Industry: ${c.industry}` : '',
+          ].filter(Boolean);
+          businessContext = parts.join('. ');
+        }
+        if (!businessContext) {
+          // Fallback: use agent name + keywords as implicit context
+          const kws = agent.keywords || signalKeywords['keyword_posts'] || [];
+          businessContext = `Company focuses on: ${agent.name}. Keywords: ${kws.join(', ')}`;
+        }
+        console.log(`Agent ${agent.id}: business_context="${businessContext.slice(0, 100)}..."`);
+
         const icpPayload = {
           jobTitles: (agent.icp_job_titles || []).map((s: string) => s.trim()).filter(Boolean),
           industries: (agent.icp_industries || []).map((s: string) => s.trim()).filter(Boolean),
@@ -98,6 +123,7 @@ Deno.serve(async (req) => {
           list_name: listName,
           icp: icpPayload,
           competitor_companies: competitorCompanyNames,
+          business_context: businessContext,
         };
 
         let agentLeads = 0;
