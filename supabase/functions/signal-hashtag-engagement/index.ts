@@ -71,11 +71,26 @@ function matchesIndustry(profile: any, match: MatchResult, icp: ICPFilters): boo
 }
 
 function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
-  const company = (profile.company||profile.current_company?.name||'').toLowerCase().trim();
-  const headline = (profile.headline||profile.title||'').toLowerCase();
-  if (competitorCompanies.length > 0) { const t = `${company} ${headline}`; for (const c of competitorCompanies) { if (t.includes(c)) return true; } }
+  const companyFields: string[] = [];
+  if (profile.company) companyFields.push(profile.company);
+  if (profile.current_company?.name) companyFields.push(profile.current_company.name);
+  if (profile.headline) companyFields.push(profile.headline);
+  if (profile.title) companyFields.push(profile.title);
+  const positions = profile.current_positions || profile.positions || profile.experience || [];
+  if (Array.isArray(positions)) {
+    for (const pos of positions) {
+      if (pos.company) companyFields.push(typeof pos.company === 'string' ? pos.company : pos.company.name || '');
+      if (pos.company_name) companyFields.push(pos.company_name);
+      if (pos.organization) companyFields.push(pos.organization);
+    }
+  }
+  const profileUrl = (profile.linkedin_url || profile.public_url || profile.profile_url || '').toLowerCase();
+  if (competitorCompanies.length > 0) {
+    const allText = companyFields.map(f => f.toLowerCase()).join(' ') + ' ' + profileUrl;
+    for (const c of competitorCompanies) { if (allText.includes(c)) return true; }
+  }
   if (excludeKeywords.length === 0) return false;
-  const text = [profile.headline,profile.title,profile.company,profile.current_company?.name,profile.industry].filter(Boolean).join(' ').toLowerCase();
+  const text = [...companyFields, profile.industry].filter(Boolean).join(' ').toLowerCase();
   return excludeKeywords.some(kw => text.includes(kw));
 }
 

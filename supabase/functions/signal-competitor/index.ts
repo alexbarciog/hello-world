@@ -55,11 +55,30 @@ function relaxedIndustryMatch(p: any, industries: string[]): boolean {
 function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean { if(!icp.industries.length) return true; if(m.industryMatch) return true; return relaxedIndustryMatch(p,icp.industries); }
 
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
-  const co=(p.company||p.current_company?.name||'').toLowerCase().trim();
-  const hl=(p.headline||p.title||'').toLowerCase();
-  if(cc.length>0){const t=`${co} ${hl}`;for(const c of cc){if(t.includes(c)) return true;}}
+  // Gather ALL company-related fields for thorough employee detection
+  const companyFields: string[] = [];
+  if (p.company) companyFields.push(p.company);
+  if (p.current_company?.name) companyFields.push(p.current_company.name);
+  if (p.headline) companyFields.push(p.headline);
+  if (p.title) companyFields.push(p.title);
+  // Check current_positions / experience arrays (Unipile may return these)
+  const positions = p.current_positions || p.positions || p.experience || [];
+  if (Array.isArray(positions)) {
+    for (const pos of positions) {
+      if (pos.company) companyFields.push(typeof pos.company === 'string' ? pos.company : pos.company.name || '');
+      if (pos.company_name) companyFields.push(pos.company_name);
+      if (pos.organization) companyFields.push(pos.organization);
+    }
+  }
+  // Also check profile URL for company vanity name
+  const profileUrl = (p.linkedin_url || p.public_url || p.profile_url || '').toLowerCase();
+  
+  if(cc.length>0){
+    const allText = companyFields.map(f => f.toLowerCase()).join(' ') + ' ' + profileUrl;
+    for(const c of cc){if(allText.includes(c)) return true;}
+  }
   if(!ek.length) return false;
-  const text=[p.headline,p.title,p.company,p.current_company?.name,p.industry].filter(Boolean).join(' ').toLowerCase();
+  const text=[...companyFields,p.industry].filter(Boolean).join(' ').toLowerCase();
   return ek.some(kw=>text.includes(kw));
 }
 
@@ -183,10 +202,10 @@ Deno.serve(async (req) => {
           const profileId = extractLinkedInId(url);
           if (!profileId) continue;
           try {
-            const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=5`, UNIPILE_API_KEY, UNIPILE_DSN);
+            const postsRes = await unipileGet(`/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=10`, UNIPILE_API_KEY, UNIPILE_DSN);
             if (!postsRes.ok) { await postsRes.text(); continue; }
             const postsData = await postsRes.json();
-            const posts = (postsData.items || postsData.posts || []).slice(0, 5);
+            const posts = (postsData.items || postsData.posts || []).slice(0, 10);
             let profileName = profileId;
             try { const pr = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN); if(pr.ok){ const pd=await pr.json(); profileName=[pd.first_name,pd.last_name].filter(Boolean).join(' ')||profileId; } else await pr.text(); } catch(_){}
             console.log(`competitor profile "${profileName}": ${posts.length} posts`);
@@ -194,10 +213,14 @@ Deno.serve(async (req) => {
               if (!hasTime()) break;
               await delay(150);
               const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-              const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!rr.ok) { await rr.text(); continue; }
-              const rd = await rr.json();
-              const engagers = (rd.items||[]).slice(0, 25);
+              // Fetch both reactions AND comments to capture all engagers
+              const [rr, cr] = await Promise.all([
+                unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
+                unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
+              ]);
+              const engagers: any[] = [];
+              if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
+              if (cr.ok) { const cd = await cr.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr.text(); }
               const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
               for (const engager of engagers) {
                 if (!hasTime()) break;
@@ -230,22 +253,26 @@ Deno.serve(async (req) => {
 
         try {
           const postsEndpoint = isCompany
-            ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=5`
-            : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=5`;
+            ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=10`
+            : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
           const postsRes = await unipileGet(postsEndpoint, UNIPILE_API_KEY, UNIPILE_DSN);
           if (!postsRes.ok) { await postsRes.text(); continue; }
           const postsData = await postsRes.json();
-          const posts = (postsData.items || postsData.posts || []).slice(0, 8);
+          const posts = (postsData.items || postsData.posts || []).slice(0, 10);
           console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts`);
 
           for (const post of posts) {
             if (!hasTime()) break;
             await delay(150);
             const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-            const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
-            if (!rr.ok) { await rr.text(); continue; }
-            const rd = await rr.json();
-            const engagers = (rd.items||[]).slice(0, 25);
+            // Fetch both reactions AND comments
+            const [rr, cr2] = await Promise.all([
+              unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
+              unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
+            ]);
+            const engagers: any[] = [];
+            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
+            if (cr2.ok) { const cd = await cr2.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr2.text(); }
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
 
             for (const engager of engagers) {
