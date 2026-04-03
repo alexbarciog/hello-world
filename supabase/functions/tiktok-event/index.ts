@@ -1,4 +1,7 @@
-import { corsHeaders } from "@supabase/supabase-js/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const TIKTOK_PIXEL_ID = "D780ID3C77UCM5J7I8T0";
 const TIKTOK_API_URL = "https://business-api.tiktok.com/open_api/v1.3/event/track/";
