@@ -55,11 +55,30 @@ function relaxedIndustryMatch(p: any, industries: string[]): boolean {
 function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean { if(!icp.industries.length) return true; if(m.industryMatch) return true; return relaxedIndustryMatch(p,icp.industries); }
 
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
-  const co=(p.company||p.current_company?.name||'').toLowerCase().trim();
-  const hl=(p.headline||p.title||'').toLowerCase();
-  if(cc.length>0){const t=`${co} ${hl}`;for(const c of cc){if(t.includes(c)) return true;}}
+  // Gather ALL company-related fields for thorough employee detection
+  const companyFields: string[] = [];
+  if (p.company) companyFields.push(p.company);
+  if (p.current_company?.name) companyFields.push(p.current_company.name);
+  if (p.headline) companyFields.push(p.headline);
+  if (p.title) companyFields.push(p.title);
+  // Check current_positions / experience arrays (Unipile may return these)
+  const positions = p.current_positions || p.positions || p.experience || [];
+  if (Array.isArray(positions)) {
+    for (const pos of positions) {
+      if (pos.company) companyFields.push(typeof pos.company === 'string' ? pos.company : pos.company.name || '');
+      if (pos.company_name) companyFields.push(pos.company_name);
+      if (pos.organization) companyFields.push(pos.organization);
+    }
+  }
+  // Also check profile URL for company vanity name
+  const profileUrl = (p.linkedin_url || p.public_url || p.profile_url || '').toLowerCase();
+  
+  if(cc.length>0){
+    const allText = companyFields.map(f => f.toLowerCase()).join(' ') + ' ' + profileUrl;
+    for(const c of cc){if(allText.includes(c)) return true;}
+  }
   if(!ek.length) return false;
-  const text=[p.headline,p.title,p.company,p.current_company?.name,p.industry].filter(Boolean).join(' ').toLowerCase();
+  const text=[...companyFields,p.industry].filter(Boolean).join(' ').toLowerCase();
   return ek.some(kw=>text.includes(kw));
 }
 
