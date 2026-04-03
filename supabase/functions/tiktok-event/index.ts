@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const timestamp = new Date().toISOString();
+    const eventTime = Math.floor(Date.now() / 1000);
 
     // Build user object
     const user: Record<string, unknown> = {};
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       pixel_code: TIKTOK_PIXEL_ID,
       event: event,
       event_id: event_id || crypto.randomUUID(),
-      timestamp: timestamp,
+      event_time: eventTime,
       context: {
         user_agent: user_agent || "",
         ip: ip || "",
