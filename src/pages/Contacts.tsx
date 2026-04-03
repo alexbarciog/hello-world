@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
@@ -30,6 +30,10 @@ export default function Contacts() {
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
   const [meetings, setMeetings] = useState<Record<string, any>>({});
+  const [showSelectPopover, setShowSelectPopover] = useState(false);
+  const [selectMode, setSelectMode] = useState<"number" | "page" | "all">("number");
+  const [selectNumber, setSelectNumber] = useState(25);
+  const selectPopoverRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -175,9 +179,36 @@ export default function Contacts() {
   }
 
   function toggleAll() {
-    if (selectedIds.size === paged.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(paged.map((c) => c.id)));
+    if (selectedIds.size > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setShowSelectPopover(true);
+    }
   }
+
+  function applySelection() {
+    if (selectMode === "page") {
+      setSelectedIds(new Set(paged.map((c) => c.id)));
+    } else if (selectMode === "all") {
+      setSelectedIds(new Set(filtered.map((c) => c.id)));
+    } else {
+      const count = Math.min(Math.max(1, selectNumber), filtered.length);
+      setSelectedIds(new Set(filtered.slice(0, count).map((c) => c.id)));
+    }
+    setShowSelectPopover(false);
+  }
+
+  // Close popover on click outside
+  useEffect(() => {
+    if (!showSelectPopover) return;
+    function handleClick(e: MouseEvent) {
+      if (selectPopoverRef.current && !selectPopoverRef.current.contains(e.target as Node)) {
+        setShowSelectPopover(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showSelectPopover]);
 
   function getContactListNames(contactId: string): string[] {
     const listIds = contactListMap[contactId] || [];
@@ -320,13 +351,87 @@ export default function Contacts() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    <th className="w-10 px-4 py-3">
+                    <th className="w-10 px-4 py-3 relative">
                       <input
                         type="checkbox"
-                        checked={paged.length > 0 && selectedIds.size === paged.length}
+                        checked={selectedIds.size > 0}
                         onChange={toggleAll}
                         className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                       />
+                      {showSelectPopover && (
+                        <div
+                          ref={selectPopoverRef}
+                          className="absolute top-full left-2 mt-1 z-50 bg-popover border border-border rounded-xl shadow-xl p-4 w-[260px]"
+                        >
+                          <div className="flex flex-col gap-3">
+                            {/* Option: select number */}
+                            <label className="flex items-center gap-2.5 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="select-mode"
+                                checked={selectMode === "number"}
+                                onChange={() => setSelectMode("number")}
+                                className="w-4 h-4 text-primary focus:ring-ring"
+                              />
+                              <span className="text-sm font-medium text-foreground">Select number of contacts</span>
+                            </label>
+                            {selectMode === "number" && (
+                              <div className="ml-6">
+                                <input
+                                  type="number"
+                                  value={selectNumber}
+                                  onChange={(e) => setSelectNumber(Math.max(1, parseInt(e.target.value) || 1))}
+                                  min={1}
+                                  max={filtered.length}
+                                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                />
+                              </div>
+                            )}
+
+                            {/* Option: select this page */}
+                            <label className="flex items-center gap-2.5 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="select-mode"
+                                checked={selectMode === "page"}
+                                onChange={() => setSelectMode("page")}
+                                className="w-4 h-4 text-primary focus:ring-ring"
+                              />
+                              <span className="text-sm font-medium text-foreground">Select this page</span>
+                              <span className="text-xs text-muted-foreground ml-1">{paged.length}</span>
+                            </label>
+
+                            {/* Option: select all */}
+                            <label className="flex items-center gap-2.5 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="select-mode"
+                                checked={selectMode === "all"}
+                                onChange={() => setSelectMode("all")}
+                                className="w-4 h-4 text-primary focus:ring-ring"
+                              />
+                              <span className="text-sm font-medium text-foreground">Select all</span>
+                              <span className="text-xs text-muted-foreground ml-1">{filtered.length.toLocaleString()}</span>
+                            </label>
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                              <button
+                                onClick={() => setShowSelectPopover(false)}
+                                className="text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={applySelection}
+                                className="text-sm font-semibold bg-primary text-primary-foreground px-4 py-1.5 rounded-lg hover:bg-primary/90 transition-colors"
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </th>
                     {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
