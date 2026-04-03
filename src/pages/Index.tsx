@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ttqViewContent } from "@/lib/tiktok-pixel";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
@@ -14,6 +16,7 @@ const Index = () => {
   const [searchParams] = useSearchParams();
   const campaignId = searchParams.get("campaign_id");
   const showCampaigns = isOnboardingComplete();
+  useEffect(() => { ttqViewContent("Landing Page", "landing"); }, []);
 
   return (
     <div className="min-h-screen bg-background font-sans">

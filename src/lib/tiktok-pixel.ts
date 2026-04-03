@@ -103,8 +103,32 @@ export function ttqCompleteRegistration() {
   });
 }
 
+export function ttqAddToCart(planName: string, value?: number) {
+  ttqTrack("AddToCart", {
+    contents: [{ content_id: planName, content_type: "product", content_name: planName }],
+    value,
+    currency: "USD",
+  });
+}
+
+export function ttqAddPaymentInfo(planName: string, value?: number) {
+  ttqTrack("AddPaymentInfo", {
+    contents: [{ content_id: planName, content_type: "product", content_name: planName }],
+    value,
+    currency: "USD",
+  });
+}
+
 export function ttqInitiateCheckout(planName: string, value?: number) {
   ttqTrack("InitiateCheckout", {
+    contents: [{ content_id: planName, content_type: "product", content_name: planName }],
+    value,
+    currency: "USD",
+  });
+}
+
+export function ttqPlaceAnOrder(planName: string, value?: number) {
+  ttqTrack("PlaceAnOrder", {
     contents: [{ content_id: planName, content_type: "product", content_name: planName }],
     value,
     currency: "USD",

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ttqInitiateCheckout } from "@/lib/tiktok-pixel";
+import { ttqInitiateCheckout, ttqAddToCart, ttqAddPaymentInfo } from "@/lib/tiktok-pixel";
 
 const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
@@ -35,7 +35,9 @@ const Pricing = () => {
 
   const handleCheckout = async (priceId: string, planName: string = "Plan", planValue?: number) => {
     setLoading(true);
+    ttqAddToCart(planName, planValue);
     ttqInitiateCheckout(planName, planValue);
+    ttqAddPaymentInfo(planName, planValue);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
