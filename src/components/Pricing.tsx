@@ -35,7 +35,9 @@ const Pricing = () => {
 
   const handleCheckout = async (priceId: string, planName: string = "Plan", planValue?: number) => {
     setLoading(true);
+    ttqAddToCart(planName, planValue);
     ttqInitiateCheckout(planName, planValue);
+    ttqAddPaymentInfo(planName, planValue);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
