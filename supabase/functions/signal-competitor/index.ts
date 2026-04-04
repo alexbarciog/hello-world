@@ -192,33 +192,61 @@ Deno.serve(async (req) => {
         const isPersonUrl = url.includes('/in/');
 
         if (isCompanyUrl && companyName) {
-          console.log(`competitor_followers: searching "${companyName}" (limit=30)`);
+          console.log(`competitor_followers: searching "${companyName}" with pagination`);
           try {
-            const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-              method: 'POST',
-              headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName, limit: 30 }),
-            });
-            if (!res.ok) {
-              const errText = await res.text();
-              console.error(`competitor_followers search "${companyName}": HTTP ${res.status} - ${errText.slice(0, 200)}`);
-              continue;
+            const allPeople: any[] = [];
+            let cursor: string | null = null;
+            const MAX_PAGES = 3;
+            for (let page = 0; page < MAX_PAGES && hasTime(); page++) {
+              const searchBody: any = { api: 'classic', category: 'people', keywords: companyName, limit: 30 };
+              if (cursor) searchBody.cursor = cursor;
+              const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+                method: 'POST',
+                headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(searchBody),
+              });
+              if (!res.ok) {
+                const errText = await res.text();
+                console.error(`competitor_followers search "${companyName}" page ${page+1}: HTTP ${res.status} - ${errText.slice(0, 200)}`);
+                break;
+              }
+              const data = await res.json();
+              const people = data.items || data.results || [];
+              allPeople.push(...people);
+              console.log(`"${companyName}" page ${page+1}: ${people.length} people (total: ${allPeople.length})`);
+              cursor = data.cursor || data.next_cursor || null;
+              if (!cursor || people.length === 0) break;
+              await delay(200);
             }
-            const data = await res.json();
-            const people = (data.items || data.results || []).slice(0, 30);
-            console.log(`"${companyName}": ${people.length} people`);
-            for (const person of people) {
+            console.log(`"${companyName}": ${allPeople.length} total people found`);
+            for (const person of allPeople) {
               if (!hasTime()) break;
-              const profile = { ...person, title: person.headline||person.title||null, linkedin_url: person.profile_url||person.public_profile_url||null, public_id: person.public_identifier||person.id||null, company: person.current_positions?.[0]?.company||person.company||null };
-              const match = scoreProfileAgainstICP(profile, icp);
-              const hl = profile.headline || profile.title || '';
-              if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: ICP mismatch`); continue; }
-              if (!matchesIndustry(profile, match, icp)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: industry mismatch`); continue; }
-              if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: excluded`); continue; }
+              await delay(200);
+              // ALWAYS fetch full profile to get current_positions, industry, experience
+              const fullProfile = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+              if (!fullProfile || !fullProfile.first_name) {
+                console.log(`[PIPELINE] ⏭ ${person.public_identifier||person.id||'?'}: could not fetch profile`);
+                continue;
+              }
+              // Reject LinkedIn Member (private profiles)
+              if ((fullProfile.first_name||'').toLowerCase() === 'linkedin' && (fullProfile.last_name||'').toLowerCase() === 'member') {
+                console.log(`[PIPELINE] ⏭ LinkedIn Member: private profile`);
+                continue;
+              }
+              const lpid = fullProfile.public_id||fullProfile.public_identifier||fullProfile.provider_id||fullProfile.id;
+              // Check exclusion FIRST (catches competitor employees with full position data)
+              if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) {
+                console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
+                continue;
+              }
+              const match = scoreProfileAgainstICP(fullProfile, icp);
+              const hl = fullProfile.headline || fullProfile.title || '';
+              if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${lpid}: ICP mismatch (title="${hl?.slice(0,50)}")`); continue; }
+              if (!matchesIndustry(fullProfile, match, icp)) { console.log(`[PIPELINE] ⏭ ${lpid}: industry mismatch`); continue; }
               const cls = classifyContact(match, icp, hl);
-              if (cls === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: cold-capped`); continue; }
-              const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
-              if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${profile.public_id}: inserted as ${cls}`); }
+              if (cls === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${lpid}: cold-capped`); continue; }
+              const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
+              if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${cls}`); }
             }
           } catch (e) { console.error(`Competitor followers ${url}:`, e); }
         }
