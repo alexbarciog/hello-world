@@ -273,24 +273,32 @@ Deno.serve(async (req) => {
           const postsEndpoint = isCompany
             ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=10`
             : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
+          console.log(`[DEBUG] competitor_engagers fetching posts: ${postsEndpoint}`);
           const postsRes = await unipileGet(postsEndpoint, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (!postsRes.ok) { await postsRes.text(); continue; }
+          if (!postsRes.ok) {
+            const errText = await postsRes.text();
+            console.error(`competitor_engagers "${companyName||companyId}": HTTP ${postsRes.status} - ${errText.slice(0, 300)}`);
+            continue;
+          }
           const postsData = await postsRes.json();
           const posts = (postsData.items || postsData.posts || []).slice(0, 10);
-          console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts`);
+          console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts found`);
+          if (posts.length === 0) {
+            console.warn(`competitor_engagers "${companyName||companyId}": API returned 0 posts. Response keys: ${Object.keys(postsData).join(',')}`);
+          }
 
           for (const post of posts) {
             if (!hasTime()) break;
             await delay(150);
-            const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-            // Fetch both reactions AND comments
+            const postId = post.social_id||post.id||post.provider_id; if (!postId) { console.log(`[PIPELINE] ⏭ post skipped: no ID`); continue; }
             const [rr, cr2] = await Promise.all([
               unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
               unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
             ]);
             const engagers: any[] = [];
-            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
-            if (cr2.ok) { const cd = await cr2.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr2.text(); }
+            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { const t = await rr.text(); console.error(`reactions ${postId}: HTTP ${rr.status} - ${t.slice(0,200)}`); }
+            if (cr2.ok) { const cd = await cr2.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { const t = await cr2.text(); console.error(`comments ${postId}: HTTP ${cr2.status} - ${t.slice(0,200)}`); }
+            console.log(`competitor_engagers post ${postId}: ${engagers.length} engagers`);
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
 
             for (const engager of engagers) {
@@ -300,14 +308,14 @@ Deno.serve(async (req) => {
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
-              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-              if (!matchesIndustry(fp, match, icp)) continue;
-              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: ICP mismatch`); continue; }
+              if (!matchesIndustry(fp, match, icp)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: industry mismatch`); continue; }
+              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded`); continue; }
               const cls3 = classifyContact(match, icp, hl);
-              if (cls3 === 'cold' && !canInsertCold()) continue;
+              if (cls3 === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: cold-capped`); continue; }
               const signal = `Engaged with ${companyName||companyId}'s post`;
               const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, postUrl, icp);
-              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; }
+              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${fp.public_id||'?'}: inserted as ${cls3}`); }
             }
           }
         } catch(e) { console.error(`Competitor engagers ${url}:`, e); }

@@ -462,13 +462,35 @@ Deno.serve(async (req) => {
       if (fullAuthor) {
         const match = scoreProfileAgainstICP(fullAuthor, icp);
         const hl = fullAuthor.headline || fullAuthor.title || '';
-        const classification = classifyContact(match, icp, hl);
-        if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
-          if (classification === 'cold' && !canInsertCold()) continue;
-          const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-          const signal = `Posted about "${post._keyword}"`;
-          const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
-          if (ok) { inserted++; if (classification === 'cold') coldCount++; else hotWarmCount++; }
+        const lpid = fullAuthor.public_id || fullAuthor.public_identifier || fullAuthor.provider_id || fullAuthor.id;
+        let classification = classifyContact(match, icp, hl);
+        
+        if (isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
+          continue;
+        }
+        if (classification === null) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: ICP mismatch (title="${hl?.slice(0,50)}")`);
+          continue;
+        }
+        // AI-boost: if AI validated buyer intent but ICP says cold, upgrade to warm
+        if (classification === 'cold') {
+          classification = 'warm';
+          console.log(`[PIPELINE] 🔼 ${lpid}: AI-boosted cold→warm (buyer intent validated)`);
+        }
+        if (classification === 'cold' && !canInsertCold()) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: cold-capped`);
+          continue;
+        }
+        const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+        const signal = `Posted about "${post._keyword}"`;
+        const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
+        if (ok) {
+          inserted++;
+          if (classification === 'cold') coldCount++; else hotWarmCount++;
+          console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification}`);
+        } else {
+          console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
         }
       }
 
