@@ -299,6 +299,7 @@ Deno.serve(async (req) => {
                 const hl = fp.headline||fp.title||'';
                 if (!matchesTitleOrIndustry(match, icp, hl)) continue;
                 if (!matchesIndustry(fp, match, icp)) continue;
+                if (ownCompanyLower && ownCompanyLower.length > 1) { const ec = (fp.company||fp.current_company?.name||'').toLowerCase(); const eh = (fp.headline||fp.title||'').toLowerCase(); if (ec.includes(ownCompanyLower)||ownCompanyLower.includes(ec)||eh.includes(ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; } }
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
                 const cls2 = classifyContact(match, icp, hl);
                 if (cls2 === 'cold' && !canInsertCold()) continue;
