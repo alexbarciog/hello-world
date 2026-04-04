@@ -281,7 +281,7 @@ Deno.serve(async (req) => {
               for (const engager of engagers) {
                 if (!hasTime()) break;
                 const ep = engager.author||engager;
-                const fp = await fetchProfileIfNeeded(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+                const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 if (!fp) continue;
                 const match = scoreProfileAgainstICP(fp, icp);
                 const hl = fp.headline||fp.title||'';
