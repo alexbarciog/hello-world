@@ -130,6 +130,7 @@ async function processInBackground(runId: string, agents: any[]) {
 
       // ── Build business_context from newest NON-EMPTY campaign ──
       let businessContext = '';
+      let userCompanyName = '';
       const { data: campaigns } = await supabase
         .from('campaigns')
         .select('description, value_proposition, company_name, website, industry')
@@ -138,20 +139,22 @@ async function processInBackground(runId: string, agents: any[]) {
         .limit(5);
       if (campaigns) {
         for (const c of campaigns) {
+          // Extract company name from first campaign that has one
+          if (!userCompanyName && c.company_name) userCompanyName = c.company_name;
           const parts = [
             c.company_name ? `Company: ${c.company_name}` : '',
             c.description ? `What they sell: ${c.description}` : '',
             c.value_proposition ? `Value proposition: ${c.value_proposition}` : '',
             c.industry ? `Industry: ${c.industry}` : '',
           ].filter(Boolean);
-          if (parts.length >= 2) { businessContext = parts.join('. '); break; }
+          if (parts.length >= 2 && !businessContext) { businessContext = parts.join('. '); }
         }
       }
       if (!businessContext) {
         const kws = agent.keywords || signalKeywords['keyword_posts'] || [];
         businessContext = `Company focuses on: ${agent.name}. Keywords: ${kws.join(', ')}`;
       }
-      console.log(`Agent ${agent.id}: business_context="${businessContext.slice(0, 100)}..."`);
+      console.log(`Agent ${agent.id}: business_context="${businessContext.slice(0, 100)}...", user_company="${userCompanyName}"`);
 
       const icpPayload = {
         jobTitles: (agent.icp_job_titles || []).map((s: string) => s.trim()).filter(Boolean),
@@ -170,6 +173,7 @@ async function processInBackground(runId: string, agents: any[]) {
         icp: icpPayload,
         competitor_companies: competitorCompanyNames,
         business_context: businessContext,
+        user_company_name: userCompanyName,
       };
 
       // ── Build task list ──

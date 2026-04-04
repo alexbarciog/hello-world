@@ -385,6 +385,7 @@ Deno.serve(async (req) => {
               const ep = engager.author||engager;
               const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!fp) continue;
+              if (ownCompanyLower && ownCompanyLower.length > 1) { const ec = (fp.company||fp.current_company?.name||'').toLowerCase(); const eh = (fp.headline||fp.title||'').toLowerCase(); if (ec.includes(ownCompanyLower)||ownCompanyLower.includes(ec)||eh.includes(ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; } }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (competitor employee)`); continue; }
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
