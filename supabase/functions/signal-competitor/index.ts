@@ -325,27 +325,23 @@ Deno.serve(async (req) => {
           }
 
           if (isCompany) {
-            // Search for posts mentioning the company name (replaces broken /users/{company}/posts?is_company=true)
-            console.log(`[DEBUG] competitor_engagers searching posts mentioning "${companyName}"`);
+            // Fetch posts directly from the company's LinkedIn page
+            console.log(`[DEBUG] competitor_engagers fetching posts from company page: ${companyId}`);
             let cursor: string | null = null;
             for (let page = 0; page < 3 && hasTime(); page++) {
-              const searchBody: any = { api: 'classic', category: 'posts', keywords: companyName, limit: 30 };
-              if (cursor) searchBody.cursor = cursor;
-              const searchRes = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-                method: 'POST',
-                headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-                body: JSON.stringify(searchBody),
-              });
-              if (!searchRes.ok) {
-                const errText = await searchRes.text();
-                console.error(`competitor_engagers search "${companyName}" page ${page+1}: HTTP ${searchRes.status} - ${errText.slice(0, 200)}`);
+              let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
+              if (cursor) fetchUrl += `&cursor=${encodeURIComponent(cursor)}`;
+              const postsRes = await unipileGet(fetchUrl, UNIPILE_API_KEY, UNIPILE_DSN);
+              if (!postsRes.ok) {
+                const errText = await postsRes.text();
+                console.error(`competitor_engagers company "${companyId}" page ${page+1}: HTTP ${postsRes.status} - ${errText.slice(0, 200)}`);
                 break;
               }
-              const data = await searchRes.json();
-              const items = data.items || data.results || [];
+              const postsData = await postsRes.json();
+              const items = postsData.items || postsData.posts || [];
               posts.push(...items);
-              console.log(`competitor_engagers "${companyName}" page ${page+1}: ${items.length} posts (total: ${posts.length})`);
-              cursor = data.cursor || data.next_cursor || null;
+              console.log(`competitor_engagers company "${companyId}" page ${page+1}: ${items.length} posts (total: ${posts.length})`);
+              cursor = postsData.cursor || postsData.next_cursor || null;
               if (!cursor || items.length === 0) break;
               await delay(200);
             }
