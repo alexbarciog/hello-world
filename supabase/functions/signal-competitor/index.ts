@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies } = await req.json();
+    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies, user_company_name } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -172,6 +172,9 @@ Deno.serve(async (req) => {
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+    // Own-company exclusion
+    const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
