@@ -88,19 +88,7 @@ function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
 function hasBuyingIntent(headline: string): boolean { return BUYING_INTENT_KEYWORDS.some(kw => (headline || '').toLowerCase().includes(kw)); }
 function isClearlyIrrelevant(headline: string): boolean { return REJECT_TITLES.some(kw => (headline || '').toLowerCase().includes(kw)); }
 
-function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
-  const hl = headline || '';
-  if (isClearlyIrrelevant(hl)) return null;
-  if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
-  if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
-  if (hasBuyingIntent(hl)) return 'warm';
-  if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
-  if (hl.length > 5) return 'cold';
-  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
-  return null;
-}
-
-function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
+function collectCompanyFields(profile: any): string[] {
   const companyFields: string[] = [];
   if (profile.company) companyFields.push(profile.company);
   if (profile.current_company?.name) companyFields.push(profile.current_company.name);
@@ -114,6 +102,35 @@ function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies
       if (pos.organization) companyFields.push(pos.organization);
     }
   }
+  return companyFields.filter(Boolean);
+}
+
+function matchesCompanyName(value: string, companyName: string): boolean {
+  const normalizedValue = normalizeText(value);
+  const normalizedCompany = normalizeText(companyName);
+  if (!normalizedValue || !normalizedCompany) return false;
+  return normalizedValue.includes(normalizedCompany) || normalizedCompany.includes(normalizedValue);
+}
+
+function worksAtCompany(profile: any, companyName: string): boolean {
+  if (!companyName?.trim()) return false;
+  return collectCompanyFields(profile).some(field => matchesCompanyName(field, companyName));
+}
+
+function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
+  const hl = headline || '';
+  if (isClearlyIrrelevant(hl)) return null;
+  if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
+  if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
+  if (hasBuyingIntent(hl)) return 'warm';
+  if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
+  if (hl.length > 5) return 'cold';
+  if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
+  return null;
+}
+
+function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
+  const companyFields = collectCompanyFields(profile);
   const profileUrl = (profile.linkedin_url || profile.public_url || profile.profile_url || '').toLowerCase();
   if (competitorCompanies.length > 0) {
     const allText = companyFields.map(f => f.toLowerCase()).join(' ') + ' ' + profileUrl;
@@ -508,9 +525,7 @@ Deno.serve(async (req) => {
 
         // Own-company exclusion
         if (ownCompanyLower && ownCompanyLower.length > 1) {
-          const authorCompany = (author.company || author.current_company?.name || '').toLowerCase();
-          const authorHeadline = (author.headline || author.title || '').toLowerCase();
-          if (authorCompany.includes(ownCompanyLower) || ownCompanyLower.includes(authorCompany) || authorHeadline.includes(ownCompanyLower)) {
+          if (worksAtCompany(author, ownCompanyLower)) {
             console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
             keywordSkipped.ownCompany++;
             continue;

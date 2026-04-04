@@ -17,6 +17,32 @@ const REJECT_TITLES = ['software developer','software engineer','frontend develo
 
 function normalizeText(v: string): string { return (v||'').toLowerCase().replace(/[^a-z0-9\s]/g,'').trim(); }
 function fuzzyMatchList(v: string, c: string[]): boolean { const h=normalizeText(v); if(!h) return false; return c.some(x=>{const n=normalizeText(x); return n?(h.includes(n)||n.includes(h)):false;}); }
+function collectCompanyFields(p: any): string[] {
+  const companyFields: string[] = [];
+  if (p.company) companyFields.push(p.company);
+  if (p.current_company?.name) companyFields.push(p.current_company.name);
+  if (p.headline) companyFields.push(p.headline);
+  if (p.title) companyFields.push(p.title);
+  const positions = p.current_positions || p.positions || p.experience || [];
+  if (Array.isArray(positions)) {
+    for (const pos of positions) {
+      if (pos.company) companyFields.push(typeof pos.company === 'string' ? pos.company : pos.company.name || '');
+      if (pos.company_name) companyFields.push(pos.company_name);
+      if (pos.organization) companyFields.push(pos.organization);
+    }
+  }
+  return companyFields.filter(Boolean);
+}
+function matchesCompanyName(value: string, companyName: string): boolean {
+  const normalizedValue = normalizeText(value);
+  const normalizedCompany = normalizeText(companyName);
+  if (!normalizedValue || !normalizedCompany) return false;
+  return normalizedValue.includes(normalizedCompany) || normalizedCompany.includes(normalizedValue);
+}
+function worksAtCompany(profile: any, companyName: string): boolean {
+  if (!companyName?.trim()) return false;
+  return collectCompanyFields(profile).some(field => matchesCompanyName(field, companyName));
+}
 
 function scoreProfileAgainstICP(p: any, icp: ICPFilters): MatchResult {
   const title=p.headline||p.title||p.role||''; const industry=p.industry||''; const location=p.location||p.country||'';
@@ -63,21 +89,7 @@ function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean {
 }
 
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
-  // Gather ALL company-related fields for thorough employee detection
-  const companyFields: string[] = [];
-  if (p.company) companyFields.push(p.company);
-  if (p.current_company?.name) companyFields.push(p.current_company.name);
-  if (p.headline) companyFields.push(p.headline);
-  if (p.title) companyFields.push(p.title);
-  // Check current_positions / experience arrays (Unipile may return these)
-  const positions = p.current_positions || p.positions || p.experience || [];
-  if (Array.isArray(positions)) {
-    for (const pos of positions) {
-      if (pos.company) companyFields.push(typeof pos.company === 'string' ? pos.company : pos.company.name || '');
-      if (pos.company_name) companyFields.push(pos.company_name);
-      if (pos.organization) companyFields.push(pos.organization);
-    }
-  }
+  const companyFields = collectCompanyFields(p);
   // Also check profile URL for company vanity name
   const profileUrl = (p.linkedin_url || p.public_url || p.profile_url || '').toLowerCase();
   
@@ -241,9 +253,7 @@ Deno.serve(async (req) => {
               const lpid = fullProfile.public_id||fullProfile.public_identifier||fullProfile.provider_id||fullProfile.id;
               // Check own-company exclusion FIRST
               if (ownCompanyLower && ownCompanyLower.length > 1) {
-                const fpCompany = (fullProfile.company || fullProfile.current_company?.name || '').toLowerCase();
-                const fpHeadline = (fullProfile.headline || fullProfile.title || '').toLowerCase();
-                if (fpCompany.includes(ownCompanyLower) || ownCompanyLower.includes(fpCompany) || fpHeadline.includes(ownCompanyLower)) {
+                if (worksAtCompany(fullProfile, ownCompanyLower)) {
                   console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
                   continue;
                 }
@@ -299,7 +309,7 @@ Deno.serve(async (req) => {
                 const hl = fp.headline||fp.title||'';
                 if (!matchesTitleOrIndustry(match, icp, hl)) continue;
                 if (!matchesIndustry(fp, match, icp)) continue;
-                if (ownCompanyLower && ownCompanyLower.length > 1) { const ec = (fp.company||fp.current_company?.name||'').toLowerCase(); const eh = (fp.headline||fp.title||'').toLowerCase(); if (ec.includes(ownCompanyLower)||ownCompanyLower.includes(ec)||eh.includes(ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; } }
+                if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; }
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
                 const cls2 = classifyContact(match, icp, hl);
                 if (cls2 === 'cold' && !canInsertCold()) continue;
@@ -385,7 +395,7 @@ Deno.serve(async (req) => {
               const ep = engager.author||engager;
               const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!fp) continue;
-              if (ownCompanyLower && ownCompanyLower.length > 1) { const ec = (fp.company||fp.current_company?.name||'').toLowerCase(); const eh = (fp.headline||fp.title||'').toLowerCase(); if (ec.includes(ownCompanyLower)||ownCompanyLower.includes(ec)||eh.includes(ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; } }
+              if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (competitor employee)`); continue; }
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
