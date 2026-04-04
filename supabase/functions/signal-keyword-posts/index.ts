@@ -165,6 +165,33 @@ async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string
   }
 }
 
+async function fetchFullProfile(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
+  const norm = normalizeProfile({ ...item });
+  const existingId = extractLinkedinProfileId(norm);
+  const fetchId = existingId || (item.id && !String(item.id).startsWith('urn:') && !String(item.id).startsWith('ACo') ? item.id : null);
+
+  if (!fetchId) {
+    return { ...norm, public_id: norm.public_id || existingId };
+  }
+
+  try {
+    const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
+    if (!res.ok) {
+      await res.text();
+      return { ...norm, public_id: norm.public_id || existingId };
+    }
+
+    const fetched = await res.json();
+    const normalizedFetched = normalizeProfile(fetched);
+    return {
+      ...normalizedFetched,
+      public_id: normalizedFetched.public_id || extractLinkedinProfileId(normalizedFetched) || existingId,
+    };
+  } catch {
+    return { ...norm, public_id: norm.public_id || existingId };
+  }
+}
+
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 async function ensureList(supabase: any, userId: string, listName: string, agentId: string): Promise<string | null> {
