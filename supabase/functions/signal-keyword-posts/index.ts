@@ -393,22 +393,35 @@ Deno.serve(async (req) => {
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
-    // Phase 1: Search posts for ALL keywords (use 40% of time)
+    // Phase 1: Search posts for ALL keywords with pagination (up to 3 pages each)
+    const SEARCH_PHASE_MS = MAX_RUNTIME_MS * 0.4; // 40% of time for searching
+    const searchDeadline = START + SEARCH_PHASE_MS;
     for (const keyword of keywords) {
-      if (!hasTime()) break;
+      if (!hasTime() || Date.now() > searchDeadline) break;
       await delay(150);
-      try {
-        const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-          method: 'POST',
-          headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week' }),
-        });
-        if (!res.ok) { await res.text(); continue; }
-        const data = await res.json();
-        const items = (data.items || data.results || []).slice(0, 50);
-        console.log(`keyword_posts "${keyword}": ${items.length} posts`);
-        for (const item of items) allPosts.push({ ...item, _keyword: keyword });
-      } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
+      let cursor: string | null = null;
+      let pageCount = 0;
+      const MAX_PAGES = 3;
+      while (pageCount < MAX_PAGES && hasTime() && Date.now() < searchDeadline) {
+        try {
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week' };
+          if (cursor) searchBody.cursor = cursor;
+          const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+            method: 'POST',
+            headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify(searchBody),
+          });
+          if (!res.ok) { await res.text(); break; }
+          const data = await res.json();
+          const items = data.items || data.results || [];
+          console.log(`keyword_posts "${keyword}" page ${pageCount + 1}: ${items.length} posts`);
+          for (const item of items) allPosts.push({ ...item, _keyword: keyword });
+          pageCount++;
+          cursor = data.cursor || data.next_cursor || null;
+          if (!cursor || items.length === 0) break;
+          await delay(200);
+        } catch (e) { console.error(`Keyword search "${keyword}" page ${pageCount + 1}:`, e); break; }
+      }
     }
 
     // Deduplicate & sort by engagement
@@ -449,13 +462,35 @@ Deno.serve(async (req) => {
       if (fullAuthor) {
         const match = scoreProfileAgainstICP(fullAuthor, icp);
         const hl = fullAuthor.headline || fullAuthor.title || '';
-        const classification = classifyContact(match, icp, hl);
-        if (matchesTitleOrIndustry(match, icp, hl) && !isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
-          if (classification === 'cold' && !canInsertCold()) continue;
-          const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-          const signal = `Posted about "${post._keyword}"`;
-          const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
-          if (ok) { inserted++; if (classification === 'cold') coldCount++; else hotWarmCount++; }
+        const lpid = fullAuthor.public_id || fullAuthor.public_identifier || fullAuthor.provider_id || fullAuthor.id;
+        let classification = classifyContact(match, icp, hl);
+        
+        if (isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
+          continue;
+        }
+        if (classification === null) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: ICP mismatch (title="${hl?.slice(0,50)}")`);
+          continue;
+        }
+        // AI-boost: if AI validated buyer intent but ICP says cold, upgrade to warm
+        if (classification === 'cold') {
+          classification = 'warm';
+          console.log(`[PIPELINE] 🔼 ${lpid}: AI-boosted cold→warm (buyer intent validated)`);
+        }
+        if (classification === 'cold' && !canInsertCold()) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: cold-capped`);
+          continue;
+        }
+        const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+        const signal = `Posted about "${post._keyword}"`;
+        const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
+        if (ok) {
+          inserted++;
+          if (classification === 'cold') coldCount++; else hotWarmCount++;
+          console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification}`);
+        } else {
+          console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
         }
       }
 

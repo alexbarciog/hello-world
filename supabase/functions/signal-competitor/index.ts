@@ -171,30 +171,48 @@ Deno.serve(async (req) => {
 
         if (isCompanyUrl && companyName) {
           console.log(`competitor_followers: searching "${companyName}"`);
-          try {
-            const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-              method: 'POST',
-              headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName }),
-            });
-            if (!res.ok) { await res.text(); continue; }
-            const data = await res.json();
-            const people = (data.items || data.results || []).slice(0, 30);
-            console.log(`"${companyName}": ${people.length} people`);
-            for (const person of people) {
-              if (!hasTime()) break;
-              const profile = { ...person, title: person.headline||person.title||null, linkedin_url: person.profile_url||person.public_profile_url||null, public_id: person.public_identifier||person.id||null, company: person.current_positions?.[0]?.company||person.company||null };
-              const match = scoreProfileAgainstICP(profile, icp);
-              const hl = profile.headline || profile.title || '';
-              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-              if (!matchesIndustry(profile, match, icp)) continue;
-              if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-              const cls = classifyContact(match, icp, hl);
-              if (cls === 'cold' && !canInsertCold()) continue;
-              const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
-              if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
-            }
-          } catch (e) { console.error(`Competitor followers ${url}:`, e); }
+          let cursor: string | null = null;
+          let pageCount = 0;
+          const MAX_PAGES = 3;
+          const allPeople: any[] = [];
+          while (pageCount < MAX_PAGES && hasTime()) {
+            try {
+              const searchBody: any = { api: 'classic', category: 'people', keywords: companyName };
+              if (cursor) searchBody.cursor = cursor;
+              const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+                method: 'POST',
+                headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(searchBody),
+              });
+              if (!res.ok) {
+                const errText = await res.text();
+                console.error(`competitor_followers search "${companyName}" page ${pageCount + 1}: HTTP ${res.status} - ${errText.slice(0, 200)}`);
+                break;
+              }
+              const data = await res.json();
+              const items = data.items || data.results || [];
+              console.log(`"${companyName}" page ${pageCount + 1}: ${items.length} people`);
+              allPeople.push(...items);
+              pageCount++;
+              cursor = data.cursor || data.next_cursor || null;
+              if (!cursor || items.length === 0) break;
+              await delay(200);
+            } catch (e) { console.error(`Competitor followers ${url} page ${pageCount + 1}:`, e); break; }
+          }
+          console.log(`"${companyName}": ${allPeople.length} total people across ${pageCount} pages`);
+          for (const person of allPeople) {
+            if (!hasTime()) break;
+            const profile = { ...person, title: person.headline||person.title||null, linkedin_url: person.profile_url||person.public_profile_url||null, public_id: person.public_identifier||person.id||null, company: person.current_positions?.[0]?.company||person.company||null };
+            const match = scoreProfileAgainstICP(profile, icp);
+            const hl = profile.headline || profile.title || '';
+            if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: ICP mismatch`); continue; }
+            if (!matchesIndustry(profile, match, icp)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: industry mismatch`); continue; }
+            if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: excluded`); continue; }
+            const cls = classifyContact(match, icp, hl);
+            if (cls === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: cold-capped`); continue; }
+            const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
+            if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${profile.public_id}: inserted as ${cls}`); }
+          }
         }
 
         // For person URLs: scan their post engagers
@@ -255,24 +273,32 @@ Deno.serve(async (req) => {
           const postsEndpoint = isCompany
             ? `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=10`
             : `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
+          console.log(`[DEBUG] competitor_engagers fetching posts: ${postsEndpoint}`);
           const postsRes = await unipileGet(postsEndpoint, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (!postsRes.ok) { await postsRes.text(); continue; }
+          if (!postsRes.ok) {
+            const errText = await postsRes.text();
+            console.error(`competitor_engagers "${companyName||companyId}": HTTP ${postsRes.status} - ${errText.slice(0, 300)}`);
+            continue;
+          }
           const postsData = await postsRes.json();
           const posts = (postsData.items || postsData.posts || []).slice(0, 10);
-          console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts`);
+          console.log(`competitor_engagers "${companyName||companyId}": ${posts.length} posts found`);
+          if (posts.length === 0) {
+            console.warn(`competitor_engagers "${companyName||companyId}": API returned 0 posts. Response keys: ${Object.keys(postsData).join(',')}`);
+          }
 
           for (const post of posts) {
             if (!hasTime()) break;
             await delay(150);
-            const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-            // Fetch both reactions AND comments
+            const postId = post.social_id||post.id||post.provider_id; if (!postId) { console.log(`[PIPELINE] ⏭ post skipped: no ID`); continue; }
             const [rr, cr2] = await Promise.all([
               unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
               unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
             ]);
             const engagers: any[] = [];
-            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
-            if (cr2.ok) { const cd = await cr2.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr2.text(); }
+            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { const t = await rr.text(); console.error(`reactions ${postId}: HTTP ${rr.status} - ${t.slice(0,200)}`); }
+            if (cr2.ok) { const cd = await cr2.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { const t = await cr2.text(); console.error(`comments ${postId}: HTTP ${cr2.status} - ${t.slice(0,200)}`); }
+            console.log(`competitor_engagers post ${postId}: ${engagers.length} engagers`);
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
 
             for (const engager of engagers) {
@@ -282,14 +308,14 @@ Deno.serve(async (req) => {
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
-              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-              if (!matchesIndustry(fp, match, icp)) continue;
-              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
+              if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: ICP mismatch`); continue; }
+              if (!matchesIndustry(fp, match, icp)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: industry mismatch`); continue; }
+              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded`); continue; }
               const cls3 = classifyContact(match, icp, hl);
-              if (cls3 === 'cold' && !canInsertCold()) continue;
+              if (cls3 === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: cold-capped`); continue; }
               const signal = `Engaged with ${companyName||companyId}'s post`;
               const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, postUrl, icp);
-              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; }
+              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${fp.public_id||'?'}: inserted as ${cls3}`); }
             }
           }
         } catch(e) { console.error(`Competitor engagers ${url}:`, e); }
