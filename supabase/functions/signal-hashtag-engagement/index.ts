@@ -67,6 +67,9 @@ function relaxedIndustryMatch(profile: any, industries: string[]): boolean {
 function matchesIndustry(profile: any, match: MatchResult, icp: ICPFilters): boolean {
   if (icp.industries.length === 0) return true;
   if (match.industryMatch) return true;
+  // If profile has NO industry data at all, don't penalize
+  const industryData = (profile.industry || '').trim();
+  if (!industryData) return true;
   return relaxedIndustryMatch(profile, icp.industries);
 }
 
