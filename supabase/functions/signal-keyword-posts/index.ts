@@ -246,14 +246,30 @@ The user's company sells: "${businessContext}"
 
 For each LinkedIn post, classify the post author into one of three categories:
 
-1. BUYER_INTENT (relevant=true) — The post author has a genuine problem, need, challenge, or interest that the user's company could solve. They are a POTENTIAL CUSTOMER.
+1. BUYER_INTENT (relevant=true) — The author is expressing a GENUINE NEED as a potential buyer. Examples:
+   - Asking for recommendations: "Can anyone recommend a good CRM?"
+   - Describing a problem/challenge: "We're struggling with lead generation"
+   - Asking for help or advice: "How do you handle X at your company?"
+   - Comparing tools/solutions: "We're evaluating alternatives to X"
+   - Expressing frustration with current solutions: "Our current tool doesn't do Y"
+   - Looking for alternatives: "Is there something better than X?"
 
-2. SELF_PROMOTER (relevant=false) — The post author is promoting their OWN similar service/product. They are a competitor — NOT a buyer.
+2. SELF_PROMOTER (relevant=false) — The author is NOT a buyer. They are promoting their own service, sharing expertise as an authority, or trying to attract clients. Examples:
+   - Sharing tips/advice as a thought leader: "Here are 5 ways to improve your sales"
+   - Promoting their own product/service: "Excited to launch our new feature"
+   - Publishing case studies of their own work: "Here's how we helped Client X"
+   - Posting thought leadership to build their brand
+   - Offering free resources to generate leads for themselves
+   - Announcing features, partnerships, or milestones of their company
 
-3. IRRELEVANT (relevant=false) — Personal content, motivational fluff, lifestyle, or unrelated content.
+3. IRRELEVANT (relevant=false) — Personal content, motivational quotes, lifestyle, celebrations, job announcements, or completely unrelated topics.
 
-CRITICAL: Only relevant=true if the author would realistically BUY "${businessContext}". Self-promoters and irrelevant = relevant=false.`
-    : `You are a LinkedIn post relevance classifier for B2B sales prospecting. Only mark posts with genuine business buying intent as relevant.`;
+CRITICAL RULES:
+- Only mark relevant=true for genuine BUYER_INTENT — people who would realistically PAY for "${businessContext}".
+- If the author is GIVING advice about the topic rather than SEEKING help, they are a SELF_PROMOTER (relevant=false).
+- If the author works in the same space and is sharing expertise, they are a SELF_PROMOTER, not a buyer.
+- When in doubt, mark as relevant=false. Quality over quantity.`
+    : `You are a LinkedIn post relevance classifier for B2B sales prospecting. Only mark posts where the author is expressing a genuine need, asking for help, recommendations, or alternatives as relevant. Posts where the author is sharing expertise, promoting their services, or giving advice should be marked irrelevant.`;
 
   for (let i = 0; i < postsWithText.length; i += 10) {
     const batch = postsWithText.slice(i, i + 10);
@@ -389,12 +405,12 @@ Deno.serve(async (req) => {
       // Step 1: Fetch up to 30 posts for this keyword (paginate up to 3 pages)
       const keywordPosts: any[] = [];
       let cursor: string | null = null;
-      const MAX_PAGES = 3;
-      const TARGET_POSTS = 30;
+      const MAX_PAGES = 1;
+      const TARGET_POSTS = 50;
 
       try {
         for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
-          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 30 };
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
           if (cursor) searchBody.cursor = cursor;
           const res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
           if (!res.ok) { const t = await res.text(); console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res.status} - ${t.slice(0, 200)}`); break; }

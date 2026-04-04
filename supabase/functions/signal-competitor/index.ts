@@ -281,7 +281,7 @@ Deno.serve(async (req) => {
               for (const engager of engagers) {
                 if (!hasTime()) break;
                 const ep = engager.author||engager;
-                const fp = await fetchProfileIfNeeded(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+                const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 if (!fp) continue;
                 const match = scoreProfileAgainstICP(fp, icp);
                 const hl = fp.headline||fp.title||'';
@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
             console.log(`[DEBUG] competitor_engagers fetching posts from company page: ${companyId}`);
             let cursor: string | null = null;
             for (let page = 0; page < 3 && hasTime(); page++) {
-              let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
+              let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`;
               if (cursor) fetchUrl += `&cursor=${encodeURIComponent(cursor)}`;
               const postsRes = await unipileGet(fetchUrl, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!postsRes.ok) {
@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
             for (const engager of engagers) {
               if (!hasTime()) break;
               const ep = engager.author||engager;
-              const fp = await fetchProfileIfNeeded(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+              const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!fp) continue;
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (competitor employee)`); continue; }
               const match = scoreProfileAgainstICP(fp, icp);
