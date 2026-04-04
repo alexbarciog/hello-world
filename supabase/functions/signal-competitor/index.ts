@@ -10,8 +10,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
-// Timer moved inside request handler (fixes warm isolate bug)
-
 const BUYING_INTENT_KEYWORDS = ['ceo','cto','coo','cfo','cmo','cro','cpo','cio','founder','co-founder','cofounder','owner','partner','president','principal','vp','vice president','director','head of','chief','general manager','managing director','svp','evp','avp'];
 const REJECT_TITLES = ['software developer','software engineer','frontend developer','backend developer','full stack developer','fullstack developer','web developer','mobile developer','junior developer','senior developer','staff engineer','intern','data analyst','qa engineer','test engineer','devops engineer','graphic designer','ui designer','ux designer','student','fresher','trainee','apprentice','accountant','bookkeeper','cashier','clerk','receptionist','administrative assistant','office assistant'];
 
@@ -59,40 +57,24 @@ function scoreProfileAgainstICP(p: any, icp: ICPFilters): MatchResult {
 
 function hasBuyingIntent(hl: string): boolean { return BUYING_INTENT_KEYWORDS.some(kw=>(hl||'').toLowerCase().includes(kw)); }
 function isClearlyIrrelevant(hl: string): boolean { return REJECT_TITLES.some(kw=>(hl||'').toLowerCase().includes(kw)); }
-function classifyContact(m: MatchResult,icp: ICPFilters,hl?:string): 'hot'|'warm'|'cold'|null {
+
+// Signal-aware classification: competitor leads get "warm" minimum
+function classifyContactWithSignalBoost(m: MatchResult, icp: ICPFilters, hl?: string, signalBoost?: 'warm' | null): 'hot'|'warm'|'cold'|null {
   const h=hl||''; if(isClearlyIrrelevant(h)) return null;
   if(icp.jobTitles.length>0&&m.titleMatch) return 'hot';
   if(hasBuyingIntent(h)&&(icp.industries.length===0||m.industryMatch)) return 'hot';
   if(hasBuyingIntent(h)) return 'warm';
   if(icp.industries.length>0&&m.industryMatch&&h.length>5) return 'warm';
+  // Signal boost: competitor followers/engagers get minimum warm
+  if (signalBoost === 'warm' && h.length > 5) return 'warm';
   if(h.length>5) return 'cold';
   if(icp.jobTitles.length===0&&icp.industries.length===0) return 'cold';
   return null;
 }
-function matchesTitleOrIndustry(m: MatchResult,icp: ICPFilters,hl?:string): boolean { return classifyContact(m,icp,hl)!==null; }
-
-function relaxedIndustryMatch(p: any, industries: string[]): boolean {
-  if(!industries.length) return true;
-  const text=[p.industry||'',p.headline||p.title||'',p.company||p.current_company?.name||''].join(' ').toLowerCase();
-  return industries.some(ind=>{const words=normalizeText(ind).split(/\s+/).filter(w=>w.length>3);return words.some(w=>text.includes(w));});
-}
-function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean {
-  if(!icp.industries.length) return true;
-  if(m.industryMatch) return true;
-  // If profile has NO industry data at all, don't penalize — skip industry check
-  const industryData = (p.industry||'').trim();
-  if (!industryData) {
-    console.log(`[PIPELINE] ℹ️ ${p.public_id||p.public_identifier||'?'}: no industry data, skipping industry check`);
-    return true;
-  }
-  return relaxedIndustryMatch(p,icp.industries);
-}
 
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   const companyFields = collectCompanyFields(p);
-  // Also check profile URL for company vanity name
   const profileUrl = (p.linkedin_url || p.public_url || p.profile_url || '').toLowerCase();
-  
   if(cc.length>0){
     const allText = companyFields.map(f => f.toLowerCase()).join(' ') + ' ' + profileUrl;
     for(const c of cc){if(allText.includes(c)) return true;}
@@ -107,16 +89,16 @@ function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
 }
-async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,dsn: string): Promise<any|null>{
-  const norm = normalizeProfile({ ...item });
-  if(norm.first_name&&(norm.headline||norm.title)) return norm;
-  const id=item.public_identifier||item.provider_id||item.public_id||item.author_id;
-  const numericOrUrn=item.id;
-  const fetchId=id||(numericOrUrn&&!String(numericOrUrn).startsWith('urn:')&&!String(numericOrUrn).startsWith('ACo')?numericOrUrn:null);
-  if(!fetchId) return norm.first_name?norm:null;
-  try{const res=await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`,apiKey,dsn);if(!res.ok){await res.text();return norm.first_name?norm:null;}return normalizeProfile(await res.json());}catch{return norm.first_name?norm:null;}
+function extractLinkedinProfileId(item: any): string | null {
+  const directId = item?.public_id || item?.public_identifier || item?.provider_id || item?.author_id || item?.entity_urn || item?.tracking_id;
+  if (directId) return String(directId);
+  const linkedinUrl = item?.linkedin_url || item?.public_url || item?.profile_url || item?.url;
+  if (linkedinUrl && typeof linkedinUrl === 'string') {
+    const match = linkedinUrl.match(/linkedin\.com\/in\/([^/?#]+)/i);
+    if (match?.[1]) return match[1];
+  }
+  return null;
 }
-// Always fetch full profile from API (never short-circuit on sparse search data)
 async function fetchFullProfile(item: any,accountId: string,apiKey: string,dsn: string): Promise<any|null>{
   const id=item.public_identifier||item.provider_id||item.public_id||item.author_id;
   const numericOrUrn=item.id;
@@ -143,14 +125,15 @@ async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<s
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }
 
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters): Promise<boolean>{
-  const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return false;
+// Updated insertContact with signal boost support
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, signalBoost?: 'warm' | null): Promise<'inserted' | 'duplicate' | 'rejected'>{
+  const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
-  if(ex?.length>0) return false;
+  if(ex?.length>0) return 'duplicate';
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
   const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
-  const rt=classifyContact(m,icp||ei,hl)||'cold';
+  const rt=classifyContactWithSignalBoost(m,icp||ei,hl,signalBoost)||'cold';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({
     user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
@@ -161,9 +144,9 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier:rt,
   }).select('id').single();
-  if(error){console.error(`Insert contact error: ${error.message}`);return false;}
+  if(error){console.error(`Insert contact error: ${error.message}`);return 'rejected';}
   if(ins?.id&&ln){const lid=await ensureList(sb,uid,ln,aid);if(lid) await sb.from('contact_lists').insert({contact_id:ins.id,list_id:lid});}
-  return true;
+  return 'inserted';
 }
 
 // ─── Main Handler: handles both competitor_followers and competitor_engagers ──
@@ -185,7 +168,6 @@ Deno.serve(async (req) => {
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-    // Own-company exclusion
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
 
     const icp: ICPFilters = {
@@ -195,12 +177,67 @@ Deno.serve(async (req) => {
     };
 
     let inserted = 0;
-    let hotWarmCount = 0; let coldCount = 0;
-    const COLD_CAP = 0.2;
-    function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
+    // NO cold cap — AI filter + exclusion logic are sufficient gatekeepers
+
+    // Helper: process a single person (used by both followers and engagers)
+    async function processPerson(person: any, signal: string, signalUrl: string): Promise<'inserted' | 'duplicate' | 'rejected' | 'excluded' | 'irrelevant' | 'skipped'> {
+      // Extract ID for early dedup
+      const rawId = extractLinkedinProfileId(person);
+
+      // EARLY DEDUP: check contacts table BEFORE expensive profile fetch
+      if (rawId) {
+        const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
+        if (existing && existing.length > 0) return 'duplicate';
+      }
+
+      // Now fetch full profile
+      const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+      if (!fp || !fp.first_name) return 'skipped';
+
+      // Reject LinkedIn Member (private profiles)
+      if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') return 'skipped';
+
+      const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
+
+      // Re-check dedup with resolved ID (may differ from raw ID)
+      if (lpid && lpid !== rawId) {
+        const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
+        if (existing && existing.length > 0) return 'duplicate';
+      }
+
+      // Own-company exclusion
+      if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) {
+        console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company)`);
+        return 'excluded';
+      }
+
+      // Competitor employee exclusion
+      if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) {
+        console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
+        return 'excluded';
+      }
+
+      // Check clearly irrelevant titles (interns, students, devs)
+      const hl = fp.headline || fp.title || '';
+      if (isClearlyIrrelevant(hl)) {
+        console.log(`[PIPELINE] ⏭ ${lpid}: irrelevant title "${hl.slice(0,50)}"`);
+        return 'irrelevant';
+      }
+
+      // NO industry gate — competitor followers/engagers are inherently relevant
+      // NO cold cap — signal boost ensures they're warm minimum
+
+      const match = scoreProfileAgainstICP(fp, icp);
+      // Signal boost: competitor signals get minimum "warm"
+      const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, signalUrl, icp, 'warm');
+      if (result === 'inserted') {
+        const tier = classifyContactWithSignalBoost(match, icp, hl, 'warm') || 'warm';
+        console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier}`);
+      }
+      return result;
+    }
 
     if (signal_type === 'competitor_followers') {
-      // Search people associated with each competitor
       for (const url of urls) {
         if (!hasTime()) break;
         await delay(150);
@@ -236,46 +273,19 @@ Deno.serve(async (req) => {
               await delay(200);
             }
             console.log(`"${companyName}": ${allPeople.length} total people found`);
+
+            let stats = { inserted: 0, duplicate: 0, excluded: 0, irrelevant: 0, skipped: 0, rejected: 0 };
             for (const person of allPeople) {
               if (!hasTime()) break;
               await delay(200);
-              // ALWAYS fetch full profile to get current_positions, industry, experience
-              const fullProfile = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!fullProfile || !fullProfile.first_name) {
-                console.log(`[PIPELINE] ⏭ ${person.public_identifier||person.id||'?'}: could not fetch profile`);
-                continue;
-              }
-              // Reject LinkedIn Member (private profiles)
-              if ((fullProfile.first_name||'').toLowerCase() === 'linkedin' && (fullProfile.last_name||'').toLowerCase() === 'member') {
-                console.log(`[PIPELINE] ⏭ LinkedIn Member: private profile`);
-                continue;
-              }
-              const lpid = fullProfile.public_id||fullProfile.public_identifier||fullProfile.provider_id||fullProfile.id;
-              // Check own-company exclusion FIRST
-              if (ownCompanyLower && ownCompanyLower.length > 1) {
-                if (worksAtCompany(fullProfile, ownCompanyLower)) {
-                  console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
-                  continue;
-                }
-              }
-              // Check exclusion FIRST (catches competitor employees with full position data)
-              if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) {
-                console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
-                continue;
-              }
-              const match = scoreProfileAgainstICP(fullProfile, icp);
-              const hl = fullProfile.headline || fullProfile.title || '';
-              if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${lpid}: ICP mismatch (title="${hl?.slice(0,50)}")`); continue; }
-              if (!matchesIndustry(fullProfile, match, icp)) { console.log(`[PIPELINE] ⏭ ${lpid}: industry mismatch`); continue; }
-              const cls = classifyContact(match, icp, hl);
-              if (cls === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${lpid}: cold-capped`); continue; }
-              const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
-              if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${cls}`); }
+              const result = await processPerson(person, `Follows ${companyName}`, url);
+              stats[result]++;
+              if (result === 'inserted') inserted++;
             }
+            console.log(`competitor_followers "${companyName}": ${JSON.stringify(stats)}`);
           } catch (e) { console.error(`Competitor followers ${url}:`, e); }
         }
 
-        // For person URLs: scan their post engagers
         if (isPersonUrl) {
           const profileId = extractLinkedInId(url);
           if (!profileId) continue;
@@ -291,7 +301,6 @@ Deno.serve(async (req) => {
               if (!hasTime()) break;
               await delay(150);
               const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
-              // Fetch both reactions AND comments to capture all engagers
               const [rr, cr] = await Promise.all([
                 unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
                 unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
@@ -303,25 +312,14 @@ Deno.serve(async (req) => {
               for (const engager of engagers) {
                 if (!hasTime()) break;
                 const ep = engager.author||engager;
-                const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-                if (!fp) continue;
-                const match = scoreProfileAgainstICP(fp, icp);
-                const hl = fp.headline||fp.title||'';
-                if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-                if (!matchesIndustry(fp, match, icp)) continue;
-                if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; }
-                if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
-                const cls2 = classifyContact(match, icp, hl);
-                if (cls2 === 'cold' && !canInsertCold()) continue;
-                const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${profileName}'s content`, postUrl, icp);
-                if (ok) { inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
+                const result = await processPerson(ep, `Engaged with ${profileName}'s content`, postUrl);
+                if (result === 'inserted') inserted++;
               }
             }
           } catch(e) { console.error(`Profile engagers ${url}:`, e); }
         }
       }
     } else if (signal_type === 'competitor_engagers') {
-      // Search-based approach: find posts mentioning the competitor, then scan engagers
       for (const url of urls) {
         if (!hasTime()) break;
         await delay(150);
@@ -335,7 +333,6 @@ Deno.serve(async (req) => {
           let posts: any[] = [];
 
           if (isPersonUrl) {
-            // For person URLs, fetch their posts directly
             console.log(`[DEBUG] competitor_engagers fetching posts for person: ${companyId}`);
             const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`, UNIPILE_API_KEY, UNIPILE_DSN);
             if (postsRes.ok) {
@@ -348,7 +345,6 @@ Deno.serve(async (req) => {
           }
 
           if (isCompany) {
-            // Fetch posts directly from the company's LinkedIn page
             console.log(`[DEBUG] competitor_engagers fetching posts from company page: ${companyId}`);
             let cursor: string | null = null;
             for (let page = 0; page < 3 && hasTime(); page++) {
@@ -370,7 +366,6 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Take top 20 posts by engagement
           posts = posts
             .sort((a: any, b: any) => ((b.likes_count||0)+(b.comments_count||0)) - ((a.likes_count||0)+(a.comments_count||0)))
             .slice(0, 20);
@@ -393,19 +388,9 @@ Deno.serve(async (req) => {
             for (const engager of engagers) {
               if (!hasTime()) break;
               const ep = engager.author||engager;
-              const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              if (!fp) continue;
-              if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; }
-              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (competitor employee)`); continue; }
-              const match = scoreProfileAgainstICP(fp, icp);
-              const hl = fp.headline||fp.title||'';
-              if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: ICP mismatch`); continue; }
-              if (!matchesIndustry(fp, match, icp)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: industry mismatch`); continue; }
-              const cls3 = classifyContact(match, icp, hl);
-              if (cls3 === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: cold-capped`); continue; }
               const signal = `Engaged with ${companyName||companyId}'s post`;
-              const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, postUrl, icp);
-              if (ok) { inserted++; if (cls3 === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${fp.public_id||'?'}: inserted as ${cls3}`); }
+              const result = await processPerson(ep, signal, postUrl);
+              if (result === 'inserted') inserted++;
             }
           }
         } catch(e) { console.error(`Competitor engagers ${url}:`, e); }

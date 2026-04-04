@@ -44,14 +44,6 @@ const REJECT_TITLES = [
   'receptionist', 'administrative assistant', 'office assistant',
 ];
 
-const GENERIC_BLACKLIST = new Set([
-  'sales', 'marketing', 'leadership', 'motivation', 'success', 'growth',
-  'entrepreneur', 'business', 'innovation', 'networking', 'mindset',
-  'hustle', 'grateful', 'blessed', 'family', 'weekend', 'vacation',
-  'holiday', 'inspiration', 'grind', 'lifestyle', 'love', 'happiness',
-  'thankful', 'morning', 'coffee', 'fitness', 'health', 'travel',
-]);
-
 function normalizeText(value: string): string {
   return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 }
@@ -117,13 +109,16 @@ function worksAtCompany(profile: any, companyName: string): boolean {
   return collectCompanyFields(profile).some(field => matchesCompanyName(field, companyName));
 }
 
-function classifyContact(match: MatchResult, icp: ICPFilters, headline?: string): 'hot' | 'warm' | 'cold' | null {
+// Signal-aware classification: keyword leads get "warm" minimum
+function classifyContactWithSignalBoost(match: MatchResult, icp: ICPFilters, headline?: string, signalBoost?: 'warm' | null): 'hot' | 'warm' | 'cold' | null {
   const hl = headline || '';
   if (isClearlyIrrelevant(hl)) return null;
   if (icp.jobTitles.length > 0 && match.titleMatch) return 'hot';
   if (hasBuyingIntent(hl) && (icp.industries.length === 0 || match.industryMatch)) return 'hot';
   if (hasBuyingIntent(hl)) return 'warm';
   if (icp.industries.length > 0 && match.industryMatch && hl.length > 5) return 'warm';
+  // Signal boost: if this lead came from a signal (keyword/competitor), minimum warm
+  if (signalBoost === 'warm' && hl.length > 5) return 'warm';
   if (hl.length > 5) return 'cold';
   if (icp.jobTitles.length === 0 && icp.industries.length === 0) return 'cold';
   return null;
@@ -163,23 +158,6 @@ function extractLinkedinProfileId(item: any): string | null {
     if (match?.[1]) return match[1];
   }
   return null;
-}
-
-async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
-  const norm = normalizeProfile({ ...item });
-  const existingId = extractLinkedinProfileId(norm);
-  if (norm.first_name && (norm.headline || norm.title) && existingId) return { ...norm, public_id: norm.public_id || existingId };
-  const fetchId = existingId || (item.id && !String(item.id).startsWith('urn:') && !String(item.id).startsWith('ACo') ? item.id : null);
-  if (!fetchId) return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null;
-  try {
-    const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { await res.text(); return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null; }
-    const fetched = await res.json();
-    const normalizedFetched = normalizeProfile(fetched);
-    return { ...normalizedFetched, public_id: normalizedFetched.public_id || extractLinkedinProfileId(normalizedFetched) || existingId };
-  } catch {
-    return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null;
-  }
 }
 
 async function fetchFullProfile(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
@@ -224,19 +202,21 @@ async function ensureList(supabase: any, userId: string, listName: string, agent
   return created?.id || null;
 }
 
+// Updated insertContact with signal boost support
 async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
-): Promise<boolean> {
+  signalBoost?: 'warm' | null,
+): Promise<'inserted' | 'duplicate' | 'rejected'> {
   const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
-  if (!linkedinProfileId) return false;
+  if (!linkedinProfileId) return 'rejected';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
-  if (existing && existing.length > 0) return false;
+  if (existing && existing.length > 0) return 'duplicate';
   const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
   const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [], competitorCompanies: [] };
-  const relevanceTier = classifyContact(match, icp || emptyIcp, hl) || 'cold';
+  const relevanceTier = classifyContactWithSignalBoost(match, icp || emptyIcp, hl, signalBoost) || 'cold';
   const signalAHit = true;
   const signalBHit = match.score >= 60;
   const signalCHit = match.score >= 80;
@@ -253,12 +233,12 @@ async function insertContact(
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
     relevance_tier: relevanceTier,
   }).select('id').single();
-  if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
+  if (error) { console.error(`Insert contact error: ${error.message}`); return 'rejected'; }
   if (inserted?.id && listName) {
     const listId = await ensureList(supabase, userId, listName, agentId);
     if (listId) await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId });
   }
-  return true;
+  return 'inserted';
 }
 
 // ─── AI Post Relevance Filter ─────────────────────────────────────────────────
@@ -283,37 +263,39 @@ async function filterIrrelevantPosts(posts: { id: string; text: string; keyword:
     return validIds;
   }
 
+  // RELAXED AI PROMPT: focus on business needs/challenges, not just direct buyers of user's product
   const systemPrompt = businessContext
     ? `You are a LinkedIn buying-intent classifier for B2B sales prospecting.
 
-The user's company sells: "${businessContext}"
+The user's company context: "${businessContext}"
 
 For each LinkedIn post, classify the post author into one of three categories:
 
-1. BUYER_INTENT (relevant=true) — The author is expressing a GENUINE NEED as a potential buyer. Examples:
-   - Asking for recommendations: "Can anyone recommend a good CRM?"
-   - Describing a problem/challenge: "We're struggling with lead generation"
-   - Asking for help or advice: "How do you handle X at your company?"
+1. BUYER_INTENT (relevant=true) — The author is expressing a GENUINE BUSINESS NEED or challenge. Examples:
+   - Asking for recommendations: "Can anyone recommend a good tool for X?"
+   - Describing a problem/challenge: "We're struggling with X", "Having trouble with Y"
+   - Asking for help or advice: "How do you handle X?", "What do you use for Y?"
    - Comparing tools/solutions: "We're evaluating alternatives to X"
-   - Expressing frustration with current solutions: "Our current tool doesn't do Y"
-   - Looking for alternatives: "Is there something better than X?"
+   - Expressing frustration: "Our current approach doesn't work for Y"
+   - Looking for vendors/partners: "Looking for a company that does X"
+   - Seeking solutions: "Need help with X", "Anyone know a good Y?"
+   - Describing pain points: "The biggest challenge in our industry is X"
 
-2. SELF_PROMOTER (relevant=false) — The author is NOT a buyer. They are promoting their own service, sharing expertise as an authority, or trying to attract clients. Examples:
-   - Sharing tips/advice as a thought leader: "Here are 5 ways to improve your sales"
-   - Promoting their own product/service: "Excited to launch our new feature"
-   - Publishing case studies of their own work: "Here's how we helped Client X"
-   - Posting thought leadership to build their brand
+2. SELF_PROMOTER (relevant=false) — The author is promoting their own service/expertise. Examples:
+   - Sharing tips as a thought leader: "Here are 5 ways to improve X"
+   - Promoting their own product: "Excited to launch our new feature"
+   - Publishing case studies of their work: "Here's how we helped Client X"
    - Offering free resources to generate leads for themselves
-   - Announcing features, partnerships, or milestones of their company
+   - Announcing their company's features, partnerships, or milestones
 
-3. IRRELEVANT (relevant=false) — Personal content, motivational quotes, lifestyle, celebrations, job announcements, or completely unrelated topics.
+3. IRRELEVANT (relevant=false) — Personal content, motivational quotes, lifestyle, job announcements, or unrelated topics.
 
 CRITICAL RULES:
-- Only mark relevant=true for genuine BUYER_INTENT — people who would realistically PAY for "${businessContext}".
-- If the author is GIVING advice about the topic rather than SEEKING help, they are a SELF_PROMOTER (relevant=false).
-- If the author works in the same space and is sharing expertise, they are a SELF_PROMOTER, not a buyer.
-- When in doubt, mark as relevant=false. Quality over quantity.`
-    : `You are a LinkedIn post relevance classifier for B2B sales prospecting. Only mark posts where the author is expressing a genuine need, asking for help, recommendations, or alternatives as relevant. Posts where the author is sharing expertise, promoting their services, or giving advice should be marked irrelevant.`;
+- Mark relevant=true for anyone expressing a genuine business need, challenge, or seeking recommendations — even if their need is not directly related to "${businessContext}".
+- If someone says "need help", "looking for", "can anyone recommend", "struggling with", "what do you use for" — that IS buyer intent regardless of the author's industry or role.
+- Only mark as SELF_PROMOTER if the author is clearly GIVING advice/promoting, not SEEKING help.
+- When in doubt between BUYER_INTENT and SELF_PROMOTER, lean toward BUYER_INTENT.`
+    : `You are a LinkedIn post relevance classifier for B2B sales prospecting. Mark posts where the author is expressing a genuine business need, asking for help, recommendations, or alternatives as relevant. Posts where the author is sharing expertise, promoting their services, or giving advice should be marked irrelevant.`;
 
   for (let i = 0; i < postsWithText.length; i += 10) {
     const batch = postsWithText.slice(i, i + 10);
@@ -327,7 +309,7 @@ CRITICAL RULES:
           model: 'google/gemini-3-flash-preview',
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: `Classify each post. Only BUYER_INTENT = relevant=true.\n\n${postList}` },
+            { role: 'user', content: `Classify each post. BUYER_INTENT = relevant=true. Remember: "need help", "looking for", "recommend" = BUYER_INTENT.\n\n${postList}` },
           ],
           tools: [{
             type: 'function',
@@ -400,14 +382,10 @@ CRITICAL RULES:
 }
 
 // ─── Main Handler: Per-Keyword Collect → AI Filter → Insert ──────────────────
-// Processes one keyword at a time. After each keyword's AI filter,
-// approved authors are inserted immediately. This ensures leads are saved
-// incrementally even if the function times out mid-way.
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
-  // Per-request timer (fixes warm isolate bug)
   const START = Date.now();
   const MAX_RUNTIME_MS = 105_000;
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -424,7 +402,6 @@ Deno.serve(async (req) => {
     const searchUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`;
     const searchHeaders = { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' };
 
-    // Build own-company exclusion keywords
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
 
     const icp: ICPFilters = {
@@ -440,16 +417,13 @@ Deno.serve(async (req) => {
     console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}], ownCompany="${ownCompanyLower}"`);
 
     let inserted = 0;
-    let hotWarmCount = 0;
-    let coldCount = 0;
     const globalSeenPostIds = new Set<string>();
     const globalSeenAuthorIds = new Set<string>();
 
-    // ── Process one keyword at a time: fetch → AI filter → insert ──
     for (const keyword of keywords) {
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" — ${inserted} leads saved so far`); break; }
 
-      // Step 1: Fetch posts with cursor pagination (up to 5 pages × 50 = 250 posts max)
+      // Step 1: Fetch posts with cursor pagination
       const keywordPosts: any[] = [];
       let cursor: string | null = null;
       const MAX_PAGES = 5;
@@ -471,7 +445,7 @@ Deno.serve(async (req) => {
         }
       } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
 
-      // Step 2: Dedupe against global seen posts
+      // Step 2: Dedupe posts
       const uniquePosts = keywordPosts.filter(p => {
         const id = p.social_id || p.id || p.provider_id;
         if (!id || globalSeenPostIds.has(id)) return false;
@@ -484,7 +458,7 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Step 3: AI filter this keyword's posts
+      // Step 3: AI filter
       const postsForFilter = uniquePosts.map(p => ({
         id: p.social_id || p.id || p.provider_id || String(Math.random()),
         text: extractPostText(p),
@@ -496,9 +470,9 @@ Deno.serve(async (req) => {
         return relevantIds.has(id);
       });
 
-      // Step 4: Process and insert approved authors IMMEDIATELY
+      // Step 4: EARLY DEDUP — check contacts table BEFORE fetching full profiles
       let keywordInserted = 0;
-      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, noId: 0, excluded: 0, ownCompany: 0, insertFail: 0 };
+      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, earlyDedup: 0, noId: 0, excluded: 0, ownCompany: 0, duplicate: 0, rejected: 0 };
 
       for (const post of approvedPosts) {
         if (!hasTime()) break;
@@ -509,16 +483,32 @@ Deno.serve(async (req) => {
         let author = normalizeProfile({ ...authorData });
         let authorId = extractLinkedinProfileId(author);
 
-        // Dedupe authors across keywords
+        // Dedupe authors across keywords (in-memory)
         if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; continue; }
         if (authorId) globalSeenAuthorIds.add(authorId);
 
-        // ALWAYS fetch full profile for AI-approved authors to get accurate company/positions data
+        // EARLY DEDUP: Check contacts table BEFORE expensive profile fetch
+        if (authorId) {
+          const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', authorId).limit(1);
+          if (existing && existing.length > 0) {
+            keywordSkipped.earlyDedup++;
+            continue;
+          }
+        }
+
+        // Now fetch full profile (only for genuinely new leads)
         const fullAuthor = await fetchFullProfile(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         if (fullAuthor) {
           author = fullAuthor;
-          authorId = extractLinkedinProfileId(author) || authorId;
-          if (authorId) globalSeenAuthorIds.add(authorId);
+          const newId = extractLinkedinProfileId(author);
+          if (newId && newId !== authorId) {
+            // Re-check dedup with the resolved ID
+            if (globalSeenAuthorIds.has(newId)) { keywordSkipped.dupAuthor++; continue; }
+            globalSeenAuthorIds.add(newId);
+            const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', newId).limit(1);
+            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; continue; }
+          }
+          authorId = newId || authorId;
         }
 
         const lpid = authorId || 'unknown';
@@ -541,22 +531,26 @@ Deno.serve(async (req) => {
         const match = scoreProfileAgainstICP(author, icp);
         const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
         const signal = `Posted about "${keyword}"`;
-        const ok = await insertContact(supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp);
+        // Signal boost: keyword leads that passed AI filter get minimum "warm"
+        const result = await insertContact(supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp, 'warm');
 
-        if (ok) {
+        if (result === 'inserted') {
           keywordInserted++;
           inserted++;
-          hotWarmCount++;
-          console.log(`[PIPELINE] ✅ ${lpid}: inserted as warm (kw="${keyword}")`);
+          const hl = author.headline || author.title || '';
+          const tier = classifyContactWithSignalBoost(match, icp, hl, 'warm') || 'warm';
+          console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier} (kw="${keyword}")`);
+        } else if (result === 'duplicate') {
+          keywordSkipped.duplicate++;
         } else {
-          keywordSkipped.insertFail++;
+          keywordSkipped.rejected++;
         }
       }
 
-      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${approvedPosts.length} AI-approved → ${keywordInserted} inserted (skip: author=${keywordSkipped.noAuthor} dup=${keywordSkipped.dupAuthor} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} fail=${keywordSkipped.insertFail})`);
+      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${approvedPosts.length} AI-approved → ${keywordInserted} inserted (skip: author=${keywordSkipped.noAuthor} dup=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} dup2=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
     }
 
-    console.log(`signal-keyword-posts: ${inserted} leads total (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
+    console.log(`signal-keyword-posts: ${inserted} leads total in ${Math.round((Date.now() - START) / 1000)}s`);
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-keyword-posts error:', error);
