@@ -146,19 +146,36 @@ function normalizeProfile(item: any): any {
   return item;
 }
 
+function extractLinkedinProfileId(item: any): string | null {
+  const directId = item?.public_id || item?.public_identifier || item?.provider_id || item?.author_id || item?.entity_urn || item?.tracking_id;
+  if (directId) return String(directId);
+
+  const linkedinUrl = item?.linkedin_url || item?.public_url || item?.profile_url || item?.url;
+  if (linkedinUrl && typeof linkedinUrl === 'string') {
+    const match = linkedinUrl.match(/linkedin\.com\/in\/([^/?#]+)/i);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
 async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
   const norm = normalizeProfile({ ...item });
-  if (norm.first_name && (norm.headline || norm.title)) return norm;
-  const id = item.public_identifier || item.provider_id || item.public_id || item.author_id;
+  const existingId = extractLinkedinProfileId(norm);
+  if (norm.first_name && (norm.headline || norm.title) && existingId) return { ...norm, public_id: norm.public_id || existingId };
+  const id = existingId;
   const numericOrUrn = item.id;
   const fetchId = id || (numericOrUrn && !String(numericOrUrn).startsWith('urn:') && !String(numericOrUrn).startsWith('ACo') ? numericOrUrn : null);
-  if (!fetchId) return norm.first_name ? norm : null;
+  if (!fetchId) return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null;
   try {
     const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { await res.text(); return norm.first_name ? norm : null; }
+    if (!res.ok) { await res.text(); return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null; }
     const fetched = await res.json();
-    return normalizeProfile(fetched);
-  } catch { return norm.first_name ? norm : null; }
+    const normalizedFetched = normalizeProfile(fetched);
+    return { ...normalizedFetched, public_id: normalizedFetched.public_id || extractLinkedinProfileId(normalizedFetched) || existingId };
+  } catch {
+    return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null;
+  }
 }
 
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
