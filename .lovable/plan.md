@@ -1,84 +1,89 @@
 
 
-# Fix: Low Lead Volume Despite Many Keywords & Competitors
+# Fix: Competitor Employee Leak + Low Lead Volume
 
-## Root Cause Analysis (from the actual logs)
+## Problem Analysis
 
-The logs reveal **three concrete bottlenecks** that compound to produce only 2 leads:
+### Issue 1: Seraphina Delacour (Trigify employee passed as lead)
+The `competitor_followers` search returns people matching keyword "Trigify" — but the search API returns **minimal profile data** (name, headline, public_id). Seraphina's search result likely didn't include `company`, `current_positions`, or `experience` fields. The `isExcluded` function checks those fields, but they're empty in search results. The fix: **fetch the full profile** before running the exclusion check so we have company/position data.
 
-### Bottleneck 1: Unipile API returns only ~10 results per search (no pagination)
-The code requests up to 50 posts per keyword, but the Unipile API returns results in pages of ~10. The code never fetches page 2+.
-- 10 keywords x 10 posts each = only ~80 posts total (with duplicates)
-- Competitor people search also returns only 10 people per query
-- We are leaving 75%+ of available results on the table
+### Issue 2: Only 16 leads per run (down from 200)
+From the logs:
+- **keyword_posts**: 15 leads in 65s — decent but limited by Unipile returning only ~10 posts per keyword despite `limit=30`
+- **competitor_followers**: Only 10 people returned per competitor (API ignores `limit=30`), then most rejected for "industry mismatch" — because search results don't include industry data, so `matchesIndustry()` fails
+- **competitor_engagers**: 0 leads — HTTP 422 errors for company post fetching (the `/api/v1/users/{company}/posts?is_company=true` endpoint doesn't work)
 
-### Bottleneck 2: 31 AI-approved posts → only 1 lead inserted
-This is the critical one. The AI filter correctly approved 31 posts as `buyer_intent`, but only 1 author passed the ICP classifier. The problem: the `classifyContact` function classifies most authors as `cold` (they don't have C-level titles), and the **cold cap (20%)** blocks all cold leads after the first one. So even though the AI says "this person is a buyer," the title-based ICP filter overrides it.
+Root causes:
+1. **No pagination** — Unipile search returns ~10 results per query, we never fetch page 2+
+2. **Industry mismatch on empty data** — Search results lack industry fields, so `matchesIndustry()` rejects everyone who doesn't have industry in their headline
+3. **competitor_engagers is broken** — The API endpoint for company posts returns 422, so this entire signal produces 0 leads
+4. **Full profile not fetched** for competitor followers — we check ICP on search-result data that's too sparse
 
-This is NOT about relaxing filters — it's about **trusting the AI classification we already paid for**. When the AI says a post shows buyer intent, the author should get credit for that.
+## Solution
 
-### Bottleneck 3: Competitor engagers completed in 0 seconds
-The `competitor_engagers` function finished in 0s with 0 leads — it likely failed to fetch posts from the competitor company pages (API returned no results or an error that was silently swallowed).
+### 1. Fetch full profiles for competitor followers (fixes both employee leak AND industry mismatch)
+**File**: `signal-competitor/index.ts`
 
-## Solution (3 changes, no quality reduction)
+For each person found in competitor_followers search, call `fetchProfileIfNeeded()` to get the full LinkedIn profile before running ICP scoring and exclusion checks. This gives us:
+- `current_positions` / `experience` → catches employees like Seraphina
+- `industry` field → fixes the mass "industry mismatch" rejections
+- Better `headline` data for ICP scoring
 
-### 1. Add Unipile search pagination
-**Files**: `signal-keyword-posts/index.ts`, `signal-competitor/index.ts`
+### 2. Add cursor-based pagination to all search queries
+**Files**: `signal-keyword-posts/index.ts`, `signal-competitor/index.ts`, `signal-hashtag-engagement/index.ts`
 
-Fetch multiple pages from the Unipile search API using the `cursor` parameter returned in each response:
-- Keywords: fetch up to 3 pages per keyword (30 posts instead of 10)
-- Competitor people search: fetch up to 3 pages (30 people instead of 10)
-- Respect the `hasTime()` budget
+The Unipile API returns a `cursor` in the response. Fetch up to 3 pages per query to get ~30 results instead of ~10:
+```text
+Page 1: POST /search → { items: [...10], cursor: "abc" }
+Page 2: POST /search + cursor → { items: [...10], cursor: "def" }  
+Page 3: POST /search + cursor → { items: [...10] }
+```
 
-### 2. AI-boosted lead classification for keyword posts
-**File**: `signal-keyword-posts/index.ts`
+### 3. Fix competitor_engagers: use search-based approach instead of broken posts endpoint
+**File**: `signal-competitor/index.ts`
 
-When a post has been AI-classified as `buyer_intent`, boost the author's classification to at least `warm` instead of `cold`. The logic:
-- AI says buyer intent + ICP title match → `hot` (unchanged)
-- AI says buyer intent + no title match → `warm` (currently `cold`, gets capped)
-- This removes the cold cap bottleneck without lowering quality — the AI already validated intent
+The `/api/v1/users/{company}/posts?is_company=true` endpoint returns 422. Replace with a search-based approach:
+- Search for posts mentioning the competitor company name (same way keyword_posts works)
+- Then fetch reactions/comments on those posts to find engagers
+- This actually works with Unipile's API
 
-### 3. Add rejection logging + fix competitor engagers silent failure
-**Files**: `signal-keyword-posts/index.ts`, `signal-competitor/index.ts`
+### 4. Skip industry check when profile has no industry data
+**File**: `signal-competitor/index.ts`
 
-- Log why each author was rejected (duplicate, ICP mismatch, excluded, cold-capped) so we can debug future runs
-- In competitor engagers, add proper error logging when the posts API returns empty or fails
-- Log the actual Unipile response status when competitor post fetching fails
+When a profile has no `industry` field at all (empty string), don't reject it for "industry mismatch." The industry check should only reject when we have data that contradicts the ICP, not when data is missing. Add a check: if `industry` is empty AND headline doesn't contradict industry, let it through.
 
 ## Expected Impact
-- **Keyword posts**: 10 posts/keyword → 30 posts/keyword = 3x more raw posts → more AI-approved buyer-intent authors → no cold cap bottleneck = ~10-20 leads instead of 1
-- **Competitor followers**: 10 people → 30 people per competitor = ~3-5 leads instead of 1
-- **Competitor engagers**: will actually work instead of silently returning 0
-- Total: ~15-30 leads per run instead of 2, with the same quality bar
+- **Competitor followers**: 10 people → ~30 per competitor + full profile fetch = fewer false rejections + proper employee exclusion = ~5-10 leads per competitor instead of 0-1
+- **Competitor engagers**: from 0 (broken) to ~5-10 leads
+- **Keyword posts**: ~10 per keyword → ~30 per keyword = ~25-40 leads
+- **Total**: ~40-60 leads per run with better quality (employees properly excluded)
 
 ## Technical Details
 
-**Pagination pattern** (Unipile uses cursor-based pagination):
+**Full profile fetch for competitor followers:**
 ```text
-Page 1: POST /search → { items: [...], cursor: "abc123" }
-Page 2: POST /search + cursor=abc123 → { items: [...], cursor: "def456" }
-Page 3: POST /search + cursor=def456 → { items: [...] }
+// Before: use sparse search result data directly
+// After: call fetchProfileIfNeeded() on each person, 
+//        THEN run isExcluded() and ICP scoring
 ```
 
-**AI-boost logic** (keyword-posts only):
+**Competitor engagers fix:**
 ```text
-// After AI filter approves a post as buyer_intent:
-// When inserting the author, if classifyContact returns 'cold',
-// upgrade to 'warm' since AI validated the buying intent.
-// This is NOT relaxing the filter — it's using the AI signal.
+// Before: /api/v1/users/{company}/posts?is_company=true → 422
+// After: Search posts with company name as keyword, 
+//        then fetch reactions/comments on those posts
 ```
 
-**Rejection logging format**:
+**Industry check fix:**
 ```text
-[PIPELINE] ⏭ urn:xyz: duplicate (already in contacts)
-[PIPELINE] ⏭ urn:xyz: excluded (competitor employee)
-[PIPELINE] ⏭ urn:xyz: ICP mismatch (no title/industry match)
-[PIPELINE] ✅ urn:xyz: inserted as warm
+// Before: matchesIndustry() rejects when no industry data
+// After: if profile.industry is empty, skip industry check 
+//        (don't penalize missing data)
 ```
 
 ## Summary
 - 3 edge functions modified
 - No database changes
 - No UI changes
-- No filters relaxed — only more volume in + smarter use of AI signal we already have
+- Fixes employee leak, broken competitor_engagers, and low volume from sparse data rejections
 
