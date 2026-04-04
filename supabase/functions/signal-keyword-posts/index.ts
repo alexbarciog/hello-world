@@ -197,7 +197,7 @@ async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
 ): Promise<boolean> {
-  const linkedinProfileId = profile.public_id || profile.public_identifier || profile.provider_id || profile.id;
+  const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
   if (!linkedinProfileId) return false;
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
   if (existing && existing.length > 0) return false;
