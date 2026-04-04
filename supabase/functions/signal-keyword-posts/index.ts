@@ -393,34 +393,26 @@ Deno.serve(async (req) => {
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
-    // Phase 1: Search posts per keyword with cursor pagination (up to 3 pages)
+    // Phase 1: COLLECT — 1 single query per keyword, limit=30, NO pagination
     for (const keyword of keywords) {
       if (!hasTime()) break;
       await delay(150);
-      let cursor: string | null = null;
-      const MAX_PAGES = 3;
       try {
-        for (let page = 0; page < MAX_PAGES && hasTime(); page++) {
-          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 30 };
-          if (cursor) searchBody.cursor = cursor;
-          const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-            method: 'POST',
-            headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-            body: JSON.stringify(searchBody),
-          });
-          if (!res.ok) { const t = await res.text(); console.error(`keyword_posts "${keyword}" page ${page+1}: HTTP ${res.status} - ${t.slice(0,200)}`); break; }
-          const data = await res.json();
-          const items = data.items || data.results || [];
-          console.log(`keyword_posts "${keyword}" page ${page+1}: ${items.length} posts`);
-          for (const item of items) allPosts.push({ ...item, _keyword: keyword });
-          cursor = data.cursor || data.next_cursor || null;
-          if (!cursor || items.length === 0) break;
-          await delay(200);
-        }
+        const searchBody = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 30 };
+        const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+          method: 'POST',
+          headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify(searchBody),
+        });
+        if (!res.ok) { const t = await res.text(); console.error(`keyword_posts "${keyword}": HTTP ${res.status} - ${t.slice(0,200)}`); continue; }
+        const data = await res.json();
+        const items = data.items || data.results || [];
+        console.log(`keyword_posts "${keyword}": ${items.length} posts`);
+        for (const item of items) allPosts.push({ ...item, _keyword: keyword });
       } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
     }
 
-    // Deduplicate & sort by engagement
+    // Phase 2: DEDUPE — no engagement cap, send ALL unique posts to AI
     const seenPostIds = new Set<string>();
     const uniquePosts = allPosts.filter(p => {
       const id = p.social_id || p.id || p.provider_id;
@@ -428,9 +420,7 @@ Deno.serve(async (req) => {
       seenPostIds.add(id);
       return true;
     });
-    const topPosts = uniquePosts
-      .sort((a, b) => ((b.likes_count || 0) + (b.comments_count || 0)) - ((a.likes_count || 0) + (a.comments_count || 0)))
-      .slice(0, 80);
+    const topPosts = uniquePosts; // No cap — let AI decide what's relevant
 
     // ─── AI Relevance Filter: buyer-intent classification ───────────
     const postsForFilter = topPosts.map(p => ({
@@ -445,54 +435,37 @@ Deno.serve(async (req) => {
     });
     console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
 
-    // Phase 2: Process each post — fetch author profile + scan engagers
+    // Phase 4: PROCESS — AI-approved authors, no profile fetch needed
     for (const post of filteredPosts) {
       if (!hasTime()) break;
-      await delay(100);
 
       const authorData = post.author || post.actor || post.author_detail || null;
       if (!authorData) continue;
 
-      const authorId = authorData.provider_id || authorData.id || authorData.public_id || authorData.public_identifier || authorData.author_id;
-      const fullAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-      if (fullAuthor) {
-        const match = scoreProfileAgainstICP(fullAuthor, icp);
-        const hl = fullAuthor.headline || fullAuthor.title || '';
-        const lpid = fullAuthor.public_id || fullAuthor.public_identifier || fullAuthor.provider_id || fullAuthor.id;
-        let classification = classifyContact(match, icp, hl);
-        
-        if (isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
-          console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
-          continue;
-        }
-        if (classification === null) {
-          console.log(`[PIPELINE] ⏭ ${lpid}: ICP mismatch (title="${hl?.slice(0,50)}")`);
-          continue;
-        }
-        // AI-boost: if AI validated buyer intent but ICP says cold, upgrade to warm
-        if (classification === 'cold') {
-          classification = 'warm';
-          console.log(`[PIPELINE] 🔼 ${lpid}: AI-boosted cold→warm (buyer intent validated)`);
-        }
-        if (classification === 'cold' && !canInsertCold()) {
-          console.log(`[PIPELINE] ⏭ ${lpid}: cold-capped`);
-          continue;
-        }
-        const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-        const signal = `Posted about "${post._keyword}"`;
-        const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
-        if (ok) {
-          inserted++;
-          if (classification === 'cold') coldCount++; else hotWarmCount++;
-          console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification}`);
-        } else {
-          console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
-        }
+      // Use author data directly from search result — no fetchProfileIfNeeded
+      const author = normalizeProfile({ ...authorData });
+      const lpid = author.public_id || author.public_identifier || author.provider_id || author.id;
+
+      // Still check exclusions on available data
+      if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
+        console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
+        continue;
       }
 
-      // NOTE: We intentionally do NOT scan engagers here.
-      // "keyword_posts" captures only post AUTHORS who wrote about these keywords.
-      // Engager scanning is handled by separate signals (post_engagers, hashtag_engagement).
+      // AI already validated buyer intent — assign warm directly, skip ICP title gate
+      const match = scoreProfileAgainstICP(author, icp);
+      const classification = 'warm';
+
+      const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+      const signal = `Posted about "${post._keyword}"`;
+      const ok = await insertContact(supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp);
+      if (ok) {
+        inserted++;
+        hotWarmCount++;
+        console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification} (AI-validated)`);
+      } else {
+        console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
+      }
     }
 
     console.log(`signal-keyword-posts: ${inserted} leads (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
