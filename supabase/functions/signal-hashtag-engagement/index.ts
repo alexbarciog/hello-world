@@ -305,22 +305,31 @@ Deno.serve(async (req) => {
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
-    // Phase 1: Search 30 posts per hashtag individually
+    // Phase 1: Search posts per hashtag with cursor pagination (up to 3 pages)
     for (let tag of hashtags) {
       if (!hasTime()) break;
       if (!tag.startsWith('#')) tag = `#${tag}`;
       await delay(150);
+      let cursor: string | null = null;
+      const MAX_PAGES = 3;
       try {
-        const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-          method: 'POST',
-          headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: tag, date_posted: 'past_week', limit: 30 }),
-        });
-        if (!res.ok) { const t = await res.text(); console.error(`hashtag "${tag}": HTTP ${res.status} - ${t.slice(0,200)}`); continue; }
-        const data = await res.json();
-        const items = (data.items || data.results || []).slice(0, 30);
-        console.log(`hashtag "${tag}": ${items.length} posts`);
-        for (const item of items) allPosts.push({ ...item, _hashtag: tag });
+        for (let page = 0; page < MAX_PAGES && hasTime(); page++) {
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: tag, date_posted: 'past_week', limit: 30 };
+          if (cursor) searchBody.cursor = cursor;
+          const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+            method: 'POST',
+            headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify(searchBody),
+          });
+          if (!res.ok) { const t = await res.text(); console.error(`hashtag "${tag}" page ${page+1}: HTTP ${res.status} - ${t.slice(0,200)}`); break; }
+          const data = await res.json();
+          const items = data.items || data.results || [];
+          console.log(`hashtag "${tag}" page ${page+1}: ${items.length} posts`);
+          for (const item of items) allPosts.push({ ...item, _hashtag: tag });
+          cursor = data.cursor || data.next_cursor || null;
+          if (!cursor || items.length === 0) break;
+          await delay(200);
+        }
       } catch (e) { console.error(`Hashtag "${tag}":`, e); }
     }
 
