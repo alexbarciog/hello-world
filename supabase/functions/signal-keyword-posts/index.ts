@@ -479,6 +479,17 @@ Deno.serve(async (req) => {
 
         const lpid = authorId || 'unknown';
 
+        // Own-company exclusion
+        if (ownCompanyLower && ownCompanyLower.length > 1) {
+          const authorCompany = (author.company || author.current_company?.name || '').toLowerCase();
+          const authorHeadline = (author.headline || author.title || '').toLowerCase();
+          if (authorCompany.includes(ownCompanyLower) || ownCompanyLower.includes(authorCompany) || authorHeadline.includes(ownCompanyLower)) {
+            console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
+            keywordSkipped.ownCompany++;
+            continue;
+          }
+        }
+
         if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor)`);
           keywordSkipped.excluded++;
