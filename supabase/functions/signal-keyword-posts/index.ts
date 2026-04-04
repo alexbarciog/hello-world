@@ -405,12 +405,12 @@ Deno.serve(async (req) => {
       // Step 1: Fetch up to 30 posts for this keyword (paginate up to 3 pages)
       const keywordPosts: any[] = [];
       let cursor: string | null = null;
-      const MAX_PAGES = 3;
-      const TARGET_POSTS = 30;
+      const MAX_PAGES = 1;
+      const TARGET_POSTS = 50;
 
       try {
         for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
-          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 30 };
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
           if (cursor) searchBody.cursor = cursor;
           const res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
           if (!res.ok) { const t = await res.text(); console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res.status} - ${t.slice(0, 200)}`); break; }

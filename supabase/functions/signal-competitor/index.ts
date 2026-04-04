@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
             for (const engager of engagers) {
               if (!hasTime()) break;
               const ep = engager.author||engager;
-              const fp = await fetchProfileIfNeeded(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+              const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!fp) continue;
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (competitor employee)`); continue; }
               const match = scoreProfileAgainstICP(fp, icp);
