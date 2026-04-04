@@ -161,6 +161,10 @@ Deno.serve(async (req) => {
 
   try {
     const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies } = await req.json();
+    const START = Date.now();
+    const MAX_RUNTIME_MS = 105_000;
+    const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
+
     if (!agent_id || !account_id || !urls?.length || !signal_type) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }

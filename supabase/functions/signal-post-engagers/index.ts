@@ -129,6 +129,10 @@ Deno.serve(async (req) => {
       run_own_posts = true,
       run_profile_engagers = true,
     } = await req.json();
+    const START = Date.now();
+    const MAX_RUNTIME_MS = 105_000;
+    const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
+
     if (!agent_id || !account_id) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
