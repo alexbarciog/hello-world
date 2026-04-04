@@ -52,7 +52,17 @@ function relaxedIndustryMatch(p: any, industries: string[]): boolean {
   const text=[p.industry||'',p.headline||p.title||'',p.company||p.current_company?.name||''].join(' ').toLowerCase();
   return industries.some(ind=>{const words=normalizeText(ind).split(/\s+/).filter(w=>w.length>3);return words.some(w=>text.includes(w));});
 }
-function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean { if(!icp.industries.length) return true; if(m.industryMatch) return true; return relaxedIndustryMatch(p,icp.industries); }
+function matchesIndustry(p: any,m: MatchResult,icp: ICPFilters): boolean {
+  if(!icp.industries.length) return true;
+  if(m.industryMatch) return true;
+  // If profile has NO industry data at all, don't penalize — skip industry check
+  const industryData = (p.industry||'').trim();
+  if (!industryData) {
+    console.log(`[PIPELINE] ℹ️ ${p.public_id||p.public_identifier||'?'}: no industry data, skipping industry check`);
+    return true;
+  }
+  return relaxedIndustryMatch(p,icp.industries);
+}
 
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   // Gather ALL company-related fields for thorough employee detection
