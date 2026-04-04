@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
-    // Phase 1: Search posts for all hashtags
+    // Phase 1: Search 30 posts per hashtag individually
     for (let tag of hashtags) {
       if (!hasTime()) break;
       if (!tag.startsWith('#')) tag = `#${tag}`;
@@ -314,11 +314,11 @@ Deno.serve(async (req) => {
         const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
           method: 'POST',
           headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: tag, date_posted: 'past_week' }),
+          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: tag, date_posted: 'past_week', limit: 30 }),
         });
-        if (!res.ok) { await res.text(); continue; }
+        if (!res.ok) { const t = await res.text(); console.error(`hashtag "${tag}": HTTP ${res.status} - ${t.slice(0,200)}`); continue; }
         const data = await res.json();
-        const items = (data.items || data.results || []).slice(0, 40);
+        const items = (data.items || data.results || []).slice(0, 30);
         console.log(`hashtag "${tag}": ${items.length} posts`);
         for (const item of items) allPosts.push({ ...item, _hashtag: tag });
       } catch (e) { console.error(`Hashtag "${tag}":`, e); }
