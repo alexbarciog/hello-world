@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
             console.log(`[DEBUG] competitor_engagers fetching posts from company page: ${companyId}`);
             let cursor: string | null = null;
             for (let page = 0; page < 3 && hasTime(); page++) {
-              let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=10`;
+              let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`;
               if (cursor) fetchUrl += `&cursor=${encodeURIComponent(cursor)}`;
               const postsRes = await unipileGet(fetchUrl, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!postsRes.ok) {
