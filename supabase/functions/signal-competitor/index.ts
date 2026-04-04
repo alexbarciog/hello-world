@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies } = await req.json();
+    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies, user_company_name } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -172,6 +172,9 @@ Deno.serve(async (req) => {
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+    // Own-company exclusion
+    const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
@@ -236,6 +239,15 @@ Deno.serve(async (req) => {
                 continue;
               }
               const lpid = fullProfile.public_id||fullProfile.public_identifier||fullProfile.provider_id||fullProfile.id;
+              // Check own-company exclusion FIRST
+              if (ownCompanyLower && ownCompanyLower.length > 1) {
+                const fpCompany = (fullProfile.company || fullProfile.current_company?.name || '').toLowerCase();
+                const fpHeadline = (fullProfile.headline || fullProfile.title || '').toLowerCase();
+                if (fpCompany.includes(ownCompanyLower) || ownCompanyLower.includes(fpCompany) || fpHeadline.includes(ownCompanyLower)) {
+                  console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
+                  continue;
+                }
+              }
               // Check exclusion FIRST (catches competitor employees with full position data)
               if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) {
                 console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
@@ -287,6 +299,7 @@ Deno.serve(async (req) => {
                 const hl = fp.headline||fp.title||'';
                 if (!matchesTitleOrIndustry(match, icp, hl)) continue;
                 if (!matchesIndustry(fp, match, icp)) continue;
+                if (ownCompanyLower && ownCompanyLower.length > 1) { const ec = (fp.company||fp.current_company?.name||'').toLowerCase(); const eh = (fp.headline||fp.title||'').toLowerCase(); if (ec.includes(ownCompanyLower)||ownCompanyLower.includes(ec)||eh.includes(ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; } }
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
                 const cls2 = classifyContact(match, icp, hl);
                 if (cls2 === 'cold' && !canInsertCold()) continue;
@@ -372,6 +385,7 @@ Deno.serve(async (req) => {
               const ep = engager.author||engager;
               const fp = await fetchFullProfile(ep, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
               if (!fp) continue;
+              if (ownCompanyLower && ownCompanyLower.length > 1) { const ec = (fp.company||fp.current_company?.name||'').toLowerCase(); const eh = (fp.headline||fp.title||'').toLowerCase(); if (ec.includes(ownCompanyLower)||ownCompanyLower.includes(ec)||eh.includes(ownCompanyLower)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (own company)`); continue; } }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${fp.public_id||'?'}: excluded (competitor employee)`); continue; }
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';

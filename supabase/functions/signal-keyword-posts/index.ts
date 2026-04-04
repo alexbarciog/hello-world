@@ -369,7 +369,7 @@ Deno.serve(async (req) => {
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
 
   try {
-    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context } = await req.json();
+    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name } = await req.json();
     if (!agent_id || !account_id || !keywords?.length) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
@@ -379,6 +379,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const searchUrl = `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`;
     const searchHeaders = { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' };
+
+    // Build own-company exclusion keywords
+    const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles || [],
@@ -390,7 +393,7 @@ Deno.serve(async (req) => {
       competitorCompanies: competitor_companies || [],
     };
 
-    console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}]`);
+    console.log(`[DEBUG] ICP: jobTitles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], excludeKw=[${icp.excludeKeywords.join(',')}], ownCompany="${ownCompanyLower}"`);
 
     let inserted = 0;
     let hotWarmCount = 0;
@@ -402,10 +405,10 @@ Deno.serve(async (req) => {
     for (const keyword of keywords) {
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" — ${inserted} leads saved so far`); break; }
 
-      // Step 1: Fetch up to 30 posts for this keyword (paginate up to 3 pages)
+      // Step 1: Fetch posts with cursor pagination (up to 5 pages × 50 = 250 posts max)
       const keywordPosts: any[] = [];
       let cursor: string | null = null;
-      const MAX_PAGES = 1;
+      const MAX_PAGES = 5;
       const TARGET_POSTS = 50;
 
       try {
@@ -417,6 +420,7 @@ Deno.serve(async (req) => {
           const data = await res.json();
           const items = data.items || data.results || [];
           keywordPosts.push(...items);
+          console.log(`[KEYWORD] "${keyword}" page ${page + 1}: ${items.length} posts (total: ${keywordPosts.length})`);
           cursor = data.cursor || data.next_cursor || null;
           if (!cursor || items.length === 0) break;
           if (page < MAX_PAGES - 1) await delay(200);
@@ -450,7 +454,7 @@ Deno.serve(async (req) => {
 
       // Step 4: Process and insert approved authors IMMEDIATELY
       let keywordInserted = 0;
-      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, noId: 0, excluded: 0, insertFail: 0 };
+      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, noId: 0, excluded: 0, ownCompany: 0, insertFail: 0 };
 
       for (const post of approvedPosts) {
         if (!hasTime()) break;
@@ -465,17 +469,26 @@ Deno.serve(async (req) => {
         if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; continue; }
         if (authorId) globalSeenAuthorIds.add(authorId);
 
-        // Fetch full profile if missing ID or basic info
-        if (!authorId || !author.first_name) {
-          const fetchedAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (fetchedAuthor) {
-            author = fetchedAuthor;
-            authorId = extractLinkedinProfileId(author);
-            if (authorId) globalSeenAuthorIds.add(authorId);
-          }
+        // ALWAYS fetch full profile for AI-approved authors to get accurate company/positions data
+        const fullAuthor = await fetchFullProfile(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+        if (fullAuthor) {
+          author = fullAuthor;
+          authorId = extractLinkedinProfileId(author) || authorId;
+          if (authorId) globalSeenAuthorIds.add(authorId);
         }
 
         const lpid = authorId || 'unknown';
+
+        // Own-company exclusion
+        if (ownCompanyLower && ownCompanyLower.length > 1) {
+          const authorCompany = (author.company || author.current_company?.name || '').toLowerCase();
+          const authorHeadline = (author.headline || author.title || '').toLowerCase();
+          if (authorCompany.includes(ownCompanyLower) || ownCompanyLower.includes(authorCompany) || authorHeadline.includes(ownCompanyLower)) {
+            console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
+            keywordSkipped.ownCompany++;
+            continue;
+          }
+        }
 
         if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor)`);
@@ -498,7 +511,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${approvedPosts.length} AI-approved → ${keywordInserted} inserted (skip: author=${keywordSkipped.noAuthor} dup=${keywordSkipped.dupAuthor} excl=${keywordSkipped.excluded} fail=${keywordSkipped.insertFail})`);
+      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${approvedPosts.length} AI-approved → ${keywordInserted} inserted (skip: author=${keywordSkipped.noAuthor} dup=${keywordSkipped.dupAuthor} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} fail=${keywordSkipped.insertFail})`);
     }
 
     console.log(`signal-keyword-posts: ${inserted} leads total (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
