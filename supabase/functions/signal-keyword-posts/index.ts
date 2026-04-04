@@ -435,54 +435,37 @@ Deno.serve(async (req) => {
     });
     console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
 
-    // Phase 2: Process each post — fetch author profile + scan engagers
+    // Phase 4: PROCESS — AI-approved authors, no profile fetch needed
     for (const post of filteredPosts) {
       if (!hasTime()) break;
-      await delay(100);
 
       const authorData = post.author || post.actor || post.author_detail || null;
       if (!authorData) continue;
 
-      const authorId = authorData.provider_id || authorData.id || authorData.public_id || authorData.public_identifier || authorData.author_id;
-      const fullAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-      if (fullAuthor) {
-        const match = scoreProfileAgainstICP(fullAuthor, icp);
-        const hl = fullAuthor.headline || fullAuthor.title || '';
-        const lpid = fullAuthor.public_id || fullAuthor.public_identifier || fullAuthor.provider_id || fullAuthor.id;
-        let classification = classifyContact(match, icp, hl);
-        
-        if (isExcluded(fullAuthor, icp.excludeKeywords, icp.competitorCompanies)) {
-          console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
-          continue;
-        }
-        if (classification === null) {
-          console.log(`[PIPELINE] ⏭ ${lpid}: ICP mismatch (title="${hl?.slice(0,50)}")`);
-          continue;
-        }
-        // AI-boost: if AI validated buyer intent but ICP says cold, upgrade to warm
-        if (classification === 'cold') {
-          classification = 'warm';
-          console.log(`[PIPELINE] 🔼 ${lpid}: AI-boosted cold→warm (buyer intent validated)`);
-        }
-        if (classification === 'cold' && !canInsertCold()) {
-          console.log(`[PIPELINE] ⏭ ${lpid}: cold-capped`);
-          continue;
-        }
-        const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
-        const signal = `Posted about "${post._keyword}"`;
-        const ok = await insertContact(supabase, fullAuthor, user_id, agent_id, list_name, match, signal, postUrl, icp);
-        if (ok) {
-          inserted++;
-          if (classification === 'cold') coldCount++; else hotWarmCount++;
-          console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification}`);
-        } else {
-          console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
-        }
+      // Use author data directly from search result — no fetchProfileIfNeeded
+      const author = normalizeProfile({ ...authorData });
+      const lpid = author.public_id || author.public_identifier || author.provider_id || author.id;
+
+      // Still check exclusions on available data
+      if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
+        console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
+        continue;
       }
 
-      // NOTE: We intentionally do NOT scan engagers here.
-      // "keyword_posts" captures only post AUTHORS who wrote about these keywords.
-      // Engager scanning is handled by separate signals (post_engagers, hashtag_engagement).
+      // AI already validated buyer intent — assign warm directly, skip ICP title gate
+      const match = scoreProfileAgainstICP(author, icp);
+      const classification = 'warm';
+
+      const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+      const signal = `Posted about "${post._keyword}"`;
+      const ok = await insertContact(supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp);
+      if (ok) {
+        inserted++;
+        hotWarmCount++;
+        console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification} (AI-validated)`);
+      } else {
+        console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
+      }
     }
 
     console.log(`signal-keyword-posts: ${inserted} leads (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
