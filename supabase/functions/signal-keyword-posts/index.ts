@@ -393,22 +393,33 @@ Deno.serve(async (req) => {
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
-    // Phase 1: COLLECT — 1 single query per keyword, limit=30, NO pagination
+    // Phase 1: COLLECT — 1 keyword at a time, paginate up to 3 pages to get ~30 posts
     for (const keyword of keywords) {
       if (!hasTime()) break;
       await delay(150);
+      let cursor: string | null = null;
+      let keywordPostCount = 0;
+      const MAX_PAGES = 3;
+      const TARGET_POSTS = 30;
       try {
-        const searchBody = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 30 };
-        const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-          method: 'POST',
-          headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify(searchBody),
-        });
-        if (!res.ok) { const t = await res.text(); console.error(`keyword_posts "${keyword}": HTTP ${res.status} - ${t.slice(0,200)}`); continue; }
-        const data = await res.json();
-        const items = data.items || data.results || [];
-        console.log(`keyword_posts "${keyword}": ${items.length} posts`);
-        for (const item of items) allPosts.push({ ...item, _keyword: keyword });
+        for (let page = 0; page < MAX_PAGES && hasTime() && keywordPostCount < TARGET_POSTS; page++) {
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 30 };
+          if (cursor) searchBody.cursor = cursor;
+          const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+            method: 'POST',
+            headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify(searchBody),
+          });
+          if (!res.ok) { const t = await res.text(); console.error(`keyword_posts "${keyword}" p${page+1}: HTTP ${res.status} - ${t.slice(0,200)}`); break; }
+          const data = await res.json();
+          const items = data.items || data.results || [];
+          for (const item of items) allPosts.push({ ...item, _keyword: keyword });
+          keywordPostCount += items.length;
+          cursor = data.cursor || data.next_cursor || null;
+          if (!cursor || items.length === 0) break;
+          if (page < MAX_PAGES - 1) await delay(200);
+        }
+        console.log(`keyword_posts "${keyword}": ${keywordPostCount} posts (${Math.min(MAX_PAGES, keywordPostCount > 0 ? Math.ceil(keywordPostCount/10) : 1)} pages)`);
       } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
     }
 
