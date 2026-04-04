@@ -463,36 +463,38 @@ Deno.serve(async (req) => {
     });
     console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
 
-    // Phase 4: PROCESS — AI-approved authors, no profile fetch needed
+    // Phase 4: PROCESS — AI-approved authors, use fast path with fallback profile fetch when ID is missing
     for (const post of filteredPosts) {
       if (!hasTime()) break;
 
       const authorData = post.author || post.actor || post.author_detail || null;
       if (!authorData) continue;
 
-      // Use author data directly from search result — no fetchProfileIfNeeded
-      const author = normalizeProfile({ ...authorData });
-      const lpid = author.public_id || author.public_identifier || author.provider_id || author.id;
+      let author = normalizeProfile({ ...authorData });
+      if (!extractLinkedinProfileId(author)) {
+        const fetchedAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+        if (fetchedAuthor) author = fetchedAuthor;
+      }
 
-      // Still check exclusions on available data
+      const lpid = extractLinkedinProfileId(author) || 'unknown';
+
       if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
         console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
         continue;
       }
 
-      // AI already validated buyer intent — assign warm directly, skip ICP title gate
       const match = scoreProfileAgainstICP(author, icp);
       const classification = 'warm';
-
       const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
       const signal = `Posted about "${post._keyword}"`;
       const ok = await insertContact(supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp);
+
       if (ok) {
         inserted++;
         hotWarmCount++;
         console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification} (AI-validated)`);
       } else {
-        console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
+        console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or missing profile id / insert failed`);
       }
     }
 
