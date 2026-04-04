@@ -188,6 +188,7 @@ export default function Signals() {
   const [showPreviousLaunches, setShowPreviousLaunches] = useState(false);
   const [activeAgent, setActiveAgent] = useState<SignalAgent | null>(null);
   const [toastAgent, setToastAgent] = useState<SignalAgent | null>(null);
+  const [runningAgentIds, setRunningAgentIds] = useState<string[]>([]);
 
   const [newName, setNewName] = useState("My Agent");
   const [newType, setNewType] = useState("recently_changed_jobs");
@@ -198,6 +199,14 @@ export default function Signals() {
   useEffect(() => {
     fetchAgents();
   }, []);
+
+  useEffect(() => {
+    if (runningAgentIds.length === 0) return;
+    const interval = window.setInterval(() => {
+      fetchAgents();
+    }, 8000);
+    return () => window.clearInterval(interval);
+  }, [runningAgentIds.length]);
 
   async function fetchAgents() {
     setLoading(true);
@@ -234,7 +243,6 @@ export default function Signals() {
 
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
-    // Block activation on free plan
     if (newStatus === "active" && !sub.subscribed) {
       toast.error("Upgrade to a paid plan to activate agents", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
@@ -257,16 +265,63 @@ export default function Signals() {
     fetchAgents();
   }
 
+  function markAgentRunning(agent: SignalAgent) {
+    const startedAt = new Date().toISOString();
+    setRunningAgentIds((prev) => (prev.includes(agent.id) ? prev : [...prev, agent.id]));
+    setToastAgent({ ...agent, status: "running", last_launched_at: startedAt });
+    setAgents((prev) => prev.map((item) => item.id === agent.id ? { ...item, last_launched_at: startedAt } : item));
+    setActiveAgent((prev) => prev?.id === agent.id ? { ...prev, last_launched_at: startedAt } : prev);
+  }
+
+  function clearAgentRunning(agentId: string) {
+    setRunningAgentIds((prev) => prev.filter((id) => id !== agentId));
+    setToastAgent((prev) => prev?.id === agentId ? null : prev);
+  }
+
+  function schedulePreviewDisconnectFallback(agent: SignalAgent) {
+    window.setTimeout(() => {
+      clearAgentRunning(agent.id);
+      fetchAgents();
+    }, 300000);
+  }
+
   async function runAgentNow(agent: SignalAgent) {
-    toast.info(`Running "${agent.name}" now...`);
-    const { data, error } = await supabase.functions.invoke("process-signal-agents", {
-      body: { agent_id: agent.id },
-    });
-    if (error) {
-      console.error("Run agent error:", error);
-      toast.error(`Failed to run agent: ${error.message}`);
-    } else {
+    if (runningAgentIds.includes(agent.id)) {
+      toast.info(`"${agent.name}" is already running`);
+      return;
+    }
+
+    markAgentRunning(agent);
+    toast.info(`Started "${agent.name}" — refreshing results while it runs...`);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("process-signal-agents", {
+        body: { agent_id: agent.id },
+      });
+
+      if (error) {
+        console.error("Run agent error:", error);
+        const isPreviewDisconnect = /Failed to fetch|Failed to send a request to the Edge Function/i.test(error.message || "");
+
+        if (isPreviewDisconnect) {
+          toast.info(`"${agent.name}" started, but preview lost the live connection. I’ll keep refreshing results here.`);
+          schedulePreviewDisconnectFallback(agent);
+          return;
+        }
+
+        clearAgentRunning(agent.id);
+        toast.error(`Failed to run agent: ${error.message}`);
+        fetchAgents();
+        return;
+      }
+
+      clearAgentRunning(agent.id);
       toast.success(`"${agent.name}" finished — ${data?.leads_inserted ?? 0} new leads found`);
+      fetchAgents();
+    } catch (error) {
+      console.error("Run agent error:", error);
+      clearAgentRunning(agent.id);
+      toast.error("Failed to run agent");
       fetchAgents();
     }
   }
