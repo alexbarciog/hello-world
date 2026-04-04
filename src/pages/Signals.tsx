@@ -315,9 +315,34 @@ export default function Signals() {
         return;
       }
 
-      clearAgentRunning(agent.id);
-      toast.success(`"${agent.name}" finished — ${data?.leads_inserted ?? 0} new leads found`);
-      fetchAgents();
+      // Fire-and-forget: function returns immediately with a job_id
+      const jobId = data?.job_id;
+      if (jobId) {
+        toast.info(`"${agent.name}" is processing in the background...`);
+        const pollInterval = setInterval(async () => {
+          const { data: runData } = await supabase
+            .from("signal_agent_runs")
+            .select("status, total_leads, completed_tasks, total_tasks")
+            .eq("id", jobId)
+            .single();
+          if (!runData) return;
+          if (runData.status === "done" || runData.status === "partial" || runData.status === "failed") {
+            clearInterval(pollInterval);
+            clearAgentRunning(agent.id);
+            if (runData.status === "failed") {
+              toast.error(`"${agent.name}" failed`);
+            } else {
+              toast.success(`"${agent.name}" finished — ${runData.total_leads ?? 0} new leads found`);
+            }
+            fetchAgents();
+          }
+        }, 5000);
+        setTimeout(() => { clearInterval(pollInterval); clearAgentRunning(agent.id); fetchAgents(); }, 300_000);
+      } else {
+        clearAgentRunning(agent.id);
+        toast.success(`"${agent.name}" finished — ${data?.leads_inserted ?? 0} new leads found`);
+        fetchAgents();
+      }
     } catch (error) {
       console.error("Run agent error:", error);
       clearAgentRunning(agent.id);
