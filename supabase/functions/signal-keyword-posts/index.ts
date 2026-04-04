@@ -146,19 +146,36 @@ function normalizeProfile(item: any): any {
   return item;
 }
 
+function extractLinkedinProfileId(item: any): string | null {
+  const directId = item?.public_id || item?.public_identifier || item?.provider_id || item?.author_id || item?.entity_urn || item?.tracking_id;
+  if (directId) return String(directId);
+
+  const linkedinUrl = item?.linkedin_url || item?.public_url || item?.profile_url || item?.url;
+  if (linkedinUrl && typeof linkedinUrl === 'string') {
+    const match = linkedinUrl.match(/linkedin\.com\/in\/([^/?#]+)/i);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
 async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any | null> {
   const norm = normalizeProfile({ ...item });
-  if (norm.first_name && (norm.headline || norm.title)) return norm;
-  const id = item.public_identifier || item.provider_id || item.public_id || item.author_id;
+  const existingId = extractLinkedinProfileId(norm);
+  if (norm.first_name && (norm.headline || norm.title) && existingId) return { ...norm, public_id: norm.public_id || existingId };
+  const id = existingId;
   const numericOrUrn = item.id;
   const fetchId = id || (numericOrUrn && !String(numericOrUrn).startsWith('urn:') && !String(numericOrUrn).startsWith('ACo') ? numericOrUrn : null);
-  if (!fetchId) return norm.first_name ? norm : null;
+  if (!fetchId) return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null;
   try {
     const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) { await res.text(); return norm.first_name ? norm : null; }
+    if (!res.ok) { await res.text(); return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null; }
     const fetched = await res.json();
-    return normalizeProfile(fetched);
-  } catch { return norm.first_name ? norm : null; }
+    const normalizedFetched = normalizeProfile(fetched);
+    return { ...normalizedFetched, public_id: normalizedFetched.public_id || extractLinkedinProfileId(normalizedFetched) || existingId };
+  } catch {
+    return norm.first_name ? { ...norm, public_id: norm.public_id || existingId } : null;
+  }
 }
 
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
@@ -180,7 +197,7 @@ async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
 ): Promise<boolean> {
-  const linkedinProfileId = profile.public_id || profile.public_identifier || profile.provider_id || profile.id;
+  const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
   if (!linkedinProfileId) return false;
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
   if (existing && existing.length > 0) return false;
@@ -446,36 +463,38 @@ Deno.serve(async (req) => {
     });
     console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
 
-    // Phase 4: PROCESS — AI-approved authors, no profile fetch needed
+    // Phase 4: PROCESS — AI-approved authors, use fast path with fallback profile fetch when ID is missing
     for (const post of filteredPosts) {
       if (!hasTime()) break;
 
       const authorData = post.author || post.actor || post.author_detail || null;
       if (!authorData) continue;
 
-      // Use author data directly from search result — no fetchProfileIfNeeded
-      const author = normalizeProfile({ ...authorData });
-      const lpid = author.public_id || author.public_identifier || author.provider_id || author.id;
+      let author = normalizeProfile({ ...authorData });
+      if (!extractLinkedinProfileId(author)) {
+        const fetchedAuthor = await fetchProfileIfNeeded(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+        if (fetchedAuthor) author = fetchedAuthor;
+      }
 
-      // Still check exclusions on available data
+      const lpid = extractLinkedinProfileId(author) || 'unknown';
+
       if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
         console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
         continue;
       }
 
-      // AI already validated buyer intent — assign warm directly, skip ICP title gate
       const match = scoreProfileAgainstICP(author, icp);
       const classification = 'warm';
-
       const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
       const signal = `Posted about "${post._keyword}"`;
       const ok = await insertContact(supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp);
+
       if (ok) {
         inserted++;
         hotWarmCount++;
         console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${classification} (AI-validated)`);
       } else {
-        console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or insert failed`);
+        console.log(`[PIPELINE] ⏭ ${lpid}: duplicate or missing profile id / insert failed`);
       }
     }
 
