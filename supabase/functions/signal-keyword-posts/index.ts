@@ -511,7 +511,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${approvedPosts.length} AI-approved → ${keywordInserted} inserted (skip: author=${keywordSkipped.noAuthor} dup=${keywordSkipped.dupAuthor} excl=${keywordSkipped.excluded} fail=${keywordSkipped.insertFail})`);
+      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${approvedPosts.length} AI-approved → ${keywordInserted} inserted (skip: author=${keywordSkipped.noAuthor} dup=${keywordSkipped.dupAuthor} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} fail=${keywordSkipped.insertFail})`);
     }
 
     console.log(`signal-keyword-posts: ${inserted} leads total (hot/warm=${hotWarmCount}, cold=${coldCount}) in ${Math.round((Date.now() - START) / 1000)}s`);
