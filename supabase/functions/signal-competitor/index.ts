@@ -106,6 +106,18 @@ async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,d
   if(!fetchId) return norm.first_name?norm:null;
   try{const res=await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`,apiKey,dsn);if(!res.ok){await res.text();return norm.first_name?norm:null;}return normalizeProfile(await res.json());}catch{return norm.first_name?norm:null;}
 }
+// Always fetch full profile from API (never short-circuit on sparse search data)
+async function fetchFullProfile(item: any,accountId: string,apiKey: string,dsn: string): Promise<any|null>{
+  const id=item.public_identifier||item.provider_id||item.public_id||item.author_id;
+  const numericOrUrn=item.id;
+  const fetchId=id||(numericOrUrn&&!String(numericOrUrn).startsWith('urn:')&&!String(numericOrUrn).startsWith('ACo')?numericOrUrn:null);
+  if(!fetchId) return normalizeProfile({...item});
+  try{
+    const res=await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`,apiKey,dsn);
+    if(!res.ok){await res.text();return normalizeProfile({...item});}
+    return normalizeProfile(await res.json());
+  }catch{return normalizeProfile({...item});}
+}
 function delay(ms: number){return new Promise(r=>setTimeout(r,ms));}
 
 function extractLinkedInId(url: string): string|null { if(!url) return null; const m=url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/); if(m) return m[1]; return url.replace(/^https?:\/\//,'').replace(/\/$/,'')||null; }
