@@ -171,30 +171,48 @@ Deno.serve(async (req) => {
 
         if (isCompanyUrl && companyName) {
           console.log(`competitor_followers: searching "${companyName}"`);
-          try {
-            const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
-              method: 'POST',
-              headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ api: 'classic', category: 'people', keywords: companyName }),
-            });
-            if (!res.ok) { await res.text(); continue; }
-            const data = await res.json();
-            const people = (data.items || data.results || []).slice(0, 30);
-            console.log(`"${companyName}": ${people.length} people`);
-            for (const person of people) {
-              if (!hasTime()) break;
-              const profile = { ...person, title: person.headline||person.title||null, linkedin_url: person.profile_url||person.public_profile_url||null, public_id: person.public_identifier||person.id||null, company: person.current_positions?.[0]?.company||person.company||null };
-              const match = scoreProfileAgainstICP(profile, icp);
-              const hl = profile.headline || profile.title || '';
-              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-              if (!matchesIndustry(profile, match, icp)) continue;
-              if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) continue;
-              const cls = classifyContact(match, icp, hl);
-              if (cls === 'cold' && !canInsertCold()) continue;
-              const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
-              if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
-            }
-          } catch (e) { console.error(`Competitor followers ${url}:`, e); }
+          let cursor: string | null = null;
+          let pageCount = 0;
+          const MAX_PAGES = 3;
+          const allPeople: any[] = [];
+          while (pageCount < MAX_PAGES && hasTime()) {
+            try {
+              const searchBody: any = { api: 'classic', category: 'people', keywords: companyName };
+              if (cursor) searchBody.cursor = cursor;
+              const res = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`, {
+                method: 'POST',
+                headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify(searchBody),
+              });
+              if (!res.ok) {
+                const errText = await res.text();
+                console.error(`competitor_followers search "${companyName}" page ${pageCount + 1}: HTTP ${res.status} - ${errText.slice(0, 200)}`);
+                break;
+              }
+              const data = await res.json();
+              const items = data.items || data.results || [];
+              console.log(`"${companyName}" page ${pageCount + 1}: ${items.length} people`);
+              allPeople.push(...items);
+              pageCount++;
+              cursor = data.cursor || data.next_cursor || null;
+              if (!cursor || items.length === 0) break;
+              await delay(200);
+            } catch (e) { console.error(`Competitor followers ${url} page ${pageCount + 1}:`, e); break; }
+          }
+          console.log(`"${companyName}": ${allPeople.length} total people across ${pageCount} pages`);
+          for (const person of allPeople) {
+            if (!hasTime()) break;
+            const profile = { ...person, title: person.headline||person.title||null, linkedin_url: person.profile_url||person.public_profile_url||null, public_id: person.public_identifier||person.id||null, company: person.current_positions?.[0]?.company||person.company||null };
+            const match = scoreProfileAgainstICP(profile, icp);
+            const hl = profile.headline || profile.title || '';
+            if (!matchesTitleOrIndustry(match, icp, hl)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: ICP mismatch`); continue; }
+            if (!matchesIndustry(profile, match, icp)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: industry mismatch`); continue; }
+            if (isExcluded(profile, icp.excludeKeywords, icp.competitorCompanies)) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: excluded`); continue; }
+            const cls = classifyContact(match, icp, hl);
+            if (cls === 'cold' && !canInsertCold()) { console.log(`[PIPELINE] ⏭ ${profile.public_id}: cold-capped`); continue; }
+            const ok = await insertContact(supabase, profile, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
+            if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; console.log(`[PIPELINE] ✅ ${profile.public_id}: inserted as ${cls}`); }
+          }
         }
 
         // For person URLs: scan their post engagers
