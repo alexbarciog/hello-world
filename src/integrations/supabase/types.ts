@@ -845,6 +845,92 @@ export type Database = {
         }
         Relationships: []
       }
+      signal_agent_runs: {
+        Row: {
+          agent_id: string
+          completed_at: string | null
+          completed_tasks: number
+          error: string | null
+          id: string
+          started_at: string
+          status: string
+          total_leads: number
+          total_tasks: number
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          completed_at?: string | null
+          completed_tasks?: number
+          error?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          total_leads?: number
+          total_tasks?: number
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          completed_at?: string | null
+          completed_tasks?: number
+          error?: string | null
+          id?: string
+          started_at?: string
+          status?: string
+          total_leads?: number
+          total_tasks?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      signal_agent_tasks: {
+        Row: {
+          agent_id: string
+          completed_at: string | null
+          error: string | null
+          id: string
+          leads_found: number
+          run_id: string
+          signal_type: string
+          started_at: string | null
+          status: string
+          task_key: string
+        }
+        Insert: {
+          agent_id: string
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          leads_found?: number
+          run_id: string
+          signal_type: string
+          started_at?: string | null
+          status?: string
+          task_key?: string
+        }
+        Update: {
+          agent_id?: string
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          leads_found?: number
+          run_id?: string
+          signal_type?: string
+          started_at?: string | null
+          status?: string
+          task_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_agent_tasks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "signal_agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signal_agents: {
         Row: {
           agent_type: string

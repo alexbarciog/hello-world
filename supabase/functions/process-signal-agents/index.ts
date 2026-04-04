@@ -6,9 +6,9 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import Stripe from 'https://esm.sh/stripe@17.7.0';
 
-// ─── Sequential Dispatcher ───────────────────────────────────────────────────
-// Invokes separate edge functions for each signal type, one at a time.
-// Each signal function gets its own ~105s budget.
+// ─── Lightweight Task-Based Orchestrator ──────────────────────────────────────
+// Creates a run record, enqueues tasks, processes each sequentially.
+// Each signal function handles its own items and inserts leads incrementally.
 
 interface SignalsConfig {
   enabled?: string[];
@@ -18,6 +18,7 @@ interface SignalsConfig {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
+  const START = Date.now();
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -82,26 +83,26 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── Fetch business context for AI relevance filter ──
+        // ── Build business_context from newest NON-EMPTY campaign ──
         let businessContext = '';
         const { data: campaigns } = await supabase
           .from('campaigns')
           .select('description, value_proposition, company_name, website, industry')
           .eq('user_id', agent.user_id)
           .order('created_at', { ascending: false })
-          .limit(1);
-        if (campaigns && campaigns.length > 0) {
-          const c = campaigns[0];
-          const parts = [
-            c.company_name ? `Company: ${c.company_name}` : '',
-            c.description ? `What they sell: ${c.description}` : '',
-            c.value_proposition ? `Value proposition: ${c.value_proposition}` : '',
-            c.industry ? `Industry: ${c.industry}` : '',
-          ].filter(Boolean);
-          businessContext = parts.join('. ');
+          .limit(5);
+        if (campaigns) {
+          for (const c of campaigns) {
+            const parts = [
+              c.company_name ? `Company: ${c.company_name}` : '',
+              c.description ? `What they sell: ${c.description}` : '',
+              c.value_proposition ? `Value proposition: ${c.value_proposition}` : '',
+              c.industry ? `Industry: ${c.industry}` : '',
+            ].filter(Boolean);
+            if (parts.length >= 2) { businessContext = parts.join('. '); break; }
+          }
         }
         if (!businessContext) {
-          // Fallback: use agent name + keywords as implicit context
           const kws = agent.keywords || signalKeywords['keyword_posts'] || [];
           businessContext = `Company focuses on: ${agent.name}. Keywords: ${kws.join(', ')}`;
         }
@@ -126,81 +127,114 @@ Deno.serve(async (req) => {
           business_context: businessContext,
         };
 
-        let agentLeads = 0;
-        console.log(`Agent ${agent.id}: signals=[${enabled.join(',')}]`);
+        // ── Build task list ──
+        interface TaskDef { signal_type: string; task_key: string; fn: string; payload: any; }
+        const tasks: TaskDef[] = [];
 
-        // ── 1. Post Engagers / Profile Engagers ──
+        // Post Engagers / Profile Engagers
         const runOwnPostEngagers = enabled.includes('post_engagers');
         const runProfileEngagers = enabled.includes('profile_engagers');
         if (runOwnPostEngagers || runProfileEngagers) {
-          const profileUrls = runProfileEngagers ? (signalKeywords['profile_engagers'] || []) : [];
-          const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-post-engagers', {
-            ...basePayload,
-            profile_urls: profileUrls,
-            run_own_posts: runOwnPostEngagers,
-            run_profile_engagers: runProfileEngagers,
+          tasks.push({
+            signal_type: 'post_engagers', task_key: 'engagers', fn: 'signal-post-engagers',
+            payload: { ...basePayload, profile_urls: runProfileEngagers ? (signalKeywords['profile_engagers'] || []) : [], run_own_posts: runOwnPostEngagers, run_profile_engagers: runProfileEngagers },
           });
-          console.log(`signal-post-engagers: ${leads} leads (own_posts=${runOwnPostEngagers}, profile_engagers=${runProfileEngagers})`);
-          agentLeads += leads;
-          await saveAgentProgress(supabase, agent, agentLeads);
         }
 
-        // ── 2. Keyword Posts ──
+        // Keyword Posts
         if (enabled.includes('keyword_posts')) {
           const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
           if (kws.length > 0) {
-            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-keyword-posts', {
-              ...basePayload,
-              keywords: kws,
+            tasks.push({
+              signal_type: 'keyword_posts', task_key: `keywords(${kws.length})`, fn: 'signal-keyword-posts',
+              payload: { ...basePayload, keywords: kws },
             });
-            console.log(`keyword_posts: ${leads} leads`);
-            agentLeads += leads;
-            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 3. Hashtag Engagement ──
+        // Hashtag Engagement
         if (enabled.includes('hashtag_engagement')) {
           const hashtags = signalKeywords['hashtag_engagement'] || [];
           if (hashtags.length > 0) {
-            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-hashtag-engagement', {
-              ...basePayload,
-              hashtags,
+            tasks.push({
+              signal_type: 'hashtag_engagement', task_key: `hashtags(${hashtags.length})`, fn: 'signal-hashtag-engagement',
+              payload: { ...basePayload, hashtags },
             });
-            console.log(`hashtag_engagement: ${leads} leads`);
-            agentLeads += leads;
-            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 4. Competitor Followers ──
+        // Competitor Followers
         if (enabled.includes('competitor_followers')) {
           const urls = signalKeywords['competitor_followers'] || [];
           if (urls.length > 0) {
-            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-competitor', {
-              ...basePayload,
-              signal_type: 'competitor_followers',
-              urls,
+            tasks.push({
+              signal_type: 'competitor_followers', task_key: `comp_followers(${urls.length})`, fn: 'signal-competitor',
+              payload: { ...basePayload, signal_type: 'competitor_followers', urls },
             });
-            console.log(`competitor_followers: ${leads} leads`);
-            agentLeads += leads;
-            await saveAgentProgress(supabase, agent, agentLeads);
           }
         }
 
-        // ── 5. Competitor Engagers ──
+        // Competitor Engagers
         if (enabled.includes('competitor_engagers')) {
           const urls = signalKeywords['competitor_engagers'] || [];
           if (urls.length > 0) {
-            const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, 'signal-competitor', {
-              ...basePayload,
-              signal_type: 'competitor_engagers',
-              urls,
+            tasks.push({
+              signal_type: 'competitor_engagers', task_key: `comp_engagers(${urls.length})`, fn: 'signal-competitor',
+              payload: { ...basePayload, signal_type: 'competitor_engagers', urls },
             });
-            console.log(`competitor_engagers: ${leads} leads`);
-            agentLeads += leads;
-            await saveAgentProgress(supabase, agent, agentLeads);
           }
+        }
+
+        // Job Changes — not implemented yet, skip gracefully
+        if (enabled.includes('job_changes')) {
+          console.log(`Agent ${agent.id}: job_changes enabled but not yet implemented — skipping`);
+        }
+
+        // ── Create run + task records ──
+        const { data: run } = await supabase.from('signal_agent_runs').insert({
+          agent_id: agent.id, user_id: agent.user_id, status: 'running', total_tasks: tasks.length,
+        }).select('id').single();
+        const runId = run?.id;
+
+        if (runId && tasks.length > 0) {
+          await supabase.from('signal_agent_tasks').insert(
+            tasks.map(t => ({ run_id: runId, agent_id: agent.id, signal_type: t.signal_type, task_key: t.task_key }))
+          );
+        }
+
+        let agentLeads = 0;
+        let completedTasks = 0;
+        console.log(`Agent ${agent.id}: ${tasks.length} tasks [${tasks.map(t => t.task_key).join(', ')}]`);
+
+        // ── Process tasks sequentially ──
+        for (const task of tasks) {
+          // Leave 5s margin for cleanup
+          if (Date.now() - START > 145_000) {
+            console.log(`Agent ${agent.id}: parent timeout — ${tasks.length - completedTasks} tasks remaining`);
+            break;
+          }
+
+          if (runId) {
+            await supabase.from('signal_agent_tasks')
+              .update({ status: 'running', started_at: new Date().toISOString() })
+              .eq('run_id', runId).eq('task_key', task.task_key);
+          }
+
+          const leads = await invokeSignalFunction(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, task.fn, task.payload);
+          console.log(`${task.task_key}: ${leads} leads`);
+          agentLeads += leads;
+          completedTasks++;
+
+          if (runId) {
+            await supabase.from('signal_agent_tasks')
+              .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+              .eq('run_id', runId).eq('task_key', task.task_key);
+            await supabase.from('signal_agent_runs')
+              .update({ completed_tasks: completedTasks, total_leads: agentLeads })
+              .eq('id', runId);
+          }
+
+          await saveAgentProgress(supabase, agent, agentLeads);
         }
 
         // Final count from DB for accuracy
@@ -215,6 +249,15 @@ Deno.serve(async (req) => {
           results_count: actualCount,
         }).eq('id', agent.id);
 
+        // Finalize run
+        if (runId) {
+          await supabase.from('signal_agent_runs').update({
+            status: completedTasks === tasks.length ? 'done' : 'partial',
+            completed_tasks: completedTasks, total_leads: agentLeads,
+            completed_at: new Date().toISOString(),
+          }).eq('id', runId);
+        }
+
         if (agentLeads > 0) {
           await supabase.from('notifications').insert({
             user_id: agent.user_id,
@@ -225,7 +268,7 @@ Deno.serve(async (req) => {
         }
 
         totalLeads += agentLeads;
-        console.log(`Agent ${agent.id}: ${agentLeads} leads total`);
+        console.log(`Agent ${agent.id}: ${agentLeads} leads total (${Math.round((Date.now() - START) / 1000)}s)`);
       } catch (e) { console.error(`Error processing agent ${agent.id}:`, e); }
     }
 
@@ -242,10 +285,7 @@ async function invokeSignalFunction(supabaseUrl: string, serviceRoleKey: string,
   try {
     const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceRoleKey}`,
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
       body: JSON.stringify(payload),
     });
     if (!res.ok) {

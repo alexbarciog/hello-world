@@ -10,9 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
-const START = Date.now();
-const MAX_RUNTIME_MS = 105_000;
-function hasTime() { return Date.now() - START < MAX_RUNTIME_MS; }
+// Timer moved inside request handler (fixes warm isolate bug)
 
 const BUYING_INTENT_KEYWORDS = ['ceo','cto','coo','cfo','cmo','cro','cpo','cio','founder','co-founder','cofounder','owner','partner','president','principal','vp','vice president','director','head of','chief','general manager','managing director','svp','evp','avp'];
 const REJECT_TITLES = ['software developer','software engineer','frontend developer','backend developer','full stack developer','fullstack developer','web developer','mobile developer','junior developer','senior developer','staff engineer','intern','data analyst','qa engineer','test engineer','devops engineer','graphic designer','ui designer','ux designer','student','fresher','trainee','apprentice','accountant','bookkeeper','cashier','clerk','receptionist','administrative assistant','office assistant'];
@@ -163,6 +161,10 @@ Deno.serve(async (req) => {
 
   try {
     const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies } = await req.json();
+    const START = Date.now();
+    const MAX_RUNTIME_MS = 105_000;
+    const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
+
     if (!agent_id || !account_id || !urls?.length || !signal_type) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
