@@ -239,6 +239,15 @@ Deno.serve(async (req) => {
                 continue;
               }
               const lpid = fullProfile.public_id||fullProfile.public_identifier||fullProfile.provider_id||fullProfile.id;
+              // Check own-company exclusion FIRST
+              if (ownCompanyLower && ownCompanyLower.length > 1) {
+                const fpCompany = (fullProfile.company || fullProfile.current_company?.name || '').toLowerCase();
+                const fpHeadline = (fullProfile.headline || fullProfile.title || '').toLowerCase();
+                if (fpCompany.includes(ownCompanyLower) || ownCompanyLower.includes(fpCompany) || fpHeadline.includes(ownCompanyLower)) {
+                  console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
+                  continue;
+                }
+              }
               // Check exclusion FIRST (catches competitor employees with full position data)
               if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) {
                 console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
