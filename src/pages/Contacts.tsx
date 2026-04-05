@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
-  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays,
+  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -35,6 +35,8 @@ export default function Contacts() {
   const [selectNumber, setSelectNumber] = useState(25);
   const selectPopoverRef = useRef<HTMLDivElement>(null);
   const [agents, setAgents] = useState<Record<string, string>>({});
+  const [sdrActiveContacts, setSdrActiveContacts] = useState<Record<string, string>>({}); // contact_id -> connection_request_id
+  const [stoppingSDR, setStoppingSDR] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -42,13 +44,14 @@ export default function Contacts() {
     if (!user) { setLoading(false); return; }
 
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes] = await Promise.all([
+    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes, campaignsRes] = await Promise.all([
       supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
-      supabase.from("campaign_connection_requests").select("contact_id, status, sent_at, accepted_at, current_step").eq("user_id", user.id).order("sent_at", { ascending: false }),
+      supabase.from("campaign_connection_requests").select("id, contact_id, status, sent_at, accepted_at, current_step, conversation_stopped, campaign_id").eq("user_id", user.id).order("sent_at", { ascending: false }),
       supabase.from("meetings" as any).select("*").eq("user_id", user.id).order("scheduled_at", { ascending: true }),
       supabase.from("signal_agents").select("id, name").eq("user_id", user.id),
+      supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
     ]);
 
     if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
@@ -73,18 +76,32 @@ export default function Contacts() {
       setContactListMap(map);
     }
 
-    // Build contact -> last action map (keep first = most recent due to order)
+    // Build campaign conversational_ai map
+    const convAiCampaigns = new Set<string>();
+    if (campaignsRes.data) {
+      for (const c of campaignsRes.data as { id: string; conversational_ai: boolean }[]) {
+        if (c.conversational_ai) convAiCampaigns.add(c.id);
+      }
+    }
+
+    // Build contact -> last action map and SDR active contacts map
     if (connReqRes.data) {
       const actionMap: Record<string, { status: string; date: string }> = {};
-      for (const row of connReqRes.data as { contact_id: string; status: string; sent_at: string; accepted_at: string | null; current_step: number }[]) {
+      const sdrMap: Record<string, string> = {}; // contact_id -> connection_request_id
+      for (const row of connReqRes.data as { id: string; contact_id: string; status: string; sent_at: string; accepted_at: string | null; current_step: number; conversation_stopped: boolean; campaign_id: string }[]) {
         if (!actionMap[row.contact_id]) {
           actionMap[row.contact_id] = {
             status: row.status,
             date: row.accepted_at || row.sent_at,
           };
         }
+        // Track contacts with active conversational AI SDR
+        if (convAiCampaigns.has(row.campaign_id) && !row.conversation_stopped && !sdrMap[row.contact_id]) {
+          sdrMap[row.contact_id] = row.id;
+        }
       }
       setLastActions(actionMap);
+      setSdrActiveContacts(sdrMap);
     }
 
     // Build agents map (id -> name)
@@ -126,6 +143,33 @@ export default function Contacts() {
       toast.error("Failed to delete contacts: " + (err.message || "Unknown error"));
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleStopSDR = async (contactId: string) => {
+    const connReqId = sdrActiveContacts[contactId];
+    if (!connReqId) return;
+    setStoppingSDR((prev) => new Set(prev).add(contactId));
+    try {
+      const { error } = await supabase
+        .from("campaign_connection_requests")
+        .update({ conversation_stopped: true })
+        .eq("id", connReqId);
+      if (error) throw error;
+      toast.success("Conversational AI SDR stopped for this contact");
+      setSdrActiveContacts((prev) => {
+        const next = { ...prev };
+        delete next[contactId];
+        return next;
+      });
+    } catch (err: any) {
+      toast.error("Failed to stop SDR: " + (err.message || "Unknown error"));
+    } finally {
+      setStoppingSDR((prev) => {
+        const next = new Set(prev);
+        next.delete(contactId);
+        return next;
+      });
     }
   };
 
@@ -598,6 +642,15 @@ export default function Contacts() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1">
+                          {sdrActiveContacts[c.id] && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleStopSDR(c.id); }}
+                              disabled={stoppingSDR.has(c.id)}
+                              className="text-[10px] font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                            >
+                              <StopCircle className="w-3 h-3" /> {stoppingSDR.has(c.id) ? '...' : 'Stop SDR'}
+                            </button>
+                          )}
                           {c.lead_status !== 'meeting_booked' ? (
                             <button
                               onClick={(e) => { e.stopPropagation(); setBookMeetingContact(c); }}
@@ -719,6 +772,15 @@ export default function Contacts() {
                         )
                       )}
                       <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo(c.imported_at)}</span>
+                      {sdrActiveContacts[c.id] && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleStopSDR(c.id); }}
+                          disabled={stoppingSDR.has(c.id)}
+                          className="text-[10px] font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <StopCircle className="w-3 h-3" /> {stoppingSDR.has(c.id) ? '...' : 'Stop SDR'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
