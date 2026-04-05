@@ -76,18 +76,32 @@ export default function Contacts() {
       setContactListMap(map);
     }
 
-    // Build contact -> last action map (keep first = most recent due to order)
+    // Build campaign conversational_ai map
+    const convAiCampaigns = new Set<string>();
+    if (campaignsRes.data) {
+      for (const c of campaignsRes.data as { id: string; conversational_ai: boolean }[]) {
+        if (c.conversational_ai) convAiCampaigns.add(c.id);
+      }
+    }
+
+    // Build contact -> last action map and SDR active contacts map
     if (connReqRes.data) {
       const actionMap: Record<string, { status: string; date: string }> = {};
-      for (const row of connReqRes.data as { contact_id: string; status: string; sent_at: string; accepted_at: string | null; current_step: number }[]) {
+      const sdrMap: Record<string, string> = {}; // contact_id -> connection_request_id
+      for (const row of connReqRes.data as { id: string; contact_id: string; status: string; sent_at: string; accepted_at: string | null; current_step: number; conversation_stopped: boolean; campaign_id: string }[]) {
         if (!actionMap[row.contact_id]) {
           actionMap[row.contact_id] = {
             status: row.status,
             date: row.accepted_at || row.sent_at,
           };
         }
+        // Track contacts with active conversational AI SDR
+        if (convAiCampaigns.has(row.campaign_id) && !row.conversation_stopped && !sdrMap[row.contact_id]) {
+          sdrMap[row.contact_id] = row.id;
+        }
       }
       setLastActions(actionMap);
+      setSdrActiveContacts(sdrMap);
     }
 
     // Build agents map (id -> name)
