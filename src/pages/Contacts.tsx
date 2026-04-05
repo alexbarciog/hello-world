@@ -146,6 +146,33 @@ export default function Contacts() {
     }
   };
 
+  const handleStopSDR = async (contactId: string) => {
+    const connReqId = sdrActiveContacts[contactId];
+    if (!connReqId) return;
+    setStoppingSDR((prev) => new Set(prev).add(contactId));
+    try {
+      const { error } = await supabase
+        .from("campaign_connection_requests")
+        .update({ conversation_stopped: true })
+        .eq("id", connReqId);
+      if (error) throw error;
+      toast.success("Conversational AI SDR stopped for this contact");
+      setSdrActiveContacts((prev) => {
+        const next = { ...prev };
+        delete next[contactId];
+        return next;
+      });
+    } catch (err: any) {
+      toast.error("Failed to stop SDR: " + (err.message || "Unknown error"));
+    } finally {
+      setStoppingSDR((prev) => {
+        const next = new Set(prev);
+        next.delete(contactId);
+        return next;
+      });
+    }
+  };
+
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0 };
     contacts.forEach((c) => {
