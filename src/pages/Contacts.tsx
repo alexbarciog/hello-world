@@ -44,13 +44,14 @@ export default function Contacts() {
     if (!user) { setLoading(false); return; }
 
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes] = await Promise.all([
+    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes, campaignsRes] = await Promise.all([
       supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
-      supabase.from("campaign_connection_requests").select("contact_id, status, sent_at, accepted_at, current_step").eq("user_id", user.id).order("sent_at", { ascending: false }),
+      supabase.from("campaign_connection_requests").select("id, contact_id, status, sent_at, accepted_at, current_step, conversation_stopped, campaign_id").eq("user_id", user.id).order("sent_at", { ascending: false }),
       supabase.from("meetings" as any).select("*").eq("user_id", user.id).order("scheduled_at", { ascending: true }),
       supabase.from("signal_agents").select("id, name").eq("user_id", user.id),
+      supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
     ]);
 
     if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
