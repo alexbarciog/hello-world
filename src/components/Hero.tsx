@@ -66,7 +66,7 @@ const Hero = () => {
           href="https://cal.com/alex-ydvmvi/15-min-meeting"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-foreground text-foreground font-medium text-base transition-all duration-300 hover:bg-foreground hover:text-background animate-fade-in-up"
+          className="mt-4 inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-foreground text-foreground font-medium text-base transition-all duration-300 hover:bg-foreground hover:text-background animate-fade-in-up"
           style={{ animationDelay: "300ms" }}
         >
           Book a demo
