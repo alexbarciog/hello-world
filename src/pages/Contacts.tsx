@@ -642,6 +642,15 @@ export default function Contacts() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1">
+                          {sdrActiveContacts[c.id] && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleStopSDR(c.id); }}
+                              disabled={stoppingSDR.has(c.id)}
+                              className="text-[10px] font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                            >
+                              <StopCircle className="w-3 h-3" /> {stoppingSDR.has(c.id) ? '...' : 'Stop SDR'}
+                            </button>
+                          )}
                           {c.lead_status !== 'meeting_booked' ? (
                             <button
                               onClick={(e) => { e.stopPropagation(); setBookMeetingContact(c); }}
