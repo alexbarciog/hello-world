@@ -35,6 +35,8 @@ export default function Contacts() {
   const [selectNumber, setSelectNumber] = useState(25);
   const selectPopoverRef = useRef<HTMLDivElement>(null);
   const [agents, setAgents] = useState<Record<string, string>>({});
+  const [sdrActiveContacts, setSdrActiveContacts] = useState<Record<string, string>>({}); // contact_id -> connection_request_id
+  const [stoppingSDR, setStoppingSDR] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
