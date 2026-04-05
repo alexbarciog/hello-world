@@ -62,6 +62,16 @@ const Hero = () => {
           Launch your AI Agent for free
           <ArrowUpRight className="w-4 h-4" />
         </a>
+        <a
+          href="https://cal.com/alex-ydvmvi/15-min-meeting"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-foreground text-foreground font-medium text-base transition-all duration-300 hover:bg-foreground hover:text-background animate-fade-in-up"
+          style={{ animationDelay: "300ms" }}
+        >
+          Book a demo
+          <ArrowUpRight className="w-4 h-4" />
+        </a>
 
         <div className="mt-14 w-full animate-fade-in-up" style={{ animationDelay: "360ms" }}>
           <HeroCards />
