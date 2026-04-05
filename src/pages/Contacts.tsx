@@ -772,6 +772,15 @@ export default function Contacts() {
                         )
                       )}
                       <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo(c.imported_at)}</span>
+                      {sdrActiveContacts[c.id] && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleStopSDR(c.id); }}
+                          disabled={stoppingSDR.has(c.id)}
+                          className="text-[10px] font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <StopCircle className="w-3 h-3" /> {stoppingSDR.has(c.id) ? '...' : 'Stop SDR'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
