@@ -388,9 +388,31 @@ async function processCampaignReplies(
             .filter((line: string) => line.length > 5)
             .join('\n');
 
-          // Check for soft rejection
+          // Check for soft rejection (regex-based, 2+ hits in history)
           if (isSoftRejection(conversationHistory)) {
             console.log(`[ai-replies] Soft rejection detected (2+ signals) from contact ${cr.contact_id}`);
+            await supabase.from('campaign_connection_requests')
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
+              .eq('id', cr.id);
+            await supabase.from('contacts')
+              .update({ lead_status: 'not_interested' })
+              .eq('id', cr.contact_id);
+            stopped++;
+            continue;
+          }
+
+          // ── AI-BASED INTENT CLASSIFICATION ──
+          // Catches nuanced rejections that regex misses (e.g., "can you help me find a job?",
+          // "I was wondering if you could give me advice", off-topic requests)
+          const aiIntent = await classifyLeadIntent(supabaseUrl, supabaseServiceRoleKey, {
+            leadMessage,
+            conversationHistory,
+            companyName: campaign.company_name,
+            valueProposition: campaign.value_proposition,
+          });
+
+          if (aiIntent === 'stop') {
+            console.log(`[ai-replies] 🛑 AI classified as STOP for contact ${cr.contact_id}: "${leadMessage.slice(0, 100)}"`);
             await supabase.from('campaign_connection_requests')
               .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
               .eq('id', cr.id);
