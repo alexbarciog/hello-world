@@ -299,9 +299,8 @@ function preFilterPost(
     return { pass: false, reason: 'no_phrase_match' };
   }
 
-  // ── Problem 4: Country filter ──
-  // If ICP has country restrictions and we have author location, check it
-  if (icp.locations.length > 0 && authorProfile) {
+  // ── Problem 4: Country filter (only in high_precision mode) ──
+  if (enforceCountry && icp.locations.length > 0 && authorProfile) {
     const authorLocation = (authorProfile.location || authorProfile.country || '').toLowerCase();
     if (authorLocation) {
       const countryMatch = icp.locations.some(loc =>
