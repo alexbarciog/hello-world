@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
-import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
+import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap, Activity, Loader2, XCircle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import {
@@ -30,6 +30,30 @@ interface SignalAgent {
   last_launched_at: string | null;
   next_launch_at: string | null;
   created_at: string;
+}
+
+interface AgentRun {
+  id: string;
+  agent_id: string;
+  status: string;
+  total_tasks: number;
+  completed_tasks: number;
+  total_leads: number;
+  error: string | null;
+  started_at: string;
+  completed_at: string | null;
+}
+
+interface AgentTask {
+  id: string;
+  run_id: string;
+  signal_type: string;
+  task_key: string;
+  status: string;
+  leads_found: number;
+  started_at: string | null;
+  completed_at: string | null;
+  error: string | null;
 }
 
 const AGENT_TYPE_LABELS: Record<string, string> = {
@@ -194,10 +218,15 @@ export default function Signals() {
   const [newType, setNewType] = useState("recently_changed_jobs");
   const [newKeywords, setNewKeywords] = useState("");
 
+  const [agentRuns, setAgentRuns] = useState<AgentRun[]>([]);
+  const [runTasks, setRunTasks] = useState<Record<string, AgentTask[]>>({});
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+
   const maxAgents = 2;
 
   useEffect(() => {
     fetchAgents();
+    fetchRuns();
   }, []);
 
   useEffect(() => {
@@ -220,6 +249,25 @@ export default function Signals() {
       if (active) setActiveAgent(active as SignalAgent);
     }
     setLoading(false);
+  }
+
+  async function fetchRuns() {
+    const { data: runs } = await supabase
+      .from("signal_agent_runs")
+      .select("*")
+      .order("started_at", { ascending: false })
+      .limit(50);
+    if (runs) setAgentRuns(runs as AgentRun[]);
+  }
+
+  async function fetchTasksForRun(runId: string) {
+    if (runTasks[runId]) return; // already loaded
+    const { data: tasks } = await supabase
+      .from("signal_agent_tasks")
+      .select("*")
+      .eq("run_id", runId)
+      .order("started_at", { ascending: true });
+    if (tasks) setRunTasks(prev => ({ ...prev, [runId]: tasks as AgentTask[] }));
   }
 
   async function createAgent() {
@@ -617,35 +665,114 @@ export default function Signals() {
         </div>
       </div>
 
-      {/* Previous launches */}
+      {/* Run History */}
       <button
-        onClick={() => setShowPreviousLaunches(!showPreviousLaunches)}
-        className="flex items-center gap-1.5 mx-auto text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        onClick={() => { setShowPreviousLaunches(!showPreviousLaunches); if (!showPreviousLaunches) fetchRuns(); }}
+        className="flex items-center gap-1.5 mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        See previous launches
+        <Activity className="w-3.5 h-3.5" />
+        Run History
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPreviousLaunches ? "rotate-180" : ""}`} />
       </button>
 
       {showPreviousLaunches && (
-        <div className="mt-4 border border-gray-200 rounded-xl p-4 md:p-5">
-          {agents.filter((a) => a.last_launched_at).length === 0 ? (
-            <p className="text-sm text-gray-400 text-center">No previous launches yet.</p>
+        <div className="mt-4 border border-border rounded-xl overflow-hidden">
+          {agentRuns.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No runs yet.</p>
           ) : (
-            <div className="space-y-3">
-              {agents
-                .filter((a) => a.last_launched_at)
-                .map((a) => (
-                  <div key={a.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm border-b border-gray-100 last:border-0 pb-2 last:pb-0">
-                    <div className="flex items-center gap-2">
-                      <Radio className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                      <span className="font-medium text-gray-700">{a.name}</span>
+            <div className="divide-y divide-border">
+              {agents.map((agent) => {
+                const runs = agentRuns.filter(r => r.agent_id === agent.id);
+                if (runs.length === 0) return null;
+                return (
+                  <div key={agent.id} className="px-4 py-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Radio className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-semibold text-sm text-foreground">{agent.name}</span>
+                      <span className="text-xs text-muted-foreground">({runs.length} runs)</span>
                     </div>
-                    <div className="flex items-center gap-3 pl-5 sm:pl-0">
-                      <span className="text-xs text-gray-400">{a.last_launched_at ? new Date(a.last_launched_at).toLocaleString() : "—"}</span>
-                      <span className="text-xs text-green-600">{a.results_count} results</span>
+                    <div className="space-y-1.5 pl-5">
+                      {runs.map((run) => {
+                        const isExpanded = expandedRunId === run.id;
+                        const tasks = runTasks[run.id];
+                        const statusIcon = run.status === 'done' ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> :
+                          run.status === 'running' || run.status === 'queued' ? <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin" /> :
+                          run.status === 'partial' ? <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> :
+                          <XCircle className="w-3.5 h-3.5 text-destructive" />;
+                        const statusColor = run.status === 'done' ? 'text-green-600 bg-green-50 border-green-200' :
+                          run.status === 'running' || run.status === 'queued' ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                          run.status === 'partial' ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                          'text-red-600 bg-red-50 border-red-200';
+
+                        return (
+                          <div key={run.id} className="rounded-lg border border-border bg-background">
+                            <button
+                              className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors rounded-lg"
+                              onClick={() => {
+                                if (isExpanded) { setExpandedRunId(null); } else { setExpandedRunId(run.id); fetchTasksForRun(run.id); }
+                              }}
+                            >
+                              <ChevronRight className={`w-3 h-3 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                              {statusIcon}
+                              <span className="text-xs text-muted-foreground">{new Date(run.started_at).toLocaleString()}</span>
+                              <span className={`text-[10px] font-semibold rounded px-1.5 py-0.5 border ${statusColor}`}>
+                                {run.status}
+                              </span>
+                              <span className="text-xs text-muted-foreground ml-auto">{run.completed_tasks}/{run.total_tasks} tasks</span>
+                              <span className="text-xs font-semibold text-green-600">{run.total_leads} leads</span>
+                            </button>
+
+                            {isExpanded && (
+                              <div className="px-3 pb-3 pt-1 border-t border-border">
+                                {!tasks ? (
+                                  <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Loading tasks...
+                                  </div>
+                                ) : tasks.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground py-2">No tasks recorded for this run.</p>
+                                ) : (
+                                  <div className="space-y-1.5 mt-1">
+                                    {tasks.map((task) => {
+                                      const tIcon = task.status === 'done' ? <CheckCircle2 className="w-3 h-3 text-green-500" /> :
+                                        task.status === 'running' ? <Loader2 className="w-3 h-3 text-amber-500 animate-spin" /> :
+                                        task.status === 'pending' ? <Clock className="w-3 h-3 text-muted-foreground" /> :
+                                        <XCircle className="w-3 h-3 text-destructive" />;
+                                      const tColor = task.status === 'done' ? 'text-green-600' :
+                                        task.status === 'running' ? 'text-amber-600' :
+                                        task.status === 'pending' ? 'text-muted-foreground' : 'text-destructive';
+                                      const duration = task.started_at && task.completed_at
+                                        ? `${Math.round((new Date(task.completed_at).getTime() - new Date(task.started_at).getTime()) / 1000)}s`
+                                        : task.started_at && task.status === 'running'
+                                        ? `${Math.round((Date.now() - new Date(task.started_at).getTime()) / 1000)}s...`
+                                        : '—';
+
+                                      return (
+                                        <div key={task.id} className="flex items-center gap-2 text-xs">
+                                          {tIcon}
+                                          <span className="font-medium text-foreground min-w-[140px]">{task.task_key}</span>
+                                          <span className={`text-[10px] font-semibold ${tColor}`}>{task.status}</span>
+                                          <span className="text-muted-foreground">{duration}</span>
+                                          <span className="text-green-600 font-semibold ml-auto">{task.leads_found} leads</span>
+                                          {task.error && <span className="text-destructive text-[10px] truncate max-w-[200px]" title={task.error}>⚠ {task.error}</span>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {run.error && (
+                                  <div className="mt-2 text-xs text-destructive bg-red-50 border border-red-200 rounded px-2 py-1.5">
+                                    <strong>Error:</strong> {run.error}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ))}
+                );
+              })}
             </div>
           )}
         </div>
