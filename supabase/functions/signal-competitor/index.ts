@@ -482,8 +482,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Competitor employee exclusion
+        // Competitor employee exclusion (global list)
         if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) {
+          pipelineStats.excluded_competitor_employee++;
+          continue;
+        }
+
+        // ★ KEY FIX: Check if this person works at the SPECIFIC competitor whose posts they engaged with
+        // Many employees have generic headlines like "Sr. Director, North America Channels"
+        // that don't mention the company name, so the global check misses them.
+        const worksAtThisCompetitor = uniqueVariants.some(variant => worksAtCompany(fp, variant));
+        if (worksAtThisCompetitor) {
+          console.log(`[COMP] ❌ EMPLOYEE of "${companyName}": ${lpid || rawId} | "${(fp.headline||fp.title||'').slice(0,60)}" | company: ${fp.company || fp.current_company?.name || 'N/A'}`);
           pipelineStats.excluded_competitor_employee++;
           continue;
         }
