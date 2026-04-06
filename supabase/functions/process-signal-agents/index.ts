@@ -252,31 +252,37 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
       let completedTasks = 0;
       console.log(`Agent ${agent.id}: ${tasks.length} tasks [${tasks.map(t => t.task_key).join(', ')}]`);
 
-      // ── Process tasks sequentially ──
-      for (const task of tasks) {
-        if (Date.now() - START > 145_000) {
-          console.log(`Agent ${agent.id}: parent timeout — ${tasks.length - completedTasks} tasks remaining`);
-          break;
-        }
-
-        await supabase.from('signal_agent_tasks')
+      // ── Process all tasks in parallel — each gets its own edge function timeout ──
+      // Mark all tasks as running
+      await Promise.all(tasks.map(task =>
+        supabase.from('signal_agent_tasks')
           .update({ status: 'running', started_at: new Date().toISOString() })
-          .eq('run_id', runId).eq('task_key', task.task_key);
+          .eq('run_id', runId).eq('task_key', task.task_key)
+      ));
 
-        const leads = await invokeSignalFunction(task.fn, task.payload);
-        console.log(`${task.task_key}: ${leads} leads`);
-        agentLeads += leads;
-        completedTasks++;
+      const results = await Promise.allSettled(
+        tasks.map(async (task) => {
+          const leads = await invokeSignalFunction(task.fn, task.payload);
+          console.log(`${task.task_key}: ${leads} leads`);
+          await supabase.from('signal_agent_tasks')
+            .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+            .eq('run_id', runId).eq('task_key', task.task_key);
+          return { task_key: task.task_key, leads };
+        })
+      );
 
-        await supabase.from('signal_agent_tasks')
-          .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
-          .eq('run_id', runId).eq('task_key', task.task_key);
-        await supabase.from('signal_agent_runs')
-          .update({ completed_tasks: completedTasks, total_leads: agentLeads })
-          .eq('id', runId);
-
-        await saveAgentProgress(supabase, agent, agentLeads);
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          agentLeads += r.value.leads;
+          completedTasks++;
+        } else {
+          console.error(`Task failed:`, r.reason);
+          completedTasks++; // still count as completed (failed)
+        }
       }
+      await supabase.from('signal_agent_runs')
+        .update({ completed_tasks: completedTasks, total_leads: agentLeads })
+        .eq('id', runId);
 
       // Final count from DB
       const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agent.user_id).eq('name', listName).maybeSingle();
