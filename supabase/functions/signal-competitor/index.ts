@@ -34,8 +34,9 @@ function collectCompanyFields(p: any): string[] {
 function matchesCompanyName(value: string, companyName: string): boolean {
   const normalizedValue = normalizeText(value);
   const normalizedCompany = normalizeText(companyName);
-  if (!normalizedValue || !normalizedCompany) return false;
-  return normalizedValue.includes(normalizedCompany) || normalizedCompany.includes(normalizedValue);
+  if (!normalizedValue || !normalizedCompany || normalizedCompany.length < 3) return false;
+  // Only check if company name appears in the value (not the reverse — avoids false positives)
+  return normalizedValue.includes(normalizedCompany);
 }
 function worksAtCompany(profile: any, companyName: string): boolean {
   if (!companyName?.trim()) return false;
