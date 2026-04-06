@@ -285,6 +285,7 @@ function preFilterPost(
   keyword: string,
   authorProfile: any | null,
   icp: ICPFilters,
+  enforceCountry: boolean = true,
 ): PreFilterResult {
   const text = (postText || '').toLowerCase();
 
@@ -298,9 +299,8 @@ function preFilterPost(
     return { pass: false, reason: 'no_phrase_match' };
   }
 
-  // ── Problem 4: Country filter ──
-  // If ICP has country restrictions and we have author location, check it
-  if (icp.locations.length > 0 && authorProfile) {
+  // ── Problem 4: Country filter (only in high_precision mode) ──
+  if (enforceCountry && icp.locations.length > 0 && authorProfile) {
     const authorLocation = (authorProfile.location || authorProfile.country || '').toLowerCase();
     if (authorLocation) {
       const countryMatch = icp.locations.some(loc =>
@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
 
   try {
-    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name } = await req.json();
+    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode } = await req.json();
     if (!agent_id || !account_id || !keywords?.length) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
@@ -520,6 +520,8 @@ Deno.serve(async (req) => {
 
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
     const MIN_INTENT_SCORE = 60; // Score gate: below 60 = discard
+    const isHighPrecision = precision_mode === 'high_precision';
+    console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles || [],
@@ -664,7 +666,7 @@ Deno.serve(async (req) => {
         const postText = extractPostText(post);
         const authorData = post.author || post.actor || post.author_detail || null;
 
-        const filterResult = preFilterPost(postText, keyword, authorData, icp);
+        const filterResult = preFilterPost(postText, keyword, authorData, icp, isHighPrecision);
 
         if (!filterResult.pass) {
           if (filterResult.reason === 'no_phrase_match') {
@@ -838,8 +840,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // ── POST-PROFILE country/industry re-check with full data ──
-        if (icp.locations.length > 0) {
+        // ── POST-PROFILE country/industry re-check with full data (high_precision only) ──
+        if (isHighPrecision && icp.locations.length > 0) {
           const fullLocation = (author.location || author.country || '').toLowerCase();
           if (fullLocation) {
             const countryMatch = icp.locations.some(loc =>

@@ -174,6 +174,7 @@ async function processInBackground(runId: string, agents: any[]) {
         competitor_companies: competitorCompanyNames,
         business_context: businessContext,
         user_company_name: userCompanyName,
+        precision_mode: agent.precision_mode || 'discovery',
       };
 
       // ── Build task list ──
