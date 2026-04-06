@@ -268,6 +268,15 @@ Deno.serve(async (req) => {
     async function processCompetitorEngagers(url: string) {
       const companyId = extractLinkedInId(url);
       const companyName = extractCompanyName(url) || companyId || 'Unknown';
+      const companyNameLower = companyName.toLowerCase();
+      // Build multiple name variants for robust employee detection
+      const competitorNameVariants: string[] = [companyNameLower];
+      if (companyId) competitorNameVariants.push(companyId.toLowerCase().replace(/-/g, ' '));
+      // Also add the raw slug (e.g., "bitdefender")
+      if (companyId) competitorNameVariants.push(companyId.toLowerCase());
+      // Deduplicate
+      const uniqueVariants = [...new Set(competitorNameVariants)];
+
       const isCompany = url.includes('/company/');
       const isPersonUrl = url.includes('/in/');
       if (!companyId) return;
