@@ -571,6 +571,11 @@ export default function Signals() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-2">
+                      {runningAgentIds.includes(agent.id) && (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 animate-pulse">
+                          <Zap className="w-3 h-3" />Running
+                        </span>
+                      )}
                       <NextLaunchesPopover />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
