@@ -285,6 +285,7 @@ function preFilterPost(
   keyword: string,
   authorProfile: any | null,
   icp: ICPFilters,
+  enforceCountry: boolean = true,
 ): PreFilterResult {
   const text = (postText || '').toLowerCase();
 
