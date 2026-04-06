@@ -271,7 +271,7 @@ Deno.serve(async (req) => {
         console.log(`[COMP] Fetching posts for company: ${companyId}`);
         let cursor: string | null = null;
         for (let page = 0; page < 5 && hasTime(); page++) {
-          let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`;
+          let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=20`;
           if (cursor) fetchUrl += `&cursor=${encodeURIComponent(cursor)}`;
           const postsRes = await unipileGet(fetchUrl, UNIPILE_API_KEY, UNIPILE_DSN);
           if (!postsRes.ok) {
