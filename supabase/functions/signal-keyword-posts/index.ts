@@ -285,7 +285,7 @@ function preFilterPost(
   keyword: string,
   authorProfile: any | null,
   icp: ICPFilters,
-  enforceCountry: boolean = true,
+  isHighPrecision: boolean = true,
 ): PreFilterResult {
   const text = (postText || '').toLowerCase();
 
@@ -300,7 +300,7 @@ function preFilterPost(
   }
 
   // ── Problem 4: Country filter (only in high_precision mode) ──
-  if (enforceCountry && icp.locations.length > 0 && authorProfile) {
+  if (isHighPrecision && icp.locations.length > 0 && authorProfile) {
     const authorLocation = (authorProfile.location || authorProfile.country || '').toLowerCase();
     if (authorLocation) {
       const countryMatch = icp.locations.some(loc =>
@@ -313,9 +313,9 @@ function preFilterPost(
     // If no location data on author, let it pass (will be checked after full profile fetch)
   }
 
-  // ── Problem 5: Industry/title check ──
-  // If we have author headline from post metadata, do a quick relevance check
-  if (authorProfile) {
+  // ── Problem 5: Industry/title check (only in high_precision mode) ──
+  // In discovery mode, skip industry filtering to maximize volume — let the AI do the filtering
+  if (isHighPrecision && authorProfile) {
     const headline = (authorProfile.headline || authorProfile.title || '').toLowerCase();
     const industry = (authorProfile.industry || authorProfile.current_company?.industry || '').toLowerCase();
 
@@ -521,7 +521,7 @@ Deno.serve(async (req) => {
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
     const MIN_INTENT_SCORE = 60; // Score gate: below 60 = discard
     const isHighPrecision = precision_mode === 'high_precision';
-    console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
+    console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country+industry filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles || [],
