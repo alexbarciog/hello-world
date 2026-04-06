@@ -686,7 +686,9 @@ async function generateConversationalReply(
     }
 
     const data = await response.json();
-    return (data?.message || '').trim();
+    const raw = (data?.message || '').trim();
+    // Never let [STOP] leak as an actual message — return it as-is for the caller to handle
+    return raw;
   } catch (error) {
     console.error('[ai-replies] generate reply failed:', error);
     return '';
