@@ -251,7 +251,26 @@ export default function Signals() {
     setLoading(false);
   }
 
-  async function createAgent() {
+  async function fetchRuns() {
+    const { data: runs } = await supabase
+      .from("signal_agent_runs")
+      .select("*")
+      .order("started_at", { ascending: false })
+      .limit(50);
+    if (runs) setAgentRuns(runs as AgentRun[]);
+  }
+
+  async function fetchTasksForRun(runId: string) {
+    if (runTasks[runId]) return; // already loaded
+    const { data: tasks } = await supabase
+      .from("signal_agent_tasks")
+      .select("*")
+      .eq("run_id", runId)
+      .order("started_at", { ascending: true });
+    if (tasks) setRunTasks(prev => ({ ...prev, [runId]: tasks as AgentTask[] }));
+  }
+
+
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
     const keywords = newKeywords.split(",").map((k) => k.trim()).filter(Boolean);
