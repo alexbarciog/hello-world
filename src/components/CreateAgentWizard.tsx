@@ -788,7 +788,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                               className={`flex-1 ${inputCls} !py-1.5 !text-xs`}
                                             />
                                             <button onClick={() => addSignalKeyword(sub.id)} className="text-xs font-medium text-foreground px-2">Add</button>
-                                            {!["competitor_followers", "competitor_engagers"].includes(sub.id) && (
+                                            {!["competitor_followers", "competitor_engagers", "profile_engagers"].includes(sub.id) && (
                                               <button
                                                 onClick={() => generateSignalKeywords(sub.id)}
                                                 disabled={generatingKeywords[sub.id]}
