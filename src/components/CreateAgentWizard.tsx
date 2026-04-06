@@ -217,6 +217,22 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   async function generateSignalKeywords(signalId: string) {
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
     try {
+      // Fetch business context from the user's campaign (same as generateWithAI)
+      const sessionId = localStorage.getItem("goji_session_id");
+      let businessFields: Record<string, any> = {};
+      if (sessionId) {
+        const { data: campaign } = await supabase.from("campaigns").select("company_name, website, description, pain_points, campaign_goal").eq("session_id", sessionId).order("updated_at", { ascending: false }).limit(1).single();
+        if (campaign) {
+          businessFields = {
+            companyName: campaign.company_name,
+            website: campaign.website,
+            description: campaign.description,
+            painPoints: campaign.pain_points,
+            campaignGoal: campaign.campaign_goal,
+          };
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-signal-keywords", {
         body: {
           signalType: signalId,
@@ -224,6 +240,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
           industries: selectedIndustries,
           companyTypes: selectedCompanyTypes,
           locations: selectedLocations,
+          ...businessFields,
         },
       });
       if (error) throw error;
