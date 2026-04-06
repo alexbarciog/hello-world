@@ -475,6 +475,8 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
           results.set(cls.id, cls);
           console.log(`[AI] ✅ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
         } else {
+          // Store rejection with negative marker so pipeline can capture sample
+          results.set(`rejected:${cls.id}`, cls);
           console.log(`[AI] ❌ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
         }
       }
