@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
-import { Radio, Settings, HelpCircle, Plus, ChevronDown, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
+import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap, Activity, Loader2, XCircle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import {
