@@ -628,10 +628,18 @@ Deno.serve(async (req) => {
       pipelineStats.total_posts_fetched += keywordPosts.length;
 
       // ── Step 2: Dedupe posts ──
+      // ── Step 2: Dedupe posts (in-run + cross-run) ──
       const uniquePosts = keywordPosts.filter(p => {
         const id = p.social_id || p.id || p.provider_id;
         if (!id || globalSeenPostIds.has(id)) return false;
         globalSeenPostIds.add(id);
+        // Cross-run dedup: skip if already processed in a prior run
+        if (alreadyProcessed.has(id)) {
+          pipelineStats.skipped_already_processed++;
+          return false;
+        }
+        // Track for saving later
+        newlyProcessedPostIds.push(id);
         return true;
       });
 
