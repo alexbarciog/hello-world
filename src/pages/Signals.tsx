@@ -32,6 +32,30 @@ interface SignalAgent {
   created_at: string;
 }
 
+interface AgentRun {
+  id: string;
+  agent_id: string;
+  status: string;
+  total_tasks: number;
+  completed_tasks: number;
+  total_leads: number;
+  error: string | null;
+  started_at: string;
+  completed_at: string | null;
+}
+
+interface AgentTask {
+  id: string;
+  run_id: string;
+  signal_type: string;
+  task_key: string;
+  status: string;
+  leads_found: number;
+  started_at: string | null;
+  completed_at: string | null;
+  error: string | null;
+}
+
 const AGENT_TYPE_LABELS: Record<string, string> = {
   recently_changed_jobs: "Recently changed jobs",
   signals: "Signals",
