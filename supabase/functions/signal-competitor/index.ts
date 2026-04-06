@@ -299,24 +299,29 @@ Deno.serve(async (req) => {
       }
 
       if (isCompany) {
-        console.log(`[COMP] Fetching posts for company: ${companyId}`);
-        let cursor: string | null = null;
-        for (let page = 0; page < 5 && hasTime(); page++) {
-          let fetchUrl = `/api/v1/users/${companyId}/posts?account_id=${account_id}&is_company=true&limit=20`;
-          if (cursor) fetchUrl += `&cursor=${encodeURIComponent(cursor)}`;
-          const postsRes = await unipileGet(fetchUrl, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (!postsRes.ok) {
-            const errText = await postsRes.text();
-            console.error(`[COMP] Posts fetch company "${companyId}" page ${page+1}: HTTP ${postsRes.status} - ${errText.slice(0, 200)}`);
-            break;
+        console.log(`[COMP] Fetching posts for company: ${companyId} (resolving numeric ID…)`);
+        const numericId = await resolveCompanyId(companyId, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+        if (!numericId) {
+          console.error(`[COMP] Skipping company "${companyId}" — could not resolve to numeric ID`);
+        } else {
+          let cursor: string | null = null;
+          for (let page = 0; page < 5 && hasTime(); page++) {
+            let fetchUrl = `/api/v1/users/${numericId}/posts?account_id=${account_id}&is_company=true&limit=20`;
+            if (cursor) fetchUrl += `&cursor=${encodeURIComponent(cursor)}`;
+            const postsRes = await unipileGet(fetchUrl, UNIPILE_API_KEY, UNIPILE_DSN);
+            if (!postsRes.ok) {
+              const errText = await postsRes.text();
+              console.error(`[COMP] Posts fetch company "${companyId}" (ID: ${numericId}) page ${page+1}: HTTP ${postsRes.status} - ${errText.slice(0, 200)}`);
+              break;
+            }
+            const postsData = await postsRes.json();
+            const items = postsData.items || postsData.posts || [];
+            posts.push(...items);
+            console.log(`[COMP] "${companyName}" page ${page+1}: ${items.length} posts (total: ${posts.length})`);
+            cursor = postsData.cursor || postsData.next_cursor || null;
+            if (!cursor || items.length === 0) break;
+            await delay(200);
           }
-          const postsData = await postsRes.json();
-          const items = postsData.items || postsData.posts || [];
-          posts.push(...items);
-          console.log(`[COMP] "${companyName}" page ${page+1}: ${items.length} posts (total: ${posts.length})`);
-          cursor = postsData.cursor || postsData.next_cursor || null;
-          if (!cursor || items.length === 0) break;
-          await delay(200);
         }
       }
 
