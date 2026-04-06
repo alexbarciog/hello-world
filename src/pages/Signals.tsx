@@ -271,6 +271,7 @@ export default function Signals() {
   }
 
   async function createAgent() {
+    const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
     const keywords = newKeywords.split(",").map((k) => k.trim()).filter(Boolean);
     const { data, error } = await supabase
