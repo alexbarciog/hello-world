@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
 // ─── Background processing ───────────────────────────────────────────────────
 
-async function processInBackground(runId: string, agents: any[]) {
+async function processInBackground(runId: string, agents: any[], bypassPlanCheck = false) {
   const START = Date.now();
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
