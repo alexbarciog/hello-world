@@ -148,11 +148,14 @@ async function processCampaign(
   let messagesSent = 0;
 
   // Order by current_step ASC so step 1 contacts (short delay) are processed before step 2+ (long delay)
+  // ★ CRITICAL: Exclude contacts who have replied — Conversational AI SDR handles them
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
+    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at, last_incoming_message_at, conversation_stopped')
     .eq('campaign_id', campaign.id)
     .eq('status', 'accepted')
+    .is('last_incoming_message_at', null)
+    .eq('conversation_stopped', false)
     .order('current_step', { ascending: true })
     .order('step_completed_at', { ascending: true })
     .limit(MAX_MESSAGE_SENDS);
