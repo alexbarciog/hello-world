@@ -503,7 +503,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const START = Date.now();
-  const MAX_RUNTIME_MS = 105_000;
+  const MAX_RUNTIME_MS = 145_000; // 145s — enough for 24+ keywords
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
 
   try {
