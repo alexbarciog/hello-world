@@ -663,6 +663,35 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_posts: {
+        Row: {
+          agent_id: string
+          id: string
+          processed_at: string
+          social_id: string
+        }
+        Insert: {
+          agent_id: string
+          id?: string
+          processed_at?: string
+          social_id: string
+        }
+        Update: {
+          agent_id?: string
+          id?: string
+          processed_at?: string
+          social_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processed_posts_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "signal_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
