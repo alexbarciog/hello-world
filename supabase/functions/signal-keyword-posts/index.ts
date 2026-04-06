@@ -535,11 +535,29 @@ Deno.serve(async (req) => {
     console.log(`[CONFIG] Keywords (${keywords.length}): ${keywords.join(' | ')}`);
 
     // ─── PIPELINE DIAGNOSTIC STATS ───
+    // ── Load previously processed post IDs for cross-run dedup ──
+    let alreadyProcessed = new Set<string>();
+    try {
+      const { data: ppRows } = await supabase
+        .from('processed_posts')
+        .select('social_id')
+        .eq('agent_id', agent_id);
+      if (ppRows) {
+        alreadyProcessed = new Set(ppRows.map((r: any) => r.social_id));
+      }
+      console.log(`[CROSS-RUN DEDUP] Loaded ${alreadyProcessed.size} previously processed post IDs for agent ${agent_id}`);
+    } catch (e) {
+      console.warn('[CROSS-RUN DEDUP] Failed to load processed posts, continuing without:', e);
+    }
+
+    const newlyProcessedPostIds: string[] = [];
+
     const pipelineStats = {
       keywords_processed: 0,
       total_posts_fetched: 0,
       unipile_errors: 0,
       unipile_empty_responses: 0,
+      skipped_already_processed: 0,
       posts_after_dedup: 0,
       duplicates_removed: 0,
       passed_prefilter: 0,
@@ -610,10 +628,18 @@ Deno.serve(async (req) => {
       pipelineStats.total_posts_fetched += keywordPosts.length;
 
       // ── Step 2: Dedupe posts ──
+      // ── Step 2: Dedupe posts (in-run + cross-run) ──
       const uniquePosts = keywordPosts.filter(p => {
         const id = p.social_id || p.id || p.provider_id;
         if (!id || globalSeenPostIds.has(id)) return false;
         globalSeenPostIds.add(id);
+        // Cross-run dedup: skip if already processed in a prior run
+        if (alreadyProcessed.has(id)) {
+          pipelineStats.skipped_already_processed++;
+          return false;
+        }
+        // Track for saving later
+        newlyProcessedPostIds.push(id);
         return true;
       });
 
@@ -861,6 +887,22 @@ Deno.serve(async (req) => {
       }
 
       console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${preFilteredPosts.length} pre-filtered → ${qualifiedPosts.length} AI-qualified → ${keywordInserted} inserted (skip: noAuthor=${keywordSkipped.noAuthor} dupAuthor=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} irrel=${keywordSkipped.irrelevant} dup=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
+    }
+
+    // ── Save all processed post IDs for cross-run dedup ──
+    if (newlyProcessedPostIds.length > 0) {
+      try {
+        // Batch insert in chunks of 500
+        for (let i = 0; i < newlyProcessedPostIds.length; i += 500) {
+          const chunk = newlyProcessedPostIds.slice(i, i + 500);
+          const rows = chunk.map(sid => ({ social_id: sid, agent_id }));
+          const { error } = await supabase.from('processed_posts').upsert(rows, { onConflict: 'social_id,agent_id', ignoreDuplicates: true });
+          if (error) console.warn(`[CROSS-RUN DEDUP] Failed to save chunk ${i}:`, error.message);
+        }
+        console.log(`[CROSS-RUN DEDUP] Saved ${newlyProcessedPostIds.length} new post IDs for future dedup`);
+      } catch (e) {
+        console.warn('[CROSS-RUN DEDUP] Failed to save processed posts:', e);
+      }
     }
 
     console.log('=== PIPELINE DIAGNOSTIC SUMMARY ===');
