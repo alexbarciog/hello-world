@@ -840,8 +840,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // ── POST-PROFILE country/industry re-check with full data ──
-        if (icp.locations.length > 0) {
+        // ── POST-PROFILE country/industry re-check with full data (high_precision only) ──
+        if (isHighPrecision && icp.locations.length > 0) {
           const fullLocation = (author.location || author.country || '').toLowerCase();
           if (fullLocation) {
             const countryMatch = icp.locations.some(loc =>
