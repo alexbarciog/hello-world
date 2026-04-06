@@ -218,6 +218,10 @@ export default function Signals() {
   const [newType, setNewType] = useState("recently_changed_jobs");
   const [newKeywords, setNewKeywords] = useState("");
 
+  const [agentRuns, setAgentRuns] = useState<AgentRun[]>([]);
+  const [runTasks, setRunTasks] = useState<Record<string, AgentTask[]>>({});
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+
   const maxAgents = 2;
 
   useEffect(() => {
