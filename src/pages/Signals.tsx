@@ -590,11 +590,9 @@ export default function Signals() {
                           <DropdownMenuItem onClick={() => toggleAgentStatus(agent)} className="gap-2 text-sm">
                             {agent.status === "active" ? <><Pause className="w-3.5 h-3.5" />Pause agent</> : <><Play className="w-3.5 h-3.5 text-green-600" />Activate agent</>}
                           </DropdownMenuItem>
-                          {isAdmin && (
-                            <DropdownMenuItem onClick={() => runAgentNow(agent)} className="gap-2 text-sm text-primary">
-                              <Zap className="w-3.5 h-3.5" />Run now
-                            </DropdownMenuItem>
-                          )}
+                          <DropdownMenuItem onClick={() => runAgentNow(agent)} className="gap-2 text-sm text-primary">
+                            <Zap className="w-3.5 h-3.5" />Run now
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => deleteAgent(agent.id)} className="gap-2 text-sm text-destructive focus:text-destructive">
                             <Trash2 className="w-3.5 h-3.5" />Delete
