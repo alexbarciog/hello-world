@@ -696,23 +696,34 @@ Deno.serve(async (req) => {
       // Track AI results in stats
       for (const p of postsForAI) {
         const cls = intentResults.get(p.id);
+        const rejectedCls = intentResults.get(`rejected:${p.id}`);
         if (cls) {
           if (cls.reason === 'ai_fallback' || cls.reason === 'ai_error' || cls.reason === 'ai_no_response' || cls.reason === 'ai_missing_response' || cls.reason === 'no_ai_key_default') {
             pipelineStats.ai_fallback_used++;
           }
           pipelineStats.passed_ai++;
+        } else if (rejectedCls) {
+          if (!rejectedCls.is_buyer) {
+            pipelineStats.rejected_ai_not_buyer++;
+          } else {
+            pipelineStats.rejected_ai_low_score++;
+          }
+          if (pipelineStats.sample_ai_rejections.length < 3) {
+            pipelineStats.sample_ai_rejections.push({
+              postSample: p.text.substring(0, 300),
+              is_buyer: rejectedCls.is_buyer,
+              intent_score: rejectedCls.intent_score,
+              reason: rejectedCls.reason,
+            });
+          }
         } else {
-          // Post was rejected by AI (not in results map = rejected)
-          // We need to check the raw AI response — the classifyIntentBatch only puts passing results in the map
-          // So any post NOT in intentResults was rejected
           pipelineStats.rejected_ai_not_buyer++;
-          // Capture sample AI rejection
           if (pipelineStats.sample_ai_rejections.length < 3) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 300),
               is_buyer: false,
               intent_score: 0,
-              reason: 'rejected_by_ai_or_below_threshold',
+              reason: 'no_ai_response_for_post',
             });
           }
         }
