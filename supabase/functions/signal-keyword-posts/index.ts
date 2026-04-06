@@ -507,7 +507,7 @@ Deno.serve(async (req) => {
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
 
   try {
-    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name } = await req.json();
+    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode } = await req.json();
     if (!agent_id || !account_id || !keywords?.length) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
@@ -520,6 +520,8 @@ Deno.serve(async (req) => {
 
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
     const MIN_INTENT_SCORE = 60; // Score gate: below 60 = discard
+    const isHighPrecision = precision_mode === 'high_precision';
+    console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles || [],
