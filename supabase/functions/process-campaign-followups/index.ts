@@ -240,7 +240,7 @@ async function processCampaign(
           continue;
         }
 
-        // ── GUARD: Skip pre-existing conversations ──
+        // ── GUARD: Skip pre-existing conversations AND detect live replies ──
         if (chatId) {
           const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
           try {
@@ -262,6 +262,22 @@ async function processCampaign(
                   await supabase.from('campaign_connection_requests')
                     .update({ conversation_stopped: true })
                     .eq('id', req.id);
+                  continue;
+                }
+
+                // ★ LIVE REPLY CHECK: If the lead has sent ANY message, stop step advancement
+                // The Conversational AI SDR will handle the conversation from here
+                const leadReplied = chatMessages.some((msg: any) => {
+                  const isFromLead = msg.is_sender === false || msg.role === 'other' || msg.sender_type === 'attendee' || msg.direction === 'inbound';
+                  const msgTime = new Date(msg.timestamp || msg.date || msg.created_at || 0);
+                  return isFromLead && msgTime >= crCreatedAt;
+                });
+                if (leadReplied) {
+                  console.log(`[followup] ★ Lead ${req.contact_id} has replied — stopping step advancement, Conversational AI SDR takes over`);
+                  await supabase.from('campaign_connection_requests')
+                    .update({ last_incoming_message_at: new Date().toISOString() })
+                    .eq('id', req.id)
+                    .is('last_incoming_message_at', null); // only set if not already set
                   continue;
                 }
               }
