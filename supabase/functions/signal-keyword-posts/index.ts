@@ -535,11 +535,29 @@ Deno.serve(async (req) => {
     console.log(`[CONFIG] Keywords (${keywords.length}): ${keywords.join(' | ')}`);
 
     // ─── PIPELINE DIAGNOSTIC STATS ───
+    // ── Load previously processed post IDs for cross-run dedup ──
+    let alreadyProcessed = new Set<string>();
+    try {
+      const { data: ppRows } = await supabase
+        .from('processed_posts')
+        .select('social_id')
+        .eq('agent_id', agent_id);
+      if (ppRows) {
+        alreadyProcessed = new Set(ppRows.map((r: any) => r.social_id));
+      }
+      console.log(`[CROSS-RUN DEDUP] Loaded ${alreadyProcessed.size} previously processed post IDs for agent ${agent_id}`);
+    } catch (e) {
+      console.warn('[CROSS-RUN DEDUP] Failed to load processed posts, continuing without:', e);
+    }
+
+    const newlyProcessedPostIds: string[] = [];
+
     const pipelineStats = {
       keywords_processed: 0,
       total_posts_fetched: 0,
       unipile_errors: 0,
       unipile_empty_responses: 0,
+      skipped_already_processed: 0,
       posts_after_dedup: 0,
       duplicates_removed: 0,
       passed_prefilter: 0,
