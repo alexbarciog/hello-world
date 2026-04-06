@@ -44,35 +44,38 @@ Deno.serve(async (req) => {
     ].filter(Boolean).join('\n');
 
     const extraInstructions: Record<string, string> = {
-      keyword_posts: `You have two inputs: what the COMPANY SELLS and who their ICP is.
+      keyword_posts: `Generate 10 keyword phrases for this specific company based on the business context above.
 
-Your job is to generate 10 keyword phrases that a person in the ICP would write in a LinkedIn post when they need what this company sells.
+THINKING PROCESS:
+1. What is the #1 pain that makes someone search for this product?
+2. How does a frustrated user describe that pain on LinkedIn in plain English?
+3. What would someone write when asking their network for a recommendation?
+4. What would someone write when they have just decided their current solution is not working?
 
-THINKING PROCESS — do this before generating:
-1. What specific problem does this company solve?
-2. How would someone in the ICP describe that problem in their own words on LinkedIn?
-3. What would they write right before they start looking for a solution?
-4. What would they write when asking their network for a recommendation?
+RULES:
+- Write exactly how a human types on LinkedIn — lowercase, casual, real
+- 4-10 words per phrase
+- Must describe a PAIN or a REQUEST FOR HELP — not a research task
+- Must be specific to what this company sells
+- No jargon, no corporate language, no analyst terminology
+- If the phrase could appear in a Gartner report — delete it
+- If a frustrated founder would never type it — delete it
 
-PHRASE STRUCTURE — use these templates as a starting point:
-- "looking for [specific thing this company does]"
-- "anyone recommend [type of service this company provides]"
-- "struggling with [specific pain point this company solves]"
-- "need help with [specific task this company handles]"
-- "switching from [current approach] to [what this company offers]"
-- "our [team/company] needs [specific service]"
-- "evaluating [type of solution this company provides]"
+GOOD examples (real human language):
+- "our cold email reply rate has tanked"
+- "anyone using something better than apollo"
+- "need to find leads who are actually buying"
+- "outbound is not working what are you using"
+- "our website looks outdated need a redesign"
+- "anyone recommend a good design agency"
 
-CRITICAL RULES:
-- Every phrase must be specific to THIS company's service — not generic buying intent
-- A design agency gets "need a brand refresh" not "looking for a tool"
-- A dev agency gets "need to outsource our MVP" not "evaluating solutions"
-- A lead gen tool gets "struggling to fill our pipeline" not "need help with outbound"
-- Phrases must be 3-8 words
-- Must sound like real LinkedIn writing — casual, direct, human
-- Must indicate the person NEEDS what this company sells RIGHT NOW
+BAD examples (corporate jargon nobody types):
+- "evaluating revenue orchestration platforms"
+- "standardizing our sales tech stack"
+- "benchmarks for pipeline conversion rates"
+- "looking to integrate our CRM with"
 
-Generate 10 phrases. We will filter down to the best 5-7.`,
+Generate 10 phrases this way. Raw, real, human.`,
 
       hashtag_engagement: `Generate exactly 7 LinkedIn hashtags (WITHOUT the # symbol) that are NICHE and SPECIFIC to the services and industry described above.
 
