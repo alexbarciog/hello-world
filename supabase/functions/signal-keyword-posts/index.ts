@@ -503,7 +503,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const START = Date.now();
-  const MAX_RUNTIME_MS = 105_000;
+  const MAX_RUNTIME_MS = 145_000; // 145s — enough for 24+ keywords
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
 
   try {
@@ -594,7 +594,7 @@ Deno.serve(async (req) => {
 
     for (const keyword of keywords) {
       pipelineStats.keywords_processed++;
-      if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" — ${inserted} leads so far`); break; }
+      if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" (${pipelineStats.keywords_processed}/${keywords.length}) — ${inserted} leads so far, ${keywords.length - pipelineStats.keywords_processed} keywords remaining`); break; }
 
       // ── Step 1: Fetch posts with pagination ──
       const keywordPosts: any[] = [];
