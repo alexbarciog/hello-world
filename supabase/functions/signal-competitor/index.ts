@@ -113,6 +113,37 @@ function delay(ms: number){return new Promise(r=>setTimeout(r,ms));}
 function extractLinkedInId(url: string): string|null { if(!url) return null; const m=url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/); if(m) return m[1]; return url.replace(/^https?:\/\//,'').replace(/\/$/,'')||null; }
 function extractCompanyName(url: string): string|null { const id=extractLinkedInId(url); if(!id) return null; return id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
+// ─── Resolve company slug to numeric ID via Unipile ──────────────────────────
+const companyIdCache = new Map<string, string | null>();
+
+async function resolveCompanyId(slug: string, accountId: string, apiKey: string, dsn: string): Promise<string | null> {
+  const cached = companyIdCache.get(slug);
+  if (cached !== undefined) return cached;
+
+  try {
+    const res = await unipileGet(`/api/v1/linkedin/company/${encodeURIComponent(slug)}?account_id=${accountId}`, apiKey, dsn);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[COMP] resolveCompanyId("${slug}"): HTTP ${res.status} - ${errText.slice(0, 200)}`);
+      companyIdCache.set(slug, null);
+      return null;
+    }
+    const data = await res.json();
+    const numericId = data.id || data.provider_id || data.company_id || null;
+    if (numericId) {
+      console.log(`[COMP] Resolved "${slug}" → numeric ID ${numericId}`);
+    } else {
+      console.warn(`[COMP] resolveCompanyId("${slug}"): response had no id field. Keys: ${Object.keys(data).join(', ')}`);
+    }
+    companyIdCache.set(slug, numericId ? String(numericId) : null);
+    return numericId ? String(numericId) : null;
+  } catch (err) {
+    console.error(`[COMP] resolveCompanyId("${slug}") error:`, err);
+    companyIdCache.set(slug, null);
+    return null;
+  }
+}
+
 async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<string|null>{
   const{data:e}=await sb.from('lists').select('id, source_agent_id').eq('user_id',uid).eq('name',ln).limit(1);
   if(e?.length>0) {
