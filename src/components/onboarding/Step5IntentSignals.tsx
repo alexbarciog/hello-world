@@ -238,6 +238,9 @@ export const Step5IntentSignals = ({
           industries: icp.targetIndustries,
           companyTypes: icp.companyTypes,
           locations: icp.targetLocations,
+          companyName: data.companyName,
+          description: data.description,
+          website: data.website,
         },
       });
       if (error) throw error;
