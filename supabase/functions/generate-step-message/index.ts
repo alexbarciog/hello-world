@@ -210,29 +210,35 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
   const isLastStep = req.stepNumber >= 4;
   const signalIsJobChange = isJobChangeSignal(lead.signal);
 
-  const systemPrompt = `You write one LinkedIn outreach message to a specific person. It must feel human.
+  const systemPrompt = `You write one LinkedIn outreach message to a specific person. It must feel human and trigger a need.
 
 LEAD CONTEXT (use real values, never placeholders):
 - First name: ${lead.firstName || 'Not provided'}
 - Last name: ${lead.lastName || 'Not provided'}
 - Company: ${lead.company || 'Not provided'}
 - Title: ${lead.title || 'Not provided'}
-- Buying signal: ${lead.signal || 'Not provided'}
+- Buying signal (what they posted/engaged with): ${lead.signal || 'Not provided'}
 - Signal type: ${signalIsJobChange ? 'job_change' : 'non_job_change'}
 
 SENDER CONTEXT:
 - Company: ${req.companyName || 'Our company'}
 - Value proposition: ${req.valueProposition || 'Not specified'}
-- Pain points solved: ${(req.painPoints || []).join(', ') || 'Not specified'}
+- Pain points we solve: ${(req.painPoints || []).join(', ') || 'Not specified'}
 - Industry: ${req.industry || 'Not specified'}
 
-RULES (MUST FOLLOW):
+CRITICAL — SPECIFICITY RULES:
+1. Read the buying signal carefully. Identify the EXACT problem or topic the lead cares about.
+2. Name that problem in your opening line using the lead's own language from the signal. Example: if the signal says "looking for new lead generation channels", say "finding new lead gen channels" — not "the problems you solve".
+3. Then connect it to ONE specific result we deliver. Pick the most relevant pain point from "Pain points we solve" above.
+4. NEVER use vague phrases like "the problems you solve", "challenges you face", "what you're working on", "your needs", "people like you". These are lazy and generic. Always be concrete.
+5. The lead should read the message and think "this person actually understands what I need."
+
+STYLE RULES:
 - Use simple everyday English. 2-4 short sentences. Under 55 words.
 - Split into 2 short paragraphs.
 - End with ONE clear question.
 - NEVER output placeholders like {{first_name}}, {{company}}, {{title}}, {{signal}}.
 - Use real values when available. If missing, write naturally without blanks.
-- Anchor message in buying signal first.
 - If signal type is non_job_change, DO NOT mention new role, promotion, or joining.
 - NEVER use em-dash (—) or semicolons.
 - Avoid AI-sounding phrases, buzzwords, and generic intros.
@@ -248,11 +254,11 @@ ${req.customTraining ? `\nEXTRA USER INSTRUCTIONS:\n${req.customTraining}` : ''}
 
   let userPrompt = '';
   if (isFirstMessage) {
-    userPrompt = `Write Step 2 (first message after connection acceptance).${historyBlock}\n\nMake it personal to this lead's buying signal and role. Keep it concise and natural.\n\nReturn ONLY the message text.`;
+    userPrompt = `Write Step 2 (first message after connection acceptance).${historyBlock}\n\nIMPORTANT: Reference the lead's specific buying signal in concrete terms. Name the exact problem or topic they care about. Then connect it to one specific outcome we deliver. No vague language.\n\nReturn ONLY the message text.`;
   } else if (isLastStep) {
-    userPrompt = `Write Step ${req.stepNumber} (final follow-up).${historyBlock}\n\n${req.previousStepMessage ? `Last message sent:\n"${req.previousStepMessage}"` : ''}\n\nShort nudge, low pressure, clear question.\n\nReturn ONLY the message text.`;
+    userPrompt = `Write Step ${req.stepNumber} (final follow-up).${historyBlock}\n\n${req.previousStepMessage ? `Last message sent:\n"${req.previousStepMessage}"` : ''}\n\nShort nudge, low pressure, clear question. Still reference their specific need.\n\nReturn ONLY the message text.`;
   } else {
-    userPrompt = `Write Step ${req.stepNumber} follow-up.${historyBlock}\n\n${req.previousStepMessage ? `Last message sent:\n"${req.previousStepMessage}"` : ''}\n\nBuild naturally, add one relevant pain point, and end with a clear question.\n\nReturn ONLY the message text.`;
+    userPrompt = `Write Step ${req.stepNumber} follow-up.${historyBlock}\n\n${req.previousStepMessage ? `Last message sent:\n"${req.previousStepMessage}"` : ''}\n\nBuild naturally, add one specific pain point relevant to their signal, and end with a clear question.\n\nReturn ONLY the message text.`;
   }
 
   return { systemPrompt, userPrompt };
