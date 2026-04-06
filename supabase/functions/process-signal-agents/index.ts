@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     // Return immediately — all heavy work happens in background
     // @ts-ignore EdgeRuntime.waitUntil is available in Supabase Edge Functions
     EdgeRuntime.waitUntil(
-      processInBackground(jobId, agents).catch(async (err) => {
+      processInBackground(jobId, agents, bypassPlanCheck).catch(async (err) => {
         console.error(`Background processing failed for run ${jobId}:`, err);
         const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await sb.from('signal_agent_runs').update({
