@@ -77,7 +77,10 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
   // ── Stripe subscription check ──
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
   const paidUsers = new Set<string>();
-  if (stripeKey) {
+  if (bypassPlanCheck) {
+    console.log('⚡ bypass_plan_check=true — treating all agents as paid');
+    agents.forEach((a: any) => paidUsers.add(a.user_id));
+  } else if (stripeKey) {
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
     const uniqueUserIds = [...new Set(agents.map((a: any) => a.user_id))];
     for (const uid of uniqueUserIds) {
