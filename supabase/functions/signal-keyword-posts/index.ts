@@ -666,7 +666,7 @@ Deno.serve(async (req) => {
         const postText = extractPostText(post);
         const authorData = post.author || post.actor || post.author_detail || null;
 
-        const filterResult = preFilterPost(postText, keyword, authorData, icp);
+        const filterResult = preFilterPost(postText, keyword, authorData, icp, isHighPrecision);
 
         if (!filterResult.pass) {
           if (filterResult.reason === 'no_phrase_match') {
