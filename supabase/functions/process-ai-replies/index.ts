@@ -16,6 +16,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  */
 
 const REJECTION_PATTERNS = [
+  // Direct rejections
   /\bnot interested\b/i,
   /\bno thanks?\b/i,
   /\bno,?\s*thank you\b/i,
@@ -42,6 +43,35 @@ const REJECTION_PATTERNS = [
   /\bpass\b/i,
   /\bi'?ll pass\b/i,
   /\bnot relevant\b/i,
+  // "I don't need/want" patterns
+  /\bdon'?t need\b/i,
+  /\bdon'?t want\b/i,
+  /\bdon'?t do\b/i,
+  /\bwe don'?t\b/i,
+  /\bi don'?t\b/i,
+  /\bnot (something|anything) (i|we)\b/i,
+  /\bnot (my|our) (thing|area|focus|department)\b/i,
+  /\bwrong person\b/i,
+  /\bnot the right (person|contact|fit)\b/i,
+  /\bnot (a )?(fit|match)\b/i,
+  // Polite declines
+  /\bappreciate it,?\s*but\b/i,
+  /\bthanks?,?\s*but\s*(no|i'?m? (good|fine|ok|set))\b/i,
+  /\bi'?m?\s*(good|fine|ok|set|sorted|covered)\b/i,
+  /\balready\s*(have|use|using|got|covered|sorted)\b/i,
+  /\bwe'?ve got\b/i,
+  /\bnah\b/i,
+  /\bno way\b/i,
+  /\bcan'?t help\b/i,
+  /\bnot my\s*(call|decision)\b/i,
+  // Off-topic / help-seeking (not a buyer)
+  /\bcan you help me\s*(with|find|get)\b/i,
+  /\bsend\s*(me\s*)?(your\s*)?(cv|resume|portfolio)\b/i,
+  /\blooking for\s*(a\s*)?(job|work|position|role|opportunity)\b/i,
+  /\bare you hiring\b/i,
+  /\bdo you have.*position\b/i,
+  /\bdo you have.*opening\b/i,
+  /\bcan (you|i).*advic/i,
 ];
 
 // ── Meeting intent detection ──
@@ -358,9 +388,31 @@ async function processCampaignReplies(
             .filter((line: string) => line.length > 5)
             .join('\n');
 
-          // Check for soft rejection
+          // Check for soft rejection (regex-based, 2+ hits in history)
           if (isSoftRejection(conversationHistory)) {
             console.log(`[ai-replies] Soft rejection detected (2+ signals) from contact ${cr.contact_id}`);
+            await supabase.from('campaign_connection_requests')
+              .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
+              .eq('id', cr.id);
+            await supabase.from('contacts')
+              .update({ lead_status: 'not_interested' })
+              .eq('id', cr.contact_id);
+            stopped++;
+            continue;
+          }
+
+          // ── AI-BASED INTENT CLASSIFICATION ──
+          // Catches nuanced rejections that regex misses (e.g., "can you help me find a job?",
+          // "I was wondering if you could give me advice", off-topic requests)
+          const aiIntent = await classifyLeadIntent(supabaseUrl, supabaseServiceRoleKey, {
+            leadMessage,
+            conversationHistory,
+            companyName: campaign.company_name,
+            valueProposition: campaign.value_proposition,
+          });
+
+          if (aiIntent === 'stop') {
+            console.log(`[ai-replies] 🛑 AI classified as STOP for contact ${cr.contact_id}: "${leadMessage.slice(0, 100)}"`);
             await supabase.from('campaign_connection_requests')
               .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
               .eq('id', cr.id);
@@ -436,7 +488,19 @@ async function processCampaignReplies(
             meetingContext: meetingContext,
           });
 
-          if (!reply.trim()) continue;
+          if (!reply.trim() || reply.trim() === '[STOP]') {
+            if (reply.trim() === '[STOP]') {
+              console.log(`[ai-replies] 🛑 AI returned [STOP] for contact ${cr.contact_id} — stopping conversation`);
+              await supabase.from('campaign_connection_requests')
+                .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
+                .eq('id', cr.id);
+              await supabase.from('contacts')
+                .update({ lead_status: 'not_interested' })
+                .eq('id', cr.contact_id);
+              stopped++;
+            }
+            continue;
+          }
 
           const sendRes = await fetch(
             `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(cr.chat_id)}/messages`,
@@ -614,6 +678,68 @@ async function generateConversationalReply(
   } catch (error) {
     console.error('[ai-replies] generate reply failed:', error);
     return '';
+  }
+}
+
+// ── AI-based intent classifier ──
+// Returns 'continue' (proceed with reply) or 'stop' (end conversation)
+async function classifyLeadIntent(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  ctx: { leadMessage: string; conversationHistory: string; companyName?: string; valueProposition?: string },
+): Promise<'continue' | 'stop'> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return 'continue'; // fail open
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        temperature: 0,
+        max_tokens: 20,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a sales conversation classifier. Your ONLY job is to determine if the lead's latest message means we should STOP the conversation.
+
+Output EXACTLY one word: "stop" or "continue"
+
+STOP the conversation if the lead:
+- Says they're not interested, don't need/want the service, or declines in any way
+- Asks for something off-topic (job advice, CV review, career help, personal favors)
+- Is looking for a job or asking if you're hiring
+- Says they already have a solution or are covered
+- Expresses annoyance, asks to stop messaging
+- Gives any form of "no" even if polite ("thanks but I'm good", "appreciate it but no")
+- Is clearly not a potential buyer for: ${ctx.companyName || 'our service'} (${ctx.valueProposition || 'B2B service'})
+- Redirects the conversation away from business (asking for free advice, mentoring, etc.)
+
+CONTINUE ONLY if the lead:
+- Shows genuine interest in the product/service
+- Asks questions about what you offer
+- Agrees to a call or meeting
+- Engages in normal professional small talk (early rapport building)
+- Shares relevant business challenges`,
+          },
+          {
+            role: 'user',
+            content: `Conversation:\n${ctx.conversationHistory}\n\nLead's latest message: "${ctx.leadMessage}"\n\nOutput:`,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) return 'continue'; // fail open
+    const data = await response.json();
+    const result = (data.choices?.[0]?.message?.content || '').trim().toLowerCase();
+    return result === 'stop' ? 'stop' : 'continue';
+  } catch {
+    return 'continue'; // fail open
   }
 }
 
