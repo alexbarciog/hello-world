@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       limit: 5,
     });
 
-    const activeSub = subs.data.find(s => s.status === "active");
+    const activeSub = subs.data.find(s => s.status === "active" || s.status === "trialing");
     const hasActiveSub = Boolean(activeSub);
     const hadSubscription = subs.data.length > 0;
 
