@@ -646,11 +646,14 @@ async function processCampaign(
   // Rule: Step 2 can be generated when connection is accepted (current_step=1).
   // Step 3+ can only be generated AFTER the previous step's message has status='sent'.
   if (lovableApiKey) {
+    // ★ CRITICAL: Exclude contacts who have replied — Conversational AI SDR handles them
     const { data: allAccepted } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, current_step, user_id, chat_id, step_completed_at')
+      .select('id, contact_id, current_step, user_id, chat_id, step_completed_at, last_incoming_message_at')
       .eq('campaign_id', campaign.id)
-      .eq('status', 'accepted');
+      .eq('status', 'accepted')
+      .is('last_incoming_message_at', null)
+      .eq('conversation_stopped', false);
 
     if (allAccepted && allAccepted.length > 0) {
       for (const req of allAccepted) {
