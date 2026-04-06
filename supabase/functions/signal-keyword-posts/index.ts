@@ -532,11 +532,46 @@ Deno.serve(async (req) => {
     console.log(`[CONFIG] ICP: titles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], ownCompany="${ownCompanyLower}", minScore=${MIN_INTENT_SCORE}`);
     console.log(`[CONFIG] Keywords (${keywords.length}): ${keywords.join(' | ')}`);
 
+    // ─── PIPELINE DIAGNOSTIC STATS ───
+    const pipelineStats = {
+      keywords_processed: 0,
+      total_posts_fetched: 0,
+      unipile_errors: 0,
+      unipile_empty_responses: 0,
+      posts_after_dedup: 0,
+      duplicates_removed: 0,
+      passed_prefilter: 0,
+      rejected_no_phrase_match: 0,
+      rejected_wrong_country: 0,
+      rejected_wrong_industry: 0,
+      sent_to_ai: 0,
+      passed_ai: 0,
+      rejected_ai_not_buyer: 0,
+      rejected_ai_low_score: 0,
+      ai_errors: 0,
+      ai_fallback_used: 0,
+      profile_fetches_attempted: 0,
+      profile_fetches_failed: 0,
+      rejected_private_profile: 0,
+      rejected_own_company: 0,
+      rejected_competitor: 0,
+      rejected_irrelevant_title: 0,
+      rejected_wrong_country_post_profile: 0,
+      rejected_early_db_dedup: 0,
+      rejected_author_dedup: 0,
+      rejected_no_author: 0,
+      inserted: 0,
+      sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
+      sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
+      sample_inserted: [] as Array<{ name: string; headline: string; intentScore: number }>,
+    };
+
     let inserted = 0;
     const globalSeenPostIds = new Set<string>();
     const globalSeenAuthorIds = new Set<string>();
 
     for (const keyword of keywords) {
+      pipelineStats.keywords_processed++;
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" — ${inserted} leads so far`); break; }
 
       // ── Step 1: Fetch posts with pagination ──
