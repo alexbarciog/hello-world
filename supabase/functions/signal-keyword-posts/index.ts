@@ -475,6 +475,8 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
           results.set(cls.id, cls);
           console.log(`[AI] ✅ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
         } else {
+          // Store rejection with negative marker so pipeline can capture sample
+          results.set(`rejected:${cls.id}`, cls);
           console.log(`[AI] ❌ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
         }
       }
@@ -532,11 +534,46 @@ Deno.serve(async (req) => {
     console.log(`[CONFIG] ICP: titles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], ownCompany="${ownCompanyLower}", minScore=${MIN_INTENT_SCORE}`);
     console.log(`[CONFIG] Keywords (${keywords.length}): ${keywords.join(' | ')}`);
 
+    // ─── PIPELINE DIAGNOSTIC STATS ───
+    const pipelineStats = {
+      keywords_processed: 0,
+      total_posts_fetched: 0,
+      unipile_errors: 0,
+      unipile_empty_responses: 0,
+      posts_after_dedup: 0,
+      duplicates_removed: 0,
+      passed_prefilter: 0,
+      rejected_no_phrase_match: 0,
+      rejected_wrong_country: 0,
+      rejected_wrong_industry: 0,
+      sent_to_ai: 0,
+      passed_ai: 0,
+      rejected_ai_not_buyer: 0,
+      rejected_ai_low_score: 0,
+      ai_errors: 0,
+      ai_fallback_used: 0,
+      profile_fetches_attempted: 0,
+      profile_fetches_failed: 0,
+      rejected_private_profile: 0,
+      rejected_own_company: 0,
+      rejected_competitor: 0,
+      rejected_irrelevant_title: 0,
+      rejected_wrong_country_post_profile: 0,
+      rejected_early_db_dedup: 0,
+      rejected_author_dedup: 0,
+      rejected_no_author: 0,
+      inserted: 0,
+      sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
+      sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
+      sample_inserted: [] as Array<{ name: string; headline: string; intentScore: number }>,
+    };
+
     let inserted = 0;
     const globalSeenPostIds = new Set<string>();
     const globalSeenAuthorIds = new Set<string>();
 
     for (const keyword of keywords) {
+      pipelineStats.keywords_processed++;
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" — ${inserted} leads so far`); break; }
 
       // ── Step 1: Fetch posts with pagination ──
@@ -550,16 +587,27 @@ Deno.serve(async (req) => {
           const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
           if (cursor) searchBody.cursor = cursor;
           const res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
-          if (!res.ok) { const t = await res.text(); console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res.status} - ${t.slice(0, 200)}`); break; }
+          if (!res.ok) {
+            const t = await res.text();
+            console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res.status} - ${t.slice(0, 200)}`);
+            pipelineStats.unipile_errors++;
+            break;
+          }
           const data = await res.json();
           const items = data.items || data.results || [];
+          if (items.length === 0) pipelineStats.unipile_empty_responses++;
           keywordPosts.push(...items);
-          console.log(`[FETCH] "${keyword}" page ${page + 1}: ${items.length} posts (total: ${keywordPosts.length})`);
+          console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
           cursor = data.cursor || data.next_cursor || null;
           if (!cursor || items.length === 0) break;
           if (page < MAX_PAGES - 1) await delay(200);
         }
-      } catch (e) { console.error(`Keyword search "${keyword}":`, e); }
+      } catch (e) {
+        console.error(`Keyword search "${keyword}":`, e);
+        pipelineStats.unipile_errors++;
+      }
+
+      pipelineStats.total_posts_fetched += keywordPosts.length;
 
       // ── Step 2: Dedupe posts ──
       const uniquePosts = keywordPosts.filter(p => {
@@ -569,15 +617,22 @@ Deno.serve(async (req) => {
         return true;
       });
 
+      const dupsThisKeyword = keywordPosts.length - uniquePosts.length;
+      pipelineStats.duplicates_removed += dupsThisKeyword;
+      pipelineStats.posts_after_dedup += uniquePosts.length;
+
       if (uniquePosts.length === 0) {
         console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched, 0 unique — skipping`);
         continue;
       }
 
       // ── Step 3: PRE-FILTER — phrase match + country + industry ──
-      // This runs in <1ms per post, zero AI cost. Eliminates garbage from LinkedIn's fuzzy search.
       const preFilteredPosts: { post: any; matchedPhrase: string }[] = [];
       let preFilterStats = { no_phrase: 0, wrong_country: 0, wrong_industry: 0, passed: 0 };
+
+      // Log generated variants for this keyword
+      const diagVariants = generatePhraseVariants(keyword);
+      console.log(`[PRE-FILTER] Keyword "${keyword}" generated variants:`, JSON.stringify(diagVariants));
 
       for (const post of uniquePosts) {
         const postText = extractPostText(post);
@@ -586,14 +641,36 @@ Deno.serve(async (req) => {
         const filterResult = preFilterPost(postText, keyword, authorData, icp);
 
         if (!filterResult.pass) {
-          if (filterResult.reason === 'no_phrase_match') preFilterStats.no_phrase++;
-          else if (filterResult.reason === 'wrong_country') preFilterStats.wrong_country++;
-          else preFilterStats.wrong_industry++;
+          if (filterResult.reason === 'no_phrase_match') {
+            preFilterStats.no_phrase++;
+            pipelineStats.rejected_no_phrase_match++;
+          } else if (filterResult.reason === 'wrong_country') {
+            preFilterStats.wrong_country++;
+            pipelineStats.rejected_wrong_country++;
+          } else {
+            preFilterStats.wrong_industry++;
+            pipelineStats.rejected_wrong_industry++;
+          }
+          // Capture sample rejections (max 3)
+          if (pipelineStats.sample_prefilter_rejections.length < 3) {
+            pipelineStats.sample_prefilter_rejections.push({
+              keyword,
+              variants: diagVariants,
+              postSample: postText.substring(0, 300),
+              reason: filterResult.reason || 'unknown',
+            });
+          }
           continue;
         }
 
         preFilterStats.passed++;
+        pipelineStats.passed_prefilter++;
         preFilteredPosts.push({ post, matchedPhrase: filterResult.matchedPhrase! });
+      }
+
+      // Warn if ALL posts for a keyword were rejected at pre-filter
+      if (preFilterStats.passed === 0 && uniquePosts.length > 0) {
+        console.warn(`[KEYWORD: "${keyword}"] ALL ${uniquePosts.length} posts rejected at pre-filter. Check phrase variants.`);
       }
 
       console.log(`[PRE-FILTER] "${keyword}": ${uniquePosts.length} → ${preFilteredPosts.length} passed (rejected: phrase=${preFilterStats.no_phrase} country=${preFilterStats.wrong_country} industry=${preFilterStats.wrong_industry})`);
@@ -612,7 +689,45 @@ Deno.serve(async (req) => {
         };
       });
 
+      pipelineStats.sent_to_ai += postsForAI.length;
+
       const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE);
+
+      // Track AI results in stats
+      for (const p of postsForAI) {
+        const cls = intentResults.get(p.id);
+        const rejectedCls = intentResults.get(`rejected:${p.id}`);
+        if (cls) {
+          if (cls.reason === 'ai_fallback' || cls.reason === 'ai_error' || cls.reason === 'ai_no_response' || cls.reason === 'ai_missing_response' || cls.reason === 'no_ai_key_default') {
+            pipelineStats.ai_fallback_used++;
+          }
+          pipelineStats.passed_ai++;
+        } else if (rejectedCls) {
+          if (!rejectedCls.is_buyer) {
+            pipelineStats.rejected_ai_not_buyer++;
+          } else {
+            pipelineStats.rejected_ai_low_score++;
+          }
+          if (pipelineStats.sample_ai_rejections.length < 3) {
+            pipelineStats.sample_ai_rejections.push({
+              postSample: p.text.substring(0, 300),
+              is_buyer: rejectedCls.is_buyer,
+              intent_score: rejectedCls.intent_score,
+              reason: rejectedCls.reason,
+            });
+          }
+        } else {
+          pipelineStats.rejected_ai_not_buyer++;
+          if (pipelineStats.sample_ai_rejections.length < 3) {
+            pipelineStats.sample_ai_rejections.push({
+              postSample: p.text.substring(0, 300),
+              is_buyer: false,
+              intent_score: 0,
+              reason: 'no_ai_response_for_post',
+            });
+          }
+        }
+      }
 
       const qualifiedPosts = preFilteredPosts.filter(({ post }) => {
         const id = post.social_id || post.id || post.provider_id;
@@ -631,38 +746,42 @@ Deno.serve(async (req) => {
         const postId = post.social_id || post.id || post.provider_id;
         const intentData = intentResults.get(postId);
         const authorData = post.author || post.actor || post.author_detail || null;
-        if (!authorData) { keywordSkipped.noAuthor++; continue; }
+        if (!authorData) { keywordSkipped.noAuthor++; pipelineStats.rejected_no_author++; continue; }
 
         let author = normalizeProfile({ ...authorData });
         let authorId = extractLinkedinProfileId(author);
 
         // In-memory dedup
-        if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; continue; }
+        if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
         if (authorId) globalSeenAuthorIds.add(authorId);
 
         // Early dedup against DB
         if (authorId) {
           const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', authorId).limit(1);
-          if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; continue; }
+          if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
         }
 
         // Full profile fetch (only for genuinely new leads)
+        pipelineStats.profile_fetches_attempted++;
         const fullAuthor = await fetchFullProfile(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         if (fullAuthor) {
           author = fullAuthor;
           const newId = extractLinkedinProfileId(author);
           if (newId && newId !== authorId) {
-            if (globalSeenAuthorIds.has(newId)) { keywordSkipped.dupAuthor++; continue; }
+            if (globalSeenAuthorIds.has(newId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
             globalSeenAuthorIds.add(newId);
             const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', newId).limit(1);
-            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; continue; }
+            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
           }
           authorId = newId || authorId;
+        } else {
+          pipelineStats.profile_fetches_failed++;
         }
 
         // Reject LinkedIn Member (private profiles)
         if ((author.first_name || '').toLowerCase() === 'linkedin' && (author.last_name || '').toLowerCase() === 'member') {
           keywordSkipped.rejected++;
+          pipelineStats.rejected_private_profile++;
           continue;
         }
 
@@ -672,6 +791,7 @@ Deno.serve(async (req) => {
         if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(author, ownCompanyLower)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
           keywordSkipped.ownCompany++;
+          pipelineStats.rejected_own_company++;
           continue;
         }
 
@@ -679,6 +799,7 @@ Deno.serve(async (req) => {
         if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
           keywordSkipped.excluded++;
+          pipelineStats.rejected_competitor++;
           continue;
         }
 
@@ -687,11 +808,11 @@ Deno.serve(async (req) => {
         if (isClearlyIrrelevant(hl)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: irrelevant title "${hl.slice(0, 50)}"`);
           keywordSkipped.irrelevant++;
+          pipelineStats.rejected_irrelevant_title++;
           continue;
         }
 
         // ── POST-PROFILE country/industry re-check with full data ──
-        // Now we have the full profile, re-check country and industry
         if (icp.locations.length > 0) {
           const fullLocation = (author.location || author.country || '').toLowerCase();
           if (fullLocation) {
@@ -701,6 +822,7 @@ Deno.serve(async (req) => {
             if (!countryMatch) {
               console.log(`[PIPELINE] ⏭ ${lpid}: wrong country "${fullLocation}"`);
               keywordSkipped.excluded++;
+              pipelineStats.rejected_wrong_country_post_profile++;
               continue;
             }
           }
@@ -719,10 +841,20 @@ Deno.serve(async (req) => {
         if (result === 'inserted') {
           keywordInserted++;
           inserted++;
+          pipelineStats.inserted++;
           const tier = classifyContactWithIntentScore(match, icp, hl, intentData?.intent_score) || 'warm';
           console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier} (score=${intentData?.intent_score}, kw="${keyword}")`);
+          // Capture sample inserted (max 3)
+          if (pipelineStats.sample_inserted.length < 3) {
+            pipelineStats.sample_inserted.push({
+              name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+              headline: hl.substring(0, 100),
+              intentScore: intentData?.intent_score || 0,
+            });
+          }
         } else if (result === 'duplicate') {
           keywordSkipped.duplicate++;
+          pipelineStats.rejected_early_db_dedup++;
         } else {
           keywordSkipped.rejected++;
         }
@@ -730,6 +862,10 @@ Deno.serve(async (req) => {
 
       console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${preFilteredPosts.length} pre-filtered → ${qualifiedPosts.length} AI-qualified → ${keywordInserted} inserted (skip: noAuthor=${keywordSkipped.noAuthor} dupAuthor=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} irrel=${keywordSkipped.irrelevant} dup=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
     }
+
+    console.log('=== PIPELINE DIAGNOSTIC SUMMARY ===');
+    console.log(JSON.stringify(pipelineStats, null, 2));
+    console.log('=====================================');
 
     console.log(`signal-keyword-posts: ${inserted} leads total in ${Math.round((Date.now() - START) / 1000)}s`);
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
