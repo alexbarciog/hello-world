@@ -148,11 +148,14 @@ async function processCampaign(
   let messagesSent = 0;
 
   // Order by current_step ASC so step 1 contacts (short delay) are processed before step 2+ (long delay)
+  // ★ CRITICAL: Exclude contacts who have replied — Conversational AI SDR handles them
   const { data: acceptedRequests } = await supabase
     .from('campaign_connection_requests')
-    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at')
+    .select('id, contact_id, current_step, step_completed_at, chat_id, user_id, created_at, sent_at, last_incoming_message_at, conversation_stopped')
     .eq('campaign_id', campaign.id)
     .eq('status', 'accepted')
+    .is('last_incoming_message_at', null)
+    .eq('conversation_stopped', false)
     .order('current_step', { ascending: true })
     .order('step_completed_at', { ascending: true })
     .limit(MAX_MESSAGE_SENDS);
@@ -237,7 +240,7 @@ async function processCampaign(
           continue;
         }
 
-        // ── GUARD: Skip pre-existing conversations ──
+        // ── GUARD: Skip pre-existing conversations AND detect live replies ──
         if (chatId) {
           const crCreatedAt = new Date(req.created_at || req.sent_at || 0);
           try {
@@ -259,6 +262,22 @@ async function processCampaign(
                   await supabase.from('campaign_connection_requests')
                     .update({ conversation_stopped: true })
                     .eq('id', req.id);
+                  continue;
+                }
+
+                // ★ LIVE REPLY CHECK: If the lead has sent ANY message, stop step advancement
+                // The Conversational AI SDR will handle the conversation from here
+                const leadReplied = chatMessages.some((msg: any) => {
+                  const isFromLead = msg.is_sender === false || msg.role === 'other' || msg.sender_type === 'attendee' || msg.direction === 'inbound';
+                  const msgTime = new Date(msg.timestamp || msg.date || msg.created_at || 0);
+                  return isFromLead && msgTime >= crCreatedAt;
+                });
+                if (leadReplied) {
+                  console.log(`[followup] ★ Lead ${req.contact_id} has replied — stopping step advancement, Conversational AI SDR takes over`);
+                  await supabase.from('campaign_connection_requests')
+                    .update({ last_incoming_message_at: new Date().toISOString() })
+                    .eq('id', req.id)
+                    .is('last_incoming_message_at', null); // only set if not already set
                   continue;
                 }
               }
@@ -643,11 +662,14 @@ async function processCampaign(
   // Rule: Step 2 can be generated when connection is accepted (current_step=1).
   // Step 3+ can only be generated AFTER the previous step's message has status='sent'.
   if (lovableApiKey) {
+    // ★ CRITICAL: Exclude contacts who have replied — Conversational AI SDR handles them
     const { data: allAccepted } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, current_step, user_id, chat_id, step_completed_at')
+      .select('id, contact_id, current_step, user_id, chat_id, step_completed_at, last_incoming_message_at')
       .eq('campaign_id', campaign.id)
-      .eq('status', 'accepted');
+      .eq('status', 'accepted')
+      .is('last_incoming_message_at', null)
+      .eq('conversation_stopped', false);
 
     if (allAccepted && allAccepted.length > 0) {
       for (const req of allAccepted) {
