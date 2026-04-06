@@ -521,7 +521,7 @@ Deno.serve(async (req) => {
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
     const MIN_INTENT_SCORE = 60; // Score gate: below 60 = discard
     const isHighPrecision = precision_mode === 'high_precision';
-    console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
+    console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country+industry filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles || [],
