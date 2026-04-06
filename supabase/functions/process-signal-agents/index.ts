@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   let targetAgentId: string | null = null;
-  try { const body = await req.json(); targetAgentId = body?.agent_id || null; } catch { /* process all */ }
+  let bypassPlanCheck = false;
+  try { const body = await req.json(); targetAgentId = body?.agent_id || null; bypassPlanCheck = body?.bypass_plan_check === true; } catch { /* process all */ }
 
   try {
     // Minimal query: just get the agent to create a run record
@@ -46,7 +47,7 @@ Deno.serve(async (req) => {
     // Return immediately — all heavy work happens in background
     // @ts-ignore EdgeRuntime.waitUntil is available in Supabase Edge Functions
     EdgeRuntime.waitUntil(
-      processInBackground(jobId, agents).catch(async (err) => {
+      processInBackground(jobId, agents, bypassPlanCheck).catch(async (err) => {
         console.error(`Background processing failed for run ${jobId}:`, err);
         const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await sb.from('signal_agent_runs').update({
@@ -64,7 +65,7 @@ Deno.serve(async (req) => {
 
 // ─── Background processing ───────────────────────────────────────────────────
 
-async function processInBackground(runId: string, agents: any[]) {
+async function processInBackground(runId: string, agents: any[], bypassPlanCheck = false) {
   const START = Date.now();
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -76,7 +77,10 @@ async function processInBackground(runId: string, agents: any[]) {
   // ── Stripe subscription check ──
   const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
   const paidUsers = new Set<string>();
-  if (stripeKey) {
+  if (bypassPlanCheck) {
+    console.log('⚡ bypass_plan_check=true — treating all agents as paid');
+    agents.forEach((a: any) => paidUsers.add(a.user_id));
+  } else if (stripeKey) {
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
     const uniqueUserIds = [...new Set(agents.map((a: any) => a.user_id))];
     for (const uid of uniqueUserIds) {
