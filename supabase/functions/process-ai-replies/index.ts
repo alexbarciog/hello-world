@@ -488,8 +488,8 @@ async function processCampaignReplies(
             meetingContext: meetingContext,
           });
 
-          if (!reply.trim() || reply.trim() === '[STOP]') {
-            if (reply.trim() === '[STOP]') {
+          if (!reply.trim() || reply.trim().includes('[STOP]')) {
+            if (reply.trim().includes('[STOP]')) {
               console.log(`[ai-replies] 🛑 AI returned [STOP] for contact ${cr.contact_id} — stopping conversation`);
               await supabase.from('campaign_connection_requests')
                 .update({ conversation_stopped: true, last_incoming_message_at: msgTimestamp, lead_status: 'not_interested' })
@@ -606,7 +606,19 @@ async function processCampaignReplies(
         meetingContext: meetingContext,
       });
 
-      if (!followUp.trim()) continue;
+      if (!followUp.trim() || followUp.trim().includes('[STOP]')) {
+        if (followUp.trim().includes('[STOP]')) {
+          console.log(`[ai-replies] 🛑 AI returned [STOP] in follow-up for contact ${cr.contact_id} — stopping`);
+          await supabase.from('campaign_connection_requests')
+            .update({ conversation_stopped: true, lead_status: 'not_interested' })
+            .eq('id', cr.id);
+          await supabase.from('contacts')
+            .update({ lead_status: 'not_interested' })
+            .eq('id', cr.contact_id);
+          stopped++;
+        }
+        continue;
+      }
 
       const sendRes = await fetch(
         `https://${unipileDsn}/api/v1/chats/${encodeURIComponent(cr.chat_id)}/messages`,
