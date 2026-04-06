@@ -34,8 +34,9 @@ function collectCompanyFields(p: any): string[] {
 function matchesCompanyName(value: string, companyName: string): boolean {
   const normalizedValue = normalizeText(value);
   const normalizedCompany = normalizeText(companyName);
-  if (!normalizedValue || !normalizedCompany) return false;
-  return normalizedValue.includes(normalizedCompany) || normalizedCompany.includes(normalizedValue);
+  if (!normalizedValue || !normalizedCompany || normalizedCompany.length < 3) return false;
+  // Only check if company name appears in the value (not the reverse — avoids false positives)
+  return normalizedValue.includes(normalizedCompany);
 }
 function worksAtCompany(profile: any, companyName: string): boolean {
   if (!companyName?.trim()) return false;
@@ -268,6 +269,15 @@ Deno.serve(async (req) => {
     async function processCompetitorEngagers(url: string) {
       const companyId = extractLinkedInId(url);
       const companyName = extractCompanyName(url) || companyId || 'Unknown';
+      const companyNameLower = companyName.toLowerCase();
+      // Build multiple name variants for robust employee detection
+      const competitorNameVariants: string[] = [companyNameLower];
+      if (companyId) competitorNameVariants.push(companyId.toLowerCase().replace(/-/g, ' '));
+      // Also add the raw slug (e.g., "bitdefender")
+      if (companyId) competitorNameVariants.push(companyId.toLowerCase());
+      // Deduplicate
+      const uniqueVariants = [...new Set(competitorNameVariants)];
+
       const isCompany = url.includes('/company/');
       const isPersonUrl = url.includes('/in/');
       if (!companyId) return;
@@ -473,8 +483,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Competitor employee exclusion
+        // Competitor employee exclusion (global list)
         if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) {
+          pipelineStats.excluded_competitor_employee++;
+          continue;
+        }
+
+        // ★ KEY FIX: Check if this person works at the SPECIFIC competitor whose posts they engaged with
+        // Many employees have generic headlines like "Sr. Director, North America Channels"
+        // that don't mention the company name, so the global check misses them.
+        const worksAtThisCompetitor = uniqueVariants.some(variant => worksAtCompany(fp, variant));
+        if (worksAtThisCompetitor) {
+          console.log(`[COMP] ❌ EMPLOYEE of "${companyName}": ${lpid || rawId} | "${(fp.headline||fp.title||'').slice(0,60)}" | company: ${fp.company || fp.current_company?.name || 'N/A'}`);
           pipelineStats.excluded_competitor_employee++;
           continue;
         }
