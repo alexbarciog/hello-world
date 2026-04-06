@@ -669,6 +669,68 @@ async function generateConversationalReply(
   }
 }
 
+// ── AI-based intent classifier ──
+// Returns 'continue' (proceed with reply) or 'stop' (end conversation)
+async function classifyLeadIntent(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  ctx: { leadMessage: string; conversationHistory: string; companyName?: string; valueProposition?: string },
+): Promise<'continue' | 'stop'> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return 'continue'; // fail open
+
+  try {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        temperature: 0,
+        max_tokens: 20,
+        messages: [
+          {
+            role: 'system',
+            content: `You are a sales conversation classifier. Your ONLY job is to determine if the lead's latest message means we should STOP the conversation.
+
+Output EXACTLY one word: "stop" or "continue"
+
+STOP the conversation if the lead:
+- Says they're not interested, don't need/want the service, or declines in any way
+- Asks for something off-topic (job advice, CV review, career help, personal favors)
+- Is looking for a job or asking if you're hiring
+- Says they already have a solution or are covered
+- Expresses annoyance, asks to stop messaging
+- Gives any form of "no" even if polite ("thanks but I'm good", "appreciate it but no")
+- Is clearly not a potential buyer for: ${ctx.companyName || 'our service'} (${ctx.valueProposition || 'B2B service'})
+- Redirects the conversation away from business (asking for free advice, mentoring, etc.)
+
+CONTINUE ONLY if the lead:
+- Shows genuine interest in the product/service
+- Asks questions about what you offer
+- Agrees to a call or meeting
+- Engages in normal professional small talk (early rapport building)
+- Shares relevant business challenges`,
+          },
+          {
+            role: 'user',
+            content: `Conversation:\n${ctx.conversationHistory}\n\nLead's latest message: "${ctx.leadMessage}"\n\nOutput:`,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) return 'continue'; // fail open
+    const data = await response.json();
+    const result = (data.choices?.[0]?.message?.content || '').trim().toLowerCase();
+    return result === 'stop' ? 'stop' : 'continue';
+  } catch {
+    return 'continue'; // fail open
+  }
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
