@@ -270,8 +270,7 @@ export default function Signals() {
     if (tasks) setRunTasks(prev => ({ ...prev, [runId]: tasks as AgentTask[] }));
   }
 
-
-    const user = (await supabase.auth.getUser()).data.user;
+  async function createAgent() {
     if (!user) return;
     const keywords = newKeywords.split(",").map((k) => k.trim()).filter(Boolean);
     const { data, error } = await supabase
