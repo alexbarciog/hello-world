@@ -226,6 +226,7 @@ export default function Signals() {
 
   useEffect(() => {
     fetchAgents();
+    fetchRuns();
   }, []);
 
   useEffect(() => {
