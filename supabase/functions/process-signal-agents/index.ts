@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   let targetAgentId: string | null = null;
-  try { const body = await req.json(); targetAgentId = body?.agent_id || null; } catch { /* process all */ }
+  let bypassPlanCheck = false;
+  try { const body = await req.json(); targetAgentId = body?.agent_id || null; bypassPlanCheck = body?.bypass_plan_check === true; } catch { /* process all */ }
 
   try {
     // Minimal query: just get the agent to create a run record
