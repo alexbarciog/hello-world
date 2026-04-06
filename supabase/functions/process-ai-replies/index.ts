@@ -16,6 +16,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  */
 
 const REJECTION_PATTERNS = [
+  // Direct rejections
   /\bnot interested\b/i,
   /\bno thanks?\b/i,
   /\bno,?\s*thank you\b/i,
@@ -42,6 +43,35 @@ const REJECTION_PATTERNS = [
   /\bpass\b/i,
   /\bi'?ll pass\b/i,
   /\bnot relevant\b/i,
+  // "I don't need/want" patterns
+  /\bdon'?t need\b/i,
+  /\bdon'?t want\b/i,
+  /\bdon'?t do\b/i,
+  /\bwe don'?t\b/i,
+  /\bi don'?t\b/i,
+  /\bnot (something|anything) (i|we)\b/i,
+  /\bnot (my|our) (thing|area|focus|department)\b/i,
+  /\bwrong person\b/i,
+  /\bnot the right (person|contact|fit)\b/i,
+  /\bnot (a )?(fit|match)\b/i,
+  // Polite declines
+  /\bappreciate it,?\s*but\b/i,
+  /\bthanks?,?\s*but\s*(no|i'?m? (good|fine|ok|set))\b/i,
+  /\bi'?m?\s*(good|fine|ok|set|sorted|covered)\b/i,
+  /\balready\s*(have|use|using|got|covered|sorted)\b/i,
+  /\bwe'?ve got\b/i,
+  /\bnah\b/i,
+  /\bno way\b/i,
+  /\bcan'?t help\b/i,
+  /\bnot my\s*(call|decision)\b/i,
+  // Off-topic / help-seeking (not a buyer)
+  /\bcan you help me\s*(with|find|get)\b/i,
+  /\bsend\s*(me\s*)?(your\s*)?(cv|resume|portfolio)\b/i,
+  /\blooking for\s*(a\s*)?(job|work|position|role|opportunity)\b/i,
+  /\bare you hiring\b/i,
+  /\bdo you have.*position\b/i,
+  /\bdo you have.*opening\b/i,
+  /\bcan (you|i).*advic/i,
 ];
 
 // ── Meeting intent detection ──
