@@ -1,64 +1,64 @@
 
 
-# Why Competitor Followers Still Finds Very Few Leads
+# Overhaul AI SDR Cold Outreach — Make It Undetectable as AI
 
-## Current Situation (from latest logs)
+## Problem
 
-Two separate invocations run for the same agent:
+The AI SDR writes messages that leads can tell are AI-generated. Messages are generic, repetitive across steps, and lack genuine sales psychology. A lead literally said "it's awful." The AI also hallucinates engagement when leads haven't replied, and force-appends "Open to a quick chat?" robotically.
 
-| Invocation | Result |
-|---|---|
-| `comp_followers` | **0 leads** — 116 engagers after dedup, but 0 profiles fetched, 74 skipped_no_id |
-| `comp_engagers` | **15 leads** — 216 after dedup, 59 profiles fetched, 15 inserted |
+## Design Principles
 
-The `comp_followers` invocation is essentially dead weight — it finds zero leads every run.
+Instead of telling the AI to "try a different angle" across steps (which makes follow-ups feel disconnected), the AI should **deepen the same angle** — like a real salesperson who keeps building the case from the same core insight, adding layers of proof, urgency, or social context each time.
 
-## Root Causes
+The AI should embody elite sales psychology: pattern interrupts, loss aversion, social proof, curiosity gaps, and mirroring the lead's own words back to them.
 
-### 1. Strategy A (LinkedIn search) — 429s persist despite retries
-The retry backoff (5s, then 10s) is too short. LinkedIn rate limits on search often last 60+ seconds. After exhausting 2 retries (~15s total wait), it still gets 429. This produces **zero search results** every run.
+## Changes — Single File
 
-### 2. Strategy 0 (Direct followers endpoint) — silently fails
-The endpoint `/api/v1/linkedin/company/{id}/followers` does not exist in Unipile's API. It returns a non-OK status, logs a fallback message, and moves on. This strategy has never produced results.
+**File**: `supabase/functions/generate-step-message/index.ts`
 
-### 3. Strategy B within comp_followers — duplicate work with comp_engagers
-Both `comp_followers` and `comp_engagers` call `processCompetitorEngagers()` on the same competitor URLs. The first invocation to run (comp_followers) processes engagers and marks them as "already processed" in the dedup set. The second invocation (comp_engagers) then finds many of those same IDs already processed, wasting capacity.
+### 1. Remove auto-append "Open to a quick chat?" (lines 57-60)
 
-However, in this run, comp_followers processed engagers but **skipped_no_id: 74** — meaning 74 engagers from reactions had no extractable LinkedIn profile ID. This is because reaction authors from Unipile sometimes only have a `name` field with no `public_id`, `provider_id`, or LinkedIn URL.
+Delete the block that force-appends a generic CTA when the message doesn't end with `?`. The AI prompt already instructs ending with a question — let it choose naturally. This is the #1 tell that it's automated.
 
-### 4. Reactions returning HTTP 500
-Multiple posts show `reactions HTTP 500` errors from Unipile. These are lost data points — reactions that could have yielded leads but returned server errors.
+### 2. Rewrite the system prompt (lines 213-248) — Sales Psychology Identity
 
-## Proposed Fixes
+Replace the current system prompt with one that gives the AI a **sales psychology persona**. Key additions:
 
-### Fix 1: Increase retry backoff dramatically for search
-Change from 5s/10s to **15s/30s/60s** with 3 retries instead of 2. LinkedIn search rate limits need longer cooldown.
+- **Identity**: "You are an elite B2B salesperson who has closed thousands of deals. You understand cognitive biases: loss aversion, social proof, curiosity gaps, the Zeigarnik effect. You use these naturally, never mechanically."
+- **Voice rule**: "Write exactly like a busy founder would text a peer on LinkedIn. Short. Imperfect. Real. Use contractions. Start mid-thought sometimes. Never sound like marketing copy."
+- **Signal mirroring**: "Use the lead's EXACT words from the buying signal. If they said 'looking for lead gen channels', you say 'lead gen channels' — not 'growth strategies' or 'pipeline solutions'."
+- **Anti-detection rules**: "Never start with 'Hi [Name],' followed by 'I saw/noticed/came across'. Vary your opener: start with a question, a stat, a bold claim, or jump straight into value. Real people don't always greet first."
+- Keep existing rules about no placeholders, no buzzwords, no em-dashes, word limits.
 
-### Fix 2: Remove the dead Strategy 0 (direct followers endpoint)  
-It clutters logs and wastes an API call per competitor. Remove it since Unipile does not support this endpoint.
+### 3. Rewrite step-specific prompts (lines 255-262) — Deepen, Don't Pivot
 
-### Fix 3: Prevent duplicate engager processing between invocations
-When `comp_followers` runs, it calls `processCompetitorEngagers()` as Strategy B. Then `comp_engagers` runs the same function on the same URLs. Fix: load the `processed_posts` table at the start of each invocation (already done), but also **save newly processed IDs to the DB immediately** at the end of `processCompetitorEngagers` in the comp_followers run, so comp_engagers can skip them. Currently, IDs are only saved at the very end of the function.
+**Step 2 (first message)**: 
+- "Open with a pattern interrupt — something unexpected that makes them stop scrolling. Reference their signal using their exact words. Connect to ONE sharp outcome. End with a question that's easy to answer (yes/no or 'curious?')."
 
-### Fix 4: Add retry logic for reactions HTTP 500 errors
-Wrap reaction fetches in a single retry (1 attempt after 2s delay) for HTTP 500 errors. These are transient Unipile errors that often succeed on retry.
+**Step 3 (follow-up, no reply)**:
+- Explicitly state: "The lead has NOT replied to your previous message. Do NOT assume they engaged."
+- "Deepen the SAME angle from your last message. Add a layer: a specific number/stat, a competitor reference, or a 'most [titles] I talk to struggle with X' social proof. Keep it to 2 sentences. End with a different question than Step 2."
 
-### Fix 5: Extract IDs from reaction author `name` field as fallback
-When `extractLinkedinProfileId` returns null (74 cases), check if the engager has a `name` or `id` field that can be used as a Unipile user lookup key. Some reaction objects have an `id` field that starts with numeric values — these can be used with `/api/v1/users/{id}` to fetch the full profile.
+**Step 4 (final, no reply)**:
+- Explicitly state: "The lead has NOT replied to any of your messages."
+- "Last shot. Ultra-short (2 sentences max). Use loss aversion or a curiosity gap. Example patterns: 'Totally fine if this isn't a priority — just didn't want you to miss [specific thing]' or 'Last thing — [one-line value hook]?'. No guilt-tripping, no passive-aggression."
 
-## Technical Details
+### 4. Handle thin/vague signals better (inside system prompt)
 
-**File**: `supabase/functions/signal-competitor/index.ts`
+Add: "If the buying signal is vague (e.g., 'Reacted to [Company] post' with no detail), do NOT pretend you know what the post said. Instead, reference what the competitor company is known for and connect it to a challenge relevant to the lead's title. Example: 'Saw you follow [Competitor] — they're big on [topic]. Curious how you're handling [related challenge] at [Company]?'"
 
-- **Fix 1** (lines 559-570): Change `fetchWithRetry` maxRetries default to 3, backoff formula to `(attempt + 1) * 15000` (15s, 30s, 45s)
-- **Fix 2** (lines 590-661): Remove the Strategy 0 block entirely
-- **Fix 3** (lines 744-746): After `processCompetitorEngagers()` in the comp_followers path, flush `newlyProcessedIds` to the `processed_posts` table immediately (move the save logic into a reusable helper)
-- **Fix 4** (lines 370-384): Add single retry with 2s delay for reaction fetch when HTTP 500
-- **Fix 5** (lines 91-100): In `extractLinkedinProfileId`, add fallback to check `item?.id` when it's a numeric string (not a URN), and `item?.actor_id`
+## What This Does NOT Change
+
+- The conversational reply handler (lines 66-193) — already has its own style rules
+- The step generation architecture — still uses the same `buildOutreachPrompts` function
+- Message sanitization — still enforces length limits, removes placeholders, strips em-dashes
+- The overall flow — still generates one message per step, still uses previous messages as context
 
 ## Expected Outcome
-- Strategy A search may start succeeding with longer backoff, unlocking 30-90 leads per competitor
-- Eliminating duplicate processing between invocations will preserve more fresh engagers for comp_engagers
-- Reaction retries will recover some of the lost data from HTTP 500s
-- Better ID extraction will reduce the 74 skipped_no_id to near zero
+
+- Messages sound like a real person who happens to be great at sales
+- Each follow-up builds on the previous one instead of feeling like a separate template
+- No more hallucinated engagement ("appreciate the positive vibes")
+- No more robotic "Open to a quick chat?" on every message
+- Leads can't easily tell it's AI because the voice is natural, varied, and psychologically sharp
 
