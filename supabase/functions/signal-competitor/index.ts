@@ -571,11 +571,11 @@ Deno.serve(async (req) => {
     }
 
     // ── Helper: fetch with retry + exponential backoff for 429s (Fix 1: longer backoff) ──
-    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 3): Promise<Response> {
+    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 2): Promise<Response> {
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const res = await fetch(fetchUrl, options);
         if (res.status !== 429 || attempt === maxRetries) return res;
-        const backoffMs = (attempt + 1) * 15000; // 15s, 30s, 45s
+        const backoffMs = (attempt + 1) * 8000; // 8s, 16s
         console.log(`[COMP] ${label}: HTTP 429 — retrying in ${backoffMs / 1000}s (attempt ${attempt + 1}/${maxRetries})`);
         await res.text(); // drain body
         await delay(backoffMs);
@@ -695,18 +695,12 @@ Deno.serve(async (req) => {
             } catch (e) { console.error(`[COMP] Competitor followers ${url}:`, e); }
           }
 
-          // Strategy B: Also process post engagers as a follower proxy
-          console.log(`[COMP] competitor_followers: also scanning post engagers for "${companyName}"`);
-          await processCompetitorEngagers(url);
-
-          // Fix 3: Flush processed IDs immediately so comp_engagers doesn't re-process them
-          await flushProcessedIds();
+          // Strategy B removed from comp_followers — comp_engagers handles all engager work
+          // This gives comp_followers its full 105s budget for search only
         }
 
-        // Person URL handling for competitor_followers
-        if (url.includes('/in/')) {
-          await processCompetitorEngagers(url);
-        }
+        // Person URLs in comp_followers: skip — comp_engagers handles them
+        // if (url.includes('/in/')) { ... }
       }
     } else if (signal_type === 'competitor_engagers') {
       for (const url of urls) {
