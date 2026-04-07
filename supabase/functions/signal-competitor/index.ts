@@ -695,12 +695,8 @@ Deno.serve(async (req) => {
             } catch (e) { console.error(`[COMP] Competitor followers ${url}:`, e); }
           }
 
-          // Strategy B: Also process post engagers as a follower proxy
-          console.log(`[COMP] competitor_followers: also scanning post engagers for "${companyName}"`);
-          await processCompetitorEngagers(url);
-
-          // Fix 3: Flush processed IDs immediately so comp_engagers doesn't re-process them
-          await flushProcessedIds();
+          // Strategy B removed from comp_followers — comp_engagers handles all engager work
+          // This gives comp_followers its full 105s budget for search only
         }
 
         // Person URL handling for competitor_followers
