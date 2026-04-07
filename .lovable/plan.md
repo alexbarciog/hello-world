@@ -1,35 +1,54 @@
 
 
-# Fix Competitor Posts Fetch (422 Errors)
+# Diagnosis: Why "Services Lead Agent" Found Only 1 Lead from Competitor Followers
 
 ## Root Cause
 
-The Unipile "list posts" endpoint (`/api/v1/users/{identifier}/posts?is_company=true`) requires a **numeric company ID** for companies (e.g., `12345678`), not the LinkedIn slug (e.g., `vizion-interiors-limited`). The current code passes the slug directly, which causes the 422 "Unprocessable Entity" error every time.
+The `competitor_followers` pipeline has **two strategies**, and both are underperforming:
 
-## Solution
+### Strategy A: LinkedIn People Search (Primary) — BLOCKED by Rate Limits
+The code searches for people by company name using Unipile's `/api/v1/linkedin/search` endpoint. Every single attempt in the logs returns **HTTP 429 "Too Many Requests"**. This means Strategy A produces **zero results** every run.
 
-Add a **slug-to-numeric-ID resolution step** before fetching posts. Use the Unipile company profile endpoint (`/api/v1/linkedin/company/{identifier}`) which accepts slugs and returns the numeric `id`.
+```text
+[COMP] follower search "Excel Party Wall Surveyors" page 1: HTTP 429 - Too many requests
+[COMP] follower search "Vicennium Surveyors Llp" page 1: HTTP 429 - Too many requests
+[COMP] follower search "Grey & Associates" page 1: HTTP 429 - Too many requests
+```
 
-## Changes — `supabase/functions/signal-competitor/index.ts`
+The LinkedIn search API has strict rate limits, and processing multiple competitors sequentially exhausts the quota immediately.
 
-### 1. Add a `resolveCompanyId` helper function
+### Strategy B: Post Engagers as Proxy — Works but Very Limited
+After the search fails, the code falls back to scanning reactions/comments on competitor posts. This works, but it only captures people who actively engaged with recent posts — a tiny fraction of actual followers. This is where the ~1-8 leads per run come from.
 
-Before fetching posts, call `/api/v1/linkedin/company/{slug}?account_id=...` to get the company profile. Extract the numeric `id` field from the response. Cache the result within the request so it's only resolved once per competitor.
+### Additional Bottlenecks
+- **Cross-run dedup**: 146 engagers were skipped as already processed from previous runs, shrinking the pool further each run
+- **ICP filtering**: Of 86 profiles fetched, 45 were excluded as competitor employees, 22 failed ICP match, 11 failed country filter
+- **Only 1 competitor URL configured**: The agent has only `excel-party-wall-surveyors` — so there's only one company to scan
 
-### 2. Update `processCompetitorEngagers` — company branch
+## Proposed Fix — 3 Changes
 
-In the `if (isCompany)` block (around line 270), call `resolveCompanyId(companyId)` first. If resolution fails (e.g., company not found), log a clear error and skip that competitor. If it succeeds, use the returned numeric ID for the posts fetch URL instead of the slug.
+### 1. Add rate-limit backoff and retry to Strategy A
+Currently, on a 429 error, the code immediately gives up. Instead, wait 5-10 seconds and retry up to 2 times. LinkedIn 429s are often short-lived. This alone could unlock the people search results.
 
-### 3. Log the resolution
+### 2. Stagger competitor processing with delays
+Instead of hitting the search API for all competitors back-to-back (which triggers rate limits), add a 3-5 second cooldown between competitors. Process the search for one competitor, wait, then search the next.
 
-Add a log line showing: `[COMP] Resolved "vizion-interiors-limited" → numeric ID 12345678` so future diagnostics are clear.
+### 3. Use LinkedIn company followers endpoint if available
+Check if Unipile exposes a `/api/v1/linkedin/company/{id}/followers` endpoint (or similar). If it does, use it directly instead of the generic people search. This would return actual followers rather than keyword-matching people.
 
-## What stays the same
-- Person URL handling (already works)
-- Reactions/comments fetching (uses post IDs, not company IDs)
-- All filtering, dedup, and insertion logic
-- The `is_company=true` parameter (still needed)
+## Technical Details
 
-## Expected outcome
-After this fix, the competitor pipeline will resolve each company slug to its numeric ID, then successfully fetch posts. The 422 errors will stop, and the engager extraction pipeline will finally receive posts to scan.
+**File**: `supabase/functions/signal-competitor/index.ts`
+
+**Change 1 — Retry logic for search (lines ~577-586)**:
+Wrap the search fetch in a retry loop (max 2 retries) with exponential backoff (5s, then 10s) when receiving 429 responses.
+
+**Change 2 — Inter-competitor delay (lines ~562-665)**:
+Add a `await delay(5000)` between each competitor URL in the `competitor_followers` loop to space out API calls.
+
+**Change 3 — Explore company followers API**:
+Before the people search, attempt `GET /api/v1/linkedin/company/{numericId}/followers` (or `/api/v1/users/{numericId}/followers`). If the endpoint exists and returns results, use those directly. Fall back to the search strategy only if this fails.
+
+## Expected Outcome
+With retry logic, the people search should succeed on at least some competitors, producing 30-90 search results per competitor instead of zero. Combined with the post engagers proxy, this should yield 10-30+ qualified leads per run instead of 1.
 
