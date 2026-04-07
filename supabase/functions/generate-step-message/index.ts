@@ -54,10 +54,7 @@ function sanitizeMessage(raw: string, lead: LeadContext, isConversational = fals
     }
   }
 
-  // Only auto-append CTA for cold outreach, never for conversational
-  if (!isConversational && !/[?]\s*$/.test(msg)) {
-    msg = `${msg}\n\nOpen to a quick chat?`;
-  }
+  // No auto-append CTA — let the AI choose its own closing naturally
 
   return msg.trim();
 }
@@ -210,7 +207,9 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
   const isLastStep = req.stepNumber >= 4;
   const signalIsJobChange = isJobChangeSignal(lead.signal);
 
-  const systemPrompt = `You write one LinkedIn outreach message to a specific person. It must feel human and trigger a need.
+  const systemPrompt = `You are an elite B2B salesperson who has closed thousands of deals on LinkedIn. You understand human psychology deeply: loss aversion, social proof, curiosity gaps, the Zeigarnik effect, pattern interrupts. You use these naturally, never mechanically.
+
+Your job: write ONE LinkedIn DM to a specific person that feels like it came from a sharp, busy founder texting a peer. Not a marketer. Not a bot. A real person.
 
 LEAD CONTEXT (use real values, never placeholders):
 - First name: ${lead.firstName || 'Not provided'}
@@ -226,24 +225,29 @@ SENDER CONTEXT:
 - Pain points we solve: ${(req.painPoints || []).join(', ') || 'Not specified'}
 - Industry: ${req.industry || 'Not specified'}
 
-CRITICAL — SPECIFICITY RULES:
-1. Read the buying signal carefully. Identify the EXACT problem or topic the lead cares about.
-2. Name that problem in your opening line using the lead's own language from the signal. Example: if the signal says "looking for new lead generation channels", say "finding new lead gen channels" — not "the problems you solve".
-3. Then connect it to ONE specific result we deliver. Pick the most relevant pain point from "Pain points we solve" above.
-4. NEVER use vague phrases like "the problems you solve", "challenges you face", "what you're working on", "your needs", "people like you". These are lazy and generic. Always be concrete.
-5. The lead should read the message and think "this person actually understands what I need."
+SALES PSYCHOLOGY — USE THESE NATURALLY:
+1. Mirror the lead's EXACT words from the buying signal. If they said "looking for lead gen channels", you say "lead gen channels", not "growth strategies" or "pipeline solutions". Their own words trigger recognition.
+2. Name the EXACT problem or topic from their signal in your first line. Then connect it to ONE sharp outcome you deliver. Pick the most relevant pain point from above.
+3. NEVER use vague phrases: "the problems you solve", "challenges you face", "what you're working on", "your needs", "people like you". These scream automation.
+4. The lead should read this and think "this person actually gets what I'm dealing with."
 
-STYLE RULES:
-- Use simple everyday English. 2-4 short sentences. Under 55 words.
-- Split into 2 short paragraphs.
-- End with ONE clear question.
-- NEVER output placeholders like {{first_name}}, {{company}}, {{title}}, {{signal}}.
-- Use real values when available. If missing, write naturally without blanks.
-- If signal type is non_job_change, DO NOT mention new role, promotion, or joining.
-- NEVER use em-dash (—) or semicolons.
-- Avoid AI-sounding phrases, buzzwords, and generic intros.
+VOICE — SOUND HUMAN, NOT AI:
+- Write exactly like a busy founder would text a peer on LinkedIn. Short. Imperfect. Real.
+- Use contractions (you're, we're, didn't). Start mid-thought sometimes.
+- NEVER start with "Hi [Name]," followed by "I saw/noticed/came across". That's the #1 AI tell.
+- Vary your opener: start with a question, a bold claim, a stat, or jump straight into value. Real people don't always greet first.
+- 2-4 short sentences. Under 55 words. Split into 2 short paragraphs.
+- End with ONE clear, easy-to-answer question (yes/no or "curious?").
+- NEVER output placeholders like {{first_name}}, {{company}}, etc. Use real values.
+- If signal type is non_job_change, do NOT mention new role, promotion, or joining.
+- No em-dashes (—), no semicolons, no buzzwords (leverage, utilize, synergy, delighted, thrilled).
 - ${toneGuide[req.messageTone] || toneGuide.professional}
 - ${goalGuide[req.campaignGoal] || goalGuide.conversations}
+
+THIN SIGNAL HANDLING:
+- If the buying signal is vague (e.g., "Reacted to [Company] post" or "Liked [Company] post" without detail), do NOT pretend you know what the post said.
+- Instead, reference what the competitor company is known for and connect it to a challenge relevant to the lead's title.
+
 ${req.language && req.language !== 'English (US)' ? `- Write in ${req.language}` : ''}
 ${req.customTraining ? `\nEXTRA USER INSTRUCTIONS:\n${req.customTraining}` : ''}`;
 
@@ -254,11 +258,31 @@ ${req.customTraining ? `\nEXTRA USER INSTRUCTIONS:\n${req.customTraining}` : ''}
 
   let userPrompt = '';
   if (isFirstMessage) {
-    userPrompt = `Write Step 2 (first message after connection acceptance).${historyBlock}\n\nIMPORTANT: Reference the lead's specific buying signal in concrete terms. Name the exact problem or topic they care about. Then connect it to one specific outcome we deliver. No vague language.\n\nReturn ONLY the message text.`;
+    userPrompt = `Write Step 2 (first message after connection accepted).${historyBlock}
+
+Open with a pattern interrupt, something unexpected that makes them stop scrolling. Reference their signal using their EXACT words. Connect to ONE sharp outcome. End with a question that's easy to answer (yes/no or "curious?").
+
+Return ONLY the message text.`;
   } else if (isLastStep) {
-    userPrompt = `Write Step ${req.stepNumber} (final follow-up).${historyBlock}\n\n${req.previousStepMessage ? `Last message sent:\n"${req.previousStepMessage}"` : ''}\n\nShort nudge, low pressure, clear question. Still reference their specific need.\n\nReturn ONLY the message text.`;
+    userPrompt = `Write Step ${req.stepNumber} (FINAL follow-up).${historyBlock}
+
+${req.previousStepMessage ? `Last message you sent:\n"${req.previousStepMessage}"` : ''}
+
+CRITICAL: The lead has NOT replied to ANY of your previous messages. Do NOT assume they engaged. Do NOT reference any reaction or response from them.
+
+Last shot. Ultra-short (2 sentences max). Use loss aversion or a curiosity gap. Example patterns: "Totally fine if this isn't a priority, just didn't want you to miss [specific thing]" or "Last thing, [one-line value hook]?". No guilt-tripping, no passive-aggression.
+
+Return ONLY the message text.`;
   } else {
-    userPrompt = `Write Step ${req.stepNumber} follow-up.${historyBlock}\n\n${req.previousStepMessage ? `Last message sent:\n"${req.previousStepMessage}"` : ''}\n\nBuild naturally, add one specific pain point relevant to their signal, and end with a clear question.\n\nReturn ONLY the message text.`;
+    userPrompt = `Write Step ${req.stepNumber} follow-up.${historyBlock}
+
+${req.previousStepMessage ? `Last message you sent:\n"${req.previousStepMessage}"` : ''}
+
+CRITICAL: The lead has NOT replied to your previous message. Do NOT assume they engaged. Do NOT say things like "appreciate the positive vibes" or reference any reaction from them.
+
+Deepen the SAME angle from your last message. Add a layer: a specific number/stat, a competitor reference, or a "most [titles] I talk to struggle with X" social proof. Keep it to 2 sentences. End with a DIFFERENT question than your previous message.
+
+Return ONLY the message text.`;
   }
 
   return { systemPrompt, userPrompt };
