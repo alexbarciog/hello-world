@@ -96,6 +96,10 @@ function extractLinkedinProfileId(item: any): string | null {
     const match = linkedinUrl.match(/linkedin\.com\/in\/([^/?#]+)/i);
     if (match?.[1]) return match[1];
   }
+  // Fix 5: Fallback to numeric id or actor_id for reaction authors
+  if (item?.actor_id) return String(item.actor_id);
+  if (item?.id && typeof item.id === 'string' && !item.id.startsWith('urn:') && /^[A-Za-z0-9_-]+$/.test(item.id)) return item.id;
+  if (item?.id && typeof item.id === 'number') return String(item.id);
   return null;
 }
 async function fetchFullProfile(item: any,accountId: string,apiKey: string,dsn: string): Promise<any|null>{
@@ -360,10 +364,21 @@ Deno.serve(async (req) => {
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
         const postText = (post.text || post.body || '').substring(0, 150);
 
-        // Fetch reactions and comments in parallel
+        // Fetch reactions and comments in parallel (Fix 4: retry on HTTP 500)
+        async function fetchWithSingleRetry(url: string, label: string): Promise<Response> {
+          const res = await unipileGet(url, UNIPILE_API_KEY, UNIPILE_DSN);
+          if (res.status === 500) {
+            await res.text(); // drain
+            console.log(`[COMP] ${label}: HTTP 500 — retrying in 2s`);
+            await delay(2000);
+            return unipileGet(url, UNIPILE_API_KEY, UNIPILE_DSN);
+          }
+          return res;
+        }
+
         const [rr, cr] = await Promise.all([
-          unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=100`, UNIPILE_API_KEY, UNIPILE_DSN),
-          unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=100`, UNIPILE_API_KEY, UNIPILE_DSN),
+          fetchWithSingleRetry(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=100`, `reactions ${postId}`),
+          fetchWithSingleRetry(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=100`, `comments ${postId}`),
         ]);
 
         let reactionCount = 0;
@@ -555,18 +570,30 @@ Deno.serve(async (req) => {
       console.log(`[COMPETITOR: ${companyName}] Posts: ${competitorStats.posts_fetched} | Engagers found: ${competitorStats.engagers_found} | After dedup: ${competitorStats.after_dedup} | Quick ICP fail: ${competitorStats.failed_quick_icp} | Profiles fetched: ${competitorStats.profiles_fetched} | Qualified: ${competitorStats.qualified}`);
     }
 
-    // ── Helper: fetch with retry + exponential backoff for 429s ──
-    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 2): Promise<Response> {
+    // ── Helper: fetch with retry + exponential backoff for 429s (Fix 1: longer backoff) ──
+    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 3): Promise<Response> {
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const res = await fetch(fetchUrl, options);
         if (res.status !== 429 || attempt === maxRetries) return res;
-        const backoffMs = (attempt + 1) * 5000;
+        const backoffMs = (attempt + 1) * 15000; // 15s, 30s, 45s
         console.log(`[COMP] ${label}: HTTP 429 — retrying in ${backoffMs / 1000}s (attempt ${attempt + 1}/${maxRetries})`);
         await res.text(); // drain body
         await delay(backoffMs);
       }
       // unreachable but satisfies TS
       throw new Error('fetchWithRetry exhausted');
+    }
+
+    // ── Helper: flush processed IDs to DB (Fix 3: reusable for early flush) ──
+    async function flushProcessedIds() {
+      if (newlyProcessedIds.length === 0) return;
+      const CHUNK = 500;
+      for (let i = 0; i < newlyProcessedIds.length; i += CHUNK) {
+        const chunk = newlyProcessedIds.slice(i, i + CHUNK);
+        const rows = chunk.map(id => ({ social_id: id, agent_id }));
+        await supabase.from('processed_posts').upsert(rows, { onConflict: 'social_id,agent_id', ignoreDuplicates: true });
+      }
+      console.log(`[COMP] Flushed ${newlyProcessedIds.length} processed IDs to DB`);
     }
 
     // ── Route by signal type ──
@@ -587,82 +614,11 @@ Deno.serve(async (req) => {
           const companyId = extractLinkedInId(url);
           let followersFound = false;
 
-          // ── Strategy 0: Try direct company followers endpoint ──
-          if (companyId) {
-            const numericId = await resolveCompanyId(companyId, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-            if (numericId) {
-              console.log(`[COMP] competitor_followers: trying direct followers endpoint for "${companyName}" (ID: ${numericId})`);
-              try {
-                const followersRes = await unipileGet(
-                  `/api/v1/linkedin/company/${numericId}/followers?account_id=${account_id}&limit=100`,
-                  UNIPILE_API_KEY, UNIPILE_DSN
-                );
-                if (followersRes.ok) {
-                  const followersData = await followersRes.json();
-                  const followers = followersData.items || followersData.results || followersData.followers || [];
-                  if (followers.length > 0) {
-                    followersFound = true;
-                    console.log(`[COMP] ✅ Direct followers endpoint returned ${followers.length} followers for "${companyName}"`);
-                    for (const person of followers) {
-                      if (!hasTime()) break;
-                      const rawId = extractLinkedinProfileId(person);
-                      if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
-                      if (rawId) newlyProcessedIds.push(rawId);
-                      const quickHl = person.headline || person.title || '';
-                      if (!engagerPassesQuickIcpCheck(quickHl, icp)) { pipelineStats.failed_quick_icp++; continue; }
-                      if (rawId) {
-                        const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
-                        if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
-                      }
-                      const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-                      pipelineStats.profiles_fetched++;
-                      if (!fp || !fp.first_name) continue;
-                      if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') continue;
-                      const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
-                      if (lpid && lpid !== rawId) {
-                        const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
-                        if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
-                      }
-                      if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { pipelineStats.excluded_own_company++; continue; }
-                      if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { pipelineStats.excluded_competitor_employee++; continue; }
-                      const hl = fp.headline || fp.title || '';
-                      if (isClearlyIrrelevant(hl)) { pipelineStats.excluded_irrelevant_title++; continue; }
-                      if (isHighPrecision && icp.locations.length > 0) {
-                        const fullLocation = (fp.location || fp.country || '').toLowerCase();
-                        if (fullLocation) {
-                          const countryMatch = icp.locations.some(loc => fullLocation.includes(loc.toLowerCase()) || loc.toLowerCase().includes(fullLocation));
-                          if (!countryMatch) { pipelineStats.excluded_wrong_country++; continue; }
-                        }
-                      }
-                      if (icp.jobTitles.length > 0 || icp.industries.length > 0) {
-                        const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(hl, icp.jobTitles);
-                        const industry = (fp.industry || fp.current_company?.industry || '').toLowerCase();
-                        const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries) || fuzzyMatchList(hl, icp.industries);
-                        if (!titleMatch && !industryMatch) { pipelineStats.excluded_no_icp_match++; continue; }
-                      }
-                      const match = scoreProfileAgainstICP(fp, icp);
-                      const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
-                      if (result === 'inserted') { pipelineStats.inserted++; inserted++; }
-                      else if (result === 'duplicate') { pipelineStats.duplicates++; }
-                      else { pipelineStats.rejected++; }
-                      await delay(200);
-                    }
-                  } else {
-                    console.log(`[COMP] Direct followers endpoint returned 0 followers — falling back to search`);
-                  }
-                } else {
-                  const errText = await followersRes.text();
-                  console.log(`[COMP] Direct followers endpoint not available (HTTP ${followersRes.status}) — falling back to search`);
-                }
-              } catch (e) {
-                console.log(`[COMP] Direct followers endpoint error — falling back to search:`, e);
-              }
-            }
-          }
+          // Fix 2: Strategy 0 (direct followers endpoint) removed — Unipile does not support it
 
           // ── Strategy A: Search for people mentioning the company name (with retry for 429s) ──
-          if (!followersFound) {
-            console.log(`[COMP] competitor_followers: searching "${companyName}" with pagination + retry`);
+          {
+            console.log(`[COMP] competitor_followers: searching "${companyName}" with pagination`);
             try {
               const allPeople: any[] = [];
               let cursor: string | null = null;
@@ -743,6 +699,9 @@ Deno.serve(async (req) => {
           // Strategy B: Also process post engagers as a follower proxy
           console.log(`[COMP] competitor_followers: also scanning post engagers for "${companyName}"`);
           await processCompetitorEngagers(url);
+
+          // Fix 3: Flush processed IDs immediately so comp_engagers doesn't re-process them
+          await flushProcessedIds();
         }
 
         // Person URL handling for competitor_followers
@@ -757,16 +716,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Save cross-run dedup IDs ──
-    if (newlyProcessedIds.length > 0) {
-      const CHUNK = 500;
-      for (let i = 0; i < newlyProcessedIds.length; i += CHUNK) {
-        const chunk = newlyProcessedIds.slice(i, i + CHUNK);
-        const rows = chunk.map(id => ({ social_id: id, agent_id }));
-        await supabase.from('processed_posts').upsert(rows, { onConflict: 'social_id,agent_id', ignoreDuplicates: true });
-      }
-      console.log(`[COMP] Saved ${newlyProcessedIds.length} processed IDs for cross-run dedup`);
-    }
+    // ── Save cross-run dedup IDs (final flush for any remaining) ──
+    await flushProcessedIds();
 
     // ── Final diagnostic summary ──
     console.log(`[COMP] =====================================`);
