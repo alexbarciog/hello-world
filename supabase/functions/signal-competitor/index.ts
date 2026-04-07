@@ -555,14 +555,33 @@ Deno.serve(async (req) => {
       console.log(`[COMPETITOR: ${companyName}] Posts: ${competitorStats.posts_fetched} | Engagers found: ${competitorStats.engagers_found} | After dedup: ${competitorStats.after_dedup} | Quick ICP fail: ${competitorStats.failed_quick_icp} | Profiles fetched: ${competitorStats.profiles_fetched} | Qualified: ${competitorStats.qualified}`);
     }
 
+    // ── Helper: fetch with retry + exponential backoff for 429s ──
+    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 2): Promise<Response> {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const res = await fetch(fetchUrl, options);
+        if (res.status !== 429 || attempt === maxRetries) return res;
+        const backoffMs = (attempt + 1) * 5000;
+        console.log(`[COMP] ${label}: HTTP 429 — retrying in ${backoffMs / 1000}s (attempt ${attempt + 1}/${maxRetries})`);
+        await res.text(); // drain body
+        await delay(backoffMs);
+      }
+      // unreachable but satisfies TS
+      throw new Error('fetchWithRetry exhausted');
+    }
+
     // ── Route by signal type ──
     if (signal_type === 'competitor_followers') {
-      // For "followers" — we can't get actual followers, so we search for people
-      // mentioning the company AND process post engagers as a proxy
-      for (const url of urls) {
+      for (let urlIdx = 0; urlIdx < urls.length; urlIdx++) {
         if (!hasTime()) break;
+        const url = urls[urlIdx];
         const companyName = extractCompanyName(url);
         const isCompanyUrl = url.includes('/company/');
+
+        // Inter-competitor delay (skip first)
+        if (urlIdx > 0) {
+          console.log(`[COMP] Waiting 5s before next competitor…`);
+          await delay(5000);
+        }
 
         if (isCompanyUrl && companyName) {
           // Strategy A: Search for people mentioning the company name
