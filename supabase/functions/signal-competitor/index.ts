@@ -699,10 +699,8 @@ Deno.serve(async (req) => {
           // This gives comp_followers its full 105s budget for search only
         }
 
-        // Person URL handling for competitor_followers
-        if (url.includes('/in/')) {
-          await processCompetitorEngagers(url);
-        }
+        // Person URLs in comp_followers: skip — comp_engagers handles them
+        // if (url.includes('/in/')) { ... }
       }
     } else if (signal_type === 'competitor_engagers') {
       for (const url of urls) {
