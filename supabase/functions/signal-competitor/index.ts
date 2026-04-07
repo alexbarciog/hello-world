@@ -612,7 +612,6 @@ Deno.serve(async (req) => {
 
         if (isCompanyUrl && companyName) {
           const companyId = extractLinkedInId(url);
-          let followersFound = false;
 
           // Fix 2: Strategy 0 (direct followers endpoint) removed — Unipile does not support it
 
