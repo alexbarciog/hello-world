@@ -571,11 +571,11 @@ Deno.serve(async (req) => {
     }
 
     // ── Helper: fetch with retry + exponential backoff for 429s (Fix 1: longer backoff) ──
-    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 3): Promise<Response> {
+    async function fetchWithRetry(fetchUrl: string, options: RequestInit, label: string, maxRetries = 2): Promise<Response> {
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const res = await fetch(fetchUrl, options);
         if (res.status !== 429 || attempt === maxRetries) return res;
-        const backoffMs = (attempt + 1) * 15000; // 15s, 30s, 45s
+        const backoffMs = (attempt + 1) * 8000; // 8s, 16s
         console.log(`[COMP] ${label}: HTTP 429 — retrying in ${backoffMs / 1000}s (attempt ${attempt + 1}/${maxRetries})`);
         await res.text(); // drain body
         await delay(backoffMs);
