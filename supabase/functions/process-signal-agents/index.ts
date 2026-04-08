@@ -194,13 +194,22 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
         });
       }
 
+      // Keyword posts: split into batches of 8 to avoid per-function timeout
+      const KEYWORD_BATCH_SIZE = 8;
       if (enabled.includes('keyword_posts')) {
         const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
         if (kws.length > 0) {
-          tasks.push({
-            signal_type: 'keyword_posts', task_key: `keywords(${kws.length})`, fn: 'signal-keyword-posts',
-            payload: { ...basePayload, keywords: kws },
-          });
+          for (let i = 0; i < kws.length; i += KEYWORD_BATCH_SIZE) {
+            const batch = kws.slice(i, i + KEYWORD_BATCH_SIZE);
+            const batchNum = Math.floor(i / KEYWORD_BATCH_SIZE) + 1;
+            tasks.push({
+              signal_type: 'keyword_posts',
+              task_key: `keywords_b${batchNum}(${batch.length})`,
+              fn: 'signal-keyword-posts',
+              payload: { ...basePayload, keywords: batch },
+              _isKeywordBatch: true,
+            } as any);
+          }
         }
       }
 
