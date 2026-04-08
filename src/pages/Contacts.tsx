@@ -43,9 +43,29 @@ export default function Contacts() {
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setLoading(false); return; }
 
+    // Helper to fetch all rows (bypasses 1000-row default limit)
+    async function fetchAllContacts(userId: string) {
+      const allRows: any[] = [];
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("contacts")
+          .select("*")
+          .eq("user_id", userId)
+          .order("imported_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error || !data || data.length === 0) break;
+        allRows.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return allRows;
+    }
+
     // Fetch contacts, lists, and junction in parallel
-    const [contactsRes, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes, campaignsRes] = await Promise.all([
-      supabase.from("contacts").select("*").eq("user_id", user.id).order("imported_at", { ascending: false }),
+    const [allContacts, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes, campaignsRes] = await Promise.all([
+      fetchAllContacts(user.id),
       (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
       supabase.from("campaign_connection_requests").select("id, contact_id, status, sent_at, accepted_at, current_step, conversation_stopped, campaign_id").eq("user_id", user.id).order("sent_at", { ascending: false }),
@@ -54,7 +74,7 @@ export default function Contacts() {
       supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
     ]);
 
-    if (contactsRes.data) setContacts(contactsRes.data as Contact[]);
+    setContacts(allContacts as Contact[]);
     if (listsRes.data) setLists(listsRes.data as ContactList[]);
 
     // Build meetings map by contact_id
