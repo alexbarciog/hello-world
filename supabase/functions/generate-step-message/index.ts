@@ -9,6 +9,7 @@ type LeadContext = {
   company: string;
   title: string;
   signal: string;
+  industry: string;
 };
 
 function isJobChangeSignal(signal: string): boolean {
@@ -204,11 +205,45 @@ function classifySignal(signal: string): 'rich' | 'medium' | 'thin' {
   return 'thin';
 }
 
+function inferRoleCategory(title: string): string {
+  const t = (title || '').toLowerCase();
+  if (/\b(ceo|founder|co-founder|cofounder|owner|president|managing director|general manager)\b/.test(t))
+    return 'executive';
+  if (/\b(vp|vice president|director|head of|svp|evp)\b.*\b(sales|revenue|business dev|partnerships)\b/.test(t) || /\b(sales|revenue|business dev)\b.*\b(vp|vice president|director|head of)\b/.test(t))
+    return 'sales_leader';
+  if (/\b(cto|vp|vice president|director|head of)\b.*\b(engineer|tech|development|product)\b/.test(t) || /\b(engineer|tech|development|product)\b.*\b(cto|vp|vice president|director|head of)\b/.test(t))
+    return 'tech_leader';
+  if (/\b(cmo|vp|director|head of)\b.*\b(marketing|growth|demand|brand)\b/.test(t) || /\b(marketing|growth|demand|brand)\b.*\b(cmo|vp|director|head of)\b/.test(t))
+    return 'marketing_leader';
+  if (/\b(coo|operations|supply chain|logistics)\b/.test(t))
+    return 'ops_leader';
+  return 'general';
+}
+
+function getRoleFraming(roleCategory: string): string {
+  switch (roleCategory) {
+    case 'executive':
+      return 'This person thinks about growth, scaling, and staying ahead of competitors. Frame your value around saving time, accelerating revenue, or gaining a competitive edge.';
+    case 'sales_leader':
+      return 'This person cares about pipeline, conversion rates, and quota attainment. Frame your value around filling pipeline with warmer leads, shortening sales cycles, or boosting reply rates.';
+    case 'tech_leader':
+      return 'This person cares about efficiency, reducing technical debt, and shipping faster. Frame your value around automation, better tooling, or reducing manual work.';
+    case 'marketing_leader':
+      return 'This person cares about lead quality, CAC, and ROI on campaigns. Frame your value around better targeting, higher-quality leads, or improved conversion from marketing spend.';
+    case 'ops_leader':
+      return 'This person cares about process efficiency, cost reduction, and smooth operations. Frame your value around streamlining workflows or eliminating bottlenecks.';
+    default:
+      return 'Infer what this person likely cares about based on their title and industry, and connect your value to that.';
+  }
+}
+
 function buildOutreachPrompts(req: any, lead: LeadContext) {
   const isFirstMessage = req.stepNumber === 2;
   const isLastStep = req.stepNumber >= 4;
   const signalIsJobChange = isJobChangeSignal(lead.signal);
   const signalRichness = classifySignal(lead.signal);
+  const roleCategory = inferRoleCategory(lead.title);
+  const roleFraming = getRoleFraming(roleCategory);
 
   const toneLabel = req.messageTone === 'direct' ? 'Direct and brief.' :
     req.messageTone === 'conversational' ? 'Casual, like texting a friend.' : 'Warm but professional.';
@@ -220,10 +255,16 @@ Signal: "${lead.signal || 'none'}"
 Signal richness: ${signalRichness}
 Signal type: ${signalIsJobChange ? 'job_change' : 'engagement'}
 
-===== LEAD =====
+===== LEAD INTELLIGENCE =====
 Name: ${lead.firstName}${lead.lastName ? ' ' + lead.lastName : ''}
 Title: ${lead.title || 'unknown'}
 Company: ${lead.company || 'unknown'}
+Industry: ${lead.industry || 'unknown'}
+Role category: ${roleCategory}
+
+BEFORE WRITING, think about what keeps this person up at night given their role at a ${lead.industry || ''} company. Your message must show you understand THEIR world, not just the signal.
+
+${roleFraming}
 
 ===== SENDER =====
 Company: ${req.companyName || 'our company'}
@@ -235,25 +276,31 @@ Industry: ${req.industry || 'not specified'}
 ${signalRichness === 'rich' ? `S1: Reference their SPECIFIC engagement. Remind them what they liked/commented on, using the exact topic. Example: "you liked Pangea's post about tech staffing"` :
   signalRichness === 'medium' ? `S1: Reference the company/person they engaged with and what that company is known for. Example: "you liked Pangea's stuff, they're big on tech staffing"` :
   `S1: Reference something specific about their role or company. No fake scenarios.`}
-S2: Connect that to ONE thing you help with. Use a concrete outcome, not a vague promise.
+S2: Connect the signal to a pain point SPECIFIC to their role and industry. A VP Sales at a logistics company has different problems than a CTO at a SaaS startup. Show you get it.
 S3: End with one simple question (yes/no or "curious?").
 
 ===== GOOD vs BAD EXAMPLES =====
-GOOD (rich signal): "You liked Pangea's post about tech staffing. We help companies spot people showing buying intent on LinkedIn so your team spends less time cold searching. Worth a look?"
+GOOD (rich signal, sales leader): "You liked Pangea's post about tech staffing. Running sales at a logistics company means your team probably wastes hours chasing cold lists instead of people already looking. Worth a quick look?"
 
-GOOD (medium signal): "You liked Pangea's stuff, they're big on tech staffing. We help teams like yours find warm leads through intent signals instead of cold outreach. Curious?"
+GOOD (rich signal, CTO): "You liked that post about dev team scaling. When you're shipping fast at a fintech, the last thing you need is your team burning time on manual prospecting instead of building. We automate that part. Curious?"
 
-GOOD (thin signal): "Running sales at a growing team is tough when you're guessing who to reach out to. We surface people already showing buying intent so your team talks to the right ones. Sound useful?"
+GOOD (medium signal, CEO): "You liked Pangea's stuff, they're big on tech staffing. Growing a SaaS company means every hour your team spends cold-calling is an hour not closing warm leads. We flip that. Worth a look?"
+
+GOOD (thin signal, marketing): "Running demand gen at a growing company means you're always balancing lead volume vs quality. We surface people already showing buying intent so your budget goes further. Sound useful?"
 
 BAD: "Most founders I talk to get stuck when their MVP hits 1,000 users and starts lagging. We usually get custom AI tools live in about 30 days. Ever feel like your tech stack is holding back growth?"
-Why bad: fabricated scenario, ignores signal, generic marketing language.
+Why bad: fabricated scenario, ignores signal, generic marketing language, ignores the lead's actual role and industry.
 
 BAD: "I noticed you're doing great work at Cubo. I'd love to connect and explore synergies."
-Why bad: "noticed", "great work" (vague), "explore synergies" (buzzword).
+Why bad: "noticed", "great work" (vague), "explore synergies" (buzzword), no role awareness.
+
+BAD: "You liked Pangea's post about tech staffing. We help companies find warm leads through intent signals. Curious?"
+Why bad: S2 is generic, doesn't connect to what THIS person cares about given their role/industry.
 
 ===== RULES =====
 - Under 50 words. 2 short paragraphs.
 - Mirror the lead's OWN words from the signal when possible.
+- S2 MUST reference a challenge specific to the lead's role + industry combo. Generic value props are banned.
 - NEVER fabricate scenarios the lead didn't mention.
 - NEVER use: leverage, utilize, synergy, pipeline, seamless, cutting-edge, game-changer, robust, ecosystem, bandwidth, scouting, grind, holistic, actionable, spearhead, deep-dive, circle back, delighted, thrilled.
 - Use simple words: "find" not "scout", "help" not "empower", "fast" not "seamless".
@@ -267,7 +314,10 @@ ${req.language && req.language !== 'English (US)' ? `- Write in ${req.language}`
 ${req.customTraining ? `- Extra instructions: ${req.customTraining}` : ''}
 
 ===== SELF-CHECK =====
-Before outputting, verify: does S1 reference the lead's actual signal or role? If you wrote a generic scenario, rewrite.`;
+Before outputting, verify:
+1. Does S1 reference the lead's actual signal or role?
+2. Does S2 mention a challenge specific to their role (${lead.title || 'unknown'}) in their industry (${lead.industry || 'unknown'})? If S2 could apply to anyone, rewrite it.
+3. If you wrote a generic scenario, rewrite.`;
 
   const prevMsgsArray: string[] = Array.isArray(req.previousMessages) ? req.previousMessages : [];
   const historyBlock = prevMsgsArray.length > 0
@@ -338,6 +388,7 @@ Deno.serve(async (req) => {
       company: (body.leadCompany || '').trim(),
       title: (body.leadTitle || '').trim(),
       signal: (body.buyingSignal || '').trim(),
+      industry: (body.leadIndustry || '').trim(),
     };
 
     const { systemPrompt, userPrompt } = buildOutreachPrompts(body, lead);

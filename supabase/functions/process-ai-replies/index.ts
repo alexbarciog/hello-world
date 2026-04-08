@@ -374,7 +374,7 @@ async function processCampaignReplies(
           // Get full contact info
           const { data: contact } = await supabase
             .from('contacts')
-            .select('first_name, last_name, company, title, signal, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
+            .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
             .eq('id', cr.contact_id)
             .single();
           if (!contact) continue;
@@ -498,7 +498,8 @@ async function processCampaignReplies(
             language: campaign.language, customTraining: campaign.custom_training,
             firstName: contact.first_name, lastName: contact.last_name,
             leadCompany: contact.company, leadTitle: contact.title,
-            buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
+            buyingSignal: contact.signal, leadIndustry: contact.industry,
+            repliesCount: cr.ai_replies_count,
             maxReplies: maxReplies, isFollowUp: false,
             meetingContext: meetingContext,
           });
@@ -594,7 +595,7 @@ async function processCampaignReplies(
 
       const { data: contact } = await supabase
         .from('contacts')
-        .select('first_name, last_name, company, title, signal, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
+        .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
         .eq('id', cr.contact_id)
         .single();
       if (!contact) continue;
@@ -633,7 +634,8 @@ async function processCampaignReplies(
         language: campaign.language, customTraining: campaign.custom_training,
         firstName: contact.first_name, lastName: contact.last_name,
         leadCompany: contact.company, leadTitle: contact.title,
-        buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
+        buyingSignal: contact.signal, leadIndustry: contact.industry,
+        repliesCount: cr.ai_replies_count,
         maxReplies: maxReplies, isFollowUp: true,
         meetingContext: meetingContext,
       });
@@ -708,6 +710,7 @@ async function generateConversationalReply(
         leadCompany: ctx.leadCompany,
         leadTitle: ctx.leadTitle,
         buyingSignal: ctx.buyingSignal,
+        leadIndustry: ctx.leadIndustry,
         meetingContext: ctx.meetingContext,
       }),
     });

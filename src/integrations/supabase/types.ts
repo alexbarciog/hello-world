@@ -312,6 +312,7 @@ export type Database = {
           first_name: string
           id: string
           imported_at: string
+          industry: string | null
           last_name: string | null
           lead_status: string
           linkedin_profile_id: string | null
@@ -336,6 +337,7 @@ export type Database = {
           first_name: string
           id?: string
           imported_at?: string
+          industry?: string | null
           last_name?: string | null
           lead_status?: string
           linkedin_profile_id?: string | null
@@ -360,6 +362,7 @@ export type Database = {
           first_name?: string
           id?: string
           imported_at?: string
+          industry?: string | null
           last_name?: string | null
           lead_status?: string
           linkedin_profile_id?: string | null
