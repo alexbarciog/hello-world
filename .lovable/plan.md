@@ -1,47 +1,65 @@
 
 
-# Admin-Only Pipeline Diagnostics: See Rejected Posts
+# Add Sales Opportunity Email Notifications
 
-## Problem
-Signal agents find zero leads for clients, but there's no visibility into what posts were fetched and why they were rejected. The diagnostic data (rejected posts, AI scores, rejection reasons) is logged to console only and lost after execution.
+## Goal
+Notify users via email (from `no-reply@intentsly.com` via Resend) when a lead reaches a sales-opportunity milestone: meeting booked or positive intent detected (e.g., agreed to learn more).
 
-## Solution
-1. Persist the full `pipelineStats` (including all rejected post samples) to the database after each task run
-2. Show an expandable diagnostics panel in the Run History UI, visible only to admins
+## Approach
+Reuse the existing `send-notification-email` edge function which already uses Resend and looks up the user's email. Just change the `from` address to `no-reply@intentsly.com` and add email triggers at the right points in `process-ai-replies`.
 
-## Technical Plan
+## Changes
 
-### 1. Database Migration: Add `diagnostics` column to `signal_agent_tasks`
+### 1. Update `send-notification-email/index.ts` — change sender address
+- Change `from: 'Intentsly <onboarding@resend.dev>'` to `from: 'Intentsly <no-reply@intentsly.com>'`
+- Add support for an optional `body` field to include lead details in the email body (name, company, signal)
+- Update the email HTML template to show lead details when provided
 
-```sql
-ALTER TABLE signal_agent_tasks ADD COLUMN diagnostics jsonb DEFAULT NULL;
+### 2. Update `process-ai-replies/index.ts` — add email notification triggers
+
+Add a call to `send-notification-email` at two key moments:
+
+**a) Meeting booked** (after the meeting auto-creation at ~line 452):
+```ts
+await supabase.functions.invoke('send-notification-email', {
+  body: {
+    user_id: cr.user_id,
+    title: `🎯 Meeting booked with ${contact.first_name} ${contact.last_name || ''}`,
+    body: `${contact.first_name} from ${contact.company || 'Unknown'} agreed to a meeting. Scheduled for ${scheduledAt.toLocaleDateString()}.`,
+    link: `/contacts`,
+    type: 'meeting',
+  }
+});
 ```
 
-### 2. Edge Function Changes
+**b) Positive intent / interested lead** (when `aiIntent === 'interested'` or similar positive classification — after the AI reply is sent successfully):
+```ts
+await supabase.functions.invoke('send-notification-email', {
+  body: {
+    user_id: cr.user_id,
+    title: `🔥 ${contact.first_name} ${contact.last_name || ''} is interested`,
+    body: `${contact.first_name} from ${contact.company || 'Unknown'} showed buying intent: "${leadMessage.slice(0, 150)}"`,
+    link: `/contacts`,
+    type: 'lead',
+  }
+});
+```
 
-**`signal-keyword-posts/index.ts`**:
-- Increase `sample_ai_rejections` and `sample_prefilter_rejections` limits from 3 to 50 (capture all rejections, not just samples)
-- After the pipeline completes, save `pipelineStats` to the task's `diagnostics` column:
-  ```ts
-  await supabase.from('signal_agent_tasks')
-    .update({ diagnostics: pipelineStats })
-    .eq('run_id', run_id).eq('task_key', task_key);
-  ```
+### 3. Add a `meeting` type to `getSubjectFromType` in `send-notification-email`
+```ts
+case 'meeting':
+  return `🎯 ${cleanTitle} — Intentsly`;
+```
 
-**`signal-competitor/index.ts`**: Same pattern -- save competitor pipeline stats to the `diagnostics` column.
+### 4. Enhance the email HTML body
+When `notifBody` is provided, render it as a paragraph below the title in the email, so the user gets context without needing to open the app.
 
-### 3. Frontend: Admin-only diagnostics viewer in `Signals.tsx`
+### Files changed
+- `supabase/functions/send-notification-email/index.ts` (sender address, body rendering, meeting type)
+- `supabase/functions/process-ai-replies/index.ts` (add email triggers for meeting_booked and interested leads)
 
-When a task row is expanded and the user is an admin (`useAdminCheck`):
-- Fetch the task's `diagnostics` jsonb
-- Render a collapsible "Pipeline Diagnostics" section showing:
-  - **Funnel summary**: posts fetched -> after dedup -> passed prefilter -> sent to AI -> passed AI -> profile fetched -> inserted
-  - **Rejected posts table** with columns: Post excerpt (first 200 chars), Rejection stage (prefilter/AI/profile), Reason, Score (if AI)
-- Non-admin users see nothing extra -- the existing task view stays unchanged
-
-### Files Changed
-- `supabase/migrations/XXXX_add_diagnostics_to_tasks.sql` (new)
-- `supabase/functions/signal-keyword-posts/index.ts` (persist stats, increase sample limits)
-- `supabase/functions/signal-competitor/index.ts` (persist stats)
-- `src/pages/Signals.tsx` (admin-only diagnostics panel in run history)
+### What stays the same
+- The existing `notifications` table insert flow (in-app notifications)
+- The notification email HTML template structure/branding
+- All other edge functions
 
