@@ -1198,6 +1198,38 @@ export default function CampaignDetail() {
         </div>
       </motion.div>
 
+      {/* Conversational AI Banner */}
+      {campaign.conversational_ai && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mx-4 md:mx-6 mt-4 relative overflow-hidden rounded-2xl"
+        >
+          <img
+            src={aiSdrBannerBg}
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="relative z-10 flex items-center gap-4 px-6 py-4">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center">
+              <Bot className="w-5 h-5 text-foreground/70" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground tracking-tight">AI SDR is active</p>
+              <p className="text-xs text-foreground/60">Replying to leads and booking meetings on autopilot</p>
+            </div>
+            <div className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/50 backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+              <span className="text-xs font-medium text-foreground/70">Live</span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Tabs */}
       <div className="px-4 md:px-6 mt-4">
         <div className="relative flex items-center gap-1 border border-border rounded-xl p-1 bg-muted/30 overflow-x-auto">
