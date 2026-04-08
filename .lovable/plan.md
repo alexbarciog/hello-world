@@ -1,64 +1,36 @@
 
 
-# Upgrade AI Outreach Messages: Lead-Aware Personalization
+# Make All Campaign Steps Use AI-Personalized Messages
 
 ## Problem
-The AI generates messages that reference the signal correctly but ignores the lead's background — their role, industry, company context. This makes messages feel one-dimensional. A VP of Sales at a logistics company should get a very different message than a CTO at a SaaS startup, even if both liked the same post.
+Only Step 2 (first message after connection) uses the AI engine (`generate-step-message`) with full lead intelligence (role, industry, signal). Steps 3 and 4 fall back to generic templates from `generate-outreach-messages` with simple placeholder substitution (`{{first_name}}`, `{{company}}`). This means follow-up messages ignore the lead's background entirely.
 
-## Root Cause
-1. **The contacts table doesn't store industry or company description** — only `first_name`, `last_name`, `title` (headline), `company`, `signal`
-2. **The AI prompt receives title and company but doesn't instruct the AI to deeply use them** — it focuses almost entirely on the signal, with the lead's role treated as metadata
-3. **No company/industry context is captured at lead creation** — the LinkedIn profile data has `industry`, `company.industry`, and headline details, but they're discarded during insert
+**Root cause**: In `generate-outreach-messages/index.ts`, only Step 2 gets `ai_icebreaker: true`. Steps 3 and 4 are set to false, so `process-campaign-followups` uses the raw template text instead of calling the AI.
 
-## Solution (3 parts)
+## Solution
 
-### 1. Store lead industry on the contacts table
-Add an `industry` column to contacts so we capture it at discovery time.
+Set `ai_icebreaker: true` on ALL message steps (Steps 2, 3, and 4) so every message goes through `generate-step-message` with full lead context.
 
-**Migration**: `ALTER TABLE contacts ADD COLUMN industry text;`
+### Changes
 
-**Update `signal-keyword-posts/index.ts`**: When inserting a contact, also store:
+**1. `supabase/functions/generate-outreach-messages/index.ts`**
+Change the normalized steps so Steps 3 and 4 also have `ai_icebreaker: true`:
 ```
-industry: profile.industry || profile.current_company?.industry || null
+// Step 3
+{ type: 'message', message: steps[2]?.message || '', delay_days: ..., ai_icebreaker: true }
+// Step 4
+{ type: 'message', message: steps[3]?.message || '', delay_days: ..., ai_icebreaker: true }
 ```
 
-### 2. Rewrite the AI prompt to deeply leverage lead context
-The current prompt treats `Title` and `Company` as flat labels. Rewrite the `buildOutreachPrompts` system prompt in `generate-step-message/index.ts` to:
+**2. `src/components/campaigns/CreateCampaignWizard.tsx`**
+Update the `DEFAULT_WORKFLOW` fallback to also set `ai_icebreaker: true` on all message steps, so even if the AI generation fails, the fallback still triggers per-lead AI generation at send time.
 
-- Add a **LEAD INTELLIGENCE** section that instructs the AI to infer the lead's daily challenges from their title + industry + company
-- Add explicit instructions: "Before writing, think about what keeps this person up at night given their role and industry. Your message must show you understand THEIR world."
-- Add role-specific framing rules:
-  - If title contains "CEO/Founder/Owner" → frame around growth/scaling
-  - If title contains "VP/Director/Head of Sales" → frame around pipeline/revenue
-  - If title contains "CTO/VP Engineering" → frame around efficiency/technical debt
-  - If title contains "Marketing" → frame around lead gen/ROI
-- Update sentence S2 to explicitly connect the signal to a pain point **specific to their role and industry**, not a generic value prop
-- Add bad examples showing role-ignorant messages vs good examples that demonstrate role-awareness
-
-### 3. Pass industry data through the full chain
-Update the data flow so `industry` reaches the AI prompt:
-
-- **`process-campaign-followups/index.ts`**: Change contact select from `first_name, last_name, company, title, signal` → add `industry`. Pass it as `leadIndustry` in the payload.
-- **`generate-step-message/index.ts`**: Accept `leadIndustry` field in the request body. Add it to the `LeadContext` type and use it in the prompt as:
-  ```
-  Lead's industry: ${lead.industry || 'unknown'}
-  ```
-- **`CampaignDetail.tsx` (frontend regenerate)**: Pass `leadIndustry` when available from the scheduled message data.
-- **`process-ai-replies/index.ts`**: Same — pass `leadIndustry` when invoking generate-step-message.
+### What changes for the user
+- Steps 3 and 4 will now be generated fresh for each lead at send time, using the same role-aware, industry-aware prompt that already powers Step 2
+- Follow-ups will reference the lead's actual title, industry, and previous messages instead of using generic templates
+- The template messages shown in the campaign editor become preview-only placeholders (they always were for Step 2, now consistently so for all steps)
 
 ### Files changed
-- `supabase/migrations/XXXX_add_industry_to_contacts.sql` (new)
-- `supabase/functions/signal-keyword-posts/index.ts` (store industry on insert)
-- `supabase/functions/generate-step-message/index.ts` (rewrite prompt, accept leadIndustry)
-- `supabase/functions/process-campaign-followups/index.ts` (pass industry)
-- `supabase/functions/process-ai-replies/index.ts` (pass industry)
-- `src/pages/CampaignDetail.tsx` (pass industry on regenerate)
-
-### What the lead experiences (before → after)
-
-**Before** (signal-only):
-> "You liked Pangea's post about tech staffing. We help companies find warm leads through intent signals. Curious?"
-
-**After** (signal + role + industry aware):
-> "You liked Pangea's post about tech staffing. Running sales at a logistics company means your team probably wastes hours chasing cold lists instead of people already looking. Worth a quick look?"
+- `supabase/functions/generate-outreach-messages/index.ts` (add `ai_icebreaker: true` to steps 3 and 4)
+- `src/components/campaigns/CreateCampaignWizard.tsx` (update DEFAULT_WORKFLOW fallback)
 
