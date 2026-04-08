@@ -2862,51 +2862,110 @@ export default function CampaignDetail() {
         onUpdated={() => { if (id) loadCampaign(id); }}
       />
 
-      {/* Manual Add Connection Dialog */}
-      <Dialog open={manualConnOpen} onOpenChange={setManualConnOpen}>
-        <DialogContent className="sm:max-w-md">
+      {/* Manual Add Connection Dialog — Contacts-page style */}
+      <Dialog open={manualConnOpen} onOpenChange={(open) => { setManualConnOpen(open); if (!open) { setManualConnSearch(""); setManualConnResults([]); } }}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Add Contact to Today's Queue</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search by name or company..."
-                value={manualConnSearch}
-                onChange={(e) => {
-                  setManualConnSearch(e.target.value);
-                  searchManualConnContacts(e.target.value);
-                }}
-                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div className="max-h-64 overflow-y-auto space-y-1">
-              {manualConnLoading && <p className="text-xs text-muted-foreground text-center py-4">Searching...</p>}
-              {!manualConnLoading && manualConnSearch && manualConnResults.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">No contacts found</p>
-              )}
-              {manualConnResults.map((c: any) => (
-                <div key={c.id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {c.first_name} {c.last_name || ""}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {c.title}{c.title && c.company ? " at " : ""}{c.company}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => addManualConnection(c.id)}
-                    disabled={manualConnAdding === c.id}
-                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                  >
-                    {manualConnAdding === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Add"}
-                  </button>
-                </div>
-              ))}
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by name or company..."
+              value={manualConnSearch}
+              onChange={(e) => {
+                setManualConnSearch(e.target.value);
+                searchManualConnContacts(e.target.value);
+              }}
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {manualConnLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            {!manualConnLoading && manualConnSearch && manualConnResults.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-12">No contacts found</p>
+            )}
+            {!manualConnLoading && !manualConnSearch && (
+              <p className="text-sm text-muted-foreground text-center py-12">Type to search your contacts</p>
+            )}
+            {!manualConnLoading && manualConnResults.length > 0 && (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    {["Contact", "Signal", "Score", ""].map((h) => (
+                      <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2.5">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {manualConnResults.map((c: any) => (
+                    <tr key={c.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
+                              {(c.first_name[0] + (c.last_name?.[0] || "")).toUpperCase()}
+                            </div>
+                            <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card ${
+                              c.relevance_tier === 'hot' ? 'bg-red-500' : c.relevance_tier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
+                            }`} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              {c.linkedin_url ? (
+                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
+                                  {c.first_name} {c.last_name || ""}
+                                </a>
+                              ) : (
+                                <span className="text-sm font-semibold text-foreground truncate">{c.first_name} {c.last_name || ""}</span>
+                              )}
+                              {c.linkedin_url && (
+                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                  <LinkedInIcon />
+                                </a>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                              {c.title}{c.title && c.company ? " at " : ""}{c.company}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 max-w-[180px]">
+                        <span className="text-xs text-muted-foreground truncate block">{c.signal || "—"}</span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-0.5">
+                          {(() => {
+                            const tier = c.relevance_tier?.toLowerCase();
+                            const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                            return [0, 1, 2].map((i) => (
+                              <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                            ));
+                          })()}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <button
+                          onClick={() => addManualConnection(c.id)}
+                          disabled={manualConnAdding === c.id}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                        >
+                          {manualConnAdding === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Add"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </DialogContent>
       </Dialog>
