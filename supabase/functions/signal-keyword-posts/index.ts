@@ -681,7 +681,7 @@ Deno.serve(async (req) => {
             pipelineStats.rejected_wrong_industry++;
           }
           // Capture sample rejections (max 3)
-          if (pipelineStats.sample_prefilter_rejections.length < 3) {
+          if (pipelineStats.sample_prefilter_rejections.length < 50) {
             pipelineStats.sample_prefilter_rejections.push({
               keyword,
               variants: diagVariants,
