@@ -56,8 +56,8 @@ const contentVariant = {
 const DEFAULT_WORKFLOW = [
   { type: "invitation", message: "", delay_days: 0 },
   { type: "message", message: "", delay_days: 1, ai_icebreaker: true },
-  { type: "message", message: "", delay_days: 2 },
-  { type: "message", message: "", delay_days: 3 },
+  { type: "message", message: "", delay_days: 2, ai_icebreaker: true },
+  { type: "message", message: "", delay_days: 3, ai_icebreaker: true },
 ];
 
 const STEP_LABELS = [
