@@ -737,7 +737,7 @@ Deno.serve(async (req) => {
           } else {
             pipelineStats.rejected_ai_low_score++;
           }
-          if (pipelineStats.sample_ai_rejections.length < 3) {
+          if (pipelineStats.sample_ai_rejections.length < 50) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 300),
               is_buyer: rejectedCls.is_buyer,
@@ -747,7 +747,7 @@ Deno.serve(async (req) => {
           }
         } else {
           pipelineStats.rejected_ai_not_buyer++;
-          if (pipelineStats.sample_ai_rejections.length < 3) {
+          if (pipelineStats.sample_ai_rejections.length < 50) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 300),
               is_buyer: false,
