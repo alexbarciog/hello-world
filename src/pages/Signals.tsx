@@ -54,6 +54,7 @@ interface AgentTask {
   started_at: string | null;
   completed_at: string | null;
   error: string | null;
+  diagnostics: any | null;
 }
 
 const AGENT_TYPE_LABELS: Record<string, string> = {
