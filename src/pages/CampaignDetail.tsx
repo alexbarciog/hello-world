@@ -1206,12 +1206,8 @@ export default function CampaignDetail() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
           className="mx-4 md:mx-6 mt-4 relative overflow-hidden rounded-2xl"
+          style={{ background: "linear-gradient(135deg, #5E93FE 0%, #a8c8ff 40%, #dbe8ff 70%, #f0f4ff 100%)" }}
         >
-          <img
-            src={aiSdrBannerBg}
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
           <div className="relative z-10 flex items-center gap-4 px-6 py-4">
             <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center">
               <Bot className="w-5 h-5 text-foreground/70" />
