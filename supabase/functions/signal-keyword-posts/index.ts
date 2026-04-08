@@ -912,9 +912,76 @@ Deno.serve(async (req) => {
     console.log('=====================================');
 
     console.log(`signal-keyword-posts: ${inserted} leads total in ${Math.round((Date.now() - START) / 1000)}s`);
+
+    // Self-report task completion if run_id and task_key were provided
+    const run_id = body?.run_id;
+    const task_key = body?.task_key;
+    if (run_id && task_key) {
+      try {
+        await supabase.from('signal_agent_tasks')
+          .update({ status: 'done', leads_found: inserted, completed_at: new Date().toISOString() })
+          .eq('run_id', run_id).eq('task_key', task_key);
+
+        // Check if all tasks for this run are now complete
+        const { data: pendingTasks } = await supabase.from('signal_agent_tasks')
+          .select('id')
+          .eq('run_id', run_id)
+          .in('status', ['pending', 'running'])
+          .limit(1);
+
+        if (!pendingTasks || pendingTasks.length === 0) {
+          // All tasks done — finalize the run
+          const { data: allTasks } = await supabase.from('signal_agent_tasks')
+            .select('leads_found, status')
+            .eq('run_id', run_id);
+          const totalLeads = (allTasks || []).reduce((sum: number, t: any) => sum + (t.leads_found || 0), 0);
+          const completedCount = (allTasks || []).length;
+          await supabase.from('signal_agent_runs').update({
+            status: 'done', total_leads: totalLeads, completed_tasks: completedCount,
+            completed_at: new Date().toISOString(),
+          }).eq('id', run_id);
+          console.log(`[SELF-REPORT] Run ${run_id} finalized: ${totalLeads} total leads`);
+
+          // Update agent results_count
+          if (agent_id) {
+            const { data: agentData } = await supabase.from('signal_agents').select('user_id, leads_list_name, name').eq('id', agent_id).single();
+            if (agentData) {
+              const lName = agentData.leads_list_name || agentData.name || 'Signal Leads';
+              const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agentData.user_id).eq('name', lName).maybeSingle();
+              if (agentList) {
+                const { count } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
+                if (typeof count === 'number') {
+                  await supabase.from('signal_agents').update({ results_count: count, last_launched_at: new Date().toISOString() }).eq('id', agent_id);
+                }
+              }
+              // Send notification if leads found
+              if (totalLeads > 0) {
+                await supabase.from('notifications').insert({
+                  user_id: agentData.user_id,
+                  title: `${agentData.name || 'Signal Agent'}: ${totalLeads} new leads`,
+                  body: `Your signal agent discovered ${totalLeads} new leads matching your ICP.`,
+                  type: 'signal', link: '/contacts',
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn(`[SELF-REPORT] Failed to update task status:`, e);
+      }
+    }
+
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-keyword-posts error:', error);
+
+    // Self-report failure if run_id and task_key were provided
+    try {
+      const bodyText = error;
+      const run_id = (globalThis as any).__run_id;
+      const task_key = (globalThis as any).__task_key;
+    } catch {}
+
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', leads: 0 }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
