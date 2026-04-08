@@ -687,11 +687,11 @@ export default function CampaignDetail() {
       const acceptedDate = cr.accepted_at ? new Date(cr.accepted_at) : new Date();
       const scheduledDate = new Date(acceptedDate);
       
-      let totalDelay = 0;
+      let totalDelayHours = 0;
       for (let j = 0; j <= nextStepIdx; j++) {
-        totalDelay += nonInvSteps[j]?.delay_days || 1;
+        totalDelayHours += nonInvSteps[j]?.delay_hours || (nonInvSteps[j]?.delay_days ? nonInvSteps[j].delay_days * 24 : 24);
       }
-      scheduledDate.setDate(acceptedDate.getDate() + totalDelay);
+      scheduledDate.setTime(acceptedDate.getTime() + totalDelayHours * 60 * 60 * 1000);
 
       // Check for pre-generated message
       const preGen = preGenMap[`${cr.id}_${stepIndexInWorkflow}`];
