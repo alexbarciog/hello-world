@@ -269,88 +269,85 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
           .eq('run_id', runId).eq('task_key', task.task_key)
       ));
 
-      // Separate keyword batches (run sequentially) from other tasks (run in parallel)
+      // Separate keyword batches (fire-and-forget) from other tasks (run in parallel, awaited)
       const keywordBatches = tasks.filter((t: any) => t._isKeywordBatch);
       const otherTasks = tasks.filter((t: any) => !t._isKeywordBatch);
 
-      // Run keyword batches sequentially + other tasks in parallel
-      const keywordBatchPromise = (async () => {
-        const batchResults: { task_key: string; leads: number }[] = [];
-        for (const task of keywordBatches) {
-          try {
-            const leads = await invokeSignalFunction(task.fn, task.payload);
-            console.log(`${task.task_key}: ${leads} leads`);
-            await supabase.from('signal_agent_tasks')
-              .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
-              .eq('run_id', runId).eq('task_key', task.task_key);
-            batchResults.push({ task_key: task.task_key, leads });
-          } catch (err) {
-            console.error(`${task.task_key} failed:`, err);
-            await supabase.from('signal_agent_tasks')
-              .update({ status: 'failed', error: String(err), completed_at: new Date().toISOString() })
-              .eq('run_id', runId).eq('task_key', task.task_key);
-            batchResults.push({ task_key: task.task_key, leads: 0 });
-          }
-        }
-        return batchResults;
-      })();
+      // Fire keyword batches as fire-and-forget — each will self-report completion
+      // Pass run_id and task_key so they can update their own task records
+      for (const task of keywordBatches) {
+        const payload = { ...task.payload, run_id: runId, task_key: task.task_key };
+        fetch(`${SUPABASE_URL}/functions/v1/${task.fn}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+          body: JSON.stringify(payload),
+        }).catch(err => console.error(`Fire-and-forget ${task.task_key} failed:`, err));
+        console.log(`🔥 Fired ${task.task_key} (fire-and-forget)`);
+      }
 
+      // Run other tasks in parallel (awaited)
       const otherPromises = otherTasks.map(async (task) => {
-        const leads = await invokeSignalFunction(task.fn, task.payload);
-        console.log(`${task.task_key}: ${leads} leads`);
-        await supabase.from('signal_agent_tasks')
-          .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
-          .eq('run_id', runId).eq('task_key', task.task_key);
-        return { task_key: task.task_key, leads };
+        try {
+          const leads = await invokeSignalFunction(task.fn, task.payload);
+          console.log(`${task.task_key}: ${leads} leads`);
+          await supabase.from('signal_agent_tasks')
+            .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+            .eq('run_id', runId).eq('task_key', task.task_key);
+          return { task_key: task.task_key, leads };
+        } catch (err) {
+          console.error(`${task.task_key} failed:`, err);
+          await supabase.from('signal_agent_tasks')
+            .update({ status: 'failed', error: String(err), completed_at: new Date().toISOString() })
+            .eq('run_id', runId).eq('task_key', task.task_key);
+          return { task_key: task.task_key, leads: 0 };
+        }
       });
 
-      const results = await Promise.allSettled([keywordBatchPromise, ...otherPromises]);
+      const otherResults = await Promise.allSettled(otherPromises);
 
-      for (const r of results) {
+      for (const r of otherResults) {
         if (r.status === 'fulfilled') {
-          // First result is keyword batches (array), rest are single results
-          const val = r.value;
-          if (Array.isArray(val)) {
-            for (const br of val) { agentLeads += br.leads; completedTasks++; }
-          } else {
-            agentLeads += val.leads;
-            completedTasks++;
-          }
-        } else {
-          console.error(`Task failed:`, r.reason);
-          completedTasks++;
+          agentLeads += r.value.leads;
         }
+        completedTasks++;
       }
+
+      // Update run with results from non-keyword tasks
+      // Keyword batches will self-report and finalize when the last one completes
       await supabase.from('signal_agent_runs')
         .update({ completed_tasks: completedTasks, total_leads: agentLeads })
         .eq('id', runId);
 
-      // Final count from DB
-      const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agent.user_id).eq('name', listName).maybeSingle();
-      let actualCount = (agent.results_count || 0) + agentLeads;
-      if (agentList) {
-        const { count: listContactCount } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
-        if (typeof listContactCount === 'number') actualCount = listContactCount;
-      }
-      await supabase.from('signal_agents').update({
-        last_launched_at: new Date().toISOString(),
-        results_count: actualCount,
-      }).eq('id', agent.id);
+      // If there are no keyword batches, finalize the run now
+      if (keywordBatches.length === 0) {
+        // Final count from DB
+        const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agent.user_id).eq('name', listName).maybeSingle();
+        let actualCount = (agent.results_count || 0) + agentLeads;
+        if (agentList) {
+          const { count: listContactCount } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
+          if (typeof listContactCount === 'number') actualCount = listContactCount;
+        }
+        await supabase.from('signal_agents').update({
+          last_launched_at: new Date().toISOString(),
+          results_count: actualCount,
+        }).eq('id', agent.id);
 
-      // Finalize run
-      await supabase.from('signal_agent_runs').update({
-        status: completedTasks === tasks.length ? 'done' : 'partial',
-        completed_tasks: completedTasks, total_leads: agentLeads,
-        completed_at: new Date().toISOString(),
-      }).eq('id', runId);
+        await supabase.from('signal_agent_runs').update({
+          status: completedTasks === tasks.length ? 'done' : 'partial',
+          completed_tasks: completedTasks, total_leads: agentLeads,
+          completed_at: new Date().toISOString(),
+        }).eq('id', runId);
 
-      if (agentLeads > 0) {
-        await supabase.from('notifications').insert({
-          user_id: agent.user_id,
-          title: `${agent.name}: ${agentLeads} new leads`,
-          body: `Your signal agent "${agent.name}" discovered ${agentLeads} new leads matching your ICP.`,
-          type: 'signal', link: '/contacts',
-        });
+        if (agentLeads > 0) {
+          await supabase.from('notifications').insert({
+            user_id: agent.user_id,
+            title: `${agent.name}: ${agentLeads} new leads`,
+            body: `Your signal agent "${agent.name}" discovered ${agentLeads} new leads matching your ICP.`,
+            type: 'signal', link: '/contacts',
+          });
+        }
+      } else {
+        console.log(`Agent ${agent.id}: ${keywordBatches.length} keyword batches running independently — they will self-finalize`);
       }
 
       totalLeads += agentLeads;
