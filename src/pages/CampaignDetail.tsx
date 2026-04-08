@@ -579,6 +579,60 @@ export default function CampaignDetail() {
     setLoadingQueue(false);
   }
 
+  // Manual connection: search contacts not already in today's queue
+  async function searchManualConnContacts(query: string) {
+    if (!id || !query.trim()) { setManualConnResults([]); return; }
+    setManualConnLoading(true);
+    try {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, signal")
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%`)
+        .limit(20);
+      // Filter out contacts already in today's queue
+      const queueContactIds = new Set(dailyQueue.map(q => q.contactId));
+      setManualConnResults((data || []).filter((c: any) => !queueContactIds.has(c.id)));
+    } catch (err) {
+      console.error("Manual conn search error:", err);
+    }
+    setManualConnLoading(false);
+  }
+
+  async function addManualConnection(contactId: string) {
+    if (!id || !campaign) return;
+    setManualConnAdding(contactId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const today = new Date().toISOString().split("T")[0];
+
+      // Insert into daily_scheduled_leads
+      const { error } = await supabase
+        .from("daily_scheduled_leads" as any)
+        .insert({
+          campaign_id: id,
+          contact_id: contactId,
+          user_id: user.id,
+          scheduled_date: today,
+          action_type: "connection",
+          status: "pending",
+          step_index: 1,
+        } as any);
+
+      if (error) throw error;
+      toast.success("Contact added to today's connection queue");
+      setManualConnOpen(false);
+      setManualConnSearch("");
+      setManualConnResults([]);
+      // Refresh queue
+      await loadDailyQueue(id);
+    } catch (err: any) {
+      console.error("Add manual connection error:", err);
+      toast.error(err.message || "Failed to add connection");
+    }
+    setManualConnAdding(null);
+  }
+
   async function handleRegenerateQueueMessage(idx: number) {
     const item = dailyQueue[idx];
     if (!item || !campaign) return;
