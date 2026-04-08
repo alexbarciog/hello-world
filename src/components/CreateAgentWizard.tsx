@@ -33,7 +33,7 @@ const INDUSTRIES = [
 ];
 const COMPANY_TYPES = ["Startup", "SMB", "Mid-Market", "Enterprise", "Agency", "Non-Profit"];
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"];
-const LOCATIONS = ["United States", "United Kingdom", "Germany", "France", "Canada", "Australia", "Netherlands", "Spain", "Italy", "India"];
+const LOCATIONS = ["Any Country", "United States", "United Kingdom", "Germany", "France", "Canada", "Australia", "Netherlands", "Spain", "Italy", "India"];
 
 // ── Animation variants ──────────────────────────────────────────────────────
 const ease = [0.22, 1, 0.36, 1] as [number, number, number, number];
