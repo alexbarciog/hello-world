@@ -748,13 +748,18 @@ export default function Signals() {
                                         : '—';
 
                                       return (
-                                        <div key={task.id} className="flex items-center gap-2 text-xs">
-                                          {tIcon}
-                                          <span className="font-medium text-foreground min-w-[140px]">{task.task_key}</span>
-                                          <span className={`text-[10px] font-semibold ${tColor}`}>{task.status}</span>
-                                          <span className="text-muted-foreground">{duration}</span>
-                                          <span className="text-green-600 font-semibold ml-auto">{task.leads_found} leads</span>
-                                          {task.error && <span className="text-destructive text-[10px] truncate max-w-[200px]" title={task.error}>⚠ {task.error}</span>}
+                                        <div key={task.id}>
+                                          <div className="flex items-center gap-2 text-xs">
+                                            {tIcon}
+                                            <span className="font-medium text-foreground min-w-[140px]">{task.task_key}</span>
+                                            <span className={`text-[10px] font-semibold ${tColor}`}>{task.status}</span>
+                                            <span className="text-muted-foreground">{duration}</span>
+                                            <span className="text-green-600 font-semibold ml-auto">{task.leads_found} leads</span>
+                                            {task.error && <span className="text-destructive text-[10px] truncate max-w-[200px]" title={task.error}>⚠ {task.error}</span>}
+                                          </div>
+                                          {isAdmin && task.diagnostics && (
+                                            <TaskDiagnosticsPanel diagnostics={task.diagnostics} />
+                                          )}
                                         </div>
                                       );
                                     })}
