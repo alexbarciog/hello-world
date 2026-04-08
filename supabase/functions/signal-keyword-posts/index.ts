@@ -915,8 +915,8 @@ Deno.serve(async (req) => {
     console.log(`signal-keyword-posts: ${inserted} leads total in ${Math.round((Date.now() - START) / 1000)}s`);
 
     // Self-report task completion if run_id and task_key were provided
-    const run_id = body?.run_id;
-    const task_key = body?.task_key;
+    const run_id = _run_id;
+    const task_key = _task_key;
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
@@ -943,7 +943,7 @@ Deno.serve(async (req) => {
           }).eq('id', run_id);
           console.log(`[SELF-REPORT] Run ${run_id} finalized: ${totalLeads} total leads`);
 
-          // Update agent results_count
+          // Update agent results_count and send notification
           if (agent_id) {
             const { data: agentData } = await supabase.from('signal_agents').select('user_id, leads_list_name, name').eq('id', agent_id).single();
             if (agentData) {
@@ -955,7 +955,6 @@ Deno.serve(async (req) => {
                   await supabase.from('signal_agents').update({ results_count: count, last_launched_at: new Date().toISOString() }).eq('id', agent_id);
                 }
               }
-              // Send notification if leads found
               if (totalLeads > 0) {
                 await supabase.from('notifications').insert({
                   user_id: agentData.user_id,
@@ -975,14 +974,6 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-keyword-posts error:', error);
-
-    // Self-report failure if run_id and task_key were provided
-    try {
-      const bodyText = error;
-      const run_id = (globalThis as any).__run_id;
-      const task_key = (globalThis as any).__task_key;
-    } catch {}
-
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error', leads: 0 }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
