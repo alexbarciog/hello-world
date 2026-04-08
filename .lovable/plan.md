@@ -1,46 +1,70 @@
 
 
-# Fix Keyword Posts Timeout: Split Keywords Across Multiple Function Calls
+# Fix AI SDR First Message Quality: Too Generic, Ignores Lead Signal
 
 ## Problem
 
-`signal-keyword-posts` has a 145s runtime limit. With 36 keywords fetching up to 5 pages each, it times out after processing ~14 keywords (39%), leaving 22 keywords unprocessed. The keywords and AI filtering are good — the bottleneck is purely execution time.
+The AI generates messages like:
+> "Most founders I talk to get stuck when their MVP hits 1,000 users and starts lagging. We usually get custom AI tools or SaaS dashboards live in about 30 days to stop that. Ever feel like your current tech stack is holding back your growth at Cubo?"
 
-## Solution: Batch Keywords in the Orchestrator
+This is bad because:
+1. It fabricates a scenario ("MVP hits 1,000 users") that has nothing to do with the lead
+2. It ignores the actual buying signal entirely
+3. It reads like a generic template, not a personalized message
+4. "Ever feel like your current tech stack is holding back your growth?" is a textbook AI/marketing line
 
-Instead of sending all keywords in one function call, split them into batches of ~8 keywords each and invoke `signal-keyword-posts` multiple times sequentially. Each batch gets a fresh 145s runtime window.
+## Root Cause
 
-**File**: `supabase/functions/process-signal-agents/index.ts`
+The prompt in `generate-step-message` has good guidelines but:
+- Too many instructions dilute focus. The AI has 50+ rules and defaults to safe, generic patterns
+- The signal isn't enforced as the structural backbone of the message. It's mentioned but not required as the opening
+- No concrete examples showing good vs bad output for this specific company's context
+- The prompt says "mirror their exact words" but doesn't enforce it structurally
 
-### Change: Split keyword_posts into multiple sequential invocations
+## Solution: Restructure the Prompt to Force Signal-First Messages
 
-In the task-building section (lines 197-205), instead of creating one task with all keywords:
+### Changes to `supabase/functions/generate-step-message/index.ts`
 
-1. Split keywords into batches of 8
-2. Invoke `signal-keyword-posts` for each batch sequentially (not parallel — to avoid Unipile rate limits)
-3. Sum up leads from all batches
+**1. Simplify and restructure `buildOutreachPrompts`**
 
-For example, 36 keywords becomes 5 batches: 8+8+8+8+4. Each batch processes ~8 keywords in ~80s (well within 145s), and total runtime is ~7 minutes — fine for `EdgeRuntime.waitUntil`.
+Replace the current sprawling system prompt with a tighter, example-driven prompt that forces the AI to:
 
-### Implementation detail
+- **Sentence 1**: Reference what the lead did (liked/commented/engaged) with specific details
+- **Sentence 2**: Connect that to what the sender does, using ONE pain point
+- **Sentence 3**: End with a simple yes/no question
 
-Replace the single `tasks.push(...)` for keyword_posts with a loop that creates multiple tasks like `keywords_batch_1(8)`, `keywords_batch_2(8)`, etc. Then in the parallel execution section, run keyword batches sequentially while other signal types (competitors, hashtags, engagers) still run in parallel.
+The restructured prompt will:
+- Move the signal to the TOP of the prompt, not buried in a list
+- Add 2-3 concrete good/bad examples directly in the prompt
+- Remove redundant psychology instructions (the AI doesn't use them well anyway)
+- Keep the banned words list and style rules but consolidate them
+- Add a "SELF-CHECK" instruction: "Before outputting, verify: does sentence 1 mention what the lead engaged with? If not, rewrite."
 
-```text
-Current:  [keywords(36)] ──timeout at keyword 14──X
-Proposed: [keywords_b1(8)] → [keywords_b2(8)] → [keywords_b3(8)] → [keywords_b4(8)] → [keywords_b5(4)]
-          Each batch: ~80s, fresh 145s window
+**2. Add thin-signal detection logic**
+
+Before calling the AI, parse the signal string to determine how much context is available:
+- Rich signal: "Commented on [Person]'s post about [topic]" → full personalization
+- Medium signal: "Liked [Company]'s post" → reference the company + what they're known for
+- No signal: just name/title/company → skip signal reference, focus on role-specific pain point
+
+Pass a `signalRichness` field to the prompt so the AI adapts its opening accordingly.
+
+**3. Add few-shot examples in the prompt**
+
+Include 2 concrete examples:
+```
+GOOD: "You liked Pangea's post about tech staffing. We help companies find people showing buying intent on LinkedIn so your team spends less time searching. Worth a look?"
+
+BAD: "Most founders I talk to get stuck when their MVP hits 1,000 users and starts lagging. We usually get custom AI tools live in about 30 days. Ever feel like your tech stack is holding back growth?"
 ```
 
-**File**: `supabase/functions/signal-keyword-posts/index.ts`
+### File changes
 
-No changes needed to the keyword function itself — it already handles partial keyword lists and the `hasTime()` guard. We just need to send it fewer keywords per call.
+- `supabase/functions/generate-step-message/index.ts` — rewrite `buildOutreachPrompts` function (system prompt + user prompt for step 2 and follow-ups)
 
-## What stays the same
-
-- All keywords are kept (no reduction)
-- AI filtering logic unchanged
-- 5-page pagination per keyword unchanged
-- No people search added
-- All other signal types (competitors, hashtags, engagers) unchanged
+### What stays the same
+- Conversational reply handler (separate path, already working)
+- `sanitizeMessage` function
+- The caller in `process-campaign-followups` (payload structure unchanged)
+- All other edge functions
 
