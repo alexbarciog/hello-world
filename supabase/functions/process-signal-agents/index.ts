@@ -308,11 +308,17 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
 
       for (const r of results) {
         if (r.status === 'fulfilled') {
-          agentLeads += r.value.leads;
-          completedTasks++;
+          // First result is keyword batches (array), rest are single results
+          const val = r.value;
+          if (Array.isArray(val)) {
+            for (const br of val) { agentLeads += br.leads; completedTasks++; }
+          } else {
+            agentLeads += val.leads;
+            completedTasks++;
+          }
         } else {
           console.error(`Task failed:`, r.reason);
-          completedTasks++; // still count as completed (failed)
+          completedTasks++;
         }
       }
       await supabase.from('signal_agent_runs')
