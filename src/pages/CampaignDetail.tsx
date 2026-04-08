@@ -2933,7 +2933,7 @@ export default function CampaignDetail() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
-                    {["Contact", "Signal", "Score", ""].map((h) => (
+                    {["Contact", "Signal", "Score", "Lists", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-2.5">
                         {h}
                       </th>
@@ -2986,6 +2986,18 @@ export default function CampaignDetail() {
                               <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
                             ));
                           })()}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {(manualConnListMap[c.id] || []).map((listName: string, li: number) => (
+                            <span key={li} className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+                              {listName}
+                            </span>
+                          ))}
+                          {!(manualConnListMap[c.id]?.length) && (
+                            <span className="text-[10px] text-muted-foreground">—</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-3 py-3 text-right">
