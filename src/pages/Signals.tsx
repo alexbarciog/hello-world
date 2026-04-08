@@ -376,7 +376,6 @@ export default function Signals() {
   }
 
   async function fetchTasksForRun(runId: string) {
-    if (runTasks[runId]) return; // already loaded
     const { data: tasks } = await supabase
       .from("signal_agent_tasks")
       .select("*")
