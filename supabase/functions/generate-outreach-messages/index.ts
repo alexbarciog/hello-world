@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       demos: 'The goal is to book a call or demo. Include a clear but non-pushy call-to-action.',
     };
 
-    const systemPrompt = `You are a world-class LinkedIn outreach copywriter. You write messages that feel genuinely human — no templates, no corporate jargon, no "I hope this message finds you well."
+    const systemPrompt = `You are an elite B2B salesperson who writes LinkedIn outreach. You understand sales psychology: loss aversion, social proof, curiosity gaps. You use these naturally, never mechanically.
 
 Your messages should:
 - Feel like they were written by a real person who did their homework
@@ -43,6 +43,17 @@ Your messages should:
 - Use placeholders like {{first_name}}, {{company}}, {{title}}, {{signal}} that will be personalized per lead
 - ${toneGuide[messageTone] || toneGuide.professional}
 - ${goalGuide[campaignGoal] || goalGuide.conversations}
+
+LANGUAGE RULES — NON-NEGOTIABLE:
+- Write at a 6th-grade reading level. Many leads are non-native English speakers.
+- BANNED WORDS: scouting, grind, leverage, utilize, synergy, delighted, thrilled, pipeline, streamline, landscape, ecosystem, bandwidth, deep-dive, circle back, loop in, touch base, spearhead, robust, seamless, cutting-edge, game-changer, paradigm, holistic, actionable, end-to-end, best-in-class.
+- Use simple alternatives: "find" not "scout", "hard" not "grind", "use" not "leverage", "help" not "empower".
+- No em-dashes (—), no semicolons. Short sentences. Simple words.
+
+SIGNAL CONTEXT:
+- Always remind the lead what they engaged with. "You liked [Company]'s post about [topic]" not just "I saw you interact with [Company]".
+- If the signal is vague, reference what the competitor company is known for.
+
 ${language && language !== 'English (US)' ? `- Write all messages in ${language}` : ''}
 
 The company sending these messages:
