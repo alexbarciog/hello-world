@@ -637,6 +637,23 @@ export default function CampaignDetail() {
     toast.success("Message saved!");
   }
 
+  async function handleSaveScheduledMessage(idx: number) {
+    const sm = scheduledMessages[idx];
+    if (!sm || !editingScheduledMsg.trim()) return;
+    const updated = [...scheduledMessages];
+    updated[idx] = { ...updated[idx], message: editingScheduledMsg.trim(), editedByUser: true };
+    setScheduledMessages(updated);
+    setEditingScheduledIdx(null);
+
+    if (sm.scheduledMsgId) {
+      await supabase
+        .from("scheduled_messages" as any)
+        .update({ message: editingScheduledMsg.trim(), edited_by_user: true, status: "edited" } as any)
+        .eq("id", sm.scheduledMsgId);
+    }
+    toast.success("Message saved!");
+  }
+
   async function loadScheduledMessages(campaignId: string, steps: any[]) {
     const { data: connReqs } = await supabase
       .from("campaign_connection_requests" as any)
