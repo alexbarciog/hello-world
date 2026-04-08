@@ -288,7 +288,7 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
       // Run other tasks in parallel (awaited)
       const otherPromises = otherTasks.map(async (task) => {
         try {
-          const leads = await invokeSignalFunction(task.fn, task.payload);
+          const leads = await invokeSignalFunction(task.fn, { ...task.payload, run_id: runId, task_key: task.task_key });
           console.log(`${task.task_key}: ${leads} leads`);
           await supabase.from('signal_agent_tasks')
             .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
