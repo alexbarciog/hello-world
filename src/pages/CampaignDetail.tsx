@@ -167,6 +167,13 @@ export default function CampaignDetail() {
   const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(false);
   const [upcomingMsgsAccordionOpen, setUpcomingMsgsAccordionOpen] = useState(false);
 
+  // Manual connection add state
+  const [manualConnOpen, setManualConnOpen] = useState(false);
+  const [manualConnSearch, setManualConnSearch] = useState("");
+  const [manualConnResults, setManualConnResults] = useState<any[]>([]);
+  const [manualConnLoading, setManualConnLoading] = useState(false);
+  const [manualConnAdding, setManualConnAdding] = useState<string | null>(null);
+
   // Scheduled messages state
   type ScheduledMessage = {
     contactId: string;
