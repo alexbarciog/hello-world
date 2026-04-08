@@ -191,74 +191,83 @@ ${isFollowUp ? 'Write a short follow-up nudge (max 15 words):' : `Lead just said
 }
 
 // ── Cold outreach handler ──
+function classifySignal(signal: string): 'rich' | 'medium' | 'thin' {
+  if (!signal || signal.trim().length === 0) return 'thin';
+  // Rich: contains topic details like "about X" or "on X" or quoted words
+  if (/\babout\b/i.test(signal) || /\bon\b.*\b(post|article|take|thread)\b/i.test(signal) || /"[^"]+"/.test(signal)) {
+    return 'rich';
+  }
+  // Medium: mentions a company/person but no topic detail
+  if (/liked|reacted|commented|engaged|followed/i.test(signal)) {
+    return 'medium';
+  }
+  return 'thin';
+}
+
 function buildOutreachPrompts(req: any, lead: LeadContext) {
-  const toneGuide: Record<string, string> = {
-    professional: 'Warm but professional. Keep it simple and human.',
-    conversational: 'Casual and friendly. Write like a real peer.',
-    direct: 'Straight to the point. No fluff.',
-  };
-
-  const goalGuide: Record<string, string> = {
-    conversations: 'Goal: start a real conversation, not a hard pitch.',
-    demos: 'Goal: get a quick call, but keep it low-pressure.',
-  };
-
   const isFirstMessage = req.stepNumber === 2;
   const isLastStep = req.stepNumber >= 4;
   const signalIsJobChange = isJobChangeSignal(lead.signal);
+  const signalRichness = classifySignal(lead.signal);
 
-  const systemPrompt = `You are an elite B2B salesperson who has closed thousands of deals on LinkedIn. You understand human psychology deeply: loss aversion, social proof, curiosity gaps, the Zeigarnik effect, pattern interrupts. You use these naturally, never mechanically.
+  const toneLabel = req.messageTone === 'direct' ? 'Direct and brief.' :
+    req.messageTone === 'conversational' ? 'Casual, like texting a friend.' : 'Warm but professional.';
 
-Your job: write ONE LinkedIn DM to a specific person that feels like it came from a sharp, busy founder texting a peer. Not a marketer. Not a bot. A real person.
+  const systemPrompt = `You write LinkedIn DMs for a founder. Every message must feel like a busy person typed it on their phone.
 
-LEAD CONTEXT (use real values, never placeholders):
-- First name: ${lead.firstName || 'Not provided'}
-- Last name: ${lead.lastName || 'Not provided'}
-- Company: ${lead.company || 'Not provided'}
-- Title: ${lead.title || 'Not provided'}
-- Buying signal (what they posted/engaged with): ${lead.signal || 'Not provided'}
-- Signal type: ${signalIsJobChange ? 'job_change' : 'non_job_change'}
+===== THE LEAD'S SIGNAL (this is the backbone of your message) =====
+Signal: "${lead.signal || 'none'}"
+Signal richness: ${signalRichness}
+Signal type: ${signalIsJobChange ? 'job_change' : 'engagement'}
 
-SENDER CONTEXT:
-- Company: ${req.companyName || 'Our company'}
-- Value proposition: ${req.valueProposition || 'Not specified'}
-- Pain points we solve: ${(req.painPoints || []).join(', ') || 'Not specified'}
-- Industry: ${req.industry || 'Not specified'}
+===== LEAD =====
+Name: ${lead.firstName}${lead.lastName ? ' ' + lead.lastName : ''}
+Title: ${lead.title || 'unknown'}
+Company: ${lead.company || 'unknown'}
 
-SALES PSYCHOLOGY — USE THESE NATURALLY:
-1. Mirror the lead's EXACT words from the buying signal. If they said "looking for lead gen channels", you say "lead gen channels", not "growth strategies" or "pipeline solutions". Their own words trigger recognition.
-2. Name the EXACT problem or topic from their signal in your first line. Then connect it to ONE sharp outcome you deliver. Pick the most relevant pain point from above.
-3. NEVER use vague phrases: "the problems you solve", "challenges you face", "what you're working on", "your needs", "people like you". These scream automation.
-4. The lead should read this and think "this person actually gets what I'm dealing with."
+===== SENDER =====
+Company: ${req.companyName || 'our company'}
+What we do: ${req.valueProposition || 'not specified'}
+Pain points we solve: ${(req.painPoints || []).join(', ') || 'not specified'}
+Industry: ${req.industry || 'not specified'}
 
-SIGNAL CONTEXT — HELP THE LEAD REMEMBER:
-- The lead may not remember what they liked or engaged with. Always remind them specifically: "you liked [Company]'s post about [topic]" or "you commented on [Person]'s take on [topic]".
-- Be specific about WHAT the content was about, not just WHO posted it. "Pangea's post on tech staffing" is better than just "Pangea's post".
-- If you only know the company name but not the post topic, say what that company is known for: "you liked Pangea's stuff — they're big on tech staffing".
+===== STRUCTURE (exactly 3 sentences, 2 short paragraphs) =====
+${signalRichness === 'rich' ? `S1: Reference their SPECIFIC engagement. Remind them what they liked/commented on, using the exact topic. Example: "you liked Pangea's post about tech staffing"` :
+  signalRichness === 'medium' ? `S1: Reference the company/person they engaged with and what that company is known for. Example: "you liked Pangea's stuff, they're big on tech staffing"` :
+  `S1: Reference something specific about their role or company. No fake scenarios.`}
+S2: Connect that to ONE thing you help with. Use a concrete outcome, not a vague promise.
+S3: End with one simple question (yes/no or "curious?").
 
-VOICE — SOUND HUMAN, NOT AI:
-- Write at a 6th-grade reading level. Use words a 12-year-old would understand. Many leads are non-native English speakers.
-- BANNED WORDS: scouting, grind, leverage, utilize, synergy, delighted, thrilled, pipeline, streamline, landscape, ecosystem, bandwidth, deep-dive, circle back, loop in, touch base, spearhead, robust, seamless, cutting-edge, game-changer, paradigm, holistic, actionable, end-to-end, best-in-class.
-- Use simple alternatives: "find" not "scout", "hard" not "grind", "use" not "leverage", "help" not "empower", "fast" not "seamless", "built" not "crafted".
-- Write exactly like a busy founder would text a peer on LinkedIn. Short. Simple. Real.
-- Use contractions (you're, we're, didn't). Start mid-thought sometimes.
-- NEVER start with "Hi [Name]," followed by "I saw/noticed/came across". That's the #1 AI tell.
-- Vary your opener: start with a question, a bold claim, a stat, or jump straight into value. Real people don't always greet first.
-- 2-4 short sentences. Under 50 words. Split into 2 short paragraphs.
-- End with ONE clear, easy-to-answer question (yes/no or "curious?").
-- NEVER output placeholders like {{first_name}}, {{company}}, etc. Use real values.
-- If signal type is non_job_change, do NOT mention new role, promotion, or joining.
-- No em-dashes (—), no semicolons.
-- ${toneGuide[req.messageTone] || toneGuide.professional}
-- ${goalGuide[req.campaignGoal] || goalGuide.conversations}
+===== GOOD vs BAD EXAMPLES =====
+GOOD (rich signal): "You liked Pangea's post about tech staffing. We help companies spot people showing buying intent on LinkedIn so your team spends less time cold searching. Worth a look?"
 
-THIN SIGNAL HANDLING:
-- If the buying signal is vague (e.g., "Reacted to [Company] post" or "Liked [Company] post" without detail), do NOT pretend you know what the post said.
-- Instead, reference what the competitor company is known for and connect it to a challenge relevant to the lead's title.
-- Example: "You liked Pangea's stuff — they're big on tech staffing. Curious how you're finding leads for that at [Company]?"
+GOOD (medium signal): "You liked Pangea's stuff, they're big on tech staffing. We help teams like yours find warm leads through intent signals instead of cold outreach. Curious?"
 
+GOOD (thin signal): "Running sales at a growing team is tough when you're guessing who to reach out to. We surface people already showing buying intent so your team talks to the right ones. Sound useful?"
+
+BAD: "Most founders I talk to get stuck when their MVP hits 1,000 users and starts lagging. We usually get custom AI tools live in about 30 days. Ever feel like your tech stack is holding back growth?"
+Why bad: fabricated scenario, ignores signal, generic marketing language.
+
+BAD: "I noticed you're doing great work at Cubo. I'd love to connect and explore synergies."
+Why bad: "noticed", "great work" (vague), "explore synergies" (buzzword).
+
+===== RULES =====
+- Under 50 words. 2 short paragraphs.
+- Mirror the lead's OWN words from the signal when possible.
+- NEVER fabricate scenarios the lead didn't mention.
+- NEVER use: leverage, utilize, synergy, pipeline, seamless, cutting-edge, game-changer, robust, ecosystem, bandwidth, scouting, grind, holistic, actionable, spearhead, deep-dive, circle back, delighted, thrilled.
+- Use simple words: "find" not "scout", "help" not "empower", "fast" not "seamless".
+- Use contractions (we're, you're, didn't).
+- NEVER start with "Hi [Name], I noticed/saw/came across".
+- No em-dashes, no semicolons.
+- No placeholders like {{first_name}}.
+${signalIsJobChange ? '- This is a job change signal. Reference the new role naturally.' : '- NOT a job change. Do NOT mention new role, promotion, or joining.'}
+- Tone: ${toneLabel}
 ${req.language && req.language !== 'English (US)' ? `- Write in ${req.language}` : ''}
-${req.customTraining ? `\nEXTRA USER INSTRUCTIONS:\n${req.customTraining}` : ''}`;
+${req.customTraining ? `- Extra instructions: ${req.customTraining}` : ''}
+
+===== SELF-CHECK =====
+Before outputting, verify: does S1 reference the lead's actual signal or role? If you wrote a generic scenario, rewrite.`;
 
   const prevMsgsArray: string[] = Array.isArray(req.previousMessages) ? req.previousMessages : [];
   const historyBlock = prevMsgsArray.length > 0
@@ -267,19 +276,17 @@ ${req.customTraining ? `\nEXTRA USER INSTRUCTIONS:\n${req.customTraining}` : ''}
 
   let userPrompt = '';
   if (isFirstMessage) {
-    userPrompt = `Write Step 2 (first message after connection accepted).${historyBlock}
+    userPrompt = `Write the first message (Step 2, after connection accepted).${historyBlock}
 
-Open with a pattern interrupt, something unexpected that makes them stop scrolling. Reference their signal using their EXACT words. Connect to ONE sharp outcome. End with a question that's easy to answer (yes/no or "curious?").
-
-Return ONLY the message text.`;
+Follow the 3-sentence structure exactly. Return ONLY the message text.`;
   } else if (isLastStep) {
     userPrompt = `Write Step ${req.stepNumber} (FINAL follow-up).${historyBlock}
 
 ${req.previousStepMessage ? `Last message you sent:\n"${req.previousStepMessage}"` : ''}
 
-CRITICAL: The lead has NOT replied to ANY of your previous messages. Do NOT assume they engaged. Do NOT reference any reaction or response from them.
+CRITICAL: The lead has NOT replied to ANY previous messages. Do NOT assume engagement.
 
-Last shot. Ultra-short (2 sentences max). Use loss aversion or a curiosity gap. Example patterns: "Totally fine if this isn't a priority, just didn't want you to miss [specific thing]" or "Last thing, [one-line value hook]?". No guilt-tripping, no passive-aggression.
+Last shot. 2 sentences max. Use loss aversion or curiosity gap. No guilt-tripping.
 
 Return ONLY the message text.`;
   } else {
@@ -287,9 +294,9 @@ Return ONLY the message text.`;
 
 ${req.previousStepMessage ? `Last message you sent:\n"${req.previousStepMessage}"` : ''}
 
-CRITICAL: The lead has NOT replied to your previous message. Do NOT assume they engaged. Do NOT say things like "appreciate the positive vibes" or reference any reaction from them.
+CRITICAL: The lead has NOT replied. Do NOT assume engagement or say things like "appreciate the positive vibes".
 
-Deepen the SAME angle from your last message. Add a layer: a specific number/stat, a competitor reference, or a "most [titles] I talk to struggle with X" social proof. Keep it to 2 sentences. End with a DIFFERENT question than your previous message.
+Deepen the same angle from your last message. Add one layer: a stat, competitor reference, or social proof. 2 sentences. Different question than before.
 
 Return ONLY the message text.`;
   }
