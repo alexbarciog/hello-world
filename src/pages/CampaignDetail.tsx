@@ -2613,7 +2613,6 @@ export default function CampaignDetail() {
                             )}
                           </AnimatePresence>
                         </div>
-                        </div>
 
                       {/* Upcoming Messages accordion — from scheduled_messages table */}
                       {scheduledMessages.length > 0 && (
