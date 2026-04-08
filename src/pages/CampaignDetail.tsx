@@ -2759,10 +2759,13 @@ export default function CampaignDetail() {
                     <span className="text-muted-foreground">Day 0</span>
                   </div>
                   {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, idx: number) => {
-                    const cumulativeDays = workflowSteps
+                    const stepDelayHours = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
+                    const cumulativeHours = workflowSteps
                       .filter((s: any) => s.type !== "invitation")
                       .slice(0, idx + 1)
-                      .reduce((sum: number, s: any) => sum + (s.delay_days || 0), 0);
+                      .reduce((sum: number, s: any) => sum + (s.delay_hours || (s.delay_days ? s.delay_days * 24 : 24)), 0);
+                    const delayLabel = stepDelayHours < 24 ? `+${stepDelayHours}h` : `+${Math.round(stepDelayHours / 24)}d`;
+                    const cumulativeLabel = cumulativeHours < 24 ? `Hour ${cumulativeHours}` : `Day ${Math.round(cumulativeHours / 24)}`;
                     return (
                       <div key={idx} className="flex items-center gap-3 text-xs">
                         <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(200 80% 92%)" }}>
@@ -2774,7 +2777,7 @@ export default function CampaignDetail() {
                             {ws.ai_icebreaker ? "AI-generated message" : ws.message ? `"${ws.message.slice(0, 40)}${ws.message.length > 40 ? "..." : ""}"` : "Custom message"}
                           </span>
                         </div>
-                        <span className="text-muted-foreground">+{ws.delay_days}d (Day {cumulativeDays})</span>
+                        <span className="text-muted-foreground">{delayLabel} ({cumulativeLabel})</span>
                       </div>
                     );
                   })}
