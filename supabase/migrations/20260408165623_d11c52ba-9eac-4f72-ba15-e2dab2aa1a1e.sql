@@ -1,0 +1,1 @@
+ALTER TABLE signal_agent_tasks ADD COLUMN diagnostics jsonb DEFAULT NULL;
