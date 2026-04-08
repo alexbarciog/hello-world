@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import aiSdrBannerBg from "@/assets/ai-sdr-banner-bg.png";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
