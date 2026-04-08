@@ -2529,29 +2529,29 @@ export default function CampaignDetail() {
                         </div>
                       )}
 
-                      {/* Messages accordion */}
-                      {messages.length > 0 && (
+                      {/* Upcoming Messages accordion — from scheduled_messages table */}
+                      {scheduledMessages.length > 0 && (
                         <div className="rounded-xl border border-border/50 overflow-hidden">
                           <button
-                            onClick={() => setMessagesAccordionOpen(!messagesAccordionOpen)}
+                            onClick={() => setUpcomingMsgsAccordionOpen(!upcomingMsgsAccordionOpen)}
                             className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
                           >
                             <div className="flex items-center gap-2">
                               <MessageSquare className="w-4 h-4 text-teal-500" />
                               <span className="text-sm font-bold text-foreground">Upcoming Messages</span>
                               <span className="text-[10px] font-semibold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-lg ring-1 ring-teal-500/20">
-                                {messages.length}
+                                {scheduledMessages.length}
                               </span>
                               <span className="text-[10px] text-muted-foreground">
-                                {messagesSentCount} sent · {messagesPending} pending
+                                {scheduledMessages.filter(m => m.status === "sent").length} sent · {scheduledMessages.filter(m => m.status !== "sent").length} pending
                               </span>
                             </div>
-                            <motion.div animate={{ rotate: messagesAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <motion.div animate={{ rotate: upcomingMsgsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                               <ArrowDown className="w-4 h-4 text-muted-foreground" />
                             </motion.div>
                           </button>
                           <AnimatePresence>
-                            {messagesAccordionOpen && (
+                            {upcomingMsgsAccordionOpen && (
                               <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
@@ -2560,16 +2560,15 @@ export default function CampaignDetail() {
                                 className="overflow-hidden"
                               >
                                 <div className="p-3 space-y-2">
-                                  {messages.map((item, idx) => {
-                                    const globalIdx = dailyQueue.indexOf(item);
-                                    const isMessage = true;
-                                    const isExpanded = expandedQueueIdx === globalIdx;
-                                    const isEditingThis = editingQueueIdx === globalIdx;
-                                    const isRegenerating = regeneratingQueueIdx === globalIdx;
+                                  {scheduledMessages.map((sm, idx) => {
+                                    const isExpanded = expandedQueueIdx === 10000 + idx;
+                                    const isEditingThis = editingScheduledIdx === idx;
+                                    const isRegenerating = regeneratingIdx === idx;
+                                    const isSent = sm.status === "sent";
 
                                     return (
                                       <motion.div
-                                        key={item.id}
+                                        key={sm.scheduledMsgId || `sm-${idx}`}
                                         initial={{ opacity: 0, y: 12 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
@@ -2579,58 +2578,41 @@ export default function CampaignDetail() {
                                         <div className="relative flex items-center justify-between gap-4">
                                           <div className="flex items-start gap-3 min-w-0 flex-1">
                                             <div className="relative shrink-0 mt-0.5">
-                                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
-                                                {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
+                                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(sm.contactName)}`}>
+                                                {sm.contactName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                                               </div>
-                                              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
-                                                item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
-                                              }`} />
                                             </div>
                                             <div className="min-w-0">
                                               <div className="flex items-center gap-1.5">
-                                                {item.contactLinkedinUrl ? (
-                                                  <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
-                                                    {item.contactName}
+                                                {sm.contactLinkedinUrl ? (
+                                                  <a href={sm.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                                    {sm.contactName}
                                                   </a>
                                                 ) : (
-                                                  <span className="text-sm font-semibold text-foreground truncate">{item.contactName}</span>
-                                                )}
-                                                {item.contactLinkedinUrl && (
-                                                  <a href={item.contactLinkedinUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
-                                                    <LinkedInIcon />
-                                                  </a>
+                                                  <span className="text-sm font-semibold text-foreground truncate">{sm.contactName}</span>
                                                 )}
                                               </div>
-                                              <p className="text-xs text-muted-foreground truncate max-w-[280px]">{item.contactTitle}</p>
-                                              {item.contactSignal && (
+                                              <p className="text-xs text-muted-foreground truncate max-w-[280px]">{sm.contactTitle}</p>
+                                              {sm.contactSignal && (
                                                 <div className="mt-1">
-                                                  {item.contactSignalPostUrl ? (
-                                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
-                                                      {item.contactSignal}
+                                                  {sm.contactSignalUrl ? (
+                                                    <a href={sm.contactSignalUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
+                                                      {sm.contactSignal}
                                                     </a>
                                                   ) : (
-                                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{item.contactSignal}</span>
+                                                    <span className="text-xs text-muted-foreground truncate block max-w-[280px]">{sm.contactSignal}</span>
                                                   )}
                                                 </div>
                                               )}
                                             </div>
                                           </div>
                                           <div className="flex items-center gap-2.5 shrink-0">
-                                            <div className="flex items-center gap-0.5">
-                                              {[0, 1, 2].map((i) => {
-                                                const tier = item.contactRelevanceTier?.toLowerCase();
-                                                const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
-                                                return (
-                                                  <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
-                                                );
-                                              })}
-                                            </div>
                                             <span className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20">
-                                              Step {item.actionType.replace("message_step_", "")} Message
+                                              Step {sm.nextStepNum} Message
                                             </span>
-                                            {item.message && (
+                                            {sm.message && (
                                               <button
-                                                onClick={() => setExpandedQueueIdx(isExpanded ? null : globalIdx)}
+                                                onClick={() => setExpandedQueueIdx(isExpanded ? null : 10000 + idx)}
                                                 className="text-[10px] font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
                                               >
                                                 <Eye className="w-3 h-3" />
@@ -2638,29 +2620,20 @@ export default function CampaignDetail() {
                                               </button>
                                             )}
                                             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
-                                              item.status === "sent"
+                                              isSent
                                                 ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
-                                                : item.status === "failed"
-                                                ? "text-destructive bg-destructive/10 ring-destructive/20"
-                                                : item.status === "skipped"
-                                                ? "text-muted-foreground bg-muted/60 ring-border/30"
+                                                : sm.status === "ready"
+                                                ? "text-amber-600 bg-amber-500/10 ring-amber-500/20"
                                                 : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
                                             }`}>
-                                              {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                                              {isSent ? "✓ Sent" : sm.status === "ready" ? "🔔 Ready" : `📅 ${sm.scheduledDate}`}
                                             </span>
-                                            {item.status === "sent" && item.sentAt && (() => {
-                                              const diff = Date.now() - new Date(item.sentAt).getTime();
-                                              const mins = Math.floor(diff / 60000);
-                                              const hrs = Math.floor(mins / 60);
-                                              const label = hrs >= 24 ? `${Math.floor(hrs / 24)}d ago` : hrs >= 1 ? `${hrs}h ago` : mins >= 1 ? `${mins}m ago` : "just now";
-                                              return <span className="text-[10px] text-muted-foreground">{label}</span>;
-                                            })()}
                                           </div>
                                         </div>
 
-                                        {/* Message preview / edit section */}
+                                        {/* Message preview / edit */}
                                         <AnimatePresence>
-                                          {isExpanded && item.message && (
+                                          {isExpanded && sm.message && (
                                             <motion.div
                                               initial={{ height: 0, opacity: 0 }}
                                               animate={{ height: "auto", opacity: 1 }}
@@ -2673,15 +2646,15 @@ export default function CampaignDetail() {
                                                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                                                     <MessageSquare className="w-3 h-3" /> AI Message
                                                   </span>
-                                                  {item.status === "pending" && (
+                                                  {!isSent && (
                                                     <div className="flex items-center gap-1.5">
                                                       <button
                                                         onClick={() => {
                                                           if (isEditingThis) {
-                                                            handleSaveQueueMessage(globalIdx);
+                                                            handleSaveScheduledMessage(idx);
                                                           } else {
-                                                            setEditingQueueIdx(globalIdx);
-                                                            setEditingQueueMsg(item.message || "");
+                                                            setEditingScheduledIdx(idx);
+                                                            setEditingScheduledMsg(sm.message || "");
                                                           }
                                                         }}
                                                         className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60"
@@ -2689,7 +2662,7 @@ export default function CampaignDetail() {
                                                         {isEditingThis ? <><Check className="w-3 h-3" /> Save</> : <><Pencil className="w-3 h-3" /> Edit</>}
                                                       </button>
                                                       <button
-                                                        onClick={() => handleRegenerateQueueMessage(globalIdx)}
+                                                        onClick={() => handleRegenerateMessage(idx)}
                                                         disabled={isRegenerating}
                                                         className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60 disabled:opacity-50"
                                                       >
@@ -2701,14 +2674,14 @@ export default function CampaignDetail() {
                                                 </div>
                                                 {isEditingThis ? (
                                                   <textarea
-                                                    value={editingQueueMsg}
-                                                    onChange={(e) => setEditingQueueMsg(e.target.value)}
+                                                    value={editingScheduledMsg}
+                                                    onChange={(e) => setEditingScheduledMsg(e.target.value)}
                                                     className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
                                                     rows={4}
                                                   />
                                                 ) : (
                                                   <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap bg-muted/20 rounded-lg p-3">
-                                                    {item.message}
+                                                    {sm.message || <span className="italic text-muted-foreground">Waiting for AI to generate...</span>}
                                                   </p>
                                                 )}
                                               </div>
