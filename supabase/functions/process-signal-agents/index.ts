@@ -269,16 +269,42 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
           .eq('run_id', runId).eq('task_key', task.task_key)
       ));
 
-      const results = await Promise.allSettled(
-        tasks.map(async (task) => {
-          const leads = await invokeSignalFunction(task.fn, task.payload);
-          console.log(`${task.task_key}: ${leads} leads`);
-          await supabase.from('signal_agent_tasks')
-            .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
-            .eq('run_id', runId).eq('task_key', task.task_key);
-          return { task_key: task.task_key, leads };
-        })
-      );
+      // Separate keyword batches (run sequentially) from other tasks (run in parallel)
+      const keywordBatches = tasks.filter((t: any) => t._isKeywordBatch);
+      const otherTasks = tasks.filter((t: any) => !t._isKeywordBatch);
+
+      // Run keyword batches sequentially + other tasks in parallel
+      const keywordBatchPromise = (async () => {
+        const batchResults: { task_key: string; leads: number }[] = [];
+        for (const task of keywordBatches) {
+          try {
+            const leads = await invokeSignalFunction(task.fn, task.payload);
+            console.log(`${task.task_key}: ${leads} leads`);
+            await supabase.from('signal_agent_tasks')
+              .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+              .eq('run_id', runId).eq('task_key', task.task_key);
+            batchResults.push({ task_key: task.task_key, leads });
+          } catch (err) {
+            console.error(`${task.task_key} failed:`, err);
+            await supabase.from('signal_agent_tasks')
+              .update({ status: 'failed', error: String(err), completed_at: new Date().toISOString() })
+              .eq('run_id', runId).eq('task_key', task.task_key);
+            batchResults.push({ task_key: task.task_key, leads: 0 });
+          }
+        }
+        return batchResults;
+      })();
+
+      const otherPromises = otherTasks.map(async (task) => {
+        const leads = await invokeSignalFunction(task.fn, task.payload);
+        console.log(`${task.task_key}: ${leads} leads`);
+        await supabase.from('signal_agent_tasks')
+          .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+          .eq('run_id', runId).eq('task_key', task.task_key);
+        return { task_key: task.task_key, leads };
+      });
+
+      const results = await Promise.allSettled([keywordBatchPromise, ...otherPromises]);
 
       for (const r of results) {
         if (r.status === 'fulfilled') {
