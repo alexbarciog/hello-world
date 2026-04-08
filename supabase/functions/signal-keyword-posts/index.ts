@@ -230,6 +230,7 @@ async function insertContact(
     user_id: userId, first_name: firstName, last_name: lastName,
     title: profile.headline || profile.title || null,
     company: profile.company || profile.current_company?.name || null,
+    industry: profile.industry || profile.current_company?.industry || null,
     linkedin_url: profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId, source_campaign_id: null,
     signal: fullSignal, signal_post_url: signalPostUrl, ai_score: aiScore,
