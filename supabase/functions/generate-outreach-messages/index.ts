@@ -174,11 +174,13 @@ Important: Each follow-up should feel like a natural continuation of the previou
         type: 'message',
         message: steps[2]?.message || '',
         delay_days: steps[2]?.delay_days || 2,
+        ai_icebreaker: true,
       },
       {
         type: 'message',
         message: steps[3]?.message || '',
         delay_days: steps[3]?.delay_days || 3,
+        ai_icebreaker: true,
       },
     ];
 
