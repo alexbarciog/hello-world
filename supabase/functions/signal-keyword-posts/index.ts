@@ -920,7 +920,7 @@ Deno.serve(async (req) => {
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
-          .update({ status: 'done', leads_found: inserted, completed_at: new Date().toISOString() })
+          .update({ status: 'done', leads_found: inserted, completed_at: new Date().toISOString(), diagnostics: pipelineStats } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
 
         // Check if all tasks for this run are now complete
