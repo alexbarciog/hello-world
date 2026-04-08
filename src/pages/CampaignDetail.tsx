@@ -221,6 +221,7 @@ export default function CampaignDetail() {
           leadCompany: sm.contactCompany || "",
           leadTitle: sm.contactTitle || "",
           buyingSignal: sm.contactSignal || "",
+          leadIndustry: (sm as any).contactIndustry || "",
         },
       });
       if (error) throw error;

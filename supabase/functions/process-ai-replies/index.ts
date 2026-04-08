@@ -498,7 +498,8 @@ async function processCampaignReplies(
             language: campaign.language, customTraining: campaign.custom_training,
             firstName: contact.first_name, lastName: contact.last_name,
             leadCompany: contact.company, leadTitle: contact.title,
-            buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
+            buyingSignal: contact.signal, leadIndustry: contact.industry,
+            repliesCount: cr.ai_replies_count,
             maxReplies: maxReplies, isFollowUp: false,
             meetingContext: meetingContext,
           });
@@ -633,7 +634,8 @@ async function processCampaignReplies(
         language: campaign.language, customTraining: campaign.custom_training,
         firstName: contact.first_name, lastName: contact.last_name,
         leadCompany: contact.company, leadTitle: contact.title,
-        buyingSignal: contact.signal, repliesCount: cr.ai_replies_count,
+        buyingSignal: contact.signal, leadIndustry: contact.industry,
+        repliesCount: cr.ai_replies_count,
         maxReplies: maxReplies, isFollowUp: true,
         meetingContext: meetingContext,
       });
