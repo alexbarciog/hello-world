@@ -507,7 +507,8 @@ Deno.serve(async (req) => {
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
 
   try {
-    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode } = await req.json();
+    const reqBody = await req.json();
+    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode, run_id: _run_id, task_key: _task_key } = reqBody;
     if (!agent_id || !account_id || !keywords?.length) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
