@@ -948,6 +948,16 @@ export default function CampaignDetail() {
     if (error) { toast.error("Failed to update status"); return; }
     setCampaign({ ...campaign, status: newStatus });
     toast.success(newStatus === "active" ? "Campaign started!" : "Campaign paused");
+
+    // When activating, immediately trigger today's lead scheduling
+    if (newStatus === "active") {
+      try {
+        await supabase.functions.invoke("schedule-daily-leads");
+        console.log("[toggleCampaignStatus] Triggered schedule-daily-leads after activation");
+      } catch (e) {
+        console.warn("[toggleCampaignStatus] schedule-daily-leads trigger failed:", e);
+      }
+    }
   }
 
   async function saveSettings() {
