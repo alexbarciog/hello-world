@@ -580,23 +580,62 @@ export default function CampaignDetail() {
   }
 
   // Manual connection: search contacts not already in today's queue
-  async function searchManualConnContacts(query: string) {
-    if (!id || !query.trim()) { setManualConnResults([]); return; }
+  const [manualConnListMap, setManualConnListMap] = useState<Record<string, string[]>>({});
+
+  async function loadManualConnContacts(query: string = "") {
+    if (!id) return;
     setManualConnLoading(true);
     try {
-      const { data } = await supabase
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) return;
+
+      let q = supabase
         .from("contacts")
-        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, signal")
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%`)
-        .limit(20);
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, signal, lead_status, list_name, company_icon_color")
+        .eq("user_id", user.id)
+        .order("imported_at", { ascending: false })
+        .limit(50);
+
+      if (query.trim()) {
+        q = q.or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%`);
+      }
+
+      const [contactsRes, junctionRes, listsRes] = await Promise.all([
+        q,
+        (supabase.from("contact_lists") as any).select("contact_id, list_id"),
+        (supabase.from("lists") as any).select("id, name").eq("user_id", user.id),
+      ]);
+
+      // Build list name map
+      const listNameMap: Record<string, string> = {};
+      if (listsRes.data) {
+        for (const l of listsRes.data as { id: string; name: string }[]) {
+          listNameMap[l.id] = l.name;
+        }
+      }
+
+      // Build contact -> list names map
+      const cListMap: Record<string, string[]> = {};
+      if (junctionRes.data) {
+        for (const row of junctionRes.data as { contact_id: string; list_id: string }[]) {
+          if (!cListMap[row.contact_id]) cListMap[row.contact_id] = [];
+          const name = listNameMap[row.list_id];
+          if (name) cListMap[row.contact_id].push(name);
+        }
+      }
+      setManualConnListMap(cListMap);
+
       // Filter out contacts already in today's queue
       const queueContactIds = new Set(dailyQueue.map(q => q.contactId));
-      setManualConnResults((data || []).filter((c: any) => !queueContactIds.has(c.id)));
+      setManualConnResults((contactsRes.data || []).filter((c: any) => !queueContactIds.has(c.id)));
     } catch (err) {
       console.error("Manual conn search error:", err);
     }
     setManualConnLoading(false);
   }
+
+  // Alias for backward compat
+  const searchManualConnContacts = loadManualConnContacts;
 
   async function addManualConnection(contactId: string) {
     if (!id || !campaign) return;
@@ -2863,7 +2902,7 @@ export default function CampaignDetail() {
       />
 
       {/* Manual Add Connection Dialog — Contacts-page style */}
-      <Dialog open={manualConnOpen} onOpenChange={(open) => { setManualConnOpen(open); if (!open) { setManualConnSearch(""); setManualConnResults([]); } }}>
+      <Dialog open={manualConnOpen} onOpenChange={(open) => { setManualConnOpen(open); if (open) { loadManualConnContacts(""); } else { setManualConnSearch(""); setManualConnResults([]); } }}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Add Contact to Today's Queue</DialogTitle>
@@ -2887,11 +2926,8 @@ export default function CampaignDetail() {
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             )}
-            {!manualConnLoading && manualConnSearch && manualConnResults.length === 0 && (
+            {!manualConnLoading && manualConnResults.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-12">No contacts found</p>
-            )}
-            {!manualConnLoading && !manualConnSearch && (
-              <p className="text-sm text-muted-foreground text-center py-12">Type to search your contacts</p>
             )}
             {!manualConnLoading && manualConnResults.length > 0 && (
               <table className="w-full">
