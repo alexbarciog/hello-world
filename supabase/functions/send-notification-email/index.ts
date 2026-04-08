@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
             <td style="padding:40px;">
               <p style="margin:0 0 16px;color:#374151;font-size:16px;">Hey ${userName} 👋</p>
               <p style="margin:0 0 24px;color:#111827;font-size:18px;font-weight:600;">${escapeHtml(title)}</p>
+              ${notifBody ? `<p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">${escapeHtml(notifBody)}</p>` : ''}
               <a href="${fullLink}" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600;">
                 View in Intentsly →
               </a>
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Intentsly <onboarding@resend.dev>',
+        from: 'Intentsly <no-reply@intentsly.com>',
         to: [userEmail],
         subject: subjectLine,
         html: emailHtml,
@@ -171,6 +172,8 @@ function getSubjectFromType(type: string, title: string): string {
     case 'signal':
       return `📡 ${cleanTitle} — Intentsly`;
     case 'lead':
+      return `🎯 ${cleanTitle} — Intentsly`;
+    case 'meeting':
       return `🎯 ${cleanTitle} — Intentsly`;
     default:
       return `${cleanTitle} — Intentsly`;

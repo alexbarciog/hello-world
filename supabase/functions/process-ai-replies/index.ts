@@ -452,6 +452,21 @@ async function processCampaignReplies(
               console.log(`[ai-replies] ✅ Meeting auto-booked for ${contact.first_name} on ${scheduledAt.toISOString()}`);
               meetingsBooked++;
 
+              // Send email notification for meeting booked
+              try {
+                await supabase.functions.invoke('send-notification-email', {
+                  body: {
+                    user_id: cr.user_id,
+                    title: `🎯 Meeting booked with ${contact.first_name} ${contact.last_name || ''}`,
+                    body: `${contact.first_name} from ${contact.company || 'Unknown'} agreed to a meeting. Scheduled for ${scheduledAt.toLocaleDateString()}.`,
+                    link: `/contacts`,
+                    type: 'meeting',
+                  }
+                });
+              } catch (emailErr) {
+                console.error(`[ai-replies] Failed to send meeting email notification:`, emailErr);
+              }
+
               // Update lead status to meeting_booked
               await supabase.from('contacts')
                 .update({ lead_status: 'meeting_booked' })
@@ -510,6 +525,23 @@ async function processCampaignReplies(
           if (!sendRes.ok) { console.error(`[ai-replies] send failed for ${cr.contact_id}:`, sendRes.status); continue; }
 
           console.log(`[ai-replies] Replied to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})${meetingAgreed ? ' [MEETING]' : ''}`);
+
+          // Send email notification for interested leads (AI classified as interested)
+          if (aiIntent === 'interested') {
+            try {
+              await supabase.functions.invoke('send-notification-email', {
+                body: {
+                  user_id: cr.user_id,
+                  title: `🔥 ${contact.first_name} ${contact.last_name || ''} is interested`,
+                  body: `${contact.first_name} from ${contact.company || 'Unknown'} showed buying intent: "${leadMessage.slice(0, 150)}"`,
+                  link: `/contacts`,
+                  type: 'lead',
+                }
+              });
+            } catch (emailErr) {
+              console.error(`[ai-replies] Failed to send interested lead email notification:`, emailErr);
+            }
+          }
           
           const updateData: any = {
             ai_replies_count: cr.ai_replies_count + 1,
