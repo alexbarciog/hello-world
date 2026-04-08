@@ -167,6 +167,13 @@ export default function CampaignDetail() {
   const [messagesAccordionOpen, setMessagesAccordionOpen] = useState(false);
   const [upcomingMsgsAccordionOpen, setUpcomingMsgsAccordionOpen] = useState(false);
 
+  // Manual connection add state
+  const [manualConnOpen, setManualConnOpen] = useState(false);
+  const [manualConnSearch, setManualConnSearch] = useState("");
+  const [manualConnResults, setManualConnResults] = useState<any[]>([]);
+  const [manualConnLoading, setManualConnLoading] = useState(false);
+  const [manualConnAdding, setManualConnAdding] = useState<string | null>(null);
+
   // Scheduled messages state
   type ScheduledMessage = {
     contactId: string;
@@ -570,6 +577,60 @@ export default function CampaignDetail() {
       console.error("Failed to load daily queue:", err);
     }
     setLoadingQueue(false);
+  }
+
+  // Manual connection: search contacts not already in today's queue
+  async function searchManualConnContacts(query: string) {
+    if (!id || !query.trim()) { setManualConnResults([]); return; }
+    setManualConnLoading(true);
+    try {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, signal")
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%`)
+        .limit(20);
+      // Filter out contacts already in today's queue
+      const queueContactIds = new Set(dailyQueue.map(q => q.contactId));
+      setManualConnResults((data || []).filter((c: any) => !queueContactIds.has(c.id)));
+    } catch (err) {
+      console.error("Manual conn search error:", err);
+    }
+    setManualConnLoading(false);
+  }
+
+  async function addManualConnection(contactId: string) {
+    if (!id || !campaign) return;
+    setManualConnAdding(contactId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      const today = new Date().toISOString().split("T")[0];
+
+      // Insert into daily_scheduled_leads
+      const { error } = await supabase
+        .from("daily_scheduled_leads" as any)
+        .insert({
+          campaign_id: id,
+          contact_id: contactId,
+          user_id: user.id,
+          scheduled_date: today,
+          action_type: "connection",
+          status: "pending",
+          step_index: 1,
+        } as any);
+
+      if (error) throw error;
+      toast.success("Contact added to today's connection queue");
+      setManualConnOpen(false);
+      setManualConnSearch("");
+      setManualConnResults([]);
+      // Refresh queue
+      await loadDailyQueue(id);
+    } catch (err: any) {
+      console.error("Add manual connection error:", err);
+      toast.error(err.message || "Failed to add connection");
+    }
+    setManualConnAdding(null);
   }
 
   async function handleRegenerateQueueMessage(idx: number) {
@@ -2423,26 +2484,34 @@ export default function CampaignDetail() {
                   return (
                     <div className="space-y-3">
                       {/* Connections accordion */}
-                      {connections.length > 0 && (
                         <div className="rounded-xl border border-border/50 overflow-hidden">
-                          <button
-                            onClick={() => setConnectionsAccordionOpen(!connectionsAccordionOpen)}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <UserPlus className="w-4 h-4 text-violet-500" />
-                              <span className="text-sm font-bold text-foreground">LinkedIn Connections</span>
-                              <span className="text-[10px] font-semibold bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-lg ring-1 ring-violet-500/20">
-                                {connections.length}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {connectionsSent} sent · {connectionsPending} pending
-                              </span>
-                            </div>
-                            <motion.div animate={{ rotate: connectionsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                              <ArrowDown className="w-4 h-4 text-muted-foreground" />
-                            </motion.div>
-                          </button>
+                          <div className="flex items-center bg-muted/20">
+                            <button
+                              onClick={() => setConnectionsAccordionOpen(!connectionsAccordionOpen)}
+                              className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <UserPlus className="w-4 h-4 text-violet-500" />
+                                <span className="text-sm font-bold text-foreground">LinkedIn Connections</span>
+                                <span className="text-[10px] font-semibold bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-lg ring-1 ring-violet-500/20">
+                                  {connections.length}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {connectionsSent} sent · {connectionsPending} pending
+                                </span>
+                              </div>
+                              <motion.div animate={{ rotate: connectionsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                              </motion.div>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setManualConnOpen(true); }}
+                              className="px-3 py-3 hover:bg-muted/40 transition-colors border-l border-border/30"
+                              title="Add contact to today's queue"
+                            >
+                              <Plus className="w-4 h-4 text-violet-500" />
+                            </button>
+                          </div>
                           <AnimatePresence>
                             {connectionsAccordionOpen && (
                               <motion.div
@@ -2544,7 +2613,6 @@ export default function CampaignDetail() {
                             )}
                           </AnimatePresence>
                         </div>
-                      )}
 
                       {/* Upcoming Messages accordion — from scheduled_messages table */}
                       {scheduledMessages.length > 0 && (
@@ -2793,6 +2861,55 @@ export default function CampaignDetail() {
         meeting={meetingPrepData}
         onUpdated={() => { if (id) loadCampaign(id); }}
       />
+
+      {/* Manual Add Connection Dialog */}
+      <Dialog open={manualConnOpen} onOpenChange={setManualConnOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Contact to Today's Queue</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name or company..."
+                value={manualConnSearch}
+                onChange={(e) => {
+                  setManualConnSearch(e.target.value);
+                  searchManualConnContacts(e.target.value);
+                }}
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-1">
+              {manualConnLoading && <p className="text-xs text-muted-foreground text-center py-4">Searching...</p>}
+              {!manualConnLoading && manualConnSearch && manualConnResults.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">No contacts found</p>
+              )}
+              {manualConnResults.map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {c.first_name} {c.last_name || ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {c.title}{c.title && c.company ? " at " : ""}{c.company}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => addManualConnection(c.id)}
+                    disabled={manualConnAdding === c.id}
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    {manualConnAdding === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Add"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
