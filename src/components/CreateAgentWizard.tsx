@@ -153,7 +153,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       if (data) {
         setAgentName(data.name || "");
         setJobTitles(data.icp_job_titles || []);
-        setSelectedLocations(data.icp_locations || []);
+        setSelectedLocations(data.icp_locations && data.icp_locations.length > 0 ? data.icp_locations : ["Any Country"]);
         setSelectedIndustries(data.icp_industries || []);
         setSelectedCompanyTypes(data.icp_company_types || []);
         setSelectedCompanySizes(data.icp_company_sizes || []);
