@@ -2692,8 +2692,12 @@ export default function CampaignDetail() {
                           </AnimatePresence>
                         </div>
 
-                      {/* Upcoming Messages accordion — from scheduled_messages table */}
-                      {scheduledMessages.length > 0 && (
+                      {/* Today's Messages accordion — from scheduled_messages table */}
+                      {(() => {
+                        const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                        const todayMessages = scheduledMessages.filter(m => m.status === "sent" || m.status === "ready" || m.scheduledDate === todayStr);
+                        if (todayMessages.length === 0) return null;
+                        return (
                         <div className="rounded-xl border border-border/50 overflow-hidden">
                           <button
                             onClick={() => setUpcomingMsgsAccordionOpen(!upcomingMsgsAccordionOpen)}
@@ -2701,12 +2705,12 @@ export default function CampaignDetail() {
                           >
                             <div className="flex items-center gap-2">
                               <MessageSquare className="w-4 h-4 text-teal-500" />
-                              <span className="text-sm font-bold text-foreground">Upcoming Messages</span>
+                              <span className="text-sm font-bold text-foreground">Today's Messages</span>
                               <span className="text-[10px] font-semibold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-lg ring-1 ring-teal-500/20">
-                                {scheduledMessages.length}
+                                {todayMessages.length}
                               </span>
                               <span className="text-[10px] text-muted-foreground">
-                                {scheduledMessages.filter(m => m.status === "sent").length} sent · {scheduledMessages.filter(m => m.status !== "sent").length} pending
+                                {todayMessages.filter(m => m.status === "sent").length} sent · {todayMessages.filter(m => m.status !== "sent").length} pending
                               </span>
                             </div>
                             <motion.div animate={{ rotate: upcomingMsgsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
