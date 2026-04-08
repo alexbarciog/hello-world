@@ -681,7 +681,7 @@ Deno.serve(async (req) => {
             pipelineStats.rejected_wrong_industry++;
           }
           // Capture sample rejections (max 3)
-          if (pipelineStats.sample_prefilter_rejections.length < 3) {
+          if (pipelineStats.sample_prefilter_rejections.length < 50) {
             pipelineStats.sample_prefilter_rejections.push({
               keyword,
               variants: diagVariants,
@@ -737,7 +737,7 @@ Deno.serve(async (req) => {
           } else {
             pipelineStats.rejected_ai_low_score++;
           }
-          if (pipelineStats.sample_ai_rejections.length < 3) {
+          if (pipelineStats.sample_ai_rejections.length < 50) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 300),
               is_buyer: rejectedCls.is_buyer,
@@ -747,7 +747,7 @@ Deno.serve(async (req) => {
           }
         } else {
           pipelineStats.rejected_ai_not_buyer++;
-          if (pipelineStats.sample_ai_rejections.length < 3) {
+          if (pipelineStats.sample_ai_rejections.length < 50) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 300),
               is_buyer: false,
@@ -920,7 +920,7 @@ Deno.serve(async (req) => {
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
-          .update({ status: 'done', leads_found: inserted, completed_at: new Date().toISOString() })
+          .update({ status: 'done', leads_found: inserted, completed_at: new Date().toISOString(), diagnostics: pipelineStats } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
 
         // Check if all tasks for this run are now complete

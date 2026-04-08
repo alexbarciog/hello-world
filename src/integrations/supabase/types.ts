@@ -917,6 +917,7 @@ export type Database = {
         Row: {
           agent_id: string
           completed_at: string | null
+          diagnostics: Json | null
           error: string | null
           id: string
           leads_found: number
@@ -929,6 +930,7 @@ export type Database = {
         Insert: {
           agent_id: string
           completed_at?: string | null
+          diagnostics?: Json | null
           error?: string | null
           id?: string
           leads_found?: number
@@ -941,6 +943,7 @@ export type Database = {
         Update: {
           agent_id?: string
           completed_at?: string | null
+          diagnostics?: Json | null
           error?: string | null
           id?: string
           leads_found?: number

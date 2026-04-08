@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies, user_company_name, precision_mode } = await req.json();
+    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies, user_company_name, precision_mode, run_id, task_key } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -719,6 +719,18 @@ Deno.serve(async (req) => {
     console.log(`[COMP] ${JSON.stringify(pipelineStats, null, 2)}`);
     console.log(`[COMP] Runtime: ${Math.round((Date.now()-START)/1000)}s`);
     console.log(`[COMP] =====================================`);
+
+    // Save diagnostics to task record if run_id/task_key provided
+    if (run_id && task_key) {
+      try {
+        await supabase.from('signal_agent_tasks')
+          .update({ diagnostics: pipelineStats } as any)
+          .eq('run_id', run_id).eq('task_key', task_key);
+        console.log(`[COMP] Diagnostics saved to task ${task_key}`);
+      } catch (e) {
+        console.warn(`[COMP] Failed to save diagnostics:`, e);
+      }
+    }
 
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {

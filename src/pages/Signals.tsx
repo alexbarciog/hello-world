@@ -54,6 +54,7 @@ interface AgentTask {
   started_at: string | null;
   completed_at: string | null;
   error: string | null;
+  diagnostics: any | null;
 }
 
 const AGENT_TYPE_LABELS: Record<string, string> = {
@@ -115,6 +116,120 @@ function NextLaunchesPopover() {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+// ── Admin-only Pipeline Diagnostics Panel ────────────────────────────────────
+function TaskDiagnosticsPanel({ diagnostics }: { diagnostics: any }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!diagnostics) return null;
+
+  const d = diagnostics;
+
+  // Build funnel rows based on available keys (keyword vs competitor format)
+  const isKeyword = 'total_posts_fetched' in d;
+  const funnelRows: { label: string; value: number }[] = isKeyword
+    ? [
+        { label: 'Posts fetched', value: d.total_posts_fetched ?? 0 },
+        { label: 'After dedup', value: d.posts_after_dedup ?? 0 },
+        { label: 'Passed pre-filter', value: d.passed_prefilter ?? 0 },
+        { label: 'Sent to AI', value: d.sent_to_ai ?? 0 },
+        { label: 'Passed AI', value: d.passed_ai ?? 0 },
+        { label: 'Inserted', value: d.inserted ?? 0 },
+      ]
+    : [
+        { label: 'Engagers raw', value: d.total_engagers_raw ?? 0 },
+        { label: 'After dedup', value: d.engagers_after_dedup ?? 0 },
+        { label: 'Profiles fetched', value: d.profiles_fetched ?? 0 },
+        { label: 'Inserted', value: d.inserted ?? 0 },
+      ];
+
+  const rejections = [
+    ...(d.sample_prefilter_rejections || []).map((r: any) => ({ ...r, stage: 'Pre-filter' })),
+    ...(d.sample_ai_rejections || []).map((r: any) => ({ ...r, stage: 'AI Classifier' })),
+  ];
+
+  // Competitor rejection summary
+  const compRejections: { label: string; count: number }[] = !isKeyword ? [
+    { label: 'Own company', count: d.excluded_own_company ?? 0 },
+    { label: 'Competitor employee', count: d.excluded_competitor_employee ?? 0 },
+    { label: 'Irrelevant title', count: d.excluded_irrelevant_title ?? 0 },
+    { label: 'Wrong country', count: d.excluded_wrong_country ?? 0 },
+    { label: 'No ICP match', count: d.excluded_no_icp_match ?? 0 },
+    { label: 'Duplicates', count: d.duplicates ?? 0 },
+    { label: 'Quick ICP fail', count: d.failed_quick_icp ?? 0 },
+  ].filter(r => r.count > 0) : [];
+
+  return (
+    <div className="ml-5 mt-1">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+      >
+        <ChevronRight className={`w-3 h-3 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+        Pipeline Diagnostics
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-3 text-[11px]">
+          {/* Funnel */}
+          <div className="flex flex-wrap gap-1 items-center">
+            {funnelRows.map((row, i) => (
+              <span key={i} className="flex items-center gap-1">
+                {i > 0 && <span className="text-muted-foreground">→</span>}
+                <span className="font-medium text-foreground">{row.value}</span>
+                <span className="text-muted-foreground">{row.label}</span>
+              </span>
+            ))}
+          </div>
+
+          {/* Keyword rejection stats */}
+          {isKeyword && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+              {d.rejected_no_phrase_match > 0 && <span>No phrase match: <strong className="text-foreground">{d.rejected_no_phrase_match}</strong></span>}
+              {d.rejected_wrong_country > 0 && <span>Wrong country: <strong className="text-foreground">{d.rejected_wrong_country}</strong></span>}
+              {d.rejected_wrong_industry > 0 && <span>Wrong industry: <strong className="text-foreground">{d.rejected_wrong_industry}</strong></span>}
+              {d.rejected_ai_not_buyer > 0 && <span>AI: not buyer: <strong className="text-foreground">{d.rejected_ai_not_buyer}</strong></span>}
+              {d.rejected_ai_low_score > 0 && <span>AI: low score: <strong className="text-foreground">{d.rejected_ai_low_score}</strong></span>}
+              {d.rejected_own_company > 0 && <span>Own company: <strong className="text-foreground">{d.rejected_own_company}</strong></span>}
+              {d.rejected_competitor > 0 && <span>Competitor: <strong className="text-foreground">{d.rejected_competitor}</strong></span>}
+              {d.rejected_irrelevant_title > 0 && <span>Irrelevant title: <strong className="text-foreground">{d.rejected_irrelevant_title}</strong></span>}
+              {d.rejected_private_profile > 0 && <span>Private profile: <strong className="text-foreground">{d.rejected_private_profile}</strong></span>}
+            </div>
+          )}
+
+          {/* Competitor rejection stats */}
+          {!isKeyword && compRejections.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+              {compRejections.map((r, i) => (
+                <span key={i}>{r.label}: <strong className="text-foreground">{r.count}</strong></span>
+              ))}
+            </div>
+          )}
+
+          {/* Rejected posts table */}
+          {rejections.length > 0 && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="px-2 py-1.5 bg-muted/50 font-semibold text-[10px] uppercase tracking-wider text-muted-foreground">
+                Rejected Posts ({rejections.length})
+              </div>
+              <div className="max-h-[300px] overflow-y-auto divide-y divide-border">
+                {rejections.map((r: any, i: number) => (
+                  <div key={i} className="px-2 py-1.5 hover:bg-muted/30">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className={`text-[9px] font-bold uppercase px-1 py-0.5 rounded ${r.stage === 'AI Classifier' ? 'bg-purple-50 text-purple-600 border border-purple-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
+                        {r.stage}
+                      </span>
+                      <span className="text-muted-foreground">{r.reason}</span>
+                      {r.intent_score !== undefined && <span className="text-muted-foreground">Score: {r.intent_score}</span>}
+                    </div>
+                    <p className="text-foreground leading-snug line-clamp-2">{r.postSample}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -747,13 +862,18 @@ export default function Signals() {
                                         : '—';
 
                                       return (
-                                        <div key={task.id} className="flex items-center gap-2 text-xs">
-                                          {tIcon}
-                                          <span className="font-medium text-foreground min-w-[140px]">{task.task_key}</span>
-                                          <span className={`text-[10px] font-semibold ${tColor}`}>{task.status}</span>
-                                          <span className="text-muted-foreground">{duration}</span>
-                                          <span className="text-green-600 font-semibold ml-auto">{task.leads_found} leads</span>
-                                          {task.error && <span className="text-destructive text-[10px] truncate max-w-[200px]" title={task.error}>⚠ {task.error}</span>}
+                                        <div key={task.id}>
+                                          <div className="flex items-center gap-2 text-xs">
+                                            {tIcon}
+                                            <span className="font-medium text-foreground min-w-[140px]">{task.task_key}</span>
+                                            <span className={`text-[10px] font-semibold ${tColor}`}>{task.status}</span>
+                                            <span className="text-muted-foreground">{duration}</span>
+                                            <span className="text-green-600 font-semibold ml-auto">{task.leads_found} leads</span>
+                                            {task.error && <span className="text-destructive text-[10px] truncate max-w-[200px]" title={task.error}>⚠ {task.error}</span>}
+                                          </div>
+                                          {isAdmin && task.diagnostics && (
+                                            <TaskDiagnosticsPanel diagnostics={task.diagnostics} />
+                                          )}
                                         </div>
                                       );
                                     })}
