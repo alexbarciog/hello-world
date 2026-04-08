@@ -334,7 +334,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       agent_type: "signals",
       keywords: jobTitles,
       icp_job_titles: jobTitles,
-      icp_locations: selectedLocations,
+      icp_locations: selectedLocations.includes("Any Country") ? [] : selectedLocations,
       icp_industries: selectedIndustries,
       icp_company_types: selectedCompanyTypes,
       icp_company_sizes: selectedCompanySizes,
@@ -612,7 +612,16 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                       )}
                     </div>
 
-                    <DropdownMulti id="locations" label="Target Locations" placeholder="Select locations..." options={LOCATIONS} selected={selectedLocations} setSelected={setSelectedLocations} required />
+                    <DropdownMulti id="locations" label="Target Locations" placeholder="Select locations..." options={LOCATIONS} selected={selectedLocations} setSelected={(v) => {
+                      // "Any Country" is exclusive — selecting it clears others, selecting others clears it
+                      if (v.includes("Any Country") && !selectedLocations.includes("Any Country")) {
+                        setSelectedLocations(["Any Country"]);
+                      } else if (v.length > 1 && v.includes("Any Country")) {
+                        setSelectedLocations(v.filter(x => x !== "Any Country"));
+                      } else {
+                        setSelectedLocations(v);
+                      }
+                    }} required />
                     <DropdownMulti id="industries" label="Target Industries" placeholder="Select industries..." options={INDUSTRIES} selected={selectedIndustries} setSelected={setSelectedIndustries} required />
                     <DropdownMulti id="company_types" label="Company Types" placeholder="Select company types..." options={COMPANY_TYPES} selected={selectedCompanyTypes} setSelected={setSelectedCompanyTypes} />
                     <DropdownMulti id="company_sizes" label="Company Sizes" placeholder="Select company sizes..." options={COMPANY_SIZES} selected={selectedCompanySizes} setSelected={setSelectedCompanySizes} />
