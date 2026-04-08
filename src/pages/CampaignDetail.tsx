@@ -2727,7 +2727,8 @@ export default function CampaignDetail() {
                                 className="overflow-hidden"
                               >
                                 <div className="p-3 space-y-2">
-                                  {scheduledMessages.map((sm, idx) => {
+                                  {todayMessages.map((sm) => {
+                                    const idx = scheduledMessages.indexOf(sm);
                                     const isExpanded = expandedQueueIdx === 10000 + idx;
                                     const isEditingThis = editingScheduledIdx === idx;
                                     const isRegenerating = regeneratingIdx === idx;
@@ -2863,7 +2864,8 @@ export default function CampaignDetail() {
                             )}
                           </AnimatePresence>
                         </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Empty state */}
                       {loadingQueue ? (
