@@ -194,13 +194,22 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
         });
       }
 
+      // Keyword posts: split into batches of 8 to avoid per-function timeout
+      const KEYWORD_BATCH_SIZE = 8;
       if (enabled.includes('keyword_posts')) {
         const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
         if (kws.length > 0) {
-          tasks.push({
-            signal_type: 'keyword_posts', task_key: `keywords(${kws.length})`, fn: 'signal-keyword-posts',
-            payload: { ...basePayload, keywords: kws },
-          });
+          for (let i = 0; i < kws.length; i += KEYWORD_BATCH_SIZE) {
+            const batch = kws.slice(i, i + KEYWORD_BATCH_SIZE);
+            const batchNum = Math.floor(i / KEYWORD_BATCH_SIZE) + 1;
+            tasks.push({
+              signal_type: 'keyword_posts',
+              task_key: `keywords_b${batchNum}(${batch.length})`,
+              fn: 'signal-keyword-posts',
+              payload: { ...basePayload, keywords: batch },
+              _isKeywordBatch: true,
+            } as any);
+          }
         }
       }
 
@@ -260,24 +269,56 @@ async function processInBackground(runId: string, agents: any[], bypassPlanCheck
           .eq('run_id', runId).eq('task_key', task.task_key)
       ));
 
-      const results = await Promise.allSettled(
-        tasks.map(async (task) => {
-          const leads = await invokeSignalFunction(task.fn, task.payload);
-          console.log(`${task.task_key}: ${leads} leads`);
-          await supabase.from('signal_agent_tasks')
-            .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
-            .eq('run_id', runId).eq('task_key', task.task_key);
-          return { task_key: task.task_key, leads };
-        })
-      );
+      // Separate keyword batches (run sequentially) from other tasks (run in parallel)
+      const keywordBatches = tasks.filter((t: any) => t._isKeywordBatch);
+      const otherTasks = tasks.filter((t: any) => !t._isKeywordBatch);
+
+      // Run keyword batches sequentially + other tasks in parallel
+      const keywordBatchPromise = (async () => {
+        const batchResults: { task_key: string; leads: number }[] = [];
+        for (const task of keywordBatches) {
+          try {
+            const leads = await invokeSignalFunction(task.fn, task.payload);
+            console.log(`${task.task_key}: ${leads} leads`);
+            await supabase.from('signal_agent_tasks')
+              .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+              .eq('run_id', runId).eq('task_key', task.task_key);
+            batchResults.push({ task_key: task.task_key, leads });
+          } catch (err) {
+            console.error(`${task.task_key} failed:`, err);
+            await supabase.from('signal_agent_tasks')
+              .update({ status: 'failed', error: String(err), completed_at: new Date().toISOString() })
+              .eq('run_id', runId).eq('task_key', task.task_key);
+            batchResults.push({ task_key: task.task_key, leads: 0 });
+          }
+        }
+        return batchResults;
+      })();
+
+      const otherPromises = otherTasks.map(async (task) => {
+        const leads = await invokeSignalFunction(task.fn, task.payload);
+        console.log(`${task.task_key}: ${leads} leads`);
+        await supabase.from('signal_agent_tasks')
+          .update({ status: 'done', leads_found: leads, completed_at: new Date().toISOString() })
+          .eq('run_id', runId).eq('task_key', task.task_key);
+        return { task_key: task.task_key, leads };
+      });
+
+      const results = await Promise.allSettled([keywordBatchPromise, ...otherPromises]);
 
       for (const r of results) {
         if (r.status === 'fulfilled') {
-          agentLeads += r.value.leads;
-          completedTasks++;
+          // First result is keyword batches (array), rest are single results
+          const val = r.value;
+          if (Array.isArray(val)) {
+            for (const br of val) { agentLeads += br.leads; completedTasks++; }
+          } else {
+            agentLeads += val.leads;
+            completedTasks++;
+          }
         } else {
           console.error(`Task failed:`, r.reason);
-          completedTasks++; // still count as completed (failed)
+          completedTasks++;
         }
       }
       await supabase.from('signal_agent_runs')
