@@ -2484,26 +2484,34 @@ export default function CampaignDetail() {
                   return (
                     <div className="space-y-3">
                       {/* Connections accordion */}
-                      {connections.length > 0 && (
                         <div className="rounded-xl border border-border/50 overflow-hidden">
-                          <button
-                            onClick={() => setConnectionsAccordionOpen(!connectionsAccordionOpen)}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <UserPlus className="w-4 h-4 text-violet-500" />
-                              <span className="text-sm font-bold text-foreground">LinkedIn Connections</span>
-                              <span className="text-[10px] font-semibold bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-lg ring-1 ring-violet-500/20">
-                                {connections.length}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {connectionsSent} sent · {connectionsPending} pending
-                              </span>
-                            </div>
-                            <motion.div animate={{ rotate: connectionsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                              <ArrowDown className="w-4 h-4 text-muted-foreground" />
-                            </motion.div>
-                          </button>
+                          <div className="flex items-center bg-muted/20">
+                            <button
+                              onClick={() => setConnectionsAccordionOpen(!connectionsAccordionOpen)}
+                              className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <UserPlus className="w-4 h-4 text-violet-500" />
+                                <span className="text-sm font-bold text-foreground">LinkedIn Connections</span>
+                                <span className="text-[10px] font-semibold bg-violet-500/10 text-violet-600 px-2 py-0.5 rounded-lg ring-1 ring-violet-500/20">
+                                  {connections.length}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {connectionsSent} sent · {connectionsPending} pending
+                                </span>
+                              </div>
+                              <motion.div animate={{ rotate: connectionsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                              </motion.div>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setManualConnOpen(true); }}
+                              className="px-3 py-3 hover:bg-muted/40 transition-colors border-l border-border/30"
+                              title="Add contact to today's queue"
+                            >
+                              <Plus className="w-4 h-4 text-violet-500" />
+                            </button>
+                          </div>
                           <AnimatePresence>
                             {connectionsAccordionOpen && (
                               <motion.div
