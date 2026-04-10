@@ -64,55 +64,39 @@ const Frame4Animation = ({ onComplete }: { onComplete: () => void }) => {
 
   return (
     <div className="w-full h-full flex items-center justify-center relative" style={{ backgroundColor: "#f2f1f3" }}>
-      {/* Website container */}
+      {/* Input with button inside */}
       <div
-        className="relative rounded-2xl shadow-2xl overflow-hidden"
+        className="flex items-center bg-white shadow-lg"
         style={{
-          width: 720,
-          minHeight: 260,
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-          padding: "48px 56px",
+          borderRadius: 200,
+          height: 64,
+          width: 620,
+          paddingLeft: 24,
+          paddingRight: 6,
         }}
       >
-        <h2
-          className="text-white font-semibold mb-6"
-          style={{ fontSize: 22, letterSpacing: "-0.02em" }}
-        >
-          Enter your website
-        </h2>
-
-        {/* Input field */}
-        <div
-          className="flex items-center rounded-xl overflow-hidden"
-          style={{
-            background: "rgba(255,255,255,0.08)",
-            border: "1px solid rgba(255,255,255,0.15)",
-            height: 56,
-          }}
-        >
-          <div className="flex-1 px-5 flex items-center">
-            <span className="text-white/40 mr-2 text-lg">🔗</span>
-            <span className="text-white text-lg font-medium tracking-wide">
-              {typedText}
-              {phase === "typing" && (
-                <span className="inline-block w-0.5 h-5 bg-white/80 ml-0.5 animate-pulse align-middle" />
-              )}
-            </span>
-            {!typedText && phase === "typing" && (
-              <span className="text-white/30 text-lg">https://yourwebsite.com</span>
+        <div className="flex-1 flex items-center">
+          <span className="text-gray-400 mr-2 text-lg">🔗</span>
+          <span className="text-gray-800 text-lg font-medium tracking-wide">
+            {typedText}
+            {phase === "typing" && (
+              <span className="inline-block w-0.5 h-5 bg-gray-800/80 ml-0.5 animate-pulse align-middle" />
             )}
-          </div>
+          </span>
+          {!typedText && phase === "typing" && (
+            <span className="text-gray-300 text-lg">https://yourwebsite.com</span>
+          )}
         </div>
 
-        {/* Button */}
         <button
-          className="mt-5 rounded-xl font-semibold text-white transition-transform"
+          className="font-semibold text-white transition-transform shrink-0"
           style={{
+            borderRadius: 200,
             background: buttonPressed
               ? "linear-gradient(135deg, #6c3bdb 0%, #4f46e5 100%)"
               : "linear-gradient(135deg, #7c5ce7 0%, #6366f1 100%)",
-            padding: "14px 36px",
-            fontSize: 17,
+            padding: "12px 28px",
+            fontSize: 16,
             transform: buttonPressed ? "scale(0.96)" : "scale(1)",
             boxShadow: buttonPressed
               ? "0 2px 12px rgba(99,102,241,0.3)"
