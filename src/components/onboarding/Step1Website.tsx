@@ -115,7 +115,7 @@ export const Step1Website = ({ data, onChange, onNext }: Props) => {
               placeholder="https://yourwebsite.com"
               disabled={scrapeStep === "loading"}
               required
-              className="pl-9 rounded-lg h-11 text-sm border-border w-full focus:ring-2 focus:ring-ring focus:outline-none"
+              className="pl-9 rounded-lg h-11 text-sm border-border w-full"
             />
           </div>
           <button
