@@ -128,9 +128,9 @@ export const Step1Website = ({ data, onChange, onNext }: Props) => {
             disabled={scrapeStep === "loading" || !data.website.trim()}
             className="h-11 sm:h-auto px-5 rounded-xl sm:rounded-full text-sm font-normal transition-all duration-200 disabled:opacity-50 shrink-0"
             style={{
-              background: "linear-gradient(135deg, hsl(18 95% 58%) 0%, hsl(5 90% 65%) 100%)",
+              background: "hsl(0 0% 0%)",
               color: "hsl(0 0% 100%)",
-              boxShadow: "0 2px 12px hsl(18 95% 58% / 0.35)",
+              boxShadow: "0 2px 8px hsl(0 0% 0% / 0.15)",
             }}
           >
             {scrapeStep === "loading" ? (
