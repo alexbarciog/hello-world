@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Globe } from "lucide-react";
 
 const WEBSITE_TEXT = "intentsly.com";
 
@@ -69,23 +70,23 @@ const Frame4Animation = ({ onComplete }: { onComplete: () => void }) => {
         className="flex items-center bg-white shadow-lg"
         style={{
           borderRadius: 200,
-          height: 64,
-          width: 280 + (typedText.length / WEBSITE_TEXT.length) * 340,
+          height: 80,
+          width: 260 + (typedText.length / WEBSITE_TEXT.length) * 220,
           paddingLeft: 24,
-          paddingRight: 6,
-          transition: "width 0.15s ease-out",
+          paddingRight: 8,
+          transition: "width 0.08s ease-out",
         }}
       >
         <div className="flex-1 flex items-center">
-          <span className="text-gray-400 mr-2 text-lg">🔗</span>
-          <span className="text-gray-800 text-lg font-medium tracking-wide">
+          <Globe className="text-gray-400 mr-3" size={24} />
+          <span className="text-gray-800 text-xl font-medium tracking-wide">
             {typedText}
             {phase === "typing" && (
-              <span className="inline-block w-0.5 h-5 bg-gray-800/80 ml-0.5 animate-pulse align-middle" />
+              <span className="inline-block w-0.5 h-6 bg-gray-800/80 ml-0.5 animate-pulse align-middle" />
             )}
           </span>
           {!typedText && phase === "typing" && (
-            <span className="text-gray-300 text-lg">https://yourwebsite.com</span>
+            <span className="text-gray-300 text-xl">https://yourwebsite.com</span>
           )}
         </div>
 
@@ -96,8 +97,8 @@ const Frame4Animation = ({ onComplete }: { onComplete: () => void }) => {
             background: buttonPressed
               ? "linear-gradient(135deg, #6c3bdb 0%, #4f46e5 100%)"
               : "linear-gradient(135deg, #7c5ce7 0%, #6366f1 100%)",
-            padding: "12px 28px",
-            fontSize: 16,
+            padding: "16px 36px",
+            fontSize: 18,
             transform: buttonPressed ? "scale(0.96)" : "scale(1)",
             boxShadow: buttonPressed
               ? "0 2px 12px rgba(99,102,241,0.3)"
