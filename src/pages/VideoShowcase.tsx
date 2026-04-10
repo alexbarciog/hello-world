@@ -70,9 +70,10 @@ const Frame4Animation = ({ onComplete }: { onComplete: () => void }) => {
         style={{
           borderRadius: 200,
           height: 64,
-          width: 620,
+          width: 280 + (typedText.length / WEBSITE_TEXT.length) * 340,
           paddingLeft: 24,
           paddingRight: 6,
+          transition: "width 0.15s ease-out",
         }}
       >
         <div className="flex-1 flex items-center">
