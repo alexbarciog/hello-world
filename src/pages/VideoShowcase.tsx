@@ -47,6 +47,17 @@ const VideoShowcase = () => {
           autoPlay
           muted
           playsInline
+          onEnded={() => setFrame(5)}
+        />
+      )}
+
+      {frame === 5 && (
+        <video
+          className="w-full h-full object-cover"
+          src="/videos/Negative-mask-effect.mp4"
+          autoPlay
+          muted
+          playsInline
         />
       )}
     </div>
