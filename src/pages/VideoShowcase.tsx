@@ -36,6 +36,17 @@ const VideoShowcase = () => {
           autoPlay
           muted
           playsInline
+          onEnded={() => setFrame(4)}
+        />
+      )}
+
+      {frame === 4 && (
+        <video
+          className="w-full h-full object-cover"
+          src="/videos/Screen_Recording_2026-04-10_at_17.27.44.mov"
+          autoPlay
+          muted
+          playsInline
         />
       )}
     </div>
