@@ -41,14 +41,16 @@ const VideoShowcase = () => {
       )}
 
       {frame === 4 && (
-        <video
-          className="w-full h-full object-cover"
-          src="/videos/Group-8.mp4"
-          autoPlay
-          muted
-          playsInline
-          onEnded={() => setFrame(5)}
-        />
+        <div className="w-full h-full flex items-center justify-center">
+          <video
+            className="w-full max-w-4xl"
+            src="/videos/Group-8.mp4"
+            autoPlay
+            muted
+            playsInline
+            onEnded={() => setFrame(5)}
+          />
+        </div>
       )}
 
       {frame === 5 && (
