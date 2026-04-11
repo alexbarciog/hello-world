@@ -1,36 +1,61 @@
 
 
-# Make All Campaign Steps Use AI-Personalized Messages
+# Fix Competitor Followers: Use Unipile's Real Followers API
 
 ## Problem
-Only Step 2 (first message after connection) uses the AI engine (`generate-step-message`) with full lead intelligence (role, industry, signal). Steps 3 and 4 fall back to generic templates from `generate-outreach-messages` with simple placeholder substitution (`{{first_name}}`, `{{company}}`). This means follow-up messages ignore the lead's background entirely.
-
-**Root cause**: In `generate-outreach-messages/index.ts`, only Step 2 gets `ai_icebreaker: true`. Steps 3 and 4 are set to false, so `process-campaign-followups` uses the raw template text instead of calling the AI.
+The `competitor_followers` task uses a keyword search (`keywords: companyName`) which returns anyone mentioning the company name -- not actual followers. This produces false positives.
 
 ## Solution
+Replace the keyword search (lines 618-696) with the Unipile followers endpoint, and add explicit competitor employee exclusion.
 
-Set `ai_icebreaker: true` on ALL message steps (Steps 2, 3, and 4) so every message goes through `generate-step-message` with full lead context.
+### Changes in `supabase/functions/signal-competitor/index.ts`
 
-### Changes
+**1. Replace Strategy A (keyword search) with the real followers API**
 
-**1. `supabase/functions/generate-outreach-messages/index.ts`**
-Change the normalized steps so Steps 3 and 4 also have `ai_icebreaker: true`:
+Instead of:
 ```
-// Step 3
-{ type: 'message', message: steps[2]?.message || '', delay_days: ..., ai_icebreaker: true }
-// Step 4
-{ type: 'message', message: steps[3]?.message || '', delay_days: ..., ai_icebreaker: true }
+POST /api/v1/linkedin/search  { keywords: companyName }
 ```
 
-**2. `src/components/campaigns/CreateCampaignWizard.tsx`**
-Update the `DEFAULT_WORKFLOW` fallback to also set `ai_icebreaker: true` on all message steps, so even if the AI generation fails, the fallback still triggers per-lead AI generation at send time.
+Use:
+```
+GET /api/v1/users/followers?user_id={numericCompanyId}&account_id={accountId}&limit=100
+```
 
-### What changes for the user
-- Steps 3 and 4 will now be generated fresh for each lead at send time, using the same role-aware, industry-aware prompt that already powers Step 2
-- Follow-ups will reference the lead's actual title, industry, and previous messages instead of using generic templates
-- The template messages shown in the campaign editor become preview-only placeholders (they always were for Step 2, now consistently so for all steps)
+- Resolve company slug to numeric ID using the existing `resolveCompanyId()` helper
+- Paginate with cursor (up to 3 pages, ~300 followers max)
+- If the followers API fails or the company ID can't be resolved, log a warning and skip (no keyword fallback)
+
+**2. Add explicit competitor employee exclusion**
+
+After fetching the full profile of each follower, add an additional check:
+- Use the existing `worksAtCompany(fp, companyName)` function to check if the follower currently works at the competitor being tracked
+- If they do, skip them with a new counter `excluded_competitor_direct_employee`
+- This is in addition to the existing `isExcluded()` check which covers the global competitor list
+
+**3. Keep everything else the same**
+
+The rest of the pipeline stays identical: dedup, quick ICP check, full profile fetch, own-company exclusion, `isExcluded()`, irrelevant title check, location/title/industry filtering, scoring, and insertion.
+
+### Processing flow
+```text
+For each competitor URL:
+  1. Extract slug → resolveCompanyId() → numeric provider_id
+  2. GET /api/v1/users/followers?user_id={numericId}&account_id=...&limit=100
+  3. Paginate (up to 3 pages)
+  4. For each follower:
+     a. Dedup check (already processed / already in contacts)
+     b. Quick ICP headline check
+     c. Fetch full profile
+     d. Skip if LinkedIn Member
+     e. Skip if works at OWN company
+     f. Skip if works at THIS competitor (worksAtCompany)
+     g. Skip if isExcluded (global competitor list + exclude keywords)
+     h. Skip if irrelevant title
+     i. Location/title/industry ICP filtering
+     j. Score and insert as "Follows {companyName}"
+```
 
 ### Files changed
-- `supabase/functions/generate-outreach-messages/index.ts` (add `ai_icebreaker: true` to steps 3 and 4)
-- `src/components/campaigns/CreateCampaignWizard.tsx` (update DEFAULT_WORKFLOW fallback)
+- `supabase/functions/signal-competitor/index.ts` -- replace lines 618-696
 
