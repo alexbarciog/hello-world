@@ -452,6 +452,20 @@ async function processCampaignReplies(
               console.log(`[ai-replies] ✅ Meeting auto-booked for ${contact.first_name} on ${scheduledAt.toISOString()}`);
               meetingsBooked++;
 
+              // Trigger auto-subscribe on first meeting
+              try {
+                await fetch(`${supabaseUrl}/functions/v1/auto-subscribe-on-meeting`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+                  },
+                  body: JSON.stringify({ user_id: cr.user_id }),
+                });
+              } catch (autoSubErr) {
+                console.error(`[ai-replies] auto-subscribe-on-meeting error:`, autoSubErr);
+              }
+
               // Send email notification for meeting booked
               try {
                 await supabase.functions.invoke('send-notification-email', {

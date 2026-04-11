@@ -52,11 +52,24 @@ Deno.serve(async (req) => {
           if (!user?.email) continue;
           const customers = await stripe.customers.list({ email: user.email, limit: 1 });
           if (!customers.data.length) continue;
-          const subs = await stripe.subscriptions.list({ customer: customers.data[0].id, limit: 5 });
-          if (subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing')) paidUsers.add(uid);
+          const customer = customers.data[0];
+          // Allow if active subscription OR card on file
+          const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 5 });
+          if (subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing')) {
+            paidUsers.add(uid);
+          } else {
+            // Check for card on file (setup-mode checkout)
+            const defaultPm = customer.invoice_settings?.default_payment_method;
+            if (defaultPm) {
+              paidUsers.add(uid);
+            } else {
+              const pms = await stripe.paymentMethods.list({ customer: customer.id, type: 'card', limit: 1 });
+              if (pms.data.length > 0) paidUsers.add(uid);
+            }
+          }
         } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
       }
-      console.log(`Paid users: ${paidUsers.size}/${uniqueUserIds.length}`);
+      console.log(`Eligible users (sub or card): ${paidUsers.size}/${uniqueUserIds.length}`);
     } else {
       console.warn('STRIPE_SECRET_KEY not set — processing all agents');
       agents.forEach((a: any) => paidUsers.add(a.user_id));
