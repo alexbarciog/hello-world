@@ -7,6 +7,7 @@ export interface SubscriptionState {
   subscriptionEnd: string | null;
   productId: string | null;
   credits: number;
+  hasCard: boolean;
   loading: boolean;
 }
 
@@ -17,6 +18,7 @@ export function useSubscription() {
     subscriptionEnd: null,
     productId: null,
     credits: 0,
+    hasCard: false,
     loading: true,
   });
 
@@ -38,6 +40,7 @@ export function useSubscription() {
         subscriptionEnd: data?.subscription_end ?? null,
         productId: data?.product_id ?? null,
         credits: data?.credits ?? 0,
+        hasCard: data?.has_card ?? false,
         loading: false,
       });
     } catch {

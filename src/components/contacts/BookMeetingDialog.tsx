@@ -62,6 +62,11 @@ export function BookMeetingDialog({ open, onOpenChange, contact, campaignId, onB
       setTime("10:00");
       setNotes("");
       onBooked();
+
+      // Trigger auto-subscribe on first meeting (fire-and-forget)
+      supabase.functions.invoke("auto-subscribe-on-meeting", {
+        body: { user_id: user.id },
+      }).catch((err) => console.error("auto-subscribe error:", err));
     } catch (err: any) {
       console.error("Book meeting error:", err);
       toast.error(err.message || "Failed to book meeting");

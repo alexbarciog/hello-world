@@ -403,11 +403,23 @@ export default function Signals() {
     }
   }
 
+  async function handleSetupCard() {
+    try {
+      const { data, error } = await supabase.functions.invoke("setup-card");
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start card setup");
+    }
+  }
+
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
-    if (newStatus === "active" && !sub.subscribed) {
-      toast.error("Upgrade to a paid plan to activate agents", {
-        action: { label: "Upgrade", onClick: () => navigate("/billing") },
+    if (newStatus === "active" && !sub.subscribed && !sub.hasCard) {
+      toast.error("Add your card to activate agents", {
+        action: { label: "Add Card", onClick: handleSetupCard },
       });
       return;
     }

@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.generate-meeting-prep]
 verify_jwt = false
+
+[functions.setup-card]
+verify_jwt = false
+
+[functions.auto-subscribe-on-meeting]
+verify_jwt = false

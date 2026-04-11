@@ -46,6 +46,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         subscribed: false,
         had_subscription: false,
+        has_card: false,
         credits: profile?.credits ?? 0,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -75,6 +76,16 @@ Deno.serve(async (req) => {
       productId = activeSub.items?.data?.[0]?.price?.product ?? null;
     }
 
+    // Check if customer has a payment method on file
+    let hasCard = false;
+    const defaultPm = customers.data[0].invoice_settings?.default_payment_method;
+    if (defaultPm) {
+      hasCard = true;
+    } else {
+      const pms = await stripe.paymentMethods.list({ customer: customerId, type: "card", limit: 1 });
+      hasCard = pms.data.length > 0;
+    }
+
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("credits")
@@ -94,6 +105,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       had_subscription: hadSubscription,
+      has_card: hasCard,
       product_id: productId,
       subscription_end: subscriptionEnd,
       credits,
