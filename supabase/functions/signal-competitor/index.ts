@@ -257,6 +257,7 @@ Deno.serve(async (req) => {
       profiles_fetched: 0,
       excluded_own_company: 0,
       excluded_competitor_employee: 0,
+      excluded_competitor_direct_employee: 0,
       excluded_irrelevant_title: 0,
       excluded_wrong_country: 0,
       excluded_no_icp_match: 0,
