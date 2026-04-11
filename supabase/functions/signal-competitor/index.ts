@@ -613,42 +613,56 @@ Deno.serve(async (req) => {
         if (isCompanyUrl && companyName) {
           const companyId = extractLinkedInId(url);
 
-          // Fix 2: Strategy 0 (direct followers endpoint) removed — Unipile does not support it
-
-          // ── Strategy A: Search for people mentioning the company name (with retry for 429s) ──
+          // ── Strategy: Fetch real followers of the company page via Unipile followers API ──
           {
-            console.log(`[COMP] competitor_followers: searching "${companyName}" with pagination`);
+            // Resolve slug to numeric company ID
+            const numericCompanyId = await resolveCompanyId(companyName, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+            if (!numericCompanyId) {
+              console.warn(`[COMP] competitor_followers: could not resolve "${companyName}" to numeric ID — skipping`);
+              continue;
+            }
+
+            console.log(`[COMP] competitor_followers: fetching real followers of "${companyName}" (ID: ${numericCompanyId})`);
             try {
-              const allPeople: any[] = [];
+              const allFollowers: any[] = [];
               let cursor: string | null = null;
               const MAX_PAGES = 3;
+
               for (let page = 0; page < MAX_PAGES && hasTime(); page++) {
-                const searchBody: any = { api: 'classic', category: 'people', keywords: companyName, limit: 30 };
-                if (cursor) searchBody.cursor = cursor;
+                const followersUrl = new URL(`https://${UNIPILE_DSN}/api/v1/users/followers`);
+                followersUrl.searchParams.set('user_id', numericCompanyId);
+                followersUrl.searchParams.set('account_id', account_id);
+                followersUrl.searchParams.set('limit', '100');
+                if (cursor) followersUrl.searchParams.set('cursor', cursor);
+
                 const res = await fetchWithRetry(
-                  `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`,
+                  followersUrl.toString(),
                   {
-                    method: 'POST',
-                    headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(searchBody),
+                    method: 'GET',
+                    headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' },
                   },
-                  `follower search "${companyName}" page ${page+1}`
+                  `followers "${companyName}" page ${page + 1}`
                 );
+
                 if (!res.ok) {
                   const errText = await res.text();
-                  console.error(`[COMP] follower search "${companyName}" page ${page+1}: HTTP ${res.status} - ${errText.slice(0, 200)}`);
+                  console.error(`[COMP] followers API "${companyName}" page ${page + 1}: HTTP ${res.status} - ${errText.slice(0, 200)}`);
                   break;
                 }
+
                 const data = await res.json();
-                const people = data.items || data.results || [];
-                allPeople.push(...people);
-                console.log(`[COMP] "${companyName}" search page ${page+1}: ${people.length} people (total: ${allPeople.length})`);
+                const followers = data.items || data.results || data.data || [];
+                allFollowers.push(...followers);
+                console.log(`[COMP] "${companyName}" followers page ${page + 1}: ${followers.length} followers (total: ${allFollowers.length})`);
+
                 cursor = data.cursor || data.next_cursor || null;
-                if (!cursor || people.length === 0) break;
-                await delay(1000); // longer delay between search pages to avoid 429
+                if (!cursor || followers.length === 0) break;
+                await delay(1000);
               }
 
-              for (const person of allPeople) {
+              console.log(`[COMP] "${companyName}": fetched ${allFollowers.length} total followers, processing…`);
+
+              for (const person of allFollowers) {
                 if (!hasTime()) break;
                 const rawId = extractLinkedinProfileId(person);
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
@@ -669,6 +683,8 @@ Deno.serve(async (req) => {
                   if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
                 }
                 if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { pipelineStats.excluded_own_company++; continue; }
+                // Explicit competitor employee exclusion: skip people who work at THIS competitor
+                if (worksAtCompany(fp, companyName)) { pipelineStats.excluded_competitor_direct_employee = (pipelineStats.excluded_competitor_direct_employee || 0) + 1; continue; }
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { pipelineStats.excluded_competitor_employee++; continue; }
                 const hl = fp.headline || fp.title || '';
                 if (isClearlyIrrelevant(hl)) { pipelineStats.excluded_irrelevant_title++; continue; }
@@ -694,9 +710,6 @@ Deno.serve(async (req) => {
               }
             } catch (e) { console.error(`[COMP] Competitor followers ${url}:`, e); }
           }
-
-          // Strategy B removed from comp_followers — comp_engagers handles all engager work
-          // This gives comp_followers its full 105s budget for search only
         }
 
         // Person URLs in comp_followers: skip — comp_engagers handles them
