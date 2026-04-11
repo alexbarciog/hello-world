@@ -328,6 +328,8 @@ export default function Signals() {
   const [activeAgent, setActiveAgent] = useState<SignalAgent | null>(null);
   const [toastAgent, setToastAgent] = useState<SignalAgent | null>(null);
   const [runningAgentIds, setRunningAgentIds] = useState<string[]>([]);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [addCardLoading, setAddCardLoading] = useState(false);
 
   const [newName, setNewName] = useState("My Agent");
   const [newType, setNewType] = useState("recently_changed_jobs");
@@ -404,23 +406,25 @@ export default function Signals() {
   }
 
   async function handleSetupCard() {
+    setAddCardLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("setup-card");
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, "_blank");
+        setShowAddCard(false);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to start card setup");
+    } finally {
+      setAddCardLoading(false);
     }
   }
 
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
     if (newStatus === "active" && !sub.subscribed && !sub.hasCard) {
-      toast.error("Add your card to activate agents", {
-        action: { label: "Add Card", onClick: handleSetupCard },
-      });
+      setShowAddCard(true);
       return;
     }
     await supabase
