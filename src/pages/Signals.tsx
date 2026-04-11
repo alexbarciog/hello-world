@@ -6,6 +6,7 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
 import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap, Activity, Loader2, XCircle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
+import { AddCardDialog } from "@/components/AddCardDialog";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import {
   Popover,
@@ -328,6 +329,8 @@ export default function Signals() {
   const [activeAgent, setActiveAgent] = useState<SignalAgent | null>(null);
   const [toastAgent, setToastAgent] = useState<SignalAgent | null>(null);
   const [runningAgentIds, setRunningAgentIds] = useState<string[]>([]);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [addCardLoading, setAddCardLoading] = useState(false);
 
   const [newName, setNewName] = useState("My Agent");
   const [newType, setNewType] = useState("recently_changed_jobs");
@@ -404,23 +407,25 @@ export default function Signals() {
   }
 
   async function handleSetupCard() {
+    setAddCardLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("setup-card");
       if (error) throw error;
       if (data?.url) {
         window.open(data.url, "_blank");
+        setShowAddCard(false);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to start card setup");
+    } finally {
+      setAddCardLoading(false);
     }
   }
 
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
     if (newStatus === "active" && !sub.subscribed && !sub.hasCard) {
-      toast.error("Add your card to activate agents", {
-        action: { label: "Add Card", onClick: handleSetupCard },
-      });
+      setShowAddCard(true);
       return;
     }
     await supabase
@@ -614,6 +619,7 @@ export default function Signals() {
       <p className="text-sm text-gray-500 mb-5">Manage your automated lead generation agents & signals</p>
 
       <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
+      <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} />
 
       {/* Active Agent Card */}
       {activeAgent && (
