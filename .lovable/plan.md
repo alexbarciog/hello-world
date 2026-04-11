@@ -1,61 +1,95 @@
 
 
-# Fix Competitor Followers: Use Unipile's Real Followers API
+# Free Until First Meeting — Card Required to Activate
 
-## Problem
-The `competitor_followers` task uses a keyword search (`keywords: companyName`) which returns anyone mentioning the company name -- not actual followers. This produces false positives.
+## How It Works
 
-## Solution
-Replace the keyword search (lines 618-696) with the Unipile followers endpoint, and add explicit competitor employee exclusion.
+1. User signs up and gets full access to create agents, contacts, campaigns
+2. To **activate** (turn on) a signal agent, they must add their card via Stripe Checkout (setup mode -- no charge)
+3. Platform runs freely with card on file, no subscription yet
+4. When the **first meeting** is booked (manual or AI-detected):
+   - Auto-create a Stripe subscription using the saved payment method and charge immediately
+   - Send congrats email: "You booked your first meeting using Intentsly!"
+5. If the charge **fails**:
+   - Send failure email: "Your payment failed -- update your card to continue using Intentsly"
+   - Do NOT create the subscription
 
-### Changes in `supabase/functions/signal-competitor/index.ts`
+## Technical Plan
 
-**1. Replace Strategy A (keyword search) with the real followers API**
+### 1. New edge function: `setup-card`
 
-Instead of:
-```
-POST /api/v1/linkedin/search  { keywords: companyName }
-```
+Creates a Stripe Checkout session in **`mode: 'setup'`** to collect card without charging.
 
-Use:
-```
-GET /api/v1/users/followers?user_id={numericCompanyId}&account_id={accountId}&limit=100
-```
+- Find or create Stripe customer by email
+- Create checkout session with `mode: 'setup'`, `success_url: /signals?card_added=true`, `cancel_url: /signals`
+- Return session URL
 
-- Resolve company slug to numeric ID using the existing `resolveCompanyId()` helper
-- Paginate with cursor (up to 3 pages, ~300 followers max)
-- If the followers API fails or the company ID can't be resolved, log a warning and skip (no keyword fallback)
+### 2. New edge function: `auto-subscribe-on-meeting`
 
-**2. Add explicit competitor employee exclusion**
+Called after first meeting is booked. Creates a real subscription and charges the card.
 
-After fetching the full profile of each follower, add an additional check:
-- Use the existing `worksAtCompany(fp, companyName)` function to check if the follower currently works at the competitor being tracked
-- If they do, skip them with a new counter `excluded_competitor_direct_employee`
-- This is in addition to the existing `isExcluded()` check which covers the global competitor list
+- Receive `user_id` 
+- Look up user email, find Stripe customer
+- Check if already has active subscription -- if yes, return early
+- Check if customer has a default payment method (from setup checkout) -- if not, return error
+- Create subscription with `default_payment_method`, price = Starter price (`price_1TIByxFsgTpFMX56JNwbw3TA`), `payment_behavior: 'default_incomplete'` so the invoice is created
+- Check if the invoice payment succeeded:
+  - **Success**: Send congrats email via `send-notification-email` ("Congrats! You booked your first meeting using Intentsly! You're now on the Starter plan.")
+  - **Failed**: Send failure email ("Your payment failed. Update your card information to continue using Intentsly.") and cancel the subscription
 
-**3. Keep everything else the same**
+### 3. Update `check-subscription` 
 
-The rest of the pipeline stays identical: dedup, quick ICP check, full profile fetch, own-company exclusion, `isExcluded()`, irrelevant title check, location/title/industry filtering, scoring, and insertion.
+Add a `has_card` field to the response:
+- After finding the Stripe customer, check if they have a default payment method or any payment methods on file
+- Return `has_card: true/false` alongside existing fields
 
-### Processing flow
-```text
-For each competitor URL:
-  1. Extract slug → resolveCompanyId() → numeric provider_id
-  2. GET /api/v1/users/followers?user_id={numericId}&account_id=...&limit=100
-  3. Paginate (up to 3 pages)
-  4. For each follower:
-     a. Dedup check (already processed / already in contacts)
-     b. Quick ICP headline check
-     c. Fetch full profile
-     d. Skip if LinkedIn Member
-     e. Skip if works at OWN company
-     f. Skip if works at THIS competitor (worksAtCompany)
-     g. Skip if isExcluded (global competitor list + exclude keywords)
-     h. Skip if irrelevant title
-     i. Location/title/industry ICP filtering
-     j. Score and insert as "Follows {companyName}"
-```
+### 4. Update `useSubscription` hook
 
-### Files changed
-- `supabase/functions/signal-competitor/index.ts` -- replace lines 618-696
+- Add `hasCard: boolean` to `SubscriptionState`
+- Map from `data.has_card`
+
+### 5. Update agent activation gating (`Signals.tsx`)
+
+Change `toggleAgentStatus()`:
+- Currently checks `!sub.subscribed` → change to check `!sub.hasCard`
+- If no card: toast "Add your card to activate agents" with action button that calls `setup-card` and redirects to Stripe Checkout
+- If has card (even without subscription): allow activation
+
+### 6. Update `process-signal-agents` backend gating
+
+- Currently checks for active Stripe subscription → change to check for **card on file** (customer exists with payment method) OR active subscription
+- Users with a card but no subscription can still run agents
+
+### 7. Trigger auto-subscribe from meeting creation
+
+**A. `BookMeetingDialog.tsx` (manual booking):**
+- After successful meeting insert, call `supabase.functions.invoke('auto-subscribe-on-meeting', { body: { user_id } })`
+
+**B. `process-ai-replies/index.ts` (AI-detected meeting):**
+- After successful meeting insert (line ~447), call `auto-subscribe-on-meeting` with the user_id
+
+### 8. Config
+
+- Add `auto-subscribe-on-meeting` and `setup-card` to `supabase/config.toml` with `verify_jwt = false`
+
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/setup-card/index.ts` | **New** -- Stripe setup checkout |
+| `supabase/functions/auto-subscribe-on-meeting/index.ts` | **New** -- auto-create subscription + emails |
+| `supabase/functions/check-subscription/index.ts` | Add `has_card` field |
+| `supabase/functions/process-signal-agents/index.ts` | Change gating from subscription to card-on-file |
+| `src/hooks/useSubscription.ts` | Add `hasCard` |
+| `src/pages/Signals.tsx` | Change activation check to `hasCard` |
+| `src/components/contacts/BookMeetingDialog.tsx` | Call auto-subscribe after booking |
+| `supabase/functions/process-ai-replies/index.ts` | Call auto-subscribe after AI meeting detection |
+| `supabase/config.toml` | Add new function configs |
+
+## Stripe Details
+
+- **Setup checkout**: `mode: 'setup'`, saves card to customer
+- **Subscription creation**: Uses `prod_UGjR0WwP5rbgZX` (Intentsly Starter, $59/mo) with `price_1TIByxFsgTpFMX56JNwbw3TA`
+- **Payment method**: Retrieved from customer's default payment method set during setup checkout
+- No trial period on auto-created subscriptions (charge immediately)
 
