@@ -413,7 +413,7 @@ async function setNextLaunchAt(supabase: any, agentId: string) {
   const currentMinute = now.getUTCMinutes();
 
   // Find the next launch hour after now
-  let nextHour = DAILY_LAUNCH_HOURS_UTC.find(h => h > currentHour || (h === currentHour && currentMinute < 55));
+  let nextHour = DAILY_LAUNCH_HOURS_UTC.find(h => h > currentHour);
   const nextDate = new Date(now);
 
   if (nextHour !== undefined) {
