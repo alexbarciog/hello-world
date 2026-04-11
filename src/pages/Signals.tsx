@@ -6,6 +6,7 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
 import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap, Activity, Loader2, XCircle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
+import { AddCardDialog } from "@/components/AddCardDialog";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import {
   Popover,
