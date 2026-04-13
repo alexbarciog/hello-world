@@ -13,7 +13,7 @@ const Hero = () => {
         aria-hidden="true"
       />
 
-      <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl mx-auto pt-28 md:pt-36">
+      <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-7xl mx-auto w-full pt-28 md:pt-36">
         <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-medium text-white leading-[1.05] tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
           Find People Looking For
           <br />
@@ -36,7 +36,7 @@ const Hero = () => {
         </div>
 
         {/* Tilted card carousel */}
-        <div className="mt-12 w-full max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: "360ms" }}>
+        <div className="mt-12 w-full max-w-6xl mx-auto animate-fade-in-up" style={{ animationDelay: "360ms" }}>
           <div className="card-carousel">
             <div className="overflow-hidden">
               <HeroCards />
