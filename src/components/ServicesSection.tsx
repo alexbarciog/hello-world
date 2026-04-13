@@ -71,8 +71,8 @@ const ServicesSection = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
               </div>
               <div className="px-7 pb-7">
-                <div className="w-full h-44 rounded-2xl bg-gradient-to-br from-[#1A8FE3]/10 to-[#87CEEB]/20 flex items-center justify-center">
-                  <s.icon className="w-16 h-16 text-[#1A8FE3]/20" />
+                <div className="w-full h-44 rounded-2xl overflow-hidden bg-[#f0f0f0]">
+                  <img src={s.image} alt={s.title} loading="lazy" width={768} height={512} className="w-full h-full object-cover" />
                 </div>
               </div>
             </div>
