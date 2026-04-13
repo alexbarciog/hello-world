@@ -16,26 +16,26 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
   const hasData = total > 0;
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-6">
-      <h3 className="text-sm font-bold text-snow-black-100 mb-4">Leads by Tier</h3>
+    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+      <h3 className="text-sm font-bold text-snow-black-100 mb-3">Leads by Tier</h3>
       {loading ? (
-        <div className="h-[200px] flex items-center justify-center">
+        <div className="h-[160px] flex items-center justify-center">
           <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
-        <div className="h-[200px] flex items-center justify-center">
+        <div className="h-[160px] flex items-center justify-center">
           <p className="text-sm text-snow-black-20">No leads yet</p>
         </div>
       ) : (
-        <div className="flex items-center gap-6">
-          <ResponsiveContainer width={200} height={200}>
+        <div className="flex items-center gap-4">
+          <ResponsiveContainer width={160} height={160}>
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="50%"
-                innerRadius={55}
-                outerRadius={85}
+                innerRadius={45}
+                outerRadius={70}
                 dataKey="value"
                 stroke="none"
               >
@@ -45,7 +45,7 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {data.map((entry) => {
               const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;
               return (

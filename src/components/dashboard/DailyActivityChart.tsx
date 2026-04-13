@@ -32,11 +32,11 @@ const DailyActivityChart = ({ data, loading }: WeeklyActivityChartProps) => {
           <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
-        <div className="h-[240px] flex items-center justify-center">
+        <div className="h-[180px] flex items-center justify-center">
           <p className="text-sm text-snow-black-20">No activity data yet</p>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={180}>
           <BarChart data={data} barCategoryGap="25%" barGap={2}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E5E7EB" />
             <XAxis

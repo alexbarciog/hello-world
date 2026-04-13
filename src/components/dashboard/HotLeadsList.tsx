@@ -39,8 +39,8 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-6">
-      <div className="flex items-center justify-between mb-5">
+    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-gray-900">Hot Leads</h2>
         <button
           onClick={() => navigate("/contacts")}
