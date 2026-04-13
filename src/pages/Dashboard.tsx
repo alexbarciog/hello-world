@@ -7,7 +7,7 @@ import { QuickStartPanel } from "@/components/dashboard/QuickStartPanel";
 import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
-import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
