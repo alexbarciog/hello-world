@@ -187,41 +187,49 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-full px-6 py-6 bg-white">
-      {/* ── Header ── */}
-      <header className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-semibold text-gray-900">Overview</h1>
-        <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-          Today
-          <ChevronDown className="w-4 h-4" />
-        </button>
-      </header>
+    <div className="min-h-full px-6 py-6 bg-white flex gap-6">
+      {/* ── Main content ── */}
+      <div className="flex-1 min-w-0">
+        {/* ── Header ── */}
+        <header className="flex items-center justify-between mb-6">
+          <h1 className="text-lg font-semibold text-gray-900">Overview</h1>
+          <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+            Today
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </header>
 
-      {/* ── Subscription Banner ── */}
-      <SubscriptionBanner />
+        {/* ── Subscription Banner ── */}
+        <SubscriptionBanner />
 
-      {/* ── Metrics ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#EDEEFC]" />
-        <MetricCard title="Leads Engaged" value={leadsEngaged} loading={statsLoading} bgColor="bg-[#f0ecfb]" />
-        <MetricCard title="Conversations" value={conversations} loading={statsLoading} bgColor="bg-[#e8f0fb]" />
-        <MetricCard title="Active Signals" value={activeSignals} loading={false} bgColor="bg-[#f0ecfb]" />
+        {/* ── Metrics ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#EDEEFC]" />
+          <MetricCard title="Leads Engaged" value={leadsEngaged} loading={statsLoading} bgColor="bg-[#f0ecfb]" />
+          <MetricCard title="Conversations" value={conversations} loading={statsLoading} bgColor="bg-[#e8f0fb]" />
+          <MetricCard title="Active Signals" value={activeSignals} loading={false} bgColor="bg-[#f0ecfb]" />
+        </div>
+
+        {/* ── Chart + Quick Start ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <PerformanceChart chartData={chartData} />
+          </div>
+          <div>
+            <QuickStartPanel steps={quickStartSteps} />
+          </div>
+        </div>
+
+        {/* ── Leads & Replies ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
+          <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
+        </div>
       </div>
 
-      {/* ── Chart + Quick Start ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <PerformanceChart chartData={chartData} />
-        </div>
-        <div>
-          <QuickStartPanel steps={quickStartSteps} />
-        </div>
-      </div>
-
-      {/* ── Leads, Replies & Activity ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
-        <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
+      {/* ── Right sidebar ── */}
+      <div className="hidden xl:block">
+        <DashboardSidebar />
       </div>
     </div>
   );
