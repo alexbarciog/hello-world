@@ -229,7 +229,7 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
                 onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 className={`${inputCls} flex-1`} disabled={sending} />
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                className="btn-cta text-sm !py-2.5 !px-5 disabled:opacity-60 w-full sm:w-auto"
+                className="inline-flex items-center gap-2 bg-black text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-60 w-full sm:w-auto"
                 onClick={handleInvite} disabled={sending}>
                 {sending ? "Sending…" : "Invite"}
               </motion.button>
