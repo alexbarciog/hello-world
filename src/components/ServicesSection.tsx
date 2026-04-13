@@ -48,15 +48,15 @@ const SignalTrackingVisual = () => (
 /* ── Visual 2: LinkedIn DM Automation ── */
 const OutreachVisual = () => (
   <div className="relative w-full h-44 flex items-center justify-center">
-    <div className="absolute left-2 top-2 w-[46%] rounded-xl bg-[#1a1a2e] text-white p-3 shadow-xl rotate-1 z-10">
-      <p className="text-[9px] opacity-50 mb-0.5">Campaign active</p>
+    <div className="absolute left-2 top-1 w-[52%] rounded-xl bg-[#1a1a2e] text-white p-4 shadow-xl rotate-1 z-10">
+      <p className="text-[10px] opacity-50 mb-0.5">Campaign active</p>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-2xl font-bold">312</span>
-        <span className="text-[9px] font-semibold text-[#C8FF00]">sent</span>
+        <span className="text-3xl font-bold">312</span>
+        <span className="text-[10px] font-semibold text-[#C8FF00]">sent</span>
       </div>
-      <p className="text-[8px] opacity-40 mt-0.5">DMs this week</p>
+      <p className="text-[9px] opacity-40 mt-0.5">DMs this week</p>
     </div>
-    <div className="absolute right-1 top-1 w-[50%] rounded-xl bg-white shadow-md p-2.5 -rotate-1 z-20 border border-border/50">
+    <div className="absolute right-1 top-14 w-[50%] rounded-xl bg-white shadow-md p-2.5 -rotate-1 z-20 border border-border/50">
       <p className="text-[9px] font-medium mb-1.5" style={{ color: "hsl(var(--aeline-dark))" }}>Sequence steps</p>
       <div className="space-y-1.5">
         {[
@@ -78,10 +78,10 @@ const OutreachVisual = () => (
 /* ── Visual 3: AI SDR Agent ── */
 const AiSdrVisual = () => (
   <div className="relative w-full h-44 flex items-center justify-center">
-    <div className="absolute left-2 top-1 w-[46%] rounded-xl bg-[#1a1a2e] text-white p-3 shadow-xl -rotate-1 z-10">
+    <div className="absolute left-2 top-1 w-[52%] rounded-xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-1 z-10">
       <div className="flex items-center gap-1.5 mb-2">
         <Bot className="w-3.5 h-3.5 text-[#C8FF00]" />
-        <span className="text-[9px] font-medium opacity-80">AI SDR active</span>
+        <span className="text-[10px] font-medium opacity-80">AI SDR active</span>
       </div>
       <div className="space-y-1">
         <div className="bg-white/10 rounded-md px-2 py-1">
@@ -94,7 +94,7 @@ const AiSdrVisual = () => (
         </div>
       </div>
     </div>
-    <div className="absolute right-1 top-2 w-[50%] rounded-xl bg-white shadow-md p-2.5 rotate-1 z-20 border border-border/50">
+    <div className="absolute right-1 top-14 w-[50%] rounded-xl bg-white shadow-md p-2.5 rotate-1 z-20 border border-border/50">
       <p className="text-[9px] font-medium mb-1.5" style={{ color: "hsl(var(--aeline-dark))" }}>This week</p>
       <div className="space-y-1.5">
         {[
