@@ -8,6 +8,8 @@ import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import TrafficByDevice from "@/components/dashboard/TrafficByDevice";
+import TrafficByLocation from "@/components/dashboard/TrafficByLocation";
 import { ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
@@ -218,6 +220,12 @@ export default function Dashboard() {
           <div>
             <QuickStartPanel steps={quickStartSteps} />
           </div>
+        </div>
+
+        {/* ── Analytics ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <TrafficByDevice />
+          <TrafficByLocation />
         </div>
 
         {/* ── Leads & Replies ── */}
