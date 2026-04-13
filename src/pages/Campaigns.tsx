@@ -264,11 +264,10 @@ export default function CampaignsPage() {
 
   const handleNewCampaign = () => {
     if (atLimit) {toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`);return;}
-    setEditCampaignId(null);
-    setShowWizard(true);
+    navigate("/campaigns/new");
   };
 
-  const handleEditCampaign = (id: string) => {setEditCampaignId(id);setShowWizard(true);};
+  const handleEditCampaign = (id: string) => { navigate(`/campaigns/new?edit=${id}`); };
 
   const handleDeleteCampaign = async (id: string) => {
     const { error } = await supabase.from("campaigns").delete().eq("id", id);
