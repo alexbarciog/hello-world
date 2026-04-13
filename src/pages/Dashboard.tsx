@@ -7,7 +7,7 @@ import { QuickStartPanel } from "@/components/dashboard/QuickStartPanel";
 import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
-import LeadsBySource from "@/components/dashboard/LeadsBySource";
+import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
 import { ChevronDown } from "lucide-react";
 
@@ -250,50 +250,63 @@ export default function Dashboard() {
     staleTime: 30_000,
   });
 
-  // Leads by source (top campaigns)
-  const { data: sourceData, isLoading: sourceLoading } = useQuery({
-    queryKey: ["dashboard-leads-by-source"],
+  // Daily activity: contacts added, responses, meetings booked
+  const { data: dailyActivityData, isLoading: dailyActivityLoading } = useQuery({
+    queryKey: ["dashboard-daily-activity"],
     queryFn: async () => {
-      const { data: contacts, error } = await supabase
-        .from("contacts")
-        .select("source_campaign_id");
-      if (error) throw error;
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const isoStart = thirtyDaysAgo.toISOString();
 
-      const campaignCounts: Record<string, number> = {};
-      let noSource = 0;
-      (contacts ?? []).forEach((c) => {
-        if (c.source_campaign_id) {
-          campaignCounts[c.source_campaign_id] = (campaignCounts[c.source_campaign_id] || 0) + 1;
-        } else {
-          noSource++;
-        }
+      const [contactsRes, responsesRes, meetingsRes] = await Promise.all([
+        supabase
+          .from("contacts")
+          .select("imported_at")
+          .gte("imported_at", isoStart),
+        supabase
+          .from("campaign_connection_requests")
+          .select("last_incoming_message_at")
+          .not("last_incoming_message_at", "is", null)
+          .gte("last_incoming_message_at", isoStart),
+        supabase
+          .from("meetings")
+          .select("created_at")
+          .gte("created_at", isoStart),
+      ]);
+
+      const contactCounts: Record<string, number> = {};
+      const responseCounts: Record<string, number> = {};
+      const meetingCounts: Record<string, number> = {};
+
+      const toKey = (d: string) =>
+        new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+      (contactsRes.data ?? []).forEach((c) => {
+        const k = toKey(c.imported_at);
+        contactCounts[k] = (contactCounts[k] || 0) + 1;
+      });
+      (responsesRes.data ?? []).forEach((r) => {
+        const k = toKey(r.last_incoming_message_at!);
+        responseCounts[k] = (responseCounts[k] || 0) + 1;
+      });
+      (meetingsRes.data ?? []).forEach((m) => {
+        const k = toKey(m.created_at);
+        meetingCounts[k] = (meetingCounts[k] || 0) + 1;
       });
 
-      // Get campaign names
-      const campaignIds = Object.keys(campaignCounts);
-      let campaignNames: Record<string, string> = {};
-      if (campaignIds.length > 0) {
-        const { data: campaigns } = await supabase
-          .from("campaigns")
-          .select("id, company_name")
-          .in("id", campaignIds);
-        (campaigns ?? []).forEach((c) => {
-          campaignNames[c.id] = c.company_name || "Unnamed Campaign";
+      const result = [];
+      for (let i = 30; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        result.push({
+          date: label,
+          contacts: contactCounts[label] || 0,
+          responses: responseCounts[label] || 0,
+          meetings: meetingCounts[label] || 0,
         });
       }
-
-      const result = Object.entries(campaignCounts)
-        .map(([id, count]) => ({
-          name: campaignNames[id] || "Campaign",
-          value: count,
-        }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 5);
-
-      if (noSource > 0) {
-        result.push({ name: "Other", value: noSource });
-      }
-
       return result;
     },
     staleTime: 30_000,
