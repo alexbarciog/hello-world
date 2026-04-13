@@ -39,7 +39,7 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-[#F9F9FA] rounded-2xl border border-gray-200/60 p-6">
+    <div className="bg-snow-bg-2 rounded-[20px] p-6">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-sm font-semibold text-gray-900">Hot Leads</h2>
         <button
