@@ -9,7 +9,7 @@ export function MetricCard({ title, value, loading, bgColor = "bg-[#e8f0fb]" }: 
   const isEmpty = !loading && (value === 0 || value === "0");
 
   return (
-    <div className={`${bgColor} rounded-[20px] p-5 flex flex-col gap-3`}>
+    <div className={`${bgColor} rounded-[20px] px-5 py-7 flex flex-col gap-3`}>
       <p className="text-sm text-snow-black-100 tracking-wide font-normal">{title}</p>
       {loading ? (
         <div className="h-9 w-20 bg-white/50 rounded-lg animate-pulse" />
