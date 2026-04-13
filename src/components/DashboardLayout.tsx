@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => navigate(item.path)}
                     className={`w-[180px] h-9 flex items-center gap-3 rounded-lg px-3 text-[14px] text-gray-900 transition-colors ${
                       active
-                        ? "bg-gray-100 font-medium"
+                        ? "bg-black/[0.04] font-medium"
                         : "hover:bg-gray-50"
                     }`}
                   >
