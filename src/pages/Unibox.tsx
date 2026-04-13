@@ -10,14 +10,12 @@ import {
   Inbox,
   LinkIcon,
   MessageSquare,
-  Search,
-  Settings2,
-  Edit3,
-  Phone,
-  Video,
-  MoreHorizontal,
+  Sparkles,
+  PlusCircle,
   Smile,
-  Reply,
+  Eye,
+  Heart,
+  Zap,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -157,7 +155,7 @@ function chatTimestamp(chat: Chat): string {
   if (isNaN(d.getTime())) return "";
   if (isToday(d)) return format(d, "HH:mm");
   if (isYesterday(d)) return "Yesterday";
-  return format(d, "MMM d");
+  return format(d, "dd MMM");
 }
 
 function messageText(m: Message): string {
@@ -172,15 +170,8 @@ function messageTime(m: Message): string {
   return format(d, "HH:mm");
 }
 
-function messageDateLabel(m: Message): string | null {
-  const raw = m.timestamp || m.date || m.created_at;
-  if (!raw) return null;
-  const d = new Date(raw);
-  if (isNaN(d.getTime())) return null;
-  if (isToday(d)) return `Today, ${format(d, "h:mm a")}`;
-  if (isYesterday(d)) return `Yesterday, ${format(d, "h:mm a")}`;
-  return format(d, "MMM d, h:mm a");
-}
+/* ── Filter tabs ──────────────────────────────────────────── */
+const FILTER_TABS = ["All", "Unread", "Archived", "Hot 🔥"] as const;
 
 /* ── Component ────────────────────────────────────────────── */
 
@@ -193,6 +184,8 @@ export default function Unibox() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [showSearch, setShowSearch] = useState(false);
 
   // ── Fetch chats ──
   const {
@@ -255,11 +248,11 @@ export default function Unibox() {
   if (chatsError && ((chatsError as Error).message?.includes("NO_LINKEDIN") || (chatsError as Error).message?.includes("not connected"))) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-4 text-center px-4">
-        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-          <LinkIcon className="w-8 h-8 text-gray-400" />
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+          <LinkIcon className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900">LinkedIn Not Connected</h2>
-        <p className="text-gray-500 max-w-sm text-sm">
+        <h2 className="text-xl font-semibold text-foreground">LinkedIn Not Connected</h2>
+        <p className="text-muted-foreground max-w-sm">
           Connect your LinkedIn account to access your messages directly from Intentsly.
         </p>
         <Button onClick={() => navigate("/settings")} className="mt-2">
@@ -273,46 +266,43 @@ export default function Unibox() {
   const showMessages = !isMobile || !!selectedChatId;
 
   return (
-    <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] overflow-hidden bg-white">
-      <div className="flex h-full">
-        {/* ── Sidebar: Chat List ── */}
+    <div className="relative h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] overflow-hidden">
+      {/* ── Background decorative blurs ── */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-[hsl(200,100%,30%)]/10 blur-[120px]" />
+        <div className="absolute top-[40%] -right-[5%] w-[35%] h-[35%] rounded-full bg-[hsl(254,70%,55%)]/10 blur-[120px]" />
+        <div className="absolute -bottom-[5%] left-[20%] w-[30%] h-[30%] rounded-full bg-[hsl(49,100%,40%)]/10 blur-[120px]" />
+      </div>
+
+      <div className="flex h-full p-2 md:p-3 gap-3">
+        {/* ── Sidebar: Message List ── */}
         {showChatList && (
           <section
             className={cn(
-              "flex flex-col h-full border-r border-gray-200",
-              isMobile ? "w-full" : "w-full md:w-[340px] shrink-0"
+              "flex flex-col h-full rounded-2xl overflow-hidden",
+              isMobile ? "w-full" : "w-full md:w-[340px]"
             )}
+            style={{
+              background: "rgba(255,255,255,0.4)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              boxShadow: "0 8px 32px 0 rgba(0,0,0,0.04)",
+            }}
           >
             {/* List Header */}
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+            <div className="px-4 pt-4 pb-1">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                    <Settings2 className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="relative flex-1 max-w-[200px]">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                  <input
-                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:bg-white transition-colors"
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+                <h1 className="text-lg font-light tracking-tight text-foreground">Unibox</h1>
               </div>
             </div>
 
-            {/* Conversations */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Conversations Scroll Area */}
+            <div className="flex-1 overflow-y-auto px-2 space-y-0.5 pb-4">
               {chatsLoading ? (
-                <div className="p-3 space-y-1">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-3 px-3 py-3">
-                      <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="p-3 space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3">
+                      <Skeleton className="w-10 h-10 rounded-xl" />
                       <div className="flex-1 space-y-2">
                         <Skeleton className="h-3.5 w-28" />
                         <Skeleton className="h-3 w-44" />
@@ -321,69 +311,83 @@ export default function Unibox() {
                   ))}
                 </div>
               ) : filteredChats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-16 text-foreground/40">
                   <Inbox className="w-10 h-10 mb-3 opacity-40" />
-                  <p className="text-sm">No conversations found</p>
+                  <p className="text-sm font-light">No conversations found</p>
                 </div>
               ) : (
-                filteredChats.map((chat) => {
+                filteredChats.map((chat, i) => {
                   const isSelected = selectedChatId === chat.id;
+                  const isFirst = i === 0;
                   const avatarUrl = chatAvatar(chat);
                   const initials = chatInitials(chat);
-                  const unread = (chat.unread_count || 0) > 0;
 
                   return (
                     <button
                       key={chat.id}
                       onClick={() => setSelectedChatId(chat.id)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 transition-colors text-left border-b border-gray-50",
+                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer group text-left",
                         isSelected
-                          ? "bg-indigo-50/60"
-                          : "hover:bg-gray-50"
+                          ? "bg-white shadow-sm border border-white/50"
+                          : "hover:bg-white/30"
                       )}
                     >
-                      {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         {avatarUrl ? (
                           <img
-                            className="w-10 h-10 rounded-full object-cover"
+                            className={cn(
+                              "w-10 h-10 rounded-xl object-cover transition-opacity",
+                              !isSelected && !isFirst && "opacity-80 group-hover:opacity-100"
+                            )}
                             src={avatarUrl}
                             alt=""
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                          <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground/60">
                             {initials}
                           </div>
                         )}
+                        {isFirst && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
+                        )}
                       </div>
-
-                      {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-0.5">
                           <h3 className={cn(
-                            "text-sm truncate text-gray-900",
-                            unread ? "font-semibold" : "font-medium"
+                            "text-[13px] truncate text-foreground",
+                            isSelected || isFirst ? "font-medium" : "font-light"
                           )}>
                             {chatDisplayName(chat)}
                           </h3>
-                          <span className="text-xs text-gray-400 ml-2 shrink-0 tabular-nums">
+                          <span className={cn(
+                            "text-[11px] uppercase tracking-wider ml-2 shrink-0",
+                            isFirst ? "font-medium text-[hsl(200,100%,28%)]" : "font-light text-foreground/40"
+                          )}>
                             {chatTimestamp(chat)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <p className={cn(
-                            "text-xs truncate",
-                            unread ? "text-gray-700" : "text-gray-500"
-                          )}>
-                            {chatLastText(chat)}
-                          </p>
-                          {unread && (
-                            <span className="ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-indigo-500 text-white text-[10px] font-semibold shrink-0">
-                              {chat.unread_count}
+                        <p className="text-xs text-foreground/50 font-light truncate">
+                          <span className="font-medium text-foreground/60">
+                            {chat.last_message
+                              ? (chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
+                                ? 'You'
+                                : chatDisplayName(chat).split(' ')[0])
+                              : ''}
+                          </span>
+                          {chat.last_message ? ': ' : ''}
+                          {chatLastText(chat)}
+                          {chat.last_message ? (
+                            <span className="text-foreground/30 ml-1">· {chatTimestamp(chat)}</span>
+                          ) : null}
+                        </p>
+                        {(chat.unread_count || 0) > 0 && (
+                          <div className="mt-1 flex gap-1.5">
+                            <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[9px] font-semibold uppercase tracking-tighter">
+                              🔥 HOT
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </button>
                   );
@@ -393,159 +397,235 @@ export default function Unibox() {
           </section>
         )}
 
-        {/* ── Main: Conversation ── */}
+        {/* ── Main Section: Active Conversation ── */}
         {showMessages && (
           <section
             className={cn(
-              "hidden md:flex flex-col flex-1 h-full bg-white",
+              "hidden md:flex flex-col flex-1 h-full rounded-2xl overflow-hidden relative",
               isMobile && selectedChatId && "!flex"
             )}
+            style={{
+              background: "rgba(255,255,255,0.4)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              boxShadow: "0 8px 32px 0 rgba(0,0,0,0.04)",
+            }}
           >
             {selectedChatId && selectedChat ? (
               <>
                 {/* Conversation Header */}
-                <div className="px-5 py-3 flex items-center justify-between border-b border-gray-200">
+                <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
                   <div className="flex items-center gap-3">
                     {isMobile && (
-                      <button onClick={() => setSelectedChatId(null)} className="text-gray-600 mr-1">
+                      <button onClick={() => setSelectedChatId(null)} className="text-foreground mr-1">
                         <ArrowLeft className="w-5 h-5" />
                       </button>
                     )}
                     {chatAvatar(selectedChat) ? (
-                      <img className="w-9 h-9 rounded-full object-cover" src={chatAvatar(selectedChat)} alt="" />
+                      <img className="w-9 h-9 rounded-xl object-cover" src={chatAvatar(selectedChat)} alt="" />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                      <div className="w-9 h-9 rounded-xl bg-foreground/10 flex items-center justify-center text-xs font-medium text-foreground/60">
                         {chatInitials(selectedChat)}
                       </div>
                     )}
                     <div>
-                      <h2 className="text-sm font-semibold text-gray-900 leading-tight">{chatDisplayName(selectedChat)}</h2>
-                      <p className="text-xs text-gray-400">LinkedIn Connection</p>
+                      <h2 className="text-sm font-medium text-foreground leading-tight">{chatDisplayName(selectedChat)}</h2>
+                      <p className="text-xs font-light text-foreground/50">LinkedIn Connection</p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                      <Phone className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                      <Video className="w-4 h-4" />
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 bg-gray-50/50">
+                {/* Messages Thread Area */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
                   {messagesLoading ? (
                     <div className="space-y-6 py-4">
                       {[...Array(4)].map((_, i) => (
                         <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
-                          <Skeleton className="h-12 w-56 rounded-2xl" />
+                          <Skeleton className="h-14 w-56 rounded-2xl" />
                         </div>
                       ))}
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400 py-16">
+                    <div className="flex flex-col items-center justify-center h-full text-foreground/40 py-16">
                       <MessageSquare className="w-10 h-10 mb-3 opacity-40" />
-                      <p className="text-sm">No messages yet</p>
+                      <p className="text-sm font-light">No messages yet</p>
                     </div>
                   ) : (
                     <>
-                      {messages.map((msg, idx) => {
+                      {messages.map((msg) => {
                         const isSent = msg.is_sender === true || msg.is_sender === 1 || msg.is_sender === "true" || msg.from_me === true || msg.from_me === 1 || msg.direction === "outbound";
-
-                        // Show date separator if first message or date changed
-                        let showDateSep = false;
-                        if (idx === 0) {
-                          showDateSep = true;
-                        } else {
-                          const prevRaw = messages[idx - 1].timestamp || messages[idx - 1].date || messages[idx - 1].created_at;
-                          const curRaw = msg.timestamp || msg.date || msg.created_at;
-                          if (prevRaw && curRaw) {
-                            const prevD = new Date(prevRaw).toDateString();
-                            const curD = new Date(curRaw).toDateString();
-                            if (prevD !== curD) showDateSep = true;
-                          }
-                        }
-
-                        const dateLabel = messageDateLabel(msg);
-
-                        return (
-                          <div key={msg.id}>
-                            {showDateSep && dateLabel && (
-                              <div className="flex items-center justify-center py-3">
-                                <span className="text-xs text-gray-400 bg-white px-3 py-1 rounded-full border border-gray-100">{dateLabel}</span>
+                        return isSent ? (
+                          /* Sent Message */
+                          <div key={msg.id} className="flex flex-row-reverse items-end gap-2 ml-auto max-w-[75%]">
+                            <div className="w-6 h-6 flex-shrink-0" />
+                            <div className="flex flex-col items-end">
+                              <div
+                                className="px-3.5 py-2.5 rounded-2xl rounded-br-none shadow-md text-white font-light text-sm leading-relaxed"
+                                style={{ background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)" }}
+                              >
+                                <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
                               </div>
-                            )}
-
-                            {isSent ? (
-                              /* Sent */
-                              <div className="flex justify-end">
-                                <div className="max-w-[70%]">
-                                  <div className="bg-gray-800 text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm leading-relaxed">
-                                    <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
-                                  </div>
-                                </div>
-                              </div>
+                              <span className="text-[10px] text-foreground/40 font-medium mr-1 mt-1 uppercase tracking-tighter">
+                                {messageTime(msg)} · SEEN
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Received Message */
+                          <div key={msg.id} className="flex items-end gap-2 max-w-[75%]">
+                            {chatAvatar(selectedChat) ? (
+                              <img className="w-6 h-6 rounded-md object-cover flex-shrink-0" src={chatAvatar(selectedChat)} alt="" />
                             ) : (
-                              /* Received */
-                              <div className="flex justify-start">
-                                <div className="max-w-[70%]">
-                                  <div className="bg-white border border-gray-200 text-gray-900 px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed shadow-sm">
-                                    <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
-                                  </div>
-                                </div>
+                              <div className="w-6 h-6 rounded-md bg-foreground/10 flex items-center justify-center text-[9px] font-medium text-foreground/50 flex-shrink-0">
+                                {chatInitials(selectedChat)}
                               </div>
                             )}
+                            <div>
+                              <div className="bg-white px-3.5 py-2.5 rounded-2xl rounded-bl-none shadow-sm border border-white/50 text-foreground font-light text-sm leading-relaxed">
+                                <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
+                              </div>
+                              <span className="text-[10px] text-foreground/40 font-medium ml-1 mt-1 block uppercase tracking-tighter">
+                                {messageTime(msg)}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
                       <div ref={messagesEndRef} />
                     </>
                   )}
+
                 </div>
 
-                {/* Message Input */}
-                <div className="px-5 py-3 border-t border-gray-200">
+                {/* Message Input Area */}
+                <div className="px-4 py-3">
                   <form
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 p-2 rounded-[32px] border border-white/80"
+                    style={{
+                      background: "rgba(255,255,255,0.6)",
+                      backdropFilter: "blur(12px)",
+                      WebkitBackdropFilter: "blur(12px)",
+                      boxShadow: "inset 0 1px 3px rgba(0,0,0,0.04)",
+                    }}
                   >
-                    <div className="flex-1 relative">
-                      <input
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-300 transition-colors"
-                        placeholder="Type message"
-                        value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
-                        disabled={sendMutation.isPending}
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={!messageInput.trim() || sendMutation.isPending}
-                      className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-30 transition-colors shrink-0"
-                    >
-                      <Send className="w-4 h-4" />
+                    <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
+                      <PlusCircle className="w-4 h-4" />
                     </button>
+                    <input
+                      className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none placeholder:text-foreground/30 font-light text-sm px-2"
+                      placeholder="Type your message..."
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      disabled={sendMutation.isPending}
+                    />
+                    <div className="flex items-center gap-1">
+                      <button type="button" className="w-8 h-8 flex items-center justify-center rounded-full text-foreground/50 hover:bg-white transition-all">
+                        <Smile className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={!messageInput.trim() || sendMutation.isPending}
+                        className="w-8 h-8 flex items-center justify-center rounded-full shadow-lg text-white active:scale-90 transition-transform disabled:opacity-40"
+                        style={{
+                          background: "linear-gradient(135deg, #005d8f 0%, #5b3cdd 50%, #c9a800 100%)",
+                          boxShadow: "0 4px 14px rgba(0,93,143,0.3)",
+                        }}
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
                   </form>
                   {sendMutation.isError && (
-                    <p className="text-xs text-red-500 mt-2 text-center">Failed to send. Try again.</p>
+                    <p className="text-xs text-destructive mt-2 text-center">Failed to send. Try again.</p>
                   )}
                 </div>
               </>
             ) : (
               /* Empty state */
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                  <MessageSquare className="w-8 h-8 text-gray-300" />
+              <div className="flex-1 flex flex-col items-center justify-center text-foreground/40">
+                <div className="w-16 h-16 rounded-2xl bg-white/40 flex items-center justify-center mb-4 shadow-sm">
+                  <MessageSquare className="w-8 h-8 opacity-40" />
                 </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Your LinkedIn Inbox</h3>
-                <p className="text-sm text-gray-400">Select a conversation to start messaging</p>
+                <h3 className="text-base font-medium text-foreground mb-1">Your LinkedIn Inbox</h3>
+                <p className="text-sm font-light">Select a conversation to start messaging</p>
               </div>
             )}
           </section>
+        )}
+
+        {/* ── Contextual Details Panel (xl only) ── */}
+        {selectedChat && (
+          <aside className="hidden xl:flex flex-col w-[280px] h-full gap-3">
+            {/* Profile Card */}
+            <div
+              className="rounded-2xl p-4 text-center"
+              style={{
+                background: "rgba(255,255,255,0.4)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+                border: "1px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              {chatAvatar(selectedChat) ? (
+                <img
+                  className="w-16 h-16 rounded-2xl mx-auto object-cover mb-3 shadow-lg border-3 border-white"
+                  src={chatAvatar(selectedChat)}
+                  alt=""
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-2xl mx-auto mb-3 shadow-lg border-3 border-white bg-foreground/10 flex items-center justify-center text-lg font-medium text-foreground/50">
+                  {chatInitials(selectedChat)}
+                </div>
+              )}
+              <h3 className="text-sm font-medium text-foreground">{chatDisplayName(selectedChat)}</h3>
+              <p className="text-xs font-light text-foreground/50">LinkedIn Connection</p>
+            </div>
+
+            {/* Engagement History Card */}
+            <div
+              className="rounded-2xl p-4 flex-1"
+              style={{
+                background: "rgba(255,255,255,0.4)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+                border: "1px solid rgba(255,255,255,0.3)",
+              }}
+            >
+              <h4 className="text-[10px] font-bold text-foreground/40 uppercase tracking-[2px] mb-4">Engagement History</h4>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(200,100%,28%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-[hsl(200,100%,28%)]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Viewed your profile</p>
+                    <p className="text-[10px] text-foreground/40 font-light">3 hours ago</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(254,70%,55%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-3.5 h-3.5 text-[hsl(254,70%,55%)]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Liked your post</p>
+                    <p className="text-[10px] text-foreground/40 font-light">Yesterday, 4:12 PM</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-[hsl(49,100%,40%)]/10 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-3.5 h-3.5 text-[hsl(49,100%,40%)]" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-foreground">High Intent Signal</p>
+                    <p className="text-[10px] text-foreground/40 font-light">Clicked external link</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
         )}
       </div>
     </div>

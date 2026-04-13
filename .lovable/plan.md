@@ -1,45 +1,95 @@
 
 
-## Plan: Align Campaigns Page with Dashboard SnowUI Design
+# Free Until First Meeting — Card Required to Activate
 
-The Dashboard uses `bg-white`, SnowUI `bg-[#F7F8FA]` surfaces with `rounded-[20px]`, pastel MetricCards, no borders/shadows, and neutral typography. The Campaigns page currently uses `glass-card`, `ghost-border`, Material Design tokens (`md-*`), gradient stat cards, and `font-headline` styling. This plan brings it in line.
+## How It Works
 
-### Changes (single file: `src/pages/Campaigns.tsx`)
+1. User signs up and gets full access to create agents, contacts, campaigns
+2. To **activate** (turn on) a signal agent, they must add their card via Stripe Checkout (setup mode -- no charge)
+3. Platform runs freely with card on file, no subscription yet
+4. When the **first meeting** is booked (manual or AI-detected):
+   - Auto-create a Stripe subscription using the saved payment method and charge immediately
+   - Send congrats email: "You booked your first meeting using Intentsly!"
+5. If the charge **fails**:
+   - Send failure email: "Your payment failed -- update your card to continue using Intentsly"
+   - Do NOT create the subscription
 
-**1. Page container**
-- Change `rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body` to `px-6 py-6` (matching Dashboard)
+## Technical Plan
 
-**2. Header**
-- Title: `text-lg font-semibold text-gray-900` (like Dashboard "Overview")
-- Subtitle: `text-sm text-gray-500`
-- "Start a campaign" button: `bg-black text-white rounded-xl` flat style, remove inline gradient
+### 1. New edge function: `setup-card`
 
-**3. Summary stat cards**
-- Replace gradient/glass cards with `MetricCard` component (already used in Dashboard)
-- Use pastel backgrounds: `bg-[#EDEEFC]`, `bg-[#E6F1FD]`, `bg-[#e8f0fb]`, `bg-[#E6F1FD]`
-- Remove all `md-*` color tokens, icon overlays, and ring effects
+Creates a Stripe Checkout session in **`mode: 'setup'`** to collect card without charging.
 
-**4. "Active Outreach Streams" section header**
-- Style as `text-sm font-semibold text-gray-900`
-- Sort text: `text-sm text-gray-500`
+- Find or create Stripe customer by email
+- Create checkout session with `mode: 'setup'`, `success_url: /signals?card_added=true`, `cancel_url: /signals`
+- Return session URL
 
-**5. Campaign cards (`CampaignCard`)**
-- Replace `glass-card ghost-border rounded-2xl` with `bg-[#F7F8FA] rounded-[20px]` (no border, no shadow)
-- Hover: `hover:bg-[#F0F1F3]` (subtle surface shift, no shadow)
-- Icon container: `bg-white rounded-xl` instead of gradient
-- Stats labels: `text-xs text-gray-500` instead of `md-outline`
-- Stats values: `text-lg font-semibold text-gray-900`; remove `md-primary`/`md-secondary` colored values
-- "View Leads" button: `bg-black text-white rounded-xl px-4 py-2 text-xs font-medium`
-- Goal badge: `bg-[#F7F8FA] text-gray-600` instead of white/emerald border
+### 2. New edge function: `auto-subscribe-on-meeting`
 
-**6. Empty state**
-- Step icons: `bg-[#F7F8FA] rounded-[20px]` instead of `glass-card ghost-border`
-- Icon colors: use gray-600 instead of `md-primary`/`md-secondary`/`md-tertiary`
-- CTA button: `bg-black text-white rounded-xl` flat style
+Called after first meeting is booked. Creates a real subscription and charges the card.
 
-**7. Loading skeletons**
-- Replace `glass-card ghost-border` with `bg-[#F7F8FA] rounded-[20px]`
+- Receive `user_id` 
+- Look up user email, find Stripe customer
+- Check if already has active subscription -- if yes, return early
+- Check if customer has a default payment method (from setup checkout) -- if not, return error
+- Create subscription with `default_payment_method`, price = Starter price (`price_1TIByxFsgTpFMX56JNwbw3TA`), `payment_behavior: 'default_incomplete'` so the invoice is created
+- Check if the invoice payment succeeded:
+  - **Success**: Send congrats email via `send-notification-email` ("Congrats! You booked your first meeting using Intentsly! You're now on the Starter plan.")
+  - **Failed**: Send failure email ("Your payment failed. Update your card information to continue using Intentsly.") and cancel the subscription
 
-### Files Modified
-- `src/pages/Campaigns.tsx` -- styling updates only, no logic changes
+### 3. Update `check-subscription` 
+
+Add a `has_card` field to the response:
+- After finding the Stripe customer, check if they have a default payment method or any payment methods on file
+- Return `has_card: true/false` alongside existing fields
+
+### 4. Update `useSubscription` hook
+
+- Add `hasCard: boolean` to `SubscriptionState`
+- Map from `data.has_card`
+
+### 5. Update agent activation gating (`Signals.tsx`)
+
+Change `toggleAgentStatus()`:
+- Currently checks `!sub.subscribed` → change to check `!sub.hasCard`
+- If no card: toast "Add your card to activate agents" with action button that calls `setup-card` and redirects to Stripe Checkout
+- If has card (even without subscription): allow activation
+
+### 6. Update `process-signal-agents` backend gating
+
+- Currently checks for active Stripe subscription → change to check for **card on file** (customer exists with payment method) OR active subscription
+- Users with a card but no subscription can still run agents
+
+### 7. Trigger auto-subscribe from meeting creation
+
+**A. `BookMeetingDialog.tsx` (manual booking):**
+- After successful meeting insert, call `supabase.functions.invoke('auto-subscribe-on-meeting', { body: { user_id } })`
+
+**B. `process-ai-replies/index.ts` (AI-detected meeting):**
+- After successful meeting insert (line ~447), call `auto-subscribe-on-meeting` with the user_id
+
+### 8. Config
+
+- Add `auto-subscribe-on-meeting` and `setup-card` to `supabase/config.toml` with `verify_jwt = false`
+
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/setup-card/index.ts` | **New** -- Stripe setup checkout |
+| `supabase/functions/auto-subscribe-on-meeting/index.ts` | **New** -- auto-create subscription + emails |
+| `supabase/functions/check-subscription/index.ts` | Add `has_card` field |
+| `supabase/functions/process-signal-agents/index.ts` | Change gating from subscription to card-on-file |
+| `src/hooks/useSubscription.ts` | Add `hasCard` |
+| `src/pages/Signals.tsx` | Change activation check to `hasCard` |
+| `src/components/contacts/BookMeetingDialog.tsx` | Call auto-subscribe after booking |
+| `supabase/functions/process-ai-replies/index.ts` | Call auto-subscribe after AI meeting detection |
+| `supabase/config.toml` | Add new function configs |
+
+## Stripe Details
+
+- **Setup checkout**: `mode: 'setup'`, saves card to customer
+- **Subscription creation**: Uses `prod_UGjR0WwP5rbgZX` (Intentsly Starter, $59/mo) with `price_1TIByxFsgTpFMX56JNwbw3TA`
+- **Payment method**: Retrieved from customer's default payment method set during setup checkout
+- No trial period on auto-created subscriptions (charge immediately)
 
