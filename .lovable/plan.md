@@ -1,95 +1,88 @@
 
 
-# Free Until First Meeting — Card Required to Activate
+# Dashboard UI/UX Improvement Plan
 
-## How It Works
+## Current State
 
-1. User signs up and gets full access to create agents, contacts, campaigns
-2. To **activate** (turn on) a signal agent, they must add their card via Stripe Checkout (setup mode -- no charge)
-3. Platform runs freely with card on file, no subscription yet
-4. When the **first meeting** is booked (manual or AI-detected):
-   - Auto-create a Stripe subscription using the saved payment method and charge immediately
-   - Send congrats email: "You booked your first meeting using Intentsly!"
-5. If the charge **fails**:
-   - Send failure email: "Your payment failed -- update your card to continue using Intentsly"
-   - Do NOT create the subscription
+The dashboard is a single 731-line component with:
+- A welcome header with status pills and CTA button
+- 3 metric cards (Hot Opportunities, Leads Engaged, Conversations)
+- A large area chart ("Performance Velocity") + Quick Start Guide side panel
+- Hot Leads list + Latest Replies list
+- A collapsible "Get Started" checklist at the bottom
 
-## Technical Plan
+**Issues identified:**
 
-### 1. New edge function: `setup-card`
+1. **Redundancy**: "Quick Start Guide" (right column) and "Get Started" (bottom accordion) show nearly identical onboarding steps -- confusing and wasteful of space
+2. **Fake data**: Hardcoded trend percentages ("12.4%", "8.1%", "24%") and "AI Prediction: Lead quality up 15%" are static/fake -- erodes trust
+3. **Empty states are weak**: Just an icon + one line of text; no clear CTA to guide the user
+4. **Chart dominates**: Takes 2/3 width but shows minimal value when data is sparse
+5. **Information hierarchy**: All cards compete visually -- nothing draws focus to the most important next action
+6. **No subscription/billing status**: User has no visibility into their plan state (free trial, card on file, active, canceled)
+7. **Header is cluttered**: Status pills + CTA all in one row, wraps awkwardly on medium screens
+8. **Component is monolithic**: 731 lines in one file, hard to maintain
 
-Creates a Stripe Checkout session in **`mode: 'setup'`** to collect card without charging.
+## Proposed Changes
 
-- Find or create Stripe customer by email
-- Create checkout session with `mode: 'setup'`, `success_url: /signals?card_added=true`, `cancel_url: /signals`
-- Return session URL
+### 1. Remove duplicate onboarding sections
+- **Remove** the bottom "Get Started" accordion entirely
+- **Keep** the Quick Start Guide in the right column but make it actionable (each incomplete step becomes a clickable link to the relevant page)
 
-### 2. New edge function: `auto-subscribe-on-meeting`
+### 2. Remove fake/static data
+- Remove hardcoded trend percentages from metric cards (show trend only when real historical data exists to compare)
+- Remove the "AI Prediction: Lead quality up 15%" floating badge from the chart
+- Show "No data yet" or a subtle empty state when metrics are zero instead of "0" with fake "+12.4%"
 
-Called after first meeting is booked. Creates a real subscription and charges the card.
+### 3. Improve empty states
+- **Hot Leads empty**: Show a card with illustration + "Your AI agents will surface hot leads here" + "Go to Signals" CTA button
+- **Replies empty**: "Replies from prospects will appear here" + "Set up a campaign" CTA button
+- **Chart empty**: Show a subtle placeholder message instead of a flat line at zero
 
-- Receive `user_id` 
-- Look up user email, find Stripe customer
-- Check if already has active subscription -- if yes, return early
-- Check if customer has a default payment method (from setup checkout) -- if not, return error
-- Create subscription with `default_payment_method`, price = Starter price (`price_1TIByxFsgTpFMX56JNwbw3TA`), `payment_behavior: 'default_incomplete'` so the invoice is created
-- Check if the invoice payment succeeded:
-  - **Success**: Send congrats email via `send-notification-email` ("Congrats! You booked your first meeting using Intentsly! You're now on the Starter plan.")
-  - **Failed**: Send failure email ("Your payment failed. Update your card information to continue using Intentsly.") and cancel the subscription
+### 4. Add subscription status banner
+- Show a contextual banner below the header:
+  - **No card**: "Add your payment method to activate AI agents" + Add Card button
+  - **Card on file, no subscription**: "Free until your first meeting -- card on file" (subtle green badge)
+  - **Canceled**: "Your subscription has been canceled" + Resubscribe CTA (warning style)
+  - **Active**: No banner (clean dashboard)
 
-### 3. Update `check-subscription` 
+### 5. Rebalance the layout
+- Make the chart and Quick Start equal columns (1:1) on large screens instead of 2:1
+- Move the Quick Start above the chart when all steps are incomplete (prioritize onboarding)
+- Once all steps are complete, collapse Quick Start into a small "Setup complete" badge
 
-Add a `has_card` field to the response:
-- After finding the Stripe customer, check if they have a default payment method or any payment methods on file
-- Return `has_card: true/false` alongside existing fields
+### 6. Clean up the header
+- Move status pills (Active Signals, LinkedIn Connected) into a subtle status bar below the welcome text
+- Keep only the "Start a campaign" CTA button aligned right in the header
 
-### 4. Update `useSubscription` hook
+### 7. Extract sub-components
+Split Dashboard.tsx into:
+- `src/components/dashboard/MetricCard.tsx`
+- `src/components/dashboard/PerformanceChart.tsx`
+- `src/components/dashboard/QuickStartPanel.tsx`
+- `src/components/dashboard/HotLeadsList.tsx`
+- `src/components/dashboard/LatestReplies.tsx`
+- `src/components/dashboard/SubscriptionBanner.tsx`
 
-- Add `hasCard: boolean` to `SubscriptionState`
-- Map from `data.has_card`
-
-### 5. Update agent activation gating (`Signals.tsx`)
-
-Change `toggleAgentStatus()`:
-- Currently checks `!sub.subscribed` → change to check `!sub.hasCard`
-- If no card: toast "Add your card to activate agents" with action button that calls `setup-card` and redirects to Stripe Checkout
-- If has card (even without subscription): allow activation
-
-### 6. Update `process-signal-agents` backend gating
-
-- Currently checks for active Stripe subscription → change to check for **card on file** (customer exists with payment method) OR active subscription
-- Users with a card but no subscription can still run agents
-
-### 7. Trigger auto-subscribe from meeting creation
-
-**A. `BookMeetingDialog.tsx` (manual booking):**
-- After successful meeting insert, call `supabase.functions.invoke('auto-subscribe-on-meeting', { body: { user_id } })`
-
-**B. `process-ai-replies/index.ts` (AI-detected meeting):**
-- After successful meeting insert (line ~447), call `auto-subscribe-on-meeting` with the user_id
-
-### 8. Config
-
-- Add `auto-subscribe-on-meeting` and `setup-card` to `supabase/config.toml` with `verify_jwt = false`
+The main `Dashboard.tsx` becomes a clean layout orchestrator (~150 lines).
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `supabase/functions/setup-card/index.ts` | **New** -- Stripe setup checkout |
-| `supabase/functions/auto-subscribe-on-meeting/index.ts` | **New** -- auto-create subscription + emails |
-| `supabase/functions/check-subscription/index.ts` | Add `has_card` field |
-| `supabase/functions/process-signal-agents/index.ts` | Change gating from subscription to card-on-file |
-| `src/hooks/useSubscription.ts` | Add `hasCard` |
-| `src/pages/Signals.tsx` | Change activation check to `hasCard` |
-| `src/components/contacts/BookMeetingDialog.tsx` | Call auto-subscribe after booking |
-| `supabase/functions/process-ai-replies/index.ts` | Call auto-subscribe after AI meeting detection |
-| `supabase/config.toml` | Add new function configs |
+| `src/pages/Dashboard.tsx` | Refactor into layout shell, remove duplicate Get Started, remove fake data, add subscription banner |
+| `src/components/dashboard/MetricCard.tsx` | **New** -- extracted metric card component |
+| `src/components/dashboard/PerformanceChart.tsx` | **New** -- extracted chart with improved empty state |
+| `src/components/dashboard/QuickStartPanel.tsx` | **New** -- actionable quick start with navigation links |
+| `src/components/dashboard/HotLeadsList.tsx` | **New** -- extracted with improved empty state |
+| `src/components/dashboard/LatestReplies.tsx` | **New** -- extracted with improved empty state |
+| `src/components/dashboard/SubscriptionBanner.tsx` | **New** -- contextual billing status banner using `useSubscription` |
 
-## Stripe Details
+## Summary of UX Improvements
 
-- **Setup checkout**: `mode: 'setup'`, saves card to customer
-- **Subscription creation**: Uses `prod_UGjR0WwP5rbgZX` (Intentsly Starter, $59/mo) with `price_1TIByxFsgTpFMX56JNwbw3TA`
-- **Payment method**: Retrieved from customer's default payment method set during setup checkout
-- No trial period on auto-created subscriptions (charge immediately)
+- Remove confusion from duplicate onboarding widgets
+- Remove fake metrics that erode user trust
+- Give users clear next-action guidance in every empty state
+- Surface billing/subscription status directly on the dashboard
+- Cleaner visual hierarchy with less clutter
+- Better maintainability through component extraction
 
