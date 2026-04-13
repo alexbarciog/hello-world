@@ -230,10 +230,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           <button
                             key={c.id}
                             onClick={() => navigate(`/campaigns/${c.id}`)}
-                            className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
+                            className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-gray-900 transition-colors ${
                               location.pathname === `/campaigns/${c.id}`
-                                ? "text-gray-900 font-medium bg-gray-50"
-                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                ? "font-medium bg-gray-50"
+                                : "hover:bg-gray-50"
                             }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />
@@ -242,7 +242,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         ))}
                         <button
                           onClick={() => navigate("/campaigns?autoStart=true")}
-                          className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-gray-900 hover:bg-gray-50 transition-colors"
                         >
                           <Plus className="w-3.5 h-3.5 shrink-0" />
                           <span>New campaign</span>
@@ -256,7 +256,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           <button
                             key={a.id}
                             onClick={() => navigate(`/signals`)}
-                            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-gray-900 hover:bg-gray-50 transition-colors"
                           >
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.status === "active" ? "bg-green-400" : "bg-gray-300"}`} />
                             <span className="truncate">{a.name}</span>
