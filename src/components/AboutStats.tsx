@@ -64,46 +64,52 @@ const AboutStats = () => {
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Stat card 1 */}
+          {/* Card 1 — Social proof + scarcity */}
           <div className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col">
             <div className="text-6xl md:text-7xl font-semibold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp end={120} suffix="+" />
+              <CountUp end={2400} suffix="+" />
             </div>
-            <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-              Collaborating with leading AI and cloud technology providers.
+            <p className="text-sm font-medium mt-3 leading-relaxed" style={{ color: "hsl(var(--aeline-dark))" }}>
+              Sales teams already using Intentsly
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              They're reaching warm leads before competitors even notice them. Every day you wait, they get further ahead.
             </p>
           </div>
 
-          {/* Stat card 2 */}
+          {/* Card 2 — Authority + testimonial */}
           <div className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col">
-            <p className="text-sm text-muted-foreground mb-2">Commitment to measurable</p>
+            <p className="text-sm text-muted-foreground mb-2">Average reply rate</p>
             <div className="text-6xl md:text-7xl font-semibold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp end={100} suffix="%" />
+              <CountUp end={38} suffix="%" />
             </div>
-            <div className="mt-6 flex -space-x-2">
-              {["MC", "DH", "RB", "AK"].map((initials, i) => (
+            <p className="text-xs text-muted-foreground mt-1 mb-4">
+              vs. industry average of 3–5% on cold outreach
+            </p>
+            <div className="mt-auto flex -space-x-2">
+              {["JM", "SK", "AR", "LT"].map((initials, i) => (
                 <div key={i} className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-[#f5f5f5]">
                   {initials}
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-3 italic">
-              "Their automation strategy completely reshaped how we work. It's efficient, intelligent, and seamless."
+              "We booked 14 meetings in the first week. I've never seen a tool pay for itself this fast."
             </p>
           </div>
 
-          {/* Stat card 3 */}
+          {/* Card 3 — Loss aversion + urgency */}
           <div className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-2">Data Points</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-2">Signals detected</p>
             <div className="text-6xl md:text-7xl font-semibold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp end={520} suffix="k+" />
+              <CountUp end={850} suffix="k+" />
             </div>
             <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-              Analyzed monthly to power smarter outreach strategies.
+              Buying signals your competitors are already acting on — job changes, funding rounds, content engagement.
             </p>
             <div className="mt-auto pt-6">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-1">Continents</p>
-              <div className="text-3xl font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>20+</div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-1">Leads missed daily without signals</p>
+              <div className="text-3xl font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>~47</div>
             </div>
           </div>
         </div>
