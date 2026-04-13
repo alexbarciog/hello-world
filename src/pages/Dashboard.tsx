@@ -379,7 +379,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <LeadsBySource data={sourceData ?? []} loading={sourceLoading} />
+          <DailyActivityChart data={dailyActivityData ?? []} loading={dailyActivityLoading} />
           <LeadsByTier data={tierData ?? []} loading={tierLoading} />
         </div>
 
