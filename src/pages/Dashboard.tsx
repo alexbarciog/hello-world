@@ -7,9 +7,8 @@ import { QuickStartPanel } from "@/components/dashboard/QuickStartPanel";
 import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import TrafficByDevice from "@/components/dashboard/TrafficByDevice";
-import TrafficByLocation from "@/components/dashboard/TrafficByLocation";
+import LeadsBySource from "@/components/dashboard/LeadsBySource";
+import LeadsByTier from "@/components/dashboard/LeadsByTier";
 import { ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
@@ -61,22 +60,36 @@ export default function Dashboard() {
     staleTime: 30_000,
   });
 
-  const { data: campaignStats, isLoading: statsLoading } = useQuery({
-    queryKey: ["dashboard-campaign-stats"],
+  // Real metrics from campaign_connection_requests
+  const { data: engagementData, isLoading: engagementLoading } = useQuery({
+    queryKey: ["dashboard-engagement"],
+    queryFn: async () => {
+      const { data: requests, error } = await supabase
+        .from("campaign_connection_requests")
+        .select("id, sent_at, last_incoming_message_at");
+      if (error) throw error;
+      const all = requests ?? [];
+      const leadsEngaged = all.length;
+      const conversations = all.filter((r) => r.last_incoming_message_at !== null).length;
+      return { leadsEngaged, conversations };
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: campaignMeta } = useQuery({
+    queryKey: ["dashboard-campaign-meta"],
     queryFn: async () => {
       const { data: campaigns, error } = await supabase
         .from("campaigns")
-        .select("id, status, invitations_sent, messages_sent, icp_job_titles, icp_industries");
+        .select("id, status, icp_job_titles, icp_industries, invitations_sent, company_name");
       if (error) throw error;
       const all = campaigns ?? [];
-      const leadsEngaged = all.reduce((s, c) => s + (c.invitations_sent ?? 0), 0);
-      const conversations = all.reduce((s, c) => s + (c.messages_sent ?? 0), 0);
       const totalCampaigns = all.length;
       const hasIcp = all.some(
         (c) => (c.icp_job_titles?.length ?? 0) > 0 || (c.icp_industries?.length ?? 0) > 0
       );
       const hasLaunched = all.some((c) => c.status === "active" && (c.invitations_sent ?? 0) > 0);
-      return { leadsEngaged, conversations, totalCampaigns, hasIcp, hasLaunched };
+      return { totalCampaigns, hasIcp, hasLaunched, campaigns: all };
     },
     staleTime: 30_000,
   });
@@ -160,6 +173,7 @@ export default function Dashboard() {
     enabled: Boolean(profileData?.linkedinConnected),
   });
 
+  // Chart data: leads found per day + contacted per day
   const { data: chartContacts } = useQuery({
     queryKey: ["dashboard-chart-contacts"],
     queryFn: async () => {
@@ -173,32 +187,126 @@ export default function Dashboard() {
     staleTime: 60_000,
   });
 
+  const { data: chartRequests } = useQuery({
+    queryKey: ["dashboard-chart-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_connection_requests")
+        .select("sent_at")
+        .order("sent_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
   const chartData = (() => {
-    const result: { date: string; leads: number }[] = [];
+    const result: { date: string; leadsFound: number; contacted: number }[] = [];
     const now = new Date();
-    const counts: Record<string, number> = {};
+    const leadCounts: Record<string, number> = {};
+    const contactedCounts: Record<string, number> = {};
+
     (chartContacts ?? []).forEach((c) => {
-      const d = new Date(c.imported_at);
-      const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      counts[key] = (counts[key] || 0) + 1;
+      const key = new Date(c.imported_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      leadCounts[key] = (leadCounts[key] || 0) + 1;
     });
+    (chartRequests ?? []).forEach((r) => {
+      const key = new Date(r.sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      contactedCounts[key] = (contactedCounts[key] || 0) + 1;
+    });
+
     for (let i = 30; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      result.push({ date: label, leads: counts[label] || 0 });
+      result.push({
+        date: label,
+        leadsFound: leadCounts[label] || 0,
+        contacted: contactedCounts[label] || 0,
+      });
     }
     return result;
   })();
 
+  // Leads by tier data
+  const { data: tierData, isLoading: tierLoading } = useQuery({
+    queryKey: ["dashboard-leads-by-tier"],
+    queryFn: async () => {
+      const { data: contacts, error } = await supabase
+        .from("contacts")
+        .select("relevance_tier");
+      if (error) throw error;
+      const counts: Record<string, number> = { hot: 0, warm: 0, cold: 0 };
+      (contacts ?? []).forEach((c) => {
+        const tier = c.relevance_tier || "warm";
+        counts[tier] = (counts[tier] || 0) + 1;
+      });
+      return [
+        { name: "Hot", value: counts.hot, color: "#10B981" },
+        { name: "Warm", value: counts.warm, color: "#F59E0B" },
+        { name: "Cold", value: counts.cold, color: "#9CA3AF" },
+      ];
+    },
+    staleTime: 30_000,
+  });
+
+  // Leads by source (top campaigns)
+  const { data: sourceData, isLoading: sourceLoading } = useQuery({
+    queryKey: ["dashboard-leads-by-source"],
+    queryFn: async () => {
+      const { data: contacts, error } = await supabase
+        .from("contacts")
+        .select("source_campaign_id");
+      if (error) throw error;
+
+      const campaignCounts: Record<string, number> = {};
+      let noSource = 0;
+      (contacts ?? []).forEach((c) => {
+        if (c.source_campaign_id) {
+          campaignCounts[c.source_campaign_id] = (campaignCounts[c.source_campaign_id] || 0) + 1;
+        } else {
+          noSource++;
+        }
+      });
+
+      // Get campaign names
+      const campaignIds = Object.keys(campaignCounts);
+      let campaignNames: Record<string, string> = {};
+      if (campaignIds.length > 0) {
+        const { data: campaigns } = await supabase
+          .from("campaigns")
+          .select("id, company_name")
+          .in("id", campaignIds);
+        (campaigns ?? []).forEach((c) => {
+          campaignNames[c.id] = c.company_name || "Unnamed Campaign";
+        });
+      }
+
+      const result = Object.entries(campaignCounts)
+        .map(([id, count]) => ({
+          name: campaignNames[id] || "Campaign",
+          value: count,
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+
+      if (noSource > 0) {
+        result.push({ name: "Other", value: noSource });
+      }
+
+      return result;
+    },
+    staleTime: 30_000,
+  });
+
   const hotOpps = hotOppsData?.count ?? 0;
-  const leadsEngaged = campaignStats?.leadsEngaged ?? 0;
-  const conversations = campaignStats?.conversations ?? 0;
+  const leadsEngaged = engagementData?.leadsEngaged ?? 0;
+  const conversations = engagementData?.conversations ?? 0;
   const activeSignals = signalData?.activeCount ?? 0;
   const linkedinConnected = profileData?.linkedinConnected ?? false;
-  const totalCampaigns = campaignStats?.totalCampaigns ?? 0;
-  const hasIcp = campaignStats?.hasIcp ?? false;
-  const hasLaunched = campaignStats?.hasLaunched ?? false;
+  const totalCampaigns = campaignMeta?.totalCampaigns ?? 0;
+  const hasIcp = campaignMeta?.hasIcp ?? false;
+  const hasLaunched = campaignMeta?.hasLaunched ?? false;
   const firstName = userData?.firstName ?? "there";
 
   const quickStartSteps = [
@@ -245,8 +353,8 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#EDEEFC]" />
-          <MetricCard title="Leads Engaged" value={leadsEngaged} loading={statsLoading} />
-          <MetricCard title="Conversations" value={conversations} loading={statsLoading} />
+          <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} />
+          <MetricCard title="Conversations" value={conversations} loading={engagementLoading} />
           <MetricCard title="Active Signals" value={activeSignals} />
         </div>
 
@@ -258,20 +366,15 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <TrafficByDevice />
-          <TrafficByLocation />
+          <LeadsBySource data={sourceData ?? []} loading={sourceLoading} />
+          <LeadsByTier data={tierData ?? []} loading={tierLoading} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
           <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
-        </div>
       </div>
-
     </div>
   );
 }
