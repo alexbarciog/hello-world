@@ -53,12 +53,14 @@ Deno.serve(async (req) => {
           const customers = await stripe.customers.list({ email: user.email, limit: 1 });
           if (!customers.data.length) continue;
           const customer = customers.data[0];
-          // Allow if active subscription OR card on file
+          // Allow if active subscription OR card on file (but only if never had a subscription before)
           const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 5 });
-          if (subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing')) {
+          const hasActiveSub = subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing');
+          const hadSubscription = subs.data.length > 0;
+          if (hasActiveSub) {
             paidUsers.add(uid);
-          } else {
-            // Check for card on file (setup-mode checkout)
+          } else if (!hadSubscription) {
+            // Never had a subscription — allow with card on file (free trial)
             const defaultPm = customer.invoice_settings?.default_payment_method;
             if (defaultPm) {
               paidUsers.add(uid);
@@ -66,6 +68,15 @@ Deno.serve(async (req) => {
               const pms = await stripe.paymentMethods.list({ customer: customer.id, type: 'card', limit: 1 });
               if (pms.data.length > 0) paidUsers.add(uid);
             }
+          } else {
+            // Had subscription but it's canceled — auto-pause their agents
+            console.log(`User ${uid} had canceled subscription — pausing their agents`);
+            const userAgentIds = agents.filter((a: any) => a.user_id === uid).map((a: any) => a.id);
+            for (const agentId of userAgentIds) {
+              await supabase.from('signal_agents').update({ status: 'paused' }).eq('id', agentId);
+            }
+            // Also pause their active campaigns
+            await supabase.from('campaigns').update({ status: 'paused' }).eq('user_id', uid).eq('status', 'active');
           }
         } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
       }
