@@ -50,7 +50,7 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
   };
 
   return (
-    <div className="snow-card p-5 flex flex-col gap-3">
+    <div className="bg-snow-bg-2 rounded-[20px] p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-900">Latest Replies</h3>
         <button
