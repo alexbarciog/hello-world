@@ -8,7 +8,6 @@ import NotificationsPanel from "@/components/NotificationsPanel";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 import {
-  LayoutDashboard,
   Megaphone,
   Radio,
   
@@ -32,9 +31,14 @@ const XIcon = ({ className }: { className?: string }) => (
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
   </svg>
 );
+const DashboardIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7.81249 9.09609C7.90753 9.04123 7.98644 8.96231 8.04129 8.86727C8.09615 8.77223 8.12502 8.66442 8.12499 8.55469V2.92969C8.12443 2.83004 8.10006 2.73198 8.0539 2.64367C8.00774 2.55536 7.94113 2.47936 7.85964 2.42202C7.77814 2.36469 7.68412 2.32766 7.5854 2.31405C7.48669 2.30043 7.38616 2.31062 7.29218 2.34375C5.46794 2.98939 3.93383 4.26457 2.96563 5.94005C1.99743 7.61554 1.65863 9.58145 2.01015 11.4844C2.02837 11.5828 2.06995 11.6754 2.1314 11.7544C2.19285 11.8333 2.27237 11.8964 2.36327 11.9383C2.44519 11.9766 2.53456 11.9963 2.62499 11.9961C2.73469 11.9961 2.84247 11.9673 2.93749 11.9125L7.81249 9.09609ZM6.87499 3.87656V8.19375L3.13437 10.3523C3.12499 10.2344 3.12499 10.1156 3.12499 10C3.1261 8.73309 3.47678 7.49106 4.13843 6.41066C4.80007 5.33025 5.74701 4.45337 6.87499 3.87656ZM18.125 10C18.1256 11.7837 17.5393 13.518 16.4564 14.9354C15.3735 16.3528 13.8543 17.3745 12.1332 17.8428C10.4121 18.3111 8.58472 18.2 6.93298 17.5267C5.28125 16.8534 3.89698 15.6553 2.99374 14.1172C2.95164 14.0461 2.92403 13.9675 2.91251 13.8857C2.901 13.8039 2.9058 13.7207 2.92665 13.6407C2.9475 13.5608 2.98398 13.4859 3.03398 13.4201C3.08398 13.3544 3.14651 13.2992 3.21796 13.2578L9.37499 9.67422V2.5C9.37499 2.33424 9.44084 2.17527 9.55805 2.05806C9.67526 1.94085 9.83423 1.875 9.99999 1.875C11.4179 1.87572 12.8109 2.24729 14.0408 2.95282C15.2706 3.65834 16.2946 4.67328 17.0109 5.89688C17.0195 5.90938 17.0273 5.92188 17.0351 5.93516C17.043 5.94844 17.0508 5.96406 17.0578 5.97812C17.7588 7.20247 18.1268 8.58916 18.125 10Z" />
+  </svg>
+);
 
 const baseNavItems = [
-  { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Dashboard",      icon: DashboardIcon, path: "/dashboard" },
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
@@ -48,7 +52,7 @@ const adminOnlyNavItems = [
 ];
 
 const mobileNavItems = [
-  { label: "Home",      icon: LayoutDashboard, path: "/dashboard" },
+  { label: "Home",      icon: DashboardIcon, path: "/dashboard" },
   { label: "Campaigns", icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",  icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/contacts" },
   { label: "Signals",   icon: Radio,           path: "/signals" },
