@@ -203,22 +203,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {item.label === "Contacts" && (
                       <>
                         {[
-                          { label: "Hot Leads", icon: Flame, filter: "hot" },
-                          { label: "Warm Leads", icon: Thermometer, filter: "warm" },
-                          { label: "Cold Leads", icon: Snowflake, filter: "cold" },
-                          { label: "Meeting", icon: Calendar, filter: "meeting" },
-                          { label: "Not Interested", icon: ThumbsDown, filter: "not_interested" },
+                          { label: "Hot Leads", filter: "hot" },
+                          { label: "Warm Leads", filter: "warm" },
+                          { label: "Cold Leads", filter: "cold" },
+                          { label: "Meeting", filter: "meeting" },
+                          { label: "Not Interested", filter: "not_interested" },
                         ].map((sub) => (
                           <button
                             key={sub.filter}
                             onClick={() => navigate(`/contacts?filter=${sub.filter}`)}
-                            className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
+                            className={`w-full flex items-center rounded-md px-2.5 py-1.5 text-[13px] text-gray-900 transition-colors ${
                               location.pathname === "/contacts" && new URLSearchParams(location.search).get("filter") === sub.filter
-                                ? "text-gray-900 font-medium bg-gray-50"
-                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                ? "font-medium bg-gray-50"
+                                : "hover:bg-gray-50"
                             }`}
                           >
-                            <sub.icon className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">{sub.label}</span>
                           </button>
                         ))}
