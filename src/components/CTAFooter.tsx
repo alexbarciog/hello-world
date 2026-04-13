@@ -24,8 +24,8 @@ const CTASection = () => {
 
 const Footer = () => {
   return (
-    <footer className="bg-[#111113] text-white">
-      <div className="max-w-6xl mx-auto px-8 pt-14 pb-8">
+    <footer className="bg-background px-4 md:px-8 pb-4 md:pb-8 pt-4 md:pt-8">
+      <div className="max-w-6xl mx-auto bg-[#111113] text-white rounded-[40px] px-8 md:px-12 pt-14 pb-8">
         {/* Top section */}
         <div className="flex flex-col lg:flex-row justify-between gap-12 mb-14">
           {/* Left: Logo + description + newsletter */}
