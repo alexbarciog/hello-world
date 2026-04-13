@@ -40,7 +40,7 @@ const tabsList: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const inputCls =
-  "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--goji-coral))/30] focus:border-[hsl(var(--goji-coral))] bg-background transition-all";
+  "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 bg-white transition-all";
 const labelCls = "block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider";
 
 function SectionCard({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
@@ -50,7 +50,7 @@ function SectionCard({ children, className = "", delay = 0 }: { children: React.
       variants={fadeUp}
       initial="hidden"
       animate="visible"
-      className={`rounded-2xl border border-border bg-card p-6 ${className}`}
+      className={`rounded-[20px] bg-[#F7F8FA] p-6 ${className}`}
     >
       {children}
     </motion.div>
@@ -61,20 +61,10 @@ function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title
   return (
     <motion.div custom={0} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
       <div className="flex items-center gap-2.5 mb-1">
-        <span className="[&_svg]:fill-[url(#section-icon-gradient)] [&_svg]:stroke-[url(#section-icon-gradient)]">
-          <svg width="0" height="0" className="absolute">
-            <defs>
-              <linearGradient id="section-icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#5C92FF" />
-                <stop offset="100%" stopColor="#9FBDFB" />
-              </linearGradient>
-            </defs>
-          </svg>
-          {icon}
-        </span>
-        <h2 className="text-lg font-bold text-foreground">{title}</h2>
+        <span className="text-gray-500">{icon}</span>
+        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
       </div>
-      <p className="text-sm text-muted-foreground ml-7">{subtitle}</p>
+      <p className="text-sm text-gray-500 ml-7">{subtitle}</p>
     </motion.div>
   );
 }
@@ -86,7 +76,7 @@ function SaveButton({ saving, saved, onClick, label = "Save Settings" }: { savin
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       disabled={saving}
-      className={`btn-cta text-sm disabled:opacity-60 ${saved ? "!bg-[hsl(142,70%,45%)]" : ""}`}
+      className={`inline-flex items-center gap-2 bg-black text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-60 ${saved ? "!bg-green-600" : ""}`}
     >
       {saving ? (
         <>
@@ -239,7 +229,7 @@ function OrganizationTab({ userEmail, userName }: { userEmail: string; userName:
                 onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleInvite()}
                 className={`${inputCls} flex-1`} disabled={sending} />
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                className="btn-cta text-sm !py-2.5 !px-5 disabled:opacity-60 w-full sm:w-auto"
+                className="inline-flex items-center gap-2 bg-black text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-60 w-full sm:w-auto"
                 onClick={handleInvite} disabled={sending}>
                 {sending ? "Sending…" : "Invite"}
               </motion.button>
@@ -892,25 +882,23 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
+    <div className="min-h-full bg-white px-6 py-6 overflow-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="border-b border-border px-4 md:px-8 py-4 md:py-5"
+        className="px-0 md:px-2 pb-4 md:pb-5"
       >
         <div className="flex items-center gap-2.5">
-          <span className="[&_svg]:stroke-[url(#section-icon-gradient)]">
-            <SettingsIcon className="w-4.5 h-4.5 shrink-0" />
-          </span>
-          <h1 className="text-base md:text-lg font-bold text-foreground">Account Settings</h1>
+          <SettingsIcon className="w-4.5 h-4.5 shrink-0 text-gray-500" />
+          <h1 className="text-base md:text-lg font-semibold text-gray-900">Account Settings</h1>
         </div>
-        <p className="text-xs md:text-sm text-muted-foreground mt-0.5 ml-7">Manage your company information and profile settings</p>
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5 ml-7">Manage your company information and profile settings</p>
       </motion.div>
 
       {/* ── Mobile nav: pill grid (above content) ── */}
-      <div className="md:hidden border-b border-border px-3 py-3">
+      <div className="md:hidden px-3 py-3">
         <div className="grid grid-cols-3 gap-1.5">
           {tabsList.map((tab) => {
             const active = activeTab === tab.id;
@@ -920,8 +908,8 @@ export default function Settings() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl text-[10px] font-semibold transition-all ${
                   active
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground bg-muted/40 hover:bg-muted"
+                    ? "bg-black text-white"
+                    : "text-gray-500 bg-gray-100 hover:bg-gray-200"
                 }`}
               >
                 <span className="[&_svg]:w-4 [&_svg]:h-4">{tab.icon}</span>
@@ -940,7 +928,7 @@ export default function Settings() {
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.08, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          className="hidden md:flex flex-col w-52 shrink-0 border-r border-border py-4 px-3 gap-0.5"
+          className="hidden md:flex flex-col w-52 shrink-0 bg-[#F7F8FA] rounded-[20px] p-4 mr-6 gap-0.5 self-start"
         >
           {tabsList.map((tab) => {
             const active = activeTab === tab.id;
@@ -950,8 +938,8 @@ export default function Settings() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left w-full ${
                   active
-                    ? "bg-foreground text-background shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "bg-black text-white"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 <span className="shrink-0">{tab.icon}</span>
