@@ -74,9 +74,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
   
   const { data: isAdmin } = useAdminCheck();
+
+  const { data: campaignsList } = useQuery({
+    queryKey: ["sidebar-campaigns"],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("id, description, status").order("created_at", { ascending: false }).limit(10);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: signalAgentsList } = useQuery({
+    queryKey: ["sidebar-signal-agents"],
+    queryFn: async () => {
+      const { data } = await supabase.from("signal_agents").select("id, name, status").order("created_at", { ascending: false }).limit(10);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const toggleSection = (label: string) => {
+    setExpandedSections((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const expandableItems = useMemo(() => new Set(["Campaigns", "Contacts", "Signals Agents"]), []);
 
   const navItems = isAdmin
     ? [...baseNavItems, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
