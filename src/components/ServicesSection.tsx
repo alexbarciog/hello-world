@@ -43,7 +43,6 @@ const SignalTrackingVisual = () => (
       </div>
     </div>
   </div>
-  </div>
 );
 
 /* ── Visual 2: LinkedIn DM Automation ── */
