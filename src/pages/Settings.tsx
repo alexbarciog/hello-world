@@ -40,7 +40,7 @@ const tabsList: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const inputCls =
-  "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground placeholder-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--goji-coral))/30] focus:border-[hsl(var(--goji-coral))] bg-background transition-all";
+  "w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 bg-white transition-all";
 const labelCls = "block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider";
 
 function SectionCard({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
