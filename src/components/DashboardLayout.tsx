@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import uniboxIcon from "@/assets/unibox-icon.png";
+import contactsIcon from "@/assets/contacts-icon.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 import {
   LayoutDashboard,
   Megaphone,
-  Users,
   Radio,
   
   Settings,
@@ -36,7 +36,7 @@ const XIcon = ({ className }: { className?: string }) => (
 const baseNavItems = [
   { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
-  { label: "Contacts",       icon: Users,           path: "/contacts" },
+  { label: "Contacts",       icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
   { label: "Unibox",         icon: ({ className }: { className?: string }) => <img src={uniboxIcon} alt="Unibox" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/unibox" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
