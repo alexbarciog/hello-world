@@ -202,7 +202,7 @@ export default function Dashboard() {
 
       {/* ── Metrics ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#e8f0fb]" />
+        <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#EDEEFC]" />
         <MetricCard title="Leads Engaged" value={leadsEngaged} loading={statsLoading} bgColor="bg-[#f0ecfb]" />
         <MetricCard title="Conversations" value={conversations} loading={statsLoading} bgColor="bg-[#e8f0fb]" />
         <MetricCard title="Active Signals" value={activeSignals} loading={false} bgColor="bg-[#f0ecfb]" />
