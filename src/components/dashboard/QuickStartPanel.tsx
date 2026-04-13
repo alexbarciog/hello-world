@@ -18,8 +18,8 @@ export function QuickStartPanel({ steps }: QuickStartPanelProps) {
   const allDone = completedSteps === steps.length;
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-6 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-snow-bg-2 rounded-[20px] p-4 flex flex-col">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-gray-900">Quick Start</h2>
         <span className="text-xs text-gray-400">{completedSteps}/{steps.length}</span>
       </div>
@@ -35,13 +35,13 @@ export function QuickStartPanel({ steps }: QuickStartPanelProps) {
           </div>
         </div>
       ) : (
-        <div className="space-y-1 flex-1">
+        <div className="space-y-0.5 flex-1">
           {steps.map((step, i) => (
             <button
               key={step.label}
               onClick={() => !step.done && navigate(step.href)}
               disabled={step.done}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors ${
+              className={`w-full flex items-center gap-3 px-2 py-2 rounded-xl text-left transition-colors ${
                 step.done
                   ? "opacity-50"
                   : "hover:bg-gray-50 cursor-pointer"

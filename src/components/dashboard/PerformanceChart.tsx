@@ -16,8 +16,8 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
   const hasData = chartData.some((d) => d.leadsFound > 0 || d.contacted > 0);
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-6 h-full">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">
+    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-3">
         <h2 className="text-sm font-bold text-snow-black-100">Lead Velocity</h2>
         <div className="w-px h-4 bg-snow-black-10" />
         <div className="flex items-center gap-1.5">
@@ -30,7 +30,7 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
         </div>
       </div>
 
-      <div style={{ height: 260 }}>
+      <div style={{ height: 200 }}>
         {!hasData ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-snow-black-20">
