@@ -57,7 +57,7 @@ const mobileNavItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed] = useState(false);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
