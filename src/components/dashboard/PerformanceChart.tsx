@@ -1,5 +1,4 @@
 import {
-  AreaChart,
   Area,
   XAxis,
   YAxis,
@@ -21,58 +20,96 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
   }));
 
   return (
-    <div className="snow-card-lg p-6 flex flex-col gap-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-base font-semibold text-gray-900">Lead Velocity</h3>
-        <span className="text-xs text-gray-400 bg-gray-50 rounded-full px-3 py-1">
+    <div className="bg-snow-bg-2 rounded-[20px] p-6 h-full">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6">
+        <h2 className="text-sm font-bold text-snow-black-100">Lead Velocity</h2>
+        <span className="text-sm text-snow-black-20 cursor-pointer hover:text-snow-black-40 transition-colors">
           Campaigns
         </span>
-        <span className="text-xs text-gray-400 bg-gray-50 rounded-full px-3 py-1">
+        <span className="text-sm text-snow-black-20 cursor-pointer hover:text-snow-black-40 transition-colors">
           Signals
         </span>
-
-        <div className="flex items-center gap-4 ml-auto">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <span className="w-2.5 h-2.5 rounded-full bg-black" />
-            This year
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#C4C6F7]" />
-            Last year
-          </div>
+        <div className="w-px h-4 bg-snow-black-10" />
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-snow-black-100" />
+          <span className="text-xs text-snow-black-40">This year</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-snow-black-20" />
+          <span className="text-xs text-snow-black-40">Last year</span>
         </div>
       </div>
 
-      <div className="h-[260px] w-full">
+      <div style={{ height: 260 }}>
         {!hasData ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-gray-400">No leads yet - start a campaign to see data here</p>
+            <p className="text-sm text-snow-black-20">
+              No leads yet — start a campaign to see data here
+            </p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={composedData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <ComposedChart
+              data={composedData}
+              margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+            >
               <defs>
-                <linearGradient id="snowFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#000000" stopOpacity={0.08} />
+                <linearGradient id="leadsFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#000000" stopOpacity={0.06} />
                   <stop offset="100%" stopColor="#000000" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#999" }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 11, fill: "#999" }} tickLine={false} axisLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${v / 1000}K` : String(v))} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: "#999999" }}
+                tickLine={false}
+                axisLine={false}
+                interval={4}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#999999" }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : v)}
+              />
               <Tooltip
-                contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", fontSize: 12 }}
+                cursor={{ stroke: "#CCCCCC", strokeWidth: 1 }}
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   return (
-                    <div className="bg-white rounded-xl shadow-lg px-3 py-2 text-xs">
-                      <p className="text-gray-500">{label}</p>
-                      <p className="font-semibold text-gray-900">{payload[0].value} leads</p>
+                    <div className="bg-white rounded-lg border border-snow-black-10 shadow-lg px-3 py-2 text-xs">
+                      <p className="text-snow-black-40 mb-1">{label}</p>
+                      <p className="text-snow-black-100 font-semibold">
+                        {payload[0].value} leads
+                      </p>
                     </div>
                   );
                 }}
               />
-              <Area type="monotone" dataKey="lastYear" stroke="#C4C6F7" strokeWidth={2} fill="none" dot={false} />
-              <Line type="monotone" dataKey="leads" stroke="#000000" strokeWidth={2.5} dot={false} fill="url(#snowFill)" />
+              <Area
+                type="monotone"
+                dataKey="leads"
+                stroke="#000000"
+                strokeWidth={1.5}
+                fill="url(#leadsFill)"
+                dot={false}
+                activeDot={{
+                  r: 3,
+                  fill: "#000000",
+                  stroke: "#fff",
+                  strokeWidth: 2,
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="lastYear"
+                stroke="#CCCCCC"
+                strokeWidth={1.5}
+                strokeDasharray="6 4"
+                dot={false}
+                activeDot={false}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         )}
