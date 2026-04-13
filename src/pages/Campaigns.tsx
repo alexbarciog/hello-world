@@ -186,7 +186,6 @@ export default function CampaignsPage() {
   const sub = useSubscription();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showWizard, setShowWizard] = useState(false);
   const [editCampaignId, setEditCampaignId] = useState<string | null>(null);
 
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
