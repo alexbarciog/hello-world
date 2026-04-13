@@ -989,10 +989,9 @@ function renderMarkdown(text: string) {
   while (i < lines.length) {
     const line = lines[i];
 
-    // Heading 2
     if (line.startsWith("## ")) {
       elements.push(
-        <h2 key={i} className="text-lg font-bold mt-8 mb-3 pb-2 border-b border-border/40" style={{ color: "hsl(var(--md-on-surface))" }}>
+        <h2 key={i} className="text-lg font-semibold mt-8 mb-3 pb-2 border-b border-border/40" style={{ color: "hsl(var(--aeline-dark))" }}>
           {renderInline(line.slice(3))}
         </h2>
       );
@@ -1000,10 +999,9 @@ function renderMarkdown(text: string) {
       continue;
     }
 
-    // Heading 3
     if (line.startsWith("### ")) {
       elements.push(
-        <h3 key={i} className="text-base font-semibold mt-6 mb-2" style={{ color: "hsl(var(--md-on-surface))" }}>
+        <h3 key={i} className="text-base font-semibold mt-6 mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>
           {renderInline(line.slice(4))}
         </h3>
       );
@@ -1011,7 +1009,6 @@ function renderMarkdown(text: string) {
       continue;
     }
 
-    // Table (starts with |)
     if (line.startsWith("|")) {
       const tableLines: string[] = [];
       while (i < lines.length && lines[i].startsWith("|")) {
@@ -1025,13 +1022,9 @@ function renderMarkdown(text: string) {
             {rows.map((row, ri) => {
               const cells = row.split("|").filter((c) => c.trim() !== "");
               return (
-                <tr key={ri} className={ri === 0 ? "bg-card" : "border-t border-border"}>
+                <tr key={ri} className={ri === 0 ? "bg-background" : "border-t border-border"}>
                   {cells.map((cell, ci) => (
-                    <td
-                      key={ci}
-                      className={`px-3 py-2 ${ri === 0 ? "font-semibold" : ""}`}
-                      style={{ color: "hsl(var(--goji-dark))" }}
-                    >
+                    <td key={ci} className={`px-3 py-2 ${ri === 0 ? "font-semibold" : ""}`} style={{ color: "hsl(var(--aeline-dark))" }}>
                       {renderInline(cell.trim())}
                     </td>
                   ))}
@@ -1044,7 +1037,6 @@ function renderMarkdown(text: string) {
       continue;
     }
 
-    // Bullet list item
     if (line.startsWith("- ")) {
       const items: string[] = [];
       while (i < lines.length && lines[i].startsWith("- ")) {
@@ -1054,8 +1046,8 @@ function renderMarkdown(text: string) {
       elements.push(
         <ul key={`ul-${i}`} className="list-none my-3 space-y-2 pl-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
-              <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "hsl(var(--md-primary))" }} />
+            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed text-muted-foreground">
+              <span className="mt-2 w-1.5 h-1.5 rounded-full shrink-0 bg-primary" />
               <span>{renderInline(item)}</span>
             </li>
           ))}
@@ -1064,7 +1056,6 @@ function renderMarkdown(text: string) {
       continue;
     }
 
-    // Numbered list item
     if (/^\d+\.\s/.test(line)) {
       const items: string[] = [];
       while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
@@ -1074,11 +1065,8 @@ function renderMarkdown(text: string) {
       elements.push(
         <ol key={`ol-${i}`} className="my-3 space-y-2.5 pl-1">
           {items.map((item, ii) => (
-            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
-              <span
-                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5"
-                style={{ background: "hsl(var(--md-primary) / 0.1)", color: "hsl(var(--md-primary))" }}
-              >
+            <li key={ii} className="flex items-start gap-3 text-[15px] leading-relaxed text-muted-foreground">
+              <span className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 bg-primary/10 text-primary">
                 {ii + 1}
               </span>
               <span>{renderInline(item)}</span>
@@ -1089,10 +1077,9 @@ function renderMarkdown(text: string) {
       continue;
     }
 
-    // Code block
     if (line.startsWith("`") && line.endsWith("`") && !line.startsWith("``")) {
       elements.push(
-        <code key={i} className="block my-2 px-3 py-2 rounded text-xs font-mono bg-muted" style={{ color: "hsl(var(--goji-dark))" }}>
+        <code key={i} className="block my-2 px-3 py-2 rounded text-xs font-mono bg-background" style={{ color: "hsl(var(--aeline-dark))" }}>
           {line.slice(1, -1)}
         </code>
       );
@@ -1100,22 +1087,19 @@ function renderMarkdown(text: string) {
       continue;
     }
 
-    // Horizontal rule
     if (line === "---" || line === "* * *") {
       elements.push(<hr key={i} className="my-4 border-border" />);
       i++;
       continue;
     }
 
-    // Empty line
     if (line.trim() === "") {
       i++;
       continue;
     }
 
-    // Paragraph
     elements.push(
-      <p key={i} className="text-[15px] leading-[1.75] my-2.5" style={{ color: "hsl(var(--md-on-surface-variant))" }}>
+      <p key={i} className="text-[15px] leading-[1.75] my-2.5 text-muted-foreground">
         {renderInline(line)}
       </p>
     );
@@ -1126,19 +1110,18 @@ function renderMarkdown(text: string) {
 }
 
 function renderInline(text: string): React.ReactNode {
-  // Bold: **text**
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} className="font-semibold" style={{ color: "hsl(var(--md-on-surface))" }}>
+        <strong key={i} className="font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
           {part.slice(2, -2)}
         </strong>
       );
     }
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={i} className="px-1 py-0.5 rounded text-xs font-mono bg-muted" style={{ color: "hsl(var(--goji-dark))" }}>
+        <code key={i} className="px-1 py-0.5 rounded text-xs font-mono bg-background" style={{ color: "hsl(var(--aeline-dark))" }}>
           {part.slice(1, -1)}
         </code>
       );
