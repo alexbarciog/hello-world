@@ -11,7 +11,7 @@ const data = [
 
 const COLORS = ["#C4C6F7", "#34D399", "#000000", "#3B82F6", "#7B61FF", "#22C55E"];
 
-const formatK = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v);
+const formatK = (v: number): string => (v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v));
 
 const TrafficByDevice = () => (
   <div className="bg-snow-bg-2 rounded-[20px] p-6">

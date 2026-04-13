@@ -8,6 +8,8 @@ import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import TrafficByDevice from "@/components/dashboard/TrafficByDevice";
+import TrafficByLocation from "@/components/dashboard/TrafficByLocation";
 import { ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
