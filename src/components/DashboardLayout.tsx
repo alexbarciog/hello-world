@@ -176,24 +176,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <div key={item.path}>
                 <div className="flex items-center">
-                  {isExpandable && (
-                    <button
-                      onClick={() => toggleSection(item.label)}
-                      className="w-5 h-5 flex items-center justify-center shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
-                    </button>
-                  )}
                   <button
                     onClick={() => navigate(item.path)}
                     className={`flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors ${
-                      !isExpandable ? "ml-5" : ""
-                    } ${
                       active
                         ? "bg-gray-100 text-gray-900 font-medium"
                         : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                     }`}
                   >
+                    {isExpandable && (
+                      <span
+                        onClick={(e) => { e.stopPropagation(); toggleSection(item.label); }}
+                        className="flex items-center justify-center shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+                      </span>
+                    )}
                     <Icon className="w-[18px] h-[18px] shrink-0" />
                     <span className="truncate">{item.label}</span>
                   </button>
