@@ -1,11 +1,17 @@
 import { ArrowUpRight, Star } from "lucide-react";
 import HeroCards from "./HeroCards";
+import heroSkyBg from "@/assets/hero-sky-bg.webp";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden hero-sky-gradient">
-      {/* Cloud overlay at bottom */}
-      <div className="cloud-overlay" />
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      {/* Sky background image */}
+      <img
+        src={heroSkyBg}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        aria-hidden="true"
+      />
 
       <div className="relative z-10 flex flex-col items-center text-center px-4 max-w-5xl mx-auto pt-28 md:pt-36">
         <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-medium text-white leading-[1.05] tracking-tight mb-6 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
