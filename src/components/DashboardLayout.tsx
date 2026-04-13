@@ -339,7 +339,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
           >
             <span className="w-3.5 shrink-0" />
-            <img src={supportIcon} alt="Support" className="w-4 h-4 shrink-0" />
+            <img src={supportIcon} alt="Support" className="w-5 h-5 shrink-0" />
             <span className="truncate">Support</span>
           </button>
         </div>
