@@ -1,43 +1,26 @@
-import { Flame, Users, MessagesSquare } from "lucide-react";
-
 interface MetricCardProps {
   title: string;
   value: number | string;
   loading?: boolean;
-  icon: React.ReactNode;
-  iconBg: string;
-  progress?: number;
+  bgColor?: string;
 }
 
-export function MetricCard({ title, value, loading, icon, iconBg, progress = 0 }: MetricCardProps) {
+export function MetricCard({ title, value, loading, bgColor = "bg-[#e8f0fb]" }: MetricCardProps) {
   const isEmpty = !loading && (value === 0 || value === "0");
 
   return (
-    <div className="glass-card p-6 rounded-[1.5rem] flex flex-col justify-between group hover:-translate-y-1 transition-transform duration-300">
-      <div className="flex justify-between items-start">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: iconBg }}>
-          {icon}
+    <div className={`${bgColor} rounded-2xl p-5 flex flex-col gap-3`}>
+      <p className="text-[13px] font-medium text-gray-500">{title}</p>
+      {loading ? (
+        <div className="h-9 w-20 bg-white/50 rounded-lg animate-pulse" />
+      ) : isEmpty ? (
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-semibold text-gray-900 tabular-nums">0</span>
+          <span className="text-xs text-gray-400 italic">No data yet</span>
         </div>
-      </div>
-      <div className="mt-6">
-        <p className="text-sm font-semibold text-md-on-surface-variant">{title}</p>
-        {loading ? (
-          <div className="h-9 w-16 bg-md-surface-container rounded animate-pulse mt-1" />
-        ) : isEmpty ? (
-          <p className="text-sm text-md-on-surface-variant mt-1 italic">No data yet</p>
-        ) : (
-          <h3 className="text-3xl font-extrabold text-md-on-surface mt-1 tracking-tight">{value}</h3>
-        )}
-      </div>
-      <div className="mt-4 h-1.5 w-full bg-md-surface-container rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{
-            width: `${Math.min(100, Math.max(5, progress))}%`,
-            background: "var(--gradient-md-brand)",
-          }}
-        />
-      </div>
+      ) : (
+        <span className="text-3xl font-semibold text-gray-900 tabular-nums">{value}</span>
+      )}
     </div>
   );
 }

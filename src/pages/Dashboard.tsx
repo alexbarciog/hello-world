@@ -1,7 +1,5 @@
-import meshGradientBg from "@/assets/mesh-gradient-bg.png";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Flame, Users, MessagesSquare, Rocket, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
@@ -9,13 +7,11 @@ import { QuickStartPanel } from "@/components/dashboard/QuickStartPanel";
 import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { ChevronDown } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const handleNewCampaign = () => {
-    navigate("/campaigns?autoStart=true");
-  };
 
   // ── User info ──
   const { data: userData } = useQuery({
@@ -191,96 +187,42 @@ export default function Dashboard() {
   ];
 
   return (
-    <div
-      className="min-h-full rounded-2xl px-4 md:px-8 py-8 md:py-10 relative m-2 md:m-4 font-body bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${meshGradientBg})` }}
-    >
+    <div className="min-h-full bg-[#f7f8fa] px-6 py-6">
       {/* ── Header ── */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-md-on-surface font-headline">
-            Welcome back, <span className="font-extrabold text-md-primary">{firstName}</span>
-          </h1>
-          <p className="text-md-on-surface-variant font-medium text-sm mt-1">
-            Your outreach performance overview.
-          </p>
-        </div>
-        <button
-          onClick={handleNewCampaign}
-          className="brand-gradient-button text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300"
-        >
-          <Rocket className="w-4 h-4" />
-          Start a campaign
+      <header className="flex items-center justify-between mb-6">
+        <h1 className="text-lg font-semibold text-gray-900">Overview</h1>
+        <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          Today
+          <ChevronDown className="w-4 h-4" />
         </button>
       </header>
-
-      {/* ── Status pills ── */}
-      <div className="flex items-center gap-3 flex-wrap mb-8">
-        <button
-          onClick={() => navigate("/signals")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all shadow-sm ${
-            activeSignals > 0
-              ? "text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50"
-              : "text-red-500 border-red-200/60 bg-red-50/80 backdrop-blur-sm hover:bg-red-50"
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${activeSignals > 0 ? "bg-emerald-400" : "bg-red-400"}`} />
-          {activeSignals} Active Signal(s)
-        </button>
-        <button
-          onClick={() => navigate("/settings?tab=linkedin")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all shadow-sm ${
-            linkedinConnected
-              ? "text-emerald-600 border-emerald-200/60 bg-emerald-50/80 backdrop-blur-sm hover:bg-emerald-50"
-              : "text-orange-600 border-orange-200/60 bg-orange-50/80 backdrop-blur-sm hover:bg-orange-50"
-          }`}
-        >
-          {linkedinConnected ? <Check className="w-3.5 h-3.5" /> : <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
-          {linkedinConnected ? "LinkedIn Connected" : "Connect LinkedIn"}
-        </button>
-      </div>
 
       {/* ── Subscription Banner ── */}
       <SubscriptionBanner />
 
       {/* ── Metrics ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <MetricCard
-          title="Hot Opportunities"
-          value={hotOpps}
-          loading={hotOppsLoading}
-          icon={<Flame className="w-6 h-6 text-md-primary" />}
-          iconBg="hsla(var(--md-primary) / 0.10)"
-          progress={hotOpps > 0 ? 75 : 5}
-        />
-        <MetricCard
-          title="Leads Engaged"
-          value={leadsEngaged}
-          loading={statsLoading}
-          icon={<Users className="w-6 h-6 text-md-secondary" />}
-          iconBg="hsla(var(--md-secondary) / 0.10)"
-          progress={leadsEngaged > 0 ? 62 : 5}
-        />
-        <MetricCard
-          title="Conversations"
-          value={conversations}
-          loading={statsLoading}
-          icon={<MessagesSquare className="w-6 h-6 text-md-tertiary" />}
-          iconBg="hsla(var(--md-tertiary) / 0.10)"
-          progress={conversations > 0 ? 48 : 5}
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#e8f0fb]" />
+        <MetricCard title="Leads Engaged" value={leadsEngaged} loading={statsLoading} bgColor="bg-[#f0ecfb]" />
+        <MetricCard title="Conversations" value={conversations} loading={statsLoading} bgColor="bg-[#e8f0fb]" />
+        <MetricCard title="Active Signals" value={activeSignals} loading={false} bgColor="bg-[#f0ecfb]" />
       </div>
 
-      {/* ── Chart & Quick Start ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <PerformanceChart chartData={chartData} />
-        <QuickStartPanel steps={quickStartSteps} />
+      {/* ── Chart + Quick Start ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2">
+          <PerformanceChart chartData={chartData} />
+        </div>
+        <div>
+          <QuickStartPanel steps={quickStartSteps} />
+        </div>
       </div>
 
-      {/* ── Leads & Replies ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      {/* ── Leads, Replies & Activity ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
         <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
+        <RecentActivity />
       </div>
     </div>
   );
