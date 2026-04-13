@@ -10,7 +10,7 @@ export function MetricCard({ title, value, loading, bgColor = "bg-[#e8f0fb]" }: 
 
   return (
     <div className={`${bgColor} rounded-[20px] p-5 flex flex-col gap-3`}>
-      <p className="text-[13px] font-medium text-gray-500">{title}</p>
+      <p className="text-sm font-medium text-snow-black-100 tracking-wide">{title}</p>
       {loading ? (
         <div className="h-9 w-20 bg-white/50 rounded-lg animate-pulse" />
       ) : isEmpty ? (
