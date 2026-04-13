@@ -26,7 +26,7 @@ const DailyActivityChart = ({ data, loading }: WeeklyActivityChartProps) => {
 
   return (
     <div className="bg-snow-bg-2 rounded-[20px] p-6">
-      <h3 className="text-sm font-bold text-snow-black-100 mb-4">Weekly Activity</h3>
+      <h3 className="text-sm font-bold text-snow-black-100 mb-4">Daily Activity per Week</h3>
       {loading ? (
         <div className="h-[240px] flex items-center justify-center">
           <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
