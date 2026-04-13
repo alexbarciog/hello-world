@@ -5,7 +5,7 @@ const HeroCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
       {/* Card 1: Engagement Signals */}
-      <div className="group rounded-3xl p-5 text-left flex flex-col relative border border-white/30 opacity-95 hover:opacity-100 transition-all duration-300 bg-white/20 backdrop-blur-xl shadow-lg">
+      <div className="group rounded-3xl p-5 text-left flex flex-col relative border border-white/30 opacity-95 hover:opacity-100 transition-all duration-300 bg-white/20 backdrop-blur-[24px] shadow-lg">
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Engagement signals</h3>
@@ -99,7 +99,7 @@ const HeroCards = () => {
       </div>
 
       {/* Card 2: Lead Insights (duplicate of Card 1 structure) */}
-      <div className="group rounded-3xl p-5 text-left flex flex-col relative border border-white/30 opacity-95 hover:opacity-100 transition-all duration-300 bg-white/20 backdrop-blur-xl shadow-lg">
+      <div className="group rounded-3xl p-5 text-left flex flex-col relative border border-white/30 opacity-95 hover:opacity-100 transition-all duration-300 bg-white/20 backdrop-blur-[24px] shadow-lg">
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Lead insights</h3>
@@ -181,7 +181,7 @@ const HeroCards = () => {
       </div>
 
       {/* Card 3: Company Intel (duplicate of Card 2 structure) */}
-      <div className="group rounded-3xl p-5 text-left flex flex-col relative border border-white/30 opacity-95 hover:opacity-100 transition-all duration-300 bg-white/20 backdrop-blur-xl shadow-lg">
+      <div className="group rounded-3xl p-5 text-left flex flex-col relative border border-white/30 opacity-95 hover:opacity-100 transition-all duration-300 bg-white/20 backdrop-blur-[24px] shadow-lg">
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Company intel</h3>
