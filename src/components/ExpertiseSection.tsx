@@ -1,5 +1,9 @@
 import { useEffect, useRef } from "react";
 import { TrendingUp, Cpu, Globe, Lightbulb } from "lucide-react";
+import expertiseAutomation from "@/assets/expertise-automation.jpg";
+import expertiseAnalytics from "@/assets/expertise-analytics.jpg";
+import expertiseDigital from "@/assets/expertise-digital.jpg";
+import expertiseExperience from "@/assets/expertise-experience.jpg";
 
 const useReveal = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -23,21 +27,25 @@ const features = [
     icon: Cpu,
     title: "Automation & optimization",
     desc: "Streamline your operations through intelligent workflow automation that saves time, reduces errors, and boosts productivity.",
+    image: expertiseAutomation,
   },
   {
     icon: TrendingUp,
     title: "Data analytics & insights",
     desc: "Transform raw data into strategic insight using advanced analytics, dashboards, and predictive modeling.",
+    image: expertiseAnalytics,
   },
   {
     icon: Globe,
     title: "Digital transformation",
     desc: "We guide organizations through full-scale digital evolution — modernizing systems, processes, and decision-making frameworks.",
+    image: expertiseDigital,
   },
   {
     icon: Lightbulb,
     title: "Experience intelligence",
     desc: "Combine data and design to deliver smarter, more personalized digital experiences that connect with users.",
+    image: expertiseExperience,
   },
 ];
 
@@ -60,19 +68,9 @@ const ExpertiseSection = () => {
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {features.map((f, i) => (
             <div key={i} className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col group hover:shadow-lg transition-shadow duration-300">
-              {/* Mini dashboard mockup */}
-              <div className="w-full h-40 rounded-2xl bg-white shadow-sm mb-6 p-4 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-medium text-muted-foreground">Performance</div>
-                  <div className="w-7 h-7 rounded-lg bg-[#f5f5f5] flex items-center justify-center">
-                    <f.icon className="w-4 h-4 text-[#1A8FE3]" />
-                  </div>
-                </div>
-                <div className="flex items-end gap-1">
-                  {[40, 65, 45, 80, 55, 90, 70].map((h, j) => (
-                    <div key={j} className="flex-1 rounded-sm bg-[#1A8FE3]" style={{ height: `${h}%`, opacity: 0.2 + (h / 100) * 0.8 }} />
-                  ))}
-                </div>
+              {/* Visual */}
+              <div className="w-full h-48 rounded-2xl overflow-hidden mb-6 bg-white">
+                <img src={f.image} alt={f.title} loading="lazy" width={960} height={640} className="w-full h-full object-cover" />
               </div>
 
               <h3 className="text-xl font-semibold mb-3" style={{ color: "hsl(var(--aeline-dark))" }}>{f.title}</h3>
