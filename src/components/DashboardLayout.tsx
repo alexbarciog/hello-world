@@ -178,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="flex items-center">
                   <button
                     onClick={() => navigate(item.path)}
-                    className={`flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] text-gray-900 transition-colors ${
+                    className={`w-[180px] h-9 flex items-center gap-3 rounded-lg px-3 text-[14px] text-gray-900 transition-colors ${
                       active
                         ? "bg-gray-100 font-medium"
                         : "hover:bg-gray-50"
