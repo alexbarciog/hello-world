@@ -1,8 +1,7 @@
-import heroBg from "@/assets/mesh-gradient-2.png";
-import { useNavigate } from "react-router-dom";
+import featureHeroSky from "@/assets/feature-hero-sky.webp";
 import { useEffect, useRef, useState } from "react";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
-import { ArrowUpRight, MessageCircle, Brain, Calendar, Shield, Sparkles } from "lucide-react";
+import { ArrowUpRight, MessageCircle, Brain, Calendar, Shield, Sparkles, Bot, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 
@@ -45,7 +44,6 @@ const chatMessages = [
 ];
 
 export default function ConversationalAi() {
-  const navigate = useNavigate();
   useEffect(() => { ttqViewContent("Conversational AI"); }, []);
   const heroRef = useInView(0.2);
   const chatRef = useInView(0.15);
@@ -57,8 +55,9 @@ export default function ConversationalAi() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden pt-20 pb-16">
-        <img src={heroBg} aria-hidden="true" className="absolute inset-0 w-full h-full object-cover z-0" />
+      <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
+        <img src={featureHeroSky} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="cloud-overlay" style={{ opacity: 0.15 }} />
         <div
           ref={heroRef.ref}
           className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto"
@@ -68,14 +67,14 @@ export default function ConversationalAi() {
             transition: "all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)",
           }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/40 bg-white/50 backdrop-blur-sm text-sm font-medium text-foreground mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium text-white mb-8">
             <Sparkles className="w-4 h-4" />
             Conversational AI
           </div>
-          <h1 className="text-5xl md:text-7xl font-light text-foreground leading-[1.1] tracking-tight mb-6">
-            AI that talks like<br />your best SDR
+          <h1 className="text-5xl md:text-7xl font-medium text-white leading-[1.05] tracking-tight mb-6">
+            AI that talks like<br /><span className="text-white/70">your best SDR</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 leading-relaxed">
+          <p className="text-base md:text-lg text-white/80 max-w-2xl mb-10 leading-relaxed">
             When leads reply, our Conversational AI handles the dialogue — building rapport, qualifying interest, and booking meetings automatically.
           </p>
           <a href="/register" className="btn-cta text-base">
@@ -86,15 +85,18 @@ export default function ConversationalAi() {
       </section>
 
       {/* Chat example */}
-      <section className="px-8 md:px-16 py-24 md:py-32" style={{ background: "hsl(0 0% 100%)" }}>
+      <section className="px-6 py-20 md:py-32 bg-background">
         <div className="max-w-6xl mx-auto">
-          <div ref={chatRef.ref} className="flex items-center justify-center pb-16 text-center"
+          <div ref={chatRef.ref} className="mb-12"
             style={{ opacity: chatRef.visible ? 1 : 0, transform: chatRef.visible ? "translateY(0)" : "translateY(24px)", transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)" }}
           >
-            <h2 className="text-5xl md:text-6xl font-normal text-foreground leading-tight tracking-tight max-w-2xl">See it in action</h2>
+            <span className="section-label mb-6 block">See It In Action</span>
+            <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] max-w-3xl" style={{ color: "hsl(var(--aeline-dark))" }}>
+              Watch the AI SDR close a meeting
+            </h2>
           </div>
 
-          <div className="max-w-2xl mx-auto space-y-4">
+          <div className="max-w-2xl mx-auto rounded-3xl bg-[#f5f5f5] p-8 space-y-3">
             {chatMessages.map((m, i) => {
               const row = useInView(0.1);
               return (
@@ -108,11 +110,9 @@ export default function ConversationalAi() {
                     transition: `all 0.5s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 80}ms`,
                   }}
                 >
-                  <div className={`max-w-[80%] rounded-[20px] px-5 py-3.5 ${m.from === "ai" ? "border border-border/60" : ""}`}
-                    style={{ background: m.from === "ai" ? "hsl(0 0% 98%)" : "hsl(220 14% 96%)" }}
-                  >
-                    <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">{m.name}</div>
-                    <div className="text-sm text-foreground leading-relaxed">{m.msg}</div>
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${m.from === "ai" ? "bg-[#1a1a2e] text-white" : "bg-white border border-border/50"}`}>
+                    <div className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${m.from === "ai" ? "text-[#C8FF00]" : "text-muted-foreground"}`}>{m.name}</div>
+                    <div className={`text-sm leading-relaxed ${m.from === "ai" ? "text-white/90" : ""}`} style={m.from !== "ai" ? { color: "hsl(var(--aeline-dark))" } : {}}>{m.msg}</div>
                   </div>
                 </div>
               );
@@ -122,33 +122,33 @@ export default function ConversationalAi() {
       </section>
 
       {/* Phases */}
-      <section className="px-8 md:px-16 py-24 md:py-32 border-t border-border/40">
+      <section className="px-6 py-20 md:py-32 bg-background">
         <div className="max-w-6xl mx-auto">
-          <div ref={phasesRef.ref} className="flex items-center justify-center pb-16 text-center"
+          <div ref={phasesRef.ref} className="mb-12"
             style={{ opacity: phasesRef.visible ? 1 : 0, transform: phasesRef.visible ? "translateY(0)" : "translateY(24px)", transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)" }}
           >
-            <h2 className="text-5xl md:text-6xl font-normal text-foreground leading-tight tracking-tight max-w-2xl">
+            <span className="section-label mb-6 block">Conversation Phases</span>
+            <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] max-w-3xl" style={{ color: "hsl(var(--aeline-dark))" }}>
               Intelligent conversation phases
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl">
             {phases.map((p, i) => {
               const card = useInView(0.15);
               return (
                 <div
                   key={i}
                   ref={card.ref}
-                  className="rounded-[28px] border border-border/60 p-8"
+                  className="rounded-3xl bg-[#f5f5f5] p-8"
                   style={{
-                    background: "hsl(0 0% 98%)",
                     opacity: card.visible ? 1 : 0,
                     transform: card.visible ? "translateY(0)" : "translateY(28px)",
                     transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 100}ms`,
                   }}
                 >
-                  <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">{p.phase}</div>
-                  <h3 className="text-2xl font-normal text-foreground tracking-tight">{p.title}</h3>
+                  <div className="inline-flex px-3 py-1 rounded-full bg-[#1a1a2e] text-[#C8FF00] text-[10px] font-semibold uppercase tracking-wider mb-4">{p.phase}</div>
+                  <h3 className="text-xl font-semibold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>{p.title}</h3>
                   <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{p.desc}</p>
                 </div>
               );
@@ -158,34 +158,37 @@ export default function ConversationalAi() {
       </section>
 
       {/* Capabilities */}
-      <section className="px-8 md:px-16 py-24 md:py-32" style={{ background: "hsl(0 0% 100%)" }}>
+      <section className="px-6 py-20 md:py-32 bg-background">
         <div className="max-w-6xl mx-auto">
-          <div ref={capsRef.ref} className="flex items-center justify-center pb-16 text-center"
+          <div ref={capsRef.ref} className="mb-12"
             style={{ opacity: capsRef.visible ? 1 : 0, transform: capsRef.visible ? "translateY(0)" : "translateY(24px)", transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)" }}
           >
-            <h2 className="text-5xl md:text-6xl font-normal text-foreground leading-tight tracking-tight max-w-2xl">Key capabilities</h2>
+            <span className="section-label mb-6 block">Capabilities</span>
+            <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] max-w-3xl" style={{ color: "hsl(var(--aeline-dark))" }}>
+              Key capabilities
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
             {capabilities.map((c, i) => {
               const row = useInView(0.15);
               return (
                 <div
                   key={i}
                   ref={row.ref}
-                  className="flex gap-5 items-start"
+                  className="rounded-3xl bg-[#f5f5f5] p-8 flex gap-5 items-start"
                   style={{
                     opacity: row.visible ? 1 : 0,
                     transform: row.visible ? "translateY(0)" : "translateY(28px)",
                     transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 60}ms`,
                   }}
                 >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl border border-border/60 flex items-center justify-center" style={{ background: "hsl(0 0% 98%)" }}>
-                    <c.icon className="w-5 h-5 text-foreground/60" />
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-[#1a1a2e] flex items-center justify-center">
+                    <c.icon className="w-5 h-5 text-[#C8FF00]" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-normal text-foreground tracking-tight">{c.title}</h3>
-                    <p className="text-base text-muted-foreground mt-1 leading-relaxed">{c.desc}</p>
+                    <h3 className="text-xl font-semibold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>{c.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{c.desc}</p>
                   </div>
                 </div>
               );
