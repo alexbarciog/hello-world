@@ -75,6 +75,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [recentPaths, setRecentPaths] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("recent-tabs") || "[]");
+    } catch { return []; }
+  });
   const userMenuRef = useRef<HTMLDivElement>(null);
   
   const { data: isAdmin } = useAdminCheck();
