@@ -6,10 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from
 "@/components/ui/dropdown-menu";
-import intentslyIcon from "@/assets/intentsly-icon.png";
-import meshGradientBg from "@/assets/mesh-gradient.png";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
+import { MetricCard } from "@/components/dashboard/MetricCard";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -48,7 +47,6 @@ function StatusBadge({ status }: {status: string;}) {
         <span className="w-2 h-2 rounded-full bg-emerald-500" />
         ACTIVE
       </span>);
-
   }
   if (isPaused) {
     return (
@@ -56,7 +54,6 @@ function StatusBadge({ status }: {status: string;}) {
         <span className="w-2 h-2 rounded-full bg-amber-400" />
         PAUSED
       </span>);
-
   }
   if (isPending) {
     return (
@@ -64,23 +61,15 @@ function StatusBadge({ status }: {status: string;}) {
         <span className="w-2 h-2 rounded-full bg-amber-400" />
         PENDING
       </span>);
-
   }
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider font-medium px-2 py-0.5 rounded-full bg-md-surface-container text-md-on-surface-variant">
+    <span className="inline-flex items-center gap-1.5 text-[10px] tracking-wider font-medium px-2 py-0.5 rounded-full bg-[#F7F8FA] text-gray-500">
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>);
-
 }
 
 function CampaignCard({
   c, index, onToggle, onEdit, onDelete
-
-
-
-
-
-
 }: {c: CampaignWithLeads;index: number;onToggle: () => void;onEdit: () => void;onDelete: () => void;}) {
   const navigate = useNavigate();
   const isActive = c.status === "active";
@@ -93,24 +82,24 @@ function CampaignCard({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="glass-card rounded-2xl p-5 ghost-border hover:shadow-xl hover:shadow-md-primary/5 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 cursor-pointer"
+      className="bg-[#F7F8FA] rounded-[20px] p-5 hover:bg-[#F0F1F3] transition-colors duration-200 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 cursor-pointer"
       onClick={() => navigate(`/campaigns/${c.id}`)}>
       
       {/* Icon */}
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-md-primary/10 to-md-secondary/10 flex items-center justify-center shrink-0">
+      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0">
         <img alt="" className="w-6 h-6 object-contain" src="/lovable-uploads/84a6842d-39a2-4615-a12e-aab711fa1c8d.webp" />
       </div>
 
       {/* Title & status */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-3 mb-1">
-          <h3 className="font-headline text-md-on-surface truncate font-semibold">
+          <h3 className="text-sm font-semibold text-gray-900 truncate">
             {c.company_name || "My Campaign"}
           </h3>
           <StatusBadge status={c.status} />
         </div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-400">
-          <p className="text-xs text-emerald-500 font-semibold">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F7F8FA] text-gray-600">
+          <p className="text-xs font-medium">
             {c.campaign_goal === "demos" ? "Booking demos" : "Starting conversations"}
           </p>
           {c.status === "active" && (
@@ -126,20 +115,20 @@ function CampaignCard({
       {/* Stats grid */}
       <div className="grid grid-cols-4 gap-8 md:gap-12 text-center items-center md:px-8">
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Leads</p>
-          <p className="text-lg text-md-on-surface font-semibold">{c.leadsCount}</p>
+          <p className="text-xs text-gray-500 mb-1">Leads</p>
+          <p className="text-lg font-semibold text-gray-900">{c.leadsCount}</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Sent</p>
-          <p className="text-lg text-md-on-surface font-semibold">{c.invitations_sent || 0}</p>
+          <p className="text-xs text-gray-500 mb-1">Sent</p>
+          <p className="text-lg font-semibold text-gray-900">{c.invitations_sent || 0}</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Connect</p>
-          <p className="text-lg text-md-primary font-semibold">{acceptRate}%</p>
+          <p className="text-xs text-gray-500 mb-1">Connect</p>
+          <p className="text-lg font-semibold text-gray-900">{acceptRate}%</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Reply</p>
-          <p className="text-lg text-md-secondary font-semibold">{replyRate}%</p>
+          <p className="text-xs text-gray-500 mb-1">Reply</p>
+          <p className="text-lg font-semibold text-gray-900">{replyRate}%</p>
         </div>
       </div>
 
@@ -147,13 +136,12 @@ function CampaignCard({
       <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => navigate(`/campaigns/${c.id}`)}
-          className="px-5 py-2 rounded-full bg-white/80 ghost-border text-xs font-medium hover:bg-white transition-colors">
-          
+          className="px-4 py-2 rounded-xl bg-black text-white text-xs font-medium hover:bg-gray-800 transition-colors">
           View Leads
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="p-2 text-md-outline hover:text-md-on-surface transition-colors">
+            <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
               <MoreVertical className="w-4 h-4" />
             </button>
           </DropdownMenuTrigger>
@@ -162,7 +150,6 @@ function CampaignCard({
             <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
                 <Play className="w-3.5 h-3.5 text-green-600" /> Activate
               </DropdownMenuItem> :
-
             <DropdownMenuItem onClick={onToggle} className="gap-2 text-sm">
                 <Pause className="w-3.5 h-3.5" /> Pause
               </DropdownMenuItem>
@@ -178,7 +165,6 @@ function CampaignCard({
         </DropdownMenu>
       </div>
     </motion.div>);
-
 }
 
 export default function CampaignsPage() {
@@ -311,29 +297,28 @@ export default function CampaignsPage() {
     
       <div className="flex items-center gap-6 mb-2">
         {[
-      { icon: Bot, label: "Create Agent", color: "hsl(var(--md-primary))" },
-      { icon: Sparkles, label: "Build Campaign", color: "hsl(var(--md-secondary))" },
-      { icon: Zap, label: "Start Outreach", color: "hsl(var(--md-tertiary))" }].
+      { icon: Bot, label: "Create Agent" },
+      { icon: Sparkles, label: "Build Campaign" },
+      { icon: Zap, label: "Start Outreach" }].
       map((step, i) =>
       <div key={i} className="flex items-center gap-3">
-            {i > 0 && <ArrowRight className="w-4 h-4 text-md-outline-variant" />}
+            {i > 0 && <ArrowRight className="w-4 h-4 text-gray-400" />}
             <div className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center glass-card ghost-border">
-                <step.icon className="w-6 h-6" style={{ color: step.color }} />
+              <div className="w-14 h-14 rounded-[20px] flex items-center justify-center bg-[#F7F8FA]">
+                <step.icon className="w-6 h-6 text-gray-600" />
               </div>
-              <span className="text-xs font-medium text-md-on-surface-variant">{step.label}</span>
+              <span className="text-xs font-medium text-gray-500">{step.label}</span>
             </div>
           </div>
       )}
       </div>
-      <p className="text-base font-medium text-md-on-surface mt-2 font-headline">No campaigns yet</p>
-      <p className="text-sm text-md-on-surface-variant max-w-md text-center font-light">
+      <p className="text-base font-semibold text-gray-900 mt-2">No campaigns yet</p>
+      <p className="text-sm text-gray-500 max-w-md text-center">
         Create your first AI-powered outreach campaign to start connecting with your ideal prospects on LinkedIn.
       </p>
       <button
       onClick={handleNewCampaign}
-      className="mt-2 px-6 py-3 rounded-full bg-md-primary text-md-on-primary text-sm font-medium shadow-md hover:opacity-90 transition-opacity flex items-center gap-2">
-      
+      className="mt-2 px-6 py-3 rounded-xl bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-2">
         <Plus className="w-4 h-4" />
         Start your first campaign
       </button>
@@ -341,16 +326,15 @@ export default function CampaignsPage() {
 
 
   return (
-    <div
-      className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
+    <div className="min-h-full px-6 py-6 bg-white">
       
       {/* Header */}
       <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-headline tracking-tight text-md-on-surface mb-2 font-medium">
+          <h1 className="text-lg font-semibold text-gray-900 mb-1">
             Outreach Campaigns
           </h1>
-          <p className="text-md-on-surface-variant font-light">
+          <p className="text-sm text-gray-500">
             {loading ? "Loading..." : `${campaigns.length} / ${MAX_CAMPAIGNS} campaigns · `}
             Create and manage your outreach campaigns
           </p>
@@ -365,8 +349,7 @@ export default function CampaignsPage() {
           <button
             onClick={handleNewCampaign}
             disabled={atLimit}
-            className="px-6 py-2.5 rounded-[12px] text-white text-sm font-medium shadow-md hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-            style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}>
+            className="px-6 py-2.5 rounded-xl bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2">
             Start a campaign
             <Plus className="w-4 h-4" />
           </button>
@@ -380,47 +363,10 @@ export default function CampaignsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        
-          {[
-        { label: "Total Leads", value: totalLeads, icon: Users, accent: "primary" as const },
-        { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, accent: "emerald" as const },
-        { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, accent: "secondary" as const },
-        { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, accent: "tertiary" as const }].
-        map((stat, index) => {
-          const isFeatured = stat.label === "Total Leads";
-          return (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
-              className={`group relative rounded-2xl overflow-hidden transition-all duration-300 ${
-                isFeatured
-                  ? "ring-[3px] ring-inset ring-white/30"
-                  : "bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-md-outline-variant/20 hover:border-md-primary/30 hover:shadow-lg hover:shadow-md-primary/5"
-              }`}
-              style={isFeatured ? { background: 'linear-gradient(to top, #6A9BFE, #D0E0FF)' } : undefined}
-            >
-              <div className="relative z-10 p-5 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <p className={`text-xs font-semibold uppercase tracking-widest ${
-                    isFeatured ? "text-white/80" : "text-md-on-surface-variant"
-                  }`}>{stat.label}</p>
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
-                    isFeatured
-                      ? "bg-white/20 backdrop-blur-sm"
-                      : "bg-md-surface-container"
-                  }`}>
-                    <stat.icon className={`w-4 h-4 ${isFeatured ? "text-white" : "text-md-primary"}`} />
-                  </div>
-                </div>
-                <p className={`font-headline tracking-tight font-bold text-3xl ${
-                  isFeatured ? "text-white" : "text-md-on-surface"
-                }`}>{stat.value}</p>
-              </div>
-            </motion.div>
-          );
-        })}
+          <MetricCard title="Total Leads" value={totalLeads} bgColor="bg-[#EDEEFC]" />
+          <MetricCard title="Active Campaigns" value={activeCampaigns} bgColor="bg-[#E6F1FD]" />
+          <MetricCard title="Invitations Sent" value={totalSent.toLocaleString()} bgColor="bg-[#e8f0fb]" />
+          <MetricCard title="Avg Accept Rate" value={`${avgAcceptRate}%`} bgColor="bg-[#E6F1FD]" />
         </motion.div>
       }
 
@@ -428,9 +374,9 @@ export default function CampaignsPage() {
       {!loading && campaigns.length > 0 &&
       <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-headline font-light tracking-tight text-md-on-surface">Active Outreach Streams</h2>
-            <div className="flex items-center gap-4 text-sm text-md-on-surface-variant">
-              <span>Sort by: <span className="text-md-primary font-medium cursor-pointer">Efficiency ↓</span></span>
+            <h2 className="text-sm font-semibold text-gray-900">Active Outreach Streams</h2>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span>Sort by: <span className="text-gray-900 font-medium cursor-pointer">Efficiency ↓</span></span>
             </div>
           </div>
         </section>
@@ -440,7 +386,7 @@ export default function CampaignsPage() {
       <div className="space-y-4">
         {loading ?
         Array.from({ length: 2 }).map((_, i) =>
-        <div key={i} className="glass-card ghost-border rounded-2xl p-5 space-y-4">
+        <div key={i} className="bg-[#F7F8FA] rounded-[20px] p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-12 w-12 rounded-xl" />
                 <div className="space-y-2 flex-1">
@@ -466,12 +412,10 @@ export default function CampaignsPage() {
             onToggle={() => handleToggleStatus(c.id, c.status)}
             onEdit={() => handleEditCampaign(c.id)}
             onDelete={() => handleDeleteCampaign(c.id)} />
-
           )}
           </AnimatePresence>
         }
       </div>
 
     </div>);
-
 }
