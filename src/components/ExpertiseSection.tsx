@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { TrendingUp, Cpu, Globe, Lightbulb, Zap, ArrowUpRight, Users, MessageSquare, Flame } from "lucide-react";
+import { Search, Heart, UserPlus, MessageCircle, Zap, Flame, TrendingUp, Eye } from "lucide-react";
 
 const useReveal = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -18,39 +18,67 @@ const useReveal = () => {
 const tags1 = ["Signal-Based", "AI Outreach", "Intent-Driven", "Hyper-Personalized"];
 const tags2 = ["Warm Leads", "Auto-Pilot", "LinkedIn Native", "Real-Time"];
 
-/* ── Card 1: Signal Detection — Signals dashboard + hot leads ── */
-const SignalVisual = () => (
+/* ── Signal 1: Posting About Keywords ── */
+const KeywordPostVisual = () => (
   <div className="relative w-full h-48 flex items-center justify-center">
-    {/* Dark signal card */}
     <div className="absolute left-4 top-2 w-44 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-3 z-10">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium opacity-80">Signals today</span>
-        <Zap className="w-4 h-4 text-[#C8FF00]" />
+        <span className="text-xs font-medium opacity-80">Keyword hits</span>
+        <Search className="w-4 h-4 text-[#C8FF00]" />
       </div>
-      <p className="text-[10px] opacity-40 mb-2">Across LinkedIn, Reddit, X</p>
-      <div className="text-3xl font-bold mb-0.5">127</div>
-      <p className="text-[10px] opacity-40">Intent signals detected</p>
+      <p className="text-[10px] opacity-40 mb-2">Last 24 hours</p>
+      <div className="text-3xl font-bold mb-0.5">34</div>
+      <p className="text-[10px] opacity-40">Posts matched</p>
     </div>
-    {/* White hot leads card */}
     <div className="absolute right-2 top-3 w-48 rounded-2xl bg-white shadow-lg p-3.5 rotate-2 z-20 border border-border/50">
-      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Hot leads</p>
+      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Tracked keywords</p>
       <div className="space-y-1.5">
         {[
-          { name: "Sarah K.", signal: "Liked competitor post", tier: "🔥" },
-          { name: "Mike R.", signal: "Job change detected", tier: "🔥" },
-          { name: "James L.", signal: "Visited your profile", tier: "🔥" },
+          { keyword: "\"sales automation\"", posts: 12 },
+          { keyword: "\"lead generation\"", posts: 9 },
+          { keyword: "\"outbound tools\"", posts: 13 },
+        ].map((k, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#C8FF00]" />
+              <span className="text-[10px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>{k.keyword}</span>
+            </div>
+            <span className="text-[8px] text-muted-foreground">{k.posts} posts</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+/* ── Signal 2: Likes Competitor Posts ── */
+const CompetitorLikesVisual = () => (
+  <div className="relative w-full h-48 flex items-center justify-center">
+    <div className="absolute left-4 top-1 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-2 z-10">
+      <p className="text-[10px] opacity-50 mb-1">Competitor engagers</p>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold">58</span>
+        <span className="text-xs font-semibold text-[#C8FF00]">today</span>
+      </div>
+      <p className="text-[10px] opacity-40 mt-1">Liked competitor content</p>
+    </div>
+    <div className="absolute right-2 top-2 w-48 rounded-2xl bg-white shadow-lg p-3.5 rotate-2 z-20 border border-border/50">
+      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Recent likes detected</p>
+      <div className="space-y-1.5">
+        {[
+          { name: "Sarah K.", action: "Liked competitor post", icon: "❤️" },
+          { name: "Mike R.", action: "Reacted to announcement", icon: "👍" },
+          { name: "James L.", action: "Liked product update", icon: "❤️" },
         ].map((l, i) => (
           <div key={i} className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-[#f5f5f5] flex items-center justify-center">
-                <Flame className="w-3 h-3 text-orange-500" />
-              </div>
+              <Heart className="w-3 h-3 text-red-400" />
               <div>
                 <p className="text-[10px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>{l.name}</p>
-                <p className="text-[8px] text-muted-foreground">{l.signal}</p>
+                <p className="text-[8px] text-muted-foreground">{l.action}</p>
               </div>
             </div>
-            <span className="text-[10px]">{l.tier}</span>
+            <span className="text-[10px]">{l.icon}</span>
           </div>
         ))}
       </div>
@@ -58,133 +86,90 @@ const SignalVisual = () => (
   </div>
 );
 
-/* ── Card 2: Outreach — Message sequence + reply rate ── */
-const OutreachVisual = () => (
+/* ── Signal 3: Follows Competitor Page ── */
+const CompetitorFollowVisual = () => (
   <div className="relative w-full h-48 flex items-center justify-center">
-    {/* Dark reply rate card */}
-    <div className="absolute left-4 top-1 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-2 z-10">
-      <p className="text-[10px] opacity-50 mb-1">Reply rate</p>
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold">38%</span>
-        <span className="text-xs font-semibold text-[#C8FF00]">+12%</span>
-      </div>
-      <p className="text-[10px] opacity-40 mt-1">vs 3% cold outreach</p>
-    </div>
-    {/* White message sequence card */}
-    <div className="absolute right-2 top-2 w-48 rounded-2xl bg-white shadow-lg p-3.5 rotate-2 z-20 border border-border/50">
-      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Campaign sequence</p>
-      <div className="space-y-1.5">
-        {[
-          { step: "Connect", status: "Sent", color: "#22c55e" },
-          { step: "Follow-up 1", status: "Replied ✓", color: "#1A8FE3" },
-          { step: "Meeting booked", status: "Done", color: "#C8FF00" },
-        ].map((s, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
-            <span className="text-[10px] font-medium flex-1" style={{ color: "hsl(var(--aeline-dark))" }}>{s.step}</span>
-            <span className="text-[8px] text-muted-foreground">{s.status}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-/* ── Card 3: Lead Scoring — AI score + pipeline chart ── */
-const ScoringVisual = () => (
-  <div className="relative w-full h-48 flex items-center justify-center">
-    {/* Dark AI score card */}
     <div className="absolute left-4 top-2 w-44 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl rotate-2 z-10">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium opacity-80">AI lead score</span>
-        <TrendingUp className="w-4 h-4 opacity-60" />
+        <span className="text-xs font-medium opacity-80">New followers</span>
+        <UserPlus className="w-4 h-4 text-[#C8FF00]" />
       </div>
-      <p className="text-[10px] opacity-40 mb-2">This week's pipeline</p>
+      <p className="text-[10px] opacity-40 mb-2">On competitor pages</p>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold">92</span>
-        <span className="text-xs font-semibold text-[#C8FF00]">/ 100</span>
+        <span className="text-3xl font-bold">23</span>
+        <span className="text-xs font-semibold text-[#C8FF00]">this week</span>
       </div>
-      <p className="text-[10px] opacity-40 mt-1">Top-tier prospect</p>
+      <p className="text-[10px] opacity-40 mt-1">Prospects to intercept</p>
     </div>
-    {/* Pipeline bar chart */}
     <div className="absolute right-3 bottom-1 w-44 rounded-2xl bg-white shadow-lg p-3.5 -rotate-1 z-20 border border-border/50">
-      <p className="text-[9px] font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Meetings booked</p>
-      <div className="flex items-end gap-1.5 h-14 mb-1.5">
-        {[15, 22, 18, 35, 28, 42, 55].map((h, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-sm"
-            style={{
-              height: `${h}%`,
-              backgroundColor: i >= 5 ? "#1A8FE3" : "#e5e7eb",
-            }}
-          />
+      <p className="text-[9px] font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Competitor pages tracked</p>
+      <div className="space-y-1.5">
+        {[
+          { page: "Competitor A", followers: "+8" },
+          { page: "Competitor B", followers: "+11" },
+          { page: "Competitor C", followers: "+4" },
+        ].map((c, i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-full bg-[#f0f0f0] flex items-center justify-center">
+                <Eye className="w-3 h-3 text-muted-foreground" />
+              </div>
+              <span className="text-[10px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>{c.page}</span>
+            </div>
+            <span className="text-[9px] font-semibold text-[#22c55e]">{c.followers}</span>
+          </div>
         ))}
       </div>
-      <div className="flex justify-between text-[7px] text-muted-foreground">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <span key={d}>{d}</span>
-        ))}
-      </div>
-    </div>
-    {/* Floating tags */}
-    <div className="absolute right-4 top-4 flex flex-col gap-1.5 z-20">
-      {["Signal A ✓", "Signal B ✓"].map((t) => (
-        <span key={t} className="px-2.5 py-1 rounded-full border border-border bg-white text-[9px] font-medium shadow-sm" style={{ color: "hsl(var(--aeline-dark))" }}>{t}</span>
-      ))}
     </div>
   </div>
 );
 
-/* ── Card 4: Conversational AI — Chat + contacts ── */
-const ConversationalVisual = () => (
+/* ── Signal 4: Comments/Likes on Topic Posts ── */
+const TopicEngagementVisual = () => (
   <div className="relative w-full h-48 flex items-center justify-center">
-    {/* Center icon */}
     <div className="w-14 h-14 rounded-2xl bg-[#1a1a2e] flex items-center justify-center shadow-xl z-10">
-      <MessageSquare className="w-6 h-6 text-white" />
+      <MessageCircle className="w-6 h-6 text-white" />
     </div>
-    {/* Orbiting rings */}
     <div className="absolute w-32 h-32 rounded-full border border-border/40" />
     <div className="absolute w-48 h-48 rounded-full border border-border/30" />
-    {/* Contact badges */}
     <div className="absolute top-1 right-12 flex items-center gap-1.5 bg-white rounded-full pl-1.5 pr-2.5 py-1 shadow-md border border-border/50 z-20">
       <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[7px] font-bold text-white">SK</div>
-      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Replied</span>
-      <span className="text-[9px] font-semibold text-[#22c55e]">Hot</span>
+      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Commented</span>
+      <span className="text-[9px] font-semibold text-[#22c55e]">🔥</span>
     </div>
     <div className="absolute bottom-8 left-4 flex items-center gap-1.5 bg-white rounded-full pl-1.5 pr-2.5 py-1 shadow-md border border-border/50 z-20">
       <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-[7px] font-bold text-white">JM</div>
-      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Meeting set</span>
-      <span className="text-[9px] font-semibold text-[#1A8FE3]">Won</span>
+      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Liked post</span>
+      <span className="text-[9px] font-semibold text-[#1A8FE3]">👍</span>
     </div>
     <div className="absolute bottom-2 right-6 flex items-center gap-1.5 bg-white rounded-full pl-1.5 pr-2.5 py-1 shadow-md border border-border/50 z-20">
       <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-[7px] font-bold text-white">AR</div>
-      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Engaged</span>
-      <span className="text-[9px] font-semibold text-[#22c55e]">Warm</span>
+      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Reacted</span>
+      <span className="text-[9px] font-semibold text-[#22c55e]">💬</span>
     </div>
   </div>
 );
 
 const features = [
   {
-    title: "AI Signal Detection",
-    desc: "Detect buying signals across LinkedIn, Reddit, and X — find prospects already looking for what you offer.",
-    Visual: SignalVisual,
+    title: "Posting About Your Keywords",
+    desc: "Detect prospects actively posting about topics you track — they're already talking about what you solve.",
+    Visual: KeywordPostVisual,
   },
   {
-    title: "Smart Outreach Sequences",
-    desc: "AI writes personalized messages from your LinkedIn. Connect, follow up, and book meetings on autopilot.",
-    Visual: OutreachVisual,
+    title: "Likes Your Competitor's Posts",
+    desc: "Catch prospects engaging with your competitors' content — they're in-market and ready to hear your pitch.",
+    Visual: CompetitorLikesVisual,
   },
   {
-    title: "Intelligent Lead Scoring",
-    desc: "Every lead is scored by AI based on intent signals, ICP match, and engagement — so you focus on who's ready to buy.",
-    Visual: ScoringVisual,
+    title: "Follows Your Competitor's Page",
+    desc: "Spot prospects following competitor pages — intercept them before they commit to someone else.",
+    Visual: CompetitorFollowVisual,
   },
   {
-    title: "Conversational AI",
-    desc: "AI replies to prospects in real-time with context-aware messages that deepen interest and drive meetings.",
-    Visual: ConversationalVisual,
+    title: "Engages on Topic Posts",
+    desc: "Find people commenting and liking posts about your niche — the strongest signal of buying intent.",
+    Visual: TopicEngagementVisual,
   },
 ];
 
@@ -194,16 +179,15 @@ const ExpertiseSection = () => {
   return (
     <section className="py-20 md:py-32 px-6 bg-background overflow-hidden">
       <div ref={ref} className="reveal-up max-w-6xl mx-auto">
-        <span className="section-label mb-6 block">Expertise</span>
+        <span className="section-label mb-6 block">Signals We Track</span>
 
         <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] max-w-3xl mb-6" style={{ color: "hsl(var(--aeline-dark))" }}>
-          Where human insight meets intelligent technology
+          Every signal is a sales opportunity
         </h2>
         <p className="text-base text-muted-foreground max-w-2xl mb-14 leading-relaxed">
-          We help businesses harness technology not to replace human creativity, but to amplify it — enabling smarter decisions and faster growth.
+          We monitor LinkedIn, Reddit, and X in real-time to detect buying signals — so you reach prospects the moment they show intent.
         </p>
 
-        {/* Feature cards - bento grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
           {features.map((f, i) => (
             <div key={i} className="rounded-3xl bg-[#f5f5f5] p-8 pb-6 flex flex-col group hover:shadow-lg transition-shadow duration-300">
@@ -214,7 +198,6 @@ const ExpertiseSection = () => {
           ))}
         </div>
 
-        {/* Tag marquees */}
         <div className="space-y-3 overflow-hidden">
           <div className="relative">
             <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
