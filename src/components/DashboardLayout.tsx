@@ -252,7 +252,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
             <span className="font-semibold text-sm text-gray-900">Intentsly</span>
           </div>
-          <div className="hidden md:block" />
+          
           <NotificationsPanel />
         </header>
 
