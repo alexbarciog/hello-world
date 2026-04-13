@@ -18,7 +18,7 @@ export function QuickStartPanel({ steps }: QuickStartPanelProps) {
   const allDone = completedSteps === steps.length;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6 h-full flex flex-col">
+    <div className="bg-snow-bg-2 rounded-[20px] p-6 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-sm font-semibold text-gray-900">Quick Start</h2>
         <span className="text-xs text-gray-400">{completedSteps}/{steps.length}</span>
