@@ -183,6 +183,7 @@ function CampaignCard({
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
+  const sub = useSubscription();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
