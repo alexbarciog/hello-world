@@ -4,17 +4,16 @@ import { ttqViewContent } from "@/lib/tiktok-pixel";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
-import Features from "@/components/Features";
-import HowItWorks from "@/components/HowItWorks";
+import AboutStats from "@/components/AboutStats";
+import ServicesSection from "@/components/ServicesSection";
+import ExpertiseSection from "@/components/ExpertiseSection";
 import Pricing from "@/components/Pricing";
-
-import FAQ from "@/components/FAQ";
+import Testimonials from "@/components/Testimonials";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { isOnboardingComplete } from "@/components/OnboardingGuard";
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const campaignId = searchParams.get("campaign_id");
   const showCampaigns = isOnboardingComplete();
   useEffect(() => { ttqViewContent("Landing Page", "landing"); }, []);
 
@@ -23,12 +22,11 @@ const Index = () => {
       <Navbar showCampaigns={showCampaigns} />
       <Hero />
       <LogoMarquee />
-      <Features />
-      <HowItWorks />
-      
-      
-      <FAQ />
+      <AboutStats />
+      <ServicesSection />
+      <ExpertiseSection />
       <Pricing />
+      <Testimonials />
       <CTASection />
       <Footer />
     </div>

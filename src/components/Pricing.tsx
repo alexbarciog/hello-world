@@ -1,10 +1,9 @@
-import { useState } from "react";
-import { Check, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Check, ArrowUp, ArrowDown, ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import pricingGradientBg from "@/assets/pricing-gradient-bg.png";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ttqInitiateCheckout, ttqAddToCart, ttqAddPaymentInfo } from "@/lib/tiktok-pixel";
+import { ttqInitiateCheckout, ttqAddToCart } from "@/lib/tiktok-pixel";
 
 const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
@@ -28,10 +27,25 @@ const proFeatures = [
 const STARTER_PRICE_ID = "price_1TIByxFsgTpFMX56JNwbw3TA";
 const PRO_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
 
+const useReveal = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { el.classList.add("revealed"); obs.disconnect(); }
+    }, { threshold: 0.15 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return ref;
+};
+
 const Pricing = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const sub = useSubscription();
+  const ref = useReveal();
 
   const handleCheckout = async (priceId: string, planName: string = "Plan", planValue?: number) => {
     setLoading(true);
@@ -39,30 +53,15 @@ const Pricing = () => {
     ttqInitiateCheckout(planName, planValue);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        window.location.href = "/register";
-        return;
-      }
-
+      if (!user) { window.location.href = "/register"; return; }
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: {
-          priceId,
-          returnUrl: window.location.origin,
-        },
+        body: { priceId, returnUrl: window.location.origin },
       });
-
       if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      if (data?.url) window.location.href = data.url;
     } catch (err: any) {
       console.error("Checkout error:", err);
-      toast({
-        title: "Checkout failed",
-        description: err.message || "Something went wrong",
-        variant: "destructive",
-      });
+      toast({ title: "Checkout failed", description: err.message || "Something went wrong", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -77,153 +76,116 @@ const Pricing = () => {
   const renderButton = (plan: "starter" | "pro", priceId: string, planLabel = "Plan", planValue = 0) => {
     if (activePlan === plan) {
       return (
-        <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
-          <Check className="w-4 h-4 mr-2" />
-          Active
+        <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white bg-green-500">
+          <Check className="w-4 h-4 mr-2" /> Active
         </div>
       );
     }
-
     if (activePlan === "pro" && plan === "starter") {
       return (
-        <button
-          onClick={() => handleCheckout(priceId, planLabel, planValue)}
-          disabled={loading}
-          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
-        >
-          <ArrowDown className="w-4 h-4 mr-2" />
-          {loading ? "Redirecting..." : "Downgrade"}
+        <button onClick={() => handleCheckout(priceId, planLabel, planValue)} disabled={loading}
+          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full border border-border text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50">
+          <ArrowDown className="w-4 h-4 mr-2" /> {loading ? "Redirecting..." : "Downgrade"}
         </button>
       );
     }
-
     if (activePlan === "starter" && plan === "pro") {
       return (
-        <button
-          onClick={() => handleCheckout(priceId, planLabel, planValue)}
-          disabled={loading}
-          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-        >
-          <ArrowUp className="w-4 h-4 mr-2" />
-          {loading ? "Redirecting..." : "Upgrade"}
+        <button onClick={() => handleCheckout(priceId, planLabel, planValue)} disabled={loading}
+          className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
+          <ArrowUp className="w-4 h-4 mr-2" /> {loading ? "Redirecting..." : "Upgrade"}
         </button>
       );
     }
-
     return (
-      <button
-        onClick={() => handleCheckout(priceId, planLabel, planValue)}
-        disabled={loading}
-        className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
-      >
-        {loading ? "Redirecting..." : "Get started"}
+      <button onClick={() => handleCheckout(priceId, planLabel, planValue)} disabled={loading}
+        className="btn-cta w-full justify-center">
+        {loading ? "Redirecting..." : "Get Started"}
+        <ArrowUpRight className="w-4 h-4" />
       </button>
     );
   };
 
   return (
-    <section id="pricing" className="py-20 md:py-32 px-6 md:px-10 bg-background">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-normal text-foreground tracking-tight">Simple, transparent pricing</h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">Choose the plan that fits your needs. Start generating warm leads today with no hidden fees.</p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          {/* Starter — $59/mo */}
-          <div className="relative rounded-3xl bg-card overflow-hidden shadow-lg">
-            <div
-              className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
-              style={{ backgroundImage: `url(${pricingGradientBg})` }}
-            >
-              <div className="flex items-center gap-2">
-                <h3 className="text-2xl font-semibold text-foreground">Starter</h3>
-                {activePlan === "starter" && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
-                    Your Plan
-                  </span>
-                )}
-              </div>
-              <div className="flex items-baseline gap-2 mt-3">
-                <span className="text-5xl font-bold text-foreground tracking-tight">$59</span>
-                <span className="text-sm text-foreground/70">/month</span>
-              </div>
-              <div className="mt-4">
-                {renderButton("starter", STARTER_PRICE_ID, "Starter", 59)}
-              </div>
+    <section id="pricing" className="py-20 md:py-32 px-6 bg-background">
+      <div ref={ref} className="reveal-up max-w-5xl mx-auto">
+        <span className="section-label mb-6 block">Pricing</span>
+
+        <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] mb-4" style={{ color: "hsl(var(--aeline-dark))" }}>
+          Flexible Plans Built for Every Stage of Growth
+        </h2>
+        <p className="text-base text-muted-foreground max-w-2xl mb-14 leading-relaxed">
+          Whether you're just starting or scaling enterprise-wide, we offer tailored solutions that grow with you.
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Starter */}
+          <div className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-lg font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>Starter Plan</h3>
+              {activePlan === "starter" && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white bg-green-500">Your Plan</span>
+              )}
             </div>
-            <div className="px-8 pt-8 pb-8">
-              <ul className="space-y-4">
-                {starterFeatures.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
+            <p className="text-sm text-muted-foreground mb-6">Perfect for small teams beginning to explore AI-powered outreach.</p>
+            <div className="flex items-baseline gap-1 mb-8">
+              <span className="text-4xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>$59</span>
+              <span className="text-sm text-muted-foreground">/month</span>
             </div>
+            <ul className="space-y-3 mb-8 flex-1">
+              {starterFeatures.map((feat, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  <Check className="w-4 h-4 text-[#1A8FE3] shrink-0" /> {feat}
+                </li>
+              ))}
+            </ul>
+            {renderButton("starter", STARTER_PRICE_ID, "Starter", 59)}
           </div>
 
-          {/* Pro — $99/mo */}
-          <div className="relative rounded-3xl bg-card overflow-hidden shadow-lg ring-2 ring-primary">
-            {activePlan === "pro" ? (
-              <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style={{ background: "hsl(142 71% 45%)" }}>
-                Your Plan
-              </div>
-            ) : (
-              <div className="absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-primary text-primary-foreground">
-                Popular
-              </div>
-            )}
-            <div
-              className="h-52 px-8 pt-8 flex flex-col justify-start relative overflow-hidden bg-cover bg-center"
-              style={{ backgroundImage: `url(${pricingGradientBg})` }}
-            >
-              <h3 className="text-2xl font-semibold text-foreground">Pro</h3>
-              <div className="flex items-baseline gap-2 mt-3">
-                <span className="text-5xl font-bold text-foreground tracking-tight">$99</span>
-                <span className="text-sm text-foreground/70">/month</span>
-              </div>
-              <div className="mt-4">
-                {renderButton("pro", PRO_PRICE_ID, "Pro", 99)}
-              </div>
+          {/* Pro — highlighted */}
+          <div className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col ring-2 ring-[#C8FF00] relative">
+            <div className="absolute -top-3 left-8 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#C8FF00]" style={{ color: "hsl(var(--aeline-dark))" }}>
+              Popular
             </div>
-            <div className="px-8 pt-8 pb-8">
-              <ul className="space-y-4">
-                {proFeatures.map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-lg font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>Growth Plan</h3>
+              {activePlan === "pro" && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white bg-green-500">Your Plan</span>
+              )}
             </div>
+            <p className="text-sm text-muted-foreground mb-6">Designed for growing companies ready to integrate AI into their operations.</p>
+            <div className="flex items-baseline gap-1 mb-8">
+              <span className="text-4xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>$99</span>
+              <span className="text-sm text-muted-foreground">/month</span>
+            </div>
+            <ul className="space-y-3 mb-8 flex-1">
+              {proFeatures.map((feat, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  <Check className="w-4 h-4 text-[#1A8FE3] shrink-0" /> {feat}
+                </li>
+              ))}
+            </ul>
+            {renderButton("pro", PRO_PRICE_ID, "Pro", 99)}
           </div>
 
           {/* Custom */}
-          <div className="rounded-3xl overflow-hidden shadow-sm h-fit" style={{ background: "hsl(0 0% 96%)" }}>
-            <div className="px-8 pt-8">
-              <h3 className="text-2xl font-semibold text-foreground">Custom</h3>
-              <p className="text-3xl font-light text-foreground tracking-tight mt-3">Contact us</p>
-              <p className="text-sm text-muted-foreground mt-3">Tailored for teams with advanced needs and higher volume.</p>
+          <div className="rounded-3xl bg-[#f5f5f5] p-8 flex flex-col">
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Enterprise Plan</h3>
+            <p className="text-sm text-muted-foreground mb-6">Custom-built for enterprises seeking full-scale transformation.</p>
+            <div className="flex items-baseline gap-1 mb-8">
+              <span className="text-4xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Custom</span>
             </div>
-            <div className="px-8 mt-6">
-              <a
-                href="/register"
-                className="flex items-center justify-center w-full text-sm font-medium py-3.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors"
-              >
-                Get started
-              </a>
-            </div>
-            <div className="px-8 pt-6 pb-8">
-              <ul className="space-y-3">
-                {["Everything in Pro", "Unlimited LinkedIn senders", "Dedicated account manager", "Custom integrations"].map((feat, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-foreground">
-                    <Check className="w-4 h-4 text-foreground/60 shrink-0" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="space-y-3 mb-8 flex-1">
+              {["Everything in Pro", "Unlimited LinkedIn senders", "Dedicated account manager", "Custom integrations", "24/7 premium support"].map((feat, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  <Check className="w-4 h-4 text-[#1A8FE3] shrink-0" /> {feat}
+                </li>
+              ))}
+            </ul>
+            <a href="/register" className="btn-outline-dark w-full justify-center">
+              Get Started
+              <ArrowUpRight className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </div>
