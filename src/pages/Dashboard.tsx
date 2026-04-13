@@ -242,9 +242,9 @@ export default function Dashboard() {
         counts[tier] = (counts[tier] || 0) + 1;
       });
       return [
-        { name: "Hot", value: counts.hot, color: "#10B981" },
-        { name: "Warm", value: counts.warm, color: "#F59E0B" },
-        { name: "Cold", value: counts.cold, color: "#9CA3AF" },
+        { name: "Hot", value: counts.hot, color: "#333333" },
+        { name: "Warm", value: counts.warm, color: "#3B82F6" },
+        { name: "Cold", value: counts.cold, color: "#34D399" },
       ];
     },
     staleTime: 30_000,
