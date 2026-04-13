@@ -198,8 +198,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   key={item!.path}
                   onClick={() => navigate(item!.path)}
-                  className="w-[180px] h-9 flex items-center rounded-lg px-3 text-[14px] text-gray-900 hover:bg-gray-50 transition-colors"
+                  className="w-[180px] h-9 flex items-center gap-2.5 rounded-lg px-3 text-[14px] text-gray-900 hover:bg-gray-50 transition-colors"
                 >
+                  <span className="w-1.5 h-1.5 rounded-full bg-black/20 shrink-0" />
                   <span className="truncate">{item!.label}</span>
                 </button>
               ))}
