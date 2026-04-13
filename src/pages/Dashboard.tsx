@@ -271,9 +271,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="hidden xl:block">
-        <DashboardSidebar />
-      </div>
     </div>
   );
 }
