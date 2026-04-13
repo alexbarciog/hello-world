@@ -1,65 +1,46 @@
 import { ArrowUpRight } from "lucide-react";
-import ctaBg from "@/assets/cta-bg.png";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 
 const CTASection = () => {
   return (
-    <section className="py-28 px-4 relative overflow-hidden bg-white">
-      {/* Background image */}
-      <img
-        src={ctaBg}
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none" />
-      
+    <section className="py-28 px-4 relative overflow-hidden hero-sky-gradient">
+      <div className="cloud-overlay" style={{ opacity: 0.3 }} />
 
-      <div className="relative max-w-5xl mx-auto text-center z-10">
-        <h2 className="text-5xl md:text-7xl font-light tracking-tight leading-[1.1] mb-6"
-        style={{ color: "hsl(228 60% 18%)" }}>
-          More High-Intent Leads = Your New Growth Engine.
+      <div className="relative max-w-4xl mx-auto text-center z-10">
+        <h2 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.08] mb-6 text-white">
+          We combine human insight with artificial intelligence
         </h2>
-        <p className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed"
-        style={{ color: "hsl(228 40% 30%)" }}>
-          Start Now and Get New High Intent Leads Delivered Straight to Slack or Your Inbox.
+        <p className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed text-white/80">
+          Our platform bridges strategic thinking and advanced AI technologies to help companies streamline processes, improve decision-making, and create intelligent outreach.
         </p>
-        <a
-          href="/register"
-          className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full backdrop-blur-md border font-medium text-base transition-all duration-300 hover:scale-[1.02]"
-          style={{
-            background: "rgba(255,255,255,0.25)",
-            borderColor: "rgba(255,255,255,0.5)",
-            color: "hsl(228 60% 18%)",
-            boxShadow: "0 4px 24px 0 rgba(61,71,238,0.15)"
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.4)"}
-          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.25)"}>
-          
-          Launch your AI Agent for free
-          <ArrowUpRight className="w-5 h-5" />
+        <a href="/register" className="btn-cta mx-auto">
+          Get Started
+          <ArrowUpRight className="w-4 h-4" />
         </a>
       </div>
-    </section>);
-
+    </section>
+  );
 };
 
 const Footer = () => {
   return (
     <footer className="border-t border-border bg-background">
       <div className="max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-        <a href="#" className="flex items-center gap-2">
-          
-          
+        <a href="/" className="flex items-center gap-2">
+          <img alt="Intentsly" className="h-9 object-contain" src={intentslyIcon} />
         </a>
-        <div className="flex items-center gap-8 text-sm text-goji-text-muted">
-          <a href="#features" className="hover:text-goji-dark transition-colors">Features</a>
-          <a href="#pricing" className="hover:text-goji-dark transition-colors">Pricing</a>
-          <a href="#faq" className="hover:text-goji-dark transition-colors">FAQ</a>
-          <a href="/privacy" className="hover:text-goji-dark transition-colors">Privacy</a>
+        <div className="flex items-center gap-8 text-sm text-muted-foreground">
+          <a href="#services" className="hover:text-foreground transition-colors uppercase tracking-wider text-xs font-medium">Services</a>
+          <a href="#pricing" className="hover:text-foreground transition-colors uppercase tracking-wider text-xs font-medium">Pricing</a>
+          <a href="#testimonials" className="hover:text-foreground transition-colors uppercase tracking-wider text-xs font-medium">Testimonials</a>
+          <a href="/privacy" className="hover:text-foreground transition-colors uppercase tracking-wider text-xs font-medium">Privacy</a>
         </div>
-        <p className="text-xs text-goji-text-muted">
+        <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Intentsly. All rights reserved.
         </p>
       </div>
-    </footer>);
-
+    </footer>
+  );
 };
 
 export { CTASection, Footer };

@@ -11,16 +11,13 @@ const LogoMarquee = () => {
   const doubled = [...logos, ...logos];
 
   return (
-    <section className="py-10 border-y border-border/50 overflow-hidden bg-background">
-      <p className="text-center text-sm font-medium text-goji-text-muted mb-8">
+    <section className="py-10 overflow-hidden bg-background">
+      <p className="text-center text-xs font-medium uppercase tracking-widest text-muted-foreground mb-8">
         Trusted by 500+ Small Sales Teams and B2B Founders
       </p>
       <div className="relative">
-        {/* Fade masks */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-          style={{ background: "linear-gradient(to right, hsl(var(--background)), transparent)" }} />
-        <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-          style={{ background: "linear-gradient(to left, hsl(var(--background)), transparent)" }} />
+        <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
+        <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-l from-background to-transparent" />
 
         <div className="animate-marquee flex items-center gap-16 px-8">
           {doubled.map((logo, i) => (
@@ -28,7 +25,7 @@ const LogoMarquee = () => {
               key={i}
               src={logo.url}
               alt={logo.alt}
-              className="h-8 object-contain opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0"
+              className="h-8 object-contain opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0"
               style={{ width: logo.w }}
             />
           ))}
