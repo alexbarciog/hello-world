@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
@@ -10,7 +10,6 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import {
   Megaphone,
   Radio,
-  
   Settings,
   LogOut,
   AlertTriangle,
@@ -18,7 +17,15 @@ import {
   Menu,
   X,
   Shield,
+  ChevronRight,
+  Plus,
+  Flame,
+  Thermometer,
+  Snowflake,
+  Calendar,
+  ThumbsDown,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const RedditIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -67,9 +74,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [showLinkedInBanner, setShowLinkedInBanner] = useState(false);
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const userMenuRef = useRef<HTMLDivElement>(null);
   
   const { data: isAdmin } = useAdminCheck();
+
+  const { data: campaignsList } = useQuery({
+    queryKey: ["sidebar-campaigns"],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("id, description, status").order("created_at", { ascending: false }).limit(10);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: signalAgentsList } = useQuery({
+    queryKey: ["sidebar-signal-agents"],
+    queryFn: async () => {
+      const { data } = await supabase.from("signal_agents").select("id, name, status").order("created_at", { ascending: false }).limit(10);
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  const toggleSection = (label: string) => {
+    setExpandedSections((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const expandableItems = useMemo(() => new Set(["Campaigns", "Contacts", "Signals Agents"]), []);
 
   const navItems = isAdmin
     ? [...baseNavItems, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
@@ -134,23 +166,110 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {allNavItems.map((item) => {
             const active = location.pathname === item.path;
             const Icon = item.icon;
+            const isExpandable = expandableItems.has(item.label);
+            const isExpanded = expandedSections[item.label] ?? false;
+
             return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] transition-colors ${
-                  active
-                    ? "bg-gray-100 text-gray-900 font-medium"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                }`}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </button>
+              <div key={item.path}>
+                <div className="flex items-center">
+                  {isExpandable && (
+                    <button
+                      onClick={() => toggleSection(item.label)}
+                      className="w-5 h-5 flex items-center justify-center shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => navigate(item.path)}
+                    className={`flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors ${
+                      !isExpandable ? "ml-5" : ""
+                    } ${
+                      active
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                    }`}
+                  >
+                    <Icon className="w-[18px] h-[18px] shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                </div>
+
+                {/* Sub-items */}
+                {isExpandable && isExpanded && (
+                  <div className="ml-5 pl-5 border-l border-gray-100 space-y-0.5 py-1">
+                    {item.label === "Contacts" && (
+                      <>
+                        {[
+                          { label: "Hot Leads", icon: Flame, filter: "hot" },
+                          { label: "Warm Leads", icon: Thermometer, filter: "warm" },
+                          { label: "Cold Leads", icon: Snowflake, filter: "cold" },
+                          { label: "Meeting", icon: Calendar, filter: "meeting" },
+                          { label: "Not Interested", icon: ThumbsDown, filter: "not_interested" },
+                        ].map((sub) => (
+                          <button
+                            key={sub.filter}
+                            onClick={() => navigate(`/contacts?filter=${sub.filter}`)}
+                            className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
+                              location.pathname === "/contacts" && new URLSearchParams(location.search).get("filter") === sub.filter
+                                ? "text-gray-900 font-medium bg-gray-50"
+                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                            }`}
+                          >
+                            <sub.icon className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{sub.label}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {item.label === "Campaigns" && (
+                      <>
+                        {(campaignsList ?? []).map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => navigate(`/campaigns/${c.id}`)}
+                            className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
+                              location.pathname === `/campaigns/${c.id}`
+                                ? "text-gray-900 font-medium bg-gray-50"
+                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />
+                            <span className="truncate">{c.description || "Untitled"}</span>
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => navigate("/campaigns?autoStart=true")}
+                          className="w-full flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5 shrink-0" />
+                          <span>New campaign</span>
+                        </button>
+                      </>
+                    )}
+
+                    {item.label === "Signals Agents" && (
+                      <>
+                        {(signalAgentsList ?? []).map((a) => (
+                          <button
+                            key={a.id}
+                            onClick={() => navigate(`/signals`)}
+                            className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.status === "active" ? "bg-green-400" : "bg-gray-300"}`} />
+                            <span className="truncate">{a.name}</span>
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
