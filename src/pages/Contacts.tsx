@@ -26,6 +26,7 @@ export default function Contacts() {
   const [perPage, setPerPage] = useState(25);
   const [page, setPage] = useState(1);
   const [listFilter, setListFilter] = useState<string>("all");
+  const [signalFilter, setSignalFilter] = useState<string>("all");
   const [showCreateList, setShowCreateList] = useState(false);
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
