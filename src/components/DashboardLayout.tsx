@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import uniboxIcon from "@/assets/unibox-icon.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
@@ -37,7 +38,7 @@ const baseNavItems = [
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
-  { label: "Unibox",         icon: Mail,            path: "/unibox" },
+  { label: "Unibox",         icon: ({ className }: { className?: string }) => <img src={uniboxIcon} alt="Unibox" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/unibox" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
 
