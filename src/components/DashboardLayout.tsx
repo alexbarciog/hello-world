@@ -329,7 +329,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
           >
             <span className="w-3.5 shrink-0" />
-            <img src={helpCenterIcon} alt="Help Center" className="w-5 h-5 shrink-0" style={{ filter: "brightness(0) saturate(100%)" }} />
+            <img src={helpCenterIcon} alt="Help Center" className="w-5 h-5 shrink-0" />
             <span className="truncate">Help Center</span>
           </button>
           <button
