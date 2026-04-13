@@ -191,14 +191,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Recently */}
         {recentItems.length > 0 && (
-          <div className="px-3 mb-3">
-            <p className="text-[14px] text-black/20 mb-1 px-3">Recently</p>
-            <div className="space-y-0.5">
+          <div className="px-3 mb-4">
+            <p className="text-[13px] text-black/20 mb-2 px-3">Recently</p>
+            <div className="space-y-1">
               {recentItems.map((item) => (
                 <button
                   key={item!.path}
                   onClick={() => navigate(item!.path)}
-                  className="w-[180px] h-9 flex items-center gap-2.5 rounded-lg px-3 text-[14px] text-gray-900 hover:bg-gray-50 transition-colors"
+                  className="w-[180px] h-8 flex items-center gap-2.5 rounded-lg px-3 text-[13px] text-gray-900 hover:bg-gray-50 transition-colors"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-black/20 shrink-0" />
                   <span className="truncate">{item!.label}</span>
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Nav */}
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {allNavItems.map((item) => {
             const active = location.pathname === item.path;
             const Icon = item.icon;
