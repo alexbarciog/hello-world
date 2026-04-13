@@ -42,7 +42,7 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6">
+    <div className="bg-snow-bg-2 rounded-[20px] p-6">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-sm font-semibold text-gray-900">Latest Replies</h2>
         <button
