@@ -152,18 +152,8 @@ const HeroCards = () => {
             <div className="absolute left-0 top-[-0.75rem] h-[calc(50%+0.75rem)] w-0 border-l border-dashed border-white/30" />
             <div className="absolute left-0 top-1/2 w-5 h-0 border-t border-dashed border-white/30" />
             <div className="flex justify-between gap-2">
-              <span className="relative flex-1 inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white border border-white/20 overflow-visible">
-                <span
-                  className="absolute inset-[-0.5px] rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-[borderSpin_2s_linear_infinite] transition-opacity duration-300"
-                  style={{
-                    background: "conic-gradient(from var(--border-angle), #7C93E6 0%, #F7C459 25%, transparent 50%, transparent 100%)",
-                    zIndex: 0,
-                  }}
-                />
-                <span className="absolute inset-[1px] rounded-full bg-white/15 backdrop-blur-sm" style={{ zIndex: 0 }} />
-                <span className="relative z-10 inline-flex items-center gap-1.5">
-                  <Users className="w-3 h-3" /> Is hiring
-                </span>
+              <span className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white border border-white/20">
+                <Users className="w-3 h-3" /> Is hiring
               </span>
             </div>
           </div>
