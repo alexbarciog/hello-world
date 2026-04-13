@@ -382,7 +382,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <DailyActivityChart data={dailyActivityData ?? []} loading={dailyActivityLoading} />
+          <DailyActivityChart data={weeklyActivityData ?? []} loading={weeklyActivityLoading} />
           <LeadsByTier data={tierData ?? []} loading={tierLoading} />
         </div>
 
