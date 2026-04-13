@@ -178,16 +178,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="flex items-center">
                   <button
                     onClick={() => navigate(item.path)}
-                    className={`flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] transition-colors ${
+                    className={`flex-1 flex items-center gap-3 rounded-lg px-3 py-2 text-[14px] text-gray-900 transition-colors ${
                       active
-                        ? "bg-gray-100 text-gray-900 font-medium"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                        ? "bg-gray-100 font-medium"
+                        : "hover:bg-gray-50"
                     }`}
                   >
                     {isExpandable && (
                       <span
                         onClick={(e) => { e.stopPropagation(); toggleSection(item.label); }}
-                        className="flex items-center justify-center shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="flex items-center justify-center shrink-0 text-gray-900 transition-colors"
                       >
                         <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
                       </span>
