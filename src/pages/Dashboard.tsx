@@ -230,7 +230,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-8">
-      <div className="flex-1 min-w-0 flex flex-col gap-6">
+      <div className="flex-1 min-w-0 flex flex-col gap-6 bg-white rounded-[20px] p-6 border border-gray-200/60 shadow-sm">
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Overview</h1>
