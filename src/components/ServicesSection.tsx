@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Sparkles, MessageCircle, BarChart3, ArrowUpRight } from "lucide-react";
+import serviceSignals from "@/assets/service-signals.jpg";
+import serviceOutreach from "@/assets/service-outreach.jpg";
+import serviceData from "@/assets/service-data.jpg";
 
 const useReveal = () => {
   const ref = useRef<HTMLDivElement>(null);
@@ -21,18 +24,21 @@ const services = [
     title: "AI Signal Detection",
     desc: "We detect high-intent buying signals across LinkedIn, Reddit, and X to find prospects already looking for what you offer.",
     color: "#1A8FE3",
+    image: serviceSignals,
   },
   {
     icon: MessageCircle,
     title: "Smart Outreach",
     desc: "Automated, personalized LinkedIn outreach campaigns that start relevant conversations and book demos on autopilot.",
     color: "#C8FF00",
+    image: serviceOutreach,
   },
   {
     icon: BarChart3,
     title: "Data & Insights",
     desc: "Advanced lead scoring, real-time analytics dashboards, and predictive insights to optimize your pipeline.",
     color: "#1A8FE3",
+    image: serviceData,
   },
 ];
 
@@ -65,8 +71,8 @@ const ServicesSection = () => {
                 <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
               </div>
               <div className="px-7 pb-7">
-                <div className="w-full h-44 rounded-2xl bg-gradient-to-br from-[#1A8FE3]/10 to-[#87CEEB]/20 flex items-center justify-center">
-                  <s.icon className="w-16 h-16 text-[#1A8FE3]/20" />
+                <div className="w-full h-44 rounded-2xl overflow-hidden bg-[#f0f0f0]">
+                  <img src={s.image} alt={s.title} loading="lazy" width={768} height={512} className="w-full h-full object-cover" />
                 </div>
               </div>
             </div>
