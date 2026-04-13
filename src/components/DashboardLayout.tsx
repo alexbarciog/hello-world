@@ -189,6 +189,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span className="font-semibold text-base tracking-tight text-gray-900">Intentsly</span>
         </div>
 
+        {/* Recently */}
+        {recentItems.length > 0 && (
+          <div className="px-3 mb-3">
+            <p className="text-[14px] text-black/20 mb-1 px-3">Recently</p>
+            <div className="space-y-0.5">
+              {recentItems.map((item) => (
+                <button
+                  key={item!.path}
+                  onClick={() => navigate(item!.path)}
+                  className="w-[180px] h-9 flex items-center rounded-lg px-3 text-[14px] text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="truncate">{item!.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {allNavItems.map((item) => {
