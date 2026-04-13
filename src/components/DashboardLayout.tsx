@@ -61,7 +61,7 @@ const adminOnlyNavItems = [
 const mobileNavItems = [
   { label: "Home",      icon: DashboardIcon, path: "/dashboard" },
   { label: "Campaigns", icon: Megaphone,       path: "/campaigns" },
-  { label: "Contacts",  icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/contacts" },
+  { label: "Contacts",  icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%)" }} />, path: "/contacts" },
   { label: "Signals",   icon: Radio,           path: "/signals" },
   { label: "Settings",  icon: Settings,        path: "/settings" },
 ];
