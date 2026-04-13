@@ -47,9 +47,9 @@ const DashboardIcon = ({ className }: { className?: string }) => (
 const baseNavItems = [
   { label: "Dashboard",      icon: DashboardIcon, path: "/dashboard" },
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
-  { label: "Contacts",       icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/contacts" },
+  { label: "Contacts",       icon: ({ className }: { className?: string }) => <img src={contactsIcon} alt="Contacts" className={className} style={{ filter: "brightness(0) saturate(100%)" }} />, path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
-  { label: "Unibox",         icon: ({ className }: { className?: string }) => <img src={uniboxIcon} alt="Unibox" className={className} style={{ filter: "brightness(0) saturate(100%) opacity(0.6)" }} />, path: "/unibox" },
+  { label: "Unibox",         icon: ({ className }: { className?: string }) => <img src={uniboxIcon} alt="Unibox" className={className} style={{ filter: "brightness(0) saturate(100%)" }} />, path: "/unibox" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
 
