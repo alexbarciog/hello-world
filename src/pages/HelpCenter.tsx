@@ -964,18 +964,18 @@ Once cancelled:
 // ─────────────────────────────────────────
 // CATEGORY ICON MAP
 // ─────────────────────────────────────────
-const categoryIcons: Record<string, { icon: React.ElementType; gradient: string; shadow: string }> = {
-  "getting-started": { icon: Rocket, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
-  "connecting-linkedin": { icon: Link, gradient: "bg-gradient-to-br from-md-secondary to-md-primary-container", shadow: "shadow-md-secondary/20" },
-  "signal-agents": { icon: Radio, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary-fixed))] to-[hsl(46,100%,50%)]", shadow: "shadow-[hsl(var(--md-tertiary))]/20" },
-  "reddit-signals": { icon: Sparkles, gradient: "bg-gradient-to-br from-[hsl(18,95%,58%)] to-[hsl(5,90%,65%)]", shadow: "shadow-[hsl(5,90%,65%)]/20" },
-  "contacts-lists": { icon: UserPlus, gradient: "bg-gradient-to-br from-md-primary-container to-md-secondary", shadow: "shadow-md-primary/20" },
-  "campaigns-outreach": { icon: BarChart3, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
-  "unibox": { icon: MessageSquare, gradient: "bg-gradient-to-br from-md-secondary to-[hsl(var(--md-tertiary))]", shadow: "shadow-md-secondary/20" },
-  "dashboard": { icon: BarChart3, gradient: "bg-gradient-to-br from-[hsl(var(--md-tertiary))] to-md-primary", shadow: "shadow-[hsl(var(--md-tertiary))]/10" },
-  "settings": { icon: Settings, gradient: "bg-gradient-to-br from-md-primary-container to-md-primary", shadow: "shadow-md-primary/10" },
-  "troubleshooting": { icon: Shield, gradient: "bg-gradient-to-br from-destructive to-md-secondary", shadow: "shadow-destructive/10" },
-  "billing-plans": { icon: CreditCard, gradient: "bg-gradient-to-br from-md-primary to-md-secondary", shadow: "shadow-md-primary/20" },
+const categoryIcons: Record<string, { icon: React.ElementType; color: string }> = {
+  "getting-started": { icon: Rocket, color: "#1A8FE3" },
+  "connecting-linkedin": { icon: Link, color: "#0A66C2" },
+  "signal-agents": { icon: Radio, color: "#C8FF00" },
+  "reddit-signals": { icon: Sparkles, color: "#FF4500" },
+  "contacts-lists": { icon: UserPlus, color: "#1A8FE3" },
+  "campaigns-outreach": { icon: BarChart3, color: "#C8FF00" },
+  "unibox": { icon: MessageSquare, color: "#1A8FE3" },
+  "dashboard": { icon: BarChart3, color: "#1A8FE3" },
+  "settings": { icon: Settings, color: "#64748B" },
+  "troubleshooting": { icon: Shield, color: "#EF4444" },
+  "billing-plans": { icon: CreditCard, color: "#1A8FE3" },
 };
 
 // ─────────────────────────────────────────
