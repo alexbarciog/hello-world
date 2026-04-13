@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import uniboxIcon from "@/assets/unibox-icon.png";
 import contactsIcon from "@/assets/contacts-icon.png";
+import helpCenterIcon from "@/assets/help-center-icon.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
@@ -327,7 +328,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
           >
             <span className="w-3.5 shrink-0" />
-            <HelpCircle className="w-5 h-5 shrink-0" />
+            <img src={helpCenterIcon} alt="Help Center" className="w-5 h-5 shrink-0" style={{ filter: "brightness(0) saturate(100%)" }} />
             <span className="truncate">Help Center</span>
           </button>
           <button
