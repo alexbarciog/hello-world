@@ -407,8 +407,8 @@ export default function CreateCampaign() {
                 </div>
 
                 {/* Pain Points */}
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-                  <p className="text-xs font-medium text-gray-500 mb-2">Pain Points</p>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-2">Pain Points</p>
                   <Textarea value={painPoints} onChange={(e) => setPainPoints(e.target.value)} placeholder={"- Pain point 1\n- Pain point 2\n- Pain point 3"} rows={3} className="border-gray-200 rounded-lg bg-white" />
                 </div>
 
