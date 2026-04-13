@@ -184,13 +184,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         : "hover:bg-gray-50"
                     }`}
                   >
-                    {isExpandable && (
+                    {isExpandable ? (
                       <span
                         onClick={(e) => { e.stopPropagation(); toggleSection(item.label); }}
-                        className="flex items-center justify-center shrink-0 text-black/20 transition-colors"
+                        className="w-3.5 flex items-center justify-center shrink-0 text-black/20 transition-colors"
                       >
                         <ChevronRight className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
                       </span>
+                    ) : (
+                      <span className="w-3.5 shrink-0" />
                     )}
                     <Icon className="w-[18px] h-[18px] shrink-0" />
                     <span className="truncate">{item.label}</span>
