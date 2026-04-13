@@ -10,7 +10,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import meshGradientBg from "@/assets/mesh-gradient.png";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
-import { CreateCampaignWizard } from "@/components/campaigns/CreateCampaignWizard";
+
 import { motion, AnimatePresence } from "framer-motion";
 
 const MAX_CAMPAIGNS = 2;
