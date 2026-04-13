@@ -424,9 +424,19 @@ export default function Signals() {
 
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
-    if (newStatus === "active" && !sub.subscribed && !sub.hasCard) {
-      setShowAddCard(true);
-      return;
+    if (newStatus === "active") {
+      // Had a subscription that's now canceled → must resubscribe
+      if (sub.hadSubscription && !sub.subscribed) {
+        toast.error("Your subscription has been canceled. Please upgrade your plan to reactivate agents.", {
+          action: { label: "Upgrade", onClick: () => navigate("/billing") },
+        });
+        return;
+      }
+      // Never had subscription and no card → must add card first
+      if (!sub.subscribed && !sub.hasCard) {
+        setShowAddCard(true);
+        return;
+      }
     }
     await supabase
       .from("signal_agents")

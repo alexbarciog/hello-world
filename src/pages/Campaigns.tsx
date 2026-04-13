@@ -276,6 +276,20 @@ export default function CampaignsPage() {
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "active" ? "paused" : "active";
+    if (newStatus === "active") {
+      if (sub.hadSubscription && !sub.subscribed) {
+        toast.error("Your subscription has been canceled. Please upgrade your plan to reactivate campaigns.", {
+          action: { label: "Upgrade", onClick: () => navigate("/billing") },
+        });
+        return;
+      }
+      if (!sub.subscribed && !sub.hasCard) {
+        toast.error("Add your card to activate campaigns.", {
+          action: { label: "Add Card", onClick: () => navigate("/signals") },
+        });
+        return;
+      }
+    }
     const { error } = await supabase.from("campaigns").update({ status: newStatus }).eq("id", id);
     if (error) toast.error("Failed to update campaign status");else
     {setCampaigns((prev) => prev.map((c) => c.id === id ? { ...c, status: newStatus } : c));toast.success(newStatus === "active" ? "Campaign activated" : "Campaign paused");}
