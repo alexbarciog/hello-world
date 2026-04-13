@@ -250,14 +250,14 @@ export default function Dashboard() {
     staleTime: 30_000,
   });
 
-  // Weekly activity: contacts added, responses, meetings booked
+  // Daily activity: past 7 days
   const { data: weeklyActivityData, isLoading: weeklyActivityLoading } = useQuery({
-    queryKey: ["dashboard-weekly-activity"],
+    queryKey: ["dashboard-daily-activity-7d"],
     queryFn: async () => {
       const now = new Date();
-      const eightWeeksAgo = new Date(now);
-      eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
-      const isoStart = eightWeeksAgo.toISOString();
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const isoStart = sevenDaysAgo.toISOString();
 
       const [contactsRes, responsesRes, meetingsRes] = await Promise.all([
         supabase.from("contacts").select("imported_at").gte("imported_at", isoStart),
@@ -265,44 +265,31 @@ export default function Dashboard() {
         supabase.from("meetings").select("created_at").gte("created_at", isoStart),
       ]);
 
-      // Build week buckets (Mon-Sun)
-      const getWeekStart = (d: Date) => {
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        const ws = new Date(d);
-        ws.setDate(diff);
-        ws.setHours(0, 0, 0, 0);
-        return ws;
-      };
-
-      const toWeekKey = (dateStr: string) => {
-        const ws = getWeekStart(new Date(dateStr));
-        return ws.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      };
+      const toKey = (d: string) =>
+        new Date(d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
       const contactCounts: Record<string, number> = {};
       const responseCounts: Record<string, number> = {};
       const meetingCounts: Record<string, number> = {};
 
       (contactsRes.data ?? []).forEach((c) => {
-        const k = toWeekKey(c.imported_at);
+        const k = toKey(c.imported_at);
         contactCounts[k] = (contactCounts[k] || 0) + 1;
       });
       (responsesRes.data ?? []).forEach((r) => {
-        const k = toWeekKey(r.last_incoming_message_at!);
+        const k = toKey(r.last_incoming_message_at!);
         responseCounts[k] = (responseCounts[k] || 0) + 1;
       });
       (meetingsRes.data ?? []).forEach((m) => {
-        const k = toWeekKey(m.created_at);
+        const k = toKey(m.created_at);
         meetingCounts[k] = (meetingCounts[k] || 0) + 1;
       });
 
       const result = [];
-      for (let i = 7; i >= 0; i--) {
+      for (let i = 6; i >= 0; i--) {
         const d = new Date(now);
-        d.setDate(d.getDate() - i * 7);
-        const ws = getWeekStart(d);
-        const label = ws.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        d.setDate(d.getDate() - i);
+        const label = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
         result.push({
           date: label,
           contacts: contactCounts[label] || 0,
