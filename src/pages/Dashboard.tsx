@@ -187,7 +187,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-full bg-[#f7f8fa] px-6 py-6">
+    <div className="min-h-full px-6 py-6 bg-white">
       {/* ── Header ── */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-gray-900">Overview</h1>
