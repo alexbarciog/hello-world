@@ -429,6 +429,23 @@ export default function Contacts() {
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
           </div>
 
+          {/* Signal filter dropdown */}
+          <div className="relative">
+            <Sparkles className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+            <select
+              value={signalFilter}
+              onChange={(e) => { setSignalFilter(e.target.value); setPage(1); }}
+              className="border border-border rounded-lg pl-7 pr-7 py-2 text-xs bg-background focus:outline-none appearance-none text-foreground"
+            >
+              <option value="all">All signals</option>
+              {Object.entries(signalTypeLabels).map(([key, label]) => {
+                const count = signalTypeCounts[key] || 0;
+                if (count === 0) return null;
+                return <option key={key} value={key}>{label} ({count})</option>;
+              })}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+          </div>
           {selectedIds.size > 0 && (
             <>
               <button
