@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Sparkles, MessageCircle, BarChart3, ArrowUpRight } from "lucide-react";
+import serviceSignals from "@/assets/service-signals.jpg";
+import serviceOutreach from "@/assets/service-outreach.jpg";
+import serviceData from "@/assets/service-data.jpg";
 
 const useReveal = () => {
   const ref = useRef<HTMLDivElement>(null);
