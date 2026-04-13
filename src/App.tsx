@@ -81,6 +81,10 @@ const App = () => (
             element={<AuthGuard><DashboardLayout><CampaignsPage /></DashboardLayout></AuthGuard>}
           />
           <Route
+            path="/campaigns/new"
+            element={<AuthGuard><DashboardLayout><CreateCampaign /></DashboardLayout></AuthGuard>}
+          />
+          <Route
             path="/campaigns/:id"
             element={<AuthGuard><DashboardLayout><CampaignDetail /></DashboardLayout></AuthGuard>}
           />
