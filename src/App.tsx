@@ -9,6 +9,7 @@ import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import CampaignsPage from "./pages/Campaigns.tsx";
+import CreateCampaign from "./pages/CreateCampaign.tsx";
 import CampaignDetail from "./pages/CampaignDetail.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import Settings from "./pages/Settings.tsx";
