@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
@@ -10,7 +10,6 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import {
   Megaphone,
   Radio,
-  
   Settings,
   LogOut,
   AlertTriangle,
@@ -18,7 +17,15 @@ import {
   Menu,
   X,
   Shield,
+  ChevronRight,
+  Plus,
+  Flame,
+  Thermometer,
+  Snowflake,
+  Calendar,
+  ThumbsDown,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 const RedditIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
