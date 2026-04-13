@@ -114,6 +114,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const allNavItems = navItems;
 
+  // Track recently visited tabs
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const navPaths = allNavItems.map((i) => i.path);
+    if (!navPaths.includes(currentPath)) return;
+    setRecentPaths((prev) => {
+      const filtered = prev.filter((p) => p !== currentPath);
+      const updated = [currentPath, ...filtered].slice(0, 3);
+      localStorage.setItem("recent-tabs", JSON.stringify(updated));
+      return updated;
+    });
+  }, [location.pathname]);
+
+  const recentItems = recentPaths
+    .filter((p) => p !== location.pathname)
+    .slice(0, 2)
+    .map((p) => allNavItems.find((i) => i.path === p))
+    .filter(Boolean);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
