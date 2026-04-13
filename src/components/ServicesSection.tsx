@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Sparkles, MessageCircle, BarChart3, ArrowUpRight } from "lucide-react";
+import { Radar, Send, Bot, ArrowUpRight } from "lucide-react";
 import serviceSignals from "@/assets/service-signals.jpg";
 import serviceOutreach from "@/assets/service-outreach.jpg";
 import serviceData from "@/assets/service-data.jpg";
@@ -20,23 +20,23 @@ const useReveal = () => {
 
 const services = [
   {
-    icon: Sparkles,
-    title: "AI Signal Detection",
-    desc: "We detect high-intent buying signals across LinkedIn, Reddit, and X to find prospects already looking for what you offer.",
+    icon: Radar,
+    title: "Intent Signal Tracking",
+    desc: "Track buying signals across LinkedIn, Reddit, and X in real-time — reach prospects at the exact moment they're ready to buy from you.",
     color: "#1A8FE3",
     image: serviceSignals,
   },
   {
-    icon: MessageCircle,
-    title: "Smart Outreach",
-    desc: "Automated, personalized LinkedIn outreach campaigns that start relevant conversations and book demos on autopilot.",
+    icon: Send,
+    title: "LinkedIn DM Automation",
+    desc: "Set up fully automated LinkedIn outreach campaigns — personalized connection requests, follow-ups, and sequences that run on autopilot.",
     color: "#C8FF00",
     image: serviceOutreach,
   },
   {
-    icon: BarChart3,
-    title: "Data & Insights",
-    desc: "Advanced lead scoring, real-time analytics dashboards, and predictive insights to optimize your pipeline.",
+    icon: Bot,
+    title: "AI SDR Agent",
+    desc: "Instruct your AI SDR to conduct real conversations with leads, handle objections, and guide them to book a meeting in your calendar.",
     color: "#1A8FE3",
     image: serviceData,
   },
