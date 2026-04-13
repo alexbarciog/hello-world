@@ -11,7 +11,7 @@ import {
   Megaphone,
   Users,
   Radio,
-  Mail,
+  
   Settings,
   LogOut,
   AlertTriangle,
