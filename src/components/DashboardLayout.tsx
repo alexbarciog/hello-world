@@ -75,6 +75,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [recentPaths, setRecentPaths] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("recent-tabs") || "[]");
+    } catch { return []; }
+  });
   const userMenuRef = useRef<HTMLDivElement>(null);
   
   const { data: isAdmin } = useAdminCheck();
@@ -108,6 +113,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : baseNavItems;
 
   const allNavItems = navItems;
+
+  // Track recently visited tabs
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const navPaths = allNavItems.map((i) => i.path);
+    if (!navPaths.includes(currentPath)) return;
+    setRecentPaths((prev) => {
+      const filtered = prev.filter((p) => p !== currentPath);
+      const updated = [currentPath, ...filtered].slice(0, 3);
+      localStorage.setItem("recent-tabs", JSON.stringify(updated));
+      return updated;
+    });
+  }, [location.pathname]);
+
+  const recentItems = recentPaths
+    .filter((p) => p !== location.pathname)
+    .slice(0, 2)
+    .map((p) => allNavItems.find((i) => i.path === p))
+    .filter(Boolean);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -164,6 +188,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
           <span className="font-semibold text-base tracking-tight text-gray-900">Intentsly</span>
         </div>
+
+        {/* Recently */}
+        {recentItems.length > 0 && (
+          <div className="px-3 mb-3">
+            <p className="text-[14px] text-black/20 mb-1 px-3">Recently</p>
+            <div className="space-y-0.5">
+              {recentItems.map((item) => (
+                <button
+                  key={item!.path}
+                  onClick={() => navigate(item!.path)}
+                  className="w-[180px] h-9 flex items-center rounded-lg px-3 text-[14px] text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <span className="truncate">{item!.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
