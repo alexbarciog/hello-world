@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden bg-white">
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex flex-col shrink-0 border-r border-gray-100 bg-white w-[240px]">
+      <aside className="hidden md:flex flex-col shrink-0 border-r border-gray-100 bg-white w-[200px]">
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 pt-6 pb-5">
           <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
