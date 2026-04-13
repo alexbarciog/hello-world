@@ -78,10 +78,10 @@ const OutreachVisual = () => (
 /* ── Visual 3: AI SDR Agent ── */
 const AiSdrVisual = () => (
   <div className="relative w-full h-44 flex items-center justify-center">
-    <div className="absolute left-2 top-1 w-[46%] rounded-xl bg-[#1a1a2e] text-white p-3 shadow-xl -rotate-1 z-10">
+    <div className="absolute left-2 top-1 w-[52%] rounded-xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-1 z-10">
       <div className="flex items-center gap-1.5 mb-2">
         <Bot className="w-3.5 h-3.5 text-[#C8FF00]" />
-        <span className="text-[9px] font-medium opacity-80">AI SDR active</span>
+        <span className="text-[10px] font-medium opacity-80">AI SDR active</span>
       </div>
       <div className="space-y-1">
         <div className="bg-white/10 rounded-md px-2 py-1">
@@ -94,7 +94,7 @@ const AiSdrVisual = () => (
         </div>
       </div>
     </div>
-    <div className="absolute right-1 top-2 w-[50%] rounded-xl bg-white shadow-md p-2.5 rotate-1 z-20 border border-border/50">
+    <div className="absolute right-1 top-14 w-[50%] rounded-xl bg-white shadow-md p-2.5 rotate-1 z-20 border border-border/50">
       <p className="text-[9px] font-medium mb-1.5" style={{ color: "hsl(var(--aeline-dark))" }}>This week</p>
       <div className="space-y-1.5">
         {[
