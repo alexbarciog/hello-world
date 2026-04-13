@@ -8,7 +8,6 @@ import NotificationsPanel from "@/components/NotificationsPanel";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 import {
-  LayoutDashboard,
   Megaphone,
   Radio,
   
