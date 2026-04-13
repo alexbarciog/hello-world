@@ -388,7 +388,7 @@ export default function CreateCampaign() {
                   <div className="flex gap-2">
                     <div className="relative flex-1">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourcompany.com" className="pl-9 border-gray-200 rounded-lg bg-white" />
+                      <Input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://yourcompany.com" className="pl-9 border-gray-200 rounded-lg bg-white border-0" />
                     </div>
                     <button onClick={handleAnalyzeWebsite} disabled={analyzingWebsite || !website.trim()} className="flex items-center gap-1.5 text-xs font-medium border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 disabled:opacity-40 transition-colors text-gray-700">
                       {analyzingWebsite ? (
@@ -399,19 +399,19 @@ export default function CreateCampaign() {
                     </button>
                   </div>
                 </div>
-
+ 
                 {/* Value Proposition */}
                 <div>
                   <p className="text-sm font-semibold text-gray-900 mb-2">Value Proposition</p>
-                  <Textarea value={valueProposition} onChange={(e) => setValueProposition(e.target.value)} placeholder="Describe what your company does..." rows={3} className="border-gray-200 rounded-lg bg-white" />
+                  <Textarea value={valueProposition} onChange={(e) => setValueProposition(e.target.value)} placeholder="Describe what your company does..." rows={3} className="border-gray-200 rounded-lg bg-white border-0" />
                 </div>
-
+ 
                 {/* Pain Points */}
-                <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="rounded-xl border-gray-200 bg-gray-50 p-5 border-0">
                   <p className="text-xs font-medium text-gray-500 mb-2">Pain Points</p>
-                  <Textarea value={painPoints} onChange={(e) => setPainPoints(e.target.value)} placeholder={"- Pain point 1\n- Pain point 2\n- Pain point 3"} rows={3} className="border-gray-200 rounded-lg bg-white" />
+                  <Textarea value={painPoints} onChange={(e) => setPainPoints(e.target.value)} placeholder={"- Pain point 1\n- Pain point 2\n- Pain point 3"} rows={3} className="border-gray-200 rounded-lg bg-white border-0" />
                 </div>
-
+ 
                 {/* Campaign Goal */}
                 <div>
                   <p className="text-sm font-semibold text-gray-900 mb-3">Campaign Goal</p>
@@ -420,7 +420,7 @@ export default function CreateCampaign() {
                       <button
                         key={g.value}
                         onClick={() => setCampaignGoal(g.value)}
-                        className={`text-left px-4 py-4 rounded-xl border transition-all ${
+                        className={`text-left px-4 py-4 rounded-xl transition-all border-0 ${
                           campaignGoal === g.value
                             ? "border-gray-900 bg-white"
                             : "border-gray-200 hover:bg-gray-50"
@@ -439,7 +439,7 @@ export default function CreateCampaign() {
                     ))}
                   </div>
                 </div>
-
+ 
                 {/* Message Tone */}
                 <div>
                   <p className="text-sm font-semibold text-gray-900 mb-3">Message Tone</p>
@@ -448,7 +448,7 @@ export default function CreateCampaign() {
                       <button
                         key={t.value}
                         onClick={() => setMessageTone(t.value)}
-                        className={`text-center px-3 py-4 rounded-xl border transition-all ${
+                        className={`text-center px-3 py-4 rounded-xl transition-all border-0 ${
                           messageTone === t.value
                             ? "border-gray-900 bg-white"
                             : "border-gray-200 hover:bg-gray-50"
