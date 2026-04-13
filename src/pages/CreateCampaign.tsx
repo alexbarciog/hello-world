@@ -266,7 +266,7 @@ export default function CreateCampaign() {
         </div>
 
         {/* Content Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-[#f9f9fa]">
           <div className="p-6 md:p-8 max-h-[60vh] overflow-y-auto">
             {/* Step 1 */}
             {step === 1 && (
@@ -289,7 +289,7 @@ export default function CreateCampaign() {
                         className={`flex items-center gap-3 py-4 px-4 rounded-xl border text-left transition-all ${
                           sourceType === opt.type
                             ? "border-gray-900 bg-gray-50"
-                            : "border-gray-200 hover:bg-gray-50"
+                            : "border-gray-200 bg-white"
                         }`}
                       >
                         <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -323,7 +323,7 @@ export default function CreateCampaign() {
                     </div>
 
                     {selectedAgent && (
-                      <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-5 space-y-4">
+                      <div className="mt-4 rounded-xl border border-gray-200 p-5 space-y-4 bg-white">
                         <div className="flex items-start gap-3">
                           <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center">
                             <Sparkles className="w-4 h-4 text-gray-500" />
