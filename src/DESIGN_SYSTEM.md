@@ -38,7 +38,14 @@ If a token is used less than 10% of the time, don't add it to the system. Keep i
 
 ## Colors
 
-### Primary (Black scale)
+### Primary
+| Token | Hex | Usage |
+|-------|-----|-------|
+| primary | #000000 | Default primary |
+| color-1 | #3B82F6 | Accent blue |
+| color-2 | #7B61FF | Accent purple |
+
+### Black Scale
 | Token | Hex | Opacity |
 |-------|-----|---------|
 | black-100 | #000000 | 100% |
@@ -47,6 +54,16 @@ If a token is used less than 10% of the time, don't add it to the system. Keep i
 | black-20 | #999999 | 20% |
 | black-10 | #CCCCCC | 10% |
 | black-4 | #F5F5F5 | 4% |
+
+### White Scale
+| Token | Hex | Opacity |
+|-------|-----|---------|
+| white-100 | #FFFFFF | 100% |
+| white-80 | #CCCCCC | 80% |
+| white-40 | #666666 | 40% |
+| white-20 | #333333 | 20% |
+| white-10 | #1A1A1A | 10% |
+| white-4 | #0A0A0A | 4% |
 
 ### Backgrounds & Surfaces
 | Token | Hex | Usage |

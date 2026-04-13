@@ -8,6 +8,11 @@
 
 export const snowui = {
   colors: {
+    primary: {
+      DEFAULT: '#000000',
+      color1: '#3B82F6',
+      color2: '#7B61FF',
+    },
     black: {
       100: '#000000',
       80: '#333333',
@@ -15,6 +20,14 @@ export const snowui = {
       20: '#999999',
       10: '#CCCCCC',
       4: '#F5F5F5',
+    },
+    white: {
+      100: '#FFFFFF',
+      80: '#CCCCCC',
+      40: '#666666',
+      20: '#333333',
+      10: '#1A1A1A',
+      4: '#0A0A0A',
     },
     background: {
       1: '#FFFFFF',
