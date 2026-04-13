@@ -1,34 +1,38 @@
 
 
-## Plan: Add Analytics Section (Traffic by Device + Traffic by Location)
+## Plan: Align Settings Page Styling with Dashboard Design System
 
-Add two new chart cards below the Chart + Quick Start row (line 221) in the Dashboard, matching the reference screenshot and the SnowUI design system.
+The Dashboard uses white page background, SnowUI Background 2 (`#F7F8FA` / `bg-snow-bg-2`) surfaces with `rounded-[20px]`, no borders/shadows, and the SnowUI color tokens. The Settings page currently uses `bg-card`, `border-border`, `rounded-2xl`, and generic foreground/muted-foreground colors. This plan brings Settings in line with the Dashboard.
 
-### Layout
-- A `grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6` row with two cards
-- Each card: `bg-snow-bg-2 rounded-[20px] p-6` (same surface as PerformanceChart)
+### Changes (single file: `src/pages/Settings.tsx`)
 
-### Card 1: Traffic by Device (Bar Chart)
-- Bold title "Traffic by Device" (text-sm font-bold text-snow-black-100)
-- Vertical bar chart using Recharts `BarChart` with 6 bars: Linux, Mac, iOS, Windows, Android, Other
-- Bar colors from the design system secondary palette: muted lavender (#C4C6F7), mint (#34D399), black (#000000), blue (#3B82F6), purple (#7B61FF), green (#22C55E)
-- Y-axis with K formatter, no axis lines, light tick text
-- Static/mock data (since there's no real analytics source yet)
+**1. Outer container**
+- Change `bg-card rounded-2xl m-3 md:m-4` to `bg-white px-6 py-6` (matching Dashboard wrapper)
 
-### Card 2: Traffic by Location (Donut Chart)
-- Bold title "Traffic by Location"
-- Recharts `PieChart` with `Pie` (innerRadius ~60, outerRadius ~90) — donut style
-- 4 segments: United States (dark gray #333), Canada (#3B82F6), Mexico (#34D399), Other (#C4C6F7)
-- Legend on the right side with dot + label + percentage
+**2. Header section**
+- Remove `border-b border-border` wrapper
+- Style title as `text-lg font-semibold text-gray-900` (like Dashboard's "Overview" heading)
+- Subtitle: `text-sm text-gray-500`
+- Remove gradient icon effect, use plain gray icon
 
-### Files to Create/Modify
-1. **Create** `src/components/dashboard/TrafficByDevice.tsx` — bar chart component with mock data
-2. **Create** `src/components/dashboard/TrafficByLocation.tsx` — donut chart component with mock data
-3. **Modify** `src/pages/Dashboard.tsx` — import both components and add a new grid row after line 221
+**3. Sidebar nav (desktop)**
+- Remove `border-r border-border`
+- Surface: `bg-snow-bg-2 rounded-[20px] p-4 mr-6`
+- Active tab pill: `bg-black text-white rounded-xl` (keep current pattern, already close)
+- Inactive: `text-gray-500 hover:bg-gray-100 rounded-xl`
 
-### Technical Details
-- Uses existing Recharts dependency (already used in PerformanceChart)
-- Uses SnowUI design tokens for colors, radii, typography
-- Mock data hardcoded; can be swapped for real analytics later
-- Tooltip styling matches existing pattern (white bg, rounded-lg, border, shadow)
+**4. SectionCard component**
+- Change from `rounded-2xl border border-border bg-card p-6` to `bg-snow-bg-2 rounded-[20px] p-6` (no border, no shadow — matching Dashboard cards)
+
+**5. Input styling**
+- Update `inputCls` focus ring from coral to plain gray or blue (`focus:ring-gray-200 focus:border-gray-300`) to remove the branded coral accent and stay neutral like the Dashboard
+
+**6. SaveButton**
+- Replace `btn-cta` with a simple `bg-black text-white rounded-xl px-5 py-2.5 text-sm font-medium hover:bg-gray-800` to match the flat Dashboard aesthetic
+
+**7. Mobile tab nav**
+- Remove `border-b border-border`, keep pill grid but update active state to `bg-black text-white`
+
+### Files Modified
+- `src/pages/Settings.tsx` — styling updates only, no logic changes
 
