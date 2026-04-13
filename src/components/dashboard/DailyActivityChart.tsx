@@ -25,10 +25,10 @@ const DailyActivityChart = ({ data, loading }: WeeklyActivityChartProps) => {
   const hasData = data.some((d) => d.contacts > 0 || d.responses > 0 || d.meetings > 0);
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-6">
-      <h3 className="text-sm font-bold text-snow-black-100 mb-4">Daily Activity per Week</h3>
+    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+      <h3 className="text-sm font-bold text-snow-black-100 mb-3">Daily Activity per Week</h3>
       {loading ? (
-        <div className="h-[240px] flex items-center justify-center">
+        <div className="h-[180px] flex items-center justify-center">
           <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
