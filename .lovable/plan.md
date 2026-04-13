@@ -1,42 +1,34 @@
 
 
-# Add Right-Side Panel to Dashboard
+## Plan: Add Analytics Section (Traffic by Device + Traffic by Location)
 
-## What
+Add two new chart cards below the Chart + Quick Start row (line 221) in the Dashboard, matching the reference screenshot and the SnowUI design system.
 
-Add a right sidebar panel to the dashboard that shows three sections matching the SnowUI reference: **Notifications**, **Activities**, and **Contacts** — each with avatar/icon, title text, and timestamp. The existing `RecentActivity` component will be replaced by this new unified sidebar.
+### Layout
+- A `grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6` row with two cards
+- Each card: `bg-snow-bg-2 rounded-[20px] p-6` (same surface as PerformanceChart)
 
-## Layout Change
+### Card 1: Traffic by Device (Bar Chart)
+- Bold title "Traffic by Device" (text-sm font-bold text-snow-black-100)
+- Vertical bar chart using Recharts `BarChart` with 6 bars: Linux, Mac, iOS, Windows, Android, Other
+- Bar colors from the design system secondary palette: muted lavender (#C4C6F7), mint (#34D399), black (#000000), blue (#3B82F6), purple (#7B61FF), green (#22C55E)
+- Y-axis with K formatter, no axis lines, light tick text
+- Static/mock data (since there's no real analytics source yet)
 
-The dashboard layout shifts from full-width to a two-column layout:
-- **Left (main)**: metrics, chart, quick start, leads, replies (existing content)
-- **Right (sidebar)**: new `DashboardSidebar` component with Notifications, Activities, and Contacts sections
+### Card 2: Traffic by Location (Donut Chart)
+- Bold title "Traffic by Location"
+- Recharts `PieChart` with `Pie` (innerRadius ~60, outerRadius ~90) — donut style
+- 4 segments: United States (dark gray #333), Canada (#3B82F6), Mexico (#34D399), Other (#C4C6F7)
+- Legend on the right side with dot + label + percentage
 
-```text
-┌─────────────────────────────┬──────────────┐
-│  Metrics (4 cards)          │              │
-├─────────────────────────────┤ Notifications│
-│  Chart        │ QuickStart  │              │
-├───────────────┴─────────────┤ Activities   │
-│  Leads  │ Replies           │              │
-│         │                   │ Contacts     │
-└─────────────────────────────┴──────────────┘
-```
+### Files to Create/Modify
+1. **Create** `src/components/dashboard/TrafficByDevice.tsx` — bar chart component with mock data
+2. **Create** `src/components/dashboard/TrafficByLocation.tsx` — donut chart component with mock data
+3. **Modify** `src/pages/Dashboard.tsx` — import both components and add a new grid row after line 221
 
-## New Component: `src/components/dashboard/DashboardSidebar.tsx`
-
-Three sections with section headers in `text-sm font-semibold text-gray-900`:
-
-1. **Notifications** — fetches recent signal agent alerts and campaign events; each item has a round icon (light purple/blue bg) + bold text + grey timestamp
-2. **Activities** — reuses existing RecentActivity logic (recent leads, campaigns) with avatar-style icons matching the SnowUI design
-3. **Contacts** — shows top 5-6 recent contacts with avatar circles (initials), name in `text-sm font-medium`
-
-All items follow the SnowUI pattern: 40px avatar/icon circle, title in dark text, subtitle/time in `text-snow-black-40`.
-
-## Changes
-
-| File | Change |
-|------|--------|
-| `src/components/dashboard/DashboardSidebar.tsx` | New — unified sidebar with Notifications, Activities, Contacts sections |
-| `src/pages/Dashboard.tsx` | Wrap main content in a two-column flex layout; add sidebar on the right; remove standalone `RecentActivity` from the bottom grid |
+### Technical Details
+- Uses existing Recharts dependency (already used in PerformanceChart)
+- Uses SnowUI design tokens for colors, radii, typography
+- Mock data hardcoded; can be swapped for real analytics later
+- Tooltip styling matches existing pattern (white bg, rounded-lg, border, shadow)
 
