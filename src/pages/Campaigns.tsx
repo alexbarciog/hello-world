@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from
@@ -182,6 +183,7 @@ function CampaignCard({
 
 export default function CampaignsPage() {
   const navigate = useNavigate();
+  const sub = useSubscription();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
@@ -276,6 +278,20 @@ export default function CampaignsPage() {
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "active" ? "paused" : "active";
+    if (newStatus === "active") {
+      if (sub.hadSubscription && !sub.subscribed) {
+        toast.error("Your subscription has been canceled. Please upgrade your plan to reactivate campaigns.", {
+          action: { label: "Upgrade", onClick: () => navigate("/billing") },
+        });
+        return;
+      }
+      if (!sub.subscribed && !sub.hasCard) {
+        toast.error("Add your card to activate campaigns.", {
+          action: { label: "Add Card", onClick: () => navigate("/signals") },
+        });
+        return;
+      }
+    }
     const { error } = await supabase.from("campaigns").update({ status: newStatus }).eq("id", id);
     if (error) toast.error("Failed to update campaign status");else
     {setCampaigns((prev) => prev.map((c) => c.id === id ? { ...c, status: newStatus } : c));toast.success(newStatus === "active" ? "Campaign activated" : "Campaign paused");}
