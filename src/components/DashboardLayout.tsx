@@ -5,6 +5,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import uniboxIcon from "@/assets/unibox-icon.png";
 import contactsIcon from "@/assets/contacts-icon.png";
 import helpCenterIcon from "@/assets/help-center-icon.png";
+import supportIcon from "@/assets/support-icon.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
@@ -338,7 +339,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }`}
           >
             <span className="w-3.5 shrink-0" />
-            <Headphones className="w-5 h-5 shrink-0" />
+            <img src={supportIcon} alt="Support" className="w-5 h-5 shrink-0" style={{ filter: "brightness(0) saturate(100%)" }} />
             <span className="truncate">Support</span>
           </button>
         </div>
