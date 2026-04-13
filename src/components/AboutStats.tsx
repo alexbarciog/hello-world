@@ -48,19 +48,19 @@ const AboutStats = () => {
         <span className="section-label mb-6 block">About us</span>
 
         <h2 className="text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.1] max-w-4xl mb-16" style={{ color: "hsl(var(--aeline-dark))" }}>
-          A global{" "}
+          Your next{" "}
           <span className="inline-flex items-center align-middle mx-1">
             <span className="w-9 h-9 rounded-lg bg-[#C8FF00] flex items-center justify-center">
               <Zap className="w-5 h-5 text-[#1a1a2e]" />
             </span>
           </span>{" "}
-          platform dedicated to building smarter
+          best customer is already online — we help you
           <span className="inline-flex items-center align-middle mx-1">
             <span className="w-9 h-9 rounded-lg bg-[#1A8FE3] flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </span>
           </span>{" "}
-          and more adaptive outreach
+          reach them first
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8">
