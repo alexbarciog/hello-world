@@ -250,10 +250,11 @@ export default function Dashboard() {
           <MetricCard title="Active Signals" value={activeSignals} />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div className="xl:col-span-2">
             <PerformanceChart chartData={chartData} />
           </div>
+          <QuickStartPanel steps={quickStartSteps} />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -262,8 +263,8 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <QuickStartPanel steps={quickStartSteps} />
           <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
+          <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
