@@ -10,7 +10,6 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import meshGradientBg from "@/assets/mesh-gradient.png";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
-import { CreateCampaignWizard } from "@/components/campaigns/CreateCampaignWizard";
 import { motion, AnimatePresence } from "framer-motion";
 
 const MAX_CAMPAIGNS = 2;
@@ -186,8 +185,7 @@ export default function CampaignsPage() {
   const sub = useSubscription();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showWizard, setShowWizard] = useState(false);
-  const [editCampaignId, setEditCampaignId] = useState<string | null>(null);
+
 
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
@@ -264,11 +262,10 @@ export default function CampaignsPage() {
 
   const handleNewCampaign = () => {
     if (atLimit) {toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`);return;}
-    setEditCampaignId(null);
-    setShowWizard(true);
+    navigate("/campaigns/new");
   };
 
-  const handleEditCampaign = (id: string) => {setEditCampaignId(id);setShowWizard(true);};
+  const handleEditCampaign = (id: string) => {navigate(`/campaigns/new?edit=${id}`)};
 
   const handleDeleteCampaign = async (id: string) => {
     const { error } = await supabase.from("campaigns").delete().eq("id", id);
@@ -474,15 +471,8 @@ export default function CampaignsPage() {
         }
       </div>
 
-      {/* Create/Edit Campaign Wizard */}
-      <CreateCampaignWizard
-        open={showWizard}
-        onOpenChange={setShowWizard}
-        editCampaignId={editCampaignId}
-        onCreated={(id) => {
-          load();
-          navigate(`/campaigns/${id}`);
-        }} />
+
+
       
     </div>);
 
