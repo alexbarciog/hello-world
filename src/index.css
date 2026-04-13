@@ -245,3 +245,85 @@
   33% { transform: translate(-25px, 20px); }
   66% { transform: translate(20px, -15px); }
 }
+
+/* ──────────────────────────────────────────────
+   SnowUI Design System — Reusable Utilities
+   ────────────────────────────────────────────── */
+
+/* Cards */
+.snow-card {
+  @apply bg-white rounded-[12px];
+  border: 1px solid rgba(229, 231, 235, 0.6);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.snow-card-lg {
+  @apply bg-white rounded-[20px];
+  border: 1px solid rgba(229, 231, 235, 0.6);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Surfaces */
+.snow-surface {
+  background-color: #F7F8FA;
+}
+
+.snow-surface-inset {
+  background-color: #F0F1F3;
+}
+
+/* Text */
+.snow-text-primary {
+  @apply text-gray-900;
+}
+
+.snow-text-secondary {
+  @apply text-gray-500;
+}
+
+.snow-text-caption {
+  @apply text-xs text-gray-400;
+}
+
+/* Buttons */
+.snow-btn-primary {
+  @apply bg-gray-900 text-white font-medium rounded-lg px-4 py-2 transition-colors;
+}
+.snow-btn-primary:hover {
+  @apply bg-gray-800;
+}
+
+.snow-btn-secondary {
+  @apply bg-white text-gray-900 font-medium rounded-lg px-4 py-2 transition-colors;
+  border: 1px solid rgba(229, 231, 235, 0.6);
+}
+.snow-btn-secondary:hover {
+  @apply bg-gray-50;
+}
+
+/* Inputs */
+.snow-input {
+  @apply bg-white text-gray-900 rounded-lg px-3 py-2 text-sm;
+  border: 1px solid #E5E7EB;
+}
+.snow-input:focus {
+  outline: none;
+  border-color: #D1D5DB;
+}
+.snow-input::placeholder {
+  @apply text-gray-400;
+}
+
+/* Effects */
+.snow-glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(40px);
+}
+
+.snow-shadow-1 {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.snow-shadow-2 {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
