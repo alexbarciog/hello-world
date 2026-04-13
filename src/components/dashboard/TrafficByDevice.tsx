@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const data = [
   { name: "Linux", value: 14000 },
@@ -30,9 +30,11 @@ const TrafficByDevice = () => (
           }}
           formatter={(value: number) => [formatK(value), "Visitors"]}
         />
-        {data.map((_, i) => (
-          <Bar key={i} dataKey="value" fill={COLORS[i]} radius={[6, 6, 0, 0]} />
-        ))}
+        <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={COLORS[i]} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   </div>
