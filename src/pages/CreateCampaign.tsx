@@ -422,7 +422,7 @@ export default function CreateCampaign() {
                         onClick={() => setCampaignGoal(g.value)}
                         className={`text-left px-4 py-4 rounded-xl border transition-all ${
                           campaignGoal === g.value
-                            ? "border-gray-900 bg-white"
+                            ? "border-gray-200 bg-white"
                             : "border-gray-200 hover:bg-gray-50"
                         }`}
                       >
@@ -450,7 +450,7 @@ export default function CreateCampaign() {
                         onClick={() => setMessageTone(t.value)}
                         className={`text-center px-3 py-4 rounded-xl border transition-all ${
                           messageTone === t.value
-                            ? "border-gray-900 bg-white"
+                            ? "border-gray-200 bg-white"
                             : "border-gray-200 hover:bg-gray-50"
                         }`}
                       >
