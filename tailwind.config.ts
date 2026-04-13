@@ -91,6 +91,25 @@ export default {
           "outline-variant": "hsl(var(--md-outline-variant))",
           error: "hsl(var(--md-error))",
         },
+        snow: {
+          black: {
+            DEFAULT: "#1A1A2E",
+            100: "#6E6E80",
+            200: "#3A3A4A",
+          },
+          white: {
+            DEFAULT: "#FFFFFF",
+            100: "#F9F9FA",
+            200: "#F4F4F5",
+            300: "#EBEBED",
+            400: "#E0E0E3",
+          },
+          primary: "#4F46E5",
+          success: "#16A34A",
+          warning: "#F59E0B",
+          danger: "#EF4444",
+          info: "#3B82F6",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
