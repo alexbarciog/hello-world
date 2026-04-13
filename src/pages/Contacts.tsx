@@ -215,6 +215,34 @@ export default function Contacts() {
     return counts;
   }, [contactListMap]);
 
+  const getSignalType = useCallback((signal: string | null): string => {
+    if (!signal) return "none";
+    const s = signal.toLowerCase();
+    if (s.startsWith("follows ")) return "competitor_follower";
+    if (s.startsWith("reacted to ") || s.startsWith("engaged with ") && !s.includes("#")) return "competitor_engager";
+    if (s.includes("#")) return "hashtag_engagement";
+    if (s.startsWith("posted about ")) return "keyword_post";
+    return "other";
+  }, []);
+
+  const signalTypeLabels: Record<string, string> = {
+    competitor_follower: "Competitor Follower",
+    competitor_engager: "Competitor Engager",
+    hashtag_engagement: "Hashtag Engagement",
+    keyword_post: "Posted about Keyword",
+    other: "Other Signal",
+    none: "No Signal",
+  };
+
+  const signalTypeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    contacts.forEach((c) => {
+      const type = getSignalType(c.signal);
+      counts[type] = (counts[type] || 0) + 1;
+    });
+    return counts;
+  }, [contacts, getSignalType]);
+
   const filtered = useMemo(() => {
     let result = contacts;
     if (tab === "not_interested") {
@@ -232,6 +260,9 @@ export default function Contacts() {
       );
       result = result.filter((c) => contactIdsInList.has(c.id));
     }
+    if (signalFilter !== "all") {
+      result = result.filter((c) => getSignalType(c.signal) === signalFilter);
+    }
     if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
     return result.filter(
@@ -241,7 +272,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter, tab, contactListMap]);
+  }, [contacts, searchQuery, listFilter, signalFilter, tab, contactListMap, getSignalType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
