@@ -5,7 +5,7 @@ const HeroCards = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
       {/* Card 1: Engagement Signals */}
-      <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
+      <div className="group rounded-3xl p-5 text-left flex flex-col relative border-2 border-background opacity-95 hover:opacity-100 transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Engagement signals</h3>
@@ -99,7 +99,7 @@ const HeroCards = () => {
       </div>
 
       {/* Card 2: Lead Insights (duplicate of Card 1 structure) */}
-      <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
+      <div className="group rounded-3xl p-5 text-left flex flex-col relative border-2 border-background opacity-95 hover:opacity-100 transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Lead insights</h3>
@@ -181,7 +181,7 @@ const HeroCards = () => {
       </div>
 
       {/* Card 3: Company Intel (duplicate of Card 2 structure) */}
-      <div className="group rounded-3xl p-5 text-left flex flex-col relative overflow-hidden border-2 border-background opacity-80 hover:opacity-100 hover:scale-[1.02] transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
+      <div className="group rounded-3xl p-5 text-left flex flex-col relative border-2 border-background opacity-95 hover:opacity-100 transition-all duration-300" style={{ background: "hsl(0 0% 96%)" }}>
         {/* Group 1: Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-foreground">Company intel</h3>
