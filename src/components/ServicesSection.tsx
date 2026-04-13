@@ -24,18 +24,21 @@ const services = [
     title: "AI Signal Detection",
     desc: "We detect high-intent buying signals across LinkedIn, Reddit, and X to find prospects already looking for what you offer.",
     color: "#1A8FE3",
+    image: serviceSignals,
   },
   {
     icon: MessageCircle,
     title: "Smart Outreach",
     desc: "Automated, personalized LinkedIn outreach campaigns that start relevant conversations and book demos on autopilot.",
     color: "#C8FF00",
+    image: serviceOutreach,
   },
   {
     icon: BarChart3,
     title: "Data & Insights",
     desc: "Advanced lead scoring, real-time analytics dashboards, and predictive insights to optimize your pipeline.",
     color: "#1A8FE3",
+    image: serviceData,
   },
 ];
 
