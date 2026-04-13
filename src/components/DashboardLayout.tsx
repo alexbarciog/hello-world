@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const sub = useSubscription();
+  
   const { data: isAdmin } = useAdminCheck();
 
   const navItems = isAdmin
