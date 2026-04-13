@@ -19,6 +19,8 @@ import {
   Shield,
   ChevronRight,
   Plus,
+  HelpCircle,
+  Headphones,
   Flame,
   Thermometer,
   Snowflake,
@@ -315,6 +317,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
+
+        {/* Bottom links */}
+        <div className="px-3 py-3 space-y-1 border-t border-gray-100">
+          <button
+            onClick={() => navigate("/help-center")}
+            className={`w-[180px] h-9 flex items-center gap-3 rounded-lg px-3 text-[14px] text-gray-900 transition-colors ${
+              location.pathname === "/help-center" ? "bg-black/[0.04] font-medium" : "hover:bg-gray-50"
+            }`}
+          >
+            <span className="w-3.5 shrink-0" />
+            <HelpCircle className="w-5 h-5 shrink-0" />
+            <span className="truncate">Help Center</span>
+          </button>
+          <button
+            onClick={() => navigate("/support")}
+            className={`w-[180px] h-9 flex items-center gap-3 rounded-lg px-3 text-[14px] text-gray-900 transition-colors ${
+              location.pathname === "/support" ? "bg-black/[0.04] font-medium" : "hover:bg-gray-50"
+            }`}
+          >
+            <span className="w-3.5 shrink-0" />
+            <Headphones className="w-5 h-5 shrink-0" />
+            <span className="truncate">Support</span>
+          </button>
+        </div>
 
         {/* User */}
         <div className="border-t border-gray-100 px-3 py-4" ref={userMenuRef}>
