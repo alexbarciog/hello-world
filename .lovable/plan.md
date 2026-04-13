@@ -1,95 +1,77 @@
 
 
-# Free Until First Meeting — Card Required to Activate
+## Plan: Dashboard Real Data Integration
 
-## How It Works
+### Summary
+Replace all static/mock data in the dashboard with real Supabase queries, update the Lead Velocity chart to show two real series, replace the two placeholder analytics panels, and fix bugs (duplicate LatestReplies, LatestReplies missing `snow-card` styling).
 
-1. User signs up and gets full access to create agents, contacts, campaigns
-2. To **activate** (turn on) a signal agent, they must add their card via Stripe Checkout (setup mode -- no charge)
-3. Platform runs freely with card on file, no subscription yet
-4. When the **first meeting** is booked (manual or AI-detected):
-   - Auto-create a Stripe subscription using the saved payment method and charge immediately
-   - Send congrats email: "You booked your first meeting using Intentsly!"
-5. If the charge **fails**:
-   - Send failure email: "Your payment failed -- update your card to continue using Intentsly"
-   - Do NOT create the subscription
+---
 
-## Technical Plan
+### 1. Lead Velocity Chart — Two Real Series
 
-### 1. New edge function: `setup-card`
+**Current**: Single `leads` count from `contacts.imported_at`, plus a fake "last year" sine wave.
 
-Creates a Stripe Checkout session in **`mode: 'setup'`** to collect card without charging.
+**Change**: Pass two data series from Dashboard to PerformanceChart:
+- **Leads Found** — count of `contacts` imported per day (existing query, already works)
+- **Contacted** — count of `campaign_connection_requests` sent per day (new query on `sent_at`)
 
-- Find or create Stripe customer by email
-- Create checkout session with `mode: 'setup'`, `success_url: /signals?card_added=true`, `cancel_url: /signals`
-- Return session URL
+Update `PerformanceChartProps` to `Array<{ date: string; leadsFound: number; contacted: number }>`.
 
-### 2. New edge function: `auto-subscribe-on-meeting`
+Update legend labels to "Leads Found" (solid black area) and "Contacted" (dashed gray line). Remove the fake `lastYear` calculation.
 
-Called after first meeting is booked. Creates a real subscription and charges the card.
+**Files**: `Dashboard.tsx` (add query for `campaign_connection_requests.sent_at`), `PerformanceChart.tsx` (update props/legend/dataKeys).
 
-- Receive `user_id` 
-- Look up user email, find Stripe customer
-- Check if already has active subscription -- if yes, return early
-- Check if customer has a default payment method (from setup checkout) -- if not, return error
-- Create subscription with `default_payment_method`, price = Starter price (`price_1TIByxFsgTpFMX56JNwbw3TA`), `payment_behavior: 'default_incomplete'` so the invoice is created
-- Check if the invoice payment succeeded:
-  - **Success**: Send congrats email via `send-notification-email` ("Congrats! You booked your first meeting using Intentsly! You're now on the Starter plan.")
-  - **Failed**: Send failure email ("Your payment failed. Update your card information to continue using Intentsly.") and cancel the subscription
+---
 
-### 3. Update `check-subscription` 
+### 2. Replace Traffic by Device → **Leads by Source**
 
-Add a `has_card` field to the response:
-- After finding the Stripe customer, check if they have a default payment method or any payment methods on file
-- Return `has_card: true/false` alongside existing fields
+Replace the hardcoded bar chart with a real breakdown of where leads came from:
+- Query `contacts` grouped by `source_campaign_id IS NOT NULL` vs signal agent sourced leads
+- Actually: simpler — query `campaigns` table to count contacts per campaign (top 5), show as a bar chart with campaign names.
 
-### 4. Update `useSubscription` hook
+**Rename** component to `LeadsBySource`. Bar chart shows top campaigns by contact count. Data comes from a new query joining `contacts.source_campaign_id` to `campaigns.company_name`.
 
-- Add `hasCard: boolean` to `SubscriptionState`
-- Map from `data.has_card`
+**Files**: Rename `TrafficByDevice.tsx` → `LeadsBySource.tsx`, update `Dashboard.tsx`.
 
-### 5. Update agent activation gating (`Signals.tsx`)
+---
 
-Change `toggleAgentStatus()`:
-- Currently checks `!sub.subscribed` → change to check `!sub.hasCard`
-- If no card: toast "Add your card to activate agents" with action button that calls `setup-card` and redirects to Stripe Checkout
-- If has card (even without subscription): allow activation
+### 3. Replace Traffic by Location → **Leads by Tier**
 
-### 6. Update `process-signal-agents` backend gating
+Replace the hardcoded donut chart with a real breakdown of lead quality tiers:
+- Query `contacts` grouped by `relevance_tier` (hot / warm / cold)
+- Show as the same donut chart style with real percentages.
 
-- Currently checks for active Stripe subscription → change to check for **card on file** (customer exists with payment method) OR active subscription
-- Users with a card but no subscription can still run agents
+Colors: hot = emerald, warm = amber, cold = gray.
 
-### 7. Trigger auto-subscribe from meeting creation
+**Files**: Rename `TrafficByLocation.tsx` → `LeadsByTier.tsx`, update `Dashboard.tsx`.
 
-**A. `BookMeetingDialog.tsx` (manual booking):**
-- After successful meeting insert, call `supabase.functions.invoke('auto-subscribe-on-meeting', { body: { user_id } })`
+---
 
-**B. `process-ai-replies/index.ts` (AI-detected meeting):**
-- After successful meeting insert (line ~447), call `auto-subscribe-on-meeting` with the user_id
+### 4. Bug Fixes
 
-### 8. Config
+| Issue | Fix |
+|---|---|
+| **Duplicate LatestReplies** — rendered twice (lines 267 and 271) | Remove the second grid block (lines 270-272) |
+| **LatestReplies uses `snow-card`** class instead of `bg-snow-bg-2 rounded-[20px]` | Update to match other panels' styling |
+| **MetricCard "Leads Engaged"** shows `invitations_sent` from campaigns table (may be stale) | Query `campaign_connection_requests` count for accurate "Leads Engaged" |
+| **MetricCard "Conversations"** shows `messages_sent` from campaigns (stale counter) | Query `campaign_connection_requests` where `last_incoming_message_at IS NOT NULL` for real conversation count |
 
-- Add `auto-subscribe-on-meeting` and `setup-card` to `supabase/config.toml` with `verify_jwt = false`
+---
 
-## Files Changed
+### Technical Details
 
-| File | Change |
-|------|--------|
-| `supabase/functions/setup-card/index.ts` | **New** -- Stripe setup checkout |
-| `supabase/functions/auto-subscribe-on-meeting/index.ts` | **New** -- auto-create subscription + emails |
-| `supabase/functions/check-subscription/index.ts` | Add `has_card` field |
-| `supabase/functions/process-signal-agents/index.ts` | Change gating from subscription to card-on-file |
-| `src/hooks/useSubscription.ts` | Add `hasCard` |
-| `src/pages/Signals.tsx` | Change activation check to `hasCard` |
-| `src/components/contacts/BookMeetingDialog.tsx` | Call auto-subscribe after booking |
-| `supabase/functions/process-ai-replies/index.ts` | Call auto-subscribe after AI meeting detection |
-| `supabase/config.toml` | Add new function configs |
+**New queries in Dashboard.tsx**:
+1. `campaign_connection_requests` with `sent_at` for chart contacted series
+2. `campaign_connection_requests` count for Leads Engaged metric
+3. `campaign_connection_requests` where `last_incoming_message_at IS NOT NULL` for Conversations metric
+4. `contacts` grouped by `relevance_tier` for Leads by Tier donut
+5. `contacts` with `source_campaign_id` joined to campaign names for Leads by Source bar chart
 
-## Stripe Details
-
-- **Setup checkout**: `mode: 'setup'`, saves card to customer
-- **Subscription creation**: Uses `prod_UGjR0WwP5rbgZX` (Intentsly Starter, $59/mo) with `price_1TIByxFsgTpFMX56JNwbw3TA`
-- **Payment method**: Retrieved from customer's default payment method set during setup checkout
-- No trial period on auto-created subscriptions (charge immediately)
+**Files changed**:
+- `src/pages/Dashboard.tsx` — new queries, remove duplicate LatestReplies, wire new components
+- `src/components/dashboard/PerformanceChart.tsx` — new props with two real data series
+- `src/components/dashboard/TrafficByDevice.tsx` → rewrite as `LeadsBySource.tsx`
+- `src/components/dashboard/TrafficByLocation.tsx` → rewrite as `LeadsByTier.tsx`
+- `src/components/dashboard/LatestReplies.tsx` — fix card styling
+- `src/components/dashboard/MetricCard.tsx` — no changes needed (props-driven)
 
