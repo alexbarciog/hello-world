@@ -252,6 +252,11 @@ const Integrations = () => {
                           </Button>
                         </>
                       ) : (
+                        provider.id === "outlook_calendar" ? (
+                          <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-muted-foreground bg-muted rounded-[12px]">
+                            Coming soon
+                          </span>
+                        ) : (
                         <button
                           className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-white rounded-[12px] transition-opacity duration-200 hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none shadow-md"
                           style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
@@ -267,6 +272,7 @@ const Integrations = () => {
                           )}
                           Connect
                         </button>
+                        )
                       )}
                     </div>
                   </div>
