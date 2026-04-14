@@ -14,6 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          attendee_email: string | null
+          contact_id: string | null
+          created_at: string
+          event_end: string | null
+          event_start: string
+          event_title: string | null
+          id: string
+          integration_id: string
+          meeting_id: string | null
+          pre_meeting_followup_sent: boolean
+          provider_event_id: string
+          user_id: string
+        }
+        Insert: {
+          attendee_email?: string | null
+          contact_id?: string | null
+          created_at?: string
+          event_end?: string | null
+          event_start: string
+          event_title?: string | null
+          id?: string
+          integration_id: string
+          meeting_id?: string | null
+          pre_meeting_followup_sent?: boolean
+          provider_event_id: string
+          user_id: string
+        }
+        Update: {
+          attendee_email?: string | null
+          contact_id?: string | null
+          created_at?: string
+          event_end?: string | null
+          event_start?: string
+          event_title?: string | null
+          id?: string
+          integration_id?: string
+          meeting_id?: string | null
+          pre_meeting_followup_sent?: boolean
+          provider_event_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_integrations: {
+        Row: {
+          access_token: string | null
+          calendar_email: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          provider: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          webhook_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          calendar_email?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          provider: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          calendar_email?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_id?: string | null
+        }
+        Relationships: []
+      }
       campaign_connection_requests: {
         Row: {
           accepted_at: string | null

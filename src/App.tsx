@@ -27,6 +27,7 @@ import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import VideoShowcase from "./pages/VideoShowcase.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
+import IntegrationsPage from "./pages/Integrations.tsx";
 import AiSdrOutreach from "./pages/features/AiSdrOutreach.tsx";
 import ConversationalAi from "./pages/features/ConversationalAi.tsx";
 import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
@@ -112,6 +113,10 @@ const App = () => (
           <Route
             path="/unibox"
             element={<AuthGuard><DashboardLayout><Unibox /></DashboardLayout></AuthGuard>}
+          />
+          <Route
+            path="/integrations"
+            element={<AuthGuard><DashboardLayout><IntegrationsPage /></DashboardLayout></AuthGuard>}
           />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
