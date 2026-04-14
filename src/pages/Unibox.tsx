@@ -203,7 +203,7 @@ export default function Unibox() {
     error: chatsError,
   } = useQuery({
     queryKey: ["unibox-chats"],
-    queryFn: () => callMessaging({ action: "list_chats", limit: 50 }),
+    queryFn: () => callMessaging({ action: "list_chats", limit: 50, enrich: true }),
     refetchInterval: 30000,
   });
 
@@ -325,11 +325,13 @@ export default function Unibox() {
                   <p className="text-sm font-light">No conversations found</p>
                 </div>
               ) : (
-                filteredChats.map((chat, i) => {
+                filteredChats.map((chat) => {
                   const isSelected = selectedChatId === chat.id;
-                  const isFirst = i === 0;
+                  const isUnread = chat._is_unread || (chat.unread_count || 0) > 0;
                   const avatarUrl = chatAvatar(chat);
                   const initials = chatInitials(chat);
+                  const lastText = chatLastText(chat);
+                  const hasMsgPreview = lastText && lastText !== "No messages yet";
 
                   return (
                     <button
@@ -347,7 +349,7 @@ export default function Unibox() {
                           <img
                             className={cn(
                               "w-10 h-10 rounded-xl object-cover transition-opacity",
-                              !isSelected && !isFirst && "opacity-80 group-hover:opacity-100"
+                              !isSelected && !isUnread && "opacity-80 group-hover:opacity-100"
                             )}
                             src={avatarUrl}
                             alt=""
@@ -357,46 +359,39 @@ export default function Unibox() {
                             {initials}
                           </div>
                         )}
-                        {isFirst && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
+                        {isUnread && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[hsl(200,100%,28%)] border-2 border-white" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-0.5">
                           <h3 className={cn(
                             "text-[13px] truncate text-foreground",
-                            isSelected || isFirst ? "font-medium" : "font-light"
+                            isSelected || isUnread ? "font-semibold" : "font-light"
                           )}>
                             {chatDisplayName(chat)}
                           </h3>
                           <span className={cn(
                             "text-[11px] uppercase tracking-wider ml-2 shrink-0",
-                            isFirst ? "font-medium text-[hsl(200,100%,28%)]" : "font-light text-foreground/40"
+                            isUnread ? "font-medium text-[hsl(200,100%,28%)]" : "font-light text-foreground/40"
                           )}>
                             {chatTimestamp(chat)}
                           </span>
                         </div>
-                        <p className="text-xs text-foreground/50 font-light truncate">
-                          <span className="font-medium text-foreground/60">
-                            {chat.last_message
-                              ? (chat._resolved_msg_is_sender || chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
-                                ? 'You'
-                                : chatDisplayName(chat).split(' ')[0])
-                              : ''}
-                          </span>
-                          {chat.last_message ? ': ' : ''}
-                          {chatLastText(chat)}
-                          {chat.last_message ? (
-                            <span className="text-foreground/30 ml-1">· {chatTimestamp(chat)}</span>
-                          ) : null}
+                        <p className={cn(
+                          "text-xs truncate",
+                          isUnread ? "text-foreground/70 font-medium" : "text-foreground/50 font-light"
+                        )}>
+                          {hasMsgPreview && (
+                            <>
+                              <span className="font-medium text-foreground/60">
+                                {chat._resolved_msg_is_sender ? 'You' : chatDisplayName(chat).split(' ')[0]}
+                              </span>
+                              {': '}
+                            </>
+                          )}
+                          {lastText}
                         </p>
-                        {(chat.unread_count || 0) > 0 && (
-                          <div className="mt-1 flex gap-1.5">
-                            <span className="px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 text-[9px] font-semibold uppercase tracking-tighter">
-                              🔥 HOT
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </button>
                   );
@@ -475,7 +470,7 @@ export default function Unibox() {
                                 <p className="whitespace-pre-wrap break-words">{messageText(msg)}</p>
                               </div>
                               <span className="text-[10px] text-foreground/40 font-medium mr-1 mt-1 uppercase tracking-tighter">
-                                {messageTime(msg)} · SEEN
+                                {messageTime(msg)}
                               </span>
                             </div>
                           </div>

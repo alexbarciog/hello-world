@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
     if (action === 'list_chats') {
       const cursor = typeof body.cursor === 'string' ? body.cursor : '';
-      const limit = Math.min(Number(body.limit) || 15, 15);
+      const limit = Math.min(Number(body.limit) || 15, 50);
       const enrich = body.enrich === true;
       const url = new URL(`https://${UNIPILE_DSN}/api/v1/chats`);
       url.searchParams.set('account_id', accountId);
