@@ -84,8 +84,36 @@ export default function Contacts() {
       supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
     ]);
 
-    setContacts(allContacts as Contact[]);
-    if (listsRes.data) setLists(listsRes.data as ContactList[]);
+    // Check if data should be locked: user has ≥1 meeting and no active subscription
+    let locked = false;
+    if (!sub.loading && !sub.subscribed) {
+      const { count: meetingsCount } = await supabase
+        .from("meetings")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if ((meetingsCount ?? 0) >= 1) {
+        locked = true;
+      }
+    }
+    setIsDataLocked(locked);
+
+    // If locked, mask sensitive data so real values never reach the DOM
+    if (locked) {
+      const maskedContacts = (allContacts as Contact[]).map((c) => ({
+        ...c,
+        first_name: "••••",
+        last_name: "••••",
+        title: "••••••••",
+        company: "••••••",
+        signal: "••••••••••",
+        signal_post_url: null,
+        linkedin_url: null,
+        email: null,
+      }));
+      setContacts(maskedContacts);
+    } else {
+      setContacts(allContacts as Contact[]);
+    }
 
     // Build meetings map by contact_id
     if (meetingsRes.data) {
