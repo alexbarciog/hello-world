@@ -43,8 +43,8 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
             <DialogTitle className="text-2xl font-semibold tracking-tight text-snow-black">
               Activate your AI Agent
             </DialogTitle>
-            <DialogDescription className="text-sm text-snow-black-100 leading-relaxed">
-              Intentsly is <strong className="text-snow-black font-medium">free until your first meeting is booked</strong>. 
+            <DialogDescription className="text-sm leading-relaxed text-[#858585]">
+              Intentsly is <strong className="text-black font-medium">free until your first meeting is booked</strong>. 
               We just need a card on file to get started — you won't be charged today.
             </DialogDescription>
           </DialogHeader>
@@ -62,7 +62,7 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
               </div>
               <div>
                 <p className="text-snow-black font-sans text-base font-medium tracking-tight">{b.title}</p>
-                <p className="text-xs text-snow-black-100 mt-0.5">{b.desc}</p>
+                <p className="text-xs mt-0.5 text-[#858585]">{b.desc}</p>
               </div>
             </div>
           ))}
