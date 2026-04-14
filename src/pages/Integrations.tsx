@@ -37,7 +37,7 @@ const providers = [
     id: "outlook_calendar",
     name: "Outlook Calendar",
     description: "Connect your Microsoft Outlook calendar for meeting tracking.",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg/1024px-Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg.png",
+    logo: outlookCalendarLogo,
     color: "from-blue-600 to-blue-700",
   },
   {
