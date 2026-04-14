@@ -346,6 +346,17 @@ export default function Contacts() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showSelectPopover]);
 
+  useEffect(() => {
+    if (!insightsOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (insightsRef.current && !insightsRef.current.contains(e.target as Node)) {
+        setInsightsOpen(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [insightsOpen]);
+
   function getContactListNames(contactId: string): string[] {
     const listIds = contactListMap[contactId] || [];
     return listIds.map((lid) => lists.find((l) => l.id === lid)?.name).filter(Boolean) as string[];
