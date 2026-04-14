@@ -20,7 +20,7 @@ const tags2 = ["Warm Leads", "Auto-Pilot", "LinkedIn Native", "Real-Time"];
 
 /* ── Signal 1: Posting About Keywords ── */
 const KeywordPostVisual = () => (
-  <div className="relative w-full h-44 flex items-center justify-center">
+  <div className="relative w-full h-64 flex items-center justify-center">
     <div className="absolute left-8 top-4 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-3 z-10">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-medium opacity-80">Keyword hits</span>
@@ -53,7 +53,7 @@ const KeywordPostVisual = () => (
 
 /* ── Signal 2: Likes Competitor Posts ── */
 const CompetitorLikesVisual = () => (
-  <div className="relative w-full h-44 flex items-center justify-center">
+  <div className="relative w-full h-64 flex items-center justify-center">
     <div className="absolute left-8 top-4 w-36 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-2 z-10">
       <p className="text-[10px] opacity-50 mb-1">Competitor engagers</p>
       <div className="flex items-baseline gap-2">
@@ -88,7 +88,7 @@ const CompetitorLikesVisual = () => (
 
 /* ── Signal 3: Follows Competitor Page ── */
 const CompetitorFollowVisual = () => (
-  <div className="relative w-full h-44 flex items-center justify-center">
+  <div className="relative w-full h-64 flex items-center justify-center">
     <div className="absolute left-8 top-4 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl rotate-2 z-10">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-medium opacity-80">New followers</span>
@@ -126,7 +126,7 @@ const CompetitorFollowVisual = () => (
 
 /* ── Signal 4: Comments/Likes on Topic Posts ── */
 const TopicEngagementVisual = () => (
-  <div className="relative w-full h-44 flex items-center justify-center">
+  <div className="relative w-full h-64 flex items-center justify-center">
     <div className="w-12 h-12 rounded-2xl bg-[#1a1a2e] flex items-center justify-center shadow-xl z-10">
       <MessageCircle className="w-5 h-5 text-white" />
     </div>
@@ -191,7 +191,7 @@ const ExpertiseSection = () => {
         <div className="rounded-[28px] bg-[#F2F2F2] p-6 md:p-10">
         <div className="grid md:grid-cols-2 gap-6">
           {features.map((f, i) => (
-            <div key={i} className="rounded-3xl bg-[#FFFFFF] p-8 pb-6 flex flex-col group hover:shadow-lg transition-shadow duration-300">
+            <div key={i} className="rounded-3xl bg-[#FFFFFF] p-10 pb-8 flex flex-col group hover:shadow-lg transition-shadow duration-300 min-h-[420px]">
               <f.Visual />
               <h3 className="text-xl font-semibold mb-2 text-center mt-2" style={{ color: "hsl(var(--aeline-dark))" }}>{f.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed text-center">{f.desc}</p>
