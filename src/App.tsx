@@ -114,6 +114,10 @@ const App = () => (
             path="/unibox"
             element={<AuthGuard><DashboardLayout><Unibox /></DashboardLayout></AuthGuard>}
           />
+          <Route
+            path="/integrations"
+            element={<AuthGuard><DashboardLayout><IntegrationsPage /></DashboardLayout></AuthGuard>}
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
