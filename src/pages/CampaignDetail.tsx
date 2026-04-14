@@ -2541,7 +2541,7 @@ export default function CampaignDetail() {
 
                     {/* Two-column stats */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="rounded-xl bg-muted/30 p-3.5">
+                      <div className="rounded-xl p-3.5 bg-neutral-100">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
                           <Zap className="w-3.5 h-3.5" />
                           <span className="font-medium">Daily Progress</span>
@@ -2550,7 +2550,7 @@ export default function CampaignDetail() {
                           <span className="text-lg font-bold text-foreground">{todaySentCount}<span className="text-sm font-normal text-muted-foreground"> / {profileLimits.daily_connections_limit}</span></span>
                           <span className="text-xs font-semibold text-primary">{Math.round(Math.min(100, (todaySentCount / profileLimits.daily_connections_limit) * 100))}%</span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="w-full h-2 rounded-full overflow-hidden bg-white">
                           <motion.div
                             className="h-full rounded-full bg-primary"
                             initial={{ width: 0 }}
@@ -2559,7 +2559,7 @@ export default function CampaignDetail() {
                           />
                         </div>
                       </div>
-                      <div className="rounded-xl bg-muted/30 p-3.5">
+                      <div className="rounded-xl p-3.5 bg-neutral-100">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
                           <Users className="w-3.5 h-3.5" />
                           <span className="font-medium">Remaining</span>
