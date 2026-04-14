@@ -194,7 +194,7 @@ const ExpertiseSection = () => {
             <div key={i} className="rounded-3xl bg-[#FFFFFF] p-10 pb-8 flex flex-col group hover:shadow-lg transition-shadow duration-300 min-h-[420px]">
               <f.Visual />
               <h3 className="text-xl mb-2 text-center mt-2 font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed text-center">{f.desc}</p>
+              <p className="text-muted-foreground leading-relaxed text-center text-base">{f.desc}</p>
             </div>
           ))}
         </div>
