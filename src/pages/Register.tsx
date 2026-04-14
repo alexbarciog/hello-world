@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ttqCompleteRegistration } from "@/lib/tiktok-pixel";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
-import registerBg from "@/assets/register-bg.png";
+import registerBg from "@/assets/hero-bg-2.avif";
 
 interface InviteData {
   email: string;
@@ -406,21 +406,21 @@ export default function Register() {
 
       {/* RIGHT — gradient + testimonials */}
       <div
-        className="hidden md:flex flex-1 flex-col items-center justify-center relative overflow-hidden bg-cover bg-center"
+        className="hidden md:flex flex-1 m-5 rounded-[30px] flex-col items-center justify-center relative overflow-hidden bg-cover bg-center"
         style={{
           backgroundImage: `url(${registerBg})`
         }}>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-start px-12 max-w-md w-full">
-          <h2 className="text-3xl font-semibold text-foreground tracking-tight mb-2">
+          <h2 className="text-3xl font-semibold text-white tracking-tight mb-2">
             Find buyers before your competitors do
           </h2>
-          <p className="text-sm text-foreground/60 mb-10">
+          <p className="text-sm text-white/60 mb-10">
             Intent-driven prospecting that fills your pipeline on autopilot.
           </p>
 
-          <div className="space-y-8 w-full">
+          <div className="space-y-6 w-full">
             {[
               {
                 icon: Radar,
@@ -438,19 +438,19 @@ export default function Register() {
                 desc: "Start relevant conversations on LinkedIn automatically and book more demos on autopilot."
               }
             ].map((item) => (
-              <div key={item.title} className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-foreground/10 flex items-center justify-center shrink-0">
-                  <item.icon className="w-5 h-5 text-foreground" />
+              <div key={item.title} className="flex gap-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4">
+                <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+                  <item.icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-1">{item.title}</h3>
-                  <p className="text-sm text-foreground/60 leading-relaxed">{item.desc}</p>
+                  <h3 className="text-sm font-semibold text-white mb-1">{item.title}</h3>
+                  <p className="text-sm text-white/60 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-foreground/40 mt-12">
+          <p className="text-xs text-white/40 mt-12">
             Trusted by 500+ B2B founders and sales teams
           </p>
         </div>
