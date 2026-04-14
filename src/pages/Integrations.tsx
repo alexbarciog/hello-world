@@ -156,8 +156,8 @@ const Integrations = () => {
       <div className="flex-1 min-w-0 flex flex-col gap-5 rounded-[20px] p-6 border border-gray-200/60 shadow-sm bg-white">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] bg-snow-bg-2 flex items-center justify-center bg-[#202022]">
-            <Plug className="w-5 h-5 text-snow-black-100" />
+            <div className="w-10 h-10 rounded-[12px] flex items-center justify-center" style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}>
+            <Plug className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-2xl text-foreground font-medium">Integrations</h1>
