@@ -33,17 +33,15 @@ const benefits = [
 export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCardDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg rounded-2xl border-none shadow-lg p-0 gap-0 overflow-hidden">
-        {/* Gradient banner */}
-        <div className="bg-gradient-to-r from-[#0057bd] to-[#4647d3] h-24 flex items-center justify-center relative">
-          <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-md">
-            <CreditCard className="w-7 h-7 text-[#4647d3]" />
+      <DialogContent className="sm:max-w-lg rounded-[20px] border border-snow-white-300 bg-white shadow-xl p-0 gap-0 overflow-hidden">
+        <div className="p-6 pb-0 space-y-5">
+          {/* Icon */}
+          <div className="w-11 h-11 rounded-[12px] bg-snow-black flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-white" />
           </div>
-        </div>
 
-        <div className="px-6 pb-6 pt-5 space-y-5">
-          <DialogHeader className="text-center sm:text-center space-y-1.5">
-            <DialogTitle className="text-xl font-semibold text-snow-black">
+          <DialogHeader className="text-left sm:text-left space-y-2">
+            <DialogTitle className="text-2xl font-semibold tracking-tight text-snow-black">
               Activate your AI Agent
             </DialogTitle>
             <DialogDescription className="text-sm text-snow-black-100 leading-relaxed">
@@ -51,42 +49,45 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
               We just need a card on file to get started — you won't be charged today.
             </DialogDescription>
           </DialogHeader>
+        </div>
 
-          {/* Benefits card */}
-          <div className="bg-snow-white-100 rounded-xl p-4 space-y-0">
+        {/* Benefits */}
+        <div className="px-6 py-5">
+          <div className="rounded-[14px] bg-[#f6f7f9] p-4 space-y-0">
             {benefits.map((b, i) => (
               <div
                 key={i}
                 className={`flex items-start gap-3 py-3 ${i < benefits.length - 1 ? "border-b border-snow-white-300" : ""}`}
               >
-                <div className="w-9 h-9 rounded-lg bg-white border border-snow-white-300 flex items-center justify-center shrink-0 mt-0.5">
-                  <b.icon className="w-4 h-4 text-snow-primary" />
+                <div className="w-9 h-9 rounded-[10px] bg-white border border-snow-white-300 flex items-center justify-center shrink-0 mt-0.5">
+                  <b.icon className="w-4 h-4 text-snow-black" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-snow-black">{b.title}</p>
-                  <p className="text-xs text-snow-black-100">{b.desc}</p>
+                  <p className="text-xs text-snow-black-100 mt-0.5">{b.desc}</p>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* Footer */}
-          <div className="flex flex-col gap-2 items-center">
-            <Button
-              onClick={onConfirm}
-              disabled={loading}
-              className="w-full gap-2 rounded-xl py-2.5 h-auto bg-gradient-to-r from-[#0057bd] to-[#4647d3] text-white hover:opacity-90 transition-opacity"
-            >
-              <CreditCard className="w-4 h-4" />
-              {loading ? "Redirecting..." : "Add card & activate"}
-              <Badge className="ml-1 bg-white/20 text-white border-none text-[10px] px-1.5 py-0 hover:bg-white/20">
-                $0 today
-              </Badge>
-            </Button>
-            <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full text-snow-black-100">
-              Maybe later
-            </Button>
-          </div>
+        {/* Footer */}
+        <div className="px-6 pb-6 flex flex-col gap-2">
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            className="w-full h-11 flex items-center justify-center gap-2 rounded-[12px] text-sm font-medium text-white shadow-md transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
+          >
+            <CreditCard className="w-4 h-4" />
+            {loading ? "Redirecting..." : "Add card & activate"}
+            <span className="ml-1 bg-white/15 text-white text-[10px] px-1.5 py-0.5 rounded-md font-medium">
+              $0 today
+            </span>
+          </button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full text-snow-black-100">
+            Maybe later
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
