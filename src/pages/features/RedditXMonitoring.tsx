@@ -1,3 +1,4 @@
+import featureHeroBg from "@/assets/feature-hero-sky.png";
 import { useEffect, useRef, useState } from "react";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
 import { ArrowUpRight, Globe, MessageSquareMore, Twitter, Search, TrendingUp, Bookmark, Sparkles } from "lucide-react";
@@ -66,36 +67,33 @@ export default function RedditXMonitoring() {
     <div className="min-h-screen bg-background font-sans">
       <Navbar />
 
-      {/* Hero — Split layout */}
-      <section className="grid md:grid-cols-2 min-h-[85vh] mx-2 md:mx-3 mt-2 md:mt-3 rounded-[20px] overflow-hidden">
+      {/* Hero */}
+      <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
+        <img src={featureHeroBg} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="cloud-overlay" style={{ opacity: 0.15 }} />
         <div
           ref={heroRef.ref}
-          className="flex flex-col justify-center px-8 md:px-14 py-16 bg-[#f5f5f5]"
+          className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto"
           style={{
             opacity: heroRef.visible ? 1 : 0,
             transform: heroRef.visible ? "translateY(0)" : "translateY(24px)",
             transition: "all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)",
           }}
         >
-          <div className="w-12 h-12 rounded-2xl bg-[#1a1a2e] flex items-center justify-center mb-8">
-            <Sparkles className="w-5 h-5 text-[#C8FF00]" />
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.08] tracking-tight mb-6" style={{ color: "hsl(var(--aeline-dark))" }}>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium text-white mb-8">
+            <Sparkles className="w-4 h-4" />
             Reddit & X Monitoring
+          </div>
+          <h1 className="text-5xl md:text-7xl font-medium text-white leading-[1.05] tracking-tight mb-6">
+            Capture buying signals<br /><span className="text-white/70">across the web</span>
           </h1>
-          <p className="text-base text-muted-foreground leading-relaxed mb-4 max-w-md">
+          <p className="text-base md:text-lg text-white/80 max-w-2xl mb-10 leading-relaxed">
             Monitor Reddit and X for real-time conversations about your industry, competitors, and the problems you solve.
           </p>
-          <p className="text-base text-muted-foreground leading-relaxed mb-8 max-w-md">
-            Capture buying signals across the web — from competitor mentions to pain point discussions — and turn them into warm outreach opportunities.
-          </p>
           <a href="/register" className="btn-cta text-base">
-            Get Started
+            Launch your AI Agent for free
             <ArrowUpRight className="w-4 h-4" />
           </a>
-        </div>
-        <div className="bg-[#e8e8e8] flex items-center justify-center">
-          <MonitoringVisual />
         </div>
       </section>
 
