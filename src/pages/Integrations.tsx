@@ -253,7 +253,8 @@ const Integrations = () => {
                         </>
                       ) : (
                         <button
-                          className="brand-gradient-button inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-white rounded-lg transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none shadow-sm"
+                          className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-white rounded-[12px] transition-opacity duration-200 hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none shadow-md"
+                          style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
                           onClick={() => handleConnect(provider.id)}
                           disabled={connecting === provider.id}
                         >
