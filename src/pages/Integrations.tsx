@@ -167,25 +167,6 @@ const Integrations = () => {
           </div>
         </div>
 
-        {/* Info banner */}
-        <div className="rounded-[12px] border-border bg-snow-bg-2 p-4 flex items-center gap-4 border-0 bg-[#f6f7f9]">
-          <div className="flex-shrink-0 w-10 h-10 rounded-[10px] brand-gradient-button flex items-center justify-center shadow-sm bg-white">
-            <Calendar className="w-4.5 h-4.5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Automatic meeting detection</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              When a lead books a meeting, the AI sends a LinkedIn follow-up 1 hour before the call.
-            </p>
-          </div>
-          <Badge variant="outline" className="bg-green-50 border-green-200/60 text-green-700 text-xs gap-1.5 px-2.5 py-1 shrink-0">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-            </span>
-            Auto
-          </Badge>
-        </div>
 
         {/* Provider cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
