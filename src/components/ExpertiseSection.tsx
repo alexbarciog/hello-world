@@ -21,18 +21,18 @@ const tags2 = ["Warm Leads", "Auto-Pilot", "LinkedIn Native", "Real-Time"];
 /* ── Signal 1: Posting About Keywords ── */
 const KeywordPostVisual = () => (
   <div className="relative w-full h-64 flex items-center justify-center">
-    <div className="absolute left-8 top-4 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-3 z-10">
+    <div className="absolute left-6 top-4 w-48 rounded-2xl bg-[#1a1a2e] text-white p-5 shadow-xl -rotate-3 z-10">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium opacity-80">Keyword hits</span>
-        <Search className="w-4 h-4 text-[#C8FF00]" />
+        <span className="text-sm font-medium opacity-80">Keyword hits</span>
+        <Search className="w-5 h-5 text-[#C8FF00]" />
       </div>
-      <p className="text-[10px] opacity-40 mb-2">Last 24 hours</p>
-      <div className="text-3xl font-bold mb-0.5">34</div>
-      <p className="text-[10px] opacity-40">Posts matched</p>
+      <p className="text-xs opacity-40 mb-2">Last 24 hours</p>
+      <div className="text-4xl font-bold mb-0.5">34</div>
+      <p className="text-xs opacity-40">Posts matched</p>
     </div>
-    <div className="absolute left-[7.25rem] top-5 w-44 rounded-2xl bg-white shadow-lg p-3 rotate-2 z-20 border border-border/50">
-      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Tracked keywords</p>
-      <div className="space-y-1.5">
+    <div className="absolute left-[8rem] top-5 w-52 rounded-2xl bg-white shadow-lg p-4 rotate-2 z-20 border border-border/50">
+      <p className="text-sm font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Tracked keywords</p>
+      <div className="space-y-2">
         {[
           { keyword: "\"sales automation\"", posts: 12 },
           { keyword: "\"lead generation\"", posts: 9 },
@@ -40,10 +40,10 @@ const KeywordPostVisual = () => (
         ].map((k, i) => (
           <div key={i} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#C8FF00]" />
-              <span className="text-[10px] font-medium truncate" style={{ color: "hsl(var(--aeline-dark))" }}>{k.keyword}</span>
+              <div className="w-2 h-2 rounded-full bg-[#C8FF00]" />
+              <span className="text-xs font-medium truncate" style={{ color: "hsl(var(--aeline-dark))" }}>{k.keyword}</span>
             </div>
-            <span className="text-[8px] shrink-0 text-muted-foreground">{k.posts} posts</span>
+            <span className="text-[10px] shrink-0 text-muted-foreground">{k.posts} posts</span>
           </div>
         ))}
       </div>
@@ -54,17 +54,17 @@ const KeywordPostVisual = () => (
 /* ── Signal 2: Likes Competitor Posts ── */
 const CompetitorLikesVisual = () => (
   <div className="relative w-full h-64 flex items-center justify-center">
-    <div className="absolute left-8 top-4 w-36 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-2 z-10">
-      <p className="text-[10px] opacity-50 mb-1">Competitor engagers</p>
+    <div className="absolute left-6 top-4 w-44 rounded-2xl bg-[#1a1a2e] text-white p-5 shadow-xl -rotate-2 z-10">
+      <p className="text-xs opacity-50 mb-1">Competitor engagers</p>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold">58</span>
-        <span className="text-xs font-semibold text-[#C8FF00]">today</span>
+        <span className="text-4xl font-bold">58</span>
+        <span className="text-sm font-semibold text-[#C8FF00]">today</span>
       </div>
-      <p className="text-[10px] opacity-40 mt-1">Liked competitor content</p>
+      <p className="text-xs opacity-40 mt-1">Liked competitor content</p>
     </div>
-    <div className="absolute left-[6.75rem] top-5 w-44 rounded-2xl bg-white shadow-lg p-3 rotate-2 z-20 border border-border/50">
-      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Recent likes detected</p>
-      <div className="space-y-1.5">
+    <div className="absolute left-[7.5rem] top-5 w-52 rounded-2xl bg-white shadow-lg p-4 rotate-2 z-20 border border-border/50">
+      <p className="text-sm font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Recent likes detected</p>
+      <div className="space-y-2">
         {[
           { name: "Sarah K.", action: "Liked competitor post", icon: "❤️" },
           { name: "Mike R.", action: "Reacted to announcement", icon: "👍" },
@@ -72,13 +72,13 @@ const CompetitorLikesVisual = () => (
         ].map((l, i) => (
           <div key={i} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              <Heart className="w-3 h-3 shrink-0 text-red-400" />
+              <Heart className="w-4 h-4 shrink-0 text-red-400" />
               <div className="min-w-0">
-                <p className="text-[10px] font-medium truncate" style={{ color: "hsl(var(--aeline-dark))" }}>{l.name}</p>
-                <p className="text-[8px] truncate text-muted-foreground">{l.action}</p>
+                <p className="text-xs font-medium truncate" style={{ color: "hsl(var(--aeline-dark))" }}>{l.name}</p>
+                <p className="text-[10px] truncate text-muted-foreground">{l.action}</p>
               </div>
             </div>
-            <span className="text-[10px] shrink-0">{l.icon}</span>
+            <span className="text-xs shrink-0">{l.icon}</span>
           </div>
         ))}
       </div>
@@ -89,21 +89,21 @@ const CompetitorLikesVisual = () => (
 /* ── Signal 3: Follows Competitor Page ── */
 const CompetitorFollowVisual = () => (
   <div className="relative w-full h-64 flex items-center justify-center">
-    <div className="absolute left-8 top-4 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl rotate-2 z-10">
+    <div className="absolute left-6 top-4 w-48 rounded-2xl bg-[#1a1a2e] text-white p-5 shadow-xl rotate-2 z-10">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-medium opacity-80">New followers</span>
-        <UserPlus className="w-4 h-4 text-[#C8FF00]" />
+        <span className="text-sm font-medium opacity-80">New followers</span>
+        <UserPlus className="w-5 h-5 text-[#C8FF00]" />
       </div>
-      <p className="text-[10px] opacity-40 mb-2">On competitor pages</p>
+      <p className="text-xs opacity-40 mb-2">On competitor pages</p>
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold">23</span>
-        <span className="text-xs font-semibold text-[#C8FF00]">this week</span>
+        <span className="text-4xl font-bold">23</span>
+        <span className="text-sm font-semibold text-[#C8FF00]">this week</span>
       </div>
-      <p className="text-[10px] opacity-40 mt-1">Prospects to intercept</p>
+      <p className="text-xs opacity-40 mt-1">Prospects to intercept</p>
     </div>
-    <div className="absolute left-[7rem] top-[4.4rem] w-40 rounded-2xl bg-white shadow-lg p-3 -rotate-1 z-20 border border-border/50">
-      <p className="text-[9px] font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Competitor pages tracked</p>
-      <div className="space-y-1.5">
+    <div className="absolute left-[8rem] top-[4.4rem] w-48 rounded-2xl bg-white shadow-lg p-4 -rotate-1 z-20 border border-border/50">
+      <p className="text-xs font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Competitor pages tracked</p>
+      <div className="space-y-2">
         {[
           { page: "Competitor A", followers: "+8" },
           { page: "Competitor B", followers: "+11" },
@@ -111,12 +111,12 @@ const CompetitorFollowVisual = () => (
         ].map((c, i) => (
           <div key={i} className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-5 h-5 rounded-full bg-[#f0f0f0] flex items-center justify-center shrink-0">
-                <Eye className="w-3 h-3 text-muted-foreground" />
+              <div className="w-6 h-6 rounded-full bg-[#f0f0f0] flex items-center justify-center shrink-0">
+                <Eye className="w-3.5 h-3.5 text-muted-foreground" />
               </div>
-              <span className="text-[10px] font-medium truncate" style={{ color: "hsl(var(--aeline-dark))" }}>{c.page}</span>
+              <span className="text-xs font-medium truncate" style={{ color: "hsl(var(--aeline-dark))" }}>{c.page}</span>
             </div>
-            <span className="text-[9px] shrink-0 font-semibold text-[#22c55e]">{c.followers}</span>
+            <span className="text-[10px] shrink-0 font-semibold text-[#22c55e]">{c.followers}</span>
           </div>
         ))}
       </div>
@@ -127,25 +127,25 @@ const CompetitorFollowVisual = () => (
 /* ── Signal 4: Comments/Likes on Topic Posts ── */
 const TopicEngagementVisual = () => (
   <div className="relative w-full h-64 flex items-center justify-center">
-    <div className="w-12 h-12 rounded-2xl bg-[#1a1a2e] flex items-center justify-center shadow-xl z-10">
-      <MessageCircle className="w-5 h-5 text-white" />
+    <div className="w-14 h-14 rounded-2xl bg-[#1a1a2e] flex items-center justify-center shadow-xl z-10">
+      <MessageCircle className="w-6 h-6 text-white" />
     </div>
-    <div className="absolute w-28 h-28 rounded-full border border-border/40" />
-    <div className="absolute w-40 h-40 rounded-full border border-border/30" />
-    <div className="absolute top-6 right-[4.25rem] flex items-center gap-1.5 bg-white rounded-full pl-1.5 pr-2 py-1 shadow-md border border-border/50 z-20">
-      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[7px] font-bold text-white">SK</div>
-      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Commented</span>
-      <span className="text-[9px] font-semibold text-[#22c55e]">🔥</span>
+    <div className="absolute w-32 h-32 rounded-full border border-border/40" />
+    <div className="absolute w-48 h-48 rounded-full border border-border/30" />
+    <div className="absolute top-4 right-[4rem] flex items-center gap-2 bg-white rounded-full pl-2 pr-3 py-1.5 shadow-md border border-border/50 z-20">
+      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-[8px] font-bold text-white">SK</div>
+      <span className="text-[10px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Commented</span>
+      <span className="text-[10px] font-semibold text-[#22c55e]">🔥</span>
     </div>
-    <div className="absolute bottom-9 left-[3.75rem] flex items-center gap-1.5 bg-white rounded-full pl-1.5 pr-2 py-1 shadow-md border border-border/50 z-20">
-      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-[7px] font-bold text-white">JM</div>
-      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Liked post</span>
-      <span className="text-[9px] font-semibold text-[#1A8FE3]">👍</span>
+    <div className="absolute bottom-8 left-[3.5rem] flex items-center gap-2 bg-white rounded-full pl-2 pr-3 py-1.5 shadow-md border border-border/50 z-20">
+      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-[8px] font-bold text-white">JM</div>
+      <span className="text-[10px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Liked post</span>
+      <span className="text-[10px] font-semibold text-[#1A8FE3]">👍</span>
     </div>
-    <div className="absolute bottom-6 right-[4rem] flex items-center gap-1.5 bg-white rounded-full pl-1.5 pr-2 py-1 shadow-md border border-border/50 z-20">
-      <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-[7px] font-bold text-white">AR</div>
-      <span className="text-[9px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Reacted</span>
-      <span className="text-[9px] font-semibold text-[#22c55e]">💬</span>
+    <div className="absolute bottom-4 right-[3.5rem] flex items-center gap-2 bg-white rounded-full pl-2 pr-3 py-1.5 shadow-md border border-border/50 z-20">
+      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-[8px] font-bold text-white">AR</div>
+      <span className="text-[10px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>Reacted</span>
+      <span className="text-[10px] font-semibold text-[#22c55e]">💬</span>
     </div>
   </div>
 );
