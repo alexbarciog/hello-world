@@ -1,11 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import ctaBg from "@/assets/cta-bg.avif";
 
 const CTASection = () => {
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
-      <div className="relative overflow-hidden rounded-[40px] hero-sky-gradient py-28 px-4">
-        <div className="cloud-overlay" style={{ opacity: 0.3 }} />
+      <div className="relative overflow-hidden rounded-[40px] py-28 px-4">
+        <img src={ctaBg} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
 
         <div className="relative max-w-4xl mx-auto text-center z-10">
           <h2 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.08] mb-6 text-white">
