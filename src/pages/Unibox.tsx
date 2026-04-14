@@ -54,6 +54,12 @@ interface Chat {
   timestamp?: string;
   updated_at?: string;
   unread_count?: number;
+  _resolved_name?: string;
+  _resolved_avatar?: string | null;
+  _resolved_msg_text?: string;
+  _resolved_msg_timestamp?: string;
+  _resolved_msg_is_sender?: boolean;
+  _is_unread?: boolean;
 }
 
 interface Message {
@@ -114,16 +120,18 @@ function attendeeName(a: ChatAttendee): string {
 }
 
 function chatDisplayName(chat: Chat): string {
+  if (chat._resolved_name && chat._resolved_name !== "LinkedIn User") return chat._resolved_name;
   const a = chat.attendees;
-  if (!a?.length) return "Unknown";
+  if (!a?.length) return chat._resolved_name || "LinkedIn User";
   for (const att of a) {
     const n = attendeeName(att);
     if (n && n !== "Unknown") return n;
   }
-  return attendeeName(a[0]) || "LinkedIn User";
+  return chat._resolved_name || attendeeName(a[0]) || "LinkedIn User";
 }
 
 function chatAvatar(chat: Chat): string | undefined {
+  if (chat._resolved_avatar) return chat._resolved_avatar;
   const a = chat.attendees;
   if (!a?.length) return undefined;
   for (const att of a) {
@@ -144,12 +152,13 @@ function chatInitials(chat: Chat): string {
 }
 
 function chatLastText(chat: Chat): string {
+  if (chat._resolved_msg_text) return chat._resolved_msg_text;
   if (!chat.last_message) return "No messages yet";
   return chat.last_message.text || chat.last_message.body || chat.last_message.content || "";
 }
 
 function chatTimestamp(chat: Chat): string {
-  const raw = chat.last_message?.timestamp || chat.last_message?.date || chat.last_message?.created_at || chat.timestamp || chat.updated_at;
+  const raw = chat._resolved_msg_timestamp || chat.last_message?.timestamp || chat.last_message?.date || chat.last_message?.created_at || chat.timestamp || chat.updated_at;
   if (!raw) return "";
   const d = new Date(raw);
   if (isNaN(d.getTime())) return "";
@@ -370,7 +379,7 @@ export default function Unibox() {
                         <p className="text-xs text-foreground/50 font-light truncate">
                           <span className="font-medium text-foreground/60">
                             {chat.last_message
-                              ? (chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
+                              ? (chat._resolved_msg_is_sender || chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
                                 ? 'You'
                                 : chatDisplayName(chat).split(' ')[0])
                               : ''}
