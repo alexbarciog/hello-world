@@ -413,7 +413,7 @@ export default function Register() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-start px-12 max-w-md w-full">
-          <h2 className="text-3xl font-semibold text-white tracking-tight mb-2">
+          <h2 className="text-4xl font-medium text-white tracking-tight mb-2">
             Find buyers before your competitors do
           </h2>
           <p className="text-sm text-white/60 mb-10">
