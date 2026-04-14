@@ -1,38 +1,87 @@
 
 
-## AI SDR Banner UI Redesign
+## Add Integrations Tab with Calendar Connections
 
-### Current State
-The "Conversational AI Banner" (lines 1204-1230 in CampaignDetail.tsx) is a simple horizontal bar with a blue gradient background, a Bot icon in a white/60 glass circle, text, and a green "Live" dot badge. It works but feels generic and doesn't match the premium aesthetic of the landing page.
+### Overview
+Add an "Integrations" tab to the sidebar navigation that lets users connect their calendar providers (Calendly, Google Calendar, Outlook Calendar, Cal.com). When a lead books a meeting through any connected calendar, the system detects it and the AI sends a LinkedIn follow-up 1 hour before the meeting.
 
-### Design Direction
-Align with the landing page's visual language: glassmorphism, subtle depth, clean neutrals with a signature accent. The banner should feel like a premium status indicator, not a basic info bar.
+### 1. Database: New Tables
 
-### Changes
+**`calendar_integrations`** — stores each user's connected calendar accounts:
+- `id` (uuid, PK)
+- `user_id` (uuid, FK auth.users, ON DELETE CASCADE)
+- `provider` (text: `calendly`, `google_calendar`, `outlook_calendar`, `cal_com`)
+- `access_token` (text, encrypted)
+- `refresh_token` (text, nullable)
+- `token_expires_at` (timestamptz, nullable)
+- `webhook_id` (text, nullable — for provider-side webhook reference)
+- `calendar_email` (text, nullable)
+- `is_active` (boolean, default true)
+- `created_at` / `updated_at`
+- RLS: users can only read/update their own rows
 
-**1. Background Treatment**
-- Replace the blue gradient with a neutral frosted-glass card: `bg-white border border-border/50` with a very subtle inner glow or left-accent stripe using the brand indigo (`#4F46E5`)
-- Add a faint decorative gradient blob in the top-right corner (indigo/purple, blurred) for depth, similar to the Contacts unlock banner
+**`calendar_events`** — stores detected meeting bookings from webhooks:
+- `id` (uuid, PK)
+- `user_id` (uuid, FK)
+- `integration_id` (uuid, FK calendar_integrations)
+- `provider_event_id` (text)
+- `attendee_email` (text)
+- `contact_id` (uuid, FK contacts, nullable — matched lead)
+- `meeting_id` (uuid, FK meetings, nullable — linked meeting record)
+- `event_title` (text)
+- `event_start` (timestamptz)
+- `event_end` (timestamptz)
+- `pre_meeting_followup_sent` (boolean, default false)
+- `created_at`
+- Unique on `(user_id, provider_event_id)`
 
-**2. Icon Upgrade**
-- Replace the plain `bg-white/60` icon container with a gradient icon badge: `bg-gradient-to-br from-[#4F46E5] to-[#6366F1]` with a white Bot icon inside
-- Slightly larger: `w-11 h-11` with `rounded-xl` and a subtle shadow
+### 2. Frontend: Integrations Page
 
-**3. Typography Polish**
-- Title: `font-semibold text-sm text-foreground` (keep)
-- Subtitle: lighter muted color, add a subtle "sparkle" or activity indicator phrase
-- Both using tighter letter spacing
+**New file: `src/pages/Integrations.tsx`**
+- Card-based layout showing 4 calendar providers
+- Each card: provider logo, name, description, Connect/Disconnect button, connection status
+- Connected state shows the linked email and a toggle to enable/disable
+- Uses the existing DashboardLayout wrapper
 
-**4. Live Badge Refinement**
-- Keep the animated green ping dot
-- Upgrade the pill: `bg-green-50 border border-green-200/60 text-green-700` for a cleaner, more intentional look instead of `bg-white/50`
+**Sidebar update: `src/components/DashboardLayout.tsx`**
+- Add `{ label: "Integrations", icon: Plug, path: "/integrations" }` to `baseNavItems` (after Unibox, before Settings)
 
-**5. Optional: Subtle shimmer animation**
-- Add a very subtle CSS shimmer/shine animation on the gradient icon to draw attention without being distracting
+**Route: `src/App.tsx`**
+- Add `/integrations` route wrapped in AuthGuard + DashboardLayout
 
-### File to Edit
-- `src/pages/CampaignDetail.tsx` (lines 1204-1230 only)
+### 3. Edge Functions
 
-### No Functional Changes
-Pure visual refresh. All conditional rendering logic stays the same.
+**`connect-calendar/index.ts`** — initiates OAuth flow for each provider:
+- Accepts `{ provider }`, returns the OAuth authorization URL
+- Stores a pending integration row
+- Handles token exchange on callback
+
+**`calendar-webhook/index.ts`** — receives webhook events from providers:
+- Calendly: event created/canceled webhooks
+- Google Calendar: push notifications
+- Cal.com: booking created webhooks
+- On new booking: matches attendee email against `contacts` table, creates `calendar_events` row, optionally creates a `meetings` row, creates a notification
+
+**`pre-meeting-followup/index.ts`** — cron job (runs every 15 min):
+- Queries `calendar_events` where `event_start` is within 45-75 min from now and `pre_meeting_followup_sent = false`
+- For matched contacts with an active campaign connection request, sends a LinkedIn message via Unipile (e.g., "Looking forward to our call in an hour!")
+- Marks `pre_meeting_followup_sent = true`
+
+### 4. Files to Create/Edit
+
+| Action | File |
+|--------|------|
+| Create | `src/pages/Integrations.tsx` |
+| Create | `supabase/functions/connect-calendar/index.ts` |
+| Create | `supabase/functions/calendar-webhook/index.ts` |
+| Create | `supabase/functions/pre-meeting-followup/index.ts` |
+| Edit   | `src/components/DashboardLayout.tsx` — add nav item |
+| Edit   | `src/App.tsx` — add route |
+| Migration | Create `calendar_integrations` and `calendar_events` tables with RLS |
+| Migration | Add pg_cron job for `pre-meeting-followup` every 15 min |
+
+### 5. Important Notes
+- OAuth secrets for each provider (Google Client ID/Secret, Calendly API key, etc.) will need to be added as Supabase secrets. I will guide you through obtaining these credentials for each provider you want to enable.
+- The pre-meeting LinkedIn follow-up uses the existing Unipile integration already in place for campaign messaging.
+- The AI message for the follow-up will be generated using the existing `generate-step-message` pattern, personalized to the meeting context.
 
