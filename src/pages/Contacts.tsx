@@ -198,6 +198,30 @@ export default function Contacts() {
     }
   };
 
+  const handleGetInsights = async (contact: Contact) => {
+    if (insightsData[contact.id]) {
+      setInsightsOpen(insightsOpen === contact.id ? null : contact.id);
+      return;
+    }
+    setInsightsOpen(contact.id);
+    setInsightsLoading((prev) => new Set(prev).add(contact.id));
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-lead-insights", {
+        body: { lead: contact },
+      });
+      if (error) throw error;
+      setInsightsData((prev) => ({ ...prev, [contact.id]: data }));
+    } catch (err: any) {
+      toast.error("Failed to generate insights");
+      setInsightsOpen(null);
+    } finally {
+      setInsightsLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(contact.id);
+        return next;
+      });
+    }
+
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0 };
     contacts.forEach((c) => {
