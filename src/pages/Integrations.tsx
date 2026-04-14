@@ -168,8 +168,8 @@ const Integrations = () => {
         </div>
 
         {/* Info banner */}
-        <div className="rounded-[12px] border-border bg-snow-bg-2 p-4 flex items-center gap-4 border-0 bg-[#f2f2f2]">
-          <div className="flex-shrink-0 w-10 h-10 rounded-[10px] brand-gradient-button flex items-center justify-center shadow-sm">
+        <div className="rounded-[12px] border-border bg-snow-bg-2 p-4 flex items-center gap-4 border-0 bg-[#f6f7f9]">
+          <div className="flex-shrink-0 w-10 h-10 rounded-[10px] brand-gradient-button flex items-center justify-center shadow-sm bg-white">
             <Calendar className="w-4.5 h-4.5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
