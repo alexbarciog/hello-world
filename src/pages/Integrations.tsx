@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import calendlyLogo from "@/assets/calendly-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ const providers = [
     id: "calendly",
     name: "Calendly",
     description: "Detect when leads book meetings through your Calendly links.",
-    logo: "https://framerusercontent.com/images/YJq4zyKbdnNcVmYpREnGjCuHaU.png",
+    logo: calendlyLogo,
     color: "from-blue-500 to-blue-600",
   },
   {
