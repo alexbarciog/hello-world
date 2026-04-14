@@ -45,10 +45,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Verify the API key by making a test call to Cal.com
-      const verifyRes = await fetch("https://api.cal.com/v1/me", {
-        headers: { Authorization: `Bearer ${api_key.trim()}` },
-      });
+      // Verify the API key — Cal.com v1 uses query param, v2 uses Bearer
+      const verifyRes = await fetch(`https://api.cal.com/v1/me?apiKey=${encodeURIComponent(api_key.trim())}`);
 
       if (!verifyRes.ok) {
         const body = await verifyRes.text();
