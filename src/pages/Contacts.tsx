@@ -739,7 +739,7 @@ export default function Contacts() {
                         })()}
                       </td>
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 relative">
                           {sdrActiveContacts[c.id] && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleStopSDR(c.id); }}
@@ -749,30 +749,40 @@ export default function Contacts() {
                               <StopCircle className="w-3 h-3" /> {stoppingSDR.has(c.id) ? '...' : 'Stop SDR'}
                             </button>
                           )}
-                          {c.lead_status !== 'meeting_booked' ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setBookMeetingContact(c); }}
-                              className="text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
-                            >
-                              📅 Book
-                            </button>
-                          ) : meetings[c.id] ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMeetingPrepData({
-                                  id: meetings[c.id].id,
-                                  contact_id: c.id,
-                                  contact_name: `${c.first_name} ${c.last_name || ''}`.trim(),
-                                  scheduled_at: meetings[c.id].scheduled_at,
-                                  prep_research: meetings[c.id].prep_research,
-                                });
-                              }}
-                              className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
-                            >
-                              <Sparkles className="w-3 h-3" /> Prep
-                            </button>
-                          ) : null}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleGetInsights(c); }}
+                            className="text-[10px] font-semibold text-violet-600 bg-violet-500/10 hover:bg-violet-500/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1"
+                          >
+                            {insightsLoading.has(c.id) ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <BrainCircuit className="w-3 h-3" />
+                            )}
+                            AI Insights
+                          </button>
+                          {insightsOpen === c.id && insightsData[c.id] && (
+                            <div ref={insightsRef} className="absolute right-0 top-full mt-1 z-50 w-72 bg-card border border-border rounded-xl shadow-lg p-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-foreground flex items-center gap-1"><BrainCircuit className="w-3.5 h-3.5 text-violet-500" /> AI Insights</span>
+                                <button onClick={() => setInsightsOpen(null)} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+                              </div>
+                              <p className="text-[11px] font-medium text-foreground">{insightsData[c.id].summary}</p>
+                              <div className="space-y-1.5">
+                                {(insightsData[c.id].insights || []).map((ins: any, idx: number) => (
+                                  <div key={idx} className="flex items-start gap-1.5">
+                                    <span className="text-xs shrink-0">{ins.icon}</span>
+                                    <p className="text-[11px] text-muted-foreground leading-snug">{ins.text}</p>
+                                  </div>
+                                ))}
+                              </div>
+                              {insightsData[c.id].suggested_action && (
+                                <div className="bg-violet-500/5 border border-violet-500/10 rounded-lg p-2">
+                                  <p className="text-[10px] font-semibold text-violet-600 mb-0.5">Suggested Action</p>
+                                  <p className="text-[11px] text-foreground leading-snug">{insightsData[c.id].suggested_action}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
