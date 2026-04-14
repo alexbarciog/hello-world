@@ -9,6 +9,7 @@ import ServicesSection from "@/components/ServicesSection";
 import ExpertiseSection from "@/components/ExpertiseSection";
 import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
+import FAQ from "@/components/FAQ";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { isOnboardingComplete } from "@/components/OnboardingGuard";
 
@@ -27,6 +28,7 @@ const Index = () => {
       <ExpertiseSection />
       <Pricing />
       <Testimonials />
+      <FAQ />
       <CTASection />
       <Footer />
     </div>
