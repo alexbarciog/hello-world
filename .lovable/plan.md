@@ -1,40 +1,47 @@
 
+Goal: fix the Unibox chat list so each row shows the real LinkedIn contact name, profile image, and latest message preview instead of fallback placeholders.
 
-## Enhanced AddCardDialog Design
+What I found
+- The Unibox page calls the `linkedin-messaging` edge function with:
+  - `action: "list_chats"`
+  - `limit: 50`
+  - but no `enrich: true`
+- In `supabase/functions/linkedin-messaging/index.ts`, the real-name lookup, avatar lookup, and latest-message lookup only happen when `body.enrich === true`.
+- Because Unibox does not request enrichment, the response currently comes back with:
+  - `_resolved_name: "LinkedIn User"`
+  - `_resolved_avatar: null`
+  - `_resolved_msg_text: ""`
+  - `attendees: []`
+- The network response confirms this is exactly what the page is rendering now.
 
-**Goal**: Elevate the dialog to feel more polished, trust-building, and aligned with the SnowUI design system.
+Implementation plan
+1. Update the Unibox chat-list request
+- Change `src/pages/Unibox.tsx` so `list_chats` requests `enrich: true`.
+- Keep the existing rendering helpers, since they already know how to use `_resolved_name`, `_resolved_avatar`, and `_resolved_msg_text`.
 
-### Changes
+2. Tighten the Unibox fallback logic
+- Improve the helper functions in `src/pages/Unibox.tsx` so they never prefer placeholder values like `"LinkedIn User"` or empty message strings when a better fallback exists.
+- Make the preview row rely on `chatLastText(chat)` instead of checking only `chat.last_message` presence, so fetched preview text still displays correctly.
 
-**1. Dialog container**
-- Apply SnowUI tokens: `rounded-2xl` (component radius), `bg-white`, remove default border, add subtle shadow
-- Widen slightly to `sm:max-w-lg` for breathing room
+3. Make unread styling accurate in the list
+- Replace the current “first row looks special” behavior with actual unread-driven UI using `_is_unread` / `unread_count`.
+- Apply bold/semi-bold text and unread indicator only when the chat is truly unread.
 
-**2. Header with visual anchor**
-- Add a top illustration area: a gradient banner strip (blue-to-purple, matching the AI action gradient `#0057bd → #4647d3`) with a centered credit card icon in a white circle
-- Title centered below the banner, using `text-xl font-semibold text-snow-black`
-- Add a `DialogDescription` beneath: the "free until first meeting" copy moves here (fixes accessibility — currently no `DialogDescription`)
+4. Improve thread status labeling
+- Remove the hardcoded `SEEN` label in the message thread unless there is a real seen/read signal available from the API.
+- This avoids showing incorrect delivery/read status.
 
-**3. Benefit rows**
-- Wrap the three benefits inside a `bg-[#f9f9fa] rounded-xl p-4` card (SnowUI surface)
-- Replace colored circles with a unified style: `w-9 h-9 rounded-lg bg-white border border-snow-white-300` with the icon in `text-snow-primary`
-- Add subtle separator lines between rows (`border-b border-snow-white-300` on first two)
-- Tighten text: title `text-sm font-medium text-snow-black`, description `text-xs text-snow-black-100`
+5. Verify end to end
+- Confirm the list now shows:
+  - real contact names
+  - LinkedIn avatars
+  - latest message preview text
+  - correct unread emphasis
+- Re-check the network payload and edge-function logs if any row still falls back.
 
-**4. Footer / CTA**
-- Primary button: apply the signature AI gradient (`bg-gradient-to-r from-[#0057bd] to-[#4647d3]`) with white text, `rounded-xl`, `py-2.5`
-- Secondary "Maybe later" button: `ghost` variant, text only, no border — reduces visual weight
-- Stack footer as `flex-col gap-2` (CTA on top, dismiss below) for more impact
-
-**5. Minor polish**
-- Add a `$0 today` badge/pill near the CTA to reinforce zero-charge messaging
-- Smooth open/close animation (already handled by Radix)
-
-### Files to edit
-- `src/components/AddCardDialog.tsx` — all visual changes
-
-### Technical notes
-- No new dependencies needed
-- Uses existing Tailwind classes + SnowUI design tokens
-- Adds `DialogDescription` for accessibility compliance
-
+Technical details
+- Files to update:
+  - `src/pages/Unibox.tsx`
+- Likely no edge-function code change is required for the main bug, because enrichment logic already exists and logs show it can fetch real names/avatar data when enabled.
+- Optional improvement after the main fix:
+  - increase the edge function’s list limit cap (currently it forces max 15 even when the client asks for 50), if you want the full inbox to load beyond the first 15 chats.
