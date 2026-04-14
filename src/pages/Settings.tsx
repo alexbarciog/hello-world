@@ -8,6 +8,7 @@ import {
   CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock, Check, MessageSquare, UserPlus, Sparkles, Loader2, CheckCircle,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
