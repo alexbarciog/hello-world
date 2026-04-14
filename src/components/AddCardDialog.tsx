@@ -58,11 +58,11 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
                 key={i}
                 className={`flex items-start gap-3 py-3 ${i < benefits.length - 1 ? "border-b border-snow-white-300" : ""}`}
               >
-                <div className="w-9 h-9 rounded-[10px] bg-white border border-snow-white-300 flex items-center justify-center shrink-0 mt-0.5">
-                  <b.icon className="w-4 h-4 text-snow-black" />
+                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5 border-accent border-2 bg-black border-solid">
+                  <b.icon className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-snow-black">{b.title}</p>
+                  <p className="font-medium text-snow-black font-sans text-base">{b.title}</p>
                   <p className="text-xs text-snow-black-100 mt-0.5">{b.desc}</p>
                 </div>
               </div>
