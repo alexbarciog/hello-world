@@ -10,7 +10,8 @@ import {
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
-  RefreshCw, Loader2, MessageCircle, CalendarDays,
+  RefreshCw, Loader2, MessageCircle, CalendarDays, Calendar, Zap, Inbox,
+  CircleDot, ChevronDown,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -2510,48 +2511,68 @@ export default function CampaignDetail() {
           {/* ── Scheduled Tab ── */}
           {tab === "scheduled" && (
             <motion.div key="scheduled" variants={tabVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
-              {/* ✨ Today's overview — iOS glassmorphic card */}
-              <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-background via-background to-primary/[0.03] p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="text-2xl">📅</div>
-                    <div>
-                      <h2 className="text-base font-extrabold text-foreground tracking-tight">Today's Schedule</h2>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-                      </p>
+              {/* Today's overview — clean card with left accent */}
+              <div className="rounded-2xl border border-border/50 bg-background overflow-hidden">
+                <div className="flex">
+                  {/* Left accent stripe */}
+                  <div className="w-1 shrink-0 bg-primary rounded-l-2xl" />
+                  <div className="flex-1 p-5">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Calendar className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <h2 className="text-base font-bold text-foreground tracking-tight">Today's Schedule</h2>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[11px] font-semibold px-3 py-1 rounded-full ${
+                        campaign.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
+                          : "bg-muted text-muted-foreground ring-1 ring-border"
+                      }`}>
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${campaign.status === "active" ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                        {campaign.status === "active" ? "Active" : "Paused"}
+                      </span>
+                    </div>
+
+                    {/* Two-column stats */}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="rounded-xl bg-muted/30 p-3.5">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                          <Zap className="w-3.5 h-3.5" />
+                          <span className="font-medium">Daily Progress</span>
+                        </div>
+                        <div className="flex items-end justify-between mb-2">
+                          <span className="text-lg font-bold text-foreground">{todaySentCount}<span className="text-sm font-normal text-muted-foreground"> / {profileLimits.daily_connections_limit}</span></span>
+                          <span className="text-xs font-semibold text-primary">{Math.round(Math.min(100, (todaySentCount / profileLimits.daily_connections_limit) * 100))}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-primary"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(100, (todaySentCount / profileLimits.daily_connections_limit) * 100)}%` }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                          />
+                        </div>
+                      </div>
+                      <div className="rounded-xl bg-muted/30 p-3.5">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+                          <Users className="w-3.5 h-3.5" />
+                          <span className="font-medium">Remaining</span>
+                        </div>
+                        <span className="text-lg font-bold text-foreground">{remainingContacts}</span>
+                        <p className="text-[10px] text-muted-foreground mt-1">contacts in queue</p>
+                      </div>
                     </div>
                   </div>
-                  <span className={`text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-sm ${
-                    campaign.status === "active"
-                      ? "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20"
-                      : "bg-muted text-muted-foreground ring-1 ring-border"
-                  }`}>
-                    {campaign.status === "active" ? "🟢 Active" : "⏸️ Paused"}
-                  </span>
-                </div>
-
-                {/* Progress pill */}
-                <div className="mb-6 rounded-xl bg-muted/40 p-3.5">
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-medium text-muted-foreground flex items-center gap-1.5">⚡ Daily progress</span>
-                    <span className="font-extrabold text-foreground">{todaySentCount} / {profileLimits.daily_connections_limit}</span>
-                  </div>
-                  <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.min(100, (todaySentCount / profileLimits.daily_connections_limit) * 100)}%` }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                    👥 {remainingContacts} contacts remaining in queue
-                  </p>
                 </div>
               </div>
 
-              {/* LinkedIn Connections & Messages Accordions — outside the overview card */}
+              {/* LinkedIn Connections & Messages Accordions */}
                 {(() => {
                   const connections = dailyQueue.filter(q => q.actionType === "connection");
                   const messages = dailyQueue.filter(q => q.actionType.startsWith("message_"));
@@ -2564,10 +2585,12 @@ export default function CampaignDetail() {
                     <div className="space-y-3">
                       {/* Connections accordion */}
                         <div className="rounded-xl border border-border/50 overflow-hidden">
-                          <div className="flex items-center bg-muted/20">
+                          <div className="flex items-center">
+                            {/* Left color stripe */}
+                            <div className="w-1 self-stretch bg-violet-500 shrink-0" />
                             <button
                               onClick={() => setConnectionsAccordionOpen(!connectionsAccordionOpen)}
-                              className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                              className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
                             >
                               <div className="flex items-center gap-2">
                                 <UserPlus className="w-4 h-4 text-violet-500" />
@@ -2580,12 +2603,12 @@ export default function CampaignDetail() {
                                 </span>
                               </div>
                               <motion.div animate={{ rotate: connectionsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                                <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
                               </motion.div>
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); setManualConnOpen(true); }}
-                              className="px-3 py-3 hover:bg-muted/40 transition-colors border-l border-border/30"
+                              className="px-3 py-3 hover:bg-muted/30 transition-colors border-l border-border/30"
                               title="Add contact to today's queue"
                             >
                               <Plus className="w-4 h-4 text-violet-500" />
@@ -2606,19 +2629,18 @@ export default function CampaignDetail() {
                                     return (
                                       <motion.div
                                         key={item.id}
-                                        initial={{ opacity: 0, y: 12 }}
+                                        initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
-                                        className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
+                                        transition={{ delay: idx * 0.03, type: "spring", stiffness: 300, damping: 24 }}
+                                        className="rounded-xl p-3 bg-muted/20 ring-1 ring-border/30"
                                       >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                                        <div className="relative flex items-center justify-between gap-4">
-                                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
                                             <div className="relative shrink-0 mt-0.5">
-                                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
+                                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white ${avatarColor(item.contactFirstName + item.contactLastName)}`}>
                                                 {getInitials({ first_name: item.contactFirstName, last_name: item.contactLastName } as any)}
                                               </div>
-                                              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                                              <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background ${
                                                 item.contactRelevanceTier === 'hot' ? 'bg-red-500' : item.contactRelevanceTier === 'warm' ? 'bg-amber-400' : 'bg-blue-300'
                                               }`} />
                                             </div>
@@ -2639,9 +2661,9 @@ export default function CampaignDetail() {
                                               </div>
                                               <p className="text-xs text-muted-foreground truncate max-w-[280px]">{item.contactTitle}</p>
                                               {item.contactSignal && (
-                                                <div className="mt-1">
+                                                <div className="mt-0.5">
                                                   {item.contactSignalPostUrl ? (
-                                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
+                                                    <a href={item.contactSignalPostUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary/80 hover:text-primary underline underline-offset-2 truncate block max-w-[280px]">
                                                       {item.contactSignal}
                                                     </a>
                                                   ) : (
@@ -2651,29 +2673,29 @@ export default function CampaignDetail() {
                                               )}
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-2.5 shrink-0">
+                                          <div className="flex items-center gap-2 shrink-0">
                                             <div className="flex items-center gap-0.5">
                                               {[0, 1, 2].map((i) => {
                                                 const tier = item.contactRelevanceTier?.toLowerCase();
                                                 const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
                                                 return (
-                                                  <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                                                  <Flame key={i} className={`w-3 h-3 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
                                                 );
                                               })}
                                             </div>
-                                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-600 ring-1 ring-violet-500/20">
-                                              Send Connection
-                                            </span>
-                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 ${
                                               item.status === "sent"
-                                                ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                                ? "text-emerald-600 bg-emerald-500/10"
                                                 : item.status === "failed"
-                                                ? "text-destructive bg-destructive/10 ring-destructive/20"
+                                                ? "text-destructive bg-destructive/10"
                                                 : item.status === "skipped"
-                                                ? "text-muted-foreground bg-muted/60 ring-border/30"
-                                                : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
+                                                ? "text-muted-foreground bg-muted/60"
+                                                : "text-sky-600 bg-sky-500/10"
                                             }`}>
-                                              {item.status === "sent" ? "✓ Sent" : item.status === "failed" ? "✗ Failed" : item.status === "skipped" ? "⏭ Skipped" : "⏳ Pending"}
+                                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                                item.status === "sent" ? "bg-emerald-500" : item.status === "failed" ? "bg-destructive" : item.status === "skipped" ? "bg-muted-foreground" : "bg-sky-500"
+                                              }`} />
+                                              {item.status === "sent" ? "Sent" : item.status === "failed" ? "Failed" : item.status === "skipped" ? "Skipped" : "Pending"}
                                             </span>
                                             {item.status === "sent" && item.sentAt && (() => {
                                               const diff = Date.now() - new Date(item.sentAt).getTime();
@@ -2693,31 +2715,34 @@ export default function CampaignDetail() {
                           </AnimatePresence>
                         </div>
 
-                      {/* Today's Messages accordion — from scheduled_messages table */}
+                      {/* Today's Messages accordion */}
                       {(() => {
                         const todayStr = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
                         const todayMessages = scheduledMessages.filter(m => m.status === "sent" || m.status === "ready" || m.scheduledDate === todayStr);
                         if (todayMessages.length === 0) return null;
                         return (
                         <div className="rounded-xl border border-border/50 overflow-hidden">
-                          <button
-                            onClick={() => setUpcomingMsgsAccordionOpen(!upcomingMsgsAccordionOpen)}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-muted/20 hover:bg-muted/40 transition-colors"
-                          >
-                            <div className="flex items-center gap-2">
-                              <MessageSquare className="w-4 h-4 text-teal-500" />
-                              <span className="text-sm font-bold text-foreground">Today's Messages</span>
-                              <span className="text-[10px] font-semibold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-lg ring-1 ring-teal-500/20">
-                                {todayMessages.length}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {todayMessages.filter(m => m.status === "sent").length} sent · {todayMessages.filter(m => m.status !== "sent").length} pending
-                              </span>
-                            </div>
-                            <motion.div animate={{ rotate: upcomingMsgsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                              <ArrowDown className="w-4 h-4 text-muted-foreground" />
-                            </motion.div>
-                          </button>
+                          <div className="flex items-center">
+                            <div className="w-1 self-stretch bg-teal-500 shrink-0" />
+                            <button
+                              onClick={() => setUpcomingMsgsAccordionOpen(!upcomingMsgsAccordionOpen)}
+                              className="flex-1 flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-teal-500" />
+                                <span className="text-sm font-bold text-foreground">Today's Messages</span>
+                                <span className="text-[10px] font-semibold bg-teal-500/10 text-teal-600 px-2 py-0.5 rounded-lg ring-1 ring-teal-500/20">
+                                  {todayMessages.length}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">
+                                  {todayMessages.filter(m => m.status === "sent").length} sent · {todayMessages.filter(m => m.status !== "sent").length} pending
+                                </span>
+                              </div>
+                              <motion.div animate={{ rotate: upcomingMsgsAccordionOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                              </motion.div>
+                            </button>
+                          </div>
                           <AnimatePresence>
                             {upcomingMsgsAccordionOpen && (
                               <motion.div
@@ -2738,16 +2763,15 @@ export default function CampaignDetail() {
                                     return (
                                       <motion.div
                                         key={sm.scheduledMsgId || `sm-${idx}`}
-                                        initial={{ opacity: 0, y: 12 }}
+                                        initial={{ opacity: 0, y: 8 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.04, type: "spring", stiffness: 300, damping: 24 }}
-                                        className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-background to-muted/30 ring-1 ring-border/40 shadow-md shadow-black/[0.03]"
+                                        transition={{ delay: idx * 0.03, type: "spring", stiffness: 300, damping: 24 }}
+                                        className="rounded-xl p-3 bg-muted/20 ring-1 ring-border/30"
                                       >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none rounded-2xl" />
-                                        <div className="relative flex items-center justify-between gap-4">
-                                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div className="flex items-start gap-2.5 min-w-0 flex-1">
                                             <div className="relative shrink-0 mt-0.5">
-                                              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(sm.contactName)}`}>
+                                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white ${avatarColor(sm.contactName)}`}>
                                                 {sm.contactName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)}
                                               </div>
                                             </div>
@@ -2763,9 +2787,9 @@ export default function CampaignDetail() {
                                               </div>
                                               <p className="text-xs text-muted-foreground truncate max-w-[280px]">{sm.contactTitle}</p>
                                               {sm.contactSignal && (
-                                                <div className="mt-1">
+                                                <div className="mt-0.5">
                                                   {sm.contactSignalUrl ? (
-                                                    <a href={sm.contactSignalUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[hsl(220,80%,55%)] hover:text-[hsl(220,80%,45%)] underline underline-offset-2 truncate block max-w-[280px]">
+                                                    <a href={sm.contactSignalUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary/80 hover:text-primary underline underline-offset-2 truncate block max-w-[280px]">
                                                       {sm.contactSignal}
                                                     </a>
                                                   ) : (
@@ -2775,9 +2799,9 @@ export default function CampaignDetail() {
                                               )}
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-2.5 shrink-0">
-                                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-600 ring-1 ring-teal-500/20">
-                                              Step {sm.nextStepNum} Message
+                                          <div className="flex items-center gap-2 shrink-0">
+                                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-600">
+                                              Step {sm.nextStepNum}
                                             </span>
                                             {sm.message && (
                                               <button
@@ -2788,14 +2812,17 @@ export default function CampaignDetail() {
                                                 {isExpanded ? "Hide" : "Preview"}
                                               </button>
                                             )}
-                                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl ring-1 ${
+                                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 ${
                                               isSent
-                                                ? "text-emerald-600 bg-emerald-500/10 ring-emerald-500/20"
+                                                ? "text-emerald-600 bg-emerald-500/10"
                                                 : sm.status === "ready"
-                                                ? "text-amber-600 bg-amber-500/10 ring-amber-500/20"
-                                                : "text-sky-600 bg-sky-500/10 ring-sky-500/20"
+                                                ? "text-amber-600 bg-amber-500/10"
+                                                : "text-sky-600 bg-sky-500/10"
                                             }`}>
-                                              {isSent ? "✓ Sent" : sm.status === "ready" ? "🔔 Ready" : `📅 ${sm.scheduledDate}`}
+                                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                                isSent ? "bg-emerald-500" : sm.status === "ready" ? "bg-amber-500" : "bg-sky-500"
+                                              }`} />
+                                              {isSent ? "Sent" : sm.status === "ready" ? "Ready" : sm.scheduledDate}
                                             </span>
                                           </div>
                                         </div>
@@ -2808,9 +2835,9 @@ export default function CampaignDetail() {
                                               animate={{ height: "auto", opacity: 1 }}
                                               exit={{ height: 0, opacity: 0 }}
                                               transition={{ duration: 0.2 }}
-                                              className="relative overflow-hidden"
+                                              className="overflow-hidden"
                                             >
-                                              <div className="mt-3 pt-3 border-t border-border/40">
+                                              <div className="mt-3 pt-3 border-t border-border/30">
                                                 <div className="flex items-center justify-between mb-2">
                                                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                                                     <MessageSquare className="w-3 h-3" /> AI Message
@@ -2826,14 +2853,14 @@ export default function CampaignDetail() {
                                                             setEditingScheduledMsg(sm.message || "");
                                                           }
                                                         }}
-                                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60"
+                                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/40"
                                                       >
                                                         {isEditingThis ? <><Check className="w-3 h-3" /> Save</> : <><Pencil className="w-3 h-3" /> Edit</>}
                                                       </button>
                                                       <button
                                                         onClick={() => handleRegenerateMessage(idx)}
                                                         disabled={isRegenerating}
-                                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/60 disabled:opacity-50"
+                                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-muted/40 disabled:opacity-50"
                                                       >
                                                         {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                                                         {isRegenerating ? "Regenerating..." : "Regenerate"}
@@ -2845,7 +2872,7 @@ export default function CampaignDetail() {
                                                   <textarea
                                                     value={editingScheduledMsg}
                                                     onChange={(e) => setEditingScheduledMsg(e.target.value)}
-                                                    className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
+                                                    className="w-full text-xs text-foreground bg-muted/30 rounded-lg p-3 border border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none min-h-[80px]"
                                                     rows={4}
                                                   />
                                                 ) : (
@@ -2874,9 +2901,11 @@ export default function CampaignDetail() {
                           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                         </div>
                       ) : connections.length === 0 && messages.length === 0 && (
-                        <div className="text-center py-8">
-                          <div className="text-3xl mb-2">📋</div>
-                          <p className="text-sm font-bold text-foreground">No leads scheduled for today</p>
+                        <div className="text-center py-10">
+                          <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                            <Inbox className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">No leads scheduled for today</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Leads are pre-selected at midnight UTC based on your daily limits
                           </p>
@@ -2887,20 +2916,24 @@ export default function CampaignDetail() {
                 })()}
 
 
-              {/* Workflow sequence summary */}
-              <div className="rounded-xl border border-border p-5">
-                <h3 className="text-sm font-bold text-foreground mb-3">Full Sequence Overview</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 text-xs">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(270 70% 92%)" }}>
-                      <UserPlus className="w-3 h-3" style={{ color: "hsl(270 70% 55%)" }} />
+              {/* Workflow sequence — vertical timeline */}
+              <div className="rounded-xl border border-border/50 p-5">
+                <h3 className="text-sm font-bold text-foreground mb-4">Full Sequence Overview</h3>
+                <div className="relative pl-6">
+                  {/* Vertical line */}
+                  <div className="absolute left-[11px] top-1 bottom-1 w-px bg-border" />
+
+                  {/* Step 1: Connection */}
+                  <div className="relative flex items-start gap-3 pb-4">
+                    <div className="absolute left-[-13px] w-6 h-6 rounded-full bg-violet-500/10 ring-1 ring-violet-500/30 flex items-center justify-center z-10">
+                      <span className="text-[10px] font-bold text-violet-600">1</span>
                     </div>
-                    <div className="flex-1">
-                      <span className="font-bold text-foreground">Step 1:</span>
-                      <span className="text-muted-foreground ml-1">Send connection invitation</span>
+                    <div className="flex-1 pt-0.5">
+                      <span className="text-xs font-semibold text-foreground">Send connection invitation</span>
+                      <span className="text-[10px] text-muted-foreground ml-2">Day 0</span>
                     </div>
-                    <span className="text-muted-foreground">Day 0</span>
                   </div>
+
                   {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, idx: number) => {
                     const stepDelayHours = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
                     const cumulativeHours = workflowSteps
@@ -2909,18 +2942,22 @@ export default function CampaignDetail() {
                       .reduce((sum: number, s: any) => sum + (s.delay_hours || (s.delay_days ? s.delay_days * 24 : 24)), 0);
                     const delayLabel = stepDelayHours < 24 ? `+${stepDelayHours}h` : `+${Math.round(stepDelayHours / 24)}d`;
                     const cumulativeLabel = cumulativeHours < 24 ? `Hour ${cumulativeHours}` : `Day ${Math.round(cumulativeHours / 24)}`;
+                    const isLast = idx === workflowSteps.filter((s: any) => s.type !== "invitation").length - 1;
                     return (
-                      <div key={idx} className="flex items-center gap-3 text-xs">
-                        <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(200 80% 92%)" }}>
-                          <Send className="w-3 h-3" style={{ color: "hsl(200 80% 45%)" }} />
+                      <div key={idx} className={`relative flex items-start gap-3 ${isLast ? "" : "pb-4"}`}>
+                        {/* Delay pill on the line */}
+                        <div className="absolute left-[-17px] -top-2 flex items-center justify-center w-[34px]">
+                          <span className="text-[9px] font-medium text-muted-foreground bg-background px-1">{delayLabel}</span>
                         </div>
-                        <div className="flex-1">
-                          <span className="font-bold text-foreground">Step {idx + 2}:</span>
-                          <span className="text-muted-foreground ml-1">
+                        <div className="absolute left-[-13px] top-2 w-6 h-6 rounded-full bg-sky-500/10 ring-1 ring-sky-500/30 flex items-center justify-center z-10">
+                          <span className="text-[10px] font-bold text-sky-600">{idx + 2}</span>
+                        </div>
+                        <div className="flex-1 pt-2.5">
+                          <span className="text-xs font-semibold text-foreground">
                             {ws.ai_icebreaker ? "AI-generated message" : ws.message ? `"${ws.message.slice(0, 40)}${ws.message.length > 40 ? "..." : ""}"` : "Custom message"}
                           </span>
+                          <span className="text-[10px] text-muted-foreground ml-2">{cumulativeLabel}</span>
                         </div>
-                        <span className="text-muted-foreground">{delayLabel} ({cumulativeLabel})</span>
                       </div>
                     );
                   })}
