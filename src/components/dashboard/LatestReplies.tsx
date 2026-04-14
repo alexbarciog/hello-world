@@ -81,13 +81,18 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
             <div key={reply.chat_id} onClick={() => navigate("/unibox")}
               className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
             >
-              <ReplyAvatar name={reply.name} url={reply.avatar_url} color={avatarColors[i % avatarColors.length]} />
+              <div className="relative">
+                <ReplyAvatar name={reply.name} url={reply.avatar_url} color={avatarColors[i % avatarColors.length]} />
+                {reply.is_unread && (
+                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white" />
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-gray-900 truncate">{reply.name}</p>
+                  <p className={`text-sm truncate ${reply.is_unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-900'}`}>{reply.name}</p>
                   <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(reply.timestamp)}</span>
                 </div>
-                <p className="text-xs text-gray-400 truncate">{reply.text || "No message"}</p>
+                <p className={`text-xs truncate ${reply.is_unread ? 'font-medium text-gray-600' : 'text-gray-400'}`}>{reply.text || "No message"}</p>
               </div>
             </div>
           ))}
