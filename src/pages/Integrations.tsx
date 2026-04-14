@@ -29,7 +29,7 @@ const providers = [
     id: "google_calendar",
     name: "Google Calendar",
     description: "Sync meetings from your Google Calendar automatically.",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Google_Calendar_icon_%282020%29.svg/1024px-Google_Calendar_icon_%282020%29.svg.png",
+    logo: googleCalendarLogo,
     color: "from-red-500 to-yellow-500",
   },
   {
