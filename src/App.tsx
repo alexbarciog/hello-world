@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,10 +34,10 @@ import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
 import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
-import { Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ttqPage, ttqIdentify } from "@/lib/tiktok-pixel";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +60,74 @@ function TikTokPageTracker() {
   return null;
 }
 
+function CalendarOAuthHandler() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const handledSearchRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const state = params.get("state");
+
+    if (!state?.startsWith("calendar:")) {
+      handledSearchRef.current = null;
+      return;
+    }
+
+    if (handledSearchRef.current === location.search) {
+      return;
+    }
+
+    handledSearchRef.current = location.search;
+
+    const provider = state.replace("calendar:", "");
+    const code = params.get("code");
+    const oauthError = params.get("error");
+    const errorDescription = params.get("error_description");
+
+    const finishCalendarAuth = async () => {
+      if (oauthError) {
+        throw new Error(errorDescription || oauthError);
+      }
+
+      if (!code) {
+        return;
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("Please sign in again to finish connecting your calendar.");
+      }
+
+      const { error } = await supabase.functions.invoke("connect-calendar", {
+        body: {
+          provider,
+          action: "callback",
+          code,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Calendar connected successfully.");
+      navigate("/integrations", { replace: true });
+    };
+
+    finishCalendarAuth().catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : "Could not complete calendar connection.";
+      toast.error(message);
+      navigate("/integrations", { replace: true });
+    });
+  }, [location.search, navigate]);
+
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -67,6 +135,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <TikTokPageTracker />
+        <CalendarOAuthHandler />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/features/ai-sdr" element={<AiSdrOutreach />} />

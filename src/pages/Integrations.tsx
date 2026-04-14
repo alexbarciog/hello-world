@@ -70,12 +70,11 @@ const Integrations = () => {
     setConnecting(providerId);
     try {
       const { data, error } = await supabase.functions.invoke("connect-calendar", {
-        body: { provider: providerId, action: "connect" },
+        body: { provider: providerId, action: "connect", redirectTo: window.location.origin },
       });
       if (error) throw error;
       if (data?.url) {
-        window.open(data.url, "_blank");
-        toast({ title: "Authorization started", description: "Complete the sign-in in the new window, then refresh this page." });
+        window.location.assign(data.url);
       }
     } catch (err: any) {
       toast({ title: "Connection failed", description: err.message, variant: "destructive" });
