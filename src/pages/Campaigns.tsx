@@ -282,11 +282,29 @@ export default function CampaignsPage() {
         });
         return;
       }
-      if (!sub.subscribed && !sub.hasCard) {
-        toast.error("Add your card to activate campaigns.", {
-          action: { label: "Add Card", onClick: () => navigate("/signals") },
-        });
-        return;
+
+      if (!sub.subscribed) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { count } = await supabase
+            .from("meetings")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+
+          if ((count ?? 0) > 1) {
+            toast.error("You have outstanding meetings without an active subscription. Please subscribe to continue.", {
+              action: { label: "Subscribe", onClick: () => navigate("/billing") },
+            });
+            return;
+          }
+        }
+
+        if (!sub.hasCard) {
+          toast.error("Add your card to activate campaigns.", {
+            action: { label: "Add Card", onClick: () => navigate("/signals") },
+          });
+          return;
+        }
       }
     }
     const { error } = await supabase.from("campaigns").update({ status: newStatus }).eq("id", id);
