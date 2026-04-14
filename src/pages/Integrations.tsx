@@ -234,9 +234,14 @@ const Integrations = () => {
                         </>
                       ) : (
                         provider.id === "outlook_calendar" ? (
-                          <span className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-muted-foreground bg-muted rounded-[12px]">
+                          <button
+                            className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-white rounded-[12px] shadow-md opacity-50 cursor-not-allowed"
+                            style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
+                            disabled
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                             Coming soon
-                          </span>
+                          </button>
                         ) : (
                         <button
                           className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-white rounded-[12px] transition-opacity duration-200 hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none shadow-md"
