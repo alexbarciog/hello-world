@@ -522,7 +522,7 @@ export default function Contacts() {
         ) : (
           <>
             {/* ── Desktop table ── */}
-            <div className="hidden md:block border-x border-border">
+            <div className="hidden md:block border-x border-border overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
