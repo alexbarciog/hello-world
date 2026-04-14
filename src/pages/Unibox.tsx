@@ -379,7 +379,7 @@ export default function Unibox() {
                         <p className="text-xs text-foreground/50 font-light truncate">
                           <span className="font-medium text-foreground/60">
                             {chat.last_message
-                              ? (chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
+                              ? (chat._resolved_msg_is_sender || chat.last_message.is_sender === 1 || chat.last_message.is_sender === true || chat.last_message.is_sender === '1' || chat.last_message.is_sender === 'true'
                                 ? 'You'
                                 : chatDisplayName(chat).split(' ')[0])
                               : ''}
