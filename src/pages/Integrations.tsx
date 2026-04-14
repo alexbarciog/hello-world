@@ -273,7 +273,6 @@ const Integrations = () => {
                           Connect
                         </button>
                         )
-                        </button>
                       )}
                     </div>
                   </div>
