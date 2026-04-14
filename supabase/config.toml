@@ -50,3 +50,12 @@ verify_jwt = false
 
 [functions.generate-lead-insights]
 verify_jwt = false
+
+[functions.connect-calendar]
+verify_jwt = false
+
+[functions.calendar-webhook]
+verify_jwt = false
+
+[functions.pre-meeting-followup]
+verify_jwt = false
