@@ -17,7 +17,9 @@ import { toast } from "sonner";
 type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
 
 export default function Contacts() {
-  const [tab, setTab] = useState<Tab>("all");
+  const navigate = useNavigate();
+  const sub = useSubscription();
+  const [isDataLocked, setIsDataLocked] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lists, setLists] = useState<ContactList[]>([]);
   const [contactListMap, setContactListMap] = useState<Record<string, string[]>>({});
