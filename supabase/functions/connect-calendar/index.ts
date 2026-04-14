@@ -72,7 +72,10 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        redirectUri = parsedRedirect.toString();
+        redirectUri = parsedRedirect.origin + parsedRedirect.pathname.replace(/\/+$/, "") + parsedRedirect.search;
+        if (!redirectUri || redirectUri === parsedRedirect.origin) {
+          redirectUri = parsedRedirect.origin;
+        }
       } catch {
         return new Response(JSON.stringify({ error: "Invalid redirect URL" }), {
           status: 400,
