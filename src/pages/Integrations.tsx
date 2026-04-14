@@ -153,14 +153,14 @@ const Integrations = () => {
 
   return (
     <div className="flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
-      <div className="flex-1 min-w-0 flex flex-col gap-5 bg-white rounded-[20px] p-6 border border-gray-200/60 shadow-sm">
+      <div className="flex-1 min-w-0 flex flex-col gap-5 rounded-[20px] p-6 border border-gray-200/60 shadow-sm bg-white">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] bg-snow-bg-2 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-[12px] bg-snow-bg-2 flex items-center justify-center bg-[#202022]">
             <Plug className="w-5 h-5 text-snow-black-100" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Integrations</h1>
+            <h1 className="text-2xl text-foreground font-medium">Integrations</h1>
             <p className="text-sm text-muted-foreground">
               Connect your calendars so the AI can detect booked meetings and send pre-meeting follow-ups.
             </p>
@@ -168,7 +168,7 @@ const Integrations = () => {
         </div>
 
         {/* Info banner */}
-        <div className="rounded-[12px] border border-border bg-snow-bg-2 p-4 flex items-center gap-4">
+        <div className="rounded-[12px] border-border bg-snow-bg-2 p-4 flex items-center gap-4 border-0 bg-[#f2f2f2]">
           <div className="flex-shrink-0 w-10 h-10 rounded-[10px] brand-gradient-button flex items-center justify-center shadow-sm">
             <Calendar className="w-4.5 h-4.5 text-white" />
           </div>
@@ -196,14 +196,14 @@ const Integrations = () => {
             return (
               <div
                 key={provider.id}
-                className={`rounded-[12px] border p-5 transition-all duration-200 hover:shadow-md ${
+                className={`rounded-[12px] p-5 transition-all duration-200 ${
                   isConnected
-                    ? "border-green-200 bg-green-50/30"
-                    : "border-border bg-white"
+                    ? "border border-green-200 bg-green-50/30"
+                    : "border-border border-0 shadow-none bg-[#f6f7f9]"
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-[10px] bg-snow-bg-2 border border-border/50 p-2 flex items-center justify-center flex-shrink-0">
+                  <div className="w-11 h-11 rounded-[10px] bg-snow-bg-2 border-border/50 p-2 flex items-center justify-center flex-shrink-0 border-0 bg-white">
                     <img
                       src={provider.logo}
                       alt={provider.name}
