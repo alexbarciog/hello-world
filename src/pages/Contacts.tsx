@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
-  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X,
+  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -15,6 +17,9 @@ import { toast } from "sonner";
 type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
 
 export default function Contacts() {
+  const navigate = useNavigate();
+  const sub = useSubscription();
+  const [isDataLocked, setIsDataLocked] = useState(false);
   const [tab, setTab] = useState<Tab>("all");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lists, setLists] = useState<ContactList[]>([]);
@@ -79,8 +84,36 @@ export default function Contacts() {
       supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
     ]);
 
-    setContacts(allContacts as Contact[]);
-    if (listsRes.data) setLists(listsRes.data as ContactList[]);
+    // Check if data should be locked: user has ≥1 meeting and no active subscription
+    let locked = false;
+    if (!sub.loading && !sub.subscribed) {
+      const { count: meetingsCount } = await supabase
+        .from("meetings")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if ((meetingsCount ?? 0) >= 1) {
+        locked = true;
+      }
+    }
+    setIsDataLocked(locked);
+
+    // If locked, mask sensitive data so real values never reach the DOM
+    if (locked) {
+      const maskedContacts = (allContacts as Contact[]).map((c) => ({
+        ...c,
+        first_name: "••••",
+        last_name: "••••",
+        title: "••••••••",
+        company: "••••••",
+        signal: "••••••••••",
+        signal_post_url: null,
+        linkedin_url: null,
+        email: null,
+      }));
+      setContacts(maskedContacts);
+    } else {
+      setContacts(allContacts as Contact[]);
+    }
 
     // Build meetings map by contact_id
     if (meetingsRes.data) {
@@ -139,7 +172,7 @@ export default function Contacts() {
     }
 
     setLoading(false);
-  }, []);
+  }, [sub.loading, sub.subscribed]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -521,6 +554,23 @@ export default function Contacts() {
           </div>
         ) : (
           <>
+            {isDataLocked && (
+              <div className="relative z-10 mx-4 mb-4 p-6 rounded-xl border border-amber-200 bg-amber-50/80 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-900">Contact details are hidden</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Subscribe to unlock full contact names, signals, and LinkedIn profiles.</p>
+                </div>
+                <button
+                  onClick={() => navigate("/billing")}
+                  className="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors shrink-0"
+                >
+                  Subscribe Now
+                </button>
+              </div>
+            )}
             {/* ── Desktop table ── */}
             <div className="hidden md:block border-x border-border overflow-x-auto">
               <table className="w-full">
