@@ -188,7 +188,8 @@ const ExpertiseSection = () => {
           We monitor LinkedIn, Reddit, and X in real-time to detect buying signals — so you reach prospects the moment they show intent.
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
+        <div className="rounded-[28px] bg-[#F2F2F2] p-6 md:p-10">
+        <div className="grid md:grid-cols-2 gap-6">
           {features.map((f, i) => (
             <div key={i} className="rounded-3xl bg-[#f5f5f5] p-8 pb-6 flex flex-col group hover:shadow-lg transition-shadow duration-300">
               <f.Visual />
