@@ -145,29 +145,60 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return [];
       const res = await supabase.functions.invoke("linkedin-messaging", {
-        body: { action: "list_chats", limit: 5 },
+        body: { action: "list_chats", limit: 10, enrich: true },
       });
       if (res.error) return [];
       const items = res.data?.items ?? [];
       return items
         .map((chat: Record<string, unknown>) => {
-          const attendees =
-            (chat.attendees as Array<{ display_name?: string; profile_picture_url?: string }>) ?? [];
+          const attendees = Array.isArray(chat.attendees)
+            ? (chat.attendees as Array<{
+                display_name?: string;
+                name?: string;
+                profile_picture_url?: string;
+                avatar_url?: string;
+                picture_url?: string;
+              }>)
+            : [];
           const attendee = attendees[0];
-          const lastMsg = chat.last_message as
-            | { text?: string; body?: string; content?: string; timestamp?: string; date?: string; is_sender?: boolean }
+          const lastMessage = chat.last_message as
+            | { text?: string; body?: string; content?: string }
             | undefined;
+          const fallbackName =
+            attendee?.display_name ||
+            attendee?.name ||
+            (typeof chat.name === "string" ? chat.name : "") ||
+            "LinkedIn User";
+          const text =
+            (chat._resolved_msg_text as string) ||
+            lastMessage?.text ||
+            lastMessage?.body ||
+            lastMessage?.content ||
+            "";
+
           return {
-            name: (chat._resolved_name as string) || attendee?.display_name || "LinkedIn User",
-            avatar_url: (chat._resolved_avatar as string) || attendee?.profile_picture_url || null,
-            text: (chat._resolved_msg_text as string) || lastMsg?.text || lastMsg?.body || lastMsg?.content || "",
-            timestamp: (chat._resolved_msg_timestamp as string) || lastMsg?.timestamp || lastMsg?.date || "",
-            is_sender: lastMsg?.is_sender ?? false,
+            name: (chat._resolved_name as string) || fallbackName,
+            avatar_url:
+              (chat._resolved_avatar as string) ||
+              attendee?.profile_picture_url ||
+              attendee?.avatar_url ||
+              attendee?.picture_url ||
+              null,
+            text,
+            timestamp:
+              (chat._resolved_msg_timestamp as string) ||
+              (typeof chat.timestamp === "string" ? chat.timestamp : "") ||
+              "",
+            is_sender: Boolean(chat._resolved_msg_is_sender),
             chat_id: chat.id as string,
-            is_unread: (chat._is_unread as boolean) ?? false,
+            is_unread: Boolean(chat._is_unread),
           };
         })
-        .filter((r: { is_sender: boolean }) => !r.is_sender)
+        .filter((reply: { text: string; is_sender: boolean }) => Boolean(reply.text) && !reply.is_sender)
+        .sort(
+          (a: { timestamp: string }, b: { timestamp: string }) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        )
         .slice(0, 4);
     },
     staleTime: 60_000,

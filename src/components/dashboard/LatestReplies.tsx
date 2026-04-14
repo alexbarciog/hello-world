@@ -92,7 +92,7 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
                   <p className={`text-sm truncate ${reply.is_unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-900'}`}>{reply.name}</p>
                   <span className="text-[10px] text-gray-400 shrink-0">{timeAgo(reply.timestamp)}</span>
                 </div>
-                <p className={`text-xs truncate ${reply.is_unread ? 'font-medium text-gray-600' : 'text-gray-400'}`}>{reply.text || "No message"}</p>
+                <p className={`text-xs truncate ${reply.is_unread ? 'font-semibold text-gray-700' : 'text-gray-400'}`}>{reply.text || "No message"}</p>
               </div>
             </div>
           ))}

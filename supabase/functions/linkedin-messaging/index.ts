@@ -5,7 +5,6 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Cache for user profile lookups within a single request (provider_id → profile data)
 const profileCache = new Map<string, { name: string; avatar_url: string | null }>();
 
 Deno.serve(async (req) => {
@@ -23,7 +22,6 @@ Deno.serve(async (req) => {
       throw new Error('Missing server configuration');
     }
 
-    // Auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return json({ error: 'Unauthorized' }, 401);
@@ -41,7 +39,6 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub;
 
-    // Get unipile_account_id from profile
     const { data: profile, error: profileErr } = await supabase
       .from('profiles')
       .select('unipile_account_id')
@@ -56,10 +53,10 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action;
 
-    // ── list_chats ──
     if (action === 'list_chats') {
-      const cursor = body.cursor || '';
-      const limit = Math.min(body.limit || 15, 15);
+      const cursor = typeof body.cursor === 'string' ? body.cursor : '';
+      const limit = Math.min(Number(body.limit) || 15, 15);
+      const enrich = body.enrich === true;
       const url = new URL(`https://${UNIPILE_DSN}/api/v1/chats`);
       url.searchParams.set('account_id', accountId);
       url.searchParams.set('limit', String(limit));
@@ -78,51 +75,76 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Log first chat structure for debugging
       if (rawItems.length > 0) {
         console.log('[list_chats] Raw chat sample keys:', Object.keys(rawItems[0]));
         console.log('[list_chats] Raw chat sample:', JSON.stringify(rawItems[0], null, 2));
       }
 
-      // Unipile already returns attendees + last_message in list_chats.
-      // Extract name from attendees (try multiple fields), pass through unread status.
-      const enriched = rawItems.map((chat) => {
-        const attendees = chat.attendees as Array<Record<string, unknown>> | undefined;
-        const att = attendees?.[0];
+      const enriched = await Promise.all(
+        rawItems.map(async (chat) => {
+          const attendees = Array.isArray(chat.attendees)
+            ? (chat.attendees as Array<Record<string, unknown>>)
+            : [];
+          const firstAttendee = attendees[0];
+          const participantProviderId =
+            (typeof chat.attendee_provider_id === 'string' && chat.attendee_provider_id) ||
+            (typeof firstAttendee?.provider_id === 'string' && firstAttendee.provider_id) ||
+            null;
 
-        // Try multiple name fields
-        const displayName = att?.display_name || att?.name ||
-          (att?.first_name || att?.last_name
-            ? [att.first_name, att.last_name].filter(Boolean).join(' ')
-            : null) ||
-          att?.full_name || null;
+          const participantProfile =
+            enrich && participantProviderId
+              ? await fetchParticipantProfile(participantProviderId, accountId, UNIPILE_API_KEY, UNIPILE_DSN)
+              : null;
 
-        const avatarUrl = att?.profile_picture_url || att?.picture_url || att?.avatar_url || null;
+          const fetchedLastMessage =
+            enrich && typeof chat.id === 'string'
+              ? await fetchLatestMessage(chat.id, UNIPILE_API_KEY, UNIPILE_DSN)
+              : null;
 
-        // Extract last message - try text, body, content
-        const lastMsg = chat.last_message as Record<string, unknown> | undefined;
-        const msgText = lastMsg?.text || lastMsg?.body || lastMsg?.content || '';
-        const msgTimestamp = lastMsg?.timestamp || lastMsg?.date || lastMsg?.created_at || '';
+          const lastMessage = fetchedLastMessage || (isRecord(chat.last_message) ? chat.last_message : undefined);
+          const displayName =
+            extractDisplayName(firstAttendee) ||
+            (typeof chat.name === 'string' ? sanitizeName(chat.name) : '') ||
+            participantProfile?.name ||
+            'LinkedIn User';
+          const avatarUrl = extractAvatarUrl(firstAttendee) || participantProfile?.avatar_url || null;
+          const msgText = extractMessageText(lastMessage);
+          const msgTimestamp =
+            extractMessageTimestamp(lastMessage) ||
+            (typeof chat.timestamp === 'string' ? chat.timestamp : '') ||
+            (typeof chat.updated_at === 'string' ? chat.updated_at : '');
+          const isUnread =
+            Number(chat.unread_count ?? 0) > 0 ||
+            toBoolean(chat.unread) ||
+            toBoolean(chat.is_unread);
 
-        // Unread status from Unipile
-        const isUnread = chat.unread_count !== undefined
-          ? Number(chat.unread_count) > 0
-          : (chat.is_unread === true || chat.unread === true);
+          const normalizedAttendees = attendees.length
+            ? attendees
+            : participantProfile
+              ? [{
+                  display_name: participantProfile.name,
+                  profile_picture_url: participantProfile.avatar_url,
+                  provider_id: participantProviderId,
+                }]
+              : attendees;
 
-        return {
-          ...chat,
-          _resolved_name: displayName,
-          _resolved_avatar: avatarUrl,
-          _resolved_msg_text: msgText,
-          _resolved_msg_timestamp: msgTimestamp,
-          _is_unread: isUnread,
-        };
-      });
+          return {
+            ...chat,
+            attendees: normalizedAttendees,
+            last_message: lastMessage ?? chat.last_message,
+            _resolved_name: displayName,
+            _resolved_avatar: avatarUrl,
+            _resolved_msg_text: msgText,
+            _resolved_msg_timestamp: msgTimestamp,
+            _resolved_msg_is_sender: resolveIsSender(lastMessage),
+            _is_unread: isUnread,
+          };
+        })
+      );
 
       return json({ ...data, items: enriched });
     }
 
-    // ── get_messages ──
     if (action === 'get_messages') {
       const chatId = body.chat_id;
       if (!chatId) return json({ error: 'chat_id required' }, 400);
@@ -146,13 +168,11 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Log first message structure for debugging
       if (rawItems.length > 0) {
         console.log('[get_messages] Raw message sample keys:', Object.keys(rawItems[0]));
         console.log('[get_messages] Raw message sample:', JSON.stringify(rawItems[0], null, 2));
       }
 
-      // Normalize is_sender field across different Unipile response formats
       const normalizedItems = rawItems.map((msg) => {
         const isSender =
           msg.is_sender === true ||
@@ -174,7 +194,6 @@ Deno.serve(async (req) => {
       return json({ ...data, items: normalizedItems });
     }
 
-    // ── send_message ──
     if (action === 'send_message') {
       const chatId = body.chat_id;
       const text = body.text;
@@ -215,9 +234,126 @@ Deno.serve(async (req) => {
   }
 });
 
-/* ── No longer needed: Unipile returns attendees + last_message in list_chats ── */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
-/* ── Fetch participant profile from Unipile ── */
+function toBoolean(value: unknown): boolean {
+  return value === true || value === 1 || value === '1' || value === 'true';
+}
+
+function sanitizeName(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  const normalized = trimmed.toLowerCase();
+  if (normalized === 'unknown' || normalized === 'linkedin user') return '';
+  return trimmed;
+}
+
+function extractDisplayName(attendee?: Record<string, unknown>): string {
+  if (!attendee) return '';
+
+  const directCandidates = [attendee.display_name, attendee.name, attendee.full_name];
+  for (const candidate of directCandidates) {
+    if (typeof candidate === 'string') {
+      const sanitized = sanitizeName(candidate);
+      if (sanitized) return sanitized;
+    }
+  }
+
+  const firstName = typeof attendee.first_name === 'string' ? attendee.first_name : '';
+  const lastName = typeof attendee.last_name === 'string' ? attendee.last_name : '';
+  return sanitizeName([firstName, lastName].filter(Boolean).join(' '));
+}
+
+function extractAvatarUrl(attendee?: Record<string, unknown>): string | null {
+  if (!attendee) return null;
+  const candidates = [
+    attendee.profile_picture_url,
+    attendee.profile_picture,
+    attendee.avatar_url,
+    attendee.picture_url,
+    attendee.image_url,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function extractMessageText(message?: Record<string, unknown>): string {
+  if (!message) return '';
+
+  const candidates = [message.text, message.body, message.content, message.subject, message.title];
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  const attachments = Array.isArray(message.attachments)
+    ? message.attachments
+    : Array.isArray(message.files)
+      ? message.files
+      : [];
+
+  return attachments.length > 0 ? 'Attachment' : '';
+}
+
+function extractMessageTimestamp(message?: Record<string, unknown>): string {
+  if (!message) return '';
+  const candidates = [message.timestamp, message.date, message.created_at, message.updated_at];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate;
+    }
+  }
+
+  return '';
+}
+
+function resolveIsSender(message?: Record<string, unknown>): boolean {
+  if (!message) return false;
+
+  return (
+    toBoolean(message.is_sender) ||
+    toBoolean(message.from_me) ||
+    (typeof message.direction === 'string' &&
+      ['outbound', 'outgoing'].includes(message.direction.toLowerCase()))
+  );
+}
+
+async function fetchLatestMessage(
+  chatId: string,
+  apiKey: string,
+  dsn: string
+): Promise<Record<string, unknown> | null> {
+  try {
+    const url = new URL(`https://${dsn}/api/v1/chats/${encodeURIComponent(chatId)}/messages`);
+    url.searchParams.set('limit', '1');
+
+    const res = await fetch(url.toString(), {
+      headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) {
+      console.warn('[list_chats] latest message lookup failed:', res.status, 'for chat:', chatId);
+      return null;
+    }
+
+    const data = await res.json();
+    const items: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
+    return items[0] ?? null;
+  } catch (error) {
+    console.warn('[list_chats] latest message lookup error for chat:', chatId, error);
+    return null;
+  }
+}
 
 async function fetchParticipantProfile(
   providerId: string,
@@ -225,7 +361,6 @@ async function fetchParticipantProfile(
   apiKey: string,
   dsn: string
 ): Promise<{ name: string; avatar_url: string | null }> {
-  // Use in-request cache to avoid duplicate lookups
   const cached = profileCache.get(providerId);
   if (cached) return cached;
 
@@ -245,18 +380,10 @@ async function fetchParticipantProfile(
     }
 
     const data = await res.json();
-
-    // Extract name from various possible fields
     const name =
-      data.display_name ||
-      data.name ||
-      (data.first_name || data.last_name
-        ? [data.first_name, data.last_name].filter(Boolean).join(' ')
-        : null) ||
-      data.full_name ||
+      sanitizeName(data.display_name || data.name || data.full_name || '') ||
+      sanitizeName([data.first_name, data.last_name].filter(Boolean).join(' ')) ||
       'LinkedIn User';
-
-    // Extract avatar from various possible fields
     const avatar_url =
       data.profile_picture_url ||
       data.picture_url ||
@@ -277,7 +404,6 @@ async function fetchParticipantProfile(
     return fallback;
   }
 }
-
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
