@@ -78,51 +78,46 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const rawItems: Record<string, unknown>[] = data?.items || data?.data || (Array.isArray(data) ? data : []);
 
-      // Unipile already returns attendees + last_message in list_chats.
-      // Only enrich chats that are missing real attendee names (rare).
-      const chatsNeedingEnrichment: number[] = [];
-      const enriched = rawItems.map((chat, i) => {
-        const attendees = chat.attendees as Array<Record<string, unknown>> | undefined;
-        const hasRealName = attendees?.length &&
-          attendees[0]?.display_name &&
-          (attendees[0].display_name as string) !== 'LinkedIn User';
-
-        if (!hasRealName && chat.attendee_provider_id) {
-          chatsNeedingEnrichment.push(i);
-        }
-        return { ...chat };
-      });
-
-      // Batch-enrich only chats missing names (in parallel, max 3 concurrent)
-      if (chatsNeedingEnrichment.length > 0) {
-        const batchSize = 3;
-        for (let b = 0; b < chatsNeedingEnrichment.length; b += batchSize) {
-          const batch = chatsNeedingEnrichment.slice(b, b + batchSize);
-          const results = await Promise.all(
-            batch.map(idx => {
-              const chat = enriched[idx];
-              return fetchParticipantProfile(
-                chat.attendee_provider_id as string,
-                accountId,
-                UNIPILE_API_KEY,
-                UNIPILE_DSN
-              );
-            })
-          );
-          results.forEach((profile, j) => {
-            const idx = batch[j];
-            enriched[idx].attendees = [{
-              display_name: profile.name,
-              profile_picture_url: profile.avatar_url ?? undefined,
-              provider_id: enriched[idx].attendee_provider_id,
-            }];
-          });
-          // Small delay between batches only if needed
-          if (b + batchSize < chatsNeedingEnrichment.length) {
-            await new Promise(r => setTimeout(r, 500));
-          }
-        }
+      // Log first chat structure for debugging
+      if (rawItems.length > 0) {
+        console.log('[list_chats] Raw chat sample keys:', Object.keys(rawItems[0]));
+        console.log('[list_chats] Raw chat sample:', JSON.stringify(rawItems[0], null, 2));
       }
+
+      // Unipile already returns attendees + last_message in list_chats.
+      // Extract name from attendees (try multiple fields), pass through unread status.
+      const enriched = rawItems.map((chat) => {
+        const attendees = chat.attendees as Array<Record<string, unknown>> | undefined;
+        const att = attendees?.[0];
+
+        // Try multiple name fields
+        const displayName = att?.display_name || att?.name ||
+          (att?.first_name || att?.last_name
+            ? [att.first_name, att.last_name].filter(Boolean).join(' ')
+            : null) ||
+          att?.full_name || null;
+
+        const avatarUrl = att?.profile_picture_url || att?.picture_url || att?.avatar_url || null;
+
+        // Extract last message - try text, body, content
+        const lastMsg = chat.last_message as Record<string, unknown> | undefined;
+        const msgText = lastMsg?.text || lastMsg?.body || lastMsg?.content || '';
+        const msgTimestamp = lastMsg?.timestamp || lastMsg?.date || lastMsg?.created_at || '';
+
+        // Unread status from Unipile
+        const isUnread = chat.unread_count !== undefined
+          ? Number(chat.unread_count) > 0
+          : (chat.is_unread === true || chat.unread === true);
+
+        return {
+          ...chat,
+          _resolved_name: displayName,
+          _resolved_avatar: avatarUrl,
+          _resolved_msg_text: msgText,
+          _resolved_msg_timestamp: msgTimestamp,
+          _is_unread: isUnread,
+        };
+      });
 
       return json({ ...data, items: enriched });
     }
