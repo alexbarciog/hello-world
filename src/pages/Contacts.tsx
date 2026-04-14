@@ -172,7 +172,7 @@ export default function Contacts() {
     }
 
     setLoading(false);
-  }, []);
+  }, [sub.loading, sub.subscribed]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
