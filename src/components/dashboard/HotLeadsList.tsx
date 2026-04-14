@@ -15,8 +15,8 @@ function LeadAvatar({ initials, color }: { initials: string; color: string }) {
 const avatarColors = ["#6366f1", "#8b5cf6", "#0ea5e9", "#14b8a6", "#f59e0b"];
 
 function TierDot({ tier }: { tier: string }) {
-  const color = tier === "hot" ? "bg-emerald-400" : tier === "warm" ? "bg-amber-400" : "bg-gray-300";
-  return <span className={`w-2 h-2 rounded-full ${color} shrink-0`} />;
+  const color = tier === "hot" ? "bg-red-500" : tier === "warm" ? "bg-amber-400" : "bg-blue-300";
+  return <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${color}`} />;
 }
 
 interface Lead {
@@ -88,14 +88,16 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
                 className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
                 onClick={() => lead.linkedin_url && window.open(lead.linkedin_url, "_blank")}
               >
-                <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
+                <div className="relative">
+                  <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
+                  <TierDot tier={lead.relevance_tier} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-gray-900 truncate">{lead.name}</p>
                   <p className="text-[11px] text-gray-400 truncate">
                     {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                   </p>
                 </div>
-                <TierDot tier={lead.relevance_tier} />
               </div>
             );
           })}
