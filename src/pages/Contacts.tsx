@@ -38,6 +38,10 @@ export default function Contacts() {
   const [agents, setAgents] = useState<Record<string, string>>({});
   const [sdrActiveContacts, setSdrActiveContacts] = useState<Record<string, string>>({}); // contact_id -> connection_request_id
   const [stoppingSDR, setStoppingSDR] = useState<Set<string>>(new Set());
+  const [insightsOpen, setInsightsOpen] = useState<string | null>(null);
+  const [insightsData, setInsightsData] = useState<Record<string, any>>({});
+  const [insightsLoading, setInsightsLoading] = useState<Set<string>>(new Set());
+  const insightsRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
