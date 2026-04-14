@@ -385,7 +385,7 @@ export default function Unibox() {
                             {chatLastText(chat)}
                           </p>
                           {unread && (
-                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[hsl(210,100%,40%)] text-white text-[10px] font-bold flex items-center justify-center">
                               {chat.unread_count || "·"}
                             </span>
                           )}
@@ -496,7 +496,7 @@ export default function Unibox() {
                               /* Sent */
                               <div className="flex justify-end">
                                 <div className="max-w-[70%]">
-                                  <div className="bg-primary text-primary-foreground px-4 py-2.5 rounded-2xl rounded-br-sm">
+                                  <div className="bg-[hsl(210,100%,40%)] text-white px-4 py-2.5 rounded-2xl rounded-br-sm">
                                     <p className="text-sm whitespace-pre-wrap break-words">{messageText(msg)}</p>
                                   </div>
                                   <p className="text-[10px] text-muted-foreground text-right mt-1 mr-1">{messageTime(msg)}</p>
@@ -543,7 +543,7 @@ export default function Unibox() {
                       type="submit"
                       size="icon"
                       disabled={!messageInput.trim() || sendMutation.isPending}
-                      className="h-10 w-10 rounded-lg"
+                      className="h-10 w-10 rounded-lg bg-[hsl(210,100%,40%)] hover:bg-[hsl(210,100%,35%)] text-white"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
