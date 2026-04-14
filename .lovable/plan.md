@@ -1,48 +1,38 @@
 
 
-## Scheduled Tab UI Redesign
+## AI SDR Banner UI Redesign
 
 ### Current State
-The scheduled tab has three main sections:
-1. **Today's Schedule** header card with date, status badge, progress bar, and remaining contacts
-2. **Accordions** for LinkedIn Connections and Today's Messages (each with lead cards inside)
-3. **Full Sequence Overview** at the bottom showing workflow steps
+The "Conversational AI Banner" (lines 1204-1230 in CampaignDetail.tsx) is a simple horizontal bar with a blue gradient background, a Bot icon in a white/60 glass circle, text, and a green "Live" dot badge. It works but feels generic and doesn't match the premium aesthetic of the landing page.
 
-The current design uses emoji icons (📅, ⚡, 👥, 📋), generic rounded cards, and a somewhat cluttered layout. It works but feels more like a prototype than a polished product.
+### Design Direction
+Align with the landing page's visual language: glassmorphism, subtle depth, clean neutrals with a signature accent. The banner should feel like a premium status indicator, not a basic info bar.
 
-### Proposed Changes
+### Changes
 
-**1. Today's Schedule Header Card** (lines 2514-2552)
-- Replace emoji icons with proper Lucide icons (`Calendar`, `Zap`, `Users`)
-- Use a cleaner two-column stat layout: status badge + daily progress on the left, contacts remaining on the right
-- Upgrade the progress bar with a subtle animated gradient and percentage label
-- Add a subtle left-accent border stripe (indigo) instead of the gradient background
-- Tighter spacing, remove the gradient-to-primary tint
+**1. Background Treatment**
+- Replace the blue gradient with a neutral frosted-glass card: `bg-white border border-border/50` with a very subtle inner glow or left-accent stripe using the brand indigo (`#4F46E5`)
+- Add a faint decorative gradient blob in the top-right corner (indigo/purple, blurred) for depth, similar to the Contacts unlock banner
 
-**2. Connections & Messages Accordions** (lines 2564-2869)
-- Replace the flat `bg-muted/20` accordion headers with a cleaner design: subtle left color stripe (violet for connections, teal for messages)
-- Simplify lead cards inside: remove the heavy `shadow-md` and glass overlay, use a clean flat card with `bg-muted/30` and `border-border/40`
-- Tighten the layout: reduce padding from `p-4` to `p-3`, smaller avatars from `w-9 h-9` to `w-8 h-8`
-- Make status badges more consistent: use dot indicators instead of emoji (✓, ✗, ⏳)
+**2. Icon Upgrade**
+- Replace the plain `bg-white/60` icon container with a gradient icon badge: `bg-gradient-to-br from-[#4F46E5] to-[#6366F1]` with a white Bot icon inside
+- Slightly larger: `w-11 h-11` with `rounded-xl` and a subtle shadow
 
-**3. Empty State** (lines 2871-2884)
-- Replace the 📋 emoji with a proper `CalendarOff` or `Inbox` Lucide icon in a soft circle
-- Add a subtle illustration-style empty state
+**3. Typography Polish**
+- Title: `font-semibold text-sm text-foreground` (keep)
+- Subtitle: lighter muted color, add a subtle "sparkle" or activity indicator phrase
+- Both using tighter letter spacing
 
-**4. Full Sequence Overview** (lines 2891-2928)
-- Convert from a plain list to a vertical timeline with a connecting line between steps
-- Each step gets a numbered circle on the timeline
-- Add delay badges as pills between steps on the timeline line
-- Cleaner typography: remove "Step X:" prefix, use the step number in the circle
+**4. Live Badge Refinement**
+- Keep the animated green ping dot
+- Upgrade the pill: `bg-green-50 border border-green-200/60 text-green-700` for a cleaner, more intentional look instead of `bg-white/50`
 
-**5. General Polish**
-- Remove all emoji usage in favor of Lucide icons throughout the tab
-- Consistent use of the snow design system colors
-- Smoother motion transitions
+**5. Optional: Subtle shimmer animation**
+- Add a very subtle CSS shimmer/shine animation on the gradient icon to draw attention without being distracting
 
-### Files to Edit
-- `src/pages/CampaignDetail.tsx` — the scheduled tab section (lines ~2510-2930)
+### File to Edit
+- `src/pages/CampaignDetail.tsx` (lines 1204-1230 only)
 
 ### No Functional Changes
-All data fetching, state management, edit/regenerate logic, and accordion behavior remain identical. This is purely a visual refresh.
+Pure visual refresh. All conditional rendering logic stays the same.
 
