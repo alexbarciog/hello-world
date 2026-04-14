@@ -15,8 +15,8 @@ function LeadAvatar({ initials, color }: { initials: string; color: string }) {
 const avatarColors = ["#6366f1", "#8b5cf6", "#0ea5e9", "#14b8a6", "#f59e0b"];
 
 function TierDot({ tier }: { tier: string }) {
-  const color = tier === "hot" ? "bg-emerald-400" : tier === "warm" ? "bg-amber-400" : "bg-gray-300";
-  return <span className={`w-2 h-2 rounded-full ${color} shrink-0`} />;
+  const color = tier === "hot" ? "bg-red-500" : tier === "warm" ? "bg-amber-400" : "bg-blue-300";
+  return <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${color}`} />;
 }
 
 interface Lead {
