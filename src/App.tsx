@@ -26,6 +26,7 @@ import BillingPlans from "./pages/BillingPlans.tsx";
 import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import VideoShowcase from "./pages/VideoShowcase.tsx";
+import PricingPage from "./pages/PricingPage.tsx";
 import AiSdrOutreach from "./pages/features/AiSdrOutreach.tsx";
 import ConversationalAi from "./pages/features/ConversationalAi.tsx";
 import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
@@ -121,6 +122,7 @@ const App = () => (
           <Route path="/billing" element={<AuthGuard><DashboardLayout><BillingPlans /></DashboardLayout></AuthGuard>} />
           <Route path="/support" element={<AuthGuard><DashboardLayout><Support /></DashboardLayout></AuthGuard>} />
           <Route path="/admin" element={<AuthGuard><DashboardLayout><AdminDashboard /></DashboardLayout></AuthGuard>} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/video" element={<VideoShowcase />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
