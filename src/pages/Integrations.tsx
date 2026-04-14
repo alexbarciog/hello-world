@@ -7,8 +7,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { Calendar, Check, ExternalLink, Loader2, Plug, Unplug } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Calendar, Check, ExternalLink, Key, Loader2, Plug, Unplug } from "lucide-react";
 
 interface CalendarIntegration {
   id: string;
@@ -25,6 +34,7 @@ const providers = [
     description: "Detect when leads book meetings through your Calendly links.",
     logo: calendlyLogo,
     color: "from-blue-500 to-blue-600",
+    authType: "oauth" as const,
   },
   {
     id: "google_calendar",
@@ -32,6 +42,7 @@ const providers = [
     description: "Sync meetings from your Google Calendar automatically.",
     logo: googleCalendarLogo,
     color: "from-red-500 to-yellow-500",
+    authType: "oauth" as const,
   },
   {
     id: "outlook_calendar",
@@ -39,6 +50,7 @@ const providers = [
     description: "Connect your Microsoft Outlook calendar for meeting tracking.",
     logo: outlookCalendarLogo,
     color: "from-blue-600 to-blue-700",
+    authType: "oauth" as const,
   },
   {
     id: "cal_com",
@@ -46,6 +58,7 @@ const providers = [
     description: "Integrate with Cal.com for open-source scheduling.",
     logo: "https://cal.com/android-chrome-256x256.png",
     color: "from-gray-800 to-gray-900",
+    authType: "api_key" as const,
   },
 ];
 
@@ -53,6 +66,9 @@ const Integrations = () => {
   const [integrations, setIntegrations] = useState<CalendarIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [apiKeyDialog, setApiKeyDialog] = useState(false);
+  const [apiKeyValue, setApiKeyValue] = useState("");
+  const [savingApiKey, setSavingApiKey] = useState(false);
 
   useEffect(() => {
     fetchIntegrations();
@@ -67,6 +83,13 @@ const Integrations = () => {
   };
 
   const handleConnect = async (providerId: string) => {
+    const provider = providers.find((p) => p.id === providerId);
+    if (provider?.authType === "api_key") {
+      setApiKeyValue("");
+      setApiKeyDialog(true);
+      return;
+    }
+
     setConnecting(providerId);
     try {
       const { data, error } = await supabase.functions.invoke("connect-calendar", {
@@ -80,6 +103,28 @@ const Integrations = () => {
       toast({ title: "Connection failed", description: err.message, variant: "destructive" });
     } finally {
       setConnecting(null);
+    }
+  };
+
+  const handleSaveCalComApiKey = async () => {
+    if (!apiKeyValue.trim()) {
+      toast({ title: "API key required", description: "Please enter your Cal.com API key.", variant: "destructive" });
+      return;
+    }
+    setSavingApiKey(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-calendar", {
+        body: { provider: "cal_com", action: "api_key", api_key: apiKeyValue.trim() },
+      });
+      if (error) throw error;
+      toast({ title: "Connected", description: "Cal.com has been connected successfully." });
+      setApiKeyDialog(false);
+      setApiKeyValue("");
+      fetchIntegrations();
+    } catch (err: any) {
+      toast({ title: "Connection failed", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingApiKey(false);
     }
   };
 
@@ -222,6 +267,8 @@ const Integrations = () => {
                         >
                           {connecting === provider.id ? (
                             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                          ) : provider.authType === "api_key" ? (
+                            <Key className="w-3.5 h-3.5 mr-1.5" />
                           ) : (
                             <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
                           )}
@@ -236,6 +283,44 @@ const Integrations = () => {
           );
         })}
       </div>
+
+      {/* Cal.com API Key Dialog */}
+      <Dialog open={apiKeyDialog} onOpenChange={setApiKeyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connect Cal.com</DialogTitle>
+            <DialogDescription>
+              Enter your Cal.com API key to connect. You can find it in your Cal.com dashboard under{" "}
+              <a
+                href="https://app.cal.com/settings/developer/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline"
+              >
+                Settings → Developer → API Keys
+              </a>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              type="password"
+              placeholder="cal_live_..."
+              value={apiKeyValue}
+              onChange={(e) => setApiKeyValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveCalComApiKey()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApiKeyDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveCalComApiKey} disabled={savingApiKey}>
+              {savingApiKey && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              Connect
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

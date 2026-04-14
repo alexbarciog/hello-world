@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { provider, action, code, calendar_email, redirectTo } = await req.json();
+    const { provider, action, code, calendar_email, redirectTo, api_key } = await req.json();
 
     if (!provider || !["calendly", "google_calendar", "outlook_calendar", "cal_com"].includes(provider)) {
       return new Response(JSON.stringify({ error: "Invalid provider" }), {
@@ -36,10 +36,51 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Handle Cal.com API key connection
+    if (action === "api_key" && provider === "cal_com") {
+      if (!api_key || typeof api_key !== "string" || api_key.trim().length < 10) {
+        return new Response(JSON.stringify({ error: "Invalid API key" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify the API key by making a test call to Cal.com
+      const verifyRes = await fetch("https://api.cal.com/v1/me", {
+        headers: { Authorization: `Bearer ${api_key.trim()}` },
+      });
+
+      if (!verifyRes.ok) {
+        const body = await verifyRes.text();
+        console.error("Cal.com API key verification failed:", verifyRes.status, body);
+        return new Response(JSON.stringify({ error: "Invalid Cal.com API key. Please check and try again." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const calUser = await verifyRes.json();
+      const calEmail = calUser?.user?.email || calUser?.email || null;
+
+      const { error: insertErr } = await supabase
+        .from("calendar_integrations")
+        .upsert({
+          user_id: user.id,
+          provider: "cal_com",
+          access_token: api_key.trim(),
+          calendar_email: calEmail,
+          is_active: true,
+        }, { onConflict: "user_id,provider" });
+
+      if (insertErr) throw insertErr;
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Handle OAuth callback (token exchange)
     if (action === "callback" && code) {
-      // In a real implementation, exchange the code for tokens here
-      // For now, store the integration with the provided info
       const { error: insertErr } = await supabase
         .from("calendar_integrations")
         .upsert({
