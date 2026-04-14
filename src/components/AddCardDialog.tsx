@@ -59,7 +59,7 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
                 className={`flex items-start gap-3 py-3 ${i < benefits.length - 1 ? "border-b border-snow-white-300" : ""}`}
               >
                 <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5 border-accent border-2 bg-black border-solid">
-                  <b.icon className="w-4 h-4 text-white" />
+                  <b.icon className="w-4 h-4 text-accent" />
                 </div>
                 <div>
                   <p className="font-medium text-snow-black font-sans text-base">{b.title}</p>
