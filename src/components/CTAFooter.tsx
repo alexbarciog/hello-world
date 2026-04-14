@@ -5,7 +5,7 @@ import ctaBg from "@/assets/cta-bg.avif";
 const CTASection = () => {
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
-      <div className="relative overflow-hidden rounded-[40px] py-28 px-4">
+      <div className="relative overflow-hidden rounded-[40px] py-28 px-8 md:px-12">
         <img src={ctaBg} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
 
         <div className="relative max-w-4xl mx-auto z-10 pl-4 md:pl-8">
