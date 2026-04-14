@@ -296,10 +296,10 @@ export default function Unibox() {
               <div className="flex items-center justify-between mb-3">
                 <h1 className="text-lg font-semibold text-foreground">Messages</h1>
                 <div className="flex items-center gap-1">
-                  <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent transition-colors">
+                  <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-gray-100 transition-colors">
                     <Settings2 className="w-4 h-4" />
                   </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent transition-colors">
+                  <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-gray-100 transition-colors">
                     <Edit3 className="w-4 h-4" />
                   </button>
                 </div>
@@ -309,7 +309,7 @@ export default function Unibox() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search messages..."
-                  className="pl-9 h-9 bg-accent/50 border-0 text-sm"
+                  className="pl-9 h-9 bg-gray-100 border-0 text-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -349,8 +349,8 @@ export default function Unibox() {
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-3 transition-colors text-left border-b border-border/50",
                         isSelected
-                          ? "bg-accent"
-                          : "hover:bg-accent/50"
+                          ? "bg-gray-100"
+                          : "hover:bg-gray-100"
                       )}
                     >
                       {/* Avatar */}
@@ -428,20 +428,20 @@ export default function Unibox() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent transition-colors">
+                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-gray-100 transition-colors">
                       <Phone className="w-4 h-4" />
                     </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent transition-colors">
+                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-gray-100 transition-colors">
                       <Video className="w-4 h-4" />
                     </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-accent transition-colors">
+                    <button className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-gray-100 transition-colors">
                       <MoreHorizontal className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-accent/20">
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-gray-50">
                   {messagesLoading ? (
                     <div className="space-y-6 py-4">
                       {[...Array(4)].map((_, i) => (
@@ -533,7 +533,7 @@ export default function Unibox() {
                     <div className="flex-1 relative">
                       <Input
                         placeholder="Type your message..."
-                        className="pr-10 h-10 bg-accent/50 border-border"
+                        className="pr-10 h-10 bg-gray-100 border-border"
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
                         disabled={sendMutation.isPending}
@@ -556,7 +556,7 @@ export default function Unibox() {
             ) : (
               /* Empty state */
               <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-                <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
                   <MessageSquare className="w-8 h-8 opacity-40" />
                 </div>
                 <h3 className="text-base font-semibold text-foreground mb-1">Your LinkedIn Inbox</h3>
