@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.auto-subscribe-on-meeting]
 verify_jwt = false
+
+[functions.generate-lead-insights]
+verify_jwt = false
