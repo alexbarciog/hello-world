@@ -64,7 +64,7 @@ export default function ConversationalAi() {
 
       {/* Hero */}
       <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
-        <img src={featureHeroBg} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={featureHeroBg} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover blur-sm scale-105" />
         <div className="cloud-overlay" style={{ opacity: 0.15 }} />
         <div
           ref={heroRef.ref}
