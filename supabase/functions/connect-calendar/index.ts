@@ -63,8 +63,10 @@ Deno.serve(async (req) => {
       case "calendly":
         authUrl = `https://auth.calendly.com/oauth/authorize?client_id=CALENDLY_CLIENT_ID&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}`;
         break;
-      case "google_calendar":
-        authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=GOOGLE_CLIENT_ID&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline`;
+      case "google_calendar": {
+        const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID") || "GOOGLE_CLIENT_ID";
+        authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent`;
+      }
         break;
       case "outlook_calendar":
         authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=OUTLOOK_CLIENT_ID&response_type=code&scope=Calendars.Read&redirect_uri=${encodeURIComponent(redirectUri)}`;
