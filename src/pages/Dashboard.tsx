@@ -155,15 +155,16 @@ export default function Dashboard() {
             (chat.attendees as Array<{ display_name?: string; profile_picture_url?: string }>) ?? [];
           const attendee = attendees[0];
           const lastMsg = chat.last_message as
-            | { text?: string; timestamp?: string; is_sender?: boolean }
+            | { text?: string; body?: string; content?: string; timestamp?: string; date?: string; is_sender?: boolean }
             | undefined;
           return {
-            name: attendee?.display_name ?? "LinkedIn User",
-            avatar_url: attendee?.profile_picture_url ?? null,
-            text: lastMsg?.text ?? "",
-            timestamp: lastMsg?.timestamp ?? "",
+            name: (chat._resolved_name as string) || attendee?.display_name || "LinkedIn User",
+            avatar_url: (chat._resolved_avatar as string) || attendee?.profile_picture_url || null,
+            text: (chat._resolved_msg_text as string) || lastMsg?.text || lastMsg?.body || lastMsg?.content || "",
+            timestamp: (chat._resolved_msg_timestamp as string) || lastMsg?.timestamp || lastMsg?.date || "",
             is_sender: lastMsg?.is_sender ?? false,
             chat_id: chat.id as string,
+            is_unread: (chat._is_unread as boolean) ?? false,
           };
         })
         .filter((r: { is_sender: boolean }) => !r.is_sender)
