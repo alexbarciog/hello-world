@@ -51,23 +51,21 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
         </div>
 
         {/* Benefits */}
-        <div className="px-6 py-5">
-          <div className="rounded-[14px] bg-[#f6f7f9] p-4 space-y-0">
-            {benefits.map((b, i) => (
-              <div
-                key={i}
-                className={`flex items-start gap-3 py-3 ${i < benefits.length - 1 ? "border-b border-snow-white-300" : ""}`}
-              >
-                <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5 border-accent bg-black border-solid border-0">
-                  <b.icon className="w-4 h-4 text-accent" />
-                </div>
-                <div>
-                  <p className="text-snow-black font-sans text-base font-medium tracking-tight">{b.title}</p>
-                  <p className="text-xs text-snow-black-100 mt-0.5">{b.desc}</p>
-                </div>
+        <div className="px-6 py-5 space-y-2">
+          {benefits.map((b, i) => (
+            <div
+              key={i}
+              className="flex items-start gap-3 p-3 rounded-[14px] bg-[#f6f7f9]"
+            >
+              <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 mt-0.5 border-accent bg-black border-solid border-0">
+                <b.icon className="w-4 h-4 text-accent" />
               </div>
-            ))}
-          </div>
+              <div>
+                <p className="text-snow-black font-sans text-base font-medium tracking-tight">{b.title}</p>
+                <p className="text-xs text-snow-black-100 mt-0.5">{b.desc}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Footer */}
