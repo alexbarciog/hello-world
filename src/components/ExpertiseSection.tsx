@@ -20,7 +20,7 @@ const tags2 = ["Warm Leads", "Auto-Pilot", "LinkedIn Native", "Real-Time"];
 
 /* ── Signal 1: Posting About Keywords ── */
 const KeywordPostVisual = () => (
-  <div className="relative w-full h-44 flex items-center justify-center">
+  <div className="relative w-full h-64 flex items-center justify-center">
     <div className="absolute left-8 top-4 w-40 rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-3 z-10">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-medium opacity-80">Keyword hits</span>
