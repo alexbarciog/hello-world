@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
-  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X,
+  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
