@@ -5,9 +5,10 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Building2, User, Linkedin, Shield,
-  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock, Check, MessageSquare, UserPlus, Sparkles, Loader2,
+  CreditCard, Key, Plus, ChevronDown, Info, Settings as SettingsIcon, Trash2, Clock, Check, MessageSquare, UserPlus, Sparkles, Loader2, CheckCircle,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { useSubscription } from "@/hooks/useSubscription";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -807,36 +808,89 @@ function SecurityTab() {
 // ─── Billing Tab ──────────────────────────────────────────────────────────────
 function BillingTab() {
   const navigate = useNavigate();
+  const sub = useSubscription();
+
+  const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
+  const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
+
+  const planName = sub.productId === STARTER_PRODUCT_ID ? "Starter" : sub.productId === PRO_PRODUCT_ID ? "Growth" : "Unknown";
+  const planPrice = sub.productId === STARTER_PRODUCT_ID ? "$59" : sub.productId === PRO_PRODUCT_ID ? "$99" : "";
+
+  if (sub.loading) {
+    return (
+      <div className="space-y-5">
+        <SectionHeader icon={<CreditCard className="w-4.5 h-4.5" />} title="Billing & Plans" subtitle="Manage your subscription and payment information" />
+        <SectionCard delay={1}>
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        </SectionCard>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <SectionHeader icon={<CreditCard className="w-4.5 h-4.5" />} title="Billing & Plans" subtitle="Manage your subscription and payment information" />
 
-      <SectionCard delay={1}>
-        <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
-            className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-            style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
-          >
-            <CreditCard className="w-7 h-7 text-white" />
-          </motion.div>
-          <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
-            <p className="text-base font-bold text-foreground mb-1">No Active Subscription</p>
-            <p className="text-sm text-muted-foreground max-w-xs">Start your 7-day free trial and unlock unlimited leads, AI campaigns, and more.</p>
-          </motion.div>
-          <motion.button
-            custom={3} variants={fadeUp} initial="hidden" animate="visible"
-            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/billing")}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md"
-            style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
-          >
-            <CreditCard className="w-4 h-4" /> View Pricing & Plans
-          </motion.button>
-        </div>
-      </SectionCard>
+      {sub.subscribed ? (
+        <SectionCard delay={1}>
+          <div className="flex flex-col items-center justify-center py-12 gap-5 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg bg-green-500"
+            >
+              <CheckCircle className="w-7 h-7 text-white" />
+            </motion.div>
+            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
+              <p className="text-base font-bold text-foreground mb-1">{planName} Plan — Active</p>
+              <p className="text-sm text-muted-foreground">{planPrice}/month</p>
+              {sub.subscriptionEnd && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Next billing: {new Date(sub.subscriptionEnd).toLocaleDateString()}
+                </p>
+              )}
+            </motion.div>
+            <motion.button
+              custom={3} variants={fadeUp} initial="hidden" animate="visible"
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/pricing")}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md bg-primary hover:bg-primary/90 transition-colors"
+            >
+              <CreditCard className="w-4 h-4" /> Manage Plan
+            </motion.button>
+          </div>
+        </SectionCard>
+      ) : (
+        <SectionCard delay={1}>
+          <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
+              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
+            >
+              <CreditCard className="w-7 h-7 text-white" />
+            </motion.div>
+            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
+              <p className="text-base font-bold text-foreground mb-1">No Active Subscription</p>
+              <p className="text-sm text-muted-foreground max-w-xs">Start your 7-day free trial and unlock unlimited leads, AI campaigns, and more.</p>
+            </motion.div>
+            <motion.button
+              custom={3} variants={fadeUp} initial="hidden" animate="visible"
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => navigate("/pricing")}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md"
+              style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
+            >
+              <CreditCard className="w-4 h-4" /> View Pricing & Plans
+            </motion.button>
+          </div>
+        </SectionCard>
+      )}
     </div>
   );
 }
