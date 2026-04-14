@@ -20,6 +20,7 @@ export default function Contacts() {
   const navigate = useNavigate();
   const sub = useSubscription();
   const [isDataLocked, setIsDataLocked] = useState(false);
+  const [tab, setTab] = useState<Tab>("all");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lists, setLists] = useState<ContactList[]>([]);
   const [contactListMap, setContactListMap] = useState<Record<string, string[]>>({});
