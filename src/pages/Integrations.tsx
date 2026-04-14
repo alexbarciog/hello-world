@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import calendlyLogo from "@/assets/calendly-logo.png";
 import googleCalendarLogo from "@/assets/google-calendar-logo.png";
+import outlookCalendarLogo from "@/assets/outlook-calendar-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ const providers = [
     id: "outlook_calendar",
     name: "Outlook Calendar",
     description: "Connect your Microsoft Outlook calendar for meeting tracking.",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg/1024px-Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg.png",
+    logo: outlookCalendarLogo,
     color: "from-blue-600 to-blue-700",
   },
   {
