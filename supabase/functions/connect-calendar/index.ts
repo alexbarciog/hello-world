@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { provider, action, code, calendar_email } = await req.json();
+    const { provider, action, code, calendar_email, redirectTo } = await req.json();
 
     if (!provider || !["calendly", "google_calendar", "outlook_calendar", "cal_com"].includes(provider)) {
       return new Response(JSON.stringify({ error: "Invalid provider" }), {
@@ -57,23 +57,44 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate OAuth URL based on provider
-    // These would use real OAuth endpoints once API keys are configured
-    const baseUrl = Deno.env.get("SUPABASE_URL");
-    const redirectUri = `${baseUrl}/functions/v1/connect-calendar`;
+    const requestOrigin = req.headers.get("origin");
+
+    let redirectUri = requestOrigin || `${Deno.env.get("SUPABASE_URL")}/functions/v1/connect-calendar`;
+    if (typeof redirectTo === "string" && redirectTo) {
+      try {
+        const parsedRedirect = new URL(redirectTo);
+        if (!["http:", "https:"].includes(parsedRedirect.protocol)) {
+          throw new Error("Unsupported redirect protocol");
+        }
+        if (requestOrigin && parsedRedirect.origin !== requestOrigin) {
+          return new Response(JSON.stringify({ error: "Redirect origin mismatch" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        redirectUri = parsedRedirect.toString();
+      } catch {
+        return new Response(JSON.stringify({ error: "Invalid redirect URL" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const oauthState = `calendar:${provider}`;
 
     let authUrl = "";
     switch (provider) {
       case "calendly":
-        authUrl = `https://auth.calendly.com/oauth/authorize?client_id=CALENDLY_CLIENT_ID&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        authUrl = `https://auth.calendly.com/oauth/authorize?client_id=CALENDLY_CLIENT_ID&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(oauthState)}`;
         break;
       case "google_calendar": {
         const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID") || "GOOGLE_CLIENT_ID";
-        authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent`;
+        authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&response_type=code&scope=https://www.googleapis.com/auth/calendar.readonly&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent&state=${encodeURIComponent(oauthState)}`;
       }
         break;
       case "outlook_calendar":
-        authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=OUTLOOK_CLIENT_ID&response_type=code&scope=Calendars.Read&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=OUTLOOK_CLIENT_ID&response_type=code&scope=Calendars.Read&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(oauthState)}`;
         break;
       case "cal_com":
         authUrl = `https://app.cal.com/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
