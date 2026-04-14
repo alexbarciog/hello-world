@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       }
 
       const calUser = await verifyRes.json();
-      const calEmail = calUser?.user?.email || calUser?.email || null;
+      const calEmail = calUser?.data?.email || calUser?.user?.email || calUser?.email || null;
 
       const { error: insertErr } = await supabase
         .from("calendar_integrations")
