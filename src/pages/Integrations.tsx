@@ -21,7 +21,7 @@ const providers = [
     id: "calendly",
     name: "Calendly",
     description: "Detect when leads book meetings through your Calendly links.",
-    logo: "https://framerusercontent.com/images/YJq4zyKbdnNcVmYpREnGjCuHaU.png",
+    logo: calendlyLogo,
     color: "from-blue-500 to-blue-600",
   },
   {
