@@ -198,6 +198,7 @@ const ExpertiseSection = () => {
             </div>
           ))}
         </div>
+        </div>
 
         <div className="space-y-3 overflow-hidden">
           <div className="relative">
