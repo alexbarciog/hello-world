@@ -30,6 +30,7 @@ interface Reply {
   timestamp: string;
   is_sender: boolean;
   chat_id: string;
+  is_unread: boolean;
 }
 
 interface LatestRepliesProps {
