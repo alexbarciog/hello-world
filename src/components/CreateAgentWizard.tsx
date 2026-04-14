@@ -82,17 +82,6 @@ const SIGNAL_CATEGORIES = [
     ],
   },
   {
-    id: "change_trigger",
-    title: "Change & Trigger Events",
-    desc: "Job changes, new hires, or funding announcements that suggest buying intent",
-    icon: <Briefcase className="w-5 h-5" />,
-    subSignals: [
-      { id: "job_changes", label: "Recently changed jobs", icon: <Briefcase className="w-3.5 h-3.5" /> },
-      { id: "new_hires", label: "Companies with new hires", icon: <UserPlus className="w-3.5 h-3.5" /> },
-      { id: "funding_events", label: "Recently funded companies", icon: <TrendingUp className="w-3.5 h-3.5" /> },
-    ],
-  },
-  {
     id: "competitors",
     title: "Companies & Competitors",
     desc: "Track leads following or interacting with competitors",
