@@ -1,5 +1,6 @@
 import { ArrowUpRight, Star } from "lucide-react";
 import HeroCards from "./HeroCards";
+import { LinkedInIcon } from "./contacts/LinkedInIcon";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
 
 const Hero = () => {
