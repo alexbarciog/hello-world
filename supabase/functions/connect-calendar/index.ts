@@ -45,8 +45,13 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Verify the API key — Cal.com v1 uses query param, v2 uses Bearer
-      const verifyRes = await fetch(`https://api.cal.com/v1/me?apiKey=${encodeURIComponent(api_key.trim())}`);
+      // Verify the API key — Cal.com v2 uses Bearer auth
+      const verifyRes = await fetch("https://api.cal.com/v2/me", {
+        headers: {
+          "Authorization": `Bearer ${api_key.trim()}`,
+          "cal-api-version": "2024-08-13",
+        },
+      });
 
       if (!verifyRes.ok) {
         const body = await verifyRes.text();
@@ -58,7 +63,7 @@ Deno.serve(async (req) => {
       }
 
       const calUser = await verifyRes.json();
-      const calEmail = calUser?.user?.email || calUser?.email || null;
+      const calEmail = calUser?.data?.email || calUser?.user?.email || calUser?.email || null;
 
       const { error: insertErr } = await supabase
         .from("calendar_integrations")
