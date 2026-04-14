@@ -432,10 +432,28 @@ export default function Signals() {
         });
         return;
       }
-      // Never had subscription and no card → must add card first
-      if (!sub.subscribed && !sub.hasCard) {
-        setShowAddCard(true);
-        return;
+
+      // If no active subscription, check if user has booked >1 meeting (payment should have gone through)
+      if (!sub.subscribed) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { count } = await supabase
+            .from("meetings")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+          if ((count ?? 0) > 1) {
+            toast.error("You have outstanding meetings without an active subscription. Please subscribe to continue.", {
+              action: { label: "Subscribe", onClick: () => navigate("/billing") },
+            });
+            return;
+          }
+        }
+
+        // No meetings issue but no card → must add card first
+        if (!sub.hasCard) {
+          setShowAddCard(true);
+          return;
+        }
       }
     }
     await supabase
