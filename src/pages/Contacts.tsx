@@ -555,20 +555,33 @@ export default function Contacts() {
         ) : (
           <>
             {isDataLocked && (
-              <div className="relative z-10 mx-4 mb-4 p-6 rounded-xl border border-amber-200 bg-amber-50/80 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5 text-amber-600" />
+              <div className="relative z-10 mx-4 mb-4 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-r from-background via-muted/30 to-background p-6">
+                {/* Decorative glow */}
+                <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-[hsl(210,100%,50%)]/10 blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-[hsl(260,80%,60%)]/10 blur-3xl pointer-events-none" />
+                
+                <div className="relative flex items-center gap-5">
+                  {/* Icon */}
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(210,100%,50%)] to-[hsl(260,80%,60%)] flex items-center justify-center shrink-0 shadow-lg shadow-[hsl(210,100%,50%)]/20">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+
+                  {/* Copy */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Unlock your lead intelligence</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Subscribe to reveal full contact names, LinkedIn profiles, signals & more.
+                    </p>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => navigate("/billing")}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[hsl(210,100%,50%)] to-[hsl(260,80%,60%)] text-white text-sm font-semibold transition-all hover:shadow-lg hover:shadow-[hsl(210,100%,50%)]/25 hover:scale-[1.02] active:scale-[0.98] shrink-0"
+                  >
+                    View Plans
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-900">Contact details are hidden</p>
-                  <p className="text-xs text-amber-700 mt-0.5">Subscribe to unlock full contact names, signals, and LinkedIn profiles.</p>
-                </div>
-                <button
-                  onClick={() => navigate("/billing")}
-                  className="px-5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors shrink-0"
-                >
-                  Subscribe Now
-                </button>
               </div>
             )}
             {/* ── Desktop table ── */}
