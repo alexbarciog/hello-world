@@ -11,8 +11,8 @@ const featureItems = [
   { icon: Globe, label: "Reddit & X Monitoring", desc: "Cross-platform buying signal detection", href: "/features/reddit-x-signals" },
 ];
 
-const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
-  const [scrolled, setScrolled] = useState(false);
+const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: boolean; forceDark?: boolean }) => {
+  const [scrolled, setScrolled] = useState(forceDark);
   const [menuOpen, setMenuOpen] = useState(false);
   const [featuresOpen, setFeaturesOpen] = useState(false);
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => setScrolled(forceDark || window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);

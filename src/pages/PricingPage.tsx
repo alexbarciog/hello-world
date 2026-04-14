@@ -9,7 +9,7 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <Navbar showCampaigns={showCampaigns} />
+      <Navbar showCampaigns={showCampaigns} forceDark />
       <div className="pt-20">
         <Pricing />
         <FAQ />
