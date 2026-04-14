@@ -51,6 +51,9 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
         >
           <a href="/" className="flex items-center gap-2">
             <img alt="Intentsly" className="h-10 object-contain" src={intentslyIcon} />
+            <span className={`text-sm font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
+              Intentsly
+            </span>
           </a>
 
           <div className="flex items-center gap-8">
