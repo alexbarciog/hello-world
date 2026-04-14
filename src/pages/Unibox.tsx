@@ -54,6 +54,12 @@ interface Chat {
   timestamp?: string;
   updated_at?: string;
   unread_count?: number;
+  _resolved_name?: string;
+  _resolved_avatar?: string | null;
+  _resolved_msg_text?: string;
+  _resolved_msg_timestamp?: string;
+  _resolved_msg_is_sender?: boolean;
+  _is_unread?: boolean;
 }
 
 interface Message {
