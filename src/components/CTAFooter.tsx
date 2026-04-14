@@ -3,20 +3,22 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 
 const CTASection = () => {
   return (
-    <section className="py-28 px-4 relative overflow-hidden hero-sky-gradient">
-      <div className="cloud-overlay" style={{ opacity: 0.3 }} />
+    <section className="px-2 md:px-4 pt-4 md:pt-8">
+      <div className="relative overflow-hidden rounded-[40px] hero-sky-gradient py-28 px-4">
+        <div className="cloud-overlay" style={{ opacity: 0.3 }} />
 
-      <div className="relative max-w-4xl mx-auto text-center z-10">
-        <h2 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.08] mb-6 text-white">
-          We combine human insight with artificial intelligence
-        </h2>
-        <p className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed text-white/80">
-          Our platform bridges strategic thinking and advanced AI technologies to help companies streamline processes, improve decision-making, and create intelligent outreach.
-        </p>
-        <a href="/register" className="btn-cta mx-auto">
-          Get Started
-          <ArrowUpRight className="w-4 h-4" />
-        </a>
+        <div className="relative max-w-4xl mx-auto text-center z-10">
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.08] mb-6 text-white">
+            We combine human insight with artificial intelligence
+          </h2>
+          <p className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed text-white/80">
+            Our platform bridges strategic thinking and advanced AI technologies to help companies streamline processes, improve decision-making, and create intelligent outreach.
+          </p>
+          <a href="/register" className="btn-cta mx-auto">
+            Get Started
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        </div>
       </div>
     </section>
   );
