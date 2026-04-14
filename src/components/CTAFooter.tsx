@@ -10,10 +10,10 @@ const CTASection = () => {
 
         <div className="relative max-w-4xl mx-auto z-10 pl-4 md:pl-8">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl">
-            We combine human insight with artificial intelligence
+            Stop chasing cold leads. Start closing warm ones.
           </h2>
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
-            Our platform bridges strategic thinking and advanced AI technologies to help companies streamline processes, improve decision-making, and create intelligent outreach.
+            Your next best customers are already showing buying signals. Let AI find them, reach out, and book meetings — while you focus on selling.
           </p>
           <a href="/register" className="btn-cta">
             Get Started
