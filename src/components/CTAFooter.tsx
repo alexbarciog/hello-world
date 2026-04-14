@@ -8,14 +8,14 @@ const CTASection = () => {
       <div className="relative overflow-hidden rounded-[40px] py-28 px-4">
         <img src={ctaBg} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
 
-        <div className="relative max-w-4xl mx-auto text-center z-10">
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.08] mb-6 text-white">
+        <div className="relative max-w-4xl mx-auto z-10 pl-4 md:pl-8">
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl">
             We combine human insight with artificial intelligence
           </h2>
-          <p className="text-base md:text-lg mb-10 max-w-xl mx-auto leading-relaxed text-white/80">
+          <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
             Our platform bridges strategic thinking and advanced AI technologies to help companies streamline processes, improve decision-making, and create intelligent outreach.
           </p>
-          <a href="/register" className="btn-cta mx-auto">
+          <a href="/register" className="btn-cta">
             Get Started
             <ArrowUpRight className="w-4 h-4" />
           </a>
