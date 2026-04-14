@@ -62,7 +62,7 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
               </div>
               <div>
                 <p className="text-snow-black font-sans text-base font-medium tracking-tight">{b.title}</p>
-                <p className="text-xs text-snow-black-100 mt-0.5">{b.desc}</p>
+                <p className="text-xs mt-0.5 text-[#858585]">{b.desc}</p>
               </div>
             </div>
           ))}
