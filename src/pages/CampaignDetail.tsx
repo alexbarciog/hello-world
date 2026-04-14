@@ -1207,23 +1207,26 @@ export default function CampaignDetail() {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="mx-4 md:mx-6 mt-4 relative overflow-hidden rounded-2xl"
-          style={{ background: "linear-gradient(135deg, #f0f4ff 0%, #dbe8ff 30%, #a8c8ff 60%, #5E93FE 100%)" }}
+          className="mx-4 md:mx-6 mt-4 relative overflow-hidden rounded-2xl bg-white border border-border/50"
         >
+          {/* Decorative gradient blob */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-gradient-to-br from-primary/15 to-[hsl(245,58%,51%)]/10 blur-2xl pointer-events-none" />
+          <div className="absolute top-0 left-0 w-1 h-full rounded-l-2xl bg-gradient-to-b from-primary to-[hsl(245,58%,51%)]" />
+
           <div className="relative z-10 flex items-center gap-4 px-6 py-4">
-            <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/60 backdrop-blur-sm flex items-center justify-center">
-              <Bot className="w-5 h-5 text-foreground/70" />
+            <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-[hsl(245,58%,51%)] shadow-md flex items-center justify-center">
+              <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground tracking-tight">AI SDR is active</p>
-              <p className="text-xs text-foreground/60">Replying to leads and booking meetings on autopilot</p>
+              <p className="text-xs text-muted-foreground">Autonomously replying & booking meetings</p>
             </div>
-            <div className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/50 backdrop-blur-sm">
+            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 border border-green-200/60">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
               </span>
-              <span className="text-xs font-medium text-foreground/70">Live</span>
+              <span className="text-xs font-semibold text-green-700">Live</span>
             </div>
           </div>
         </motion.div>
