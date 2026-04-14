@@ -946,16 +946,23 @@ Deno.serve(async (req) => {
 
           // Update agent results_count and send notification
           if (agent_id) {
-            const { data: agentData } = await supabase.from('signal_agents').select('user_id, leads_list_name, name').eq('id', agent_id).single();
+            const { data: agentData } = await supabase.from('signal_agents').select('user_id, leads_list_name, name, results_count').eq('id', agent_id).single();
             if (agentData) {
               const lName = agentData.leads_list_name || agentData.name || 'Signal Leads';
               const { data: agentList } = await supabase.from('lists').select('id').eq('user_id', agentData.user_id).eq('name', lName).maybeSingle();
+              let newCount: number | null = null;
               if (agentList) {
                 const { count } = await supabase.from('contact_lists').select('id', { count: 'exact', head: true }).eq('list_id', agentList.id);
-                if (typeof count === 'number') {
-                  await supabase.from('signal_agents').update({ results_count: count, last_launched_at: new Date().toISOString() }).eq('id', agent_id);
+                if (typeof count === 'number' && count > 0) {
+                  newCount = count;
                 }
               }
+              // Fallback: never reset to 0 — keep existing count + new leads
+              if (newCount === null) {
+                newCount = (agentData.results_count || 0) + totalLeads;
+              }
+              await supabase.from('signal_agents').update({ results_count: newCount, last_launched_at: new Date().toISOString() }).eq('id', agent_id);
+            }
               if (totalLeads > 0) {
                 await supabase.from('notifications').insert({
                   user_id: agentData.user_id,
