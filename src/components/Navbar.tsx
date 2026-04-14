@@ -90,7 +90,7 @@ const Navbar = ({ showCampaigns = false }: { showCampaigns?: boolean }) => {
               </AnimatePresence>
             </div>
 
-            <a href="#pricing" className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}>Pricing</a>
+            <button onClick={() => navigate("/pricing")} className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}>Pricing</button>
             <button onClick={() => navigate("/dashboard")} className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}>Dashboard</button>
           </div>
 
