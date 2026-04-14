@@ -1,7 +1,6 @@
-import featureHeroSky from "@/assets/feature-hero-sky.webp";
 import { useEffect, useRef, useState } from "react";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
-import { ArrowUpRight, Bot, Target, Send, MessageSquare, TrendingUp, Zap, Clock, Calendar } from "lucide-react";
+import { ArrowUpRight, Bot, Target, Send, MessageSquare, TrendingUp, Sparkles, Calendar, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 
@@ -21,81 +20,36 @@ function useInView(threshold = 0.15) {
   return { ref, visible };
 }
 
-const steps = [
-  { icon: Target, title: "Define Your ICP", desc: "Tell us who your ideal customers are — job titles, industries, company sizes. Our AI builds a precision-targeted profile." },
-  { icon: Bot, title: "AI Crafts Personalized Messages", desc: "Each connection request and follow-up is uniquely written based on the lead's profile, activity, and your value proposition." },
-  { icon: Send, title: "Automated Multi-Step Outreach", desc: "Connection requests, follow-up messages, and nurture sequences run on autopilot — respecting LinkedIn's daily limits." },
-  { icon: MessageSquare, title: "Smart Conversation Handling", desc: "When leads reply, the AI SDR responds naturally — mirroring their tone, asking discovery questions, and guiding toward a meeting." },
-  { icon: TrendingUp, title: "Continuous Optimization", desc: "Message performance is tracked. The AI learns what works for your audience and refines its approach over time." },
+const benefits = [
+  { icon: Target, title: "Precision-Targeted ICP", desc: "Define your ideal customers by job title, industry, and company size. The AI builds a laser-focused outreach profile." },
+  { icon: Send, title: "Multi-Step Sequences", desc: "Connection requests, follow-ups, and nurture messages run on autopilot — respecting LinkedIn's daily limits." },
+  { icon: MessageSquare, title: "Smart Reply Handling", desc: "When leads reply, the AI responds naturally — mirroring tone, asking questions, and guiding toward meetings." },
+  { icon: TrendingUp, title: "Continuous Optimization", desc: "Message performance is tracked and the AI refines its approach based on what works for your audience." },
 ];
 
-const stats = [
-  { value: "10x", label: "More conversations started" },
-  { value: "< 25", label: "Words per AI reply" },
-  { value: "24/7", label: "Outreach running nonstop" },
-  { value: "0", label: "Manual effort needed" },
-];
-
-/* Mini visual components */
+/* Outreach visual mockup */
 const OutreachVisual = () => (
-  <div className="relative w-full h-52 flex items-center justify-center">
-    <div className="absolute left-6 top-3 w-[48%] rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-2 z-10">
-      <p className="text-[10px] opacity-50 mb-0.5">Campaign active</p>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-3xl font-bold">312</span>
-        <span className="text-[10px] font-semibold text-[#C8FF00]">sent</span>
+  <div className="relative w-full h-full min-h-[320px] flex items-center justify-center p-6">
+    <div className="absolute left-6 top-8 w-[55%] rounded-2xl bg-[#1a1a2e] text-white p-5 shadow-xl -rotate-2 z-10">
+      <p className="text-[11px] opacity-50 mb-1">Campaign active</p>
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-bold">312</span>
+        <span className="text-[11px] font-semibold text-[#C8FF00]">sent</span>
       </div>
-      <p className="text-[9px] opacity-40 mt-0.5">DMs this week</p>
+      <p className="text-[10px] opacity-40 mt-1">DMs this week</p>
     </div>
-    <div className="absolute right-4 top-14 w-[48%] rounded-2xl bg-white shadow-lg p-3 rotate-1 z-20 border border-border/50">
-      <p className="text-[9px] font-medium mb-1.5" style={{ color: "hsl(var(--aeline-dark))" }}>Sequence steps</p>
-      <div className="space-y-1.5">
+    <div className="absolute right-4 top-[45%] w-[52%] rounded-2xl bg-white shadow-lg p-4 rotate-1 z-20 border border-border/50">
+      <p className="text-[10px] font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>Sequence steps</p>
+      <div className="space-y-2">
         {[
           { step: "Connect request", status: "Sent ✓", color: "#22c55e" },
           { step: "Follow-up #1", status: "Replied ✓", color: "#1A8FE3" },
           { step: "Meeting booked", status: "Done", color: "#C8FF00" },
         ].map((s, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-            <span className="text-[9px] font-medium flex-1" style={{ color: "hsl(var(--aeline-dark))" }}>{s.step}</span>
-            <span className="text-[7px] text-muted-foreground">{s.status}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const ConvoVisual = () => (
-  <div className="relative w-full h-52 flex items-center justify-center">
-    <div className="absolute left-6 top-3 w-[48%] rounded-2xl bg-[#1a1a2e] text-white p-4 shadow-xl rotate-1 z-10">
-      <div className="flex items-center gap-1.5 mb-2">
-        <Bot className="w-3.5 h-3.5 text-[#C8FF00]" />
-        <span className="text-[9px] font-medium opacity-80">AI SDR active</span>
-      </div>
-      <div className="space-y-1">
-        <div className="bg-white/10 rounded-md px-2 py-1">
-          <p className="text-[7px] opacity-60">Lead:</p>
-          <p className="text-[8px]">"Tell me more about this"</p>
-        </div>
-        <div className="bg-[#C8FF00]/20 rounded-md px-2 py-1">
-          <p className="text-[7px] opacity-60">AI SDR:</p>
-          <p className="text-[8px]">"Happy to! Want a quick call?"</p>
-        </div>
-      </div>
-    </div>
-    <div className="absolute right-4 top-14 w-[48%] rounded-2xl bg-white shadow-lg p-3 -rotate-1 z-20 border border-border/50">
-      <p className="text-[9px] font-medium mb-1.5" style={{ color: "hsl(var(--aeline-dark))" }}>This week</p>
-      <div className="space-y-1.5">
-        {[
-          { icon: MessageSquare, label: "Conversations", value: "48", color: "#1A8FE3" },
-          { icon: Calendar, label: "Meetings booked", value: "12", color: "#22c55e" },
-          { icon: Clock, label: "Avg. response", value: "< 2 min", color: "#C8FF00" },
-        ].map((m, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <m.icon className="w-3 h-3 shrink-0" style={{ color: m.color }} />
-            <span className="text-[8px] text-muted-foreground flex-1">{m.label}</span>
-            <span className="text-[9px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>{m.value}</span>
+          <div key={i} className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+            <span className="text-[10px] font-medium flex-1" style={{ color: "hsl(var(--aeline-dark))" }}>{s.step}</span>
+            <span className="text-[8px] text-muted-foreground">{s.status}</span>
           </div>
         ))}
       </div>
@@ -106,127 +60,166 @@ const ConvoVisual = () => (
 export default function AiSdrOutreach() {
   useEffect(() => { ttqViewContent("AI SDR & Outreach"); }, []);
   const heroRef = useInView(0.2);
-  const statsRef = useInView(0.2);
-  const stepsHeadingRef = useInView(0.2);
-  const visualRef = useInView(0.2);
+  const benefitsRef = useInView(0.15);
 
   return (
     <div className="min-h-screen bg-background font-sans">
       <Navbar />
 
-      {/* Hero — sky background like landing page */}
-      <section className="relative min-h-[80vh] flex flex-col items-center justify-center overflow-hidden">
-        <img src={featureHeroSky} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="cloud-overlay" style={{ opacity: 0.15 }} />
+      {/* Hero — Split layout */}
+      <section className="grid md:grid-cols-2 min-h-[85vh] mx-2 md:mx-3 mt-2 md:mt-3 rounded-[20px] overflow-hidden">
+        {/* Left — text */}
         <div
           ref={heroRef.ref}
-          className="relative z-10 flex flex-col items-center text-center px-4 max-w-4xl mx-auto"
+          className="flex flex-col justify-center px-8 md:px-14 py-16 bg-[#f5f5f5]"
           style={{
             opacity: heroRef.visible ? 1 : 0,
             transform: heroRef.visible ? "translateY(0)" : "translateY(24px)",
             transition: "all 0.7s cubic-bezier(0.25,0.46,0.45,0.94)",
           }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium text-white mb-8">
-            <Bot className="w-4 h-4" />
-            AI SDR & Outreach
+          <div className="w-12 h-12 rounded-2xl bg-[#1a1a2e] flex items-center justify-center mb-8">
+            <Sparkles className="w-5 h-5 text-[#C8FF00]" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-medium text-white leading-[1.05] tracking-tight mb-6">
-            Your AI sales rep<br /><span className="text-white/70">that never sleeps</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium leading-[1.08] tracking-tight mb-6" style={{ color: "hsl(var(--aeline-dark))" }}>
+            AI SDR & Outreach
           </h1>
-          <p className="text-base md:text-lg text-white/80 max-w-2xl mb-10 leading-relaxed">
-            Intentsly's AI SDR sends personalized LinkedIn messages, manages multi-step campaigns, and handles replies — all on autopilot.
+          <p className="text-base text-muted-foreground leading-relaxed mb-4 max-w-md">
+            Your AI sales rep that never sleeps. Intentsly's AI SDR sends personalized LinkedIn messages, manages multi-step campaigns, and handles replies — all on autopilot.
+          </p>
+          <p className="text-base text-muted-foreground leading-relaxed mb-8 max-w-md">
+            From connection request to booked meeting, the entire outreach sequence is handled with human-like precision and zero manual effort.
           </p>
           <a href="/register" className="btn-cta text-base">
-            Launch your AI Agent for free
+            Get Started
             <ArrowUpRight className="w-4 h-4" />
           </a>
         </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-20 px-6 bg-background">
-        <div
-          ref={statsRef.ref}
-          className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8"
-          style={{
-            opacity: statsRef.visible ? 1 : 0,
-            transform: statsRef.visible ? "translateY(0)" : "translateY(24px)",
-            transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
-          }}
-        >
-          {stats.map((s, i) => (
-            <div key={i} className="text-center rounded-3xl bg-[#f5f5f5] p-8">
-              <div className="text-4xl md:text-5xl font-medium tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>{s.value}</div>
-              <div className="text-sm text-muted-foreground mt-2">{s.label}</div>
-            </div>
-          ))}
+        {/* Right — visual */}
+        <div className="bg-[#e8e8e8] flex items-center justify-center">
+          <OutreachVisual />
         </div>
       </section>
 
-      {/* Visual bento showcase */}
-      <section className="px-6 pb-20 bg-background">
-        <div
-          ref={visualRef.ref}
-          className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6"
-          style={{
-            opacity: visualRef.visible ? 1 : 0,
-            transform: visualRef.visible ? "translateY(0)" : "translateY(24px)",
-            transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
-          }}
-        >
-          <div className="rounded-3xl bg-[#f5f5f5] p-8 pb-6">
-            <OutreachVisual />
-            <h3 className="text-xl font-semibold mb-2 text-center mt-2" style={{ color: "hsl(var(--aeline-dark))" }}>Automated Sequences</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed text-center">Multi-step campaigns that connect, follow up, and book meetings.</p>
-          </div>
-          <div className="rounded-3xl bg-[#f5f5f5] p-8 pb-6">
-            <ConvoVisual />
-            <h3 className="text-xl font-semibold mb-2 text-center mt-2" style={{ color: "hsl(var(--aeline-dark))" }}>Smart Reply Handling</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed text-center">AI responds naturally and guides leads toward meetings.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="px-6 py-20 md:py-32 bg-background">
+      {/* Benefits bento */}
+      <section className="px-6 py-24 md:py-32 bg-background">
         <div className="max-w-6xl mx-auto">
           <div
-            ref={stepsHeadingRef.ref}
-            className="mb-16"
+            ref={benefitsRef.ref}
+            className="text-center mb-16"
             style={{
-              opacity: stepsHeadingRef.visible ? 1 : 0,
-              transform: stepsHeadingRef.visible ? "translateY(0)" : "translateY(24px)",
+              opacity: benefitsRef.visible ? 1 : 0,
+              transform: benefitsRef.visible ? "translateY(0)" : "translateY(24px)",
               transition: "all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)",
             }}
           >
-            <span className="section-label mb-6 block">How It Works</span>
-            <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] max-w-3xl" style={{ color: "hsl(var(--aeline-dark))" }}>
-              From setup to booked meetings in 5 steps
+            <span className="section-label mb-6 block justify-center mx-auto w-fit">Benefits</span>
+            <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] mb-4" style={{ color: "hsl(var(--aeline-dark))" }}>
+              The benefits of AI-powered outreach
             </h2>
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Automated sequences, intelligent replies, and continuous optimization — so you can focus on closing, not prospecting.
+            </p>
           </div>
 
-          <div className="space-y-12 max-w-3xl">
-            {steps.map((step, i) => {
-              const row = useInView(0.15);
+          {/* Bento grid — row 1: 2 cards + visual */}
+          <div className="grid md:grid-cols-3 gap-4 mb-4 mx-2 md:mx-3">
+            {benefits.slice(0, 2).map((b, i) => {
+              const card = useInView(0.15);
               return (
                 <div
                   key={i}
-                  ref={row.ref}
-                  className="flex gap-6 items-start"
+                  ref={card.ref}
+                  className="rounded-[20px] bg-[#f5f5f5] p-8 flex flex-col"
                   style={{
-                    opacity: row.visible ? 1 : 0,
-                    transform: row.visible ? "translateY(0)" : "translateY(28px)",
-                    transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 60}ms`,
+                    opacity: card.visible ? 1 : 0,
+                    transform: card.visible ? "translateY(0)" : "translateY(28px)",
+                    transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 100}ms`,
                   }}
                 >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center bg-[#1a1a2e]">
-                    <step.icon className="w-5 h-5 text-[#C8FF00]" />
+                  <div className="w-12 h-12 rounded-2xl bg-[#C8FF00] flex items-center justify-center mb-6">
+                    <b.icon className="w-5 h-5 text-[#1a1a2e]" />
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <h3 className="text-2xl font-medium tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>{step.title}</h3>
-                    <p className="text-base text-muted-foreground leading-relaxed max-w-md">{step.desc}</p>
+                  <h3 className="text-xl md:text-2xl font-medium tracking-tight mb-3" style={{ color: "hsl(var(--aeline-dark))" }}>{b.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{b.desc}</p>
+                </div>
+              );
+            })}
+            {/* Large visual card */}
+            <div className="rounded-[20px] bg-[#f5f5f5] overflow-hidden md:row-span-2 flex items-center justify-center">
+              <div className="relative w-full h-full min-h-[300px] flex items-center justify-center p-4">
+                <div className="absolute left-4 top-6 w-[54%] rounded-xl bg-[#1a1a2e] text-white p-4 shadow-xl -rotate-1 z-10">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Bot className="w-3.5 h-3.5 text-[#C8FF00]" />
+                    <span className="text-[9px] font-medium opacity-80">AI SDR active</span>
                   </div>
+                  <div className="space-y-1">
+                    <div className="bg-white/10 rounded-md px-2 py-1">
+                      <p className="text-[7px] opacity-60">Lead:</p>
+                      <p className="text-[8px]">"Tell me more about this"</p>
+                    </div>
+                    <div className="bg-[#C8FF00]/20 rounded-md px-2 py-1">
+                      <p className="text-[7px] opacity-60">AI SDR:</p>
+                      <p className="text-[8px]">"Happy to! Want a quick call?"</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute right-3 bottom-8 w-[50%] rounded-xl bg-white shadow-md p-3 rotate-1 z-20 border border-border/50">
+                  <p className="text-[9px] font-medium mb-1.5" style={{ color: "hsl(var(--aeline-dark))" }}>This week</p>
+                  <div className="space-y-1.5">
+                    {[
+                      { icon: MessageSquare, label: "Conversations", value: "48", color: "#1A8FE3" },
+                      { icon: Calendar, label: "Meetings booked", value: "12", color: "#22c55e" },
+                      { icon: Clock, label: "Avg. response", value: "< 2 min", color: "#C8FF00" },
+                    ].map((m, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <m.icon className="w-3 h-3 shrink-0" style={{ color: m.color }} />
+                        <span className="text-[8px] text-muted-foreground flex-1">{m.label}</span>
+                        <span className="text-[9px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>{m.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: testimonial + 2 cards */}
+          <div className="grid md:grid-cols-3 gap-4 mx-2 md:mx-3">
+            {/* Testimonial card */}
+            <div className="rounded-[20px] bg-[#C8FF00] p-8 flex flex-col justify-between">
+              <div>
+                <div className="text-4xl font-serif mb-4" style={{ color: "hsl(var(--aeline-dark))" }}>"</div>
+                <p className="text-base font-medium leading-relaxed mb-6" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  "We went from 0 to 15 meetings per week using Intentsly's AI SDR. It's like having a full sales team on autopilot."
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#1a1a2e] flex items-center justify-center text-white text-sm font-semibold">JD</div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>James Doe</p>
+                  <p className="text-xs" style={{ color: "hsl(var(--aeline-dark))", opacity: 0.6 }}>VP of Sales, SaaS Co.</p>
+                </div>
+              </div>
+            </div>
+            {benefits.slice(2, 4).map((b, i) => {
+              const card = useInView(0.15);
+              return (
+                <div
+                  key={i}
+                  ref={card.ref}
+                  className="rounded-[20px] bg-[#f5f5f5] p-8 flex flex-col"
+                  style={{
+                    opacity: card.visible ? 1 : 0,
+                    transform: card.visible ? "translateY(0)" : "translateY(28px)",
+                    transition: `all 0.65s cubic-bezier(0.25,0.46,0.45,0.94) ${i * 100}ms`,
+                  }}
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-[#C8FF00] flex items-center justify-center mb-6">
+                    <b.icon className="w-5 h-5 text-[#1a1a2e]" />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-medium tracking-tight mb-3" style={{ color: "hsl(var(--aeline-dark))" }}>{b.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{b.desc}</p>
                 </div>
               );
             })}
