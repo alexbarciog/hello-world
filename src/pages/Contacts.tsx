@@ -221,6 +221,7 @@ export default function Contacts() {
         return next;
       });
     }
+  };
 
   const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0 };
