@@ -191,7 +191,7 @@ const ExpertiseSection = () => {
         <div className="rounded-[28px] bg-[#F2F2F2] p-6 md:p-10">
         <div className="grid md:grid-cols-2 gap-6">
           {features.map((f, i) => (
-            <div key={i} className="rounded-3xl bg-[#f5f5f5] p-8 pb-6 flex flex-col group hover:shadow-lg transition-shadow duration-300">
+            <div key={i} className="rounded-3xl bg-[#FFFFFF] p-8 pb-6 flex flex-col group hover:shadow-lg transition-shadow duration-300">
               <f.Visual />
               <h3 className="text-xl font-semibold mb-2 text-center mt-2" style={{ color: "hsl(var(--aeline-dark))" }}>{f.title}</h3>
               <p className="text-sm text-muted-foreground leading-relaxed text-center">{f.desc}</p>
