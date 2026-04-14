@@ -80,7 +80,7 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
           >
             <CreditCard className="w-4 h-4" />
             {loading ? "Redirecting..." : "Add card & activate"}
-            <span className="ml-1 bg-white/15 text-white text-[10px] px-1.5 py-0.5 rounded-md font-medium">
+            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md bg-accent text-black font-bold">
               $0 today
             </span>
           </button>
