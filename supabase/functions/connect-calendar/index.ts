@@ -132,8 +132,10 @@ Deno.serve(async (req) => {
 
     let authUrl = "";
     switch (provider) {
-      case "calendly":
-        authUrl = `https://auth.calendly.com/oauth/authorize?client_id=CALENDLY_CLIENT_ID&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(oauthState)}`;
+      case "calendly": {
+        const calendlyClientId = Deno.env.get("CALENDLY_CLIENT_ID") || "CALENDLY_CLIENT_ID";
+        authUrl = `https://auth.calendly.com/oauth/authorize?client_id=${calendlyClientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(oauthState)}`;
+      }
         break;
       case "google_calendar": {
         const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID") || "GOOGLE_CLIENT_ID";
