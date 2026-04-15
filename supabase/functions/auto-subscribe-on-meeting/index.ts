@@ -24,6 +24,18 @@ Deno.serve(async (req) => {
   try {
     if (!stripe) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    // Check if free trial mode is enabled — only auto-subscribe in that mode
+    const { data: settings } = await supabaseClient
+      .from("platform_settings")
+      .select("free_trial_enabled")
+      .limit(1)
+      .single();
+
+    if (!settings?.free_trial_enabled) {
+      console.log("[auto-subscribe] Free trial mode is disabled — skipping auto-subscribe");
+      return jsonRes({ status: "skipped", message: "Free trial mode is disabled" });
+    }
+
     const body = await req.json();
     const userId = body.user_id;
     if (!userId) throw new Error("user_id is required");

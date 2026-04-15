@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
 import {
   Users, Radio, Megaphone, MessageSquare, Eye, Hash,
   Copy, Check, ExternalLink, Shield, Database, Activity,
-  Search, ChevronDown, ChevronUp, Mail, Globe, Flame
+  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -161,6 +162,7 @@ export default function AdminDashboard() {
     { id: "reddit", label: "Reddit Mentions", icon: <MessageSquare className="w-4 h-4" />, count: redditMentions.length },
     { id: "x", label: "X Mentions", icon: <Globe className="w-4 h-4" />, count: xMentions.length },
     { id: "notifications", label: "Notifications", icon: <Mail className="w-4 h-4" />, count: notifications.length },
+    { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
   const filterData = (data: any[]) => {
@@ -245,6 +247,73 @@ export default function AdminDashboard() {
         {activeTab === "reddit" && <RedditTable data={filterData(redditMentions)} />}
         {activeTab === "x" && <XTable data={filterData(xMentions)} />}
         {activeTab === "notifications" && <NotificationsTable data={filterData(notifications)} />}
+        {activeTab === "settings" && <PlatformSettingsPanel />}
+      </div>
+    </div>
+  );
+}
+
+// ── Platform Settings Panel ──
+
+function PlatformSettingsPanel() {
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["platform-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("platform_settings" as any)
+        .select("*")
+        .limit(1)
+        .single();
+      if (error) throw error;
+      return data as unknown as { id: string; free_trial_enabled: boolean; updated_at: string };
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (freeTrialEnabled: boolean) => {
+      if (!settings?.id) throw new Error("No settings row found");
+      const { error } = await supabase
+        .from("platform_settings" as any)
+        .update({ free_trial_enabled: freeTrialEnabled, updated_at: new Date().toISOString() } as any)
+        .eq("id", settings.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
+      toast.success("Settings updated");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update settings");
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin w-6 h-6 border-2 border-md-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-start gap-4 p-5 rounded-xl bg-md-surface-container/50">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-md-on-surface mb-1">Free Trial Mode</h3>
+          <p className="text-xs text-md-on-surface-variant leading-relaxed">
+            When enabled, users can activate agents and campaigns with just a card on file (no upfront payment). 
+            They will be auto-charged the Starter plan ($59/mo) when their first meeting is booked.
+            <br /><br />
+            When disabled (default), users must subscribe to a plan before activating agents or campaigns.
+          </p>
+        </div>
+        <Switch
+          checked={settings?.free_trial_enabled ?? false}
+          onCheckedChange={(checked) => mutation.mutate(checked)}
+          disabled={mutation.isPending}
+        />
       </div>
     </div>
   );

@@ -775,6 +775,24 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          free_trial_enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          free_trial_enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          free_trial_enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       processed_posts: {
         Row: {
           agent_id: string

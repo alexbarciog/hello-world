@@ -33,6 +33,14 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
+    // Fetch platform settings
+    const { data: settings } = await supabaseClient
+      .from("platform_settings")
+      .select("free_trial_enabled")
+      .limit(1)
+      .single();
+    const freeTrialEnabled = settings?.free_trial_enabled ?? false;
+
     // Single Stripe call: list subscriptions by email with expand
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
@@ -48,6 +56,7 @@ Deno.serve(async (req) => {
         had_subscription: false,
         has_card: false,
         credits: profile?.credits ?? 0,
+        free_trial_enabled: freeTrialEnabled,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -109,6 +118,7 @@ Deno.serve(async (req) => {
       product_id: productId,
       subscription_end: subscriptionEnd,
       credits,
+      free_trial_enabled: freeTrialEnabled,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

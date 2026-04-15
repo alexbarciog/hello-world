@@ -1,4 +1,4 @@
-import { CreditCard, Zap, CalendarCheck, Shield } from "lucide-react";
+import { CreditCard, Zap, CalendarCheck, Shield, Rocket } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -9,9 +9,10 @@ interface AddCardDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   loading?: boolean;
+  freeTrialMode?: boolean;
 }
 
-const benefits = [
+const trialBenefits = [
   {
     icon: Zap,
     title: "Your AI agent starts hunting for leads",
@@ -29,7 +30,27 @@ const benefits = [
   },
 ];
 
-export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCardDialogProps) {
+const directBenefits = [
+  {
+    icon: Zap,
+    title: "AI-powered lead discovery",
+    desc: "Monitors LinkedIn signals 24/7 and finds your ideal prospects.",
+  },
+  {
+    icon: Rocket,
+    title: "Automated outreach & follow-ups",
+    desc: "Personalized connection requests and messages sent on your behalf.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Meeting booking on autopilot",
+    desc: "Your AI agent handles conversations and books meetings for you.",
+  },
+];
+
+export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false }: AddCardDialogProps) {
+  const benefits = freeTrialMode ? trialBenefits : directBenefits;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg rounded-[20px] border border-snow-white-300 bg-white shadow-xl p-0 gap-0 overflow-hidden">
@@ -41,11 +62,20 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
 
           <DialogHeader className="text-left sm:text-left space-y-2">
             <DialogTitle className="text-2xl font-semibold tracking-tight text-snow-black">
-              Activate your AI Agent
+              {freeTrialMode ? "Activate your AI Agent" : "Subscribe to activate"}
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed text-[#858585]">
-              Intentsly is <strong className="text-black font-medium">free until your first meeting is booked</strong>. 
-              We just need a card on file to get started — you won't be charged today.
+              {freeTrialMode ? (
+                <>
+                  Intentsly is <strong className="text-black font-medium">free until your first meeting is booked</strong>. 
+                  We just need a card on file to get started — you won't be charged today.
+                </>
+              ) : (
+                <>
+                  Subscribe to the <strong className="text-black font-medium">Starter plan ($59/mo)</strong> to 
+                  activate your AI agents and start generating leads automatically.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -77,10 +107,15 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading }: AddCar
             style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
           >
             <CreditCard className="w-4 h-4" />
-            {loading ? "Redirecting..." : "Add card & activate"}
-            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md bg-accent text-black font-bold">
-              $0 today
-            </span>
+            {freeTrialMode
+              ? (loading ? "Redirecting..." : "Add card & activate")
+              : (loading ? "Redirecting..." : "Subscribe & activate")
+            }
+            {freeTrialMode && (
+              <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md bg-accent text-black font-bold">
+                $0 today
+              </span>
+            )}
           </button>
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full text-snow-black-100">
             Maybe later

@@ -433,7 +433,7 @@ export default function Signals() {
         return;
       }
 
-      // If no active subscription, check if user has booked >1 meeting (payment should have gone through)
+      // If no active subscription
       if (!sub.subscribed) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -449,9 +449,17 @@ export default function Signals() {
           }
         }
 
-        // No meetings issue but no card → must add card first
-        if (!sub.hasCard) {
-          setShowAddCard(true);
+        // Free trial mode: require card only
+        if (sub.freeTrialEnabled) {
+          if (!sub.hasCard) {
+            setShowAddCard(true);
+            return;
+          }
+        } else {
+          // Direct payment mode: must subscribe first
+          toast.error("You need an active subscription to activate agents.", {
+            action: { label: "Subscribe", onClick: () => navigate("/billing") },
+          });
           return;
         }
       }
@@ -647,7 +655,7 @@ export default function Signals() {
       <p className="text-sm text-gray-500 mb-5">Manage your automated lead generation agents & signals</p>
 
       <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
-      <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} />
+      <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} freeTrialMode={sub.freeTrialEnabled} />
 
       {/* Active Agent Card */}
       {activeAgent && (
