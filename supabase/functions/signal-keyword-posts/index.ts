@@ -962,7 +962,6 @@ Deno.serve(async (req) => {
                 newCount = (agentData.results_count || 0) + totalLeads;
               }
               await supabase.from('signal_agents').update({ results_count: newCount, last_launched_at: new Date().toISOString() }).eq('id', agent_id);
-            }
               if (totalLeads > 0) {
                 await supabase.from('notifications').insert({
                   user_id: agentData.user_id,
