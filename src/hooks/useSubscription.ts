@@ -9,6 +9,7 @@ export interface SubscriptionState {
   credits: number;
   hasCard: boolean;
   freeTrialEnabled: boolean;
+  freeTrialLimit: number;
   loading: boolean;
 }
 
@@ -21,6 +22,7 @@ export function useSubscription() {
     credits: 0,
     hasCard: false,
     freeTrialEnabled: false,
+    freeTrialLimit: 1,
     loading: true,
   });
 
@@ -44,6 +46,7 @@ export function useSubscription() {
         credits: data?.credits ?? 0,
         hasCard: data?.has_card ?? false,
         freeTrialEnabled: data?.free_trial_enabled ?? false,
+        freeTrialLimit: data?.free_trial_limit ?? 1,
         loading: false,
       });
     } catch {
