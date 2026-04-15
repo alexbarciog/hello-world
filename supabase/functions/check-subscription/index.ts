@@ -33,30 +33,27 @@ Deno.serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    // Fetch platform settings
-    const { data: settings } = await supabaseClient
-      .from("platform_settings")
-      .select("free_trial_enabled")
-      .limit(1)
+    // Fetch profile (includes per-user free trial settings)
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("credits, free_trial_enabled, free_trial_limit")
+      .eq("user_id", user.id)
       .single();
-    const freeTrialEnabled = settings?.free_trial_enabled ?? false;
+
+    const freeTrialEnabled = profile?.free_trial_enabled ?? false;
+    const freeTrialLimit = profile?.free_trial_limit ?? 1;
 
     // Single Stripe call: list subscriptions by email with expand
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("credits")
-        .eq("user_id", user.id)
-        .single();
-
       return new Response(JSON.stringify({
         subscribed: false,
         had_subscription: false,
         has_card: false,
         credits: profile?.credits ?? 0,
         free_trial_enabled: freeTrialEnabled,
+        free_trial_limit: freeTrialLimit,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -95,12 +92,6 @@ Deno.serve(async (req) => {
       hasCard = pms.data.length > 0;
     }
 
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("credits")
-      .eq("user_id", user.id)
-      .single();
-
     let credits = profile?.credits ?? 0;
 
     if (hasActiveSub && credits === 0) {
@@ -119,6 +110,7 @@ Deno.serve(async (req) => {
       subscription_end: subscriptionEnd,
       credits,
       free_trial_enabled: freeTrialEnabled,
+      free_trial_limit: freeTrialLimit,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
