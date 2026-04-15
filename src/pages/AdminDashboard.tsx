@@ -256,64 +256,13 @@ export default function AdminDashboard() {
 // ── Platform Settings Panel ──
 
 function PlatformSettingsPanel() {
-  const queryClient = useQueryClient();
-
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ["platform-settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("platform_settings" as any)
-        .select("*")
-        .limit(1)
-        .single();
-      if (error) throw error;
-      return data as unknown as { id: string; free_trial_enabled: boolean; updated_at: string };
-    },
-  });
-
-  const mutation = useMutation({
-    mutationFn: async (freeTrialEnabled: boolean) => {
-      if (!settings?.id) throw new Error("No settings row found");
-      const { error } = await supabase
-        .from("platform_settings" as any)
-        .update({ free_trial_enabled: freeTrialEnabled, updated_at: new Date().toISOString() } as any)
-        .eq("id", settings.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
-      toast.success("Settings updated");
-    },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to update settings");
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin w-6 h-6 border-2 border-md-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-start gap-4 p-5 rounded-xl bg-md-surface-container/50">
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-md-on-surface mb-1">Free Trial Mode</h3>
-          <p className="text-xs text-md-on-surface-variant leading-relaxed">
-            When enabled, users can activate agents and campaigns with just a card on file (no upfront payment). 
-            They will be auto-charged the Starter plan ($59/mo) when their first meeting is booked.
-            <br /><br />
-            When disabled (default), users must subscribe to a plan before activating agents or campaigns.
-          </p>
-        </div>
-        <Switch
-          checked={settings?.free_trial_enabled ?? false}
-          onCheckedChange={(checked) => mutation.mutate(checked)}
-          disabled={mutation.isPending}
-        />
+      <div className="p-5 rounded-xl bg-md-surface-container/50">
+        <h3 className="text-sm font-semibold text-md-on-surface mb-1">Per-User Free Trial</h3>
+        <p className="text-xs text-md-on-surface-variant leading-relaxed">
+          Free trial is now managed per-user from the Users tab. Expand a user row to toggle their free trial on/off and set the meeting limit before auto-charge.
+        </p>
       </div>
     </div>
   );
@@ -364,10 +313,30 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
 }
 
 function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
+  const queryClient = useQueryClient();
+  const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+
+  const updateTrial = async (userId: string, field: string, value: any) => {
+    setUpdatingUser(userId);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [field]: value } as any)
+        .eq("user_id", userId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-auth-users"] });
+      toast.success("Updated");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
+    } finally {
+      setUpdatingUser(null);
+    }
+  };
+
   return (
     <table className="w-full">
       <thead>
-        <tr><TH>Email</TH><TH>Name</TH><TH>Website</TH><TH>Onboarded</TH><TH>Plan</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
+        <tr><TH>Email</TH><TH>Name</TH><TH>Website</TH><TH>Onboarded</TH><TH>Plan</TH><TH>Free Trial</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
       </thead>
       <tbody className="divide-y divide-md-outline-variant/20">
         {data.map((u: any) => {
@@ -376,6 +345,7 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
           const isExpanded = expandedRow === id;
           const website = u.website || null;
           const isPaid = (u.credits ?? 0) >= 100;
+          const hasTrial = u.free_trial_enabled ?? false;
           return (
             <>
               <tr key={id} className="hover:bg-md-surface-container/30 transition-colors cursor-pointer" onClick={() => setExpandedRow(isExpanded ? null : id)}>
@@ -395,6 +365,17 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
                     {isPaid ? "Paid" : "Free"}
                   </span>
                 </TD>
+                <TD>
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Switch
+                      checked={hasTrial}
+                      onCheckedChange={(checked) => updateTrial(id, "free_trial_enabled", checked)}
+                      disabled={updatingUser === id}
+                      className="scale-75"
+                    />
+                    {hasTrial && <span className="text-[10px] text-emerald-600 font-medium">{u.free_trial_limit ?? 1}m</span>}
+                  </div>
+                </TD>
                 <TD><span className="font-mono text-xs">{u.credits ?? 0}</span></TD>
                 <TD>{u.unipile_account_id ? <Check className="w-4 h-4 text-blue-500" /> : <span className="text-md-on-surface-variant/40">—</span>}</TD>
                 <TD><span className="text-xs text-md-on-surface-variant whitespace-nowrap">{new Date(u.created_at).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></TD>
@@ -402,13 +383,26 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
               </tr>
               {isExpanded && (
                 <tr key={`${id}-detail`}>
-                  <td colSpan={9} className="px-6 py-4 bg-md-surface-container/20">
+                  <td colSpan={10} className="px-6 py-4 bg-md-surface-container/20">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                       <div><span className="text-md-on-surface-variant/60">User ID:</span> <CopyCell value={id} /></div>
                       <div><span className="text-md-on-surface-variant/60">Website:</span> <CopyCell value={website} /></div>
                       <div><span className="text-md-on-surface-variant/60">Daily Msgs Limit:</span> {u.daily_messages_limit ?? "—"}</div>
                       <div><span className="text-md-on-surface-variant/60">Daily Conn Limit:</span> {u.daily_connections_limit ?? "—"}</div>
                       <div><span className="text-md-on-surface-variant/60">Unipile ID:</span> <CopyCell value={u.unipile_account_id} /></div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-md-on-surface-variant/60">Trial Meeting Limit:</span>
+                        <select
+                          value={u.free_trial_limit ?? 1}
+                          onChange={(e) => updateTrial(id, "free_trial_limit", parseInt(e.target.value))}
+                          disabled={updatingUser === id}
+                          className="bg-white border border-md-outline-variant/30 rounded-md px-2 py-1 text-xs"
+                        >
+                          {[1, 2, 3, 5, 10].map((n) => (
+                            <option key={n} value={n}>{n} meeting{n > 1 ? "s" : ""}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </td>
                 </tr>

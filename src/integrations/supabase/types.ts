@@ -828,6 +828,8 @@ export type Database = {
           credits: number
           daily_connections_limit: number
           daily_messages_limit: number
+          free_trial_enabled: boolean
+          free_trial_limit: number
           id: string
           linkedin_display_name: string | null
           onboarding_complete: boolean
@@ -840,6 +842,8 @@ export type Database = {
           credits?: number
           daily_connections_limit?: number
           daily_messages_limit?: number
+          free_trial_enabled?: boolean
+          free_trial_limit?: number
           id?: string
           linkedin_display_name?: string | null
           onboarding_complete?: boolean
@@ -852,6 +856,8 @@ export type Database = {
           credits?: number
           daily_connections_limit?: number
           daily_messages_limit?: number
+          free_trial_enabled?: boolean
+          free_trial_limit?: number
           id?: string
           linkedin_display_name?: string | null
           onboarding_complete?: boolean
