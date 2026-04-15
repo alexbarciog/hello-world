@@ -267,7 +267,7 @@ function PlatformSettingsPanel() {
         .limit(1)
         .single();
       if (error) throw error;
-      return data as { id: string; free_trial_enabled: boolean; updated_at: string };
+      return data as unknown as { id: string; free_trial_enabled: boolean; updated_at: string };
     },
   });
 
