@@ -1,45 +1,81 @@
 
 
-## Integrations Tab Redesign — High-Tech Silicon Valley Aesthetic
+## Plan: Rework Subscription Model — Payment Required by Default, Free Trial as Admin Toggle
 
 ### Current State
-The Integrations page uses a basic white card layout with simple borders, standard badges, and flat styling. It doesn't match the high-density glassmorphism, gradient accents, and premium feel of the landing page.
+- Users get a **free trial** (no charge) until their first meeting is booked via the "Pay on Success" model
+- The `setup-card` edge function collects a card in Stripe Setup mode (no charge)
+- The `auto-subscribe-on-meeting` edge function charges the Starter plan ($59/mo) when a meeting is booked
+- The `AddCardDialog` UI says "$0 today" and "free until your first meeting is booked"
+- Agents/campaigns require a card on file but not an active subscription
 
-### Design Direction
-Align with the landing page's aesthetic: glassmorphism cards, gradient accents, subtle glows, Space Grotesk typography cues, and the SnowUI design system tokens.
+### What Changes
 
-### Changes
+**Default behavior (new):** Users must pay for a subscription upfront before activating agents or campaigns. No free trial. No card-only flow.
 
-**1. Page container & header**
-- Replace plain white `bg-white rounded-2xl` with `bg-snow-white-100` surface + subtle noise/gradient background
-- Restyle the header icon with a larger frosted-glass badge and gradient shimmer
-- Use `font-[Space_Grotesk]` for the page title
+**Optional (admin toggle):** Admins can enable the old "free trial / pay on success" model from the Admin Dashboard. When enabled, the current card-only flow applies.
 
-**2. Info banner upgrade**
-- Add `backdrop-blur-xl bg-white/60` glassmorphism treatment
-- Increase the glow effect (dual radial gradients, indigo + purple tints)
-- Refine the "Auto" badge with a soft animated pulse ring
+### Implementation Steps
 
-**3. Provider cards — glassmorphism treatment**
-- `bg-white/70 backdrop-blur-lg` with `border border-white/20` and soft box-shadow
-- On hover: scale-[1.02] with increased glow shadow
-- Connected state: subtle green gradient border glow instead of flat green background
-- Logo containers: frosted circle/rounded-square with inner shadow
-- "Connect" button: gradient fill (`from-primary to-indigo-600`) with subtle shadow, matching the landing page CTA style
-- "Connected" badge: glass pill style (bg-green-500/10 backdrop-blur) with dot ping
+#### 1. Create `platform_settings` table
+A single-row key-value settings table for platform-wide config:
+- `id` (uuid, PK)
+- `free_trial_enabled` (boolean, default `false`)
+- `updated_at` (timestamptz)
+- RLS: admins can read/update, authenticated users can read
 
-**4. Grid layout refinement**
-- Switch to a responsive grid that breathes more: `gap-6` with slightly larger card padding
-- Add staggered fade-in entrance animations using CSS `@keyframes` + `animation-delay`
+#### 2. Add Settings tab to Admin Dashboard
+Add a "Settings" tab in the Admin Dashboard with a toggle switch for "Free Trial Mode" that updates `platform_settings.free_trial_enabled`. Simple on/off with descriptive text.
 
-**5. API key dialog**
-- Glassmorphism overlay (`bg-black/40 backdrop-blur-sm`)
-- Dialog card with frosted glass background and gradient accent stripe on top
-- Gradient "Connect" button consistent with the card buttons
+#### 3. Update `check-subscription` edge function
+Return the `free_trial_enabled` flag from `platform_settings` so the frontend knows which flow to use.
+
+#### 4. Update `useSubscription` hook
+Add `freeTrialEnabled: boolean` to the subscription state from the check-subscription response.
+
+#### 5. Update activation flow in `Signals.tsx` and `Campaigns.tsx`
+- **If free trial disabled (default):** When user tries to activate an agent/campaign without an active subscription → redirect to `/billing` (pricing page) instead of showing the AddCardDialog
+- **If free trial enabled:** Keep existing behavior (show AddCardDialog, collect card, activate without subscription)
+
+#### 6. Update `AddCardDialog` component
+Make the dialog content conditional based on the mode:
+- **Direct payment mode:** Update copy to say "Subscribe to activate" with a CTA that goes to checkout (not setup-card). Remove "$0 today" badge.
+- **Free trial mode:** Keep current copy ("free until first meeting", "$0 today")
+
+#### 7. Update `auto-subscribe-on-meeting` edge function
+Add a check: only auto-subscribe if `free_trial_enabled` is true. If false, the user should already have a subscription, so skip.
 
 ### Technical Details
-- Single file edit: `src/pages/Integrations.tsx`
-- All styling via Tailwind utility classes — no new dependencies
-- Uses existing design tokens from `index.css` and `design-system.ts`
-- Preserves all existing logic (connect, disconnect, toggle, API key flow) unchanged
+
+**New table migration:**
+```sql
+CREATE TABLE public.platform_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  free_trial_enabled boolean NOT NULL DEFAULT false,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+
+-- Seed single row
+INSERT INTO public.platform_settings (free_trial_enabled) VALUES (false);
+
+-- Everyone can read
+CREATE POLICY "Authenticated can read settings"
+  ON public.platform_settings FOR SELECT TO authenticated
+  USING (true);
+
+-- Only admins can update
+CREATE POLICY "Admins can update settings"
+  ON public.platform_settings FOR UPDATE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+```
+
+**Files modified:**
+- `supabase/functions/check-subscription/index.ts` — add `free_trial_enabled` to response
+- `supabase/functions/auto-subscribe-on-meeting/index.ts` — check setting before auto-subscribing
+- `src/hooks/useSubscription.ts` — add `freeTrialEnabled` field
+- `src/pages/Signals.tsx` — update activation logic
+- `src/pages/Campaigns.tsx` — update activation logic
+- `src/components/AddCardDialog.tsx` — conditional content based on mode
+- `src/pages/AdminDashboard.tsx` — add Settings tab with toggle
 
