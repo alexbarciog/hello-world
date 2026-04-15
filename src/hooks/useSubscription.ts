@@ -8,6 +8,7 @@ export interface SubscriptionState {
   productId: string | null;
   credits: number;
   hasCard: boolean;
+  freeTrialEnabled: boolean;
   loading: boolean;
 }
 
@@ -19,6 +20,7 @@ export function useSubscription() {
     productId: null,
     credits: 0,
     hasCard: false,
+    freeTrialEnabled: false,
     loading: true,
   });
 
@@ -41,6 +43,7 @@ export function useSubscription() {
         productId: data?.product_id ?? null,
         credits: data?.credits ?? 0,
         hasCard: data?.has_card ?? false,
+        freeTrialEnabled: data?.free_trial_enabled ?? false,
         loading: false,
       });
     } catch {
