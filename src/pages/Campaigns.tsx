@@ -299,9 +299,18 @@ export default function CampaignsPage() {
           }
         }
 
-        if (!sub.hasCard) {
-          toast.error("Add your card to activate campaigns.", {
-            action: { label: "Add Card", onClick: () => navigate("/signals") },
+        // Free trial mode: require card only
+        if (sub.freeTrialEnabled) {
+          if (!sub.hasCard) {
+            toast.error("Add your card to activate campaigns.", {
+              action: { label: "Add Card", onClick: () => navigate("/signals") },
+            });
+            return;
+          }
+        } else {
+          // Direct payment mode: must subscribe first
+          toast.error("You need an active subscription to activate campaigns.", {
+            action: { label: "Subscribe", onClick: () => navigate("/billing") },
           });
           return;
         }
