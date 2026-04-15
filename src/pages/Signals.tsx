@@ -655,7 +655,7 @@ export default function Signals() {
       <p className="text-sm text-gray-500 mb-5">Manage your automated lead generation agents & signals</p>
 
       <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
-      <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} />
+      <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} freeTrialMode={sub.freeTrialEnabled} />
 
       {/* Active Agent Card */}
       {activeAgent && (
