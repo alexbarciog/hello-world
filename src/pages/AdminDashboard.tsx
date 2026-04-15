@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
 import {
   Users, Radio, Megaphone, MessageSquare, Eye, Hash,
   Copy, Check, ExternalLink, Shield, Database, Activity,
-  Search, ChevronDown, ChevronUp, Mail, Globe, Flame
+  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -161,6 +162,7 @@ export default function AdminDashboard() {
     { id: "reddit", label: "Reddit Mentions", icon: <MessageSquare className="w-4 h-4" />, count: redditMentions.length },
     { id: "x", label: "X Mentions", icon: <Globe className="w-4 h-4" />, count: xMentions.length },
     { id: "notifications", label: "Notifications", icon: <Mail className="w-4 h-4" />, count: notifications.length },
+    { id: "settings", label: "Settings", icon: <Settings className="w-4 h-4" /> },
   ];
 
   const filterData = (data: any[]) => {
@@ -245,6 +247,7 @@ export default function AdminDashboard() {
         {activeTab === "reddit" && <RedditTable data={filterData(redditMentions)} />}
         {activeTab === "x" && <XTable data={filterData(xMentions)} />}
         {activeTab === "notifications" && <NotificationsTable data={filterData(notifications)} />}
+        {activeTab === "settings" && <PlatformSettingsPanel />}
       </div>
     </div>
   );
