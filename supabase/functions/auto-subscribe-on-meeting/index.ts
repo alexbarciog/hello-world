@@ -24,21 +24,35 @@ Deno.serve(async (req) => {
   try {
     if (!stripe) throw new Error("STRIPE_SECRET_KEY is not set");
 
-    // Check if free trial mode is enabled — only auto-subscribe in that mode
-    const { data: settings } = await supabaseClient
-      .from("platform_settings")
-      .select("free_trial_enabled")
-      .limit(1)
-      .single();
-
-    if (!settings?.free_trial_enabled) {
-      console.log("[auto-subscribe] Free trial mode is disabled — skipping auto-subscribe");
-      return jsonRes({ status: "skipped", message: "Free trial mode is disabled" });
-    }
-
     const body = await req.json();
     const userId = body.user_id;
     if (!userId) throw new Error("user_id is required");
+
+    // Check if this user has free trial enabled — only auto-subscribe if so
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("free_trial_enabled, free_trial_limit")
+      .eq("user_id", userId)
+      .single();
+
+    if (!profile?.free_trial_enabled) {
+      console.log("[auto-subscribe] Free trial not enabled for this user — skipping auto-subscribe");
+      return jsonRes({ status: "skipped", message: "Free trial not enabled for this user" });
+    }
+
+    // Check if user has reached their free trial meeting limit
+    const { count: meetingCount } = await supabaseClient
+      .from("meetings")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    const limit = profile.free_trial_limit ?? 1;
+    if ((meetingCount ?? 0) < limit) {
+      console.log(`[auto-subscribe] User has ${meetingCount}/${limit} meetings — not yet at limit, skipping`);
+      return jsonRes({ status: "under_limit", message: `${meetingCount}/${limit} meetings` });
+    }
+
+    console.log(`[auto-subscribe] User reached ${meetingCount}/${limit} meeting limit — proceeding with auto-subscribe`);
 
     // Get user email
     const { data: userData, error: userErr } = await supabaseClient.auth.admin.getUserById(userId);
