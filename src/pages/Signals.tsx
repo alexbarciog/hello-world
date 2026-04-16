@@ -373,8 +373,46 @@ export default function Signals() {
       .select("*")
       .order("created_at", { ascending: false });
     if (!error && data) {
-      setAgents(data as SignalAgent[]);
-      const active = data.find((a: any) => a.status === "active");
+      // Enrich each agent with live contact count from its associated list
+      const agentIds = data.map((a: any) => a.id);
+      const { data: lists } = await supabase
+        .from("lists")
+        .select("source_agent_id, id")
+        .in("source_agent_id", agentIds);
+
+      let countsMap: Record<string, number> = {};
+      if (lists && lists.length > 0) {
+        const listIds = lists.map((l: any) => l.id);
+        const { count } = await supabase
+          .from("contact_lists")
+          .select("list_id", { count: "exact", head: false })
+          .in("list_id", listIds);
+
+        // Get per-list counts
+        const { data: clData } = await supabase
+          .from("contact_lists")
+          .select("list_id")
+          .in("list_id", listIds);
+
+        if (clData) {
+          const listToAgent: Record<string, string> = {};
+          for (const l of lists) {
+            if (l.source_agent_id) listToAgent[l.id] = l.source_agent_id;
+          }
+          for (const cl of clData) {
+            const agentId = listToAgent[cl.list_id];
+            if (agentId) countsMap[agentId] = (countsMap[agentId] || 0) + 1;
+          }
+        }
+      }
+
+      const enriched = data.map((a: any) => ({
+        ...a,
+        results_count: countsMap[a.id] ?? a.results_count,
+      }));
+
+      setAgents(enriched as SignalAgent[]);
+      const active = enriched.find((a: any) => a.status === "active");
       if (active) setActiveAgent(active as SignalAgent);
     }
     setLoading(false);
