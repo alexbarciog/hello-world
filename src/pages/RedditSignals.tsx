@@ -215,7 +215,7 @@ export default function RedditSignals() {
       toast.info("Checking subscription status, please try again in a moment.");
       return;
     }
-    if (!sub.subscribed) {
+    if (!sub.hasAccess) {
       toast.error("Upgrade to a paid plan to scan Reddit", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
