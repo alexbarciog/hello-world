@@ -315,15 +315,20 @@ async function processSingleAgent(agentId: string, runId: string) {
   const keywordBatches = tasks.filter(t => t._isKeywordBatch);
   const otherTasks = tasks.filter(t => !t._isKeywordBatch);
 
-  // Fire keyword batches as fire-and-forget
-  for (const task of keywordBatches) {
+  // Fire keyword batches as fire-and-forget, STAGGERED to avoid Unipile rate-limit (429)
+  for (let i = 0; i < keywordBatches.length; i++) {
+    const task = keywordBatches[i];
     const payload = { ...task.payload, run_id: runId, task_key: task.task_key };
-    fetch(`${SUPABASE_URL}/functions/v1/${task.fn}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-      body: JSON.stringify(payload),
-    }).catch(err => console.error(`Fire-and-forget ${task.task_key} failed:`, err));
-    console.log(`🔥 Fired ${task.task_key} (fire-and-forget)`);
+    // Stagger each batch by 8 seconds so 4 batches don't slam Unipile simultaneously
+    const staggerMs = i * 8000;
+    setTimeout(() => {
+      fetch(`${SUPABASE_URL}/functions/v1/${task.fn}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify(payload),
+      }).catch(err => console.error(`Fire-and-forget ${task.task_key} failed:`, err));
+      console.log(`🔥 Fired ${task.task_key} (fire-and-forget, +${staggerMs}ms)`);
+    }, staggerMs);
   }
 
   // Run other tasks in parallel (awaited)
