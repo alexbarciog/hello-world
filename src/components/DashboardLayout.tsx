@@ -89,12 +89,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
-    if (!sub.loading && !sub.subscribed) {
+    if (!sub.loading && !sub.hasAccess) {
       setShowAgentTooltip(true);
       const timer = setTimeout(() => setShowAgentTooltip(false), 8000);
       return () => clearTimeout(timer);
     }
-  }, [sub.loading, sub.subscribed]);
+  }, [sub.loading, sub.hasAccess]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
