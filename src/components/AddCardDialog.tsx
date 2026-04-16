@@ -68,7 +68,7 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTria
             <DialogDescription className="text-sm leading-relaxed text-[#858585]">
               {freeTrialMode ? (
                 <>
-                  Intentsly is <strong className="text-black font-medium">free until your first meeting is booked</strong>. 
+                  Intentsly is <strong className="text-black font-medium">free for your first {freeTrialLimit} {freeTrialLimit === 1 ? 'meeting' : 'meetings'}</strong>. 
                   We just need a card on file to get started — you won't be charged today.
                 </>
               ) : (
