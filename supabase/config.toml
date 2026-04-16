@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.pre-meeting-followup]
 verify_jwt = false
+
+[functions.reap-stuck-runs]
+verify_jwt = false
