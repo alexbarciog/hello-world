@@ -297,52 +297,56 @@ async function processSingleAgent(agentId: string, runId: string) {
   // Update run with task count
   await supabase.from('signal_agent_runs').update({ total_tasks: tasks.length }).eq('id', runId);
 
-  // Create task records
-  await supabase.from('signal_agent_tasks').insert(
-    tasks.map(t => ({ run_id: runId, agent_id: agentId, signal_type: t.signal_type, task_key: t.task_key }))
-  );
+  // Separate keyword batches from other tasks early
+  const keywordBatches = tasks.filter(t => t._isKeywordBatch);
+  const otherTasks = tasks.filter(t => !t._isKeywordBatch);
 
-  console.log(`Agent ${agentId}: ${tasks.length} tasks [${tasks.map(t => t.task_key).join(', ')}]`);
+  // ── Insert task records into the durable queue ──
+  // Keyword batches: store as `pending` with full payload + staggered available_at.
+  //   The drain-signal-agent-tasks worker (cron, every minute) claims them one
+  //   at a time per run, with a cooldown between batches.
+  // Other tasks: still inserted as `pending` (we mark them `running` right
+  //   below when we kick them off in-process).
+  const nowMs = Date.now();
+  const KEYWORD_BATCH_STAGGER_MS = 75_000; // matches drain worker cooldown
 
-  // Mark all tasks as running
-  await Promise.all(tasks.map(task =>
+  const taskRows = tasks.map((t, idx) => {
+    const isKw = !!t._isKeywordBatch;
+    const kwIdx = keywordBatches.findIndex(k => k.task_key === t.task_key);
+    const availableAt = isKw
+      ? new Date(nowMs + Math.max(0, kwIdx) * KEYWORD_BATCH_STAGGER_MS).toISOString()
+      : new Date(nowMs).toISOString();
+    return {
+      run_id: runId,
+      agent_id: agentId,
+      signal_type: t.signal_type,
+      task_key: t.task_key,
+      status: 'pending',
+      payload: isKw ? { ...t.payload } : null,
+      available_at: availableAt,
+    } as any;
+  });
+  await supabase.from('signal_agent_tasks').insert(taskRows);
+
+  console.log(`Agent ${agentId}: ${tasks.length} tasks queued [${tasks.map(t => t.task_key).join(', ')}] — ${keywordBatches.length} keyword batches will be drained by worker`);
+
+  // ── Kick off the drain worker IMMEDIATELY for the first keyword batch ──
+  // Don't wait for the next cron tick — start now.
+  if (keywordBatches.length > 0) {
+    fetch(`${SUPABASE_URL}/functions/v1/drain-signal-agent-tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+      body: JSON.stringify({}),
+    }).catch(err => console.error('Initial drain kick failed:', err));
+  }
+
+  // ── Mark non-keyword tasks as running and execute them in parallel (awaited) ──
+  await Promise.all(otherTasks.map(task =>
     supabase.from('signal_agent_tasks')
       .update({ status: 'running', started_at: new Date().toISOString() })
       .eq('run_id', runId).eq('task_key', task.task_key)
   ));
 
-  // Separate keyword batches (fire-and-forget) from other tasks (awaited)
-  const keywordBatches = tasks.filter(t => t._isKeywordBatch);
-  const otherTasks = tasks.filter(t => !t._isKeywordBatch);
-
-  // Process keyword batches SEQUENTIALLY (one after the other) to avoid Unipile 429.
-  // Each batch is fire-and-forget but kicked off only after the previous one starts +
-  // a fixed gap, so Unipile never sees concurrent search bursts from this agent.
-  // Run the sequential queue in the background so we don't block the awaited "other tasks" below.
-  (async () => {
-    const SEQUENTIAL_GAP_MS = 60_000; // ~1 min gap between batch kickoffs
-    for (let i = 0; i < keywordBatches.length; i++) {
-      const task = keywordBatches[i];
-      const payload = { ...task.payload, run_id: runId, task_key: task.task_key };
-      try {
-        // Fire (do not await response — the function self-finalizes via run_id)
-        fetch(`${SUPABASE_URL}/functions/v1/${task.fn}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-          body: JSON.stringify(payload),
-        }).catch(err => console.error(`Sequential kickoff ${task.task_key} failed:`, err));
-        console.log(`🔁 Kicked off ${task.task_key} (sequential ${i + 1}/${keywordBatches.length})`);
-      } catch (err) {
-        console.error(`Sequential kickoff error for ${task.task_key}:`, err);
-      }
-      // Wait before launching next batch (skip wait after the last one)
-      if (i < keywordBatches.length - 1) {
-        await new Promise(r => setTimeout(r, SEQUENTIAL_GAP_MS));
-      }
-    }
-  })().catch(err => console.error('Sequential keyword queue error:', err));
-
-  // Run other tasks in parallel (awaited)
   let agentLeads = 0;
   let completedTasks = 0;
 
@@ -376,31 +380,13 @@ async function processSingleAgent(agentId: string, runId: string) {
     .update({ completed_tasks: completedTasks, total_leads: agentLeads })
     .eq('id', runId);
 
-  // If there are no keyword batches, finalize the run now
+  // If there are no keyword batches, finalize the run now.
+  // Otherwise, the keyword fetcher self-finalizes when the LAST pending/running
+  // task completes, and the reaper handles long-tail cleanup based on lease expiry.
   if (keywordBatches.length === 0) {
     await finalizeRun(supabase, runId, agentId, agent, agentLeads, completedTasks, tasks.length, listName);
   } else {
-    console.log(`Agent ${agentId}: ${keywordBatches.length} keyword batches running independently — they will self-finalize`);
-    // Set a timeout guard: if keyword batches don't finalize within 5 minutes,
-    // clean up stuck tasks and finalize the run
-    setTimeout(async () => {
-      try {
-        const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const { data: run } = await sb.from('signal_agent_runs').select('status').eq('id', runId).single();
-        if (run?.status === 'running') {
-          console.warn(`[TIMEOUT] Run ${runId} still running after 5min — force-finalizing`);
-          // Mark stuck tasks as timed out
-          await sb.from('signal_agent_tasks')
-            .update({ status: 'failed', error: 'Timed out', completed_at: new Date().toISOString() })
-            .eq('run_id', runId).eq('status', 'running');
-          // Count actual results
-          const { data: allTasks } = await sb.from('signal_agent_tasks').select('leads_found, status').eq('run_id', runId);
-          const totalLeads = (allTasks || []).reduce((sum: number, t: any) => sum + (t.leads_found || 0), 0);
-          const doneCount = (allTasks || []).filter((t: any) => t.status === 'done').length;
-          await finalizeRun(sb, runId, agentId, agent, totalLeads, doneCount, allTasks?.length || 0, listName);
-        }
-      } catch (e) { console.error(`[TIMEOUT] cleanup error for run ${runId}:`, e); }
-    }, 5 * 60 * 1000);
+    console.log(`Agent ${agentId}: ${keywordBatches.length} keyword batches queued — drain worker will pace them; reaper handles lease expiry`);
   }
 
   // Always set next_launch_at regardless of keyword batches
