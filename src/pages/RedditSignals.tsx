@@ -184,7 +184,7 @@ export default function RedditSignals() {
 
   // ── Start AI Agent (initial scan + enable auto-polling) ──
   const handleStartAgent = async () => {
-    if (!sub.subscribed) {
+    if (!sub.hasAccess) {
       toast.error("Upgrade to a paid plan to run the Reddit agent", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
@@ -215,7 +215,7 @@ export default function RedditSignals() {
       toast.info("Checking subscription status, please try again in a moment.");
       return;
     }
-    if (!sub.subscribed) {
+    if (!sub.hasAccess) {
       toast.error("Upgrade to a paid plan to scan Reddit", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
@@ -267,7 +267,7 @@ export default function RedditSignals() {
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
       {/* Free plan banner */}
-      {!sub.loading && !sub.subscribed && (
+      {!sub.loading && !sub.hasAccess && (
         <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <p className="text-sm text-amber-900 font-medium">

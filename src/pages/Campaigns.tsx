@@ -276,7 +276,7 @@ export default function CampaignsPage() {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === "active" ? "paused" : "active";
     if (newStatus === "active") {
-      if (sub.hadSubscription && !sub.subscribed) {
+      if (sub.hadSubscription && !sub.subscribed && !(sub.freeTrialEnabled && sub.hasCard)) {
         toast.error("Your subscription has been canceled. Please upgrade your plan to reactivate campaigns.", {
           action: { label: "Upgrade", onClick: () => navigate("/billing") },
         });

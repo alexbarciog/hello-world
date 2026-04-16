@@ -86,7 +86,7 @@ export default function Contacts() {
 
     // Check if data should be locked: user has ≥1 meeting and no active subscription
     let locked = false;
-    if (!sub.loading && !sub.subscribed) {
+    if (!sub.loading && !sub.hasAccess) {
       const { count: meetingsCount } = await supabase
         .from("meetings")
         .select("id", { count: "exact", head: true })

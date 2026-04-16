@@ -186,7 +186,7 @@ export default function XSignals() {
   // ── Start AI Agent ──
   const handleStartAgent = async () => {
     if (sub.loading) { toast.info("Checking subscription status, please try again in a moment."); return; }
-    if (!sub.subscribed) {
+    if (!sub.hasAccess) {
       toast.error("Upgrade to a paid plan to run the X agent", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
@@ -214,7 +214,7 @@ export default function XSignals() {
   // ── Manual re-scan ──
   const handleRescan = async () => {
     if (sub.loading) { toast.info("Checking subscription status, please try again in a moment."); return; }
-    if (!sub.subscribed) {
+    if (!sub.hasAccess) {
       toast.error("Upgrade to a paid plan to scan X", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
@@ -261,7 +261,7 @@ export default function XSignals() {
   return (
     <div className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
       {/* Free plan banner */}
-      {!sub.loading && !sub.subscribed && (
+      {!sub.loading && !sub.hasAccess && (
         <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <p className="text-sm text-amber-900 font-medium">

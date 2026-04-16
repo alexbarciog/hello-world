@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -318,6 +318,7 @@ function AgentCard({
 
 export default function Signals() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const sub = useSubscription();
   const { data: isAdmin } = useAdminCheck();
   const [agents, setAgents] = useState<SignalAgent[]>([]);
@@ -354,6 +355,16 @@ export default function Signals() {
     }, 8000);
     return () => window.clearInterval(interval);
   }, [runningAgentIds.length]);
+
+  // Auto-refresh subscription state when returning from Stripe card setup
+  useEffect(() => {
+    if (searchParams.get("card_added") === "true") {
+      sub.refresh();
+      searchParams.delete("card_added");
+      setSearchParams(searchParams, { replace: true });
+      toast.success("Card added successfully! You can now activate your agents.");
+    }
+  }, [searchParams]);
 
   async function fetchAgents() {
     setLoading(true);
@@ -425,8 +436,8 @@ export default function Signals() {
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
     if (newStatus === "active") {
-      // Had a subscription that's now canceled → must resubscribe
-      if (sub.hadSubscription && !sub.subscribed) {
+      // Had a subscription that's now canceled → must resubscribe (unless on active trial)
+      if (sub.hadSubscription && !sub.subscribed && !(sub.freeTrialEnabled && sub.hasCard)) {
         toast.error("Your subscription has been canceled. Please upgrade your plan to reactivate agents.", {
           action: { label: "Upgrade", onClick: () => navigate("/billing") },
         });
@@ -587,7 +598,7 @@ export default function Signals() {
   return (
     <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 p-4 md:p-8">
       {/* Free plan banner */}
-      {!sub.loading && !sub.subscribed && (
+      {!sub.loading && !sub.hasAccess && (
         <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <p className="text-sm text-amber-900 font-medium">
