@@ -11,6 +11,8 @@ export interface SubscriptionState {
   freeTrialEnabled: boolean;
   freeTrialLimit: number;
   loading: boolean;
+  /** True when user has an active trial (freeTrialEnabled + card on file) OR a paid subscription */
+  hasAccess: boolean;
 }
 
 export function useSubscription() {
