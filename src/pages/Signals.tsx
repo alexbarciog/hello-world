@@ -436,8 +436,8 @@ export default function Signals() {
   async function toggleAgentStatus(agent: SignalAgent) {
     const newStatus = agent.status === "active" ? "paused" : "active";
     if (newStatus === "active") {
-      // Had a subscription that's now canceled → must resubscribe
-      if (sub.hadSubscription && !sub.subscribed) {
+      // Had a subscription that's now canceled → must resubscribe (unless on active trial)
+      if (sub.hadSubscription && !sub.subscribed && !(sub.freeTrialEnabled && sub.hasCard)) {
         toast.error("Your subscription has been canceled. Please upgrade your plan to reactivate agents.", {
           action: { label: "Upgrade", onClick: () => navigate("/billing") },
         });
