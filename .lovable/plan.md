@@ -1,81 +1,91 @@
 
+Goal
 
-## Plan: Rework Subscription Model — Payment Required by Default, Free Trial as Admin Toggle
+Make large signal-agent runs like “StaffiX Lead Agent” complete reliably when they have 30+ keywords, without getting cut off by the current timeout/reaper design.
 
-### Current State
-- Users get a **free trial** (no charge) until their first meeting is booked via the "Pay on Success" model
-- The `setup-card` edge function collects a card in Stripe Setup mode (no charge)
-- The `auto-subscribe-on-meeting` edge function charges the Starter plan ($59/mo) when a meeting is booked
-- The `AddCardDialog` UI says "$0 today" and "free until your first meeting is booked"
-- Agents/campaigns require a card on file but not an active subscription
+What I found
 
-### What Changes
+- `process-signal-agents` currently splits keyword searches into batches of 4 and launches them 60s apart.
+- With 30+ keywords, that becomes ~8 batches, so the last batch may not even start until ~7 minutes after the run begins.
+- But the backend still force-finalizes runs after 5 minutes, and `reap-stuck-runs` also reaps `running/queued` runs older than 5 minutes based on `started_at`.
+- `signal-keyword-posts` also stops itself after 145s and only uses light 429 backoff plus ~2–3s spacing.
+- So this is not just “too short a timeout” — the current lifecycle is fundamentally too short for large keyword agents.
 
-**Default behavior (new):** Users must pay for a subscription upfront before activating agents or campaigns. No free trial. No card-only flow.
+Implementation plan
 
-**Optional (admin toggle):** Admins can enable the old "free trial / pay on success" model from the Admin Dashboard. When enabled, the current card-only flow applies.
+1. Replace the fixed 5-minute run lifecycle
+- Remove the orchestrator’s hard 5-minute force-finalize path for runs that still have keyword work pending.
+- Update the reaper so it no longer treats every run older than 5 minutes as stuck.
+- Finalize runs based on task completion, not elapsed wall-clock time from run creation.
 
-### Implementation Steps
+2. Reuse `signal_agent_tasks` as the durable queue
+- Extend `signal_agent_tasks` with queue/lease metadata:
+  - `payload jsonb`
+  - `available_at timestamptz`
+  - `lease_expires_at timestamptz`
+  - `attempt_count integer`
+  - `last_heartbeat_at timestamptz`
+- Store the exact keyword batch payload on each task row when the run is created.
+- Keep keyword tasks as `pending` until actually claimed, instead of marking them all `running` immediately.
 
-#### 1. Create `platform_settings` table
-A single-row key-value settings table for platform-wide config:
-- `id` (uuid, PK)
-- `free_trial_enabled` (boolean, default `false`)
-- `updated_at` (timestamptz)
-- RLS: admins can read/update, authenticated users can read
+3. Add a dedicated keyword-task worker
+- Create a new edge function that claims the next due keyword task, processes it, then marks it `done/failed`.
+- Only let one keyword batch per run/account execute at a time.
+- After each completed batch, schedule the next batch by setting its `available_at` into the future instead of launching everything upfront.
+- This avoids long-lived orchestrator waits and makes pacing durable even if a run takes 10–20+ minutes.
 
-#### 2. Add Settings tab to Admin Dashboard
-Add a "Settings" tab in the Admin Dashboard with a toggle switch for "Free Trial Mode" that updates `platform_settings.free_trial_enabled`. Simple on/off with descriptive text.
+4. Make the pacing adaptive and more conservative
+- Reduce keyword batch size again for large agents:
+  - likely 2 keywords per batch for large runs
+  - possibly 3 for smaller runs
+- Increase pauses:
+  - between keywords: ~4–6s + jitter
+  - between paginated search pages: ~1–2s
+  - between batches: ~60–120s cooldown
+- Upgrade 429 handling to a longer backoff ladder, e.g. `5s -> 10s -> 20s -> 30s cap`
+- Add a cool-off window after repeated 429s before the next batch becomes available.
 
-#### 3. Update `check-subscription` edge function
-Return the `free_trial_enabled` flag from `platform_settings` so the frontend knows which flow to use.
+5. Make stuck-run cleanup lease-based
+- `reap-stuck-runs` should look for expired leases / missing heartbeats, not just old `started_at`.
+- Use a much longer run-level safety window (for example 20–30 minutes) for large keyword agents.
+- Only fail tasks that truly stopped heartbeating or exceeded retry policy.
 
-#### 4. Update `useSubscription` hook
-Add `freeTrialEnabled: boolean` to the subscription state from the check-subscription response.
+Files to change
 
-#### 5. Update activation flow in `Signals.tsx` and `Campaigns.tsx`
-- **If free trial disabled (default):** When user tries to activate an agent/campaign without an active subscription → redirect to `/billing` (pricing page) instead of showing the AddCardDialog
-- **If free trial enabled:** Keep existing behavior (show AddCardDialog, collect card, activate without subscription)
+- `supabase/functions/process-signal-agents/index.ts`
+- `supabase/functions/signal-keyword-posts/index.ts`
+- `supabase/functions/reap-stuck-runs/index.ts`
+- new worker function, e.g. `supabase/functions/drain-signal-agent-tasks/index.ts`
+- new migration for `signal_agent_tasks` queue fields + indexes
 
-#### 6. Update `AddCardDialog` component
-Make the dialog content conditional based on the mode:
-- **Direct payment mode:** Update copy to say "Subscribe to activate" with a CTA that goes to checkout (not setup-card). Remove "$0 today" badge.
-- **Free trial mode:** Keep current copy ("free until first meeting", "$0 today")
+Technical details
 
-#### 7. Update `auto-subscribe-on-meeting` edge function
-Add a check: only auto-subscribe if `free_trial_enabled` is true. If false, the user should already have a subscription, so skip.
+```text
+Current
+run starts
+  -> all keyword tasks marked running
+  -> batches launched every 60s
+  -> run/reaper kill it after 5m
 
-### Technical Details
-
-**New table migration:**
-```sql
-CREATE TABLE public.platform_settings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  free_trial_enabled boolean NOT NULL DEFAULT false,
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
-
--- Seed single row
-INSERT INTO public.platform_settings (free_trial_enabled) VALUES (false);
-
--- Everyone can read
-CREATE POLICY "Authenticated can read settings"
-  ON public.platform_settings FOR SELECT TO authenticated
-  USING (true);
-
--- Only admins can update
-CREATE POLICY "Admins can update settings"
-  ON public.platform_settings FOR UPDATE TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
+Proposed
+run starts
+  -> keyword tasks created as pending + payload
+  -> worker claims one due task
+  -> batch runs with stronger pacing/backoff
+  -> next batch becomes available after cooldown
+  -> run finishes only when all tasks are done/failed
 ```
 
-**Files modified:**
-- `supabase/functions/check-subscription/index.ts` — add `free_trial_enabled` to response
-- `supabase/functions/auto-subscribe-on-meeting/index.ts` — check setting before auto-subscribing
-- `src/hooks/useSubscription.ts` — add `freeTrialEnabled` field
-- `src/pages/Signals.tsx` — update activation logic
-- `src/pages/Campaigns.tsx` — update activation logic
-- `src/components/AddCardDialog.tsx` — conditional content based on mode
-- `src/pages/AdminDashboard.tsx` — add Settings tab with toggle
+Why this is the right fix
 
+- Simply “increasing the timeout” will still be brittle.
+- StaffiX has enough keywords that the current 5-minute model is too short by design.
+- A queue + lease + adaptive pacing approach fits the existing `signal_agent_runs` / `signal_agent_tasks` architecture and solves both timeout risk and Unipile rate limiting.
+
+Validation
+
+- Run “StaffiX Lead Agent” end to end with its full keyword set.
+- Confirm the run can stay active beyond 5 minutes without being reaped.
+- Confirm batches progress one by one in run history.
+- Confirm `unipile_errors` drop and more keywords are actually processed.
+- Confirm the final toast/count only appears after the last batch finishes.
