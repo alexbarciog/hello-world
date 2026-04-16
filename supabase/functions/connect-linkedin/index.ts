@@ -172,12 +172,26 @@ async function handleUnipileNotify(
 
   console.log('[unipile_notify]', JSON.stringify({ status, accountId, userId }));
 
-  if (!status || !accountId || !userId) {
+  if (!status || !accountId) {
     return jsonResponse({ status: 'ignored', reason: 'missing_fields' });
   }
 
-  if (!['CREATION_SUCCESS', 'RECONNECTED', 'OK', 'SYNC_SUCCESS'].includes(status.toUpperCase())) {
+  const upperStatus = status.toUpperCase();
+  const POSITIVE_STATUSES = ['CREATION_SUCCESS', 'RECONNECTED', 'OK', 'SYNC_SUCCESS'];
+  const NEGATIVE_STATUSES = ['DISCONNECTED', 'DELETED', 'REMOVED', 'ERROR', 'CREATION_FAIL', 'CONNECTION_ERROR', 'ACCOUNT_DISCONNECTED'];
+
+  if (NEGATIVE_STATUSES.includes(upperStatus)) {
+    console.log('[unipile_notify] disconnection event:', upperStatus, 'accountId:', accountId);
+    await handleAccountDisconnection(accountId, upperStatus, supabaseUrl, serviceRoleKey);
+    return jsonResponse({ status: 'disconnection_handled', account_id: accountId });
+  }
+
+  if (!POSITIVE_STATUSES.includes(upperStatus)) {
     return jsonResponse({ status: 'ignored', reason: 'unsupported_status' });
+  }
+
+  if (!userId) {
+    return jsonResponse({ status: 'ignored', reason: 'missing_user_id' });
   }
 
   // Try to fetch the LinkedIn display name from the Unipile account
@@ -205,6 +219,151 @@ async function handleUnipileNotify(
   await activatePendingAndDiscover(userId, supabaseUrl, serviceRoleKey);
 
   return jsonResponse({ status: 'saved', account_id: accountId });
+}
+
+async function handleAccountDisconnection(
+  accountId: string,
+  status: string,
+  supabaseUrl: string,
+  serviceRoleKey: string
+) {
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+
+  // Find the user by unipile_account_id
+  const { data: profile, error: profileErr } = await serviceClient
+    .from('profiles')
+    .select('user_id, linkedin_display_name')
+    .eq('unipile_account_id', accountId)
+    .single();
+
+  if (profileErr || !profile) {
+    console.warn('[disconnect] no profile found for account:', accountId);
+    return;
+  }
+
+  const userId = profile.user_id;
+  console.log('[disconnect] clearing account for user:', userId, 'status:', status);
+
+  // Clear the unipile_account_id
+  await serviceClient
+    .from('profiles')
+    .update({ unipile_account_id: null, linkedin_display_name: null })
+    .eq('user_id', userId);
+
+  // Pause active campaigns
+  const { data: pausedCampaigns } = await serviceClient
+    .from('campaigns')
+    .update({ status: 'paused' })
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .select('id');
+
+  console.log(`[disconnect] paused ${pausedCampaigns?.length || 0} campaigns`);
+
+  // Pause active signal agents
+  await serviceClient
+    .from('signal_agents')
+    .update({ status: 'paused' })
+    .eq('user_id', userId)
+    .eq('status', 'active');
+
+  // Insert in-app notification
+  await serviceClient.from('notifications').insert({
+    user_id: userId,
+    type: 'warning',
+    title: '⚠️ LinkedIn Disconnected',
+    body: 'Your LinkedIn account has been disconnected. Your campaigns and agents have been paused. Please reconnect to resume.',
+    link: '/onboarding',
+  });
+
+  // Send email notification via Resend
+  try {
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      console.warn('[disconnect] RESEND_API_KEY not set, skipping email');
+      return;
+    }
+
+    const { data: userData } = await serviceClient.auth.admin.getUserById(userId);
+    const userEmail = userData?.user?.email;
+    if (!userEmail) {
+      console.warn('[disconnect] no email found for user:', userId);
+      return;
+    }
+
+    const userName = userData.user.user_metadata?.first_name || 'there';
+    const appUrl = 'https://intentsly.com';
+
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI',Roboto,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#ef4444,#dc2626);padding:32px 40px;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">⚠️ Intentsly</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 16px;color:#374151;font-size:16px;">Hey ${userName} 👋</p>
+              <p style="margin:0 0 8px;color:#111827;font-size:18px;font-weight:600;">Your LinkedIn account has been disconnected</p>
+              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
+                We detected that your LinkedIn account was disconnected from our platform. 
+                As a result, all your active campaigns and signal agents have been <strong>paused</strong> to protect your account.
+              </p>
+              <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
+                To resume your outreach, please reconnect your LinkedIn account. It only takes a few seconds.
+              </p>
+              <a href="${appUrl}/onboarding" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">
+                Reconnect LinkedIn →
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#9ca3af;font-size:13px;">
+                This alert was sent by Intentsly because your LinkedIn connection status changed.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Intentsly <no-reply@intentsly.com>',
+        to: [userEmail],
+        subject: '⚠️ Your LinkedIn account was disconnected — Intentsly',
+        html: emailHtml,
+      }),
+    });
+
+    const resData = await res.json();
+    if (res.ok) {
+      console.log(`[disconnect] email sent to ${userEmail}: ${resData.id}`);
+    } else {
+      console.error('[disconnect] Resend error:', resData);
+    }
+  } catch (err) {
+    console.error('[disconnect] email send error:', err);
+  }
 }
 
 function buildRedirectUrl(returnUrl: string | undefined, linkedinStatus: 'success' | 'failed') {
