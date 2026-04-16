@@ -318,6 +318,7 @@ function AgentCard({
 
 export default function Signals() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const sub = useSubscription();
   const { data: isAdmin } = useAdminCheck();
   const [agents, setAgents] = useState<SignalAgent[]>([]);
