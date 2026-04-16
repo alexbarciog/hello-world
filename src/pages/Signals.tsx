@@ -587,7 +587,7 @@ export default function Signals() {
   return (
     <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 p-4 md:p-8">
       {/* Free plan banner */}
-      {!sub.loading && !sub.subscribed && (
+      {!sub.loading && !sub.hasAccess && (
         <div className="flex items-center gap-3 px-4 py-3 mb-5 rounded-xl border border-amber-200 bg-amber-50/60">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <p className="text-sm text-amber-900 font-medium">
