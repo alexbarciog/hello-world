@@ -184,7 +184,7 @@ export default function RedditSignals() {
 
   // ── Start AI Agent (initial scan + enable auto-polling) ──
   const handleStartAgent = async () => {
-    if (!sub.subscribed) {
+    if (!sub.hasAccess) {
       toast.error("Upgrade to a paid plan to run the Reddit agent", {
         action: { label: "Upgrade", onClick: () => navigate("/billing") },
       });
