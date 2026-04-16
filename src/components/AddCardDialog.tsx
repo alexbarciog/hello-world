@@ -22,7 +22,7 @@ const trialBenefits = [
   {
     icon: CalendarCheck,
     title: "You only pay when it works",
-    desc: "Once your first meeting is booked, you'll be auto-enrolled on the Starter plan ($59/mo).",
+    desc: "After your free meetings are used, you'll be auto-enrolled on the Starter plan ($59/mo).",
   },
   {
     icon: Shield,
