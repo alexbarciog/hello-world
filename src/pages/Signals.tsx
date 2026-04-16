@@ -356,6 +356,16 @@ export default function Signals() {
     return () => window.clearInterval(interval);
   }, [runningAgentIds.length]);
 
+  // Auto-refresh subscription state when returning from Stripe card setup
+  useEffect(() => {
+    if (searchParams.get("card_added") === "true") {
+      sub.refresh();
+      searchParams.delete("card_added");
+      setSearchParams(searchParams, { replace: true });
+      toast.success("Card added successfully! You can now activate your agents.");
+    }
+  }, [searchParams]);
+
   async function fetchAgents() {
     setLoading(true);
     const { data, error } = await supabase
