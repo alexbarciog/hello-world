@@ -26,6 +26,7 @@ export function useSubscription() {
     freeTrialEnabled: false,
     freeTrialLimit: 1,
     loading: true,
+    hasAccess: false,
   });
 
   const refresh = useCallback(async () => {
