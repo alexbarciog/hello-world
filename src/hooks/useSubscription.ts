@@ -41,16 +41,21 @@ export function useSubscription() {
         setState(s => ({ ...s, loading: false }));
         return;
       }
+      const subscribed = data?.subscribed ?? false;
+      const hasCard = data?.has_card ?? false;
+      const freeTrialEnabled = data?.free_trial_enabled ?? false;
+      const hasAccess = subscribed || (freeTrialEnabled && hasCard);
       setState({
-        subscribed: data?.subscribed ?? false,
+        subscribed,
         hadSubscription: data?.had_subscription ?? false,
         subscriptionEnd: data?.subscription_end ?? null,
         productId: data?.product_id ?? null,
         credits: data?.credits ?? 0,
-        hasCard: data?.has_card ?? false,
-        freeTrialEnabled: data?.free_trial_enabled ?? false,
+        hasCard,
+        freeTrialEnabled,
         freeTrialLimit: data?.free_trial_limit ?? 1,
         loading: false,
+        hasAccess,
       });
     } catch {
       setState(s => ({ ...s, loading: false }));
