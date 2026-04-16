@@ -579,8 +579,8 @@ export default function Signals() {
         return;
       }
 
-      // Fire-and-forget: function returns immediately with a job_id
-      const jobId = data?.job_id;
+      // Fire-and-forget: orchestrator returns job_ids (array) immediately
+      const jobId = data?.job_id ?? data?.job_ids?.[0];
       if (jobId) {
         toast.info(`"${agent.name}" is processing in the background...`);
         const pollInterval = setInterval(async () => {
