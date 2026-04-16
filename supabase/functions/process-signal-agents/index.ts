@@ -234,8 +234,8 @@ async function processSingleAgent(agentId: string, runId: string) {
     });
   }
 
-  // Keyword posts: split into batches of 8
-  const KEYWORD_BATCH_SIZE = 8;
+  // Keyword posts: split into batches of 4 (smaller batches finish faster, easier on Unipile)
+  const KEYWORD_BATCH_SIZE = 4;
   if (enabled.includes('keyword_posts')) {
     const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
     if (kws.length > 0) {
@@ -315,21 +315,32 @@ async function processSingleAgent(agentId: string, runId: string) {
   const keywordBatches = tasks.filter(t => t._isKeywordBatch);
   const otherTasks = tasks.filter(t => !t._isKeywordBatch);
 
-  // Fire keyword batches as fire-and-forget, STAGGERED to avoid Unipile rate-limit (429)
-  for (let i = 0; i < keywordBatches.length; i++) {
-    const task = keywordBatches[i];
-    const payload = { ...task.payload, run_id: runId, task_key: task.task_key };
-    // Stagger each batch by 8 seconds so 4 batches don't slam Unipile simultaneously
-    const staggerMs = i * 8000;
-    setTimeout(() => {
-      fetch(`${SUPABASE_URL}/functions/v1/${task.fn}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-        body: JSON.stringify(payload),
-      }).catch(err => console.error(`Fire-and-forget ${task.task_key} failed:`, err));
-      console.log(`🔥 Fired ${task.task_key} (fire-and-forget, +${staggerMs}ms)`);
-    }, staggerMs);
-  }
+  // Process keyword batches SEQUENTIALLY (one after the other) to avoid Unipile 429.
+  // Each batch is fire-and-forget but kicked off only after the previous one starts +
+  // a fixed gap, so Unipile never sees concurrent search bursts from this agent.
+  // Run the sequential queue in the background so we don't block the awaited "other tasks" below.
+  (async () => {
+    const SEQUENTIAL_GAP_MS = 60_000; // ~1 min gap between batch kickoffs
+    for (let i = 0; i < keywordBatches.length; i++) {
+      const task = keywordBatches[i];
+      const payload = { ...task.payload, run_id: runId, task_key: task.task_key };
+      try {
+        // Fire (do not await response — the function self-finalizes via run_id)
+        fetch(`${SUPABASE_URL}/functions/v1/${task.fn}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+          body: JSON.stringify(payload),
+        }).catch(err => console.error(`Sequential kickoff ${task.task_key} failed:`, err));
+        console.log(`🔁 Kicked off ${task.task_key} (sequential ${i + 1}/${keywordBatches.length})`);
+      } catch (err) {
+        console.error(`Sequential kickoff error for ${task.task_key}:`, err);
+      }
+      // Wait before launching next batch (skip wait after the last one)
+      if (i < keywordBatches.length - 1) {
+        await new Promise(r => setTimeout(r, SEQUENTIAL_GAP_MS));
+      }
+    }
+  })().catch(err => console.error('Sequential keyword queue error:', err));
 
   // Run other tasks in parallel (awaited)
   let agentLeads = 0;

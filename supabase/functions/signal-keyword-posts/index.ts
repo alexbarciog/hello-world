@@ -642,8 +642,8 @@ Deno.serve(async (req) => {
         pipelineStats.unipile_errors++;
       }
 
-      // Inter-keyword spacing to avoid rate-limiting Unipile
-      if (hasTime()) await delay(700 + Math.floor(Math.random() * 400));
+      // Inter-keyword spacing to avoid rate-limiting Unipile (~30 search req/min safe budget)
+      if (hasTime()) await delay(2000 + Math.floor(Math.random() * 1000));
 
       pipelineStats.total_posts_fetched += keywordPosts.length;
 
