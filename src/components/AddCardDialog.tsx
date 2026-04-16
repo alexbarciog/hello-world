@@ -10,6 +10,7 @@ interface AddCardDialogProps {
   onConfirm: () => void;
   loading?: boolean;
   freeTrialMode?: boolean;
+  freeTrialLimit?: number;
 }
 
 const trialBenefits = [
