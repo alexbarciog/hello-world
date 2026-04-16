@@ -49,7 +49,7 @@ const directBenefits = [
   },
 ];
 
-export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false }: AddCardDialogProps) {
+export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false, freeTrialLimit = 1 }: AddCardDialogProps) {
   const benefits = freeTrialMode ? trialBenefits : directBenefits;
 
   return (
