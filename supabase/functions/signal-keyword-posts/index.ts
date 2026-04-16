@@ -504,8 +504,23 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const START = Date.now();
-  const MAX_RUNTIME_MS = 145_000; // 145s — enough for 24+ keywords
+  // With the new queue model, each invocation processes a SMALL batch (≤ 4 keywords)
+  // so we can give it a generous runtime budget. Edge Function hard limit is ~400s.
+  const MAX_RUNTIME_MS = 330_000; // 5.5 min
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
+  // Heartbeat the task every ~20s so the reaper knows we're alive.
+  let lastHeartbeat = 0;
+  const heartbeat = async (sb: any, rid?: string, tkey?: string) => {
+    if (!rid || !tkey) return;
+    const now = Date.now();
+    if (now - lastHeartbeat < 20_000) return;
+    lastHeartbeat = now;
+    try {
+      await sb.from('signal_agent_tasks')
+        .update({ last_heartbeat_at: new Date().toISOString() })
+        .eq('run_id', rid).eq('task_key', tkey);
+    } catch { /* non-fatal */ }
+  };
 
   try {
     const reqBody = await req.json();
