@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
 
     const freeTrialEnabled = profile?.free_trial_enabled ?? false;
     const freeTrialLimit = profile?.free_trial_limit ?? 1;
+    console.log("[CHECK-SUB] user:", user.id, "free_trial_enabled:", freeTrialEnabled, "free_trial_limit:", freeTrialLimit);
 
     // Single Stripe call: list subscriptions by email with expand
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
