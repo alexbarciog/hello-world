@@ -319,11 +319,11 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
   const updateTrial = async (userId: string, field: string, value: any) => {
     setUpdatingUser(userId);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ [field]: value } as any)
-        .eq("user_id", userId);
+      const { data, error } = await supabase.functions.invoke("admin-update-profile", {
+        body: { user_id: userId, updates: { [field]: value } },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       queryClient.invalidateQueries({ queryKey: ["admin-auth-users"] });
       toast.success("Updated");
     } catch (err: any) {
