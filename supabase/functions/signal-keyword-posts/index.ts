@@ -608,10 +608,23 @@ Deno.serve(async (req) => {
         for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
           const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
           if (cursor) searchBody.cursor = cursor;
-          const res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
-          if (!res.ok) {
-            const t = await res.text();
-            console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res.status} - ${t.slice(0, 200)}`);
+
+          // Retry-with-backoff on Unipile 429 (rate-limit). Up to 3 attempts.
+          let res: Response | null = null;
+          let attempt = 0;
+          const MAX_ATTEMPTS = 3;
+          while (attempt < MAX_ATTEMPTS) {
+            res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
+            if (res.status !== 429) break;
+            attempt++;
+            const backoffMs = 1500 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500); // 1.5s, 3s, 6s + jitter
+            console.warn(`[RATE-LIMIT] keyword "${keyword}" p${page + 1} got 429 — retry ${attempt}/${MAX_ATTEMPTS} in ${backoffMs}ms`);
+            if (!hasTime()) break;
+            await delay(backoffMs);
+          }
+          if (!res || !res.ok) {
+            const t = res ? await res.text() : 'no response';
+            console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res?.status ?? 'n/a'} - ${t.slice(0, 200)}`);
             pipelineStats.unipile_errors++;
             break;
           }
@@ -622,12 +635,15 @@ Deno.serve(async (req) => {
           console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
           cursor = data.cursor || data.next_cursor || null;
           if (!cursor || items.length === 0) break;
-          if (page < MAX_PAGES - 1) await delay(200);
+          if (page < MAX_PAGES - 1) await delay(400);
         }
       } catch (e) {
         console.error(`Keyword search "${keyword}":`, e);
         pipelineStats.unipile_errors++;
       }
+
+      // Inter-keyword spacing to avoid rate-limiting Unipile
+      if (hasTime()) await delay(700 + Math.floor(Math.random() * 400));
 
       pipelineStats.total_posts_fetched += keywordPosts.length;
 
