@@ -10,6 +10,7 @@ interface AddCardDialogProps {
   onConfirm: () => void;
   loading?: boolean;
   freeTrialMode?: boolean;
+  freeTrialLimit?: number;
 }
 
 const trialBenefits = [
@@ -21,7 +22,7 @@ const trialBenefits = [
   {
     icon: CalendarCheck,
     title: "You only pay when it works",
-    desc: "Once your first meeting is booked, you'll be auto-enrolled on the Starter plan ($59/mo).",
+    desc: "After your free meetings are used, you'll be auto-enrolled on the Starter plan ($59/mo).",
   },
   {
     icon: Shield,
@@ -48,7 +49,7 @@ const directBenefits = [
   },
 ];
 
-export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false }: AddCardDialogProps) {
+export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false, freeTrialLimit = 1 }: AddCardDialogProps) {
   const benefits = freeTrialMode ? trialBenefits : directBenefits;
 
   return (
@@ -67,7 +68,7 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTria
             <DialogDescription className="text-sm leading-relaxed text-[#858585]">
               {freeTrialMode ? (
                 <>
-                  Intentsly is <strong className="text-black font-medium">free until your first meeting is booked</strong>. 
+                  Intentsly is <strong className="text-black font-medium">free for your first {freeTrialLimit} {freeTrialLimit === 1 ? 'meeting' : 'meetings'}</strong>. 
                   We just need a card on file to get started — you won't be charged today.
                 </>
               ) : (
