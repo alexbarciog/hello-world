@@ -1,0 +1,1 @@
+UPDATE profiles SET free_trial_enabled = false, free_trial_limit = 1 WHERE user_id = 'e72571e3-a568-417c-80b5-c404ac765b83';
