@@ -609,9 +609,15 @@ Deno.serve(async (req) => {
     const globalSeenPostIds = new Set<string>();
     const globalSeenAuthorIds = new Set<string>();
 
+    // Track consecutive 429s to trigger an extra cool-off if Unipile is unhappy.
+    let consecutive429s = 0;
+
     for (const keyword of keywords) {
       pipelineStats.keywords_processed++;
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" (${pipelineStats.keywords_processed}/${keywords.length}) — ${inserted} leads so far, ${keywords.length - pipelineStats.keywords_processed} keywords remaining`); break; }
+
+      // Heartbeat so the reaper doesn't think we're stuck.
+      await heartbeat(supabase, _run_id, _task_key);
 
       // ── Step 1: Fetch posts with pagination ──
       const keywordPosts: any[] = [];
@@ -624,15 +630,16 @@ Deno.serve(async (req) => {
           const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
           if (cursor) searchBody.cursor = cursor;
 
-          // Retry-with-backoff on Unipile 429 (rate-limit). Up to 3 attempts.
+          // Retry-with-backoff on Unipile 429 (rate-limit). Up to 5 attempts: 5s, 10s, 20s, 30s, 30s.
           let res: Response | null = null;
           let attempt = 0;
-          const MAX_ATTEMPTS = 3;
+          const MAX_ATTEMPTS = 5;
+          const BACKOFFS_MS = [5_000, 10_000, 20_000, 30_000, 30_000];
           while (attempt < MAX_ATTEMPTS) {
             res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
             if (res.status !== 429) break;
             attempt++;
-            const backoffMs = 1500 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500); // 1.5s, 3s, 6s + jitter
+            const backoffMs = BACKOFFS_MS[attempt - 1] + Math.floor(Math.random() * 1500);
             console.warn(`[RATE-LIMIT] keyword "${keyword}" p${page + 1} got 429 — retry ${attempt}/${MAX_ATTEMPTS} in ${backoffMs}ms`);
             if (!hasTime()) break;
             await delay(backoffMs);
@@ -641,8 +648,18 @@ Deno.serve(async (req) => {
             const t = res ? await res.text() : 'no response';
             console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res?.status ?? 'n/a'} - ${t.slice(0, 200)}`);
             pipelineStats.unipile_errors++;
+            if (res?.status === 429) {
+              consecutive429s++;
+              // Circuit breaker: 3 consecutive 429s → 30s cool-off
+              if (consecutive429s >= 3 && hasTime()) {
+                console.warn(`[CIRCUIT-BREAKER] ${consecutive429s} consecutive 429s — sleeping 30s`);
+                await delay(30_000);
+                consecutive429s = 0;
+              }
+            }
             break;
           }
+          consecutive429s = 0; // success — reset circuit breaker
           const data = await res.json();
           const items = data.items || data.results || [];
           if (items.length === 0) pipelineStats.unipile_empty_responses++;
@@ -650,15 +667,17 @@ Deno.serve(async (req) => {
           console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
           cursor = data.cursor || data.next_cursor || null;
           if (!cursor || items.length === 0) break;
-          if (page < MAX_PAGES - 1) await delay(400);
+          // Inter-page spacing
+          if (page < MAX_PAGES - 1 && hasTime()) await delay(1200 + Math.floor(Math.random() * 600));
         }
       } catch (e) {
         console.error(`Keyword search "${keyword}":`, e);
         pipelineStats.unipile_errors++;
       }
 
-      // Inter-keyword spacing to avoid rate-limiting Unipile (~30 search req/min safe budget)
-      if (hasTime()) await delay(2000 + Math.floor(Math.random() * 1000));
+      // Inter-keyword spacing — generous to stay well under Unipile's per-account search budget.
+      // Target: ~12 keywords/min ceiling per account.
+      if (hasTime()) await delay(4000 + Math.floor(Math.random() * 2000));
 
       pipelineStats.total_posts_fetched += keywordPosts.length;
 
