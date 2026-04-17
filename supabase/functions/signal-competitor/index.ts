@@ -897,7 +897,7 @@ Deno.serve(async (req) => {
         // if (url.includes('/in/')) { ... }
       }
     } else if (signal_type === 'competitor_engagers') {
-      for (const url of urls) {
+      for (const url of sanitizedUrls) {
         if (!hasTime()) break;
         await processCompetitorEngagers(url);
       }
