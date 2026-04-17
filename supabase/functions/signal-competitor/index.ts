@@ -368,6 +368,12 @@ Deno.serve(async (req) => {
       failed_quick_icp: 0,
       strong_passes: 0,
       profiles_fetched: 0,
+      // Mode tracking for AI suggestions
+      precision_mode: (precision_mode || 'discovery') as any,
+      discovery_passed: 0,
+      discovery_rejected: 0,
+      hp_passed: 0,
+      hp_rejected: 0,
       excluded_own_company: 0,
       excluded_competitor_employee: 0,
       excluded_competitor_direct_employee: 0,
