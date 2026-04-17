@@ -1057,6 +1057,29 @@ Deno.serve(async (req) => {
     console.log(JSON.stringify(pipelineStats, null, 2));
     console.log('=====================================');
 
+    // BRUTAL LOG: Step 6 — single-line task summary
+    console.log('[TASK_FINAL_SUMMARY]', JSON.stringify({
+      signal: 'keyword_posts',
+      rawFetched: pipelineStats.total_posts_fetched,
+      afterDedup: pipelineStats.posts_after_dedup,
+      passedPrefilter: pipelineStats.passed_prefilter,
+      passedAI: pipelineStats.passed_ai,
+      profilesFetched: pipelineStats.profile_fetches_attempted,
+      passedICP: pipelineStats.inserted + pipelineStats.rejected_early_db_dedup,
+      inserted: pipelineStats.inserted,
+      rejections: {
+        urlBroken: pipelineStats.unipile_empty_responses,
+        noIcpMatch: pipelineStats.rejected_irrelevant_title,
+        ownCompany: pipelineStats.rejected_own_company,
+        irrelevantTitle: pipelineStats.rejected_irrelevant_title,
+        dbDedup: pipelineStats.rejected_early_db_dedup,
+        aiRejected: pipelineStats.rejected_ai_not_buyer + pipelineStats.rejected_ai_low_score,
+        prefilterPhrase: pipelineStats.rejected_no_phrase_match,
+        wrongCountry: pipelineStats.rejected_wrong_country,
+        wrongIndustry: pipelineStats.rejected_wrong_industry,
+      },
+    }));
+
     console.log(`signal-keyword-posts: ${inserted} leads total in ${Math.round((Date.now() - START) / 1000)}s`);
 
     // Self-report task completion if run_id and task_key were provided
