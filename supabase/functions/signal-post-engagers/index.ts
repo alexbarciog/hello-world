@@ -338,11 +338,14 @@ Deno.serve(async (req) => {
             const hl = fullProfile.headline || fullProfile.title || '';
             if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
+            // Fix 5: seller filter — reject engagers whose headline screams "I sell this"
+            if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
             const cls = classifyContact(match, icp, hl);
             if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-            const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
-            if (ok) { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
+            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
+            if (result === 'exists') { diag.already_in_contacts++; continue; }
+            if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
         }
       } else { await postsRes.text(); console.log('[POST_ENG] failed to fetch own posts'); }
