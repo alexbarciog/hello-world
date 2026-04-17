@@ -503,26 +503,31 @@ Deno.serve(async (req) => {
       // Step 4-5: Process each unique engager
       for (const engager of uniqueEngagers) {
         if (!hasTime()) break;
-        if (!hasProfileBudget()) { console.log(`[COMP] profile-fetch cap (${PROFILE_FETCH_CAP}) hit — stopping`); break; }
 
         const rawId = extractLinkedinProfileId(engager.person);
 
-        // Cross-run dedup
-        if (rawId && alreadyProcessed.has(rawId)) {
-          pipelineStats.skipped_already_processed++;
-          continue;
-        }
-
-        // Track for cross-run dedup
-        if (rawId) newlyProcessedIds.push(rawId);
-
-        // Step 4: Quick ICP headline check before expensive profile fetch
+        // Step 4: Pre-filter on the lightweight engager payload BEFORE any expensive call
         const quickHeadline = engager.person.headline || engager.person.title || engager.person.description || '';
-        if (!engagerPassesQuickIcpCheck(quickHeadline, icp)) {
+        const preFilter = engagerPreFilter(quickHeadline, icp);
+        if (preFilter === 'reject') {
           pipelineStats.failed_quick_icp++;
           competitorStats.failed_quick_icp++;
           continue;
         }
+        if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
+
+        // Budget check (strong passes bypass per-task cap, weak ones don't)
+        if (!hasProfileBudget(preFilter)) {
+          console.log(`[COMP] profile-fetch budget reached (weak=${weakFetches}/${PROFILE_FETCH_CAP}, run=${runFetchesSoFar + profileFetches}/${RUN_PROFILE_FETCH_CAP}) — stopping`);
+          break;
+        }
+
+        // Cross-run dedup (30-day window already applied at load time)
+        if (rawId && alreadyProcessed.has(rawId)) {
+          pipelineStats.skipped_already_processed++;
+          continue;
+        }
+        if (rawId) newlyProcessedIds.push(rawId);
 
         // Early dedup against contacts DB
         if (rawId) {
@@ -536,7 +541,7 @@ Deno.serve(async (req) => {
         // Step 5: Fetch full profile
         const fp = await fetchFullProfile(engager.person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         pipelineStats.profiles_fetched++;
-        profileFetches++;
+        trackFetch(preFilter);
         competitorStats.profiles_fetched++;
 
         if (!fp || !fp.first_name) { pipelineStats.skipped_no_id++; continue; }
