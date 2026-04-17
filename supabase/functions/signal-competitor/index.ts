@@ -270,6 +270,11 @@ Deno.serve(async (req) => {
     const newlyProcessedIds: string[] = [];
     let inserted = 0;
 
+    // ── Bandwidth-first cap: profile fetches are the dominant egress driver. ──
+    const PROFILE_FETCH_CAP = 30;
+    let profileFetches = 0;
+    const hasProfileBudget = () => profileFetches < PROFILE_FETCH_CAP;
+
     // ── Process engagers for a single competitor ──
     async function processCompetitorEngagers(url: string) {
       const companyId = extractLinkedInId(url);
@@ -443,6 +448,7 @@ Deno.serve(async (req) => {
       // Step 4-5: Process each unique engager
       for (const engager of uniqueEngagers) {
         if (!hasTime()) break;
+        if (!hasProfileBudget()) { console.log(`[COMP] profile-fetch cap (${PROFILE_FETCH_CAP}) hit — stopping`); break; }
 
         const rawId = extractLinkedinProfileId(engager.person);
 
@@ -475,6 +481,7 @@ Deno.serve(async (req) => {
         // Step 5: Fetch full profile
         const fp = await fetchFullProfile(engager.person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         pipelineStats.profiles_fetched++;
+        profileFetches++;
         competitorStats.profiles_fetched++;
 
         if (!fp || !fp.first_name) { pipelineStats.skipped_no_id++; continue; }
@@ -665,6 +672,7 @@ Deno.serve(async (req) => {
 
               for (const person of allFollowers) {
                 if (!hasTime()) break;
+                if (!hasProfileBudget()) { console.log(`[COMP] follower profile-fetch cap (${PROFILE_FETCH_CAP}) hit — stopping`); break; }
                 const rawId = extractLinkedinProfileId(person);
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
                 if (rawId) newlyProcessedIds.push(rawId);
@@ -676,6 +684,7 @@ Deno.serve(async (req) => {
                 }
                 const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 pipelineStats.profiles_fetched++;
+                profileFetches++;
                 if (!fp || !fp.first_name) continue;
                 if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') continue;
                 const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
