@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
 
         const { data: tasks } = await supabase
           .from('signal_agent_tasks')
-          .select('leads_found, status')
+          .select('leads_found, status, rejected_profiles_sample, signal_type')
           .eq('run_id', run.id);
 
         const totalLeads = (tasks || []).reduce((s: number, t: any) => s + (t.leads_found || 0), 0);
@@ -101,11 +101,14 @@ Deno.serve(async (req) => {
           ? 'done'
           : doneCount > 0 ? 'partial' : 'failed';
 
+        const aggregatedRejected = aggregateRejected(tasks || []);
+
         await supabase.from('signal_agent_runs').update({
           status: finalStatus,
           total_leads: totalLeads,
           completed_tasks: doneCount,
           completed_at: nowIso,
+          rejected_profiles_sample: aggregatedRejected,
           error: finalStatus === 'failed' ? 'Reaped: hard 30min timeout, no tasks completed' : null,
         }).eq('id', run.id);
 
@@ -129,7 +132,9 @@ Deno.serve(async (req) => {
           }
         }
 
-        console.log(`[REAPER] Hard-finalized run ${run.id}: ${finalStatus}, ${totalLeads} leads`);
+        await maybeTriggerSuggestions(run.id, run.agent_id, totalLeads, aggregatedRejected.length);
+
+        console.log(`[REAPER] Hard-finalized run ${run.id}: ${finalStatus}, ${totalLeads} leads, ${aggregatedRejected.length} rejected sampled`);
         reapedRuns++;
       } catch (e) {
         console.error(`[REAPER] Failed to reap run ${run.id}:`, e);
