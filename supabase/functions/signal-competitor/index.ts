@@ -622,15 +622,30 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Industry/title filter
+        // Fix 1: OR-logic ICP — any of headline / structured title / industry / company industry matching
+        // is sufficient. Previously required a structured title re-match which killed 197/200 strong passes.
         if (icp.jobTitles.length > 0 || icp.industries.length > 0) {
-          const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(hl, icp.jobTitles);
-          const industry = (fp.industry || fp.current_company?.industry || '').toLowerCase();
-          const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries) || fuzzyMatchList(hl, icp.industries);
+          const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
+          const profileIndustry: string = (fp.industry || '').toLowerCase();
+          const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
+          const titleMatch =
+            icp.jobTitles.length === 0 ||
+            fuzzyMatchList(hl, icp.jobTitles) ||
+            fuzzyMatchList(exp0Title, icp.jobTitles);
+          const industryMatch =
+            icp.industries.length === 0 ||
+            fuzzyMatchList(profileIndustry, icp.industries) ||
+            fuzzyMatchList(companyIndustry, icp.industries) ||
+            fuzzyMatchList(hl, icp.industries);
           if (!titleMatch && !industryMatch) {
             pipelineStats.excluded_no_icp_match++;
             continue;
           }
+          // Fix 6: track which signal made it pass
+          pipelineStats.icp_match_by_headline = (pipelineStats.icp_match_by_headline || 0) + (fuzzyMatchList(hl, icp.jobTitles) ? 1 : 0);
+          pipelineStats.icp_match_by_structured_title = (pipelineStats.icp_match_by_structured_title || 0) + (fuzzyMatchList(exp0Title, icp.jobTitles) ? 1 : 0);
+          pipelineStats.icp_match_by_profile_industry = (pipelineStats.icp_match_by_profile_industry || 0) + (fuzzyMatchList(profileIndustry, icp.industries) ? 1 : 0);
+          pipelineStats.icp_match_by_company_industry = (pipelineStats.icp_match_by_company_industry || 0) + (fuzzyMatchList(companyIndustry, icp.industries) ? 1 : 0);
         }
 
         const match = scoreProfileAgainstICP(fp, icp);
