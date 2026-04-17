@@ -218,7 +218,7 @@ BEFORE STATE (buyer's pain): ${analysis.before_state}
 ALTERNATIVES BUYERS USE NOW: ${analysis.competitors_or_alternatives.join(', ') || 'unknown'}
 BUYER'S OWN VOCABULARY: ${analysis.buyer_vocabulary.join(', ') || 'unknown'}
 
-Generate keywords across 7 intent categories. Each phrase 3-8 words, lowercase, conversational.
+Generate keywords across 7 intent categories. Each phrase MUST be 2-3 words ONLY (never 1 word, never 4+ words), lowercase, conversational. Examples of correct length: "reply rates dropped", "tired of apollo", "anyone tried lemlist", "switching from outreach". Examples of WRONG length (do NOT generate): "our outreach reply rates have dropped to nothing" (too long), "outreach" (too short).
 
 CATEGORIES:
 - frustration_current_tool (5): buyer is unhappy with what they use now. Reference competitors_or_alternatives.
