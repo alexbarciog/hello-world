@@ -121,11 +121,24 @@ async function ensureList(supabase: any, userId: string, listName: string, agent
   if (error) { console.error(`Create list error: ${error.message}`); return null; } return created?.id || null;
 }
 
-async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters): Promise<boolean> {
+// Fix 5: Seller detection — reject engagers whose post/headline screams "I sell this"
+const SELLER_PHRASES = [
+  'we help', 'our agency', 'our services', 'book a call',
+  'check out our', 'dm me for', 'link in bio', 'we offer',
+  'our clients', 'free consultation', 'i help companies',
+  'we specialize in', 'we work with', 'helping companies',
+];
+function isSeller(postText: string, authorHeadline: string): boolean {
+  const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
+  return SELLER_PHRASES.some(p => text.includes(p));
+}
+
+// Rule 3 (Hard Skip): returns 'exists' if profile already in contacts
+async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters): Promise<'inserted'|'exists'|'failed'> {
   const linkedinProfileId = profile.public_id||profile.public_identifier||profile.provider_id||profile.id;
-  if (!linkedinProfileId) return false;
+  if (!linkedinProfileId) return 'failed';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
-  if (existing?.length > 0) return false;
+  if (existing?.length > 0) return 'exists';
   const firstName = profile.first_name||profile.name?.split(' ')[0]||'Unknown';
   const lastName = profile.last_name||profile.name?.split(' ').slice(1).join(' ')||'';
   const hl = profile.headline||profile.title||'';
@@ -143,9 +156,9 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
     company_icon_color: ['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier: relevanceTier,
   }).select('id').single();
-  if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
+  if (error) { console.error(`Insert contact error: ${error.message}`); return 'failed'; }
   if (inserted?.id && listName) { const listId = await ensureList(supabase, userId, listName, agentId); if (listId) await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId }); }
-  return true;
+  return 'inserted';
 }
 
 // ─── AI Post Relevance Filter ─────────────────────────────────────────────────
@@ -285,7 +298,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context } = await req.json();
+    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, run_id, task_key } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -310,10 +323,28 @@ Deno.serve(async (req) => {
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
     const allPosts: any[] = [];
 
+    // Per-task diagnostics
+    const diag: Record<string, number> = {
+      hashtags_searched: 0,
+      raw_posts: 0,
+      ai_filtered_posts: 0,
+      reactions_fetched: 0,
+      total_engagers_raw: 0,
+      excluded_no_icp_match: 0,
+      excluded_competitor: 0,
+      rejected_seller: 0,
+      already_in_contacts: 0,
+      cold_capped: 0,
+      inserted: 0,
+    };
+
+    console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length });
+
     // Phase 1: Search posts per hashtag with cursor pagination (up to 3 pages)
     for (let tag of hashtags) {
       if (!hasTime()) break;
       if (!tag.startsWith('#')) tag = `#${tag}`;
+      diag.hashtags_searched++;
       await delay(150);
       let cursor: string | null = null;
       const MAX_PAGES = 3;
@@ -337,6 +368,7 @@ Deno.serve(async (req) => {
         }
       } catch (e) { console.error(`Hashtag "${tag}":`, e); }
     }
+    diag.raw_posts = allPosts.length;
 
     // Sort by engagement, take top posts
     const topPosts = allPosts
@@ -354,6 +386,7 @@ Deno.serve(async (req) => {
       const id = p.social_id || p.id || p.provider_id;
       return relevantPostIds.has(id);
     });
+    diag.ai_filtered_posts = filteredPosts.length;
     console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
 
     // Phase 2: Scan engagers on each filtered post
@@ -368,7 +401,10 @@ Deno.serve(async (req) => {
         if (!reactionsRes.ok) { await reactionsRes.text(); continue; }
         const reactionsData = await reactionsRes.json();
         const engagers = (reactionsData.items || []).slice(0, 25);
+        diag.reactions_fetched += engagers.length;
+        diag.total_engagers_raw += engagers.length;
         const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
+        const postText = extractPostText(post);
 
         for (const engager of engagers) {
           if (!hasTime()) break;
@@ -377,19 +413,47 @@ Deno.serve(async (req) => {
           if (!fullProfile) continue;
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
-          if (!matchesTitleOrIndustry(match, icp, hl)) continue;
-          if (!matchesIndustry(fullProfile, match, icp)) continue;
-          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
+          if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
+          if (!matchesIndustry(fullProfile, match, icp)) { diag.excluded_no_icp_match++; continue; }
+          if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
+          // Fix 5: seller filter
+          if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
           const cls = classifyContact(match, icp, hl);
-          if (cls === 'cold' && !canInsertCold()) continue;
+          if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
           const signal = `Engaged with ${post._hashtag}`;
-          const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
-          if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
+          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
+          if (result === 'exists') { diag.already_in_contacts++; continue; }
+          if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
         }
       } catch (e) { console.error('Hashtag engager fetch:', e); }
     }
 
     console.log(`signal-hashtag-engagement: ${inserted} leads total (${Math.round((Date.now()-START)/1000)}s)`);
+    console.log('[TASK_FINAL_SUMMARY]', JSON.stringify({
+      signal: 'hashtag_engagement',
+      rawPosts: diag.raw_posts,
+      aiFilteredPosts: diag.ai_filtered_posts,
+      rawEngagers: diag.total_engagers_raw,
+      inserted: diag.inserted,
+      already_in_contacts: diag.already_in_contacts,
+      rejected_seller: diag.rejected_seller,
+      rejections: {
+        noIcpMatch: diag.excluded_no_icp_match,
+        competitorOrExcluded: diag.excluded_competitor,
+        rejectedSeller: diag.rejected_seller,
+        alreadyInContacts: diag.already_in_contacts,
+        coldCapped: diag.cold_capped,
+      },
+    }));
+
+    if (run_id && task_key) {
+      try {
+        await supabase.from('signal_agent_tasks')
+          .update({ diagnostics: diag } as any)
+          .eq('run_id', run_id).eq('task_key', task_key);
+      } catch (e) { console.warn(`[HASHTAG] Failed to save diagnostics:`, e); }
+    }
+
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-hashtag-engagement error:', error);
