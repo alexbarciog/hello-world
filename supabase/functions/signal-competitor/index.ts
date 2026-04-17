@@ -798,6 +798,12 @@ Deno.serve(async (req) => {
                 allFollowers.push(...followers);
                 console.log(`[COMP] "${companyName}" followers page ${page + 1}: ${followers.length} followers (total: ${allFollowers.length})`);
 
+                // Fix 6: surface zero-result responses with body preview so we can see why
+                if (page === 0 && followers.length === 0) {
+                  console.error('[COMP][unipile.zero_followers]', { sanitized: url, response_preview: JSON.stringify(data).slice(0, 400) });
+                  (pipelineStats as any).zero_post_urls.push(url);
+                }
+
                 cursor = data.cursor || data.next_cursor || null;
                 if (!cursor || followers.length === 0) break;
                 await delay(1000);
