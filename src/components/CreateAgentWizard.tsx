@@ -7,6 +7,7 @@ import {
   Info, Plus, ArrowLeft, Users, MessageSquare, ThumbsUp, UserPlus, Briefcase,
   TrendingUp, Building2, Eye,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CreateAgentWizardProps {
   onClose: () => void;
