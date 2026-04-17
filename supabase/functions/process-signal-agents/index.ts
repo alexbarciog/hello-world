@@ -27,7 +27,8 @@ Deno.serve(async (req) => {
 
   let targetAgentId: string | null = null;
   let bypassPlanCheck = false;
-  try { const body = await req.json(); targetAgentId = body?.agent_id || null; bypassPlanCheck = body?.bypass_plan_check === true; } catch { /* process all */ }
+  let bypassBudget = false;
+  try { const body = await req.json(); targetAgentId = body?.agent_id || null; bypassPlanCheck = body?.bypass_plan_check === true; bypassBudget = body?.bypass_budget === true; } catch { /* process all */ }
 
   try {
     const query = supabase.from('signal_agents').select('id, user_id, name');
