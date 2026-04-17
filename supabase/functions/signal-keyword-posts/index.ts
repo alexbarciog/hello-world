@@ -483,6 +483,18 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
       const classifications = parsed.results || [];
 
       for (const cls of classifications) {
+        // BRUTAL LOG: Step 4 — log every AI output
+        const matchingPost = batch.find((p: any) => p.id === cls.id);
+        console.log('[AI_OUTPUT]', JSON.stringify({
+          id: cls.id,
+          postText: (matchingPost?.text || '').substring(0, 100),
+          is_buyer: cls.is_buyer,
+          intent_score: cls.intent_score,
+          reason: cls.reason,
+          signal_type: cls.signal_type,
+          passedThreshold: cls.intent_score >= minIntentScore,
+          threshold: minIntentScore,
+        }));
         if (cls.is_buyer && cls.intent_score >= minIntentScore) {
           results.set(cls.id, cls);
           console.log(`[AI] ✅ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
