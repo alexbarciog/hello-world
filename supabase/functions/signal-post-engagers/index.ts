@@ -137,9 +137,9 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],relevance_tier:rt,
   }).select('id').single();
-  if(error){console.error(`Insert contact error: ${error.message}`);return false;}
+  if(error){console.error(`Insert contact error: ${error.message}`);return 'failed';}
   if(ins?.id&&ln){const lid=await ensureList(sb,uid,ln,aid);if(lid) await sb.from('contact_lists').insert({contact_id:ins.id,list_id:lid});}
-  return true;
+  return 'inserted';
 }
 
 // ─── Quick ICP headline pre-filter (saves Unipile profile bandwidth) ─────────
