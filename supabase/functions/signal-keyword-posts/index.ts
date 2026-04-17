@@ -722,6 +722,15 @@ Deno.serve(async (req) => {
           const data = await res.json();
           const items = data.items || data.results || [];
           if (items.length === 0) pipelineStats.unipile_empty_responses++;
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (items.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: searchUrl,
+              status: res.status,
+              rawResponse: JSON.stringify(data).substring(0, 1000),
+              params: JSON.stringify({ ...searchBody, signal: 'keyword_posts' }),
+            }));
+          }
           keywordPosts.push(...items);
           console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
           cursor = data.cursor || data.next_cursor || null;
