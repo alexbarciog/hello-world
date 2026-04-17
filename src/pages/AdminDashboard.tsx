@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Users, Radio, Megaphone, MessageSquare, Eye, Hash,
   Copy, Check, ExternalLink, Shield, Database, Activity,
-  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings
+  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings, LogIn
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -315,6 +315,35 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
 function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
   const queryClient = useQueryClient();
   const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+  const [impersonatingUser, setImpersonatingUser] = useState<string | null>(null);
+
+  const impersonate = async (userId: string, email: string) => {
+    setImpersonatingUser(userId);
+    // Open a blank tab synchronously so the popup blocker doesn't intercept us
+    const newTab = window.open("about:blank", "_blank");
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-impersonate-user", {
+        body: {
+          target_user_id: userId,
+          redirect_to: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.action_link) throw new Error("No login link returned");
+      if (newTab) {
+        newTab.location.href = data.action_link;
+      } else {
+        window.location.href = data.action_link;
+      }
+      toast.success(`Logging in as ${email}…`);
+    } catch (err: any) {
+      newTab?.close();
+      toast.error(err.message || "Failed to impersonate user");
+    } finally {
+      setImpersonatingUser(null);
+    }
+  };
 
   const updateTrial = async (userId: string, field: string, value: any) => {
     setUpdatingUser(userId);
@@ -379,7 +408,19 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
                 <TD><span className="font-mono text-xs">{u.credits ?? 0}</span></TD>
                 <TD>{u.unipile_account_id ? <Check className="w-4 h-4 text-blue-500" /> : <span className="text-md-on-surface-variant/40">—</span>}</TD>
                 <TD><span className="text-xs text-md-on-surface-variant whitespace-nowrap">{new Date(u.created_at).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></TD>
-                <TD>{isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</TD>
+                <TD>
+                  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => impersonate(id, u.email)}
+                      disabled={impersonatingUser === id}
+                      title="Log in as this user (opens in new tab)"
+                      className="p-1.5 rounded-md hover:bg-md-surface-container text-md-on-surface-variant hover:text-md-primary transition-colors disabled:opacity-40"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                    </button>
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </TD>
               </tr>
               {isExpanded && (
                 <tr key={`${id}-detail`}>
