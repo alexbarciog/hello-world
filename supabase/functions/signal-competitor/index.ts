@@ -407,6 +407,17 @@ Deno.serve(async (req) => {
 
       pipelineStats.competitors_processed++;
 
+      // BRUTAL LOG: Step 1 — URL right before Unipile call (engagers path)
+      console.log('[URL_CHECK]', JSON.stringify({
+        original: url,
+        sanitized: url,
+        areTheyDifferent: false,
+        signal: 'competitor_engagers',
+        companyId,
+        isCompany,
+        isPersonUrl,
+      }));
+
       // Step 1: Fetch posts (up to 20)
       let posts: any[] = [];
 
