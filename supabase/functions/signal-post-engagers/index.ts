@@ -66,6 +66,23 @@ function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   return ek.some(kw=>text.includes(kw));
 }
 function unipileGet(path: string,apiKey: string,dsn: string){return fetch(`https://${dsn}${path}`,{headers:{'X-API-KEY':apiKey}});}
+
+// Fix 2: Sanitize LinkedIn URLs before sending to Unipile.
+// Strips query strings (utm_*), fragments, trailing slashes, and Unicode diacritics
+// that break Unipile's URL parser and silently return 0 results.
+function sanitizeLinkedinUrl(raw: string): string {
+  if (!raw) return raw;
+  try {
+    const url = new URL(raw.trim());
+    url.search = '';
+    url.hash = '';
+    let clean = url.toString().replace(/\/+$/, '');
+    clean = clean.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    return clean.toLowerCase();
+  } catch {
+    return raw.trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+}
 function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
