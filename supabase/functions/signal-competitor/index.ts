@@ -731,12 +731,12 @@ Deno.serve(async (req) => {
 
     // ── Route by signal type ──
     if (signal_type === 'competitor_followers') {
-      console.log(`[COMP] competitor_followers: received ${urls.length} URLs:`);
-      urls.forEach((u: string, i: number) => console.log(`[COMP]   [${i}] ${u}`));
+      console.log(`[COMP] competitor_followers: received ${sanitizedUrls.length} URLs:`);
+      sanitizedUrls.forEach((u: string, i: number) => console.log(`[COMP]   [${i}] ${u}`));
 
-      for (let urlIdx = 0; urlIdx < urls.length; urlIdx++) {
+      for (let urlIdx = 0; urlIdx < sanitizedUrls.length; urlIdx++) {
         if (!hasTime()) break;
-        const url = urls[urlIdx];
+        const url = sanitizedUrls[urlIdx];
         const companyName = extractCompanyName(url);
         const isCompanyUrl = url.includes('/company/');
 
