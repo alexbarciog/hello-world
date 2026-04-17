@@ -550,16 +550,14 @@ Deno.serve(async (req) => {
       console.log('[KW_GEN] Using fallback context (no website content)');
     }
 
-    // STAGE 2 — Analyse business
-    console.log('[KW_GEN] Stage 2: analysing business');
-    const analysis = await analyseBusinessFromWebsite(websiteContent, website || 'unknown', {
-      companyName, description, painPoints,
-    });
-    console.log('[KW_GEN] Stage 2 done. analysis:', JSON.stringify(analysis));
-
-    // STAGE 3 — Generate keywords
-    console.log('[KW_GEN] Stage 3: generating keywords');
-    const generated = await generateKeywordsFromAnalysis(analysis);
+    // STAGE 2+3 (combined) — Analyse + generate in a SINGLE AI call (≈2× faster)
+    console.log('[KW_GEN] Stage 2+3: combined analysis + keyword generation');
+    const { analysis, generated } = await analyseAndGenerateInOneCall(
+      websiteContent,
+      website || 'unknown',
+      { companyName, description, painPoints },
+    );
+    console.log('[KW_GEN] Stage 2+3 done. analysis:', JSON.stringify(analysis));
 
     // Flatten with category tracking
     const flat: { phrase: string; category: string }[] = [];
