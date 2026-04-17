@@ -972,16 +972,42 @@ Deno.serve(async (req) => {
                   const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
                   const profileIndustry: string = (fp.industry || '').toLowerCase();
                   const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
-                  const titleMatch =
-                    icp.jobTitles.length === 0 ||
-                    fuzzyMatchList(hl, icp.jobTitles) ||
-                    fuzzyMatchList(exp0Title, icp.jobTitles);
-                  const industryMatch =
-                    icp.industries.length === 0 ||
-                    fuzzyMatchList(profileIndustry, icp.industries) ||
-                    fuzzyMatchList(companyIndustry, icp.industries) ||
-                    fuzzyMatchList(hl, icp.industries);
-                  if (!titleMatch && !industryMatch) { pipelineStats.excluded_no_icp_match++; continue; }
+
+                  const results = {
+                    headlineMatch: icp.jobTitles.length > 0 && fuzzyMatchList(hl, icp.jobTitles),
+                    experienceMatch: icp.jobTitles.length > 0 && fuzzyMatchList(exp0Title, icp.jobTitles),
+                    industryMatch: icp.industries.length > 0 && fuzzyMatchList(profileIndustry, icp.industries),
+                    companyIndustryMatch: icp.industries.length > 0 && fuzzyMatchList(companyIndustry, icp.industries),
+                    headlineIndustryMatch: icp.industries.length > 0 && fuzzyMatchList(hl, icp.industries),
+                  };
+                  const passes = Object.values(results).some(Boolean)
+                    || (icp.jobTitles.length === 0 && icp.industries.length === 0);
+
+                  if (results.headlineMatch) pipelineStats.icp_match_by_headline++;
+                  if (results.experienceMatch) pipelineStats.icp_match_by_structured_title++;
+                  if (results.industryMatch) pipelineStats.icp_match_by_profile_industry++;
+                  if (results.companyIndustryMatch) pipelineStats.icp_match_by_company_industry++;
+                  if (!passes) pipelineStats.icp_match_failed++;
+
+                  const _icpLogged2 = (pipelineStats as any)._icp_log_count_followers = ((pipelineStats as any)._icp_log_count_followers || 0);
+                  if (_icpLogged2 < 30) {
+                    (pipelineStats as any)._icp_log_count_followers = _icpLogged2 + 1;
+                    console.log('[ICP_RESULT]', JSON.stringify({
+                      profileId: fp.public_id || fp.public_identifier || fp.provider_id || fp.id,
+                      headline: hl,
+                      experienceTitle: exp0Title,
+                      profileIndustry,
+                      companyIndustry,
+                      icpTitles: icp.jobTitles,
+                      icpIndustries: icp.industries,
+                      results,
+                      passes,
+                      reason: passes ? 'inserted' : 'rejected_no_icp_match',
+                      source: 'competitor_followers',
+                    }));
+                  }
+
+                  if (!passes) { pipelineStats.excluded_no_icp_match++; continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
                 const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
