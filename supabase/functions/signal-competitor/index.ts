@@ -528,6 +528,15 @@ Deno.serve(async (req) => {
           const rd = await rr.json();
           const reactors = rd.items || [];
           reactionCount = reactors.length;
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (reactors.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: `/api/v1/posts/${postId}/reactions`,
+              status: rr.status,
+              rawResponse: JSON.stringify(rd).substring(0, 1000),
+              params: JSON.stringify({ postId, account_id, signal: 'competitor_engagers_reactions' }),
+            }));
+          }
           for (const r of reactors) {
             allEngagers.push({
               person: r.author || r,
@@ -542,6 +551,15 @@ Deno.serve(async (req) => {
           const cd = await cr.json();
           const commenters = cd.items || [];
           commentCount = commenters.length;
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (commenters.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: `/api/v1/posts/${postId}/comments`,
+              status: cr.status,
+              rawResponse: JSON.stringify(cd).substring(0, 1000),
+              params: JSON.stringify({ postId, account_id, signal: 'competitor_engagers_comments' }),
+            }));
+          }
           for (const c of commenters) {
             allEngagers.push({
               person: c.author || c,
