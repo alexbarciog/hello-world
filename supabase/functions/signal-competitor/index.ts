@@ -257,16 +257,19 @@ Deno.serve(async (req) => {
     console.log(`[COMP] URLs to process: ${urls.length}`);
     console.log(`[COMP] ═══════════════════════════════════════════`);
 
-    // ── Cross-run dedup: load previously processed engager IDs ──
+    // ── Cross-run dedup: only block IDs processed in the LAST 30 DAYS ──
+    // Older entries get a second chance (ICP may have changed; lead may now qualify).
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: ppRows } = await supabase
       .from('processed_posts')
       .select('social_id')
-      .eq('agent_id', agent_id);
+      .eq('agent_id', agent_id)
+      .gte('processed_at', thirtyDaysAgo);
     const alreadyProcessed = new Set((ppRows || []).map((r: any) => r.social_id));
-    console.log(`[COMP] Cross-run dedup: ${alreadyProcessed.size} previously processed IDs loaded`);
+    console.log(`[COMP] Cross-run dedup (30d window): ${alreadyProcessed.size} previously processed IDs loaded`);
 
     // Pipeline stats
-    const pipelineStats = {
+    const pipelineStats: Record<string, number> = {
       competitors_processed: 0,
       posts_fetched: 0,
       reactions_fetched: 0,
@@ -275,6 +278,7 @@ Deno.serve(async (req) => {
       engagers_after_dedup: 0,
       skipped_already_processed: 0,
       failed_quick_icp: 0,
+      strong_passes: 0,
       profiles_fetched: 0,
       excluded_own_company: 0,
       excluded_competitor_employee: 0,
@@ -286,15 +290,45 @@ Deno.serve(async (req) => {
       skipped_no_id: 0,
       inserted: 0,
       rejected: 0,
+      bytes_fetched_estimate: 0,
     };
 
     const newlyProcessedIds: string[] = [];
     let inserted = 0;
 
-    // ── Bandwidth-first cap: profile fetches are the dominant egress driver. ──
-    const PROFILE_FETCH_CAP = 30;
+    // ── Two-tier bandwidth budget ──
+    // Per-task soft cap counts only "weak" pre-filter passes. Strong passes (positive
+    // ICP keyword in headline) bypass the cap so we never starve high-quality leads.
+    // The run-level hard ceiling is enforced via signal_agent_runs metadata below.
+    const PROFILE_FETCH_CAP = 80;          // per task, weak-signal fetches only
+    const RUN_PROFILE_FETCH_CAP = 200;     // hard ceiling across all comp tasks in this run
     let profileFetches = 0;
-    const hasProfileBudget = () => profileFetches < PROFILE_FETCH_CAP;
+    let weakFetches = 0;
+
+    // Load run-wide fetch counter (other comp tasks in the same run may have already used budget)
+    let runFetchesSoFar = 0;
+    if (run_id) {
+      try {
+        const { data: runTasks } = await supabase
+          .from('signal_agent_tasks')
+          .select('diagnostics')
+          .eq('run_id', run_id)
+          .in('signal_type', ['competitor_engagers', 'competitor_followers']);
+        runFetchesSoFar = (runTasks || []).reduce((acc: number, t: any) => acc + (t?.diagnostics?.profiles_fetched || 0), 0);
+        console.log(`[COMP] Run-wide budget: ${runFetchesSoFar}/${RUN_PROFILE_FETCH_CAP} profile fetches already used by sibling tasks`);
+      } catch (_) { /* best-effort */ }
+    }
+    const hasProfileBudget = (preFilterResult: 'strong_pass' | 'pass') => {
+      if (runFetchesSoFar + profileFetches >= RUN_PROFILE_FETCH_CAP) return false;
+      if (preFilterResult === 'strong_pass') return true; // strong pass bypasses per-task cap
+      return weakFetches < PROFILE_FETCH_CAP;
+    };
+    const trackFetch = (preFilterResult: 'strong_pass' | 'pass') => {
+      profileFetches++;
+      if (preFilterResult === 'pass') weakFetches++;
+      // Estimate ~30KB per Unipile profile JSON
+      pipelineStats.bytes_fetched_estimate += 30_000;
+    };
 
     // ── Process engagers for a single competitor ──
     async function processCompetitorEngagers(url: string) {
