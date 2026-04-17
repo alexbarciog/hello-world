@@ -853,6 +853,15 @@ Deno.serve(async (req) => {
             }
 
             console.log(`[COMP] competitor_followers: fetching real followers of "${companyName}" (ID: ${numericCompanyId})`);
+            // BRUTAL LOG: Step 1 — URL right before Unipile call (followers path)
+            console.log('[URL_CHECK]', JSON.stringify({
+              original: url,
+              sanitized: url,
+              areTheyDifferent: false,
+              signal: 'competitor_followers',
+              companyName,
+              numericCompanyId,
+            }));
             try {
               const allFollowers: any[] = [];
               let cursor: string | null = null;
@@ -887,7 +896,12 @@ Deno.serve(async (req) => {
 
                 // Fix 6: surface zero-result responses with body preview so we can see why
                 if (page === 0 && followers.length === 0) {
-                  console.error('[COMP][unipile.zero_followers]', { sanitized: url, response_preview: JSON.stringify(data).slice(0, 400) });
+                  console.error('[UNIPILE_ZERO]', JSON.stringify({
+                    endpoint: followersUrl.toString(),
+                    status: res.status,
+                    rawResponse: JSON.stringify(data).substring(0, 1000),
+                    params: JSON.stringify({ companyName, numericCompanyId, account_id, signal: 'competitor_followers' }),
+                  }));
                   (pipelineStats as any).zero_post_urls.push(url);
                 }
 
