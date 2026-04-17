@@ -121,11 +121,24 @@ async function ensureList(supabase: any, userId: string, listName: string, agent
   if (error) { console.error(`Create list error: ${error.message}`); return null; } return created?.id || null;
 }
 
-async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters): Promise<boolean> {
+// Fix 5: Seller detection — reject engagers whose post/headline screams "I sell this"
+const SELLER_PHRASES = [
+  'we help', 'our agency', 'our services', 'book a call',
+  'check out our', 'dm me for', 'link in bio', 'we offer',
+  'our clients', 'free consultation', 'i help companies',
+  'we specialize in', 'we work with', 'helping companies',
+];
+function isSeller(postText: string, authorHeadline: string): boolean {
+  const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
+  return SELLER_PHRASES.some(p => text.includes(p));
+}
+
+// Rule 3 (Hard Skip): returns 'exists' if profile already in contacts
+async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters): Promise<'inserted'|'exists'|'failed'> {
   const linkedinProfileId = profile.public_id||profile.public_identifier||profile.provider_id||profile.id;
-  if (!linkedinProfileId) return false;
+  if (!linkedinProfileId) return 'failed';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
-  if (existing?.length > 0) return false;
+  if (existing?.length > 0) return 'exists';
   const firstName = profile.first_name||profile.name?.split(' ')[0]||'Unknown';
   const lastName = profile.last_name||profile.name?.split(' ').slice(1).join(' ')||'';
   const hl = profile.headline||profile.title||'';
@@ -143,9 +156,9 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
     company_icon_color: ['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier: relevanceTier,
   }).select('id').single();
-  if (error) { console.error(`Insert contact error: ${error.message}`); return false; }
+  if (error) { console.error(`Insert contact error: ${error.message}`); return 'failed'; }
   if (inserted?.id && listName) { const listId = await ensureList(supabase, userId, listName, agentId); if (listId) await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId }); }
-  return true;
+  return 'inserted';
 }
 
 // ─── AI Post Relevance Filter ─────────────────────────────────────────────────
