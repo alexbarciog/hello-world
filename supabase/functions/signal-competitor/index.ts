@@ -272,6 +272,7 @@ Deno.serve(async (req) => {
 
     // BRUTAL LOG: Step 5 — confirm OR-logic version is deployed
     console.log('[ICP_LOGIC_VERSION]', 'OR_LOGIC_V2');
+    console.log('[FIX2_DEPLOYED]', { signal: signal_type, file: 'signal-competitor', sanitizedUrlCount: sanitizedUrls.length, urlSanitizationChanged });
 
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
@@ -336,6 +337,7 @@ Deno.serve(async (req) => {
       icp_match_by_structured_title: 0,
       icp_match_by_profile_industry: 0,
       icp_match_by_company_industry: 0,
+      icp_match_failed: 0,
       // Fix 6: URL sanitization + zero-result tracking
       url_sanitization_changed: urlSanitizationChanged,
     };

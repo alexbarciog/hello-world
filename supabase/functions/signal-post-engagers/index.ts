@@ -223,6 +223,7 @@ Deno.serve(async (req) => {
 
     console.log(`[POST_ENG] run_own_posts=${run_own_posts}, run_profile_engagers=${run_profile_engagers}, profile_urls=${profile_urls?.length || 0}`);
     console.log('[ICP_LOGIC_VERSION]', 'OR_LOGIC_V2_post_engagers');
+    console.log('[FIX2_DEPLOYED]', { signal: signal_type, file: 'signal-post-engagers', profileUrlCount: profile_urls?.length || 0 });
 
     // Fix 2: sanitize profile_urls ONCE before any Unipile call
     const rawProfileUrls: string[] = Array.isArray(profile_urls) ? profile_urls.filter(Boolean) : [];
