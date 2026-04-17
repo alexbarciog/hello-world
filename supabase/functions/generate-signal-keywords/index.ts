@@ -15,9 +15,19 @@ async function scrapeWebsite(websiteUrl: string): Promise<string> {
     formattedUrl = `https://${formattedUrl}`;
   }
 
+  // Hard cap any scrape attempt at 8s — we'd rather fall back to AI-only than block the user.
+  const SCRAPE_TIMEOUT_MS = 8000;
+  const withTimeout = <T,>(p: Promise<T>): Promise<T> => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), SCRAPE_TIMEOUT_MS);
+    return p.finally(() => clearTimeout(t));
+  };
+
   // Prefer Firecrawl when available (handles JS-rendered pages)
   if (FIRECRAWL_API_KEY) {
     try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), SCRAPE_TIMEOUT_MS);
       const fc = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
         headers: {
@@ -29,36 +39,45 @@ async function scrapeWebsite(websiteUrl: string): Promise<string> {
           formats: ['markdown'],
           onlyMainContent: true,
         }),
-      });
+        signal: ctrl.signal,
+      }).finally(() => clearTimeout(t));
       if (fc.ok) {
         const json = await fc.json();
         const md = json?.data?.markdown || json?.markdown || '';
         if (md && md.length > 100) {
-          return md.substring(0, 4000);
+          return md.substring(0, 3000);
         }
       } else {
         console.warn('[KW_GEN] Firecrawl failed, falling back to fetch:', fc.status);
       }
     } catch (e) {
-      console.warn('[KW_GEN] Firecrawl error, falling back to fetch:', e);
+      console.warn('[KW_GEN] Firecrawl error/timeout, falling back to fetch:', e instanceof Error ? e.message : e);
     }
   }
 
-  // Fallback: raw fetch + HTML strip
-  const res = await fetch(formattedUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Intentsly/1.0)' },
-  });
-  const html = await res.text();
-  const cleaned = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return cleaned.substring(0, 3000);
+  // Fallback: raw fetch + HTML strip (also timed out)
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), SCRAPE_TIMEOUT_MS);
+    const res = await fetch(formattedUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Intentsly/1.0)' },
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    const html = await res.text();
+    const cleaned = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cleaned.substring(0, 2500);
+  } catch (e) {
+    console.warn('[KW_GEN] Raw fetch timeout/error:', e instanceof Error ? e.message : e);
+    return '';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
