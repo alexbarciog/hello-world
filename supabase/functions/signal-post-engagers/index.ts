@@ -341,8 +341,9 @@ Deno.serve(async (req) => {
             if (!hasTime()) break;
             const profile = engager.author || engager;
             const quickHl = profile.headline || profile.title || '';
-            const pf = engagerPreFilter(quickHl, icp);
-            if (pf === 'reject') { diag.failed_quick_icp++; continue; }
+            const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
+            if (pf === 'reject') { diag.failed_quick_icp++; if (isHighPrecision) diag.hp_rejected++; else diag.discovery_rejected++; continue; }
+            if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
             if (pf === 'strong_pass') diag.strong_passes++;
             if (!hasBudget(pf)) { console.log(`[POST_ENG] own_posts budget reached`); break; }
             const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
@@ -350,7 +351,7 @@ Deno.serve(async (req) => {
             if (!fullProfile) continue;
             const match = scoreProfileAgainstICP(fullProfile, icp);
             const hl = fullProfile.headline || fullProfile.title || '';
-            if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
+            if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fullProfile, 'icp_match_failed'); continue; }
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
             // Fix 5: seller filter — reject engagers whose headline screams "I sell this"
             if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
@@ -442,8 +443,9 @@ Deno.serve(async (req) => {
               if (!hasTime()) break;
               const ep2 = engager.author||engager;
               const quickHl = ep2.headline || ep2.title || '';
-              const pf = engagerPreFilter(quickHl, icp);
-              if (pf === 'reject') { diag.failed_quick_icp++; continue; }
+              const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
+              if (pf === 'reject') { diag.failed_quick_icp++; if (isHighPrecision) diag.hp_rejected++; else diag.discovery_rejected++; continue; }
+              if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
               if (pf === 'strong_pass') diag.strong_passes++;
               if (!hasBudget(pf)) { console.log(`[POST_ENG] profile_engagers budget reached`); break; }
               const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
@@ -451,7 +453,7 @@ Deno.serve(async (req) => {
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
-              if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
+              if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
               // Fix 5: seller filter
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }
@@ -494,7 +496,7 @@ Deno.serve(async (req) => {
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
-          .update({ diagnostics: diag } as any)
+          .update({ diagnostics: diag, rejected_profiles_sample: rejectedProfiles } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
       } catch (e) { console.warn(`[POST_ENG] Failed to save diagnostics:`, e); }
     }
