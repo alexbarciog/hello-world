@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Users, Radio, Megaphone, MessageSquare, Eye, Hash,
   Copy, Check, ExternalLink, Shield, Database, Activity,
-  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings
+  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings, LogIn
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -315,6 +315,35 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
 function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
   const queryClient = useQueryClient();
   const [updatingUser, setUpdatingUser] = useState<string | null>(null);
+  const [impersonatingUser, setImpersonatingUser] = useState<string | null>(null);
+
+  const impersonate = async (userId: string, email: string) => {
+    setImpersonatingUser(userId);
+    // Open a blank tab synchronously so the popup blocker doesn't intercept us
+    const newTab = window.open("about:blank", "_blank");
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-impersonate-user", {
+        body: {
+          target_user_id: userId,
+          redirect_to: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (!data?.action_link) throw new Error("No login link returned");
+      if (newTab) {
+        newTab.location.href = data.action_link;
+      } else {
+        window.location.href = data.action_link;
+      }
+      toast.success(`Logging in as ${email}…`);
+    } catch (err: any) {
+      newTab?.close();
+      toast.error(err.message || "Failed to impersonate user");
+    } finally {
+      setImpersonatingUser(null);
+    }
+  };
 
   const updateTrial = async (userId: string, field: string, value: any) => {
     setUpdatingUser(userId);
