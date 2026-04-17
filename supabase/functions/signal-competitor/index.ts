@@ -259,6 +259,20 @@ Deno.serve(async (req) => {
       console.log(`[COMP] sanitized ${urlSanitizationChanged}/${urls.length} URLs (stripped query/fragment/diacritics)`);
     }
 
+    // BRUTAL LOG: Step 1 — sanitized URL audit
+    (urls as string[]).forEach((raw, i) => {
+      const sanitized = sanitizedUrls[i];
+      console.log('[URL_CHECK]', JSON.stringify({
+        original: raw,
+        sanitized,
+        areTheyDifferent: raw !== sanitized,
+        signal: signal_type,
+      }));
+    });
+
+    // BRUTAL LOG: Step 5 — confirm OR-logic version is deployed
+    console.log('[ICP_LOGIC_VERSION]', 'OR_LOGIC_V2');
+
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -393,15 +407,36 @@ Deno.serve(async (req) => {
 
       pipelineStats.competitors_processed++;
 
+      // BRUTAL LOG: Step 1 — URL right before Unipile call (engagers path)
+      console.log('[URL_CHECK]', JSON.stringify({
+        original: url,
+        sanitized: url,
+        areTheyDifferent: false,
+        signal: 'competitor_engagers',
+        companyId,
+        isCompany,
+        isPersonUrl,
+      }));
+
       // Step 1: Fetch posts (up to 20)
       let posts: any[] = [];
 
       if (isPersonUrl) {
         console.log(`[COMP] Fetching posts for person: ${companyId}`);
-        const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`, UNIPILE_API_KEY, UNIPILE_DSN);
+        const personPath = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`;
+        const postsRes = await unipileGet(personPath, UNIPILE_API_KEY, UNIPILE_DSN);
         if (postsRes.ok) {
           const postsData = await postsRes.json();
           posts = (postsData.items || postsData.posts || []).slice(0, 20);
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (!postsData?.items?.length && !postsData?.posts?.length) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: personPath,
+              status: postsRes.status,
+              rawResponse: JSON.stringify(postsData).substring(0, 1000),
+              params: JSON.stringify({ companyId, account_id, signal: 'competitor_engagers_person_posts' }),
+            }));
+          }
         } else {
           const errText = await postsRes.text();
           console.error(`[COMP] Posts fetch person "${companyId}": HTTP ${postsRes.status} - ${errText.slice(0, 200)}`);
@@ -428,6 +463,15 @@ Deno.serve(async (req) => {
             const items = postsData.items || postsData.posts || [];
             posts.push(...items);
             console.log(`[COMP] "${companyName}" page ${page+1}: ${items.length} posts (total: ${posts.length})`);
+            // BRUTAL LOG: Step 2 — zero response audit (first page only)
+            if (page === 0 && items.length === 0) {
+              console.error('[UNIPILE_ZERO]', JSON.stringify({
+                endpoint: fetchUrl,
+                status: postsRes.status,
+                rawResponse: JSON.stringify(postsData).substring(0, 1000),
+                params: JSON.stringify({ companyId, numericId, account_id, signal: 'competitor_engagers_company_posts' }),
+              }));
+            }
             cursor = postsData.cursor || postsData.next_cursor || null;
             if (!cursor || items.length === 0) break;
             await delay(200);
@@ -484,6 +528,15 @@ Deno.serve(async (req) => {
           const rd = await rr.json();
           const reactors = rd.items || [];
           reactionCount = reactors.length;
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (reactors.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: `/api/v1/posts/${postId}/reactions`,
+              status: rr.status,
+              rawResponse: JSON.stringify(rd).substring(0, 1000),
+              params: JSON.stringify({ postId, account_id, signal: 'competitor_engagers_reactions' }),
+            }));
+          }
           for (const r of reactors) {
             allEngagers.push({
               person: r.author || r,
@@ -498,6 +551,15 @@ Deno.serve(async (req) => {
           const cd = await cr.json();
           const commenters = cd.items || [];
           commentCount = commenters.length;
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (commenters.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: `/api/v1/posts/${postId}/comments`,
+              status: cr.status,
+              rawResponse: JSON.stringify(cd).substring(0, 1000),
+              params: JSON.stringify({ postId, account_id, signal: 'competitor_engagers_comments' }),
+            }));
+          }
           for (const c of commenters) {
             allEngagers.push({
               person: c.author || c,
@@ -659,24 +721,49 @@ Deno.serve(async (req) => {
           const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
           const profileIndustry: string = (fp.industry || '').toLowerCase();
           const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
+          const headlineMatch_ = fuzzyMatchList(hl, icp.jobTitles);
+          const experienceMatch_ = fuzzyMatchList(exp0Title, icp.jobTitles);
+          const profileIndustryMatch_ = fuzzyMatchList(profileIndustry, icp.industries);
+          const companyIndustryMatch_ = fuzzyMatchList(companyIndustry, icp.industries);
+          const headlineIndustryMatch_ = fuzzyMatchList(hl, icp.industries);
           const titleMatch =
-            icp.jobTitles.length === 0 ||
-            fuzzyMatchList(hl, icp.jobTitles) ||
-            fuzzyMatchList(exp0Title, icp.jobTitles);
+            icp.jobTitles.length === 0 || headlineMatch_ || experienceMatch_;
           const industryMatch =
             icp.industries.length === 0 ||
-            fuzzyMatchList(profileIndustry, icp.industries) ||
-            fuzzyMatchList(companyIndustry, icp.industries) ||
-            fuzzyMatchList(hl, icp.industries);
-          if (!titleMatch && !industryMatch) {
+            profileIndustryMatch_ ||
+            companyIndustryMatch_ ||
+            headlineIndustryMatch_;
+          const passes = titleMatch || industryMatch;
+          // BRUTAL LOG: Step 3 — log first 10 ICP decisions per task
+          const _icpLogged = (pipelineStats as any)._icp_log_count = ((pipelineStats as any)._icp_log_count || 0);
+          if (_icpLogged < 10) {
+            (pipelineStats as any)._icp_log_count = _icpLogged + 1;
+            console.log('[ICP_CHECK]', JSON.stringify({
+              profileId: fp.public_id || fp.public_identifier || fp.provider_id || fp.id,
+              headline: hl,
+              experienceTitle: exp0Title,
+              industry: fp.industry,
+              companyIndustry: fp.current_company?.industry || fp.company?.industry,
+              icpTitles: icp.jobTitles,
+              icpIndustries: icp.industries,
+              headlineMatch: headlineMatch_,
+              experienceMatch: experienceMatch_,
+              industryMatch: profileIndustryMatch_,
+              companyIndustryMatch: companyIndustryMatch_,
+              headlineIndustryMatch: headlineIndustryMatch_,
+              finalDecision: passes ? 'pass' : 'reject',
+              rejectionReason: passes ? null : (icp.jobTitles.length > 0 && icp.industries.length > 0 ? 'no_title_AND_no_industry_match' : (icp.jobTitles.length > 0 ? 'no_title_match' : 'no_industry_match')),
+            }));
+          }
+          if (!passes) {
             pipelineStats.excluded_no_icp_match++;
             continue;
           }
           // Fix 6: track which signal made it pass
-          pipelineStats.icp_match_by_headline = (pipelineStats.icp_match_by_headline || 0) + (fuzzyMatchList(hl, icp.jobTitles) ? 1 : 0);
-          pipelineStats.icp_match_by_structured_title = (pipelineStats.icp_match_by_structured_title || 0) + (fuzzyMatchList(exp0Title, icp.jobTitles) ? 1 : 0);
-          pipelineStats.icp_match_by_profile_industry = (pipelineStats.icp_match_by_profile_industry || 0) + (fuzzyMatchList(profileIndustry, icp.industries) ? 1 : 0);
-          pipelineStats.icp_match_by_company_industry = (pipelineStats.icp_match_by_company_industry || 0) + (fuzzyMatchList(companyIndustry, icp.industries) ? 1 : 0);
+          pipelineStats.icp_match_by_headline = (pipelineStats.icp_match_by_headline || 0) + (headlineMatch_ ? 1 : 0);
+          pipelineStats.icp_match_by_structured_title = (pipelineStats.icp_match_by_structured_title || 0) + (experienceMatch_ ? 1 : 0);
+          pipelineStats.icp_match_by_profile_industry = (pipelineStats.icp_match_by_profile_industry || 0) + (profileIndustryMatch_ ? 1 : 0);
+          pipelineStats.icp_match_by_company_industry = (pipelineStats.icp_match_by_company_industry || 0) + (companyIndustryMatch_ ? 1 : 0);
         }
 
         const match = scoreProfileAgainstICP(fp, icp);
@@ -766,6 +853,15 @@ Deno.serve(async (req) => {
             }
 
             console.log(`[COMP] competitor_followers: fetching real followers of "${companyName}" (ID: ${numericCompanyId})`);
+            // BRUTAL LOG: Step 1 — URL right before Unipile call (followers path)
+            console.log('[URL_CHECK]', JSON.stringify({
+              original: url,
+              sanitized: url,
+              areTheyDifferent: false,
+              signal: 'competitor_followers',
+              companyName,
+              numericCompanyId,
+            }));
             try {
               const allFollowers: any[] = [];
               let cursor: string | null = null;
@@ -800,7 +896,12 @@ Deno.serve(async (req) => {
 
                 // Fix 6: surface zero-result responses with body preview so we can see why
                 if (page === 0 && followers.length === 0) {
-                  console.error('[COMP][unipile.zero_followers]', { sanitized: url, response_preview: JSON.stringify(data).slice(0, 400) });
+                  console.error('[UNIPILE_ZERO]', JSON.stringify({
+                    endpoint: followersUrl.toString(),
+                    status: res.status,
+                    rawResponse: JSON.stringify(data).substring(0, 1000),
+                    params: JSON.stringify({ companyName, numericCompanyId, account_id, signal: 'competitor_followers' }),
+                  }));
                   (pipelineStats as any).zero_post_urls.push(url);
                 }
 
@@ -913,6 +1014,31 @@ Deno.serve(async (req) => {
     console.log(`[COMP] ${JSON.stringify(pipelineStats, null, 2)}`);
     console.log(`[COMP] Runtime: ${Math.round((Date.now()-START)/1000)}s`);
     console.log(`[COMP] =====================================`);
+
+    // BRUTAL LOG: Step 6 — single-line task summary
+    console.log('[TASK_FINAL_SUMMARY]', JSON.stringify({
+      signal: signal_type,
+      rawFetched: pipelineStats.total_engagers_raw,
+      afterDedup: pipelineStats.engagers_after_dedup,
+      passedPrefilter: pipelineStats.engagers_after_dedup - pipelineStats.failed_quick_icp,
+      passedAI: 'N/A',
+      profilesFetched: pipelineStats.profiles_fetched,
+      passedICP: pipelineStats.inserted + pipelineStats.duplicates,
+      inserted: pipelineStats.inserted,
+      rejections: {
+        urlBroken: ((pipelineStats as any).zero_post_urls || []).length,
+        noIcpMatch: pipelineStats.excluded_no_icp_match,
+        ownCompany: pipelineStats.excluded_own_company,
+        irrelevantTitle: pipelineStats.excluded_irrelevant_title,
+        dbDedup: pipelineStats.duplicates,
+        aiRejected: 0,
+        failedQuickIcp: pipelineStats.failed_quick_icp,
+        excludedCompetitorEmployee: pipelineStats.excluded_competitor_employee,
+        wrongCountry: pipelineStats.excluded_wrong_country,
+        skippedNoId: pipelineStats.skipped_no_id,
+        crossRunSkipped: pipelineStats.skipped_already_processed,
+      },
+    }));
 
     // Save diagnostics to task record if run_id/task_key provided
     if (run_id && task_key) {

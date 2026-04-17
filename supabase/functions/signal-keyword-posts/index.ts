@@ -410,6 +410,17 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
       return `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 500)}${authorInfo}${phraseInfo}`;
     }).join('\n\n---\n\n');
 
+    // BRUTAL LOG: Step 4 — log every AI input
+    for (const p of batch) {
+      console.log('[AI_INPUT]', JSON.stringify({
+        id: p.id,
+        postText: (p.text || '').substring(0, 200),
+        keyword: p.keyword,
+        authorHeadline: p.authorHeadline,
+        matchedPhrase: p.matchedPhrase,
+      }));
+    }
+
     try {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -472,6 +483,18 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
       const classifications = parsed.results || [];
 
       for (const cls of classifications) {
+        // BRUTAL LOG: Step 4 — log every AI output
+        const matchingPost = batch.find((p: any) => p.id === cls.id);
+        console.log('[AI_OUTPUT]', JSON.stringify({
+          id: cls.id,
+          postText: (matchingPost?.text || '').substring(0, 100),
+          is_buyer: cls.is_buyer,
+          intent_score: cls.intent_score,
+          reason: cls.reason,
+          signal_type: cls.signal_type,
+          passedThreshold: cls.intent_score >= minIntentScore,
+          threshold: minIntentScore,
+        }));
         if (cls.is_buyer && cls.intent_score >= minIntentScore) {
           results.set(cls.id, cls);
           console.log(`[AI] ✅ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
@@ -699,6 +722,15 @@ Deno.serve(async (req) => {
           const data = await res.json();
           const items = data.items || data.results || [];
           if (items.length === 0) pipelineStats.unipile_empty_responses++;
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (items.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: searchUrl,
+              status: res.status,
+              rawResponse: JSON.stringify(data).substring(0, 1000),
+              params: JSON.stringify({ ...searchBody, signal: 'keyword_posts' }),
+            }));
+          }
           keywordPosts.push(...items);
           console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
           cursor = data.cursor || data.next_cursor || null;
@@ -1024,6 +1056,29 @@ Deno.serve(async (req) => {
     console.log('=== PIPELINE DIAGNOSTIC SUMMARY ===');
     console.log(JSON.stringify(pipelineStats, null, 2));
     console.log('=====================================');
+
+    // BRUTAL LOG: Step 6 — single-line task summary
+    console.log('[TASK_FINAL_SUMMARY]', JSON.stringify({
+      signal: 'keyword_posts',
+      rawFetched: pipelineStats.total_posts_fetched,
+      afterDedup: pipelineStats.posts_after_dedup,
+      passedPrefilter: pipelineStats.passed_prefilter,
+      passedAI: pipelineStats.passed_ai,
+      profilesFetched: pipelineStats.profile_fetches_attempted,
+      passedICP: pipelineStats.inserted + pipelineStats.rejected_early_db_dedup,
+      inserted: pipelineStats.inserted,
+      rejections: {
+        urlBroken: pipelineStats.unipile_empty_responses,
+        noIcpMatch: pipelineStats.rejected_irrelevant_title,
+        ownCompany: pipelineStats.rejected_own_company,
+        irrelevantTitle: pipelineStats.rejected_irrelevant_title,
+        dbDedup: pipelineStats.rejected_early_db_dedup,
+        aiRejected: pipelineStats.rejected_ai_not_buyer + pipelineStats.rejected_ai_low_score,
+        prefilterPhrase: pipelineStats.rejected_no_phrase_match,
+        wrongCountry: pipelineStats.rejected_wrong_country,
+        wrongIndustry: pipelineStats.rejected_wrong_industry,
+      },
+    }));
 
     console.log(`signal-keyword-posts: ${inserted} leads total in ${Math.round((Date.now() - START) / 1000)}s`);
 
