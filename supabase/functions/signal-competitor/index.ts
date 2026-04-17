@@ -723,49 +723,47 @@ Deno.serve(async (req) => {
           const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
           const profileIndustry: string = (fp.industry || '').toLowerCase();
           const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
-          const headlineMatch_ = fuzzyMatchList(hl, icp.jobTitles);
-          const experienceMatch_ = fuzzyMatchList(exp0Title, icp.jobTitles);
-          const profileIndustryMatch_ = fuzzyMatchList(profileIndustry, icp.industries);
-          const companyIndustryMatch_ = fuzzyMatchList(companyIndustry, icp.industries);
-          const headlineIndustryMatch_ = fuzzyMatchList(hl, icp.industries);
-          const titleMatch =
-            icp.jobTitles.length === 0 || headlineMatch_ || experienceMatch_;
-          const industryMatch =
-            icp.industries.length === 0 ||
-            profileIndustryMatch_ ||
-            companyIndustryMatch_ ||
-            headlineIndustryMatch_;
-          const passes = titleMatch || industryMatch;
-          // BRUTAL LOG: Step 3 — log first 10 ICP decisions per task
+
+          const results = {
+            headlineMatch: icp.jobTitles.length > 0 && fuzzyMatchList(hl, icp.jobTitles),
+            experienceMatch: icp.jobTitles.length > 0 && fuzzyMatchList(exp0Title, icp.jobTitles),
+            industryMatch: icp.industries.length > 0 && fuzzyMatchList(profileIndustry, icp.industries),
+            companyIndustryMatch: icp.industries.length > 0 && fuzzyMatchList(companyIndustry, icp.industries),
+            headlineIndustryMatch: icp.industries.length > 0 && fuzzyMatchList(hl, icp.industries),
+          };
+          const passes = Object.values(results).some(Boolean)
+            || (icp.jobTitles.length === 0 && icp.industries.length === 0);
+
+          // Increment the right counter (every match contributes — not exclusive)
+          if (results.headlineMatch) pipelineStats.icp_match_by_headline++;
+          if (results.experienceMatch) pipelineStats.icp_match_by_structured_title++;
+          if (results.industryMatch) pipelineStats.icp_match_by_profile_industry++;
+          if (results.companyIndustryMatch) pipelineStats.icp_match_by_company_industry++;
+          if (!passes) pipelineStats.icp_match_failed++;
+
+          // BRUTAL LOG: per-profile ICP_RESULT (cap to first 30 to avoid log spam)
           const _icpLogged = (pipelineStats as any)._icp_log_count = ((pipelineStats as any)._icp_log_count || 0);
-          if (_icpLogged < 10) {
+          if (_icpLogged < 30) {
             (pipelineStats as any)._icp_log_count = _icpLogged + 1;
-            console.log('[ICP_CHECK]', JSON.stringify({
+            console.log('[ICP_RESULT]', JSON.stringify({
               profileId: fp.public_id || fp.public_identifier || fp.provider_id || fp.id,
               headline: hl,
               experienceTitle: exp0Title,
-              industry: fp.industry,
-              companyIndustry: fp.current_company?.industry || fp.company?.industry,
+              profileIndustry,
+              companyIndustry,
               icpTitles: icp.jobTitles,
               icpIndustries: icp.industries,
-              headlineMatch: headlineMatch_,
-              experienceMatch: experienceMatch_,
-              industryMatch: profileIndustryMatch_,
-              companyIndustryMatch: companyIndustryMatch_,
-              headlineIndustryMatch: headlineIndustryMatch_,
-              finalDecision: passes ? 'pass' : 'reject',
-              rejectionReason: passes ? null : (icp.jobTitles.length > 0 && icp.industries.length > 0 ? 'no_title_AND_no_industry_match' : (icp.jobTitles.length > 0 ? 'no_title_match' : 'no_industry_match')),
+              results,
+              passes,
+              reason: passes ? 'inserted' : 'rejected_no_icp_match',
+              source: 'competitor_engagers',
             }));
           }
+
           if (!passes) {
             pipelineStats.excluded_no_icp_match++;
             continue;
           }
-          // Fix 6: track which signal made it pass
-          pipelineStats.icp_match_by_headline = (pipelineStats.icp_match_by_headline || 0) + (headlineMatch_ ? 1 : 0);
-          pipelineStats.icp_match_by_structured_title = (pipelineStats.icp_match_by_structured_title || 0) + (experienceMatch_ ? 1 : 0);
-          pipelineStats.icp_match_by_profile_industry = (pipelineStats.icp_match_by_profile_industry || 0) + (profileIndustryMatch_ ? 1 : 0);
-          pipelineStats.icp_match_by_company_industry = (pipelineStats.icp_match_by_company_industry || 0) + (companyIndustryMatch_ ? 1 : 0);
         }
 
         const match = scoreProfileAgainstICP(fp, icp);
