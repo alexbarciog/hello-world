@@ -305,14 +305,27 @@ function preFilterPost(
 ): PreFilterResult {
   const text = (postText || '').toLowerCase();
 
-  // ── Problem 1: Phrase match ──
-  // The post must contain at least one meaningful sub-phrase from the keyword.
-  // This prevents LinkedIn's fuzzy word-level matching from returning garbage.
+  // ── Phrase match (best-effort, non-blocking in discovery mode) ──
+  // We still try to detect a sub-phrase match to give the AI a useful hint
+  // ("MATCHED PHRASE: ..."), but in DISCOVERY mode we no longer reject posts
+  // that lack the literal keyword. The AI semantic classifier will judge whether
+  // the author is genuinely expressing buying intent — even when they describe
+  // their need in different words than the configured keyword.
+  //
+  // In HIGH_PRECISION mode we keep the strict phrase guard to avoid garbage,
+  // but require a minimum post length so the AI has something to work with.
   const phraseVariants = generatePhraseVariants(keyword);
   const matchedPhrase = phraseVariants.find(phrase => text.includes(phrase));
 
   if (!matchedPhrase) {
-    return { pass: false, reason: 'no_phrase_match' };
+    if (isHighPrecision) {
+      return { pass: false, reason: 'no_phrase_match' };
+    }
+    // Discovery mode: require some substance before sending to AI
+    if (text.length < 40) {
+      return { pass: false, reason: 'no_phrase_match' };
+    }
+    // Fall through — let the AI decide if it's a buyer
   }
 
   // ── Problem 4: Country filter (only in high_precision mode) ──
