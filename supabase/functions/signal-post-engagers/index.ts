@@ -213,32 +213,35 @@ Deno.serve(async (req) => {
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
     };
+    const isHighPrecision = precision_mode === 'high_precision';
+
+    // Lightweight rejected-profile collector for AI suggestions (cap 200/task)
+    const rejectedProfiles: Array<{ headline: string; industry: string; company: string; companyIndustry: string; rejectionReason: string; signalType: string; }> = [];
+    function captureRejected(fp: any, reason: string) {
+      if (rejectedProfiles.length >= 200) return;
+      rejectedProfiles.push({
+        headline: (fp?.headline || fp?.title || '').slice(0, 200),
+        industry: (fp?.industry || '').slice(0, 100),
+        company: (fp?.company || fp?.current_company?.name || '').slice(0, 100),
+        companyIndustry: (fp?.current_company?.industry || fp?.company?.industry || '').slice(0, 100),
+        rejectionReason: reason,
+        signalType: signal_type,
+      });
+    }
 
     let inserted = 0;
     let hotWarmCount = 0; let coldCount = 0;
     const COLD_CAP = 0.2;
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
-    // ── Per-task diagnostics ──
     const diag: Record<string, number> = {
-      own_posts_scanned: 0,
-      profile_urls_scanned: 0,
-      profile_posts_scanned: 0,
-      reactions_fetched: 0,
-      comments_fetched: 0,
-      total_engagers_raw: 0,
-      failed_quick_icp: 0,
-      strong_passes: 0,
-      profiles_fetched: 0,
-      excluded_no_icp_match: 0,
-      excluded_competitor: 0,
-      // Fix 5: seller-detection counter
-      rejected_seller: 0,
-      // Rule 3: existing contact = skip, no update
-      already_in_contacts: 0,
-      cold_capped: 0,
-      inserted: 0,
-      bytes_fetched_estimate: 0,
+      own_posts_scanned: 0, profile_urls_scanned: 0, profile_posts_scanned: 0,
+      reactions_fetched: 0, comments_fetched: 0, total_engagers_raw: 0,
+      failed_quick_icp: 0, strong_passes: 0, profiles_fetched: 0,
+      excluded_no_icp_match: 0, excluded_competitor: 0, rejected_seller: 0,
+      already_in_contacts: 0, cold_capped: 0, inserted: 0, bytes_fetched_estimate: 0,
+      precision_mode: (precision_mode || 'discovery') as any,
+      discovery_passed: 0, discovery_rejected: 0, hp_passed: 0, hp_rejected: 0,
     };
 
     // Bandwidth ceiling (matches competitor function for symmetry)
