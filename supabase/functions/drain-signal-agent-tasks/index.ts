@@ -35,6 +35,22 @@ Deno.serve(async (req) => {
   const dispatchedTasks: Array<{ run_id: string; task_key: string }> = [];
 
   try {
+    // ── Cheap short-circuit: if no run has been touched in the last 30 min, exit. ──
+    // The orchestrator kicks off a fresh drain inline when it queues a new run,
+    // so the cron tick is just a safety net for paced batches that are already
+    // mid-flight. When nothing is in flight, this saves a full task scan.
+    const cutoffIso = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { count: activeRunCount } = await supabase
+      .from('signal_agent_runs')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['queued', 'running'])
+      .gte('started_at', cutoffIso);
+    if (!activeRunCount || activeRunCount === 0) {
+      return new Response(JSON.stringify({ dispatched: 0, message: 'no active runs' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // ── 1. Find due pending keyword tasks (one per run, oldest first) ──
     // We dispatch at most one keyword task per run per tick to keep pacing.
     const { data: dueTasks, error: dueErr } = await supabase
