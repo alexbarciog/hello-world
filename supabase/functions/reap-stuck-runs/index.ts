@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
     for (const run of openRuns || []) {
       const { data: tasks } = await supabase
         .from('signal_agent_tasks')
-        .select('status, leads_found')
+        .select('status, leads_found, rejected_profiles_sample, signal_type')
         .eq('run_id', run.id);
       if (!tasks?.length) continue;
       const open = tasks.filter((t: any) => t.status === 'pending' || t.status === 'running').length;
@@ -160,13 +160,16 @@ Deno.serve(async (req) => {
       const totalLeads = tasks.reduce((s: number, t: any) => s + (t.leads_found || 0), 0);
       const doneCount = tasks.filter((t: any) => t.status === 'done').length;
       const finalStatus = doneCount === tasks.length ? 'done' : doneCount > 0 ? 'partial' : 'failed';
+      const aggregatedRejected = aggregateRejected(tasks);
       await supabase.from('signal_agent_runs').update({
         status: finalStatus,
         total_leads: totalLeads,
         completed_tasks: doneCount,
         completed_at: nowIso,
+        rejected_profiles_sample: aggregatedRejected,
       }).eq('id', run.id);
-      console.log(`[REAPER] Closed orphan run ${run.id}: ${finalStatus}, ${totalLeads} leads`);
+      await maybeTriggerSuggestions(run.id, run.agent_id, totalLeads, aggregatedRejected.length);
+      console.log(`[REAPER] Closed orphan run ${run.id}: ${finalStatus}, ${totalLeads} leads, ${aggregatedRejected.length} rejected sampled`);
       reapedRuns++;
     }
 
@@ -181,3 +184,34 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// Aggregate rejected profile samples across tasks (cap at 200)
+function aggregateRejected(tasks: any[]): any[] {
+  const all: any[] = [];
+  for (const t of tasks) {
+    const sample = (t.rejected_profiles_sample || []) as any[];
+    for (const p of sample) {
+      all.push({ ...p, signalType: p.signalType ?? t.signal_type });
+      if (all.length >= 200) return all;
+    }
+  }
+  return all;
+}
+
+// Fire-and-forget suggestion trigger
+async function maybeTriggerSuggestions(runId: string, agentId: string | null, totalLeads: number, rejectedCount: number) {
+  if (!agentId) return;
+  if (totalLeads >= 20 && rejectedCount <= 50) return;
+  try {
+    // @ts-ignore EdgeRuntime
+    EdgeRuntime.waitUntil(
+      fetch(`${SUPABASE_URL}/functions/v1/generate-agent-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ runId, agentId }),
+      }).catch((e) => console.warn(`[SUGGESTIONS] reaper trigger failed:`, e))
+    );
+  } catch (e) {
+    console.warn('[SUGGESTIONS] waitUntil unavailable in reaper:', e);
+  }
+}
