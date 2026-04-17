@@ -120,9 +120,11 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     keyword_posts: true,
   });
   const [signalKeywords, setSignalKeywords] = useState<Record<string, string[]>>({});
+  const [newSignalKeywords, setNewSignalKeywords] = useState<Record<string, string[]>>({});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [signalKeywordInputs, setSignalKeywordInputs] = useState<Record<string, string>>({});
   const [generatingKeywords, setGeneratingKeywords] = useState<Record<string, boolean>>({});
+
 
   // Step 3: Leads
   const [leadsListName, setLeadsListName] = useState("");
