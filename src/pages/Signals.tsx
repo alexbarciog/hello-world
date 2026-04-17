@@ -32,6 +32,7 @@ interface SignalAgent {
   last_launched_at: string | null;
   next_launch_at: string | null;
   created_at: string;
+  icp_job_titles?: string[] | null;
 }
 
 interface AgentRun {
