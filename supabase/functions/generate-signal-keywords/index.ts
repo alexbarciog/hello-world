@@ -207,7 +207,7 @@ The phrases you generate will be searched on LinkedIn in real time.
 When someone posts one of these phrases it triggers an outreach.
 Getting it wrong wastes real money. Getting it right books real meetings.
 
-ALL phrases must be lowercase, conversational, 3-8 words.`;
+ALL phrases MUST be lowercase, conversational, and STRICTLY 2-3 words long. Never more than 3 words. Never fewer than 2 words.`;
 
   const userPrompt = `Generate buying intent keywords for this business:
 
