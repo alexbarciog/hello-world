@@ -815,9 +815,18 @@ Deno.serve(async (req) => {
                   }
                 }
                 if (icp.jobTitles.length > 0 || icp.industries.length > 0) {
-                  const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(hl, icp.jobTitles);
-                  const industry = (fp.industry || fp.current_company?.industry || '').toLowerCase();
-                  const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries) || fuzzyMatchList(hl, icp.industries);
+                  const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
+                  const profileIndustry: string = (fp.industry || '').toLowerCase();
+                  const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
+                  const titleMatch =
+                    icp.jobTitles.length === 0 ||
+                    fuzzyMatchList(hl, icp.jobTitles) ||
+                    fuzzyMatchList(exp0Title, icp.jobTitles);
+                  const industryMatch =
+                    icp.industries.length === 0 ||
+                    fuzzyMatchList(profileIndustry, icp.industries) ||
+                    fuzzyMatchList(companyIndustry, icp.industries) ||
+                    fuzzyMatchList(hl, icp.industries);
                   if (!titleMatch && !industryMatch) { pipelineStats.excluded_no_icp_match++; continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
