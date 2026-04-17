@@ -540,13 +540,23 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
           passedThreshold: cls.intent_score >= minIntentScore,
           threshold: minIntentScore,
         }));
-        if (cls.is_buyer && cls.intent_score >= minIntentScore) {
+        // Fix 8: belt-and-suspenders — even if AI returns is_buyer=true with a
+        // borderline score, reject "problem_aware" unless it's a strong signal.
+        // problem_aware = vague pain, not active solution-seeking.
+        const isWeakSignal = cls.signal_type === 'problem_aware' && cls.intent_score < 80;
+        const isStrongSignalType = ['seeking_recommendation', 'actively_evaluating', 'frustrated_with_current'].includes(cls.signal_type);
+        const passesIntent = cls.is_buyer
+          && cls.intent_score >= minIntentScore
+          && !isWeakSignal
+          && (isStrongSignalType || cls.intent_score >= 85);
+
+        if (passesIntent) {
           results.set(cls.id, cls);
           console.log(`[AI] ✅ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
         } else {
           // Store rejection with negative marker so pipeline can capture sample
           results.set(`rejected:${cls.id}`, cls);
-          console.log(`[AI] ❌ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
+          console.log(`[AI] ❌ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} weak=${isWeakSignal} — ${cls.reason}`);
         }
       }
 
