@@ -1145,15 +1145,28 @@ Deno.serve(async (req) => {
         if (!pendingTasks || pendingTasks.length === 0) {
           // All tasks done — finalize the run
           const { data: allTasks } = await supabase.from('signal_agent_tasks')
-            .select('leads_found, status')
+            .select('leads_found, status, rejected_profiles_sample, signal_type')
             .eq('run_id', run_id);
           const totalLeads = (allTasks || []).reduce((sum: number, t: any) => sum + (t.leads_found || 0), 0);
           const completedCount = (allTasks || []).length;
+
+          // Aggregate rejected profile samples (cap 200)
+          const aggregatedRejected: any[] = [];
+          for (const t of allTasks || []) {
+            const sample = (t.rejected_profiles_sample || []) as any[];
+            for (const p of sample) {
+              aggregatedRejected.push({ ...p, signalType: p.signalType ?? t.signal_type });
+              if (aggregatedRejected.length >= 200) break;
+            }
+            if (aggregatedRejected.length >= 200) break;
+          }
+
           await supabase.from('signal_agent_runs').update({
             status: 'done', total_leads: totalLeads, completed_tasks: completedCount,
             completed_at: new Date().toISOString(),
+            rejected_profiles_sample: aggregatedRejected,
           }).eq('id', run_id);
-          console.log(`[SELF-REPORT] Run ${run_id} finalized: ${totalLeads} total leads`);
+          console.log(`[SELF-REPORT] Run ${run_id} finalized: ${totalLeads} total leads, ${aggregatedRejected.length} rejected sampled`);
 
           // Update agent results_count and send notification
           if (agent_id) {
@@ -1181,6 +1194,23 @@ Deno.serve(async (req) => {
                   type: 'signal', link: '/contacts',
                 });
               }
+            }
+          }
+
+          // Trigger AI suggestions if run was thin or had many ICP rejections
+          if (totalLeads < 20 || aggregatedRejected.length > 50) {
+            try {
+              // @ts-ignore EdgeRuntime
+              EdgeRuntime.waitUntil(
+                fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-agent-suggestions`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+                  body: JSON.stringify({ runId: run_id, agentId: agent_id }),
+                }).catch((e) => console.warn('[SUGGESTIONS] trigger failed:', e))
+              );
+              console.log(`[SUGGESTIONS] Triggered for run ${run_id} (leads=${totalLeads}, rejected=${aggregatedRejected.length})`);
+            } catch (e) {
+              console.warn('[SUGGESTIONS] waitUntil unavailable:', e);
             }
           }
         }
