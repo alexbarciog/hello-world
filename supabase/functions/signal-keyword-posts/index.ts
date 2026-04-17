@@ -126,6 +126,21 @@ function classifyContactWithIntentScore(match: MatchResult, icp: ICPFilters, hea
   return null;
 }
 
+// Fix 5: Seller detection — reject posts where the AUTHOR is offering the same service
+// the user sells (lead-gen agencies posting "we help companies with outbound" attract
+// buyers but ARE NOT BUYERS THEMSELVES). Runs BEFORE AI to save classification budget.
+const SELLER_PHRASES = [
+  'we help', 'our agency', 'our services', 'book a call',
+  'check out our', 'dm me for', 'link in bio', 'we offer',
+  'our clients', 'free consultation', 'i help companies',
+  'we specialize in', 'we work with', 'our team helps',
+  'reach out if you', 'message me to', 'visit our website',
+];
+function isSeller(postText: string, authorHeadline: string): boolean {
+  const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
+  return SELLER_PHRASES.some(p => text.includes(p));
+}
+
 function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
   const companyFields = collectCompanyFields(profile);
   const profileUrl = (profile.linkedin_url || profile.public_url || profile.profile_url || '').toLowerCase();
@@ -559,7 +574,8 @@ Deno.serve(async (req) => {
     const searchHeaders = { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' };
 
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
-    const MIN_INTENT_SCORE = 60; // Score gate: below 60 = discard
+    // Fix 7: Lowered from 60 → 50 for keyword posts (warm buyer-frustration signals are typically 50-65)
+    const MIN_INTENT_SCORE = 50;
     const isHighPrecision = precision_mode === 'high_precision';
     console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country+industry filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
