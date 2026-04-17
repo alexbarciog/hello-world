@@ -111,28 +111,6 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   return true;
 }
 
-// ─── Quick ICP headline pre-filter (saves Unipile profile bandwidth) ─────────
-
-const QUICK_REJECT_TITLES = ['student','intern','freelance','looking for work','job seeker','fresher','trainee','apprentice'];
-
-function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'strong_pass' | 'pass' | 'reject' {
-  if (!headline) return 'pass';
-  const hl = headline.toLowerCase();
-  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
-  if (isClearlyIrrelevant(hl)) return 'reject';
-  if (icp.jobTitles.length > 0) {
-    const titleMatch = icp.jobTitles.some(t => {
-      const needle = t.toLowerCase().trim();
-      return needle.length >= 3 && hl.includes(needle);
-    });
-    if (titleMatch) return 'strong_pass';
-  }
-  if (hasBuyingIntent(hl)) return 'strong_pass';
-  // Strict mode: headline present but no positive signal AND ICP defines titles → reject
-  if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
-  return 'pass';
-}
-
 // ─── Main: scans engagers on your own LinkedIn posts ──────────────────────────
 
 Deno.serve(async (req) => {
@@ -150,8 +128,6 @@ Deno.serve(async (req) => {
       profile_urls,
       run_own_posts = true,
       run_profile_engagers = true,
-      run_id,
-      task_key,
     } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
@@ -176,35 +152,7 @@ Deno.serve(async (req) => {
     const COLD_CAP = 0.2;
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
-    // ── Per-task diagnostics ──
-    const diag: Record<string, number> = {
-      own_posts_scanned: 0,
-      profile_urls_scanned: 0,
-      profile_posts_scanned: 0,
-      reactions_fetched: 0,
-      comments_fetched: 0,
-      total_engagers_raw: 0,
-      failed_quick_icp: 0,
-      strong_passes: 0,
-      profiles_fetched: 0,
-      excluded_no_icp_match: 0,
-      excluded_competitor: 0,
-      cold_capped: 0,
-      inserted: 0,
-      bytes_fetched_estimate: 0,
-    };
-
-    // Bandwidth ceiling (matches competitor function for symmetry)
-    const PROFILE_FETCH_CAP = 80;
-    let weakFetches = 0;
-    const hasBudget = (pf: 'strong_pass' | 'pass') => pf === 'strong_pass' || weakFetches < PROFILE_FETCH_CAP;
-    const trackFetch = (pf: 'strong_pass' | 'pass') => {
-      diag.profiles_fetched++;
-      if (pf === 'pass') weakFetches++;
-      diag.bytes_fetched_estimate += 30_000;
-    };
-
-    console.log(`[POST_ENG] run_own_posts=${run_own_posts}, run_profile_engagers=${run_profile_engagers}, profile_urls=${profile_urls?.length || 0}`);
+    console.log(`signal-post-engagers: run_own_posts=${run_own_posts}, run_profile_engagers=${run_profile_engagers}, profile_urls=${profile_urls?.length || 0}`);
 
     // Resolve user's LinkedIn ID if not provided
     let userLiId = linkedin_id;
@@ -225,9 +173,7 @@ Deno.serve(async (req) => {
       if (postsRes.ok) {
         const postsData = await postsRes.json();
         const posts = (postsData.items || postsData.posts || []).slice(0, 5);
-        diag.own_posts_scanned = posts.length;
-        diag.bytes_fetched_estimate += 20_000;
-        console.log(`[POST_ENG] own_posts: ${posts.length}`);
+        console.log(`post_engagers: ${posts.length} own posts`);
 
         for (const post of posts) {
           if (!hasTime()) break;
@@ -238,9 +184,6 @@ Deno.serve(async (req) => {
           if (!rr.ok) { await rr.text(); continue; }
           const rd = await rr.json();
           const engagers = (rd.items || []).slice(0, 25);
-          diag.reactions_fetched += engagers.length;
-          diag.total_engagers_raw += engagers.length;
-          diag.bytes_fetched_estimate += 25_000;
           const postUrl = post.url || post.share_url || post.permalink || `https://www.linkedin.com/feed/update/${postId}`;
           const postText = post.text || post.commentary || '';
           const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
@@ -248,26 +191,20 @@ Deno.serve(async (req) => {
           for (const engager of engagers) {
             if (!hasTime()) break;
             const profile = engager.author || engager;
-            const quickHl = profile.headline || profile.title || '';
-            const pf = engagerPreFilter(quickHl, icp);
-            if (pf === 'reject') { diag.failed_quick_icp++; continue; }
-            if (pf === 'strong_pass') diag.strong_passes++;
-            if (!hasBudget(pf)) { console.log(`[POST_ENG] own_posts budget reached`); break; }
             const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-            trackFetch(pf);
             if (!fullProfile) continue;
             const match = scoreProfileAgainstICP(fullProfile, icp);
             const hl = fullProfile.headline || fullProfile.title || '';
-            if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
-            if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
+            if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+            if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) continue;
             const cls = classifyContact(match, icp, hl);
-            if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
+            if (cls === 'cold' && !canInsertCold()) continue;
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
             const ok = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
-            if (ok) { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
+            if (ok) { inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
         }
-      } else { await postsRes.text(); console.log('[POST_ENG] failed to fetch own posts'); }
+      } else { await postsRes.text(); console.log('post_engagers: failed to fetch own posts'); }
     }
 
     // Also scan profile_engagers (influencer profiles) if provided
@@ -280,7 +217,6 @@ Deno.serve(async (req) => {
         await delay(150);
         const profileId = extractLinkedInId(url);
         if (!profileId) continue;
-        diag.profile_urls_scanned++;
         const isCompany = url.includes('/company/');
         const ep = isCompany ? `/api/v1/users/${profileId}/posts?account_id=${account_id}&is_company=true&limit=10` : `/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=10`;
         try {
@@ -288,11 +224,9 @@ Deno.serve(async (req) => {
           if (!pr.ok) { await pr.text(); continue; }
           const pd = await pr.json();
           const posts = (pd.items || pd.posts || []).slice(0, 10);
-          diag.profile_posts_scanned += posts.length;
-          diag.bytes_fetched_estimate += 20_000;
           let profileName = isCompany ? (extractCompanyName(url)||profileId) : profileId;
           if (!isCompany) { try { const r = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN); if(r.ok){const d=await r.json();profileName=[d.first_name,d.last_name].filter(Boolean).join(' ')||profileId;}else await r.text(); } catch(_){} }
-          console.log(`[POST_ENG] profile_engagers "${profileName}": ${posts.length} posts`);
+          console.log(`profile_engagers "${profileName}": ${posts.length} posts`);
           for (const post of posts) {
             if (!hasTime()) break;
             await delay(150);
@@ -303,48 +237,29 @@ Deno.serve(async (req) => {
               unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
             ]);
             const engagers: any[] = [];
-            if (rr.ok) { const rd = await rr.json(); const items = (rd.items||[]).slice(0, 50); engagers.push(...items); diag.reactions_fetched += items.length; } else { await rr.text(); }
-            if (cr.ok) { const cd = await cr.json(); const items = (cd.items||[]).slice(0, 30); engagers.push(...items.map((c: any) => c.author || c)); diag.comments_fetched += items.length; } else { await cr.text(); }
-            diag.total_engagers_raw += engagers.length;
-            diag.bytes_fetched_estimate += 25_000 * 2;
+            if (rr.ok) { const rd = await rr.json(); engagers.push(...(rd.items||[]).slice(0, 50)); } else { await rr.text(); }
+            if (cr.ok) { const cd = await cr.json(); engagers.push(...(cd.items||[]).slice(0, 30).map((c: any) => c.author || c)); } else { await cr.text(); }
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
             for (const engager of engagers) {
               if (!hasTime()) break;
               const ep2 = engager.author||engager;
-              const quickHl = ep2.headline || ep2.title || '';
-              const pf = engagerPreFilter(quickHl, icp);
-              if (pf === 'reject') { diag.failed_quick_icp++; continue; }
-              if (pf === 'strong_pass') diag.strong_passes++;
-              if (!hasBudget(pf)) { console.log(`[POST_ENG] profile_engagers budget reached`); break; }
               const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
-              trackFetch(pf);
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
-              if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
-              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
+              if (!matchesTitleOrIndustry(match, icp, hl)) continue;
+              if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) continue;
               const cls2 = classifyContact(match, icp, hl);
-              if (cls2 === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
+              if (cls2 === 'cold' && !canInsertCold()) continue;
               const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp);
-              if (ok) { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
+              if (ok) { inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }
           }
-        } catch(e) { console.error(`[POST_ENG] Profile engagers ${url}:`, e); }
+        } catch(e) { console.error(`Profile engagers ${url}:`, e); }
       }
     }
 
-    console.log(`[POST_ENG] ${inserted} leads total (${Math.round((Date.now()-START)/1000)}s)`);
-    console.log(`[POST_ENG] diag: ${JSON.stringify(diag)}`);
-
-    // Save diagnostics to task record if run_id/task_key provided
-    if (run_id && task_key) {
-      try {
-        await supabase.from('signal_agent_tasks')
-          .update({ diagnostics: diag } as any)
-          .eq('run_id', run_id).eq('task_key', task_key);
-      } catch (e) { console.warn(`[POST_ENG] Failed to save diagnostics:`, e); }
-    }
-
+    console.log(`signal-post-engagers: ${inserted} leads total (${Math.round((Date.now()-START)/1000)}s)`);
     return new Response(JSON.stringify({ leads: inserted }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (error) {
     console.error('signal-post-engagers error:', error);

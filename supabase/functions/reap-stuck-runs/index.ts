@@ -1,13 +1,5 @@
-// Reaper: lease-based cleanup for signal_agent_runs and signal_agent_tasks.
-//
+// Reaper: finalizes signal_agent_runs that are stuck in `running` for > 5 minutes.
 // Designed to be called by pg_cron every minute. Idempotent.
-//
-// New model (queue-based):
-//   - Tasks have a `lease_expires_at` and `last_heartbeat_at`.
-//   - A task is "stuck" if its lease has expired AND it hasn't heartbeated recently.
-//   - Runs are no longer reaped purely on `started_at` age — we use a much larger
-//     safety window (30 min) for keyword runs because they can legitimately take
-//     10–20 min when there are 30+ keywords.
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,84 +11,54 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-// Hard ceiling — runs older than this are reaped no matter what.
-const RUN_HARD_TIMEOUT_MS = 30 * 60 * 1000; // 30 min
-
-// A task is considered stuck if lease has expired by this much.
-const TASK_LEASE_GRACE_MS = 60 * 1000; // 1 min after lease expiry
-
-// A task without a heartbeat for this long is considered dead, even if its lease
-// hasn't formally expired (worker probably crashed mid-claim).
-const TASK_HEARTBEAT_TIMEOUT_MS = 10 * 60 * 1000; // 10 min
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  const now = new Date();
-  const nowIso = now.toISOString();
-
-  let reapedTasks = 0;
-  let reapedRuns = 0;
+  const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 min ago
 
   try {
-    // ── 1. Reap individual stuck TASKS (lease expired or no heartbeat) ──
-    const leaseDeadlineIso = new Date(now.getTime() - TASK_LEASE_GRACE_MS).toISOString();
-    const heartbeatDeadlineIso = new Date(now.getTime() - TASK_HEARTBEAT_TIMEOUT_MS).toISOString();
-
-    const { data: stuckTasks } = await supabase
-      .from('signal_agent_tasks')
-      .select('id, run_id, task_key, lease_expires_at, last_heartbeat_at, started_at')
-      .eq('status', 'running')
-      .limit(100);
-
-    for (const t of stuckTasks || []) {
-      const leaseExpired = t.lease_expires_at && t.lease_expires_at < leaseDeadlineIso;
-      const heartbeatStale = t.last_heartbeat_at
-        ? t.last_heartbeat_at < heartbeatDeadlineIso
-        : (t.started_at && t.started_at < heartbeatDeadlineIso);
-
-      if (!leaseExpired && !heartbeatStale) continue;
-
-      await supabase.from('signal_agent_tasks').update({
-        status: 'failed',
-        error: leaseExpired ? 'Reaped: lease expired' : 'Reaped: no heartbeat',
-        completed_at: nowIso,
-      }).eq('id', t.id).eq('status', 'running');
-      reapedTasks++;
-      console.log(`[REAPER] Reaped task ${t.task_key} (run ${t.run_id}) — leaseExpired=${leaseExpired} heartbeatStale=${heartbeatStale}`);
-    }
-
-    // ── 2. Reap whole RUNS that have exceeded the hard timeout ──
-    const runHardCutoff = new Date(now.getTime() - RUN_HARD_TIMEOUT_MS).toISOString();
-    const { data: stuckRuns } = await supabase
+    // Find runs stuck in running OR queued state for >5 min
+    const { data: stuckRuns, error } = await supabase
       .from('signal_agent_runs')
       .select('id, agent_id, started_at')
       .in('status', ['running', 'queued'])
-      .lt('started_at', runHardCutoff)
+      .lt('started_at', cutoff)
       .limit(50);
 
-    for (const run of stuckRuns || []) {
+    if (error) throw error;
+    if (!stuckRuns?.length) {
+      return new Response(JSON.stringify({ reaped: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`[REAPER] Found ${stuckRuns.length} stuck runs`);
+    let reaped = 0;
+
+    for (const run of stuckRuns) {
       try {
-        // Mark anything still pending/running as failed
+        // Mark stuck tasks as failed
         await supabase.from('signal_agent_tasks')
           .update({
             status: 'failed',
-            error: 'Reaped: parent run hit hard timeout (30min)',
-            completed_at: nowIso,
+            error: 'Reaped: stuck > 5min',
+            completed_at: new Date().toISOString(),
           })
           .eq('run_id', run.id)
           .in('status', ['pending', 'running']);
 
+        // Aggregate actual results from completed tasks
         const { data: tasks } = await supabase
           .from('signal_agent_tasks')
           .select('leads_found, status')
           .eq('run_id', run.id);
 
-        const totalLeads = (tasks || []).reduce((s: number, t: any) => s + (t.leads_found || 0), 0);
+        const totalLeads = (tasks || []).reduce((sum: number, t: any) => sum + (t.leads_found || 0), 0);
         const doneCount = (tasks || []).filter((t: any) => t.status === 'done').length;
         const totalCount = tasks?.length || 0;
 
+        // Determine final status
         const finalStatus = doneCount === totalCount && totalCount > 0
           ? 'done'
           : doneCount > 0 ? 'partial' : 'failed';
@@ -105,11 +67,11 @@ Deno.serve(async (req) => {
           status: finalStatus,
           total_leads: totalLeads,
           completed_tasks: doneCount,
-          completed_at: nowIso,
-          error: finalStatus === 'failed' ? 'Reaped: hard 30min timeout, no tasks completed' : null,
+          completed_at: new Date().toISOString(),
+          error: finalStatus === 'failed' ? 'Reaped: no tasks completed within 5min' : null,
         }).eq('id', run.id);
 
-        // Update agent results count if we have any leads.
+        // Update agent results_count if needed (only if positive count)
         if (totalLeads > 0 && run.agent_id) {
           const { data: agent } = await supabase.from('signal_agents')
             .select('results_count, leads_list_name, name, user_id')
@@ -129,43 +91,14 @@ Deno.serve(async (req) => {
           }
         }
 
-        console.log(`[REAPER] Hard-finalized run ${run.id}: ${finalStatus}, ${totalLeads} leads`);
-        reapedRuns++;
+        console.log(`[REAPER] Finalized run ${run.id}: ${finalStatus}, ${totalLeads} leads`);
+        reaped++;
       } catch (e) {
         console.error(`[REAPER] Failed to reap run ${run.id}:`, e);
       }
     }
 
-    // ── 3. Finalize runs whose tasks are ALL done/failed but were never closed ──
-    // (Edge case: keyword fetcher's self-finalize step may have failed)
-    const { data: openRuns } = await supabase
-      .from('signal_agent_runs')
-      .select('id, agent_id')
-      .eq('status', 'running')
-      .limit(50);
-
-    for (const run of openRuns || []) {
-      const { data: tasks } = await supabase
-        .from('signal_agent_tasks')
-        .select('status, leads_found')
-        .eq('run_id', run.id);
-      if (!tasks?.length) continue;
-      const open = tasks.filter((t: any) => t.status === 'pending' || t.status === 'running').length;
-      if (open > 0) continue;
-      const totalLeads = tasks.reduce((s: number, t: any) => s + (t.leads_found || 0), 0);
-      const doneCount = tasks.filter((t: any) => t.status === 'done').length;
-      const finalStatus = doneCount === tasks.length ? 'done' : doneCount > 0 ? 'partial' : 'failed';
-      await supabase.from('signal_agent_runs').update({
-        status: finalStatus,
-        total_leads: totalLeads,
-        completed_tasks: doneCount,
-        completed_at: nowIso,
-      }).eq('id', run.id);
-      console.log(`[REAPER] Closed orphan run ${run.id}: ${finalStatus}, ${totalLeads} leads`);
-      reapedRuns++;
-    }
-
-    return new Response(JSON.stringify({ reaped_tasks: reapedTasks, reaped_runs: reapedRuns }), {
+    return new Response(JSON.stringify({ reaped }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

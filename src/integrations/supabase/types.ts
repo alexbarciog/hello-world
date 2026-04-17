@@ -1052,16 +1052,11 @@ export type Database = {
       signal_agent_tasks: {
         Row: {
           agent_id: string
-          attempt_count: number
-          available_at: string
           completed_at: string | null
           diagnostics: Json | null
           error: string | null
           id: string
-          last_heartbeat_at: string | null
           leads_found: number
-          lease_expires_at: string | null
-          payload: Json | null
           run_id: string
           signal_type: string
           started_at: string | null
@@ -1070,16 +1065,11 @@ export type Database = {
         }
         Insert: {
           agent_id: string
-          attempt_count?: number
-          available_at?: string
           completed_at?: string | null
           diagnostics?: Json | null
           error?: string | null
           id?: string
-          last_heartbeat_at?: string | null
           leads_found?: number
-          lease_expires_at?: string | null
-          payload?: Json | null
           run_id: string
           signal_type: string
           started_at?: string | null
@@ -1088,16 +1078,11 @@ export type Database = {
         }
         Update: {
           agent_id?: string
-          attempt_count?: number
-          available_at?: string
           completed_at?: string | null
           diagnostics?: Json | null
           error?: string | null
           id?: string
-          last_heartbeat_at?: string | null
           leads_found?: number
-          lease_expires_at?: string | null
-          payload?: Json | null
           run_id?: string
           signal_type?: string
           started_at?: string | null

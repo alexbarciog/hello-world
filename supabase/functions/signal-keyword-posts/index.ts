@@ -504,23 +504,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   const START = Date.now();
-  // With the new queue model, each invocation processes a SMALL batch (≤ 4 keywords)
-  // so we can give it a generous runtime budget. Edge Function hard limit is ~400s.
-  const MAX_RUNTIME_MS = 330_000; // 5.5 min
+  const MAX_RUNTIME_MS = 145_000; // 145s — enough for 24+ keywords
   const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
-  // Heartbeat the task every ~20s so the reaper knows we're alive.
-  let lastHeartbeat = 0;
-  const heartbeat = async (sb: any, rid?: string, tkey?: string) => {
-    if (!rid || !tkey) return;
-    const now = Date.now();
-    if (now - lastHeartbeat < 20_000) return;
-    lastHeartbeat = now;
-    try {
-      await sb.from('signal_agent_tasks')
-        .update({ last_heartbeat_at: new Date().toISOString() })
-        .eq('run_id', rid).eq('task_key', tkey);
-    } catch { /* non-fatal */ }
-  };
 
   try {
     const reqBody = await req.json();
@@ -600,82 +585,39 @@ Deno.serve(async (req) => {
       rejected_author_dedup: 0,
       rejected_no_author: 0,
       inserted: 0,
-      // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
       sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
       sample_inserted: [] as Array<{ name: string; headline: string; intentScore: number }>,
     };
-    // Cap diagnostic sample arrays to keep the row small (was 50 each → ~50KB rows).
-    const SAMPLE_CAP = 5;
 
     let inserted = 0;
     const globalSeenPostIds = new Set<string>();
     const globalSeenAuthorIds = new Set<string>();
 
-    // ── Per-RUN bandwidth caps ──
-    // Profile fetches are the single biggest egress driver (30–80 KB each).
-    // Cap them at the RUN level (across all keyword tasks for this run) so
-    // a 30-keyword agent can't accidentally pull thousands of profile JSONs.
-    const RUN_PROFILE_FETCH_CAP = 50;
-    const RUN_INSERT_CAP = 60; // sane ceiling per run; quality > volume
-    let runProfileFetchesSoFar = 0;
-    let runInsertsSoFar = 0;
-    if (_run_id) {
-      try {
-        // Aggregate profile fetches already done by sibling tasks of this run.
-        const { data: doneRows } = await supabase
-          .from('signal_agent_tasks')
-          .select('diagnostics, leads_found')
-          .eq('run_id', _run_id)
-          .neq('task_key', _task_key || '');
-        for (const r of (doneRows || [])) {
-          const d: any = r.diagnostics || {};
-          runProfileFetchesSoFar += (d.profile_fetches_attempted || 0);
-          runInsertsSoFar += (r.leads_found || 0);
-        }
-      } catch { /* best effort */ }
-    }
-    const runHasBudget = () =>
-      runProfileFetchesSoFar < RUN_PROFILE_FETCH_CAP &&
-      runInsertsSoFar + inserted < RUN_INSERT_CAP;
-
-    // Track consecutive 429s to trigger an extra cool-off if Unipile is unhappy.
-    let consecutive429s = 0;
-
     for (const keyword of keywords) {
       pipelineStats.keywords_processed++;
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" (${pipelineStats.keywords_processed}/${keywords.length}) — ${inserted} leads so far, ${keywords.length - pipelineStats.keywords_processed} keywords remaining`); break; }
-      if (!runHasBudget()) {
-        console.log(`[BUDGET] Run-level cap reached (profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}) — stopping early`);
-        break;
-      }
 
-      // Heartbeat so the reaper doesn't think we're stuck.
-      await heartbeat(supabase, _run_id, _task_key);
-
-      // ── Step 1: Fetch ONE page (~25 posts). Bandwidth-first: stop paginating. ──
-      // Real intent phrases rarely have more than ~25 high-quality matches per week,
-      // and going past page 1 mostly returns noise — at the cost of ~50 KB per page.
+      // ── Step 1: Fetch posts with pagination ──
       const keywordPosts: any[] = [];
       let cursor: string | null = null;
-      const MAX_PAGES = 1;
-      const TARGET_POSTS = 25;
+      const MAX_PAGES = 5;
+      const TARGET_POSTS = 50;
 
       try {
         for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
-          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 25 };
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
           if (cursor) searchBody.cursor = cursor;
 
-          // Retry-with-backoff on Unipile 429 (rate-limit). Up to 5 attempts: 5s, 10s, 20s, 30s, 30s.
+          // Retry-with-backoff on Unipile 429 (rate-limit). Up to 3 attempts.
           let res: Response | null = null;
           let attempt = 0;
-          const MAX_ATTEMPTS = 5;
-          const BACKOFFS_MS = [5_000, 10_000, 20_000, 30_000, 30_000];
+          const MAX_ATTEMPTS = 3;
           while (attempt < MAX_ATTEMPTS) {
             res = await fetch(searchUrl, { method: 'POST', headers: searchHeaders, body: JSON.stringify(searchBody) });
             if (res.status !== 429) break;
             attempt++;
-            const backoffMs = BACKOFFS_MS[attempt - 1] + Math.floor(Math.random() * 1500);
+            const backoffMs = 1500 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500); // 1.5s, 3s, 6s + jitter
             console.warn(`[RATE-LIMIT] keyword "${keyword}" p${page + 1} got 429 — retry ${attempt}/${MAX_ATTEMPTS} in ${backoffMs}ms`);
             if (!hasTime()) break;
             await delay(backoffMs);
@@ -684,18 +626,8 @@ Deno.serve(async (req) => {
             const t = res ? await res.text() : 'no response';
             console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res?.status ?? 'n/a'} - ${t.slice(0, 200)}`);
             pipelineStats.unipile_errors++;
-            if (res?.status === 429) {
-              consecutive429s++;
-              // Circuit breaker: 3 consecutive 429s → 30s cool-off
-              if (consecutive429s >= 3 && hasTime()) {
-                console.warn(`[CIRCUIT-BREAKER] ${consecutive429s} consecutive 429s — sleeping 30s`);
-                await delay(30_000);
-                consecutive429s = 0;
-              }
-            }
             break;
           }
-          consecutive429s = 0; // success — reset circuit breaker
           const data = await res.json();
           const items = data.items || data.results || [];
           if (items.length === 0) pipelineStats.unipile_empty_responses++;
@@ -703,17 +635,15 @@ Deno.serve(async (req) => {
           console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
           cursor = data.cursor || data.next_cursor || null;
           if (!cursor || items.length === 0) break;
-          // Inter-page spacing
-          if (page < MAX_PAGES - 1 && hasTime()) await delay(1200 + Math.floor(Math.random() * 600));
+          if (page < MAX_PAGES - 1) await delay(400);
         }
       } catch (e) {
         console.error(`Keyword search "${keyword}":`, e);
         pipelineStats.unipile_errors++;
       }
 
-      // Inter-keyword spacing — generous to stay well under Unipile's per-account search budget.
-      // Target: ~12 keywords/min ceiling per account.
-      if (hasTime()) await delay(4000 + Math.floor(Math.random() * 2000));
+      // Inter-keyword spacing to avoid rate-limiting Unipile
+      if (hasTime()) await delay(700 + Math.floor(Math.random() * 400));
 
       pipelineStats.total_posts_fetched += keywordPosts.length;
 
@@ -767,12 +697,12 @@ Deno.serve(async (req) => {
             preFilterStats.wrong_industry++;
             pipelineStats.rejected_wrong_industry++;
           }
-          // Capture sample rejections (small cap to keep diagnostics tiny)
-          if (pipelineStats.sample_prefilter_rejections.length < SAMPLE_CAP) {
+          // Capture sample rejections (max 3)
+          if (pipelineStats.sample_prefilter_rejections.length < 50) {
             pipelineStats.sample_prefilter_rejections.push({
               keyword,
-              variants: diagVariants.slice(0, 5),
-              postSample: postText.substring(0, 160),
+              variants: diagVariants,
+              postSample: postText.substring(0, 300),
               reason: filterResult.reason || 'unknown',
             });
           }
@@ -824,9 +754,9 @@ Deno.serve(async (req) => {
           } else {
             pipelineStats.rejected_ai_low_score++;
           }
-          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
+          if (pipelineStats.sample_ai_rejections.length < 50) {
             pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 160),
+              postSample: p.text.substring(0, 300),
               is_buyer: rejectedCls.is_buyer,
               intent_score: rejectedCls.intent_score,
               reason: rejectedCls.reason,
@@ -834,9 +764,9 @@ Deno.serve(async (req) => {
           }
         } else {
           pipelineStats.rejected_ai_not_buyer++;
-          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
+          if (pipelineStats.sample_ai_rejections.length < 50) {
             pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 160),
+              postSample: p.text.substring(0, 300),
               is_buyer: false,
               intent_score: 0,
               reason: 'no_ai_response_for_post',
@@ -858,10 +788,6 @@ Deno.serve(async (req) => {
 
       for (const { post, matchedPhrase } of qualifiedPosts) {
         if (!hasTime()) break;
-        if (!runHasBudget()) {
-          console.log(`[BUDGET] mid-keyword stop: profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}`);
-          break;
-        }
 
         const postId = post.social_id || post.id || post.provider_id;
         const intentData = intentResults.get(postId);
@@ -881,29 +807,8 @@ Deno.serve(async (req) => {
           if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
         }
 
-        // ── BANDWIDTH-FIRST: pre-screen on the lightweight author payload included
-        // in the search response BEFORE doing the expensive full profile fetch.
-        // This drops ~70% of profile fetches without losing real leads, because
-        // posts that already passed the AI intent classifier with a real-looking
-        // author headline almost always represent a genuine person.
-        const previewHeadline = (authorData.headline || authorData.title || '').trim();
-        if (previewHeadline) {
-          if (isClearlyIrrelevant(previewHeadline)) {
-            keywordSkipped.irrelevant++;
-            pipelineStats.rejected_irrelevant_title++;
-            continue;
-          }
-          // Own-company exclusion using preview text only
-          if (ownCompanyLower && ownCompanyLower.length > 1 && previewHeadline.toLowerCase().includes(ownCompanyLower)) {
-            keywordSkipped.ownCompany++;
-            pipelineStats.rejected_own_company++;
-            continue;
-          }
-        }
-
-        // Full profile fetch (only for genuinely new leads that survived pre-screen)
+        // Full profile fetch (only for genuinely new leads)
         pipelineStats.profile_fetches_attempted++;
-        runProfileFetchesSoFar++;
         const fullAuthor = await fetchFullProfile(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         if (fullAuthor) {
           author = fullAuthor;
@@ -983,7 +888,6 @@ Deno.serve(async (req) => {
           keywordInserted++;
           inserted++;
           pipelineStats.inserted++;
-          runInsertsSoFar++;
           const tier = classifyContactWithIntentScore(match, icp, hl, intentData?.intent_score) || 'warm';
           console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier} (score=${intentData?.intent_score}, kw="${keyword}")`);
           // Capture sample inserted (max 3)

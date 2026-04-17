@@ -348,15 +348,11 @@ export default function Signals() {
     fetchRuns();
   }, []);
 
-  // Bandwidth-friendly polling: only when a run is in flight, every 15s, and
-  // also refresh the run list so the History view stays current without
-  // hammering Supabase when nothing is happening.
   useEffect(() => {
     if (runningAgentIds.length === 0) return;
     const interval = window.setInterval(() => {
       fetchAgents();
-      fetchRuns();
-    }, 15000);
+    }, 8000);
     return () => window.clearInterval(interval);
   }, [runningAgentIds.length]);
 
@@ -571,15 +567,6 @@ export default function Signals() {
         console.error("Run agent error:", error);
         const isPreviewDisconnect = /Failed to fetch|Failed to send a request to the Edge Function/i.test(error.message || "");
 
-        // Surface daily-budget rejection clearly
-        const rawMsg = (error as any)?.context?.error || error.message || "";
-        if (/DAILY_BUDGET_EXCEEDED|Daily run budget/i.test(rawMsg)) {
-          clearAgentRunning(agent.id);
-          toast.error("Daily run budget reached for this agent (3/day). This protects your bandwidth — please try again tomorrow.");
-          fetchAgents();
-          return;
-        }
-
         if (isPreviewDisconnect) {
           toast.info(`"${agent.name}" started, but preview lost the live connection. I’ll keep refreshing results here.`);
           schedulePreviewDisconnectFallback(agent);
@@ -596,8 +583,6 @@ export default function Signals() {
       const jobId = data?.job_id ?? data?.job_ids?.[0];
       if (jobId) {
         toast.info(`"${agent.name}" is processing in the background...`);
-        // Poll less aggressively (15s) — large runs can take 10+ min and the
-        // run record only changes a handful of times.
         const pollInterval = setInterval(async () => {
           const { data: runData } = await supabase
             .from("signal_agent_runs")
@@ -615,9 +600,8 @@ export default function Signals() {
             }
             fetchAgents();
           }
-        }, 15000);
-        // Hard stop after 25 min (enough for the largest StaffiX-style runs).
-        setTimeout(() => { clearInterval(pollInterval); clearAgentRunning(agent.id); fetchAgents(); }, 25 * 60_000);
+        }, 5000);
+        setTimeout(() => { clearInterval(pollInterval); clearAgentRunning(agent.id); fetchAgents(); }, 300_000);
       } else {
         clearAgentRunning(agent.id);
         toast.success(`"${agent.name}" finished — ${data?.leads_inserted ?? 0} new leads found`);
