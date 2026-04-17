@@ -423,6 +423,7 @@ Deno.serve(async (req) => {
             diag.total_engagers_raw += engagers.length;
             diag.bytes_fetched_estimate += 25_000 * 2;
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
+            const postText2 = post.text || post.commentary || '';
             for (const engager of engagers) {
               if (!hasTime()) break;
               const ep2 = engager.author||engager;
@@ -438,10 +439,13 @@ Deno.serve(async (req) => {
               const hl = fp.headline||fp.title||'';
               if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
+              // Fix 5: seller filter
+              if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }
               const cls2 = classifyContact(match, icp, hl);
               if (cls2 === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
-              const ok = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp);
-              if (ok) { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
+              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp);
+              if (result === 'exists') { diag.already_in_contacts++; continue; }
+              if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }
           }
         } catch(e) { console.error(`[POST_ENG] Profile engagers ${url}:`, e); }
