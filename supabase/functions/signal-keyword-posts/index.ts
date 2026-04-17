@@ -685,7 +685,7 @@ Deno.serve(async (req) => {
       // Fix 5: seller-detection layer (sellers using buyer phrases as bait)
       rejected_seller: 0,
       // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
-      min_intent_score: 50,
+      min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
       inserted: 0,
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
