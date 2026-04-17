@@ -1015,6 +1015,31 @@ Deno.serve(async (req) => {
     console.log(`[COMP] Runtime: ${Math.round((Date.now()-START)/1000)}s`);
     console.log(`[COMP] =====================================`);
 
+    // BRUTAL LOG: Step 6 — single-line task summary
+    console.log('[TASK_FINAL_SUMMARY]', JSON.stringify({
+      signal: signal_type,
+      rawFetched: pipelineStats.total_engagers_raw,
+      afterDedup: pipelineStats.engagers_after_dedup,
+      passedPrefilter: pipelineStats.engagers_after_dedup - pipelineStats.failed_quick_icp,
+      passedAI: 'N/A',
+      profilesFetched: pipelineStats.profiles_fetched,
+      passedICP: pipelineStats.inserted + pipelineStats.duplicates,
+      inserted: pipelineStats.inserted,
+      rejections: {
+        urlBroken: ((pipelineStats as any).zero_post_urls || []).length,
+        noIcpMatch: pipelineStats.excluded_no_icp_match,
+        ownCompany: pipelineStats.excluded_own_company,
+        irrelevantTitle: pipelineStats.excluded_irrelevant_title,
+        dbDedup: pipelineStats.duplicates,
+        aiRejected: 0,
+        failedQuickIcp: pipelineStats.failed_quick_icp,
+        excludedCompetitorEmployee: pipelineStats.excluded_competitor_employee,
+        wrongCountry: pipelineStats.excluded_wrong_country,
+        skippedNoId: pipelineStats.skipped_no_id,
+        crossRunSkipped: pipelineStats.skipped_already_processed,
+      },
+    }));
+
     // Save diagnostics to task record if run_id/task_key provided
     if (run_id && task_key) {
       try {
