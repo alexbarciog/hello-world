@@ -330,8 +330,12 @@ Deno.serve(async (req) => {
       inserted: 0,
       rejected: 0,
       bytes_fetched_estimate: 0,
-      // Fix 4: track repeat-signal updates to existing contacts (was silently rejected)
+      // Rule 3: skipped because contact already exists in DB (no update — net-new only)
+      already_in_contacts: 0,
+      // Legacy alias kept for backwards compatibility with run-history UI
       already_in_pipeline: 0,
+      // Fix 5: seller-detection counter
+      rejected_seller: 0,
       // Fix 6: per-source ICP match breakdown
       icp_match_by_headline: 0,
       icp_match_by_structured_title: 0,
@@ -630,16 +634,14 @@ Deno.serve(async (req) => {
         }
         if (rawId) newlyProcessedIds.push(rawId);
 
-        // Early dedup against contacts DB (Fix 4: bump signal_count + last_signal_at)
+        // Rule 3 (HARD SKIP): if contact already exists — skip entirely. No update.
+        // Updating existing contacts inflates "activity" without producing pipeline.
+        // The goal of each run is exclusively NET-NEW contacts.
         if (rawId) {
-          const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
+          const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
           if (existing && existing.length > 0) {
             pipelineStats.duplicates++;
-            pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
-            await supabase.from('contacts').update({
-              last_signal_at: new Date().toISOString(),
-              signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
-            } as any).eq('id', (existing[0] as any).id);
+            pipelineStats.already_in_contacts = (pipelineStats.already_in_contacts || 0) + 1;
             continue;
           }
         }
@@ -660,16 +662,12 @@ Deno.serve(async (req) => {
 
         const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
 
-        // Re-check dedup with resolved ID (Fix 4: bump signal_count on repeat hit)
+        // Rule 3 (HARD SKIP) — re-check with resolved ID. Skip if exists. No update.
         if (lpid && lpid !== rawId) {
-          const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
+          const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
           if (existing && existing.length > 0) {
             pipelineStats.duplicates++;
-            pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
-            await supabase.from('contacts').update({
-              last_signal_at: new Date().toISOString(),
-              signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
-            } as any).eq('id', (existing[0] as any).id);
+            pipelineStats.already_in_contacts = (pipelineStats.already_in_contacts || 0) + 1;
             continue;
           }
         }
@@ -926,14 +924,11 @@ Deno.serve(async (req) => {
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
                 if (rawId) newlyProcessedIds.push(rawId);
                 if (rawId) {
-                  const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
+                  // Rule 3 (HARD SKIP): existing contact = skip, no update.
+                  const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
                   if (existing && existing.length > 0) {
                     pipelineStats.duplicates++;
-                    pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
-                    await supabase.from('contacts').update({
-                      last_signal_at: new Date().toISOString(),
-                      signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
-                    } as any).eq('id', (existing[0] as any).id);
+                    pipelineStats.already_in_contacts = (pipelineStats.already_in_contacts || 0) + 1;
                     continue;
                   }
                 }
@@ -944,14 +939,11 @@ Deno.serve(async (req) => {
                 if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') continue;
                 const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
                 if (lpid && lpid !== rawId) {
-                  const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
+                  // Rule 3 (HARD SKIP): existing contact = skip, no update.
+                  const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
                   if (existing && existing.length > 0) {
                     pipelineStats.duplicates++;
-                    pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
-                    await supabase.from('contacts').update({
-                      last_signal_at: new Date().toISOString(),
-                      signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
-                    } as any).eq('id', (existing[0] as any).id);
+                    pipelineStats.already_in_contacts = (pipelineStats.already_in_contacts || 0) + 1;
                     continue;
                   }
                 }

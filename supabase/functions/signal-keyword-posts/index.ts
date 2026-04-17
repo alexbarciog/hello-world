@@ -126,6 +126,21 @@ function classifyContactWithIntentScore(match: MatchResult, icp: ICPFilters, hea
   return null;
 }
 
+// Fix 5: Seller detection — reject posts where the AUTHOR is offering the same service
+// the user sells (lead-gen agencies posting "we help companies with outbound" attract
+// buyers but ARE NOT BUYERS THEMSELVES). Runs BEFORE AI to save classification budget.
+const SELLER_PHRASES = [
+  'we help', 'our agency', 'our services', 'book a call',
+  'check out our', 'dm me for', 'link in bio', 'we offer',
+  'our clients', 'free consultation', 'i help companies',
+  'we specialize in', 'we work with', 'our team helps',
+  'reach out if you', 'message me to', 'visit our website',
+];
+function isSeller(postText: string, authorHeadline: string): boolean {
+  const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
+  return SELLER_PHRASES.some(p => text.includes(p));
+}
+
 function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies: string[] = []): boolean {
   const companyFields = collectCompanyFields(profile);
   const profileUrl = (profile.linkedin_url || profile.public_url || profile.profile_url || '').toLowerCase();
@@ -559,7 +574,8 @@ Deno.serve(async (req) => {
     const searchHeaders = { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' };
 
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
-    const MIN_INTENT_SCORE = 60; // Score gate: below 60 = discard
+    // Fix 7: Lowered from 60 → 50 for keyword posts (warm buyer-frustration signals are typically 50-65)
+    const MIN_INTENT_SCORE = 50;
     const isHighPrecision = precision_mode === 'high_precision';
     console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country+industry filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
@@ -622,6 +638,11 @@ Deno.serve(async (req) => {
       rejected_early_db_dedup: 0,
       rejected_author_dedup: 0,
       rejected_no_author: 0,
+      // Fix 5: seller-detection layer (sellers using buyer phrases as bait)
+      rejected_seller: 0,
+      // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
+      min_intent_score: 50,
+      already_in_contacts: 0,
       inserted: 0,
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
@@ -786,6 +807,24 @@ Deno.serve(async (req) => {
         const postText = extractPostText(post);
         const authorData = post.author || post.actor || post.author_detail || null;
 
+        // Fix 5: SELLER DETECTION — reject before AI to save classification budget.
+        // A lead-gen agency posting "we help companies with outbound" attracts buyers
+        // but is NOT a buyer themselves. Add to contacts table = poisoned pipeline.
+        const authorHl = authorData?.headline || authorData?.title || '';
+        if (isSeller(postText, authorHl)) {
+          pipelineStats.rejected_seller++;
+          if (pipelineStats.sample_prefilter_rejections.length < SAMPLE_CAP) {
+            pipelineStats.sample_prefilter_rejections.push({
+              keyword,
+              variants: diagVariants.slice(0, 5),
+              postSample: postText.substring(0, 160),
+              reason: 'seller_detected',
+            });
+          }
+          console.log(`[SELLER] ❌ "${(authorHl || 'unknown').slice(0, 60)}" — sample: "${postText.substring(0, 100)}"`);
+          continue;
+        }
+
         const filterResult = preFilterPost(postText, keyword, authorData, icp, isHighPrecision);
 
         if (!filterResult.pass) {
@@ -907,10 +946,15 @@ Deno.serve(async (req) => {
         if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
         if (authorId) globalSeenAuthorIds.add(authorId);
 
-        // Early dedup against DB
+        // Early dedup against DB — Rule 3: HARD SKIP (no update, no re-insert)
         if (authorId) {
           const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', authorId).limit(1);
-          if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
+          if (existing && existing.length > 0) {
+            keywordSkipped.earlyDedup++;
+            pipelineStats.rejected_early_db_dedup++;
+            pipelineStats.already_in_contacts++;
+            continue;
+          }
         }
 
         // ── BANDWIDTH-FIRST: pre-screen on the lightweight author payload included
@@ -944,7 +988,7 @@ Deno.serve(async (req) => {
             if (globalSeenAuthorIds.has(newId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
             globalSeenAuthorIds.add(newId);
             const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', newId).limit(1);
-            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
+            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; pipelineStats.already_in_contacts++; continue; }
           }
           authorId = newId || authorId;
         } else {
