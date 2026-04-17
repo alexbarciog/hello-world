@@ -83,6 +83,19 @@ function sanitizeLinkedinUrl(raw: string): string {
     return raw.trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 }
+
+// Fix 5: Seller detection — reject engagers whose headline screams "I sell this".
+// Sellers commonly engage with competitors' posts to fish for clients; they are NOT buyers.
+const SELLER_PHRASES = [
+  'we help', 'our agency', 'our services', 'book a call',
+  'check out our', 'dm me for', 'link in bio', 'we offer',
+  'our clients', 'free consultation', 'i help companies',
+  'we specialize in', 'we work with', 'helping companies',
+];
+function isSeller(postText: string, authorHeadline: string): boolean {
+  const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
+  return SELLER_PHRASES.some(p => text.includes(p));
+}
 function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
@@ -169,6 +182,7 @@ Deno.serve(async (req) => {
       run_profile_engagers = true,
       run_id,
       task_key,
+      signal_type = 'post_engagers',
     } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
@@ -206,6 +220,10 @@ Deno.serve(async (req) => {
       profiles_fetched: 0,
       excluded_no_icp_match: 0,
       excluded_competitor: 0,
+      // Fix 5: seller-detection counter
+      rejected_seller: 0,
+      // Rule 3: existing contact = skip, no update
+      already_in_contacts: 0,
       cold_capped: 0,
       inserted: 0,
       bytes_fetched_estimate: 0,
