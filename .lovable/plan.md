@@ -1,84 +1,137 @@
 
 
-## Problem
+## Diagnosis — what the data actually shows
 
-Last 4 signal-agent runs exhausted Supabase egress. Looking at the current architecture:
+I read the latest `signal_agent_tasks.diagnostics` rows for StaffiX, Venus One, and Services. Here are the smoking guns from the most recent runs:
 
-- `process-signal-agents` enqueues all keyword tasks upfront
-- `drain-signal-agent-tasks` runs every minute via cron and dispatches up to 8 tasks per tick
-- Each `signal-keyword-posts` invocation runs ~5.5 min, paginates Unipile search results (often hundreds of posts per keyword), fetches each profile individually, then writes leads + diagnostics
-- Each task also re-reads `signal_agent_tasks`, `signal_agent_runs`, `processed_posts` repeatedly
-- Heartbeats + run-status polling from the UI add constant DB chatter
+### Competitor Engagers (StaffiX, run 7:00 UTC) — task `comp_engagers(5)`
+```
+posts_fetched:           85    (5 competitors × ~17 posts)
+reactions_fetched:     1,095
+comments_fetched:         56
+total_engagers_raw:    1,151
+engagers_after_dedup:    603
+skipped_no_id:            56   (anonymous/private)
+failed_quick_icp:         50   (rejected on headline alone)
+profiles_fetched:        502   ← BLEW PAST THE 30-CAP
+excluded_no_icp_match:   438   ← almost all of them lose here
+excluded_irrelevant_title:30
+excluded_competitor_employee: 32
+duplicates:               13
+inserted:                  2   ← only 2 leads
+```
 
-For an agent with 30+ keywords this becomes:
-- 30 keyword searches × ~5 paginated pages × ~50KB per Unipile response = ~7–8 MB of inbound traffic per run
-- Plus per-post profile fetches (the expensive part — 1 HTTP call + 1 DB write per post)
-- Plus competitor + post-engagers signals doing the same
-- Plus the cron worker firing every 60s even when there's nothing to do
-- Plus the UI polling run status every few seconds while a run is active
+### Competitor Engagers (Venus One, run 7:14 UTC) — task `comp_engagers(17)`
+```
+engagers_after_dedup:    523
+profiles_fetched:         30   (cap hit, stopped early)
+skipped_already_processed: 329 (cross-run dedup ate most candidates)
+excluded_no_icp_match:    25
+inserted:                  0
+```
 
-So 4 large runs can easily push 100+ MB of egress, plus thousands of edge invocations.
+### Competitor Followers — every single run shows
+```
+competitors_processed: 0, posts_fetched: 0, profiles_fetched: 0, inserted: 0
+```
+The `competitor_followers` task is finishing in <1 second with all zeros. Nothing is being fetched at all.
 
-## Goal
+---
 
-Keep lead quality high (strict filtering stays) while drastically cutting bandwidth and edge-function execution time per run. The current strategy fans out too wide — we need to **fetch less, smarter**.
+## How each system actually works today
 
-## Plan — bandwidth-first redesign
+### A. `competitor_engagers` (live in `signal-competitor/index.ts` lines 279–579)
+1. For each competitor URL → resolve company slug to numeric ID via Unipile
+2. Paginate up to 5 pages × 20 posts (max 100), keep top 20 by engagement
+3. For each of those 20 posts: fetch up to **100 reactions + 100 comments**
+4. Dedupe engagers, then for each unique engager:
+   - cross-run dedup against `processed_posts`
+   - quick-ICP check on the headline included in the reaction payload
+   - early dup-check against `contacts` table
+   - **fetch full profile from Unipile** (capped at 30 per task)
+   - exclude own company / competitor employee / irrelevant title / wrong country
+   - require title OR industry to match ICP
+   - insert as contact
 
-### 1. Hard cap what each keyword actually fetches
-- Stop paginating Unipile search past page 1 for keyword_posts. One page = ~25 posts is plenty when the query is a real intent phrase. Drop `total_posts_fetched` from "hundreds" to ~25 per keyword.
-- Cap total posts processed per **run** at ~150 across all keywords. Once hit, skip remaining tasks and finalize the run cleanly.
-- Cap profile fetches per run at ~50. Profile fetches are the single biggest egress driver (each is a full Unipile profile JSON ~30–80 KB).
+### B. `competitor_followers` (lines 608–727)
+1. Resolve company slug to numeric ID
+2. Call `/api/v1/users/followers?user_id={numericId}` paginated up to 3×100
+3. For each follower → quick-ICP → profile fetch → same exclusion + ICP filter pipeline → insert
 
-### 2. Pre-filter posts BEFORE fetching profiles
-Right now we fetch the profile of nearly every post author, then run quick-ICP. Flip the order:
-- Use the post's already-included author headline + post text to run quick-ICP first (no extra HTTP call)
-- Only fetch the full profile when quick-ICP passes
-- This alone should cut Unipile egress by 60–80%
+### C. `profile_engagers` / influencer LinkedIn profiles (in `signal-post-engagers/index.ts` lines 211–260)
+1. For each LinkedIn profile/company URL in your influencer list → fetch up to 10 of their posts
+2. For each post → fetch 50 reactions + 30 comments **in parallel**
+3. For each engager → fetch full profile (no cap) → ICP scoring → `matchesTitleOrIndustry` filter → exclusion check → insert
 
-### 3. Stop the cron worker from idling
-- `drain-signal-agent-tasks` runs every minute forever, even with zero pending tasks. Each tick still does 1–2 SELECTs.
-- Add an early-exit: if no agents have an active run in the last 30 min, return immediately without querying tasks at all (one cheap COUNT instead of full task scan).
-- Reduce cron from every-minute to every-2-minutes.
+There is also `own_post_engagers` in the same file (lines 170–208): scans your own last 5 posts, 25 reactors each.
 
-### 4. Reduce UI polling pressure
-- Run-history page currently polls `signal_agent_runs` + `signal_agent_tasks` every few seconds while a run is active. Move polling to 15s when running, stop entirely when idle.
-- Use a single combined query instead of two separate ones.
+---
 
-### 5. Per-user run budget (the safety net)
-- Add a per-user **daily run budget**: e.g. max 3 large runs per agent per day. Block "Run now" with a clear toast when exceeded.
-- Track in `signal_agent_runs` (already has `started_at`) — no schema change needed.
+## Why you're getting almost no leads — three concrete failures
 
-### 6. Diagnostics size
-- `diagnostics` jsonb on each task can grow large (full per-keyword breakdowns). Cap it to a small summary and drop the per-post arrays.
+### Problem 1 — `competitor_followers` is silently broken
+Every recent run shows `competitors_processed: 0`. The task returns instantly with all-zero diagnostics. Likely cause: the `pipelineStats.competitors_processed` counter is only incremented inside `processCompetitorEngagers` (line 304), but the followers branch (line 608+) never increments it, AND the followers branch never runs the loop body because either:
+- the company slug fails to resolve to a numeric ID (we've seen `resolveCompanyId` warnings before for company URLs that aren't `/company/<slug>` form), or
+- `urls` is empty when `signal_type === 'competitor_followers'` is dispatched.
+
+We need to confirm by logging the URLs the task receives + the resolution result. Right now we have zero visibility.
+
+### Problem 2 — `competitor_engagers` profile-fetch cap is starving the funnel
+The cap was lowered to **30 profile fetches per task** in the bandwidth pass. But the funnel needs ~250 fetches to find ~2 leads (StaffiX 7:00 run: 502 fetches → 2 inserts = ~0.4% conversion). At 30 fetches the math is: `30 × 0.4% ≈ 0 leads`. That is exactly what Venus One 7:14 returned.
+
+The pre-filter (`engagerPassesQuickIcpCheck`) only rejected 50 of 553 engagers on headline alone — because the Unipile reaction payload usually doesn't include a headline at all, so the function returns "benefit of doubt = pass." So the cap is hit on essentially random engagers, not pre-filtered ones.
+
+### Problem 3 — cross-run dedup is over-blocking re-runs
+Venus One run shows `skipped_already_processed: 329` — meaning 63% of engagers were thrown out as "already seen." `processed_posts` accumulates forever per agent. After a few runs almost every engager of a given competitor is already in there, so the new run has nothing to qualify.
+
+---
+
+## Plan — restore lead flow without blowing egress
+
+### Fix 1 — Make `competitor_followers` actually run + observable
+- Log `urls` array and resolution results at task entry
+- Increment `competitors_processed` in the followers branch too
+- Verify the followers API call shape (Unipile recently changed the followers endpoint contract; we may need `?company_id=` instead of `?user_id=`)
+
+### Fix 2 — Smarter cap, not a smaller cap
+Replace the flat `PROFILE_FETCH_CAP = 30` with a **two-tier budget**:
+- Allow up to **80 profile fetches per task** when no ICP-strong pre-filter signal exists in the engager payload
+- Skip the cap entirely for engagers whose included headline already passes a positive ICP keyword check
+- Add `RUN_PROFILE_FETCH_CAP` shared across all comp tasks (e.g. 200/run) to keep the global egress ceiling intact
+
+### Fix 3 — Cap cross-run dedup window
+Only treat `processed_posts` as "seen" if processed in the **last 30 days**. Older entries get a second chance. Also: only dedupe by post-id, not by engager-id, for the engagers signal (engagers should be re-evaluated when ICP changes).
+
+### Fix 4 — Tighten the engagers funnel before the profile fetch
+Currently almost all rejection happens AFTER the expensive fetch:
+- `excluded_no_icp_match: 438` — these are full profiles fetched then thrown out
+- Move the industry/title check earlier: if the engager payload contains `headline`/`occupation` (Unipile sometimes includes it for commenters), run the strict ICP match before fetching. Only fetch profile when (a) headline is missing, or (b) headline already matches.
+
+### Fix 5 — `profile_engagers` is the one bright spot — prioritize it
+It has no profile-fetch cap and no cross-run dedup, and it runs fewer posts (10) but fetches more engagers per post (80). It should be reliably finding leads. We should:
+- Add diagnostics to `signal-post-engagers` (currently it only logs to console — no per-task summary in the DB) so we can verify it's actually working
+- Add the same quick-ICP pre-filter to save Unipile profile bandwidth
+
+### Fix 6 — Add a hard per-task egress estimate
+Track `bytes_fetched_estimate` in diagnostics (count Unipile responses × ~30KB) so the run history shows actual per-task cost. This makes future tuning data-driven instead of guesswork.
+
+---
 
 ## Files to change
 
 ```text
-supabase/functions/signal-keyword-posts/index.ts     single-page fetch, quick-ICP before profile fetch, run-level caps
-supabase/functions/signal-competitor/index.ts        same: pre-filter before profile fetch, cap fetches
-supabase/functions/signal-post-engagers/index.ts     same pre-filter pattern
-supabase/functions/drain-signal-agent-tasks/index.ts early-exit when no active runs
-supabase/functions/process-signal-agents/index.ts    enforce daily run budget per user/agent
-supabase/config.toml                                  (cron schedule update — done via SQL, not config)
-src/pages/Signals.tsx (run history)                  reduce polling frequency, single combined query
+supabase/functions/signal-competitor/index.ts        Fix 1, 2, 3, 4, 6
+supabase/functions/signal-post-engagers/index.ts     Fix 5 (add diagnostics + quick-ICP)
 ```
 
-## Expected impact
-
-| Metric | Before | After |
-|---|---|---|
-| Unipile egress per large run | ~7–10 MB | ~1–2 MB |
-| Profile fetches per run | 100–300 | ≤50 |
-| Edge function invocations per run | 50–100 | 15–25 |
-| DB queries per run | ~500 | ~150 |
-| Cron worker idle ticks | 1440/day | ~720/day, mostly cheap |
-| Lead quality | strict | strict (unchanged) |
+No DB migration needed — diagnostics fields are already JSONB.
 
 ## Validation
 
-- Run StaffiX agent end-to-end and confirm the run finishes cleanly with leads found.
-- Check Supabase egress dashboard before/after — should drop ~5x.
-- Confirm the daily run budget blocks excessive re-runs with a clear message.
-- Confirm UI run history still updates within ~15s.
+1. Re-run StaffiX agent. Check that:
+   - `competitor_followers` task diagnostics show `competitors_processed > 0` and `profiles_fetched > 0`
+   - `competitor_engagers` diagnostics show `inserted ≥ 2` with `profiles_fetched ≤ 80`
+   - `profile_engagers` task now writes diagnostics
+2. Check `bytes_fetched_estimate` in run history — should be 1–2MB per run, not 7–10MB.
+3. Confirm cross-run dedup still prevents re-importing the exact same lead from a recent run.
 
