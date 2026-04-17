@@ -37,6 +37,30 @@ Deno.serve(async (req) => {
     if (agentErr) throw new Error(`Failed to load agents: ${agentErr.message}`);
     if (!agents?.length) return jsonResponse({ message: 'No active signal agents', processed: 0 });
 
+    // ── Daily run budget (manual triggers only) ──
+    // Bandwidth safety net: cap any single agent at 3 runs per UTC day.
+    // The scheduled cron path bypasses this — it runs ALL active agents in
+    // one tick and is already pace-limited by the schedule itself.
+    const DAILY_RUN_BUDGET = 3;
+    if (targetAgentId) {
+      const startOfDay = new Date();
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const { count: todaysRuns } = await supabase
+        .from('signal_agent_runs')
+        .select('id', { count: 'exact', head: true })
+        .eq('agent_id', targetAgentId)
+        .gte('started_at', startOfDay.toISOString());
+      if ((todaysRuns ?? 0) >= DAILY_RUN_BUDGET) {
+        return new Response(
+          JSON.stringify({
+            error: `Daily run budget reached (${todaysRuns}/${DAILY_RUN_BUDGET}). This protects your Supabase bandwidth — try again tomorrow or wait for the next scheduled run.`,
+            code: 'DAILY_BUDGET_EXCEEDED',
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+    }
+
     // ── Stripe subscription check ──
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     const paidUsers = new Set<string>();
