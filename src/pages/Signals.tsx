@@ -799,15 +799,21 @@ export default function Signals() {
           <p className="text-center py-10 text-sm text-muted-foreground">No agents yet. Create your first one below.</p>
         ) : (
           agents.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onToggle={() => toggleAgentStatus(agent)}
-              onDelete={() => deleteAgent(agent.id)}
-              onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
-              onRun={() => runAgentNow(agent)}
-              isAdmin={!!isAdmin}
-            />
+            <div key={agent.id}>
+              <AgentCard
+                agent={agent}
+                onToggle={() => toggleAgentStatus(agent)}
+                onDelete={() => deleteAgent(agent.id)}
+                onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
+                onRun={() => runAgentNow(agent)}
+                isAdmin={!!isAdmin}
+              />
+              <AgentSuggestionsPanel
+                agentId={agent.id}
+                currentIcpTitles={agent.icp_job_titles ?? []}
+                onIcpUpdated={(next) => setAgents((prev) => prev.map(a => a.id === agent.id ? { ...a, icp_job_titles: next } : a))}
+              />
+            </div>
           ))
         )}
         <button
