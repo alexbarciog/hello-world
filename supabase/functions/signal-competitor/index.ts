@@ -203,17 +203,29 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
 
 const QUICK_REJECT_TITLES = ['student', 'intern', 'freelance', 'looking for work', 'job seeker', 'fresher', 'trainee', 'apprentice'];
 
-// Returns:
-//   'strong_pass' = headline mentions an ICP job title → skip cap, fetch profile
-//   'pass'        = no headline OR neutral headline → counts toward cap
-//   'reject'      = clearly irrelevant → skip
-function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'strong_pass' | 'pass' | 'reject' {
-  if (!headline) return 'pass';
-  const hl = headline.toLowerCase();
-  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
-  if (isClearlyIrrelevant(hl)) return 'reject';
+// Mode-aware pre-filter.
+//   isHighPrecision = true  → strict legacy behaviour (reject if no positive ICP signal)
+//   isHighPrecision = false → relaxed Discovery (only reject hard never-buyers; let
+//                              seniority + relevant departments + industry through)
+function engagerPreFilter(
+  headline: string | undefined,
+  icp: ICPFilters,
+  isHighPrecision: boolean,
+): 'strong_pass' | 'pass' | 'reject' {
+  const hl = (headline || '').toLowerCase();
 
-  // STRONG positive: headline matches an ICP job title OR has buying intent
+  // Hard never-buyers — reject in BOTH modes
+  const NEVER_BUYERS = [
+    'intern', 'student', 'junior', 'trainee', 'apprentice',
+    'graduate', 'assistant', 'coordinator', 'administrator',
+    'receptionist', 'support agent', 'data entry',
+  ];
+  if (hl && NEVER_BUYERS.some(r => hl.includes(r))) return 'reject';
+
+  if (!headline) return 'pass';
+
+  // Buying-intent / seniority always wins
+  if (hasBuyingIntent(hl)) return 'strong_pass';
   if (icp.jobTitles.length > 0) {
     const titleMatch = icp.jobTitles.some(t => {
       const needle = t.toLowerCase().trim();
@@ -221,15 +233,35 @@ function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'stron
     });
     if (titleMatch) return 'strong_pass';
   }
-  if (hasBuyingIntent(hl)) return 'strong_pass';
 
-  // STRICT mode: headline present but no positive signal AND ICP defines titles → reject
-  // This is the key fix: most rejections were happening AFTER the expensive fetch.
-  if (icp.jobTitles.length > 0 && hl.length > 5) {
-    return 'reject';
+  if (isHighPrecision) {
+    // Strict — same as before.
+    if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
+    if (isClearlyIrrelevant(hl)) return 'reject';
+    if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
+    return 'pass';
   }
 
-  return 'pass';
+  // Discovery mode — let any plausible buyer through to AI / full ICP check.
+  const SENIORITY_SIGNALS = [
+    'founder', 'co-founder', 'owner', 'director', 'head of',
+    'vp', 'vice president', 'chief', 'ceo', 'cto', 'cmo', 'coo',
+    'president', 'partner', 'principal', 'lead', 'manager',
+    'senior', 'sr.', 'general manager', 'managing director',
+  ];
+  if (SENIORITY_SIGNALS.some(s => hl.includes(s))) return 'pass';
+
+  const RELEVANT_DEPARTMENTS = [
+    'sales', 'revenue', 'growth', 'marketing', 'business development',
+    'bd', 'account', 'partnerships', 'operations', 'product',
+    'strategy', 'commercial', 'customer success', 'go-to-market',
+  ];
+  if (RELEVANT_DEPARTMENTS.some(d => hl.includes(d))) return 'pass';
+
+  // Industry fallback — if any ICP industry shows up in the headline, allow.
+  if (icp.industries.some(ind => ind && hl.includes(ind.toLowerCase()))) return 'pass';
+
+  return 'reject';
 }
 
 // Backward-compat shim (still referenced in the file)
