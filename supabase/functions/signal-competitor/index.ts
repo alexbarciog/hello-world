@@ -84,6 +84,23 @@ function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
 }
 
 function unipileGet(path: string,apiKey: string,dsn: string){return fetch(`https://${dsn}${path}`,{headers:{'X-API-KEY':apiKey}});}
+
+// Fix 2: Sanitize LinkedIn URLs before sending to Unipile.
+// Strips query strings (utm_*), fragments, trailing slashes, and Unicode diacritics
+// that break Unipile's URL parser and silently return 0 results.
+function sanitizeLinkedinUrl(raw: string): string {
+  if (!raw) return raw;
+  try {
+    const url = new URL(raw.trim());
+    url.search = '';
+    url.hash = '';
+    let clean = url.toString().replace(/\/+$/, '');
+    clean = clean.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    return clean.toLowerCase();
+  } catch {
+    return raw.trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+}
 function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
@@ -235,6 +252,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
 
+    // Fix 2: sanitize all incoming URLs ONCE before any Unipile call
+    const sanitizedUrls: string[] = (urls as string[]).map(sanitizeLinkedinUrl).filter(Boolean);
+    const urlSanitizationChanged = sanitizedUrls.filter((s, i) => s !== (urls as string[])[i]).length;
+    if (urlSanitizationChanged > 0) {
+      console.log(`[COMP] sanitized ${urlSanitizationChanged}/${urls.length} URLs (stripped query/fragment/diacritics)`);
+    }
+
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -291,7 +315,18 @@ Deno.serve(async (req) => {
       inserted: 0,
       rejected: 0,
       bytes_fetched_estimate: 0,
+      // Fix 4: track repeat-signal updates to existing contacts (was silently rejected)
+      already_in_pipeline: 0,
+      // Fix 6: per-source ICP match breakdown
+      icp_match_by_headline: 0,
+      icp_match_by_structured_title: 0,
+      icp_match_by_profile_industry: 0,
+      icp_match_by_company_industry: 0,
+      // Fix 6: URL sanitization + zero-result tracking
+      url_sanitization_changed: urlSanitizationChanged,
     };
+    // Fix 6: list of URLs that returned 0 posts/followers from Unipile
+    (pipelineStats as any).zero_post_urls = [] as any;
 
     const newlyProcessedIds: string[] = [];
     let inserted = 0;
@@ -531,11 +566,16 @@ Deno.serve(async (req) => {
         }
         if (rawId) newlyProcessedIds.push(rawId);
 
-        // Early dedup against contacts DB
+        // Early dedup against contacts DB (Fix 4: bump signal_count + last_signal_at)
         if (rawId) {
-          const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
+          const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
           if (existing && existing.length > 0) {
             pipelineStats.duplicates++;
+            pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
+            await supabase.from('contacts').update({
+              last_signal_at: new Date().toISOString(),
+              signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
+            } as any).eq('id', (existing[0] as any).id);
             continue;
           }
         }
@@ -556,10 +596,18 @@ Deno.serve(async (req) => {
 
         const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
 
-        // Re-check dedup with resolved ID
+        // Re-check dedup with resolved ID (Fix 4: bump signal_count on repeat hit)
         if (lpid && lpid !== rawId) {
-          const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
-          if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
+          const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
+          if (existing && existing.length > 0) {
+            pipelineStats.duplicates++;
+            pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
+            await supabase.from('contacts').update({
+              last_signal_at: new Date().toISOString(),
+              signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
+            } as any).eq('id', (existing[0] as any).id);
+            continue;
+          }
         }
 
         // Own-company exclusion
@@ -605,15 +653,30 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Industry/title filter
+        // Fix 1: OR-logic ICP — any of headline / structured title / industry / company industry matching
+        // is sufficient. Previously required a structured title re-match which killed 197/200 strong passes.
         if (icp.jobTitles.length > 0 || icp.industries.length > 0) {
-          const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(hl, icp.jobTitles);
-          const industry = (fp.industry || fp.current_company?.industry || '').toLowerCase();
-          const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries) || fuzzyMatchList(hl, icp.industries);
+          const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
+          const profileIndustry: string = (fp.industry || '').toLowerCase();
+          const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
+          const titleMatch =
+            icp.jobTitles.length === 0 ||
+            fuzzyMatchList(hl, icp.jobTitles) ||
+            fuzzyMatchList(exp0Title, icp.jobTitles);
+          const industryMatch =
+            icp.industries.length === 0 ||
+            fuzzyMatchList(profileIndustry, icp.industries) ||
+            fuzzyMatchList(companyIndustry, icp.industries) ||
+            fuzzyMatchList(hl, icp.industries);
           if (!titleMatch && !industryMatch) {
             pipelineStats.excluded_no_icp_match++;
             continue;
           }
+          // Fix 6: track which signal made it pass
+          pipelineStats.icp_match_by_headline = (pipelineStats.icp_match_by_headline || 0) + (fuzzyMatchList(hl, icp.jobTitles) ? 1 : 0);
+          pipelineStats.icp_match_by_structured_title = (pipelineStats.icp_match_by_structured_title || 0) + (fuzzyMatchList(exp0Title, icp.jobTitles) ? 1 : 0);
+          pipelineStats.icp_match_by_profile_industry = (pipelineStats.icp_match_by_profile_industry || 0) + (fuzzyMatchList(profileIndustry, icp.industries) ? 1 : 0);
+          pipelineStats.icp_match_by_company_industry = (pipelineStats.icp_match_by_company_industry || 0) + (fuzzyMatchList(companyIndustry, icp.industries) ? 1 : 0);
         }
 
         const match = scoreProfileAgainstICP(fp, icp);
@@ -668,12 +731,12 @@ Deno.serve(async (req) => {
 
     // ── Route by signal type ──
     if (signal_type === 'competitor_followers') {
-      console.log(`[COMP] competitor_followers: received ${urls.length} URLs:`);
-      urls.forEach((u: string, i: number) => console.log(`[COMP]   [${i}] ${u}`));
+      console.log(`[COMP] competitor_followers: received ${sanitizedUrls.length} URLs:`);
+      sanitizedUrls.forEach((u: string, i: number) => console.log(`[COMP]   [${i}] ${u}`));
 
-      for (let urlIdx = 0; urlIdx < urls.length; urlIdx++) {
+      for (let urlIdx = 0; urlIdx < sanitizedUrls.length; urlIdx++) {
         if (!hasTime()) break;
-        const url = urls[urlIdx];
+        const url = sanitizedUrls[urlIdx];
         const companyName = extractCompanyName(url);
         const isCompanyUrl = url.includes('/company/');
 
@@ -735,6 +798,12 @@ Deno.serve(async (req) => {
                 allFollowers.push(...followers);
                 console.log(`[COMP] "${companyName}" followers page ${page + 1}: ${followers.length} followers (total: ${allFollowers.length})`);
 
+                // Fix 6: surface zero-result responses with body preview so we can see why
+                if (page === 0 && followers.length === 0) {
+                  console.error('[COMP][unipile.zero_followers]', { sanitized: url, response_preview: JSON.stringify(data).slice(0, 400) });
+                  (pipelineStats as any).zero_post_urls.push(url);
+                }
+
                 cursor = data.cursor || data.next_cursor || null;
                 if (!cursor || followers.length === 0) break;
                 await delay(1000);
@@ -756,8 +825,16 @@ Deno.serve(async (req) => {
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
                 if (rawId) newlyProcessedIds.push(rawId);
                 if (rawId) {
-                  const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
-                  if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
+                  const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
+                  if (existing && existing.length > 0) {
+                    pipelineStats.duplicates++;
+                    pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
+                    await supabase.from('contacts').update({
+                      last_signal_at: new Date().toISOString(),
+                      signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
+                    } as any).eq('id', (existing[0] as any).id);
+                    continue;
+                  }
                 }
                 const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 pipelineStats.profiles_fetched++;
@@ -766,8 +843,16 @@ Deno.serve(async (req) => {
                 if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') continue;
                 const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
                 if (lpid && lpid !== rawId) {
-                  const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
-                  if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
+                  const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', lpid).limit(1);
+                  if (existing && existing.length > 0) {
+                    pipelineStats.duplicates++;
+                    pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
+                    await supabase.from('contacts').update({
+                      last_signal_at: new Date().toISOString(),
+                      signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
+                    } as any).eq('id', (existing[0] as any).id);
+                    continue;
+                  }
                 }
                 if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { pipelineStats.excluded_own_company++; continue; }
                 // Explicit competitor employee exclusion: skip people who work at THIS competitor
@@ -783,9 +868,18 @@ Deno.serve(async (req) => {
                   }
                 }
                 if (icp.jobTitles.length > 0 || icp.industries.length > 0) {
-                  const titleMatch = icp.jobTitles.length === 0 || fuzzyMatchList(hl, icp.jobTitles);
-                  const industry = (fp.industry || fp.current_company?.industry || '').toLowerCase();
-                  const industryMatch = icp.industries.length === 0 || fuzzyMatchList(industry, icp.industries) || fuzzyMatchList(hl, icp.industries);
+                  const exp0Title: string = (fp.experience?.[0]?.title || fp.positions?.[0]?.title || '');
+                  const profileIndustry: string = (fp.industry || '').toLowerCase();
+                  const companyIndustry: string = (fp.current_company?.industry || fp.company?.industry || '').toLowerCase();
+                  const titleMatch =
+                    icp.jobTitles.length === 0 ||
+                    fuzzyMatchList(hl, icp.jobTitles) ||
+                    fuzzyMatchList(exp0Title, icp.jobTitles);
+                  const industryMatch =
+                    icp.industries.length === 0 ||
+                    fuzzyMatchList(profileIndustry, icp.industries) ||
+                    fuzzyMatchList(companyIndustry, icp.industries) ||
+                    fuzzyMatchList(hl, icp.industries);
                   if (!titleMatch && !industryMatch) { pipelineStats.excluded_no_icp_match++; continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
@@ -803,7 +897,7 @@ Deno.serve(async (req) => {
         // if (url.includes('/in/')) { ... }
       }
     } else if (signal_type === 'competitor_engagers') {
-      for (const url of urls) {
+      for (const url of sanitizedUrls) {
         if (!hasTime()) break;
         await processCompetitorEngagers(url);
       }
