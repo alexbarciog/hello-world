@@ -264,21 +264,54 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   async function generateWithAI() {
     setAiLoading(true);
     try {
-      const sessionId = localStorage.getItem("goji_session_id");
       let businessContext: any = {};
-      if (sessionId) {
-        const { data: campaign } = await supabase.from("campaigns").select("*").eq("session_id", sessionId).order("updated_at", { ascending: false }).limit(1).single();
-        if (campaign) {
-          businessContext = {
-            website: campaign.website, companyName: campaign.company_name, industry: campaign.industry,
-            country: campaign.country, language: campaign.language, description: campaign.description,
-            painPoints: campaign.pain_points, campaignGoal: campaign.campaign_goal,
-            icpJobTitles: campaign.icp_job_titles, icpIndustries: campaign.icp_industries,
-            icpCompanyTypes: campaign.icp_company_types, icpCompanySizes: campaign.icp_company_sizes,
-            icpLocations: campaign.icp_locations, icpExcludeKeywords: campaign.icp_exclude_keywords,
-          };
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // 1) Try to load latest campaign for this user (most reliable source of website + description)
+      let campaign: any = null;
+      if (user) {
+        const { data: byUser } = await supabase
+          .from("campaigns")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        campaign = byUser;
+      }
+
+      // 2) Fallback to session-based lookup (onboarding before user_id is attached)
+      if (!campaign) {
+        const sessionId = localStorage.getItem("goji_session_id");
+        if (sessionId) {
+          const { data: bySession } = await supabase
+            .from("campaigns")
+            .select("*")
+            .eq("session_id", sessionId)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          campaign = bySession;
         }
       }
+
+      if (campaign) {
+        businessContext = {
+          website: campaign.website, companyName: campaign.company_name, industry: campaign.industry,
+          country: campaign.country, language: campaign.language, description: campaign.description,
+          painPoints: campaign.pain_points, campaignGoal: campaign.campaign_goal,
+          icpJobTitles: campaign.icp_job_titles, icpIndustries: campaign.icp_industries,
+          icpCompanyTypes: campaign.icp_company_types, icpCompanySizes: campaign.icp_company_sizes,
+          icpLocations: campaign.icp_locations, icpExcludeKeywords: campaign.icp_exclude_keywords,
+        };
+      }
+
+      if (!businessContext.website && !businessContext.description) {
+        toast.error("Add your business website in onboarding/campaign first — AI needs context to generate ICP");
+        setAiLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-agent-icp", { body: { agentName, ...businessContext } });
       if (error) throw error;
       if (data.job_titles) setJobTitles(data.job_titles);
