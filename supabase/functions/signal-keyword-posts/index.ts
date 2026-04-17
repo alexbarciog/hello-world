@@ -807,6 +807,24 @@ Deno.serve(async (req) => {
         const postText = extractPostText(post);
         const authorData = post.author || post.actor || post.author_detail || null;
 
+        // Fix 5: SELLER DETECTION — reject before AI to save classification budget.
+        // A lead-gen agency posting "we help companies with outbound" attracts buyers
+        // but is NOT a buyer themselves. Add to contacts table = poisoned pipeline.
+        const authorHl = authorData?.headline || authorData?.title || '';
+        if (isSeller(postText, authorHl)) {
+          pipelineStats.rejected_seller++;
+          if (pipelineStats.sample_prefilter_rejections.length < SAMPLE_CAP) {
+            pipelineStats.sample_prefilter_rejections.push({
+              keyword,
+              variants: diagVariants.slice(0, 5),
+              postSample: postText.substring(0, 160),
+              reason: 'seller_detected',
+            });
+          }
+          console.log(`[SELLER] ❌ "${(authorHl || 'unknown').slice(0, 60)}" — sample: "${postText.substring(0, 100)}"`);
+          continue;
+        }
+
         const filterResult = preFilterPost(postText, keyword, authorData, icp, isHighPrecision);
 
         if (!filterResult.pass) {
