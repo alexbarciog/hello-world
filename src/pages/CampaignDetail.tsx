@@ -2918,54 +2918,6 @@ export default function CampaignDetail() {
                   );
                 })()}
 
-
-              {/* Workflow sequence — vertical timeline */}
-              <div className="rounded-xl border border-border/50 p-5">
-                <h3 className="text-sm font-bold text-foreground mb-4">Full Sequence Overview</h3>
-                <div className="relative pl-6">
-                  {/* Vertical line */}
-                  <div className="absolute left-[11px] top-1 bottom-1 w-px bg-border" />
-
-                  {/* Step 1: Connection */}
-                  <div className="relative flex items-start gap-3 pb-4">
-                    <div className="absolute left-[-13px] w-6 h-6 rounded-full bg-violet-500/10 ring-1 ring-violet-500/30 flex items-center justify-center z-10">
-                      <span className="text-[10px] font-bold text-violet-600">1</span>
-                    </div>
-                    <div className="flex-1 pt-0.5">
-                      <span className="text-xs font-semibold text-foreground">Send connection invitation</span>
-                      <span className="text-[10px] text-muted-foreground ml-2">Day 0</span>
-                    </div>
-                  </div>
-
-                  {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, idx: number) => {
-                    const stepDelayHours = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
-                    const cumulativeHours = workflowSteps
-                      .filter((s: any) => s.type !== "invitation")
-                      .slice(0, idx + 1)
-                      .reduce((sum: number, s: any) => sum + (s.delay_hours || (s.delay_days ? s.delay_days * 24 : 24)), 0);
-                    const delayLabel = stepDelayHours < 24 ? `+${stepDelayHours}h` : `+${Math.round(stepDelayHours / 24)}d`;
-                    const cumulativeLabel = cumulativeHours < 24 ? `Hour ${cumulativeHours}` : `Day ${Math.round(cumulativeHours / 24)}`;
-                    const isLast = idx === workflowSteps.filter((s: any) => s.type !== "invitation").length - 1;
-                    return (
-                      <div key={idx} className={`relative flex items-start gap-3 ${isLast ? "" : "pb-4"}`}>
-                        {/* Delay pill on the line */}
-                        <div className="absolute left-[-17px] -top-2 flex items-center justify-center w-[34px]">
-                          <span className="text-[9px] font-medium text-muted-foreground bg-background px-1">{delayLabel}</span>
-                        </div>
-                        <div className="absolute left-[-13px] top-2 w-6 h-6 rounded-full bg-sky-500/10 ring-1 ring-sky-500/30 flex items-center justify-center z-10">
-                          <span className="text-[10px] font-bold text-sky-600">{idx + 2}</span>
-                        </div>
-                        <div className="flex-1 pt-2.5">
-                          <span className="text-xs font-semibold text-foreground">
-                            {ws.ai_icebreaker ? "AI-generated message" : ws.message ? `"${ws.message.slice(0, 40)}${ws.message.length > 40 ? "..." : ""}"` : "Custom message"}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground ml-2">{cumulativeLabel}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
             </motion.div>
           )}
 
