@@ -1125,9 +1125,9 @@ Deno.serve(async (req) => {
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
-          .update({ diagnostics: pipelineStats } as any)
+          .update({ diagnostics: pipelineStats, rejected_profiles_sample: rejectedProfiles } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
-        console.log(`[COMP] Diagnostics saved to task ${task_key}`);
+        console.log(`[COMP] Diagnostics saved to task ${task_key} (${rejectedProfiles.length} rejected profiles captured)`);
       } catch (e) {
         console.warn(`[COMP] Failed to save diagnostics:`, e);
       }
