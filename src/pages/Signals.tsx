@@ -915,7 +915,17 @@ export default function Signals() {
         </div>
       </div>
 
-      {/* Run History */}
+      {/* Desktop: Agent suggestion panels (one per agent) */}
+      <div className="hidden md:block space-y-3 mb-4">
+        {agents.map((agent) => (
+          <AgentSuggestionsPanel
+            key={`sugg-${agent.id}`}
+            agentId={agent.id}
+            currentIcpTitles={agent.icp_job_titles ?? []}
+            onIcpUpdated={(next) => setAgents((prev) => prev.map(a => a.id === agent.id ? { ...a, icp_job_titles: next } : a))}
+          />
+        ))}
+      </div>
       <button
         onClick={() => { setShowPreviousLaunches(!showPreviousLaunches); if (!showPreviousLaunches) fetchRuns(); }}
         className="flex items-center gap-1.5 mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
