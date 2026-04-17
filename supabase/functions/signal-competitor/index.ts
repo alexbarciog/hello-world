@@ -319,6 +319,23 @@ Deno.serve(async (req) => {
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
     };
 
+    // Lightweight rejected-profile collector for AI suggestions (capped at 200 / task)
+    const rejectedProfiles: Array<{
+      headline: string; industry: string; company: string;
+      companyIndustry: string; rejectionReason: string; signalType: string;
+    }> = [];
+    function captureRejected(fp: any, reason: string) {
+      if (rejectedProfiles.length >= 200) return;
+      rejectedProfiles.push({
+        headline: (fp?.headline || fp?.title || '').slice(0, 200),
+        industry: (fp?.industry || '').slice(0, 100),
+        company: (fp?.company || fp?.current_company?.name || '').slice(0, 100),
+        companyIndustry: (fp?.current_company?.industry || fp?.company?.industry || '').slice(0, 100),
+        rejectionReason: reason,
+        signalType: signal_type,
+      });
+    }
+
     console.log(`[COMP] ═══════════════════════════════════════════`);
     console.log(`[COMP] Signal type: ${signal_type} | Agent: ${agent_id}`);
     console.log(`[COMP] Precision: ${precision_mode || 'discovery'} | Country filter: ${isHighPrecision ? 'ENABLED' : 'DISABLED'}`);
