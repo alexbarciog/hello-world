@@ -1019,36 +1019,45 @@ export type Database = {
       signal_agent_runs: {
         Row: {
           agent_id: string
+          ai_suggestions: Json | null
           completed_at: string | null
           completed_tasks: number
           error: string | null
           id: string
+          rejected_profiles_sample: Json
           started_at: string
           status: string
+          suggestions_generated_at: string | null
           total_leads: number
           total_tasks: number
           user_id: string
         }
         Insert: {
           agent_id: string
+          ai_suggestions?: Json | null
           completed_at?: string | null
           completed_tasks?: number
           error?: string | null
           id?: string
+          rejected_profiles_sample?: Json
           started_at?: string
           status?: string
+          suggestions_generated_at?: string | null
           total_leads?: number
           total_tasks?: number
           user_id: string
         }
         Update: {
           agent_id?: string
+          ai_suggestions?: Json | null
           completed_at?: string | null
           completed_tasks?: number
           error?: string | null
           id?: string
+          rejected_profiles_sample?: Json
           started_at?: string
           status?: string
+          suggestions_generated_at?: string | null
           total_leads?: number
           total_tasks?: number
           user_id?: string
@@ -1068,6 +1077,7 @@ export type Database = {
           leads_found: number
           lease_expires_at: string | null
           payload: Json | null
+          rejected_profiles_sample: Json
           run_id: string
           signal_type: string
           started_at: string | null
@@ -1086,6 +1096,7 @@ export type Database = {
           leads_found?: number
           lease_expires_at?: string | null
           payload?: Json | null
+          rejected_profiles_sample?: Json
           run_id: string
           signal_type: string
           started_at?: string | null
@@ -1104,6 +1115,7 @@ export type Database = {
           leads_found?: number
           lease_expires_at?: string | null
           payload?: Json | null
+          rejected_profiles_sample?: Json
           run_id?: string
           signal_type?: string
           started_at?: string | null

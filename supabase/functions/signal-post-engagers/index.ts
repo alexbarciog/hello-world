@@ -146,22 +146,32 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
 
 const QUICK_REJECT_TITLES = ['student','intern','freelance','looking for work','job seeker','fresher','trainee','apprentice'];
 
-function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'strong_pass' | 'pass' | 'reject' {
+// Mode-aware pre-filter (mirrors signal-competitor).
+function engagerPreFilter(headline: string | undefined, icp: ICPFilters, isHighPrecision: boolean): 'strong_pass' | 'pass' | 'reject' {
+  const hl = (headline || '').toLowerCase();
+  const NEVER_BUYERS = ['intern','student','junior','trainee','apprentice','graduate','assistant','coordinator','administrator','receptionist','support agent','data entry'];
+  if (hl && NEVER_BUYERS.some(r => hl.includes(r))) return 'reject';
   if (!headline) return 'pass';
-  const hl = headline.toLowerCase();
-  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
-  if (isClearlyIrrelevant(hl)) return 'reject';
+
+  if (hasBuyingIntent(hl)) return 'strong_pass';
   if (icp.jobTitles.length > 0) {
-    const titleMatch = icp.jobTitles.some(t => {
-      const needle = t.toLowerCase().trim();
-      return needle.length >= 3 && hl.includes(needle);
-    });
+    const titleMatch = icp.jobTitles.some(t => { const n = t.toLowerCase().trim(); return n.length >= 3 && hl.includes(n); });
     if (titleMatch) return 'strong_pass';
   }
-  if (hasBuyingIntent(hl)) return 'strong_pass';
-  // Strict mode: headline present but no positive signal AND ICP defines titles → reject
-  if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
-  return 'pass';
+
+  if (isHighPrecision) {
+    if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
+    if (isClearlyIrrelevant(hl)) return 'reject';
+    if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
+    return 'pass';
+  }
+
+  const SENIORITY = ['founder','co-founder','owner','director','head of','vp','vice president','chief','ceo','cto','cmo','coo','president','partner','principal','lead','manager','senior','sr.','general manager','managing director'];
+  if (SENIORITY.some(s => hl.includes(s))) return 'pass';
+  const DEPTS = ['sales','revenue','growth','marketing','business development','bd','account','partnerships','operations','product','strategy','commercial','customer success','go-to-market'];
+  if (DEPTS.some(d => hl.includes(d))) return 'pass';
+  if (icp.industries.some(ind => ind && hl.includes(ind.toLowerCase()))) return 'pass';
+  return 'reject';
 }
 
 // ─── Main: scans engagers on your own LinkedIn posts ──────────────────────────
@@ -184,6 +194,7 @@ Deno.serve(async (req) => {
       run_id,
       task_key,
       signal_type = 'post_engagers',
+      precision_mode,
     } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
@@ -202,32 +213,35 @@ Deno.serve(async (req) => {
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
     };
+    const isHighPrecision = precision_mode === 'high_precision';
+
+    // Lightweight rejected-profile collector for AI suggestions (cap 200/task)
+    const rejectedProfiles: Array<{ headline: string; industry: string; company: string; companyIndustry: string; rejectionReason: string; signalType: string; }> = [];
+    function captureRejected(fp: any, reason: string) {
+      if (rejectedProfiles.length >= 200) return;
+      rejectedProfiles.push({
+        headline: (fp?.headline || fp?.title || '').slice(0, 200),
+        industry: (fp?.industry || '').slice(0, 100),
+        company: (fp?.company || fp?.current_company?.name || '').slice(0, 100),
+        companyIndustry: (fp?.current_company?.industry || fp?.company?.industry || '').slice(0, 100),
+        rejectionReason: reason,
+        signalType: signal_type,
+      });
+    }
 
     let inserted = 0;
     let hotWarmCount = 0; let coldCount = 0;
     const COLD_CAP = 0.2;
     function canInsertCold() { const total = hotWarmCount + coldCount; return total === 0 || coldCount / (total + 1) < COLD_CAP; }
 
-    // ── Per-task diagnostics ──
     const diag: Record<string, number> = {
-      own_posts_scanned: 0,
-      profile_urls_scanned: 0,
-      profile_posts_scanned: 0,
-      reactions_fetched: 0,
-      comments_fetched: 0,
-      total_engagers_raw: 0,
-      failed_quick_icp: 0,
-      strong_passes: 0,
-      profiles_fetched: 0,
-      excluded_no_icp_match: 0,
-      excluded_competitor: 0,
-      // Fix 5: seller-detection counter
-      rejected_seller: 0,
-      // Rule 3: existing contact = skip, no update
-      already_in_contacts: 0,
-      cold_capped: 0,
-      inserted: 0,
-      bytes_fetched_estimate: 0,
+      own_posts_scanned: 0, profile_urls_scanned: 0, profile_posts_scanned: 0,
+      reactions_fetched: 0, comments_fetched: 0, total_engagers_raw: 0,
+      failed_quick_icp: 0, strong_passes: 0, profiles_fetched: 0,
+      excluded_no_icp_match: 0, excluded_competitor: 0, rejected_seller: 0,
+      already_in_contacts: 0, cold_capped: 0, inserted: 0, bytes_fetched_estimate: 0,
+      precision_mode: (precision_mode || 'discovery') as any,
+      discovery_passed: 0, discovery_rejected: 0, hp_passed: 0, hp_rejected: 0,
     };
 
     // Bandwidth ceiling (matches competitor function for symmetry)
@@ -327,8 +341,9 @@ Deno.serve(async (req) => {
             if (!hasTime()) break;
             const profile = engager.author || engager;
             const quickHl = profile.headline || profile.title || '';
-            const pf = engagerPreFilter(quickHl, icp);
-            if (pf === 'reject') { diag.failed_quick_icp++; continue; }
+            const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
+            if (pf === 'reject') { diag.failed_quick_icp++; if (isHighPrecision) diag.hp_rejected++; else diag.discovery_rejected++; continue; }
+            if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
             if (pf === 'strong_pass') diag.strong_passes++;
             if (!hasBudget(pf)) { console.log(`[POST_ENG] own_posts budget reached`); break; }
             const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
@@ -336,7 +351,7 @@ Deno.serve(async (req) => {
             if (!fullProfile) continue;
             const match = scoreProfileAgainstICP(fullProfile, icp);
             const hl = fullProfile.headline || fullProfile.title || '';
-            if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
+            if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fullProfile, 'icp_match_failed'); continue; }
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
             // Fix 5: seller filter — reject engagers whose headline screams "I sell this"
             if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
@@ -428,8 +443,9 @@ Deno.serve(async (req) => {
               if (!hasTime()) break;
               const ep2 = engager.author||engager;
               const quickHl = ep2.headline || ep2.title || '';
-              const pf = engagerPreFilter(quickHl, icp);
-              if (pf === 'reject') { diag.failed_quick_icp++; continue; }
+              const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
+              if (pf === 'reject') { diag.failed_quick_icp++; if (isHighPrecision) diag.hp_rejected++; else diag.discovery_rejected++; continue; }
+              if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
               if (pf === 'strong_pass') diag.strong_passes++;
               if (!hasBudget(pf)) { console.log(`[POST_ENG] profile_engagers budget reached`); break; }
               const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
@@ -437,7 +453,7 @@ Deno.serve(async (req) => {
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
-              if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
+              if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
               // Fix 5: seller filter
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }
@@ -480,7 +496,7 @@ Deno.serve(async (req) => {
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
-          .update({ diagnostics: diag } as any)
+          .update({ diagnostics: diag, rejected_profiles_sample: rejectedProfiles } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
       } catch (e) { console.warn(`[POST_ENG] Failed to save diagnostics:`, e); }
     }

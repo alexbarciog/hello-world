@@ -203,17 +203,29 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
 
 const QUICK_REJECT_TITLES = ['student', 'intern', 'freelance', 'looking for work', 'job seeker', 'fresher', 'trainee', 'apprentice'];
 
-// Returns:
-//   'strong_pass' = headline mentions an ICP job title → skip cap, fetch profile
-//   'pass'        = no headline OR neutral headline → counts toward cap
-//   'reject'      = clearly irrelevant → skip
-function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'strong_pass' | 'pass' | 'reject' {
-  if (!headline) return 'pass';
-  const hl = headline.toLowerCase();
-  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
-  if (isClearlyIrrelevant(hl)) return 'reject';
+// Mode-aware pre-filter.
+//   isHighPrecision = true  → strict legacy behaviour (reject if no positive ICP signal)
+//   isHighPrecision = false → relaxed Discovery (only reject hard never-buyers; let
+//                              seniority + relevant departments + industry through)
+function engagerPreFilter(
+  headline: string | undefined,
+  icp: ICPFilters,
+  isHighPrecision: boolean,
+): 'strong_pass' | 'pass' | 'reject' {
+  const hl = (headline || '').toLowerCase();
 
-  // STRONG positive: headline matches an ICP job title OR has buying intent
+  // Hard never-buyers — reject in BOTH modes
+  const NEVER_BUYERS = [
+    'intern', 'student', 'junior', 'trainee', 'apprentice',
+    'graduate', 'assistant', 'coordinator', 'administrator',
+    'receptionist', 'support agent', 'data entry',
+  ];
+  if (hl && NEVER_BUYERS.some(r => hl.includes(r))) return 'reject';
+
+  if (!headline) return 'pass';
+
+  // Buying-intent / seniority always wins
+  if (hasBuyingIntent(hl)) return 'strong_pass';
   if (icp.jobTitles.length > 0) {
     const titleMatch = icp.jobTitles.some(t => {
       const needle = t.toLowerCase().trim();
@@ -221,20 +233,40 @@ function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'stron
     });
     if (titleMatch) return 'strong_pass';
   }
-  if (hasBuyingIntent(hl)) return 'strong_pass';
 
-  // STRICT mode: headline present but no positive signal AND ICP defines titles → reject
-  // This is the key fix: most rejections were happening AFTER the expensive fetch.
-  if (icp.jobTitles.length > 0 && hl.length > 5) {
-    return 'reject';
+  if (isHighPrecision) {
+    // Strict — same as before.
+    if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
+    if (isClearlyIrrelevant(hl)) return 'reject';
+    if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
+    return 'pass';
   }
 
-  return 'pass';
+  // Discovery mode — let any plausible buyer through to AI / full ICP check.
+  const SENIORITY_SIGNALS = [
+    'founder', 'co-founder', 'owner', 'director', 'head of',
+    'vp', 'vice president', 'chief', 'ceo', 'cto', 'cmo', 'coo',
+    'president', 'partner', 'principal', 'lead', 'manager',
+    'senior', 'sr.', 'general manager', 'managing director',
+  ];
+  if (SENIORITY_SIGNALS.some(s => hl.includes(s))) return 'pass';
+
+  const RELEVANT_DEPARTMENTS = [
+    'sales', 'revenue', 'growth', 'marketing', 'business development',
+    'bd', 'account', 'partnerships', 'operations', 'product',
+    'strategy', 'commercial', 'customer success', 'go-to-market',
+  ];
+  if (RELEVANT_DEPARTMENTS.some(d => hl.includes(d))) return 'pass';
+
+  // Industry fallback — if any ICP industry shows up in the headline, allow.
+  if (icp.industries.some(ind => ind && hl.includes(ind.toLowerCase()))) return 'pass';
+
+  return 'reject';
 }
 
-// Backward-compat shim (still referenced in the file)
+// Backward-compat shim (still referenced in the file). Defaults to discovery mode.
 function engagerPassesQuickIcpCheck(headline: string | undefined, icp: ICPFilters): boolean {
-  return engagerPreFilter(headline, icp) !== 'reject';
+  return engagerPreFilter(headline, icp, false) !== 'reject';
 }
 
 // ─── Main Handler ────────────────────────────────────────────────────────────
@@ -287,6 +319,23 @@ Deno.serve(async (req) => {
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
     };
 
+    // Lightweight rejected-profile collector for AI suggestions (capped at 200 / task)
+    const rejectedProfiles: Array<{
+      headline: string; industry: string; company: string;
+      companyIndustry: string; rejectionReason: string; signalType: string;
+    }> = [];
+    function captureRejected(fp: any, reason: string) {
+      if (rejectedProfiles.length >= 200) return;
+      rejectedProfiles.push({
+        headline: (fp?.headline || fp?.title || '').slice(0, 200),
+        industry: (fp?.industry || '').slice(0, 100),
+        company: (fp?.company || fp?.current_company?.name || '').slice(0, 100),
+        companyIndustry: (fp?.current_company?.industry || fp?.company?.industry || '').slice(0, 100),
+        rejectionReason: reason,
+        signalType: signal_type,
+      });
+    }
+
     console.log(`[COMP] ═══════════════════════════════════════════`);
     console.log(`[COMP] Signal type: ${signal_type} | Agent: ${agent_id}`);
     console.log(`[COMP] Precision: ${precision_mode || 'discovery'} | Country filter: ${isHighPrecision ? 'ENABLED' : 'DISABLED'}`);
@@ -319,6 +368,12 @@ Deno.serve(async (req) => {
       failed_quick_icp: 0,
       strong_passes: 0,
       profiles_fetched: 0,
+      // Mode tracking for AI suggestions
+      precision_mode: (precision_mode || 'discovery') as any,
+      discovery_passed: 0,
+      discovery_rejected: 0,
+      hp_passed: 0,
+      hp_rejected: 0,
       excluded_own_company: 0,
       excluded_competitor_employee: 0,
       excluded_competitor_direct_employee: 0,
@@ -613,12 +668,14 @@ Deno.serve(async (req) => {
 
         // Step 4: Pre-filter on the lightweight engager payload BEFORE any expensive call
         const quickHeadline = engager.person.headline || engager.person.title || engager.person.description || '';
-        const preFilter = engagerPreFilter(quickHeadline, icp);
+        const preFilter = engagerPreFilter(quickHeadline, icp, isHighPrecision);
         if (preFilter === 'reject') {
           pipelineStats.failed_quick_icp++;
           competitorStats.failed_quick_icp++;
+          if (isHighPrecision) pipelineStats.hp_rejected++; else pipelineStats.discovery_rejected++;
           continue;
         }
+        if (isHighPrecision) pipelineStats.hp_passed++; else pipelineStats.discovery_passed++;
         if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
 
         // Budget check (strong passes bypass per-task cap, weak ones don't)
@@ -760,6 +817,7 @@ Deno.serve(async (req) => {
 
           if (!passes) {
             pipelineStats.excluded_no_icp_match++;
+            captureRejected(fp, 'icp_match_failed');
             continue;
           }
         }
@@ -914,8 +972,13 @@ Deno.serve(async (req) => {
                 if (!hasTime()) break;
                 const rawId = extractLinkedinProfileId(person);
                 const quickHl = person.headline || person.title || '';
-                const preFilter = engagerPreFilter(quickHl, icp);
-                if (preFilter === 'reject') { pipelineStats.failed_quick_icp++; continue; }
+                const preFilter = engagerPreFilter(quickHl, icp, isHighPrecision);
+                if (preFilter === 'reject') {
+                  pipelineStats.failed_quick_icp++;
+                  if (isHighPrecision) pipelineStats.hp_rejected++; else pipelineStats.discovery_rejected++;
+                  continue;
+                }
+                if (isHighPrecision) pipelineStats.hp_passed++; else pipelineStats.discovery_passed++;
                 if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
                 if (!hasProfileBudget(preFilter)) {
                   console.log(`[COMP] follower budget reached (weak=${weakFetches}/${PROFILE_FETCH_CAP}, run=${runFetchesSoFar + profileFetches}/${RUN_PROFILE_FETCH_CAP}) — stopping`);
@@ -999,7 +1062,7 @@ Deno.serve(async (req) => {
                     }));
                   }
 
-                  if (!passes) { pipelineStats.excluded_no_icp_match++; continue; }
+                  if (!passes) { pipelineStats.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
                 const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
@@ -1062,9 +1125,9 @@ Deno.serve(async (req) => {
     if (run_id && task_key) {
       try {
         await supabase.from('signal_agent_tasks')
-          .update({ diagnostics: pipelineStats } as any)
+          .update({ diagnostics: pipelineStats, rejected_profiles_sample: rejectedProfiles } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
-        console.log(`[COMP] Diagnostics saved to task ${task_key}`);
+        console.log(`[COMP] Diagnostics saved to task ${task_key} (${rejectedProfiles.length} rejected profiles captured)`);
       } catch (e) {
         console.warn(`[COMP] Failed to save diagnostics:`, e);
       }
