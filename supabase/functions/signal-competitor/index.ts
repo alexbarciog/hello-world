@@ -825,8 +825,16 @@ Deno.serve(async (req) => {
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
                 if (rawId) newlyProcessedIds.push(rawId);
                 if (rawId) {
-                  const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
-                  if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
+                  const { data: existing } = await supabase.from('contacts').select('id, signal_count').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
+                  if (existing && existing.length > 0) {
+                    pipelineStats.duplicates++;
+                    pipelineStats.already_in_pipeline = (pipelineStats.already_in_pipeline || 0) + 1;
+                    await supabase.from('contacts').update({
+                      last_signal_at: new Date().toISOString(),
+                      signal_count: ((existing[0] as any).signal_count ?? 1) + 1,
+                    } as any).eq('id', (existing[0] as any).id);
+                    continue;
+                  }
                 }
                 const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 pipelineStats.profiles_fetched++;
