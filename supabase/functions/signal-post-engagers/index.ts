@@ -461,6 +461,8 @@ Deno.serve(async (req) => {
       passedPrefilter: diag.strong_passes,
       passedICP: diag.inserted + diag.excluded_competitor + diag.cold_capped,
       inserted: diag.inserted,
+      already_in_contacts: diag.already_in_contacts,
+      rejected_seller: diag.rejected_seller,
       ownPostsScanned: diag.own_posts_scanned,
       profileUrlsScanned: diag.profile_urls_scanned,
       profilePostsScanned: diag.profile_posts_scanned,
@@ -468,6 +470,8 @@ Deno.serve(async (req) => {
         failedQuickIcp: diag.failed_quick_icp,
         noIcpMatch: diag.excluded_no_icp_match,
         competitorOrExcluded: diag.excluded_competitor,
+        rejectedSeller: diag.rejected_seller,
+        alreadyInContacts: diag.already_in_contacts,
         coldCapped: diag.cold_capped,
       },
     }));
