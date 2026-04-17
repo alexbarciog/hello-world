@@ -315,7 +315,18 @@ Deno.serve(async (req) => {
       inserted: 0,
       rejected: 0,
       bytes_fetched_estimate: 0,
+      // Fix 4: track repeat-signal updates to existing contacts (was silently rejected)
+      already_in_pipeline: 0,
+      // Fix 6: per-source ICP match breakdown
+      icp_match_by_headline: 0,
+      icp_match_by_structured_title: 0,
+      icp_match_by_profile_industry: 0,
+      icp_match_by_company_industry: 0,
+      // Fix 6: URL sanitization + zero-result tracking
+      url_sanitization_changed: urlSanitizationChanged,
     };
+    // Fix 6: list of URLs that returned 0 posts/followers from Unipile
+    (pipelineStats as any).zero_post_urls = [] as any;
 
     const newlyProcessedIds: string[] = [];
     let inserted = 0;
