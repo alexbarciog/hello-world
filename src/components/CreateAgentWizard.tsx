@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   HelpCircle, Sparkles, ChevronDown, ChevronRight, X, Check, Search, Target,
   Info, Plus, ArrowLeft, Users, MessageSquare, ThumbsUp, UserPlus, Briefcase,
-  TrendingUp, Building2, Eye,
+  TrendingUp, Building2, Eye, Loader2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
