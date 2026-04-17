@@ -259,6 +259,20 @@ Deno.serve(async (req) => {
       console.log(`[COMP] sanitized ${urlSanitizationChanged}/${urls.length} URLs (stripped query/fragment/diacritics)`);
     }
 
+    // BRUTAL LOG: Step 1 — sanitized URL audit
+    (urls as string[]).forEach((raw, i) => {
+      const sanitized = sanitizedUrls[i];
+      console.log('[URL_CHECK]', JSON.stringify({
+        original: raw,
+        sanitized,
+        areTheyDifferent: raw !== sanitized,
+        signal: signal_type,
+      }));
+    });
+
+    // BRUTAL LOG: Step 5 — confirm OR-logic version is deployed
+    console.log('[ICP_LOGIC_VERSION]', 'OR_LOGIC_V2');
+
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
