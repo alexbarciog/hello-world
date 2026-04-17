@@ -423,6 +423,7 @@ export type Database = {
           imported_at: string
           industry: string | null
           last_name: string | null
+          last_signal_at: string | null
           lead_status: string
           linkedin_profile_id: string | null
           linkedin_url: string | null
@@ -432,6 +433,7 @@ export type Database = {
           signal_a_hit: boolean | null
           signal_b_hit: boolean | null
           signal_c_hit: boolean | null
+          signal_count: number
           signal_post_url: string | null
           source_campaign_id: string | null
           title: string | null
@@ -448,6 +450,7 @@ export type Database = {
           imported_at?: string
           industry?: string | null
           last_name?: string | null
+          last_signal_at?: string | null
           lead_status?: string
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
@@ -457,6 +460,7 @@ export type Database = {
           signal_a_hit?: boolean | null
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
+          signal_count?: number
           signal_post_url?: string | null
           source_campaign_id?: string | null
           title?: string | null
@@ -473,6 +477,7 @@ export type Database = {
           imported_at?: string
           industry?: string | null
           last_name?: string | null
+          last_signal_at?: string | null
           lead_status?: string
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
@@ -482,6 +487,7 @@ export type Database = {
           signal_a_hit?: boolean | null
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
+          signal_count?: number
           signal_post_url?: string | null
           source_campaign_id?: string | null
           title?: string | null
