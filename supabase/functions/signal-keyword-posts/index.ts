@@ -946,10 +946,15 @@ Deno.serve(async (req) => {
         if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
         if (authorId) globalSeenAuthorIds.add(authorId);
 
-        // Early dedup against DB
+        // Early dedup against DB — Rule 3: HARD SKIP (no update, no re-insert)
         if (authorId) {
           const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', authorId).limit(1);
-          if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
+          if (existing && existing.length > 0) {
+            keywordSkipped.earlyDedup++;
+            pipelineStats.rejected_early_db_dedup++;
+            pipelineStats.already_in_contacts++;
+            continue;
+          }
         }
 
         // ── BANDWIDTH-FIRST: pre-screen on the lightweight author payload included
