@@ -8,6 +8,7 @@ import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar,
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import { AddCardDialog } from "@/components/AddCardDialog";
 import HowItWorksModal from "@/components/HowItWorksModal";
+import AgentSuggestionsPanel from "@/components/signals/AgentSuggestionsPanel";
 import {
   Popover,
   PopoverContent,
