@@ -988,7 +988,7 @@ Deno.serve(async (req) => {
             if (globalSeenAuthorIds.has(newId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
             globalSeenAuthorIds.add(newId);
             const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', newId).limit(1);
-            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
+            if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; pipelineStats.already_in_contacts++; continue; }
           }
           authorId = newId || authorId;
         } else {
