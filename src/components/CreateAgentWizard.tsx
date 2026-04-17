@@ -7,6 +7,7 @@ import {
   Info, Plus, ArrowLeft, Users, MessageSquare, ThumbsUp, UserPlus, Briefcase,
   TrendingUp, Building2, Eye,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CreateAgentWizardProps {
   onClose: () => void;
@@ -119,9 +120,11 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     keyword_posts: true,
   });
   const [signalKeywords, setSignalKeywords] = useState<Record<string, string[]>>({});
+  const [newSignalKeywords, setNewSignalKeywords] = useState<Record<string, string[]>>({});
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [signalKeywordInputs, setSignalKeywordInputs] = useState<Record<string, string>>({});
   const [generatingKeywords, setGeneratingKeywords] = useState<Record<string, boolean>>({});
+
 
   // Step 3: Leads
   const [leadsListName, setLeadsListName] = useState("");
@@ -203,7 +206,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     setSignalKeywordInputs({ ...signalKeywordInputs, [signalId]: "" });
   }
 
-  async function generateSignalKeywords(signalId: string) {
+  async function generateSignalKeywords(signalId: string, mode: "replace" | "add" = "add") {
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
     try {
       // Fetch business context from the user's campaign (same as generateWithAI)
@@ -234,10 +237,22 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       });
       if (error) throw error;
       if (data?.keywords?.length) {
-        const current = signalKeywords[signalId] || [];
-        const merged = [...new Set([...current, ...data.keywords])];
-        setSignalKeywords({ ...signalKeywords, [signalId]: merged });
-        toast.success(`Generated ${data.keywords.length} keywords!`);
+        const incoming: string[] = data.keywords;
+        if (mode === "replace") {
+          setSignalKeywords({ ...signalKeywords, [signalId]: [...incoming] });
+          setNewSignalKeywords({ ...newSignalKeywords, [signalId]: [...incoming] });
+          toast.success(`Replaced with ${incoming.length} new keywords`);
+        } else {
+          const current = signalKeywords[signalId] || [];
+          const additions = incoming.filter((k) => !current.includes(k));
+          const merged = [...current, ...additions];
+          setSignalKeywords({ ...signalKeywords, [signalId]: merged });
+          setNewSignalKeywords({
+            ...newSignalKeywords,
+            [signalId]: [...(newSignalKeywords[signalId] || []), ...additions],
+          });
+          toast.success(`Added ${additions.length} new keywords`);
+        }
       }
     } catch (e) {
       console.error("Failed to generate keywords:", e);
@@ -245,6 +260,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     }
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: false }));
   }
+
 
   // ── ICP Validation ────────────────────────────────────────────────────────
   function validateICP(): boolean {
@@ -820,26 +836,72 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                             />
                                             <button onClick={() => addSignalKeyword(sub.id)} className="text-xs font-medium text-foreground px-2">Add</button>
                                             {!["competitor_followers", "competitor_engagers", "profile_engagers"].includes(sub.id) && (
-                                              <button
-                                                onClick={() => generateSignalKeywords(sub.id)}
-                                                disabled={generatingKeywords[sub.id]}
-                                                className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
-                                              >
-                                                <Sparkles className="w-3 h-3" />
-                                                {generatingKeywords[sub.id] ? "..." : "AI"}
-                                              </button>
+                                              (signalKeywords[sub.id] || []).length === 0 ? (
+                                                <button
+                                                  onClick={() => generateSignalKeywords(sub.id, "add")}
+                                                  disabled={generatingKeywords[sub.id]}
+                                                  className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+                                                >
+                                                  <Sparkles className="w-3 h-3" />
+                                                  {generatingKeywords[sub.id] ? "..." : "AI"}
+                                                </button>
+                                              ) : (
+                                                <Popover>
+                                                  <PopoverTrigger asChild>
+                                                    <button
+                                                      disabled={generatingKeywords[sub.id]}
+                                                      className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+                                                    >
+                                                      <Sparkles className="w-3 h-3" />
+                                                      {generatingKeywords[sub.id] ? "..." : "AI"}
+                                                    </button>
+                                                  </PopoverTrigger>
+                                                  <PopoverContent align="end" className="w-56 p-1">
+                                                    <button
+                                                      onClick={() => generateSignalKeywords(sub.id, "add")}
+                                                      className="w-full text-left px-3 py-2 rounded-md hover:bg-muted text-xs"
+                                                    >
+                                                      <div className="font-medium text-foreground">Add to current</div>
+                                                      <div className="text-muted-foreground text-[11px]">Keep existing, append new ones</div>
+                                                    </button>
+                                                    <button
+                                                      onClick={() => generateSignalKeywords(sub.id, "replace")}
+                                                      className="w-full text-left px-3 py-2 rounded-md hover:bg-muted text-xs"
+                                                    >
+                                                      <div className="font-medium text-foreground">Replace all</div>
+                                                      <div className="text-muted-foreground text-[11px]">Discard current, generate fresh</div>
+                                                    </button>
+                                                  </PopoverContent>
+                                                </Popover>
+                                              )
                                             )}
                                           </div>
                                           {(signalKeywords[sub.id] || []).length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1.5">
-                                              {signalKeywords[sub.id].map((kw) => (
-                                                <span key={kw} className="inline-flex items-center gap-1 text-[11px] font-medium bg-muted text-foreground rounded-full px-2 py-0.5">
-                                                  {kw}
-                                                  <button onClick={() => setSignalKeywords({ ...signalKeywords, [sub.id]: signalKeywords[sub.id].filter((x) => x !== kw) })}>
-                                                    <X className="w-2.5 h-2.5" />
-                                                  </button>
-                                                </span>
-                                              ))}
+                                              {signalKeywords[sub.id].map((kw) => {
+                                                const isNew = (newSignalKeywords[sub.id] || []).includes(kw);
+                                                return (
+                                                  <span
+                                                    key={kw}
+                                                    className={`inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 border ${
+                                                      isNew
+                                                        ? "bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-200"
+                                                        : "bg-muted text-foreground border-transparent"
+                                                    }`}
+                                                  >
+                                                    {isNew && <Sparkles className="w-2.5 h-2.5 text-amber-500" />}
+                                                    {kw}
+                                                    <button
+                                                      onClick={() => {
+                                                        setSignalKeywords({ ...signalKeywords, [sub.id]: signalKeywords[sub.id].filter((x) => x !== kw) });
+                                                        setNewSignalKeywords({ ...newSignalKeywords, [sub.id]: (newSignalKeywords[sub.id] || []).filter((x) => x !== kw) });
+                                                      }}
+                                                    >
+                                                      <X className="w-2.5 h-2.5" />
+                                                    </button>
+                                                  </span>
+                                                );
+                                              })}
                                             </div>
                                           )}
                                         </motion.div>
