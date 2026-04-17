@@ -14,6 +14,37 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    // ── If a website is provided, scrape it for fresh business context ──
+    let scrapedSummary = "";
+    if (website) {
+      try {
+        const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+        if (FIRECRAWL_API_KEY) {
+          const url = website.startsWith("http") ? website : `https://${website}`;
+          console.log("[generate-agent-icp] Scraping website:", url);
+          const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url, formats: ["markdown"], onlyMainContent: true }),
+            signal: AbortSignal.timeout(20000),
+          });
+          if (fcRes.ok) {
+            const fcData = await fcRes.json();
+            const md: string = fcData?.data?.markdown || "";
+            scrapedSummary = md.slice(0, 6000);
+            console.log("[generate-agent-icp] Scraped chars:", scrapedSummary.length);
+          } else {
+            console.warn("[generate-agent-icp] Firecrawl failed:", fcRes.status);
+          }
+        }
+      } catch (e) {
+        console.warn("[generate-agent-icp] Website scrape failed:", e instanceof Error ? e.message : e);
+      }
+    }
+
     const contextParts: string[] = [];
     if (companyName) contextParts.push(`Company: ${companyName}`);
     if (website) contextParts.push(`Website: ${website}`);
@@ -31,9 +62,10 @@ serve(async (req) => {
     if (precisionMode) contextParts.push(`Precision mode: ${precisionMode}`);
     if (engagementKeywords?.length) contextParts.push(`Engagement keywords: ${engagementKeywords.join(", ")}`);
 
+    const websiteBlock = scrapedSummary ? `\n\n=== LIVE WEBSITE CONTENT (${website}) ===\n${scrapedSummary}\n=== END WEBSITE ===\n\nIMPORTANT: Ground the ICP in the LIVE WEBSITE CONTENT above. That is the source of truth for what this business actually sells.` : "";
     const businessInfo = contextParts.length > 0
-      ? `\n\nBusiness context from onboarding:\n${contextParts.join("\n")}`
-      : "";
+      ? `\n\nBusiness context from onboarding:\n${contextParts.join("\n")}${websiteBlock}`
+      : websiteBlock;
 
     const ALLOWED_INDUSTRIES = ["Accounting","Advertising","Aerospace","Agriculture","AI & Machine Learning","Automotive","Banking","Biotech","Blockchain & Crypto","Chemical","Civil Engineering","Clean Energy","Cloud Computing","Construction","Consulting","Consumer Electronics","Cybersecurity","Data Analytics","Defense","E-commerce","Education","Energy & Utilities","Entertainment","Environmental Services","Event Management","Fashion & Apparel","Finance","Fintech","Food & Beverage","Gaming","Government","Healthcare","Hospitality & Tourism","HR & Recruiting","Insurance","Interior Design","IoT","Legal","Logistics & Supply Chain","Manufacturing","Marketing","Media & Publishing","Medical Devices","Mining","Non-Profit","Oil & Gas","Pharmaceutical","Photography","PropTech","Public Relations","Real Estate","Renewable Energy","Retail","Robotics","SaaS","Semiconductors","Sports & Fitness","Staffing","Technology","Telecommunications","Transportation","Travel","Venture Capital & Private Equity","Warehousing","Wellness & Health"];
     const ALLOWED_COMPANY_TYPES = ["Startup","SMB","Mid-Market","Enterprise","Agency","Non-Profit"];
