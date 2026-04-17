@@ -666,11 +666,19 @@ Deno.serve(async (req) => {
 
     // ── Route by signal type ──
     if (signal_type === 'competitor_followers') {
+      console.log(`[COMP] competitor_followers: received ${urls.length} URLs:`);
+      urls.forEach((u: string, i: number) => console.log(`[COMP]   [${i}] ${u}`));
+
       for (let urlIdx = 0; urlIdx < urls.length; urlIdx++) {
         if (!hasTime()) break;
         const url = urls[urlIdx];
         const companyName = extractCompanyName(url);
         const isCompanyUrl = url.includes('/company/');
+
+        if (!isCompanyUrl) {
+          console.log(`[COMP] competitor_followers: skipping non-company URL "${url}" (followers API requires /company/ slug)`);
+          continue;
+        }
 
         // Inter-competitor delay (skip first)
         if (urlIdx > 0) {
@@ -679,6 +687,8 @@ Deno.serve(async (req) => {
         }
 
         if (isCompanyUrl && companyName) {
+          // Count this competitor as processed regardless of resolution outcome (visibility)
+          pipelineStats.competitors_processed++;
           const companyId = extractLinkedInId(url);
 
           // ── Strategy: Fetch real followers of the company page via Unipile followers API ──
