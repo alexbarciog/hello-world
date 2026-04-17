@@ -911,7 +911,6 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                               ))}
                                             </div>
                                           )}
-                                          </div>
                                           {(signalKeywords[sub.id] || []).length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1.5">
                                               {signalKeywords[sub.id].map((kw) => {
