@@ -475,6 +475,8 @@ Deno.serve(async (req) => {
 
         pipelineStats.reactions_fetched += reactionCount;
         pipelineStats.comments_fetched += commentCount;
+        // Estimate ~25KB per reactions/comments page response
+        pipelineStats.bytes_fetched_estimate += 25_000 * 2;
 
         console.log(`[COMP] Post ${postId}: ${reactionCount} reactions, ${commentCount} comments`);
 
