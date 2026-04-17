@@ -39,11 +39,10 @@ Deno.serve(async (req) => {
     if (!agents?.length) return jsonResponse({ message: 'No active signal agents', processed: 0 });
 
     // ── Daily run budget (manual triggers only) ──
-    // Bandwidth safety net: cap any single agent at 3 runs per UTC day.
-    // The scheduled cron path bypasses this — it runs ALL active agents in
-    // one tick and is already pace-limited by the schedule itself.
-    const DAILY_RUN_BUDGET = 3;
-    if (targetAgentId) {
+    // Bandwidth safety net: cap any single agent at 20 runs per UTC day.
+    // Bypassable via bypass_budget=true for active debugging sessions.
+    const DAILY_RUN_BUDGET = 20;
+    if (targetAgentId && !bypassBudget) {
       const startOfDay = new Date();
       startOfDay.setUTCHours(0, 0, 0, 0);
       const { count: todaysRuns } = await supabase
