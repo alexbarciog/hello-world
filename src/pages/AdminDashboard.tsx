@@ -408,7 +408,19 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
                 <TD><span className="font-mono text-xs">{u.credits ?? 0}</span></TD>
                 <TD>{u.unipile_account_id ? <Check className="w-4 h-4 text-blue-500" /> : <span className="text-md-on-surface-variant/40">—</span>}</TD>
                 <TD><span className="text-xs text-md-on-surface-variant whitespace-nowrap">{new Date(u.created_at).toLocaleString("ro-RO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span></TD>
-                <TD>{isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</TD>
+                <TD>
+                  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => impersonate(id, u.email)}
+                      disabled={impersonatingUser === id}
+                      title="Log in as this user (opens in new tab)"
+                      className="p-1.5 rounded-md hover:bg-md-surface-container text-md-on-surface-variant hover:text-md-primary transition-colors disabled:opacity-40"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                    </button>
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </div>
+                </TD>
               </tr>
               {isExpanded && (
                 <tr key={`${id}-detail`}>
