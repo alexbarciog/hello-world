@@ -330,8 +330,12 @@ Deno.serve(async (req) => {
       inserted: 0,
       rejected: 0,
       bytes_fetched_estimate: 0,
-      // Fix 4: track repeat-signal updates to existing contacts (was silently rejected)
+      // Rule 3: skipped because contact already exists in DB (no update — net-new only)
+      already_in_contacts: 0,
+      // Legacy alias kept for backwards compatibility with run-history UI
       already_in_pipeline: 0,
+      // Fix 5: seller-detection counter
+      rejected_seller: 0,
       // Fix 6: per-source ICP match breakdown
       icp_match_by_headline: 0,
       icp_match_by_structured_title: 0,
