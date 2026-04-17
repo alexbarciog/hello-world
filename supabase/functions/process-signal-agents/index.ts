@@ -437,10 +437,14 @@ async function finalizeRun(
     results_count: actualCount,
   }).eq('id', agentId);
 
+  // Aggregate rejected_profiles_sample across all tasks in this run
+  const aggregatedRejected = await aggregateRejectedProfiles(supabase, runId);
+
   await supabase.from('signal_agent_runs').update({
     status: completedTasks === totalTasks ? 'done' : 'partial',
     completed_tasks: completedTasks, total_leads: totalLeads,
     completed_at: new Date().toISOString(),
+    rejected_profiles_sample: aggregatedRejected,
   }).eq('id', runId);
 
   if (totalLeads > 0) {
@@ -452,7 +456,45 @@ async function finalizeRun(
     });
   }
 
-  console.log(`✅ Run ${runId} finalized: ${totalLeads} leads, ${completedTasks}/${totalTasks} tasks`);
+  // Trigger AI suggestions asynchronously if run was thin or had many ICP rejections
+  await maybeTriggerSuggestions(runId, agentId, totalLeads, aggregatedRejected.length);
+
+  console.log(`✅ Run ${runId} finalized: ${totalLeads} leads, ${completedTasks}/${totalTasks} tasks, ${aggregatedRejected.length} rejected sampled`);
+}
+
+// Aggregate rejected profile samples across all tasks in a run (cap at 200)
+async function aggregateRejectedProfiles(supabase: any, runId: string): Promise<any[]> {
+  const { data: tasks } = await supabase.from('signal_agent_tasks')
+    .select('rejected_profiles_sample, signal_type')
+    .eq('run_id', runId);
+  const all: any[] = [];
+  for (const t of tasks || []) {
+    const sample = (t.rejected_profiles_sample || []) as any[];
+    for (const p of sample) {
+      all.push({ ...p, signalType: p.signalType ?? t.signal_type });
+      if (all.length >= 200) break;
+    }
+    if (all.length >= 200) break;
+  }
+  return all;
+}
+
+// Fire-and-forget suggestion trigger
+async function maybeTriggerSuggestions(runId: string, agentId: string, totalLeads: number, rejectedCount: number) {
+  if (totalLeads >= 20 && rejectedCount <= 50) return;
+  try {
+    // @ts-ignore EdgeRuntime is available in Supabase Edge Functions
+    EdgeRuntime.waitUntil(
+      fetch(`${SUPABASE_URL}/functions/v1/generate-agent-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+        body: JSON.stringify({ runId, agentId }),
+      }).catch((e) => console.warn(`[SUGGESTIONS] trigger failed for run ${runId}:`, e))
+    );
+    console.log(`[SUGGESTIONS] Triggered for run ${runId} (leads=${totalLeads}, rejected=${rejectedCount})`);
+  } catch (e) {
+    console.warn(`[SUGGESTIONS] EdgeRuntime.waitUntil unavailable:`, e);
+  }
 }
 
 // ─── Set next_launch_at based on cron schedule ───────────────────────────────

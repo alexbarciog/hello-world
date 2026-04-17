@@ -8,6 +8,7 @@ import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar,
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import { AddCardDialog } from "@/components/AddCardDialog";
 import HowItWorksModal from "@/components/HowItWorksModal";
+import AgentSuggestionsPanel from "@/components/signals/AgentSuggestionsPanel";
 import {
   Popover,
   PopoverContent,
@@ -31,6 +32,7 @@ interface SignalAgent {
   last_launched_at: string | null;
   next_launch_at: string | null;
   created_at: string;
+  icp_job_titles?: string[] | null;
 }
 
 interface AgentRun {
@@ -797,15 +799,21 @@ export default function Signals() {
           <p className="text-center py-10 text-sm text-muted-foreground">No agents yet. Create your first one below.</p>
         ) : (
           agents.map((agent) => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onToggle={() => toggleAgentStatus(agent)}
-              onDelete={() => deleteAgent(agent.id)}
-              onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
-              onRun={() => runAgentNow(agent)}
-              isAdmin={!!isAdmin}
-            />
+            <div key={agent.id}>
+              <AgentCard
+                agent={agent}
+                onToggle={() => toggleAgentStatus(agent)}
+                onDelete={() => deleteAgent(agent.id)}
+                onEdit={() => { setEditAgentId(agent.id); setShowCreate(true); }}
+                onRun={() => runAgentNow(agent)}
+                isAdmin={!!isAdmin}
+              />
+              <AgentSuggestionsPanel
+                agentId={agent.id}
+                currentIcpTitles={agent.icp_job_titles ?? []}
+                onIcpUpdated={(next) => setAgents((prev) => prev.map(a => a.id === agent.id ? { ...a, icp_job_titles: next } : a))}
+              />
+            </div>
           ))
         )}
         <button
@@ -907,7 +915,17 @@ export default function Signals() {
         </div>
       </div>
 
-      {/* Run History */}
+      {/* Desktop: Agent suggestion panels (one per agent) */}
+      <div className="hidden md:block space-y-3 mb-4">
+        {agents.map((agent) => (
+          <AgentSuggestionsPanel
+            key={`sugg-${agent.id}`}
+            agentId={agent.id}
+            currentIcpTitles={agent.icp_job_titles ?? []}
+            onIcpUpdated={(next) => setAgents((prev) => prev.map(a => a.id === agent.id ? { ...a, icp_job_titles: next } : a))}
+          />
+        ))}
+      </div>
       <button
         onClick={() => { setShowPreviousLaunches(!showPreviousLaunches); if (!showPreviousLaunches) fetchRuns(); }}
         className="flex items-center gap-1.5 mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
