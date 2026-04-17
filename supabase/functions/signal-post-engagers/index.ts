@@ -146,22 +146,32 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
 
 const QUICK_REJECT_TITLES = ['student','intern','freelance','looking for work','job seeker','fresher','trainee','apprentice'];
 
-function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'strong_pass' | 'pass' | 'reject' {
+// Mode-aware pre-filter (mirrors signal-competitor).
+function engagerPreFilter(headline: string | undefined, icp: ICPFilters, isHighPrecision: boolean): 'strong_pass' | 'pass' | 'reject' {
+  const hl = (headline || '').toLowerCase();
+  const NEVER_BUYERS = ['intern','student','junior','trainee','apprentice','graduate','assistant','coordinator','administrator','receptionist','support agent','data entry'];
+  if (hl && NEVER_BUYERS.some(r => hl.includes(r))) return 'reject';
   if (!headline) return 'pass';
-  const hl = headline.toLowerCase();
-  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
-  if (isClearlyIrrelevant(hl)) return 'reject';
+
+  if (hasBuyingIntent(hl)) return 'strong_pass';
   if (icp.jobTitles.length > 0) {
-    const titleMatch = icp.jobTitles.some(t => {
-      const needle = t.toLowerCase().trim();
-      return needle.length >= 3 && hl.includes(needle);
-    });
+    const titleMatch = icp.jobTitles.some(t => { const n = t.toLowerCase().trim(); return n.length >= 3 && hl.includes(n); });
     if (titleMatch) return 'strong_pass';
   }
-  if (hasBuyingIntent(hl)) return 'strong_pass';
-  // Strict mode: headline present but no positive signal AND ICP defines titles → reject
-  if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
-  return 'pass';
+
+  if (isHighPrecision) {
+    if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
+    if (isClearlyIrrelevant(hl)) return 'reject';
+    if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
+    return 'pass';
+  }
+
+  const SENIORITY = ['founder','co-founder','owner','director','head of','vp','vice president','chief','ceo','cto','cmo','coo','president','partner','principal','lead','manager','senior','sr.','general manager','managing director'];
+  if (SENIORITY.some(s => hl.includes(s))) return 'pass';
+  const DEPTS = ['sales','revenue','growth','marketing','business development','bd','account','partnerships','operations','product','strategy','commercial','customer success','go-to-market'];
+  if (DEPTS.some(d => hl.includes(d))) return 'pass';
+  if (icp.industries.some(ind => ind && hl.includes(ind.toLowerCase()))) return 'pass';
+  return 'reject';
 }
 
 // ─── Main: scans engagers on your own LinkedIn posts ──────────────────────────
@@ -184,6 +194,7 @@ Deno.serve(async (req) => {
       run_id,
       task_key,
       signal_type = 'post_engagers',
+      precision_mode,
     } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
