@@ -817,6 +817,7 @@ Deno.serve(async (req) => {
 
           if (!passes) {
             pipelineStats.excluded_no_icp_match++;
+            captureRejected(fp, 'icp_match_failed');
             continue;
           }
         }
@@ -1061,7 +1062,7 @@ Deno.serve(async (req) => {
                     }));
                   }
 
-                  if (!passes) { pipelineStats.excluded_no_icp_match++; continue; }
+                  if (!passes) { pipelineStats.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
                 const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
