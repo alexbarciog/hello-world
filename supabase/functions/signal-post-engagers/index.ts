@@ -66,6 +66,23 @@ function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   return ek.some(kw=>text.includes(kw));
 }
 function unipileGet(path: string,apiKey: string,dsn: string){return fetch(`https://${dsn}${path}`,{headers:{'X-API-KEY':apiKey}});}
+
+// Fix 2: Sanitize LinkedIn URLs before sending to Unipile.
+// Strips query strings (utm_*), fragments, trailing slashes, and Unicode diacritics
+// that break Unipile's URL parser and silently return 0 results.
+function sanitizeLinkedinUrl(raw: string): string {
+  if (!raw) return raw;
+  try {
+    const url = new URL(raw.trim());
+    url.search = '';
+    url.hash = '';
+    let clean = url.toString().replace(/\/+$/, '');
+    clean = clean.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+    return clean.toLowerCase();
+  } catch {
+    return raw.trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+}
 function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
@@ -205,39 +222,80 @@ Deno.serve(async (req) => {
     };
 
     console.log(`[POST_ENG] run_own_posts=${run_own_posts}, run_profile_engagers=${run_profile_engagers}, profile_urls=${profile_urls?.length || 0}`);
+    console.log('[ICP_LOGIC_VERSION]', 'OR_LOGIC_V2_post_engagers');
+
+    // Fix 2: sanitize profile_urls ONCE before any Unipile call
+    const rawProfileUrls: string[] = Array.isArray(profile_urls) ? profile_urls.filter(Boolean) : [];
+    const sanitizedProfileUrls: string[] = rawProfileUrls.map(sanitizeLinkedinUrl).filter(Boolean);
+    rawProfileUrls.forEach((raw, i) => {
+      const sanitized = sanitizedProfileUrls[i];
+      console.log('[URL_CHECK]', JSON.stringify({
+        original: raw,
+        sanitized,
+        areTheyDifferent: raw !== sanitized,
+        signal: 'post_engagers',
+      }));
+    });
 
     // Resolve user's LinkedIn ID if not provided
     let userLiId = linkedin_id;
     if (!userLiId) {
       try {
-        const res = await unipileGet(`/api/v1/users/me?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN);
+        const meEp = `/api/v1/users/me?account_id=${account_id}`;
+        const res = await unipileGet(meEp, UNIPILE_API_KEY, UNIPILE_DSN);
         if (res.ok) { const d = await res.json(); userLiId = d.provider_id || d.public_id || d.id; }
         else {
-          const res2 = await unipileGet(`/api/v1/linkedin/profile/me?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN);
+          const me2Ep = `/api/v1/linkedin/profile/me?account_id=${account_id}`;
+          const res2 = await unipileGet(me2Ep, UNIPILE_API_KEY, UNIPILE_DSN);
           if (res2.ok) { const d2 = await res2.json(); userLiId = d2.provider_id || d2.public_id || d2.id; }
+          else {
+            const txt = await res2.text();
+            console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: me2Ep, status: res2.status, rawResponse: txt.substring(0, 1000), params: '{}' }));
+          }
         }
       } catch (e) { console.error('resolveUserLinkedInId:', e); }
     }
 
     if (run_own_posts && userLiId) {
       // Scan own posts
-      const postsRes = await unipileGet(`/api/v1/users/${userLiId}/posts?account_id=${account_id}&limit=5`, UNIPILE_API_KEY, UNIPILE_DSN);
+      const ownPostsEp = `/api/v1/users/${userLiId}/posts?account_id=${account_id}&limit=5`;
+      const postsRes = await unipileGet(ownPostsEp, UNIPILE_API_KEY, UNIPILE_DSN);
       if (postsRes.ok) {
         const postsData = await postsRes.json();
         const posts = (postsData.items || postsData.posts || []).slice(0, 5);
         diag.own_posts_scanned = posts.length;
         diag.bytes_fetched_estimate += 20_000;
         console.log(`[POST_ENG] own_posts: ${posts.length}`);
+        if (posts.length === 0) {
+          console.error('[UNIPILE_ZERO]', JSON.stringify({
+            endpoint: ownPostsEp,
+            status: postsRes.status,
+            rawResponse: JSON.stringify(postsData).substring(0, 1000),
+            params: JSON.stringify({ userLiId, account_id, limit: 5 }),
+          }));
+        }
 
         for (const post of posts) {
           if (!hasTime()) break;
           await delay(150);
           const postId = post.social_id || post.id || post.provider_id;
           if (!postId) continue;
-          const rr = await unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (!rr.ok) { await rr.text(); continue; }
+          const reactionsEp = `/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=25`;
+          const rr = await unipileGet(reactionsEp, UNIPILE_API_KEY, UNIPILE_DSN);
+          if (!rr.ok) {
+            const txt = await rr.text();
+            console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: reactionsEp, status: rr.status, rawResponse: txt.substring(0, 1000), params: JSON.stringify({ postId }) }));
+            continue;
+          }
           const rd = await rr.json();
           const engagers = (rd.items || []).slice(0, 25);
+          if (engagers.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: reactionsEp, status: rr.status,
+              rawResponse: JSON.stringify(rd).substring(0, 1000),
+              params: JSON.stringify({ postId }),
+            }));
+          }
           diag.reactions_fetched += engagers.length;
           diag.total_engagers_raw += engagers.length;
           diag.bytes_fetched_estimate += 25_000;
@@ -270,41 +328,75 @@ Deno.serve(async (req) => {
       } else { await postsRes.text(); console.log('[POST_ENG] failed to fetch own posts'); }
     }
 
-    // Also scan profile_engagers (influencer profiles) if provided
-    if (run_profile_engagers && profile_urls?.length > 0) {
+    // Also scan profile_engagers (influencer profiles) if provided — use SANITIZED urls (Fix 2)
+    if (run_profile_engagers && sanitizedProfileUrls.length > 0) {
       function extractLinkedInId(url: string): string|null { if(!url) return null; const m=url.match(/linkedin\.com\/(?:company|in)\/([^/?]+)/); if(m) return m[1]; return url.replace(/^https?:\/\//,'').replace(/\/$/,'')||null; }
       function extractCompanyName(url: string): string|null { const id=extractLinkedInId(url); if(!id) return null; return id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
 
-      for (const url of profile_urls) {
+      for (const url of sanitizedProfileUrls) {
         if (!hasTime()) break;
         await delay(150);
         const profileId = extractLinkedInId(url);
-        if (!profileId) continue;
+        if (!profileId) {
+          console.error('[POST_ENG] Could not extract profileId from', url);
+          continue;
+        }
         diag.profile_urls_scanned++;
         const isCompany = url.includes('/company/');
         const ep = isCompany ? `/api/v1/users/${profileId}/posts?account_id=${account_id}&is_company=true&limit=10` : `/api/v1/users/${profileId}/posts?account_id=${account_id}&limit=10`;
         try {
           const pr = await unipileGet(ep, UNIPILE_API_KEY, UNIPILE_DSN);
-          if (!pr.ok) { await pr.text(); continue; }
+          if (!pr.ok) {
+            const txt = await pr.text();
+            console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: ep, status: pr.status, rawResponse: txt.substring(0, 1000), params: JSON.stringify({ profileId, isCompany, url }) }));
+            continue;
+          }
           const pd = await pr.json();
           const posts = (pd.items || pd.posts || []).slice(0, 10);
+          if (posts.length === 0) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: ep, status: pr.status,
+              rawResponse: JSON.stringify(pd).substring(0, 1000),
+              params: JSON.stringify({ profileId, isCompany, url }),
+            }));
+          }
           diag.profile_posts_scanned += posts.length;
           diag.bytes_fetched_estimate += 20_000;
           let profileName = isCompany ? (extractCompanyName(url)||profileId) : profileId;
           if (!isCompany) { try { const r = await unipileGet(`/api/v1/linkedin/profile/${profileId}?account_id=${account_id}`, UNIPILE_API_KEY, UNIPILE_DSN); if(r.ok){const d=await r.json();profileName=[d.first_name,d.last_name].filter(Boolean).join(' ')||profileId;}else await r.text(); } catch(_){} }
-          console.log(`[POST_ENG] profile_engagers "${profileName}": ${posts.length} posts`);
+          console.log(`[POST_ENG] profile_engagers "${profileName}" (${url}): ${posts.length} posts`);
           for (const post of posts) {
             if (!hasTime()) break;
             await delay(150);
             const postId = post.social_id||post.id||post.provider_id; if (!postId) continue;
             // Fetch both reactions AND comments
+            const reactionsEp = `/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`;
+            const commentsEp = `/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`;
             const [rr, cr] = await Promise.all([
-              unipileGet(`/api/v1/posts/${postId}/reactions?account_id=${account_id}&limit=50`, UNIPILE_API_KEY, UNIPILE_DSN),
-              unipileGet(`/api/v1/posts/${postId}/comments?account_id=${account_id}&limit=30`, UNIPILE_API_KEY, UNIPILE_DSN),
+              unipileGet(reactionsEp, UNIPILE_API_KEY, UNIPILE_DSN),
+              unipileGet(commentsEp, UNIPILE_API_KEY, UNIPILE_DSN),
             ]);
             const engagers: any[] = [];
-            if (rr.ok) { const rd = await rr.json(); const items = (rd.items||[]).slice(0, 50); engagers.push(...items); diag.reactions_fetched += items.length; } else { await rr.text(); }
-            if (cr.ok) { const cd = await cr.json(); const items = (cd.items||[]).slice(0, 30); engagers.push(...items.map((c: any) => c.author || c)); diag.comments_fetched += items.length; } else { await cr.text(); }
+            if (rr.ok) {
+              const rd = await rr.json();
+              const items = (rd.items||[]).slice(0, 50);
+              if (items.length === 0) console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: reactionsEp, status: rr.status, rawResponse: JSON.stringify(rd).substring(0, 1000), params: JSON.stringify({ postId }) }));
+              engagers.push(...items);
+              diag.reactions_fetched += items.length;
+            } else {
+              const txt = await rr.text();
+              console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: reactionsEp, status: rr.status, rawResponse: txt.substring(0, 1000), params: JSON.stringify({ postId }) }));
+            }
+            if (cr.ok) {
+              const cd = await cr.json();
+              const items = (cd.items||[]).slice(0, 30);
+              if (items.length === 0) console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: commentsEp, status: cr.status, rawResponse: JSON.stringify(cd).substring(0, 1000), params: JSON.stringify({ postId }) }));
+              engagers.push(...items.map((c: any) => c.author || c));
+              diag.comments_fetched += items.length;
+            } else {
+              const txt = await cr.text();
+              console.error('[UNIPILE_ZERO]', JSON.stringify({ endpoint: commentsEp, status: cr.status, rawResponse: txt.substring(0, 1000), params: JSON.stringify({ postId }) }));
+            }
             diag.total_engagers_raw += engagers.length;
             diag.bytes_fetched_estimate += 25_000 * 2;
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
@@ -335,6 +427,23 @@ Deno.serve(async (req) => {
 
     console.log(`[POST_ENG] ${inserted} leads total (${Math.round((Date.now()-START)/1000)}s)`);
     console.log(`[POST_ENG] diag: ${JSON.stringify(diag)}`);
+    console.log('[TASK_FINAL_SUMMARY]', JSON.stringify({
+      signal: 'post_engagers',
+      rawFetched: diag.total_engagers_raw,
+      profilesFetched: diag.profiles_fetched,
+      passedPrefilter: diag.strong_passes,
+      passedICP: diag.inserted + diag.excluded_competitor + diag.cold_capped,
+      inserted: diag.inserted,
+      ownPostsScanned: diag.own_posts_scanned,
+      profileUrlsScanned: diag.profile_urls_scanned,
+      profilePostsScanned: diag.profile_posts_scanned,
+      rejections: {
+        failedQuickIcp: diag.failed_quick_icp,
+        noIcpMatch: diag.excluded_no_icp_match,
+        competitorOrExcluded: diag.excluded_competitor,
+        coldCapped: diag.cold_capped,
+      },
+    }));
 
     // Save diagnostics to task record if run_id/task_key provided
     if (run_id && task_key) {
