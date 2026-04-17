@@ -423,10 +423,20 @@ Deno.serve(async (req) => {
 
       if (isPersonUrl) {
         console.log(`[COMP] Fetching posts for person: ${companyId}`);
-        const postsRes = await unipileGet(`/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`, UNIPILE_API_KEY, UNIPILE_DSN);
+        const personPath = `/api/v1/users/${companyId}/posts?account_id=${account_id}&limit=20`;
+        const postsRes = await unipileGet(personPath, UNIPILE_API_KEY, UNIPILE_DSN);
         if (postsRes.ok) {
           const postsData = await postsRes.json();
           posts = (postsData.items || postsData.posts || []).slice(0, 20);
+          // BRUTAL LOG: Step 2 — zero response audit
+          if (!postsData?.items?.length && !postsData?.posts?.length) {
+            console.error('[UNIPILE_ZERO]', JSON.stringify({
+              endpoint: personPath,
+              status: postsRes.status,
+              rawResponse: JSON.stringify(postsData).substring(0, 1000),
+              params: JSON.stringify({ companyId, account_id, signal: 'competitor_engagers_person_posts' }),
+            }));
+          }
         } else {
           const errText = await postsRes.text();
           console.error(`[COMP] Posts fetch person "${companyId}": HTTP ${postsRes.status} - ${errText.slice(0, 200)}`);
@@ -453,6 +463,15 @@ Deno.serve(async (req) => {
             const items = postsData.items || postsData.posts || [];
             posts.push(...items);
             console.log(`[COMP] "${companyName}" page ${page+1}: ${items.length} posts (total: ${posts.length})`);
+            // BRUTAL LOG: Step 2 — zero response audit (first page only)
+            if (page === 0 && items.length === 0) {
+              console.error('[UNIPILE_ZERO]', JSON.stringify({
+                endpoint: fetchUrl,
+                status: postsRes.status,
+                rawResponse: JSON.stringify(postsData).substring(0, 1000),
+                params: JSON.stringify({ companyId, numericId, account_id, signal: 'competitor_engagers_company_posts' }),
+              }));
+            }
             cursor = postsData.cursor || postsData.next_cursor || null;
             if (!cursor || items.length === 0) break;
             await delay(200);
