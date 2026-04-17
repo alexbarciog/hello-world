@@ -600,14 +600,44 @@ Deno.serve(async (req) => {
       rejected_author_dedup: 0,
       rejected_no_author: 0,
       inserted: 0,
+      // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
       sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
       sample_inserted: [] as Array<{ name: string; headline: string; intentScore: number }>,
     };
+    // Cap diagnostic sample arrays to keep the row small (was 50 each → ~50KB rows).
+    const SAMPLE_CAP = 5;
 
     let inserted = 0;
     const globalSeenPostIds = new Set<string>();
     const globalSeenAuthorIds = new Set<string>();
+
+    // ── Per-RUN bandwidth caps ──
+    // Profile fetches are the single biggest egress driver (30–80 KB each).
+    // Cap them at the RUN level (across all keyword tasks for this run) so
+    // a 30-keyword agent can't accidentally pull thousands of profile JSONs.
+    const RUN_PROFILE_FETCH_CAP = 50;
+    const RUN_INSERT_CAP = 60; // sane ceiling per run; quality > volume
+    let runProfileFetchesSoFar = 0;
+    let runInsertsSoFar = 0;
+    if (_run_id) {
+      try {
+        // Aggregate profile fetches already done by sibling tasks of this run.
+        const { data: doneRows } = await supabase
+          .from('signal_agent_tasks')
+          .select('diagnostics, leads_found')
+          .eq('run_id', _run_id)
+          .neq('task_key', _task_key || '');
+        for (const r of (doneRows || [])) {
+          const d: any = r.diagnostics || {};
+          runProfileFetchesSoFar += (d.profile_fetches_attempted || 0);
+          runInsertsSoFar += (r.leads_found || 0);
+        }
+      } catch { /* best effort */ }
+    }
+    const runHasBudget = () =>
+      runProfileFetchesSoFar < RUN_PROFILE_FETCH_CAP &&
+      runInsertsSoFar + inserted < RUN_INSERT_CAP;
 
     // Track consecutive 429s to trigger an extra cool-off if Unipile is unhappy.
     let consecutive429s = 0;
@@ -615,19 +645,25 @@ Deno.serve(async (req) => {
     for (const keyword of keywords) {
       pipelineStats.keywords_processed++;
       if (!hasTime()) { console.log(`[TIMEOUT] Stopping at keyword "${keyword}" (${pipelineStats.keywords_processed}/${keywords.length}) — ${inserted} leads so far, ${keywords.length - pipelineStats.keywords_processed} keywords remaining`); break; }
+      if (!runHasBudget()) {
+        console.log(`[BUDGET] Run-level cap reached (profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}) — stopping early`);
+        break;
+      }
 
       // Heartbeat so the reaper doesn't think we're stuck.
       await heartbeat(supabase, _run_id, _task_key);
 
-      // ── Step 1: Fetch posts with pagination ──
+      // ── Step 1: Fetch ONE page (~25 posts). Bandwidth-first: stop paginating. ──
+      // Real intent phrases rarely have more than ~25 high-quality matches per week,
+      // and going past page 1 mostly returns noise — at the cost of ~50 KB per page.
       const keywordPosts: any[] = [];
       let cursor: string | null = null;
-      const MAX_PAGES = 5;
-      const TARGET_POSTS = 50;
+      const MAX_PAGES = 1;
+      const TARGET_POSTS = 25;
 
       try {
         for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
-          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 50 };
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 25 };
           if (cursor) searchBody.cursor = cursor;
 
           // Retry-with-backoff on Unipile 429 (rate-limit). Up to 5 attempts: 5s, 10s, 20s, 30s, 30s.
@@ -731,12 +767,12 @@ Deno.serve(async (req) => {
             preFilterStats.wrong_industry++;
             pipelineStats.rejected_wrong_industry++;
           }
-          // Capture sample rejections (max 3)
-          if (pipelineStats.sample_prefilter_rejections.length < 50) {
+          // Capture sample rejections (small cap to keep diagnostics tiny)
+          if (pipelineStats.sample_prefilter_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_prefilter_rejections.push({
               keyword,
-              variants: diagVariants,
-              postSample: postText.substring(0, 300),
+              variants: diagVariants.slice(0, 5),
+              postSample: postText.substring(0, 160),
               reason: filterResult.reason || 'unknown',
             });
           }
@@ -788,9 +824,9 @@ Deno.serve(async (req) => {
           } else {
             pipelineStats.rejected_ai_low_score++;
           }
-          if (pipelineStats.sample_ai_rejections.length < 50) {
+          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 300),
+              postSample: p.text.substring(0, 160),
               is_buyer: rejectedCls.is_buyer,
               intent_score: rejectedCls.intent_score,
               reason: rejectedCls.reason,
@@ -798,9 +834,9 @@ Deno.serve(async (req) => {
           }
         } else {
           pipelineStats.rejected_ai_not_buyer++;
-          if (pipelineStats.sample_ai_rejections.length < 50) {
+          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 300),
+              postSample: p.text.substring(0, 160),
               is_buyer: false,
               intent_score: 0,
               reason: 'no_ai_response_for_post',
@@ -822,6 +858,10 @@ Deno.serve(async (req) => {
 
       for (const { post, matchedPhrase } of qualifiedPosts) {
         if (!hasTime()) break;
+        if (!runHasBudget()) {
+          console.log(`[BUDGET] mid-keyword stop: profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}`);
+          break;
+        }
 
         const postId = post.social_id || post.id || post.provider_id;
         const intentData = intentResults.get(postId);
@@ -841,8 +881,29 @@ Deno.serve(async (req) => {
           if (existing && existing.length > 0) { keywordSkipped.earlyDedup++; pipelineStats.rejected_early_db_dedup++; continue; }
         }
 
-        // Full profile fetch (only for genuinely new leads)
+        // ── BANDWIDTH-FIRST: pre-screen on the lightweight author payload included
+        // in the search response BEFORE doing the expensive full profile fetch.
+        // This drops ~70% of profile fetches without losing real leads, because
+        // posts that already passed the AI intent classifier with a real-looking
+        // author headline almost always represent a genuine person.
+        const previewHeadline = (authorData.headline || authorData.title || '').trim();
+        if (previewHeadline) {
+          if (isClearlyIrrelevant(previewHeadline)) {
+            keywordSkipped.irrelevant++;
+            pipelineStats.rejected_irrelevant_title++;
+            continue;
+          }
+          // Own-company exclusion using preview text only
+          if (ownCompanyLower && ownCompanyLower.length > 1 && previewHeadline.toLowerCase().includes(ownCompanyLower)) {
+            keywordSkipped.ownCompany++;
+            pipelineStats.rejected_own_company++;
+            continue;
+          }
+        }
+
+        // Full profile fetch (only for genuinely new leads that survived pre-screen)
         pipelineStats.profile_fetches_attempted++;
+        runProfileFetchesSoFar++;
         const fullAuthor = await fetchFullProfile(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         if (fullAuthor) {
           author = fullAuthor;
@@ -922,6 +983,7 @@ Deno.serve(async (req) => {
           keywordInserted++;
           inserted++;
           pipelineStats.inserted++;
+          runInsertsSoFar++;
           const tier = classifyContactWithIntentScore(match, icp, hl, intentData?.intent_score) || 'warm';
           console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier} (score=${intentData?.intent_score}, kw="${keyword}")`);
           // Capture sample inserted (max 3)
