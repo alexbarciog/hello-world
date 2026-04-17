@@ -299,11 +299,11 @@ function validateAndScoreKeywords(
     }
 
     const wordCount = phrase.trim().split(/\s+/).length;
-    if (wordCount < 3) {
-      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too short — single/double words match too broadly' };
+    if (wordCount < 2) {
+      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too short — single words match too broadly' };
     }
-    if (wordCount > 8) {
-      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too long — LinkedIn search will not match reliably' };
+    if (wordCount > 3) {
+      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too long — must be 2-3 words max' };
     }
 
     let score = 50;
