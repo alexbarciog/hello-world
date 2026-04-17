@@ -410,6 +410,17 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
       return `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 500)}${authorInfo}${phraseInfo}`;
     }).join('\n\n---\n\n');
 
+    // BRUTAL LOG: Step 4 — log every AI input
+    for (const p of batch) {
+      console.log('[AI_INPUT]', JSON.stringify({
+        id: p.id,
+        postText: (p.text || '').substring(0, 200),
+        keyword: p.keyword,
+        authorHeadline: p.authorHeadline,
+        matchedPhrase: p.matchedPhrase,
+      }));
+    }
+
     try {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
