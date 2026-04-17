@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
     if (!roleData) throw new Error("Not an admin");
 
-    const { target_user_id, redirect_to } = await req.json();
+    const { target_user_id } = await req.json();
     if (!target_user_id) throw new Error("Missing target_user_id");
 
     // Look up target user's email
@@ -43,16 +43,20 @@ Deno.serve(async (req) => {
     if (getErr || !targetUser?.user?.email) throw new Error("Target user not found");
 
     const email = targetUser.user.email;
-    const origin = redirect_to || req.headers.get("origin") || "";
+
+    // Always send the admin into the production app, regardless of where they
+    // triggered impersonation from (preview, localhost, etc.).
+    const targetOrigin = "https://intentsly.com";
+    const targetRedirect = `${targetOrigin}/dashboard`;
 
     // Generate a magic link to obtain a token_hash. We won't use action_link directly
     // because Supabase ignores redirectTo if it's not in the allowed list and falls
-    // back to the project's Site URL (e.g. localhost:3000).
+    // back to the project's Site URL.
     const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
       type: "magiclink",
       email,
       options: {
-        redirectTo: `${origin}/dashboard`,
+        redirectTo: targetRedirect,
       },
     });
     if (linkErr) throw linkErr;
@@ -61,8 +65,8 @@ Deno.serve(async (req) => {
     if (!tokenHash) throw new Error("No token hash returned");
 
     // Build a verify URL that goes through Supabase's /verify endpoint but redirects
-    // back to OUR origin regardless of Site URL config.
-    const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=magiclink&redirect_to=${encodeURIComponent(`${origin}/dashboard`)}`;
+    // to intentsly.com regardless of Site URL config.
+    const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=magiclink&redirect_to=${encodeURIComponent(targetRedirect)}`;
 
     return new Response(
       JSON.stringify({
