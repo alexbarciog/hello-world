@@ -206,7 +206,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     setSignalKeywordInputs({ ...signalKeywordInputs, [signalId]: "" });
   }
 
-  async function generateSignalKeywords(signalId: string) {
+  async function generateSignalKeywords(signalId: string, mode: "replace" | "add" = "add") {
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
     try {
       // Fetch business context from the user's campaign (same as generateWithAI)
@@ -237,10 +237,22 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       });
       if (error) throw error;
       if (data?.keywords?.length) {
-        const current = signalKeywords[signalId] || [];
-        const merged = [...new Set([...current, ...data.keywords])];
-        setSignalKeywords({ ...signalKeywords, [signalId]: merged });
-        toast.success(`Generated ${data.keywords.length} keywords!`);
+        const incoming: string[] = data.keywords;
+        if (mode === "replace") {
+          setSignalKeywords({ ...signalKeywords, [signalId]: [...incoming] });
+          setNewSignalKeywords({ ...newSignalKeywords, [signalId]: [...incoming] });
+          toast.success(`Replaced with ${incoming.length} new keywords`);
+        } else {
+          const current = signalKeywords[signalId] || [];
+          const additions = incoming.filter((k) => !current.includes(k));
+          const merged = [...current, ...additions];
+          setSignalKeywords({ ...signalKeywords, [signalId]: merged });
+          setNewSignalKeywords({
+            ...newSignalKeywords,
+            [signalId]: [...(newSignalKeywords[signalId] || []), ...additions],
+          });
+          toast.success(`Added ${additions.length} new keywords`);
+        }
       }
     } catch (e) {
       console.error("Failed to generate keywords:", e);
@@ -248,6 +260,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     }
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: false }));
   }
+
 
   // ── ICP Validation ────────────────────────────────────────────────────────
   function validateICP(): boolean {
