@@ -120,10 +120,11 @@ async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<s
   const{data:c,error}=await sb.from('lists').insert({user_id:uid,name:ln,source_agent_id:aid}).select('id').single();
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters): Promise<boolean>{
-  const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return false;
+// Rule 3 (Hard Skip): returns 'exists' if profile already in contacts, 'inserted' on success, 'failed' otherwise
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters): Promise<'inserted'|'exists'|'failed'>{
+  const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'failed';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
-  if(ex?.length>0) return false;
+  if(ex?.length>0) return 'exists';
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
   const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
