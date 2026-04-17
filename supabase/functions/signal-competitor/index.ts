@@ -186,17 +186,38 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
 
 const QUICK_REJECT_TITLES = ['student', 'intern', 'freelance', 'looking for work', 'job seeker', 'fresher', 'trainee', 'apprentice'];
 
-function engagerPassesQuickIcpCheck(headline: string | undefined, icp: ICPFilters): boolean {
-  if (!headline) return true; // no data = benefit of doubt
+// Returns:
+//   'strong_pass' = headline mentions an ICP job title → skip cap, fetch profile
+//   'pass'        = no headline OR neutral headline → counts toward cap
+//   'reject'      = clearly irrelevant → skip
+function engagerPreFilter(headline: string | undefined, icp: ICPFilters): 'strong_pass' | 'pass' | 'reject' {
+  if (!headline) return 'pass';
   const hl = headline.toLowerCase();
-  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return false;
-  // If ICP has job titles, check for match — but still pass if no strong signal either way
+  if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
+  if (isClearlyIrrelevant(hl)) return 'reject';
+
+  // STRONG positive: headline matches an ICP job title OR has buying intent
   if (icp.jobTitles.length > 0) {
-    const titleMatch = icp.jobTitles.some(t => hl.includes(t.toLowerCase()));
-    if (titleMatch) return true;
+    const titleMatch = icp.jobTitles.some(t => {
+      const needle = t.toLowerCase().trim();
+      return needle.length >= 3 && hl.includes(needle);
+    });
+    if (titleMatch) return 'strong_pass';
   }
-  // No strong signal either way — let full profile check decide
-  return true;
+  if (hasBuyingIntent(hl)) return 'strong_pass';
+
+  // STRICT mode: headline present but no positive signal AND ICP defines titles → reject
+  // This is the key fix: most rejections were happening AFTER the expensive fetch.
+  if (icp.jobTitles.length > 0 && hl.length > 5) {
+    return 'reject';
+  }
+
+  return 'pass';
+}
+
+// Backward-compat shim (still referenced in the file)
+function engagerPassesQuickIcpCheck(headline: string | undefined, icp: ICPFilters): boolean {
+  return engagerPreFilter(headline, icp) !== 'reject';
 }
 
 // ─── Main Handler ────────────────────────────────────────────────────────────
@@ -236,16 +257,19 @@ Deno.serve(async (req) => {
     console.log(`[COMP] URLs to process: ${urls.length}`);
     console.log(`[COMP] ═══════════════════════════════════════════`);
 
-    // ── Cross-run dedup: load previously processed engager IDs ──
+    // ── Cross-run dedup: only block IDs processed in the LAST 30 DAYS ──
+    // Older entries get a second chance (ICP may have changed; lead may now qualify).
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: ppRows } = await supabase
       .from('processed_posts')
       .select('social_id')
-      .eq('agent_id', agent_id);
+      .eq('agent_id', agent_id)
+      .gte('processed_at', thirtyDaysAgo);
     const alreadyProcessed = new Set((ppRows || []).map((r: any) => r.social_id));
-    console.log(`[COMP] Cross-run dedup: ${alreadyProcessed.size} previously processed IDs loaded`);
+    console.log(`[COMP] Cross-run dedup (30d window): ${alreadyProcessed.size} previously processed IDs loaded`);
 
     // Pipeline stats
-    const pipelineStats = {
+    const pipelineStats: Record<string, number> = {
       competitors_processed: 0,
       posts_fetched: 0,
       reactions_fetched: 0,
@@ -254,6 +278,7 @@ Deno.serve(async (req) => {
       engagers_after_dedup: 0,
       skipped_already_processed: 0,
       failed_quick_icp: 0,
+      strong_passes: 0,
       profiles_fetched: 0,
       excluded_own_company: 0,
       excluded_competitor_employee: 0,
@@ -265,10 +290,45 @@ Deno.serve(async (req) => {
       skipped_no_id: 0,
       inserted: 0,
       rejected: 0,
+      bytes_fetched_estimate: 0,
     };
 
     const newlyProcessedIds: string[] = [];
     let inserted = 0;
+
+    // ── Two-tier bandwidth budget ──
+    // Per-task soft cap counts only "weak" pre-filter passes. Strong passes (positive
+    // ICP keyword in headline) bypass the cap so we never starve high-quality leads.
+    // The run-level hard ceiling is enforced via signal_agent_runs metadata below.
+    const PROFILE_FETCH_CAP = 80;          // per task, weak-signal fetches only
+    const RUN_PROFILE_FETCH_CAP = 200;     // hard ceiling across all comp tasks in this run
+    let profileFetches = 0;
+    let weakFetches = 0;
+
+    // Load run-wide fetch counter (other comp tasks in the same run may have already used budget)
+    let runFetchesSoFar = 0;
+    if (run_id) {
+      try {
+        const { data: runTasks } = await supabase
+          .from('signal_agent_tasks')
+          .select('diagnostics')
+          .eq('run_id', run_id)
+          .in('signal_type', ['competitor_engagers', 'competitor_followers']);
+        runFetchesSoFar = (runTasks || []).reduce((acc: number, t: any) => acc + (t?.diagnostics?.profiles_fetched || 0), 0);
+        console.log(`[COMP] Run-wide budget: ${runFetchesSoFar}/${RUN_PROFILE_FETCH_CAP} profile fetches already used by sibling tasks`);
+      } catch (_) { /* best-effort */ }
+    }
+    const hasProfileBudget = (preFilterResult: 'strong_pass' | 'pass') => {
+      if (runFetchesSoFar + profileFetches >= RUN_PROFILE_FETCH_CAP) return false;
+      if (preFilterResult === 'strong_pass') return true; // strong pass bypasses per-task cap
+      return weakFetches < PROFILE_FETCH_CAP;
+    };
+    const trackFetch = (preFilterResult: 'strong_pass' | 'pass') => {
+      profileFetches++;
+      if (preFilterResult === 'pass') weakFetches++;
+      // Estimate ~30KB per Unipile profile JSON
+      pipelineStats.bytes_fetched_estimate += 30_000;
+    };
 
     // ── Process engagers for a single competitor ──
     async function processCompetitorEngagers(url: string) {
@@ -415,6 +475,8 @@ Deno.serve(async (req) => {
 
         pipelineStats.reactions_fetched += reactionCount;
         pipelineStats.comments_fetched += commentCount;
+        // Estimate ~25KB per reactions/comments page response
+        pipelineStats.bytes_fetched_estimate += 25_000 * 2;
 
         console.log(`[COMP] Post ${postId}: ${reactionCount} reactions, ${commentCount} comments`);
 
@@ -446,22 +508,28 @@ Deno.serve(async (req) => {
 
         const rawId = extractLinkedinProfileId(engager.person);
 
-        // Cross-run dedup
-        if (rawId && alreadyProcessed.has(rawId)) {
-          pipelineStats.skipped_already_processed++;
-          continue;
-        }
-
-        // Track for cross-run dedup
-        if (rawId) newlyProcessedIds.push(rawId);
-
-        // Step 4: Quick ICP headline check before expensive profile fetch
+        // Step 4: Pre-filter on the lightweight engager payload BEFORE any expensive call
         const quickHeadline = engager.person.headline || engager.person.title || engager.person.description || '';
-        if (!engagerPassesQuickIcpCheck(quickHeadline, icp)) {
+        const preFilter = engagerPreFilter(quickHeadline, icp);
+        if (preFilter === 'reject') {
           pipelineStats.failed_quick_icp++;
           competitorStats.failed_quick_icp++;
           continue;
         }
+        if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
+
+        // Budget check (strong passes bypass per-task cap, weak ones don't)
+        if (!hasProfileBudget(preFilter)) {
+          console.log(`[COMP] profile-fetch budget reached (weak=${weakFetches}/${PROFILE_FETCH_CAP}, run=${runFetchesSoFar + profileFetches}/${RUN_PROFILE_FETCH_CAP}) — stopping`);
+          break;
+        }
+
+        // Cross-run dedup (30-day window already applied at load time)
+        if (rawId && alreadyProcessed.has(rawId)) {
+          pipelineStats.skipped_already_processed++;
+          continue;
+        }
+        if (rawId) newlyProcessedIds.push(rawId);
 
         // Early dedup against contacts DB
         if (rawId) {
@@ -475,6 +543,7 @@ Deno.serve(async (req) => {
         // Step 5: Fetch full profile
         const fp = await fetchFullProfile(engager.person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
         pipelineStats.profiles_fetched++;
+        trackFetch(preFilter);
         competitorStats.profiles_fetched++;
 
         if (!fp || !fp.first_name) { pipelineStats.skipped_no_id++; continue; }
@@ -599,11 +668,19 @@ Deno.serve(async (req) => {
 
     // ── Route by signal type ──
     if (signal_type === 'competitor_followers') {
+      console.log(`[COMP] competitor_followers: received ${urls.length} URLs:`);
+      urls.forEach((u: string, i: number) => console.log(`[COMP]   [${i}] ${u}`));
+
       for (let urlIdx = 0; urlIdx < urls.length; urlIdx++) {
         if (!hasTime()) break;
         const url = urls[urlIdx];
         const companyName = extractCompanyName(url);
         const isCompanyUrl = url.includes('/company/');
+
+        if (!isCompanyUrl) {
+          console.log(`[COMP] competitor_followers: skipping non-company URL "${url}" (followers API requires /company/ slug)`);
+          continue;
+        }
 
         // Inter-competitor delay (skip first)
         if (urlIdx > 0) {
@@ -612,6 +689,8 @@ Deno.serve(async (req) => {
         }
 
         if (isCompanyUrl && companyName) {
+          // Count this competitor as processed regardless of resolution outcome (visibility)
+          pipelineStats.competitors_processed++;
           const companyId = extractLinkedInId(url);
 
           // ── Strategy: Fetch real followers of the company page via Unipile followers API ──
@@ -666,16 +745,23 @@ Deno.serve(async (req) => {
               for (const person of allFollowers) {
                 if (!hasTime()) break;
                 const rawId = extractLinkedinProfileId(person);
+                const quickHl = person.headline || person.title || '';
+                const preFilter = engagerPreFilter(quickHl, icp);
+                if (preFilter === 'reject') { pipelineStats.failed_quick_icp++; continue; }
+                if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
+                if (!hasProfileBudget(preFilter)) {
+                  console.log(`[COMP] follower budget reached (weak=${weakFetches}/${PROFILE_FETCH_CAP}, run=${runFetchesSoFar + profileFetches}/${RUN_PROFILE_FETCH_CAP}) — stopping`);
+                  break;
+                }
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
                 if (rawId) newlyProcessedIds.push(rawId);
-                const quickHl = person.headline || person.title || '';
-                if (!engagerPassesQuickIcpCheck(quickHl, icp)) { pipelineStats.failed_quick_icp++; continue; }
                 if (rawId) {
                   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
                   if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
                 }
                 const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 pipelineStats.profiles_fetched++;
+                trackFetch(preFilter);
                 if (!fp || !fp.first_name) continue;
                 if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') continue;
                 const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
