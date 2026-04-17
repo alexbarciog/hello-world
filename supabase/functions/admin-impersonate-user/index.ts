@@ -43,20 +43,30 @@ Deno.serve(async (req) => {
     if (getErr || !targetUser?.user?.email) throw new Error("Target user not found");
 
     const email = targetUser.user.email;
+    const origin = redirect_to || req.headers.get("origin") || "";
 
-    // Generate a magic link the admin can open in a new tab to log in as that user
+    // Generate a magic link to obtain a token_hash. We won't use action_link directly
+    // because Supabase ignores redirectTo if it's not in the allowed list and falls
+    // back to the project's Site URL (e.g. localhost:3000).
     const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
       type: "magiclink",
       email,
       options: {
-        redirectTo: redirect_to || `${req.headers.get("origin") || ""}/dashboard`,
+        redirectTo: `${origin}/dashboard`,
       },
     });
     if (linkErr) throw linkErr;
 
+    const tokenHash = linkData.properties?.hashed_token;
+    if (!tokenHash) throw new Error("No token hash returned");
+
+    // Build a verify URL that goes through Supabase's /verify endpoint but redirects
+    // back to OUR origin regardless of Site URL config.
+    const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=magiclink&redirect_to=${encodeURIComponent(`${origin}/dashboard`)}`;
+
     return new Response(
       JSON.stringify({
-        action_link: linkData.properties?.action_link,
+        action_link: verifyUrl,
         email,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
