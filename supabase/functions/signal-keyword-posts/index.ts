@@ -397,38 +397,55 @@ async function classifyIntentBatch(
     return results;
   }
 
-  const systemPrompt = `You are a B2B buying intent classifier for LinkedIn posts.
+  const systemPrompt = `You are an EXTREMELY STRICT B2B buying intent classifier for LinkedIn posts.
 
 COMPANY CONTEXT: "${businessContext}"
 
-For each LinkedIn post, determine if the AUTHOR is expressing genuine buying intent — meaning they have a business need, challenge, or are seeking solutions.
+Your job is to REJECT posts unless the AUTHOR is EXPLICITLY and ACTIVELY looking RIGHT NOW for a solution related to the company context above.
+
+DEFAULT TO is_buyer=false. Only set is_buyer=true if the post passes ALL of these tests:
+  1. Present tense — the need exists NOW (not "we did", "we used to", "last year")
+  2. The AUTHOR (not their company in third person) is the one expressing the need / asking
+  3. There is an EXPLICIT signal: a question seeking recommendations, a stated frustration with a current vendor, a stated evaluation of alternatives, or an explicit "we need X / looking for X / anyone use X"
+  4. The need is RELEVANT to the company context above. Vague pain ("we have growth challenges") is NOT enough.
+  5. It is NOT thought leadership, advice-giving, hiring, self-promotion, case study, hot take, or congratulations
 
 RESPOND ONLY via the tool call. No other text.
 
-TRUE BUYER examples (is_buyer: true, high intent_score):
-- "Anyone tried anything better than Apollo? Getting frustrated with the data quality" → BUYER (score: 90, seeking_recommendation)
-- "We need to replace our current outreach tool, evaluating alternatives" → BUYER (score: 85, actively_evaluating)
-- "Our dev agency keeps missing deadlines, looking to switch providers" → BUYER (score: 80, frustrated_with_current)
-- "Can anyone recommend a good lead gen tool?" → BUYER (score: 85, seeking_recommendation)
-- "We're struggling with X, how do you handle this?" → BUYER (score: 70, problem_aware)
+TRUE BUYER examples (is_buyer: true):
+- "Anyone tried anything better than Apollo? Data quality is killing us" → BUYER (score: 95, seeking_recommendation)
+- "We need to replace our outreach tool this quarter — evaluating alternatives" → BUYER (score: 90, actively_evaluating)
+- "Our SEO agency keeps missing deadlines, actively looking to switch" → BUYER (score: 85, frustrated_with_current)
+- "Can anyone recommend a good lead-gen tool for B2B SaaS?" → BUYER (score: 85, seeking_recommendation)
+- "What's everyone using instead of HubSpot for outbound? Ours is broken" → BUYER (score: 90, seeking_recommendation)
 
-FALSE POSITIVE examples (is_buyer: false, low intent_score):
-- "We're hiring a developer to build our internal tool" → NOT buyer (job posting)
-- "I built an internal tool for my team, happy to share" → NOT buyer (self-promotion)
-- "Here's how to develop your internal processes — 5 tips" → NOT buyer (thought leadership)
-- "Excited to announce our new feature launch!" → NOT buyer (self-promotion)
-- "Every company should invest in internal tools" → NOT buyer (vague opinion)
-- "We switched last year and it was great" → NOT buyer (past tense, resolved)
-- "Here are 5 ways to improve your outreach" → NOT buyer (giving advice, not seeking)
-- Publishing case studies of their work → NOT buyer (promoting expertise)
+REJECT — these are NOT buyers (is_buyer: false, score < 50):
+- "We're hiring a developer to build our internal tool" → job posting
+- "I built an internal tool for my team, happy to share" → self-promotion
+- "Here's how to develop your internal processes — 5 tips" → thought leadership
+- "Excited to announce our new feature launch!" → self-promotion
+- "Every company should invest in internal tools" → vague opinion
+- "We switched last year and it was great" → past tense, resolved
+- "Here are 5 ways to improve your outreach" → giving advice, not seeking
+- "Outbound is broken in 2026, here's why" → hot take / opinion
+- "We're struggling with growth, how do you handle this?" → vague problem, no specific solution being sought
+- "Sales is hard right now" → vague commiseration
+- "Proud of our team for hitting 200% this quarter" → celebration
+- Posts that are mostly hashtags, emojis, or motivational quotes
+- Case studies, testimonials, or "how we did X" stories
+- General industry commentary, predictions, or trends
+- "What's your biggest challenge?" — engagement bait, not buying intent
 
-SCORING GUIDE:
-- 90-100: Actively asking for alternatives RIGHT NOW, clear frustration, urgent need
-- 70-89: Evaluating options, comparing tools, requesting recommendations
-- 50-69: Problem-aware, casually exploring, not urgent
-- Below 50: Not a buyer — set is_buyer to false
+STRICT SCORING:
+- 90-100: Author is asking RIGHT NOW for a specific alternative/recommendation, with named pain or named current vendor → BUYER
+- 75-89: Author is explicitly evaluating / replacing / switching a specific category of tool/vendor → BUYER
+- 60-74: Author has a specific stated problem AND mentions wanting to fix it / find a solution, but no explicit "looking for" → BUYER (borderline)
+- Below 60: NOT a buyer. Set is_buyer=false. This includes vague problem awareness, advice posts, opinions, anything past tense.
 
-signal_type must be one of: "seeking_recommendation", "actively_evaluating", "frustrated_with_current", "problem_aware", "not_a_buyer"`;
+CRITICAL: When in doubt, REJECT. False negatives are FAR better than false positives. The user is paying for high-intent leads only.
+
+signal_type must be one of: "seeking_recommendation", "actively_evaluating", "frustrated_with_current", "problem_aware", "not_a_buyer".
+"problem_aware" alone is NOT enough to be a buyer — only use it if score >= 60 AND there is an explicit solution-seeking phrase.`;
 
   for (let i = 0; i < postsWithText.length; i += 8) {
     const batch = postsWithText.slice(i, i + 8);
@@ -523,13 +540,23 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
           passedThreshold: cls.intent_score >= minIntentScore,
           threshold: minIntentScore,
         }));
-        if (cls.is_buyer && cls.intent_score >= minIntentScore) {
+        // Fix 8: belt-and-suspenders — even if AI returns is_buyer=true with a
+        // borderline score, reject "problem_aware" unless it's a strong signal.
+        // problem_aware = vague pain, not active solution-seeking.
+        const isWeakSignal = cls.signal_type === 'problem_aware' && cls.intent_score < 80;
+        const isStrongSignalType = ['seeking_recommendation', 'actively_evaluating', 'frustrated_with_current'].includes(cls.signal_type);
+        const passesIntent = cls.is_buyer
+          && cls.intent_score >= minIntentScore
+          && !isWeakSignal
+          && (isStrongSignalType || cls.intent_score >= 85);
+
+        if (passesIntent) {
           results.set(cls.id, cls);
           console.log(`[AI] ✅ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
         } else {
           // Store rejection with negative marker so pipeline can capture sample
           results.set(`rejected:${cls.id}`, cls);
-          console.log(`[AI] ❌ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} — ${cls.reason}`);
+          console.log(`[AI] ❌ ${cls.id}: score=${cls.intent_score} type=${cls.signal_type} weak=${isWeakSignal} — ${cls.reason}`);
         }
       }
 
@@ -587,9 +614,13 @@ Deno.serve(async (req) => {
     const searchHeaders = { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' };
 
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
-    // Fix 7: Lowered from 60 → 50 for keyword posts (warm buyer-frustration signals are typically 50-65)
-    const MIN_INTENT_SCORE = 50;
     const isHighPrecision = precision_mode === 'high_precision';
+    // Fix 8 (HARD intent gate): The pre-filter was relaxed in discovery mode, so the AI
+    // gate must be much stricter to compensate. Reject anything that isn't an explicit,
+    // present-tense, solution-seeking post.
+    //   - high_precision: 80 (only the clearest "looking for X right now" posts)
+    //   - discovery:      70 (explicit evaluation / frustration / recommendation requests)
+    const MIN_INTENT_SCORE = isHighPrecision ? 80 : 70;
     console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country+industry filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
     const icp: ICPFilters = {
@@ -654,7 +685,7 @@ Deno.serve(async (req) => {
       // Fix 5: seller-detection layer (sellers using buyer phrases as bait)
       rejected_seller: 0,
       // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
-      min_intent_score: 50,
+      min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
       inserted: 0,
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
