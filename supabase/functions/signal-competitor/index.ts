@@ -252,6 +252,13 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
 
+    // Fix 2: sanitize all incoming URLs ONCE before any Unipile call
+    const sanitizedUrls: string[] = (urls as string[]).map(sanitizeLinkedinUrl).filter(Boolean);
+    const urlSanitizationChanged = sanitizedUrls.filter((s, i) => s !== (urls as string[])[i]).length;
+    if (urlSanitizationChanged > 0) {
+      console.log(`[COMP] sanitized ${urlSanitizationChanged}/${urls.length} URLs (stripped query/fragment/diacritics)`);
+    }
+
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY')!;
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN')!;
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
