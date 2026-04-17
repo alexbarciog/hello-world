@@ -264,9 +264,9 @@ function engagerPreFilter(
   return 'reject';
 }
 
-// Backward-compat shim (still referenced in the file)
+// Backward-compat shim (still referenced in the file). Defaults to discovery mode.
 function engagerPassesQuickIcpCheck(headline: string | undefined, icp: ICPFilters): boolean {
-  return engagerPreFilter(headline, icp) !== 'reject';
+  return engagerPreFilter(headline, icp, false) !== 'reject';
 }
 
 // ─── Main Handler ────────────────────────────────────────────────────────────
@@ -668,12 +668,14 @@ Deno.serve(async (req) => {
 
         // Step 4: Pre-filter on the lightweight engager payload BEFORE any expensive call
         const quickHeadline = engager.person.headline || engager.person.title || engager.person.description || '';
-        const preFilter = engagerPreFilter(quickHeadline, icp);
+        const preFilter = engagerPreFilter(quickHeadline, icp, isHighPrecision);
         if (preFilter === 'reject') {
           pipelineStats.failed_quick_icp++;
           competitorStats.failed_quick_icp++;
+          if (isHighPrecision) pipelineStats.hp_rejected++; else pipelineStats.discovery_rejected++;
           continue;
         }
+        if (isHighPrecision) pipelineStats.hp_passed++; else pipelineStats.discovery_passed++;
         if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
 
         // Budget check (strong passes bypass per-task cap, weak ones don't)
@@ -969,8 +971,13 @@ Deno.serve(async (req) => {
                 if (!hasTime()) break;
                 const rawId = extractLinkedinProfileId(person);
                 const quickHl = person.headline || person.title || '';
-                const preFilter = engagerPreFilter(quickHl, icp);
-                if (preFilter === 'reject') { pipelineStats.failed_quick_icp++; continue; }
+                const preFilter = engagerPreFilter(quickHl, icp, isHighPrecision);
+                if (preFilter === 'reject') {
+                  pipelineStats.failed_quick_icp++;
+                  if (isHighPrecision) pipelineStats.hp_rejected++; else pipelineStats.discovery_rejected++;
+                  continue;
+                }
+                if (isHighPrecision) pipelineStats.hp_passed++; else pipelineStats.discovery_passed++;
                 if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
                 if (!hasProfileBudget(preFilter)) {
                   console.log(`[COMP] follower budget reached (weak=${weakFetches}/${PROFILE_FETCH_CAP}, run=${runFetchesSoFar + profileFetches}/${RUN_PROFILE_FETCH_CAP}) — stopping`);
