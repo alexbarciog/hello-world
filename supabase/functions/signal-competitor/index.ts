@@ -742,19 +742,24 @@ Deno.serve(async (req) => {
 
               for (const person of allFollowers) {
                 if (!hasTime()) break;
-                if (!hasProfileBudget()) { console.log(`[COMP] follower profile-fetch cap (${PROFILE_FETCH_CAP}) hit — stopping`); break; }
                 const rawId = extractLinkedinProfileId(person);
+                const quickHl = person.headline || person.title || '';
+                const preFilter = engagerPreFilter(quickHl, icp);
+                if (preFilter === 'reject') { pipelineStats.failed_quick_icp++; continue; }
+                if (preFilter === 'strong_pass') pipelineStats.strong_passes++;
+                if (!hasProfileBudget(preFilter)) {
+                  console.log(`[COMP] follower budget reached (weak=${weakFetches}/${PROFILE_FETCH_CAP}, run=${runFetchesSoFar + profileFetches}/${RUN_PROFILE_FETCH_CAP}) — stopping`);
+                  break;
+                }
                 if (rawId && alreadyProcessed.has(rawId)) { pipelineStats.skipped_already_processed++; continue; }
                 if (rawId) newlyProcessedIds.push(rawId);
-                const quickHl = person.headline || person.title || '';
-                if (!engagerPassesQuickIcpCheck(quickHl, icp)) { pipelineStats.failed_quick_icp++; continue; }
                 if (rawId) {
                   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', rawId).limit(1);
                   if (existing && existing.length > 0) { pipelineStats.duplicates++; continue; }
                 }
                 const fp = await fetchFullProfile(person, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
                 pipelineStats.profiles_fetched++;
-                profileFetches++;
+                trackFetch(preFilter);
                 if (!fp || !fp.first_name) continue;
                 if ((fp.first_name||'').toLowerCase() === 'linkedin' && (fp.last_name||'').toLowerCase() === 'member') continue;
                 const lpid = fp.public_id || fp.public_identifier || fp.provider_id || fp.id;
