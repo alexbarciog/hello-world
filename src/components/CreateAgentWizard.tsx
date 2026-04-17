@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   HelpCircle, Sparkles, ChevronDown, ChevronRight, X, Check, Search, Target,
   Info, Plus, ArrowLeft, Users, MessageSquare, ThumbsUp, UserPlus, Briefcase,
-  TrendingUp, Building2, Eye,
+  TrendingUp, Building2, Eye, Loader2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -840,20 +840,38 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                                 <button
                                                   onClick={() => generateSignalKeywords(sub.id, "add")}
                                                   disabled={generatingKeywords[sub.id]}
-                                                  className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+                                                  className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-wait min-w-[68px] justify-center"
                                                 >
-                                                  <Sparkles className="w-3 h-3" />
-                                                  {generatingKeywords[sub.id] ? "..." : "AI"}
+                                                  {generatingKeywords[sub.id] ? (
+                                                    <>
+                                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                                      <span>Thinking</span>
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <Sparkles className="w-3 h-3" />
+                                                      <span>AI</span>
+                                                    </>
+                                                  )}
                                                 </button>
                                               ) : (
                                                 <Popover>
                                                   <PopoverTrigger asChild>
                                                     <button
                                                       disabled={generatingKeywords[sub.id]}
-                                                      className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+                                                      className="inline-flex items-center gap-1 text-xs font-medium text-white px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-wait min-w-[68px] justify-center"
                                                     >
-                                                      <Sparkles className="w-3 h-3" />
-                                                      {generatingKeywords[sub.id] ? "..." : "AI"}
+                                                      {generatingKeywords[sub.id] ? (
+                                                        <>
+                                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                                          <span>Thinking</span>
+                                                        </>
+                                                      ) : (
+                                                        <>
+                                                          <Sparkles className="w-3 h-3" />
+                                                          <span>AI</span>
+                                                        </>
+                                                      )}
                                                     </button>
                                                   </PopoverTrigger>
                                                   <PopoverContent align="end" className="w-56 p-1">
@@ -876,6 +894,23 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                                               )
                                             )}
                                           </div>
+                                          {generatingKeywords[sub.id] && (
+                                            <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                                              <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                                              <span>Analysing your business and generating buyer-intent keywords… (5-15s)</span>
+                                            </div>
+                                          )}
+                                          {generatingKeywords[sub.id] && (
+                                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                              {Array.from({ length: 8 }).map((_, i) => (
+                                                <span
+                                                  key={i}
+                                                  className="inline-block h-5 rounded-full bg-muted animate-pulse"
+                                                  style={{ width: `${50 + ((i * 17) % 60)}px` }}
+                                                />
+                                              ))}
+                                            </div>
+                                          )}
                                           {(signalKeywords[sub.id] || []).length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-1.5">
                                               {signalKeywords[sub.id].map((kw) => {

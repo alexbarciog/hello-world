@@ -15,9 +15,19 @@ async function scrapeWebsite(websiteUrl: string): Promise<string> {
     formattedUrl = `https://${formattedUrl}`;
   }
 
+  // Hard cap any scrape attempt at 8s — we'd rather fall back to AI-only than block the user.
+  const SCRAPE_TIMEOUT_MS = 8000;
+  const withTimeout = <T,>(p: Promise<T>): Promise<T> => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), SCRAPE_TIMEOUT_MS);
+    return p.finally(() => clearTimeout(t));
+  };
+
   // Prefer Firecrawl when available (handles JS-rendered pages)
   if (FIRECRAWL_API_KEY) {
     try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), SCRAPE_TIMEOUT_MS);
       const fc = await fetch('https://api.firecrawl.dev/v1/scrape', {
         method: 'POST',
         headers: {
@@ -29,36 +39,45 @@ async function scrapeWebsite(websiteUrl: string): Promise<string> {
           formats: ['markdown'],
           onlyMainContent: true,
         }),
-      });
+        signal: ctrl.signal,
+      }).finally(() => clearTimeout(t));
       if (fc.ok) {
         const json = await fc.json();
         const md = json?.data?.markdown || json?.markdown || '';
         if (md && md.length > 100) {
-          return md.substring(0, 4000);
+          return md.substring(0, 3000);
         }
       } else {
         console.warn('[KW_GEN] Firecrawl failed, falling back to fetch:', fc.status);
       }
     } catch (e) {
-      console.warn('[KW_GEN] Firecrawl error, falling back to fetch:', e);
+      console.warn('[KW_GEN] Firecrawl error/timeout, falling back to fetch:', e instanceof Error ? e.message : e);
     }
   }
 
-  // Fallback: raw fetch + HTML strip
-  const res = await fetch(formattedUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Intentsly/1.0)' },
-  });
-  const html = await res.text();
-  const cleaned = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return cleaned.substring(0, 3000);
+  // Fallback: raw fetch + HTML strip (also timed out)
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), SCRAPE_TIMEOUT_MS);
+    const res = await fetch(formattedUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Intentsly/1.0)' },
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    const html = await res.text();
+    const cleaned = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cleaned.substring(0, 2500);
+  } catch (e) {
+    console.warn('[KW_GEN] Raw fetch timeout/error:', e instanceof Error ? e.message : e);
+    return '';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -253,6 +272,104 @@ CATEGORIES:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// COMBINED Stage 2+3 — Single AI call for analysis + keywords (≈2× faster)
+// ─────────────────────────────────────────────────────────────────────────────
+async function analyseAndGenerateInOneCall(
+  websiteContent: string,
+  websiteUrl: string,
+  fallbackHints: { companyName?: string; description?: string; painPoints?: string | string[] },
+): Promise<{ analysis: BusinessAnalysis; generated: GeneratedKeywords }> {
+  const hintsBlock = [
+    fallbackHints.companyName && `Company name: ${fallbackHints.companyName}`,
+    fallbackHints.description && `Description: ${fallbackHints.description}`,
+    fallbackHints.painPoints && `Pain points: ${Array.isArray(fallbackHints.painPoints) ? fallbackHints.painPoints.join(', ') : fallbackHints.painPoints}`,
+  ].filter(Boolean).join('\n');
+
+  const systemPrompt = `You are a B2B signal-monitoring specialist. In a SINGLE step you (1) analyse a business and (2) produce LinkedIn keyword phrases that ONLY a frustrated buyer would write — never a vendor.
+
+GOLDEN RULE: For every phrase ask "would a vendor selling this ever post this to attract clients?" If yes → reject. Vendors never confess pain, never ask competitors for help.
+
+PASS examples: "reply rates dropped", "tired of apollo", "anyone tried lemlist", "switching from outreach"
+FAIL examples: "lead generation tips", "best practices outreach", "improve your pipeline"
+
+ALL keyword phrases MUST be lowercase, conversational, STRICTLY 2-3 words. Never 1 word. Never 4+ words.`;
+
+  const userPrompt = `Analyse this business and produce buyer-intent keywords in ONE response.
+
+WEBSITE URL: ${websiteUrl}
+${hintsBlock ? `\nUSER-PROVIDED CONTEXT:\n${hintsBlock}\n` : ''}
+WEBSITE CONTENT:
+${websiteContent}
+
+Be specific and concrete — no vague generalisations. Identify who really buys this and what pain they had RIGHT BEFORE buying. Then produce 2-3 word keyword phrases across 7 intent categories using the buyer's own vocabulary and competitor names.
+
+CATEGORIES (counts):
+- frustration_current_tool (5)
+- seeking_alternatives (5)
+- describing_pain (5)
+- asking_network (5)
+- budget_decision (4)
+- competitor_frustration (3)
+- problem_confession (3)`;
+
+  const combined = await callAITool({
+    systemPrompt,
+    userPrompt,
+    temperature: 0.25,
+    toolName: 'return_analysis_and_keywords',
+    toolDescription: 'Return both the business analysis and buyer-intent keyword categories',
+    parameters: {
+      type: 'object',
+      properties: {
+        what_they_sell: { type: 'string' },
+        primary_buyer: { type: 'string' },
+        core_problem_solved: { type: 'string' },
+        before_state: { type: 'string' },
+        after_state: { type: 'string' },
+        competitors_or_alternatives: { type: 'array', items: { type: 'string' } },
+        buyer_vocabulary: { type: 'array', items: { type: 'string' } },
+        category: { type: 'string' },
+        frustration_current_tool: { type: 'array', items: { type: 'string' } },
+        seeking_alternatives: { type: 'array', items: { type: 'string' } },
+        describing_pain: { type: 'array', items: { type: 'string' } },
+        asking_network: { type: 'array', items: { type: 'string' } },
+        budget_decision: { type: 'array', items: { type: 'string' } },
+        competitor_frustration: { type: 'array', items: { type: 'string' } },
+        problem_confession: { type: 'array', items: { type: 'string' } },
+      },
+      required: [
+        'what_they_sell', 'primary_buyer', 'core_problem_solved', 'before_state', 'after_state',
+        'competitors_or_alternatives', 'buyer_vocabulary', 'category',
+        'frustration_current_tool', 'seeking_alternatives', 'describing_pain', 'asking_network',
+        'budget_decision', 'competitor_frustration', 'problem_confession',
+      ],
+      additionalProperties: false,
+    },
+  });
+
+  const analysis: BusinessAnalysis = {
+    what_they_sell: combined.what_they_sell,
+    primary_buyer: combined.primary_buyer,
+    core_problem_solved: combined.core_problem_solved,
+    before_state: combined.before_state,
+    after_state: combined.after_state,
+    competitors_or_alternatives: combined.competitors_or_alternatives || [],
+    buyer_vocabulary: combined.buyer_vocabulary || [],
+    category: combined.category,
+  };
+  const generated: GeneratedKeywords = {
+    frustration_current_tool: combined.frustration_current_tool || [],
+    seeking_alternatives: combined.seeking_alternatives || [],
+    describing_pain: combined.describing_pain || [],
+    asking_network: combined.asking_network || [],
+    budget_decision: combined.budget_decision || [],
+    competitor_frustration: combined.competitor_frustration || [],
+    problem_confession: combined.problem_confession || [],
+  };
+  return { analysis, generated };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // STAGE 4 — Validation and scoring
 // ─────────────────────────────────────────────────────────────────────────────
 interface KeywordScore {
@@ -433,16 +550,14 @@ Deno.serve(async (req) => {
       console.log('[KW_GEN] Using fallback context (no website content)');
     }
 
-    // STAGE 2 — Analyse business
-    console.log('[KW_GEN] Stage 2: analysing business');
-    const analysis = await analyseBusinessFromWebsite(websiteContent, website || 'unknown', {
-      companyName, description, painPoints,
-    });
-    console.log('[KW_GEN] Stage 2 done. analysis:', JSON.stringify(analysis));
-
-    // STAGE 3 — Generate keywords
-    console.log('[KW_GEN] Stage 3: generating keywords');
-    const generated = await generateKeywordsFromAnalysis(analysis);
+    // STAGE 2+3 (combined) — Analyse + generate in a SINGLE AI call (≈2× faster)
+    console.log('[KW_GEN] Stage 2+3: combined analysis + keyword generation');
+    const { analysis, generated } = await analyseAndGenerateInOneCall(
+      websiteContent,
+      website || 'unknown',
+      { companyName, description, painPoints },
+    );
+    console.log('[KW_GEN] Stage 2+3 done. analysis:', JSON.stringify(analysis));
 
     // Flatten with category tracking
     const flat: { phrase: string; category: string }[] = [];
