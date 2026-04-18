@@ -194,8 +194,22 @@ Deno.serve(async (req) => {
     if (!userRes.ok) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const user = await userRes.json();
 
-    const { criteria = {}, excludeLinkedInUrls = [] } = await req.json();
+    const { criteria = {}, excludeLinkedInUrls = [], conversation = [] } = await req.json();
     const c = criteria as Criteria;
+
+    // ── If `selling` is missing, derive it from the chat conversation.
+    // This is the #1 reason searches go off-topic — the model never called
+    // `update_search_criteria` so we never captured what the user actually sells.
+    if (!c.selling || c.selling.trim().length < 5) {
+      const derived = await deriveSellingFromConversation(conversation);
+      if (derived) {
+        c.selling = derived;
+        console.log("[AI_CHAT_SEARCH] derived selling from chat:", derived);
+      }
+    }
+    if (!c.selling || c.selling.trim().length < 5) {
+      console.warn("[AI_CHAT_SEARCH] no `selling` in criteria or chat — search will be weak");
+    }
 
     // Get user's Unipile account
     const profileRes = await fetch(`${supabaseUrl}/rest/v1/profiles?user_id=eq.${user.id}&select=unipile_account_id`, {
