@@ -5,6 +5,8 @@ export interface SearchCriteria {
   company_sizes?: string[];
   exclude_keywords?: string[];
   intent_keywords?: string[];
+  /** Free-form description of the user's offering — used by the buyer-intent classifier */
+  selling?: string;
 }
 
 export interface LeadResult {
@@ -18,6 +20,8 @@ export interface LeadResult {
   avatar_url?: string;
   match_score: number;
   reasons: string[];
+  signal_post_url?: string;
+  signal_post_excerpt?: string;
 }
 
 export interface ChatMessageData {
