@@ -44,6 +44,22 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${scoreColor}`}>{lead.match_score}</span>
       </div>
 
+      {lead.signal_post_excerpt && (
+        <a
+          href={lead.signal_post_url || lead.linkedin_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-[hsl(var(--md-secondary)/0.06)] hover:bg-[hsl(var(--md-secondary)/0.1)] border border-[hsl(var(--md-secondary)/0.2)] rounded-lg p-2.5 transition-colors"
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[hsl(var(--md-secondary))] mb-1">
+            <MessageSquare className="w-3 h-3" />
+            Buying-intent post
+            <ExternalLink className="w-3 h-3 ml-auto" />
+          </div>
+          <p className="text-[11px] text-foreground/70 leading-snug line-clamp-3">"{lead.signal_post_excerpt}"</p>
+        </a>
+      )}
+
       {lead.reasons && lead.reasons.length > 0 && (
         <div className="bg-foreground/[0.02] rounded-lg p-2.5 border border-border/50">
           <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/60 mb-1.5">
