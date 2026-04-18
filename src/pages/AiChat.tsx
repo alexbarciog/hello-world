@@ -275,6 +275,7 @@ export default function AiChat() {
     setMessages([]);
     setCriteria({});
     setLeadStatus({});
+    usedKeywordsRef.current = [];
   }
 
   // ─── Empty state ────────────────────────────────────────────
