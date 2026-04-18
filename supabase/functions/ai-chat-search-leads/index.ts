@@ -483,14 +483,42 @@ Deno.serve(async (req) => {
     }));
     const scores = await scorePostsForBuyingIntent(forAI, c);
 
-    // ── STAGE 4: Tiered keep — try ≥80 first; if <3 results, fall back to ≥65; minimum floor 50.
-    //            This prevents the "0 leads" outcome when posts are clearly relevant but not perfectly phrased.
+    // ── STAGE 3b: Decisioner score per author (heuristic + AI fallback for ambiguous titles)
+    const decisionerScores = new Map<string, number>();
+    const ambiguous: { id: string; headline: string; company: string }[] = [];
+    for (let i = 0; i < toScore.length; i++) {
+      const author = toScore[i].author;
+      const headline = String(author.headline || author.title || "");
+      const company = String(author.current_company || author.company || "");
+      const heur = heuristicDecisionerScore(headline);
+      if (heur !== null) {
+        decisionerScores.set(String(i), heur);
+      } else {
+        ambiguous.push({ id: String(i), headline, company });
+      }
+    }
+    if (ambiguous.length > 0) {
+      const aiScores = await scoreDecisionersWithAI(ambiguous);
+      for (const [k, v] of aiScores.entries()) decisionerScores.set(k, v);
+      for (const a of ambiguous) {
+        if (!decisionerScores.has(a.id)) decisionerScores.set(a.id, 40);
+      }
+    }
+
+    // ── STAGE 4: Tiered intent threshold + ALWAYS require decisioner ≥ DECISIONER_THRESHOLD (70).
     const seenAuthors = new Set<string>();
+    let filteredOutByDecisioner = 0;
     function buildLeads(threshold: number): LeadOut[] {
       const out: LeadOut[] = [];
       for (let i = 0; i < toScore.length; i++) {
         const scoreData = scores.get(String(i));
         if (!scoreData || scoreData.score < threshold) continue;
+
+        const decisioner = decisionerScores.get(String(i)) ?? 0;
+        if (decisioner < DECISIONER_THRESHOLD) {
+          filteredOutByDecisioner++;
+          continue;
+        }
 
         const { post, text, author, url } = toScore[i];
         const lowUrl = url.toLowerCase();
@@ -513,6 +541,7 @@ Deno.serve(async (req) => {
           location: String(author.location || ""),
           avatar_url: author.profile_picture_url || author.avatar_url || undefined,
           match_score: scoreData.score,
+          decisioner_score: decisioner,
           reasons: [scoreData.reason || `Buying intent ${scoreData.score}/100`, `“${text.slice(0, 90)}…”`],
           signal_post_url: extractPostUrl(post) || undefined,
           signal_post_excerpt: text.slice(0, 240),
@@ -525,19 +554,21 @@ Deno.serve(async (req) => {
     let usedThreshold = 80;
     if (leads.length < 3) {
       seenAuthors.clear();
+      filteredOutByDecisioner = 0;
       leads = buildLeads(65);
       usedThreshold = 65;
     }
     if (leads.length === 0) {
       seenAuthors.clear();
+      filteredOutByDecisioner = 0;
       leads = buildLeads(50);
       usedThreshold = 50;
     }
 
-    leads.sort((a, b) => b.match_score - a.match_score);
+    leads.sort((a, b) => (b.match_score - a.match_score) || (b.decisioner_score - a.decisioner_score));
     const top = leads.slice(0, 15);
 
-    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} kept:${leads.length}`);
+    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} decisioner_threshold:${DECISIONER_THRESHOLD} dropped_low_decisioner:${filteredOutByDecisioner} kept:${leads.length}`);
 
     return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries, threshold: usedThreshold }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
