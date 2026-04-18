@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.ai-chat-search-leads]
 verify_jwt = false
+
+[functions.public-ai-chat]
+verify_jwt = false
