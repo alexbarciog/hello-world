@@ -108,9 +108,23 @@ Example for "AI cold-email writer for SDRs":
         return wc >= 2 && wc <= 3;
       })
       .filter((s) => !prevSet.has(s.toLowerCase()))
-      .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i)
-      .slice(0, 5);
-    return cleaned.length > 0 ? cleaned : fallback;
+      .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i);
+
+    // Enforce angle diversity: no single content word may appear in more than 2 of the 5 phrases.
+    // This prevents the "fixing salesforce / planning salesforce / growing salesforce …" failure mode
+    // where every query returns the same overlapping results.
+    const STOP = new Set(["a","an","the","and","or","of","for","to","in","on","with","my","our","your","is","are","be","new","best","top","need","needs","needed","want","wants","wanted"]);
+    const wordCounts = new Map<string, number>();
+    const diverse: string[] = [];
+    for (const phrase of cleaned) {
+      const words = phrase.toLowerCase().split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w));
+      // Skip if this phrase would push any of its words past the 2-phrase cap
+      if (words.some((w) => (wordCounts.get(w) ?? 0) >= 2)) continue;
+      diverse.push(phrase);
+      for (const w of words) wordCounts.set(w, (wordCounts.get(w) ?? 0) + 1);
+      if (diverse.length === 5) break;
+    }
+    return diverse.length > 0 ? diverse : (cleaned.slice(0, 5).length > 0 ? cleaned.slice(0, 5) : fallback);
   } catch (e) {
     console.warn("[AI_CHAT_SEARCH] keyword gen failed:", e instanceof Error ? e.message : e);
     return fallback;
