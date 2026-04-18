@@ -5,6 +5,7 @@ export interface Contact {
   linkedin_url: string | null;
   title: string | null;
   company: string | null;
+  industry: string | null;
   company_icon_color: string | null;
   signal: string | null;
   signal_post_url: string | null;
