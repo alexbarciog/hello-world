@@ -556,17 +556,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── STAGE 4: Tiered intent threshold + ALWAYS require decisioner ≥ DECISIONER_THRESHOLD (70).
+    // ── STAGE 4: Tiered relaxation ladder.
+    // Old logic returned 0 leads constantly because intent threshold + decisioner=70 was way too strict.
+    // New logic: progressively relax both intent AND decisioner so we always surface SOMETHING usable
+    // when there are matching candidates, while still preferring high-quality leads at the top.
     const seenAuthors = new Set<string>();
     let filteredOutByDecisioner = 0;
-    function buildLeads(threshold: number): LeadOut[] {
+    function buildLeads(intentThreshold: number, decisionerThreshold: number): LeadOut[] {
       const out: LeadOut[] = [];
       for (let i = 0; i < toScore.length; i++) {
         const scoreData = scores.get(String(i));
-        if (!scoreData || scoreData.score < threshold) continue;
+        if (!scoreData || scoreData.score < intentThreshold) continue;
 
         const decisioner = decisionerScores.get(String(i)) ?? 0;
-        if (decisioner < DECISIONER_THRESHOLD) {
+        if (decisioner < decisionerThreshold) {
           filteredOutByDecisioner++;
           continue;
         }
@@ -601,25 +604,29 @@ Deno.serve(async (req) => {
       return out;
     }
 
-    let leads = buildLeads(80);
+    // Relaxation ladder: [intent, decisioner]
+    const ladder: Array<[number, number]> = [
+      [80, 70], // ideal: hot intent + clear decision-maker
+      [65, 70], // strong fit + decision-maker
+      [55, 60], // decent fit + senior IC / lead
+      [45, 50], // any meaningful relevance + manager-level
+    ];
+    let leads: LeadOut[] = [];
     let usedThreshold = 80;
-    if (leads.length < 3) {
+    let usedDecisioner = 70;
+    for (const [intent, dec] of ladder) {
       seenAuthors.clear();
       filteredOutByDecisioner = 0;
-      leads = buildLeads(65);
-      usedThreshold = 65;
-    }
-    if (leads.length === 0) {
-      seenAuthors.clear();
-      filteredOutByDecisioner = 0;
-      leads = buildLeads(50);
-      usedThreshold = 50;
+      leads = buildLeads(intent, dec);
+      usedThreshold = intent;
+      usedDecisioner = dec;
+      if (leads.length >= 3) break;
     }
 
     leads.sort((a, b) => (b.match_score - a.match_score) || (b.decisioner_score - a.decisioner_score));
     const top = leads.slice(0, 15);
 
-    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} decisioner_threshold:${DECISIONER_THRESHOLD} dropped_low_decisioner:${filteredOutByDecisioner} kept:${leads.length}`);
+    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} decisioner_threshold:${usedDecisioner} dropped_low_decisioner:${filteredOutByDecisioner} kept:${leads.length}`);
 
     return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries, threshold: usedThreshold }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
