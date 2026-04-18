@@ -1,0 +1,1 @@
+UPDATE public.profiles SET unipile_account_id = 'y9kWOl7qRO--tvFC3fVgDg', linkedin_display_name = 'Shkumbin Ibraimi', updated_at = now() WHERE user_id = '04c16c08-e8a1-4650-af13-e897ccbada26';
