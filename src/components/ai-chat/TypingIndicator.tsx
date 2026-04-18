@@ -1,9 +1,33 @@
+import { useState, useEffect } from "react";
+
+const THINKING_STEPS = [
+  "Analyzing your request",
+  "Thinking",
+  "Processing context",
+  "Generating response",
+];
+
 export function TypingIndicator() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStepIndex((prev) => (prev + 1) % THINKING_STEPS.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="flex items-center gap-1 px-3 py-2">
-      <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
-      <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
-      <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
+    <div className="flex gap-3 animate-fade-in">
+      <div className="flex flex-col gap-1 max-w-[80%] items-start">
+        <div className="px-1 py-1">
+          <div className="flex items-center gap-2">
+            <span className="thinking-text-shimmer text-sm font-medium" key={stepIndex}>
+              {THINKING_STEPS[stepIndex]}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
