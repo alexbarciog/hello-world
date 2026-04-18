@@ -441,8 +441,11 @@
 
 .ai-border {
   position: relative;
-  border-radius: 12px;
   isolation: isolate;
+}
+
+.ai-border:not([class*="rounded-"]) {
+  border-radius: 12px;
 }
 
 .ai-border::before,
