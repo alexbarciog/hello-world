@@ -204,13 +204,18 @@ export default function AiChat() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const excludeUrls = allLeads.map((l) => l.lead.linkedin_url);
+      // Send recent chat turns so the search function can derive `selling` if criteria is missing it.
+      const conversation = messages
+        .filter((m) => m.role === "user" || m.role === "assistant")
+        .slice(-20)
+        .map((m) => ({ role: m.role, content: m.content }));
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat-search-leads`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ criteria, excludeLinkedInUrls: excludeUrls }),
+        body: JSON.stringify({ criteria, excludeLinkedInUrls: excludeUrls, conversation }),
       });
       if (!res.ok) {
         const err = await res.text();

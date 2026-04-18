@@ -85,6 +85,79 @@ Example for "lead generation platform":
   }
 }
 
+// ── Derive `selling` from the chat conversation when criteria.selling is missing.
+// This is critical: without `selling`, query generation hallucinates topics.
+async function deriveSellingFromConversation(
+  conversation: { role: string; content: string }[],
+): Promise<string> {
+  if (!LOVABLE_API_KEY || !Array.isArray(conversation) || conversation.length === 0) return "";
+  // Take the last ~20 turns of just user+assistant
+  const trimmed = conversation
+    .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+    .slice(-20)
+    .map((m) => `${m.role === "user" ? "USER" : "ASSISTANT"}: ${m.content.slice(0, 800)}`)
+    .join("\n");
+  if (!trimmed.trim()) return "";
+
+  const prompt = `Read this chat between a B2B founder (USER) and an AI lead-finder (ASSISTANT). Extract ONE sentence describing what the USER is selling/offering, written from a BUYER's perspective (what a buyer would search for). If the user is vague, use the most concrete clue. Return ONLY the sentence, no quotes, no preamble. If genuinely impossible, return an empty string.
+
+CHAT:
+${trimmed}
+
+OFFERING (one sentence, buyer's perspective):`;
+
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    if (!res.ok) return "";
+    const data = await res.json();
+    const txt: string = (data.choices?.[0]?.message?.content ?? "").trim().replace(/^["']|["']$/g, "");
+    if (txt.length < 5 || txt.length > 300) return "";
+    return txt;
+  } catch (e) {
+    console.warn("[AI_CHAT_SEARCH] deriveSelling failed:", e instanceof Error ? e.message : e);
+    return "";
+  }
+}
+
+// ── Cheap topical pre-filter: extract content words from `selling` and require
+// at least one to appear in the post text. Saves AI scoring on obvious off-topic posts.
+function extractTopicTokens(selling: string): string[] {
+  const STOP = new Set([
+    "a","an","the","and","or","of","for","to","in","on","with","that","is","are","be","my","our","your","their",
+    "this","these","those","it","at","as","by","from","into","up","down","out","over","under","i","we","you","they",
+    "platform","tool","tools","service","services","software","app","application","system","solution","solutions",
+    "product","products","company","companies","business","businesses","help","helps","helping","based","using","new",
+    "best","top","good","great","make","makes","making","get","getting","build","builds","building","provide","provides",
+    "people","customers","clients","users","leads","sales","outreach","b2b","saas","ai","auto","automatic","automated",
+    "small","large","big","more","less","other","any","some","all","one","two","etc",
+  ]);
+  return Array.from(
+    new Set(
+      selling
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length >= 4 && !STOP.has(w))
+    )
+  ).slice(0, 10);
+}
+
+function postMatchesTopic(text: string, tokens: string[]): boolean {
+  if (tokens.length === 0) return true; // no topic info → keep
+  const lower = text.toLowerCase();
+  return tokens.some((t) => lower.includes(t));
+}
+
 // ── STAGE 3 ── AI scores a batch of posts for buying intent
 async function scorePostsForBuyingIntent(
   posts: { id: string; text: string; authorHeadline: string }[],
@@ -194,8 +267,22 @@ Deno.serve(async (req) => {
     if (!userRes.ok) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const user = await userRes.json();
 
-    const { criteria = {}, excludeLinkedInUrls = [] } = await req.json();
+    const { criteria = {}, excludeLinkedInUrls = [], conversation = [] } = await req.json();
     const c = criteria as Criteria;
+
+    // ── If `selling` is missing, derive it from the chat conversation.
+    // This is the #1 reason searches go off-topic — the model never called
+    // `update_search_criteria` so we never captured what the user actually sells.
+    if (!c.selling || c.selling.trim().length < 5) {
+      const derived = await deriveSellingFromConversation(conversation);
+      if (derived) {
+        c.selling = derived;
+        console.log("[AI_CHAT_SEARCH] derived selling from chat:", derived);
+      }
+    }
+    if (!c.selling || c.selling.trim().length < 5) {
+      console.warn("[AI_CHAT_SEARCH] no `selling` in criteria or chat — search will be weak");
+    }
 
     // Get user's Unipile account
     const profileRes = await fetch(`${supabaseUrl}/rest/v1/profiles?user_id=eq.${user.id}&select=unipile_account_id`, {
@@ -255,7 +342,9 @@ Deno.serve(async (req) => {
     }
 
     // ── Pre-filter: must have author + meaningful text + author URL not already in exclude
-    const candidates: { post: any; text: string; author: any; url: string }[] = [];
+    //               + (if we have a `selling`) topical overlap, so we don't waste AI scoring on off-topic posts
+    const topicTokens = c.selling ? extractTopicTokens(c.selling) : [];
+    const candidates: { post: any; text: string; author: any; url: string; topical: boolean }[] = [];
     for (const { post } of allPosts) {
       const text = extractPostText(post);
       if (text.length < 40) continue;
@@ -267,7 +356,8 @@ Deno.serve(async (req) => {
       const fn = String(author.first_name || author.firstName || "").toLowerCase();
       const ln = String(author.last_name || author.lastName || "").toLowerCase();
       if (fn === "linkedin" && ln === "member") continue;
-      candidates.push({ post, text, author, url });
+      const topical = postMatchesTopic(text, topicTokens);
+      candidates.push({ post, text, author, url, topical });
     }
 
     if (candidates.length === 0) {
@@ -276,8 +366,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Cap at 40 posts to keep AI scoring under budget
-    const toScore = candidates.slice(0, 40);
+    // Prefer topical posts; fall back to non-topical only if we don't have 40 topical ones
+    const topical = candidates.filter((c) => c.topical);
+    const nonTopical = candidates.filter((c) => !c.topical);
+    const toScore = (topical.length >= 15 ? topical : [...topical, ...nonTopical]).slice(0, 40);
+    console.log(`[AI_CHAT_SEARCH] candidates:${candidates.length} topical:${topical.length} scoring:${toScore.length} topicTokens:${JSON.stringify(topicTokens)}`);
 
     // ── STAGE 3: AI score each post 0-100 for buying intent
     const forAI = toScore.map((cand, i) => ({
@@ -287,47 +380,63 @@ Deno.serve(async (req) => {
     }));
     const scores = await scorePostsForBuyingIntent(forAI, c);
 
-    // ── STAGE 4: Keep score ≥80, dedupe authors, build leads
+    // ── STAGE 4: Tiered keep — try ≥80 first; if <3 results, fall back to ≥65; minimum floor 50.
+    //            This prevents the "0 leads" outcome when posts are clearly relevant but not perfectly phrased.
     const seenAuthors = new Set<string>();
-    const leads: LeadOut[] = [];
+    function buildLeads(threshold: number): LeadOut[] {
+      const out: LeadOut[] = [];
+      for (let i = 0; i < toScore.length; i++) {
+        const scoreData = scores.get(String(i));
+        if (!scoreData || scoreData.score < threshold) continue;
 
-    for (let i = 0; i < toScore.length; i++) {
-      const scoreData = scores.get(String(i));
-      if (!scoreData || scoreData.score < 80) continue;
+        const { post, text, author, url } = toScore[i];
+        const lowUrl = url.toLowerCase();
+        if (seenAuthors.has(lowUrl)) continue;
+        seenAuthors.add(lowUrl);
 
-      const { post, text, author, url } = toScore[i];
-      const lowUrl = url.toLowerCase();
-      if (seenAuthors.has(lowUrl)) continue;
-      seenAuthors.add(lowUrl);
+        const fullName =
+          author.name ||
+          `${author.first_name || author.firstName || ""} ${author.last_name || author.lastName || ""}`.trim();
+        const firstName = author.first_name || author.firstName || fullName.split(" ")[0] || "";
+        const lastName = author.last_name || author.lastName || fullName.split(" ").slice(1).join(" ") || "";
 
-      const fullName =
-        author.name ||
-        `${author.first_name || author.firstName || ""} ${author.last_name || author.lastName || ""}`.trim();
-      const firstName = author.first_name || author.firstName || fullName.split(" ")[0] || "";
-      const lastName = author.last_name || author.lastName || fullName.split(" ").slice(1).join(" ") || "";
+        out.push({
+          linkedin_url: url,
+          first_name: firstName,
+          last_name: lastName,
+          full_name: fullName || "Unknown",
+          title: String(author.headline || author.title || ""),
+          company: String(author.current_company || author.company || ""),
+          location: String(author.location || ""),
+          avatar_url: author.profile_picture_url || author.avatar_url || undefined,
+          match_score: scoreData.score,
+          reasons: [scoreData.reason || `Buying intent ${scoreData.score}/100`, `“${text.slice(0, 90)}…”`],
+          signal_post_url: extractPostUrl(post) || undefined,
+          signal_post_excerpt: text.slice(0, 240),
+        });
+      }
+      return out;
+    }
 
-      leads.push({
-        linkedin_url: url,
-        first_name: firstName,
-        last_name: lastName,
-        full_name: fullName || "Unknown",
-        title: String(author.headline || author.title || ""),
-        company: String(author.current_company || author.company || ""),
-        location: String(author.location || ""),
-        avatar_url: author.profile_picture_url || author.avatar_url || undefined,
-        match_score: scoreData.score,
-        reasons: [scoreData.reason || `Buying intent ${scoreData.score}/100`, `“${text.slice(0, 90)}…”`],
-        signal_post_url: extractPostUrl(post) || undefined,
-        signal_post_excerpt: text.slice(0, 240),
-      });
+    let leads = buildLeads(80);
+    let usedThreshold = 80;
+    if (leads.length < 3) {
+      seenAuthors.clear();
+      leads = buildLeads(65);
+      usedThreshold = 65;
+    }
+    if (leads.length === 0) {
+      seenAuthors.clear();
+      leads = buildLeads(50);
+      usedThreshold = 50;
     }
 
     leads.sort((a, b) => b.match_score - a.match_score);
     const top = leads.slice(0, 15);
 
-    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} kept:${leads.length}`);
+    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} kept:${leads.length}`);
 
-    return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries }), {
+    return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries, threshold: usedThreshold }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
