@@ -757,7 +757,7 @@ async function generateNextStepMessage(
 
   const { data: contact } = await supabase
     .from('contacts')
-    .select('first_name, last_name, company, title, signal, industry')
+    .select('first_name, last_name, company, title, signal, industry, personality_prediction')
     .eq('id', req.contact_id)
     .single();
 
@@ -803,6 +803,7 @@ async function generateNextStepMessage(
       leadTitle: contact.title,
       buyingSignal: contact.signal,
       leadIndustry: contact.industry,
+      personality: contact.personality_prediction,
     });
 
     if (!message.trim()) {

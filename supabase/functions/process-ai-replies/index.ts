@@ -374,7 +374,7 @@ async function processCampaignReplies(
           // Get full contact info
           const { data: contact } = await supabase
             .from('contacts')
-            .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
+            .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier, personality_prediction')
             .eq('id', cr.contact_id)
             .single();
           if (!contact) continue;
@@ -609,7 +609,7 @@ async function processCampaignReplies(
 
       const { data: contact } = await supabase
         .from('contacts')
-        .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
+        .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier, personality_prediction')
         .eq('id', cr.contact_id)
         .single();
       if (!contact) continue;
