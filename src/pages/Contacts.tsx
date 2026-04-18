@@ -233,11 +233,8 @@ export default function Contacts() {
   };
 
   const handleGetInsights = async (contact: Contact) => {
-    if (insightsData[contact.id]) {
-      setInsightsOpen(insightsOpen === contact.id ? null : contact.id);
-      return;
-    }
     setInsightsOpen(contact.id);
+    if (insightsData[contact.id]) return; // already cached
     setInsightsLoading((prev) => new Set(prev).add(contact.id));
     try {
       const { data, error } = await supabase.functions.invoke("generate-lead-insights", {
@@ -247,7 +244,6 @@ export default function Contacts() {
       setInsightsData((prev) => ({ ...prev, [contact.id]: data }));
     } catch (err: any) {
       toast.error("Failed to generate insights");
-      setInsightsOpen(null);
     } finally {
       setInsightsLoading((prev) => {
         const next = new Set(prev);
