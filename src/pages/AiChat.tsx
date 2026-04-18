@@ -75,6 +75,23 @@ export default function AiChat() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, sending, searching]);
 
+  // Persist lead status (saved/skipped) to profile so it survives reloads
+  const leadStatusInitialized = useRef(false);
+  useEffect(() => {
+    if (!leadStatusInitialized.current) {
+      leadStatusInitialized.current = true;
+      return;
+    }
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase
+        .from("profiles")
+        .update({ ai_chat_lead_status: leadStatus as any } as any)
+        .eq("user_id", user.id);
+    })();
+  }, [leadStatus]);
+
   const allLeads = useMemo(() => {
     const out: { lead: LeadResult; status: "review" | "saved" | "skipped" }[] = [];
     const seen = new Set<string>();
