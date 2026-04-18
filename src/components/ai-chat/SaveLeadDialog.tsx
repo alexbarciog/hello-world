@@ -71,6 +71,7 @@ export function SaveLeadDialog({ open, onOpenChange, lead, onSaved }: Props) {
           last_name: lead.last_name || lead.full_name.split(" ").slice(1).join(" ") || null,
           title: lead.title || null,
           company: lead.company || null,
+          industry: lead.industry || null,
           linkedin_url: lead.linkedin_url || null,
           list_name: listName,
           relevance_tier: tier,
