@@ -425,9 +425,9 @@ Deno.serve(async (req) => {
     const unipileKey = Deno.env.get("UNIPILE_API_KEY");
     if (!unipileDsn || !unipileKey) throw new Error("Unipile not configured");
 
-    // ── STAGE 1: AI-generate buyer-intent post queries
-    const queries = await generateBuyerIntentQueries(c);
-    console.log("[AI_CHAT_SEARCH] queries:", JSON.stringify(queries));
+    // ── STAGE 1: AI-generate buyer-intent post queries (5 phrases, 2-3 words each, no repeats vs previous searches)
+    const queries = await generateBuyerIntentQueries(c, Array.isArray(previousKeywords) ? previousKeywords : []);
+    console.log("[AI_CHAT_SEARCH] queries:", JSON.stringify(queries), "previousCount:", (previousKeywords || []).length);
 
     const exclude = new Set<string>(excludeLinkedInUrls.map((u: string) => u.toLowerCase()));
 
