@@ -40,6 +40,7 @@ const TOOLS = [
           company_sizes: { type: "array", items: { type: "string" }, description: "Sizes, e.g. ['1-10','11-50','51-200','201-500','501-1000','1001+']" },
           exclude_keywords: { type: "array", items: { type: "string" }, description: "Things to exclude in titles/companies" },
           intent_keywords: { type: "array", items: { type: "string" }, description: "Buyer-intent signals, e.g. ['hiring SDR','recently funded','launching','migrating']" },
+          selling: { type: "string", description: "ONE-SENTENCE description of what the user is selling/offering, written as a buyer would describe what they need (e.g. 'a B2B lead-generation platform that finds high-intent buyers from LinkedIn'). Update this whenever the user clarifies their offering." },
         },
       },
     },
@@ -48,7 +49,7 @@ const TOOLS = [
     type: "function",
     function: {
       name: "ready_to_search",
-      description: "Call when criteria are sufficient to run a LinkedIn search.",
+      description: "Call when criteria are sufficient to run a LinkedIn POST search for buyer-intent signals. You need at minimum: a clear `selling` description AND (a role OR industries OR locations).",
       parameters: { type: "object", properties: {} },
     },
   },
