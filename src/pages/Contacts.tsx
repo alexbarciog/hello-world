@@ -12,6 +12,7 @@ import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
 import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
+import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { toast } from "sonner";
 
 type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
@@ -232,11 +233,8 @@ export default function Contacts() {
   };
 
   const handleGetInsights = async (contact: Contact) => {
-    if (insightsData[contact.id]) {
-      setInsightsOpen(insightsOpen === contact.id ? null : contact.id);
-      return;
-    }
     setInsightsOpen(contact.id);
+    if (insightsData[contact.id]) return; // already cached
     setInsightsLoading((prev) => new Set(prev).add(contact.id));
     try {
       const { data, error } = await supabase.functions.invoke("generate-lead-insights", {
@@ -246,7 +244,6 @@ export default function Contacts() {
       setInsightsData((prev) => ({ ...prev, [contact.id]: data }));
     } catch (err: any) {
       toast.error("Failed to generate insights");
-      setInsightsOpen(null);
     } finally {
       setInsightsLoading((prev) => {
         const next = new Set(prev);
@@ -379,16 +376,7 @@ export default function Contacts() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [showSelectPopover]);
 
-  useEffect(() => {
-    if (!insightsOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (insightsRef.current && !insightsRef.current.contains(e.target as Node)) {
-        setInsightsOpen(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [insightsOpen]);
+  // Modal handles its own close (Esc + backdrop click)
 
   function getContactListNames(contactId: string): string[] {
     const listIds = contactListMap[contactId] || [];
@@ -834,29 +822,6 @@ export default function Contacts() {
                             )}
                             AI Insights
                           </button>
-                          {insightsOpen === c.id && insightsData[c.id] && (
-                            <div ref={insightsRef} className="absolute right-0 top-full mt-1 z-50 w-72 bg-card border border-border rounded-xl shadow-lg p-3 space-y-2" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-foreground flex items-center gap-1"><BrainCircuit className="w-3.5 h-3.5 text-violet-500" /> AI Insights</span>
-                                <button onClick={() => setInsightsOpen(null)} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
-                              </div>
-                              <p className="text-[11px] font-medium text-foreground">{insightsData[c.id].summary}</p>
-                              <div className="space-y-1.5">
-                                {(insightsData[c.id].insights || []).map((ins: any, idx: number) => (
-                                  <div key={idx} className="flex items-start gap-1.5">
-                                    <span className="text-xs shrink-0">{ins.icon}</span>
-                                    <p className="text-[11px] text-muted-foreground leading-snug">{ins.text}</p>
-                                  </div>
-                                ))}
-                              </div>
-                              {insightsData[c.id].suggested_action && (
-                                <div className="bg-violet-500/5 border border-violet-500/10 rounded-lg p-2">
-                                  <p className="text-[10px] font-semibold text-violet-600 mb-0.5">Suggested Action</p>
-                                  <p className="text-[11px] text-foreground leading-snug">{insightsData[c.id].suggested_action}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -865,6 +830,20 @@ export default function Contacts() {
                 </tbody>
               </table>
             </div>
+
+            {/* AI Insights modal — rendered once for the open contact */}
+            {(() => {
+              const openContact = contacts.find((c) => c.id === insightsOpen);
+              if (!openContact) return null;
+              return (
+                <AIInsightsModal
+                  contact={openContact}
+                  insights={insightsData[openContact.id] || null}
+                  insightsLoading={insightsLoading.has(openContact.id)}
+                  onClose={() => setInsightsOpen(null)}
+                />
+              );
+            })()}
 
             {/* ── Mobile cards ── */}
             <div className="md:hidden flex flex-col gap-2 py-3">
