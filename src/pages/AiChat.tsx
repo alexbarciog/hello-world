@@ -183,23 +183,10 @@ export default function AiChat() {
         await supabase.from("profiles").update({ ai_chat_criteria: newCriteria as any } as any).eq("user_id", user.id);
       }
 
-      // Auto-search when:
-      //  1. The assistant explicitly returned ready_to_search, OR
-      //  2. The assistant's reply announces it's about to search AND we have
-      //     enough criteria (selling + at least one of role/industries/locations).
-      // We never trigger from the USER's text — only from the assistant's
-      // own stated intent — so clarifying questions are always honored.
-      const reply = String(data.reply ?? "").replace(/[’]/g, "'").toLowerCase();
-      const announcesSearch = /\b(let me (search|kick off (the )?search|start (the )?search|run (the )?search)|searching now|i'?ll (now |go )?(run|start|kick off) (the |a )?search|running (the |a )?search|let'?s search|searching again|i'?ll search|kicking off the search|starting the search)\b/.test(reply);
-      const hasSelling = typeof (newCriteria as any).selling === "string" && (newCriteria as any).selling.trim().length > 0;
-      const hasWho =
-        Boolean((newCriteria as any).role) ||
-        ((newCriteria as any).industries?.length ?? 0) > 0 ||
-        ((newCriteria as any).locations?.length ?? 0) > 0;
-      const endsWithQuestion = /\?\s*$/.test(data.reply ?? "");
+      // Single source of truth: the backend (model + classifier) decides.
+      // Frontend trusts `ready_to_search` from the response — no text parsing.
       const nextMessages = [...history, ...(assistantMsg ? [assistantMsg] : [])];
-
-      if (data.ready_to_search || (announcesSearch && hasSelling && hasWho && !endsWithQuestion)) {
+      if (data.ready_to_search) {
         runSearch(newCriteria, nextMessages);
       }
     } catch (e: any) {
