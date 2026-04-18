@@ -583,20 +583,60 @@ Deno.serve(async (req) => {
         const firstName = author.first_name || author.firstName || fullName.split(" ")[0] || "";
         const lastName = author.last_name || author.lastName || fullName.split(" ").slice(1).join(" ") || "";
 
+        // Resolve role + company from the most-recent POSITION when available.
+        // The LinkedIn `headline` is a marketing tagline ("👉 Helping businesses grow…")
+        // and must NOT be used as the job title. We prefer:
+        //   1) explicit position fields (current_position, occupation when short)
+        //   2) the first item in experience/positions arrays
+        //   3) parsing "<role> at <company>" out of the headline
+        //   4) finally, the headline itself (truncated) as a last resort
+        const rawHeadline = String(author.headline || "").trim();
+        const positions: any[] = Array.isArray(author.experience)
+          ? author.experience
+          : Array.isArray(author.positions)
+            ? author.positions
+            : Array.isArray(author.work_experience)
+              ? author.work_experience
+              : [];
+        const latestPos = positions[0] || null;
+
+        // Try to extract "<title> at <company>" pattern from the headline as a fallback
+        let parsedHeadlineTitle = "";
+        let parsedHeadlineCompany = "";
+        if (rawHeadline) {
+          const m = rawHeadline.match(/^(.{2,80}?)\s+(?:@|at)\s+(.{2,80}?)(?:\s*[|·•\-–—].*)?$/i);
+          if (m) {
+            parsedHeadlineTitle = m[1].replace(/^[^A-Za-z0-9]+/, "").trim();
+            parsedHeadlineCompany = m[2].trim();
+          }
+        }
+
+        const occ = String(author.occupation || "").trim();
+        const resolvedTitle =
+          String(author.current_position || "").trim() ||
+          String(latestPos?.title || latestPos?.position || latestPos?.role || "").trim() ||
+          parsedHeadlineTitle ||
+          (occ && occ.length <= 80 ? occ : "") ||
+          (rawHeadline && rawHeadline.length <= 80 ? rawHeadline : rawHeadline.slice(0, 80));
+
+        const resolvedCompany =
+          String(
+            author.current_company ||
+            author.company ||
+            author.current_company_name ||
+            author.company_name ||
+            ""
+          ).trim() ||
+          String(latestPos?.company || latestPos?.company_name || latestPos?.organization || "").trim() ||
+          parsedHeadlineCompany;
+
         out.push({
           linkedin_url: url,
           first_name: firstName,
           last_name: lastName,
           full_name: fullName || "Unknown",
-          title: String(author.headline || author.title || author.occupation || ""),
-          company: String(
-            author.current_company ||
-            author.company ||
-            author.current_company_name ||
-            author.company_name ||
-            (author.experience && author.experience[0]?.company) ||
-            ""
-          ),
+          title: resolvedTitle,
+          company: resolvedCompany,
           industry: String(
             author.industry ||
             author.company_industry ||
