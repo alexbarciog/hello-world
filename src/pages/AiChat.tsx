@@ -189,17 +189,18 @@ export default function AiChat() {
       //     enough criteria (selling + at least one of role/industries/locations).
       // We never trigger from the USER's text — only from the assistant's
       // own stated intent — so clarifying questions are always honored.
-      const reply: string = (data.reply ?? "").toLowerCase();
-      const announcesSearch = /\b(let me search|searching now|i'?ll (now |go )?(run|start) (the |a )?search|running (the |a )?search|let'?s search|searching again|i'?ll search|kicking off the search|starting the search)\b/.test(reply);
+      const reply = String(data.reply ?? "").replace(/[’]/g, "'").toLowerCase();
+      const announcesSearch = /\b(let me (search|kick off (the )?search|start (the )?search|run (the )?search)|searching now|i'?ll (now |go )?(run|start|kick off) (the |a )?search|running (the |a )?search|let'?s search|searching again|i'?ll search|kicking off the search|starting the search)\b/.test(reply);
       const hasSelling = typeof (newCriteria as any).selling === "string" && (newCriteria as any).selling.trim().length > 0;
       const hasWho =
         Boolean((newCriteria as any).role) ||
         ((newCriteria as any).industries?.length ?? 0) > 0 ||
         ((newCriteria as any).locations?.length ?? 0) > 0;
       const endsWithQuestion = /\?\s*$/.test(data.reply ?? "");
+      const nextMessages = [...history, ...(assistantMsg ? [assistantMsg] : [])];
 
       if (data.ready_to_search || (announcesSearch && hasSelling && hasWho && !endsWithQuestion)) {
-        runSearch();
+        runSearch(newCriteria, nextMessages);
       }
     } catch (e: any) {
       toast.error(e.message ?? "Something went wrong");
@@ -208,15 +209,17 @@ export default function AiChat() {
     }
   }
 
-  async function runSearch() {
+  async function runSearch(criteriaOverride?: SearchCriteria, conversationOverride?: ChatMessageData[]) {
     if (searching) return;
     setSearching(true);
     if (window.innerWidth < 768) setMobileTab("leads");
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const excludeUrls = allLeads.map((l) => l.lead.linkedin_url);
+      const effectiveCriteria = criteriaOverride ?? criteria;
+      const effectiveMessages = conversationOverride ?? messages;
       // Send recent chat turns so the search function can derive `selling` if criteria is missing it.
-      const conversation = messages
+      const conversation = effectiveMessages
         .filter((m) => m.role === "user" || m.role === "assistant")
         .slice(-20)
         .map((m) => ({ role: m.role, content: m.content }));
@@ -226,7 +229,7 @@ export default function AiChat() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ criteria, excludeLinkedInUrls: excludeUrls, conversation }),
+        body: JSON.stringify({ criteria: effectiveCriteria, excludeLinkedInUrls: excludeUrls, conversation }),
       });
       if (!res.ok) {
         const err = await res.text();
