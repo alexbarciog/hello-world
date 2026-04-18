@@ -831,7 +831,7 @@ export default function Contacts() {
               </table>
             </div>
 
-            {/* Render modal once for the open contact */}
+            {/* AI Insights modal — rendered once for the open contact */}
             {(() => {
               const openContact = contacts.find((c) => c.id === insightsOpen);
               if (!openContact) return null;
@@ -844,15 +844,6 @@ export default function Contacts() {
                 />
               );
             })()}
-            {/* SENTINEL_END_TABLE */}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                  })}
-                </tbody>
-              </table>
-            </div>
 
             {/* ── Mobile cards ── */}
             <div className="md:hidden flex flex-col gap-2 py-3">
