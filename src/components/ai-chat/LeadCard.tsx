@@ -62,6 +62,7 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
             {lead.title && <p className="text-xs text-foreground/70 truncate">{lead.title}</p>}
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[11px] text-foreground/50">
               {lead.company && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{lead.company}</span>}
+              {lead.industry && <span className="flex items-center gap-1">·<span>{lead.industry}</span></span>}
               {lead.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{lead.location}</span>}
             </div>
           </div>

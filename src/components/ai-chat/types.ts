@@ -16,6 +16,7 @@ export interface LeadResult {
   full_name: string;
   title: string;
   company: string;
+  industry?: string;
   location: string;
   avatar_url?: string;
   match_score: number;
