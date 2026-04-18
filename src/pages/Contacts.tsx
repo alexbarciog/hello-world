@@ -675,7 +675,7 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    {["Contact", "Signal", "Score", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
+                    {["Contact", "Role", "Company", "Industry", "Signal", "Score", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
                         {h}
                       </th>
@@ -726,6 +726,21 @@ export default function Contacts() {
                             </div>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-3 py-3 max-w-[180px]">
+                        <span className="text-xs text-foreground truncate block max-w-[170px]" title={c.title || ""}>
+                          {c.title || <span className="text-muted-foreground">—</span>}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 max-w-[160px]">
+                        <span className="text-xs text-foreground truncate block max-w-[150px]" title={c.company || ""}>
+                          {c.company || <span className="text-muted-foreground">—</span>}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 max-w-[140px]">
+                        <span className="text-xs text-muted-foreground truncate block max-w-[130px]" title={c.industry || ""}>
+                          {c.industry || <span className="text-muted-foreground/60">—</span>}
+                        </span>
                       </td>
                       <td className="px-3 py-3 max-w-[220px]">
                         {c.signal_post_url ? (
