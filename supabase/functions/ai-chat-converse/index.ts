@@ -178,6 +178,56 @@ Deno.serve(async (req) => {
 
     if (!reply) reply = "Got it. What else should I know?";
 
+    // ── Reliable search-trigger classifier ───────────────────────────────
+    // The main model sometimes forgets to emit `ready_to_search` even when
+    // its reply clearly announces a search. We run a small, deterministic
+    // second pass that ONLY decides: should the frontend kick off a search
+    // on this turn? It returns strict JSON.
+    const hasSelling = typeof updatedCriteria?.selling === "string" && updatedCriteria.selling.trim().length > 0;
+    const hasWho = Boolean(updatedCriteria?.role) ||
+      (Array.isArray(updatedCriteria?.industries) && updatedCriteria.industries.length > 0) ||
+      (Array.isArray(updatedCriteria?.locations) && updatedCriteria.locations.length > 0);
+    const endsWithQuestion = /\?\s*$/.test(reply);
+
+    if (!readyToSearch && hasSelling && hasWho && !endsWithQuestion) {
+      try {
+        const classifier = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "system",
+                content: `You are a binary classifier. Decide if the assistant's latest reply is announcing/committing to running a LinkedIn lead search RIGHT NOW (vs. asking a clarifying question or just acknowledging info).
+
+Return STRICT JSON only: {"ready_to_search": true} or {"ready_to_search": false}.
+
+Return TRUE when the reply implies the assistant is about to run, is running, or is restarting a search (examples: "let me search", "I'll kick off the search", "let me find them", "running the search now", "let's go find these people", "I'll search again with the new criteria", "sounds good — searching now"). Casual confirmations that imply action ("on it", "got it, looking now") also count as TRUE.
+
+Return FALSE when the reply ends with a clarifying question, asks for more info, or just summarizes what was captured without committing to search.`
+              },
+              {
+                role: "user",
+                content: `Assistant reply:\n"""${reply}"""\n\nAccumulated criteria: ${JSON.stringify(updatedCriteria)}`,
+              },
+            ],
+            response_format: { type: "json_object" },
+          }),
+        });
+        if (classifier.ok) {
+          const cj = await classifier.json();
+          const raw = cj.choices?.[0]?.message?.content ?? "{}";
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed?.ready_to_search === true) readyToSearch = true;
+          } catch { /* ignore */ }
+        }
+      } catch (err) {
+        console.warn("ready_to_search classifier failed", err);
+      }
+    }
+
     const quickReplies: string[] = [];
     if (readyToSearch) quickReplies.push("Start search", "Add a filter");
 
