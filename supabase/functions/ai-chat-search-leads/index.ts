@@ -283,6 +283,77 @@ function buildLinkedInUrl(author: any): string {
   return pid ? `https://www.linkedin.com/in/${pid}` : "";
 }
 
+// ── Decisioner scoring: how senior/decision-making is this person at their company?
+// Heuristic first (instant + free), then AI for ambiguous titles.
+function heuristicDecisionerScore(headline: string): number | null {
+  const h = (headline || "").toLowerCase();
+  if (!h.trim()) return null;
+  if (/\b(student|intern|graduate|seeking|open to work|job seek|aspiring|trainee)\b/.test(h)) return 10;
+  if (/\b(founder|co-?founder|ceo|owner|managing director|\bmd\b|president|proprietor)\b/.test(h)) return 95;
+  if (/\bchief\s+\w+\s+officer\b|\b(cto|cfo|cmo|coo|cpo|cro|cso|ciso|cio)\b/.test(h)) return 90;
+  if (/\b(vp|vice president|svp|evp)\b/.test(h)) return 85;
+  if (/\b(head of|director of|director)\b/.test(h)) return 80;
+  if (/\b(principal|partner)\b/.test(h)) return 78;
+  if (/\b(senior manager|sr\.? manager|team lead|tech lead|\blead\b)\b/.test(h)) return 65;
+  if (/\b(assistant|associate|junior|jr\.?|coordinator|analyst)\b/.test(h) && !/\b(senior|lead|head|director|vp|chief)\b/.test(h)) return 35;
+  if (/\b(manager|mgr)\b/.test(h)) return 55;
+  if (/\b(senior|sr\.?|specialist)\b/.test(h)) return 50;
+  return null;
+}
+
+async function scoreDecisionersWithAI(
+  candidates: { id: string; headline: string; company: string }[],
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (!LOVABLE_API_KEY || candidates.length === 0) return out;
+
+  const prompt = `You are a B2B sales authority classifier. For each person, score 0-100 how likely they personally have BUDGET / DECISION-MAKING power to buy a B2B tool for their company.
+
+RUBRIC:
+- 90-100: Founders, CEOs, owners, MDs, Presidents (esp. small/mid orgs)
+- 80-89: C-level (CTO, CMO, COO, CFO, CRO, etc.), VPs, SVPs, EVPs
+- 70-79: Heads of <function>, Directors, Partners, Principals
+- 60-69: Senior Managers, Team Leads with budget influence
+- 40-59: Managers, ICs with some influence
+- 20-39: Junior staff, coordinators, assistants, analysts
+- 0-19: Students, interns, job-seekers, "open to work", retired, irrelevant
+
+PEOPLE:
+${candidates.map((p, i) => `[${i}] id=${p.id}\nHeadline: ${p.headline.slice(0, 200)}\nCompany: ${p.company.slice(0, 100)}`).join("\n\n")}
+
+Return ONLY a JSON array: [{"id":"...","score":NN}]`;
+
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    if (!res.ok) return out;
+    const data = await res.json();
+    const txt: string = data.choices?.[0]?.message?.content ?? "";
+    const match = txt.match(/\[[\s\S]*\]/);
+    if (!match) return out;
+    const arr = robustParseScoreArray(match[0]);
+    for (const r of arr) {
+      if (r?.id !== undefined && r?.id !== null) {
+        out.set(String(r.id), Math.max(0, Math.min(100, Number(r.score) || 0)));
+      }
+    }
+  } catch (e) {
+    console.warn("[AI_CHAT_SEARCH] decisioner scoring failed:", e instanceof Error ? e.message : e);
+  }
+  return out;
+}
+
+const DECISIONER_THRESHOLD = 70;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
