@@ -29,6 +29,7 @@ interface LeadOut {
   location: string;
   avatar_url?: string;
   match_score: number;
+  decisioner_score: number;
   reasons: string[];
   signal_post_url?: string;
   signal_post_excerpt?: string;
