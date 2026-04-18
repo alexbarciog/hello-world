@@ -11,6 +11,7 @@ import { SaveLeadDialog } from "@/components/ai-chat/SaveLeadDialog";
 import type { ChatMessageData, LeadResult, SearchCriteria } from "@/components/ai-chat/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 
 const PROMPT_CHIPS = [
   "Founders of seed-stage SaaS in the US",
