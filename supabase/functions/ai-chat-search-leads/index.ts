@@ -207,12 +207,43 @@ Return ONLY a JSON array: [{"id":"...","score":NN,"reason":"≤12 words"}]`;
     const txt: string = data.choices?.[0]?.message?.content ?? "";
     const match = txt.match(/\[[\s\S]*\]/);
     if (!match) return out;
-    const arr = JSON.parse(match[0]);
+    const arr = robustParseScoreArray(match[0]);
     for (const r of arr) {
-      if (r?.id) out.set(String(r.id), { score: Number(r.score) || 0, reason: String(r.reason || "") });
+      if (r?.id !== undefined && r?.id !== null) {
+        out.set(String(r.id), { score: Number(r.score) || 0, reason: String(r.reason || "") });
+      }
     }
   } catch (e) {
     console.warn("[AI_CHAT_SEARCH] intent scoring failed:", e instanceof Error ? e.message : e);
+  }
+  return out;
+}
+
+// Robust parser — Gemini occasionally returns unquoted keys, trailing commas,
+// or stray // comments. We try strict JSON first, then progressive cleanups,
+// then a per-object regex fallback so a single malformed entry doesn't drop everything.
+function robustParseScoreArray(raw: string): Array<{ id: string; score: number; reason: string }> {
+  const tryParse = (s: string): any[] | null => {
+    try { const v = JSON.parse(s); return Array.isArray(v) ? v : null; } catch { return null; }
+  };
+  let v = tryParse(raw);
+  if (v) return v;
+  // Strip // and /* */ comments
+  let cleaned = raw.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  // Remove trailing commas before } or ]
+  cleaned = cleaned.replace(/,(\s*[}\]])/g, "$1");
+  v = tryParse(cleaned);
+  if (v) return v;
+  // Quote unquoted keys: {id: → {"id":
+  cleaned = cleaned.replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":');
+  v = tryParse(cleaned);
+  if (v) return v;
+  // Last resort: regex per-object
+  const out: Array<{ id: string; score: number; reason: string }> = [];
+  const re = /["']?id["']?\s*:\s*["']?([^"',}]+)["']?\s*,\s*["']?score["']?\s*:\s*(\d+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw)) !== null) {
+    out.push({ id: m[1].trim(), score: Number(m[2]), reason: "" });
   }
   return out;
 }
