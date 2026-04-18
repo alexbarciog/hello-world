@@ -12,6 +12,7 @@ import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
 import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
+import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { toast } from "sonner";
 
 type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
