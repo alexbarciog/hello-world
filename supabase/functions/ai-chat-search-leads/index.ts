@@ -342,7 +342,9 @@ Deno.serve(async (req) => {
     }
 
     // ── Pre-filter: must have author + meaningful text + author URL not already in exclude
-    const candidates: { post: any; text: string; author: any; url: string }[] = [];
+    //               + (if we have a `selling`) topical overlap, so we don't waste AI scoring on off-topic posts
+    const topicTokens = c.selling ? extractTopicTokens(c.selling) : [];
+    const candidates: { post: any; text: string; author: any; url: string; topical: boolean }[] = [];
     for (const { post } of allPosts) {
       const text = extractPostText(post);
       if (text.length < 40) continue;
@@ -354,7 +356,8 @@ Deno.serve(async (req) => {
       const fn = String(author.first_name || author.firstName || "").toLowerCase();
       const ln = String(author.last_name || author.lastName || "").toLowerCase();
       if (fn === "linkedin" && ln === "member") continue;
-      candidates.push({ post, text, author, url });
+      const topical = postMatchesTopic(text, topicTokens);
+      candidates.push({ post, text, author, url, topical });
     }
 
     if (candidates.length === 0) {
@@ -363,8 +366,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Cap at 40 posts to keep AI scoring under budget
-    const toScore = candidates.slice(0, 40);
+    // Prefer topical posts; fall back to non-topical only if we don't have 40 topical ones
+    const topical = candidates.filter((c) => c.topical);
+    const nonTopical = candidates.filter((c) => !c.topical);
+    const toScore = (topical.length >= 15 ? topical : [...topical, ...nonTopical]).slice(0, 40);
+    console.log(`[AI_CHAT_SEARCH] candidates:${candidates.length} topical:${topical.length} scoring:${toScore.length} topicTokens:${JSON.stringify(topicTokens)}`);
 
     // ── STAGE 3: AI score each post 0-100 for buying intent
     const forAI = toScore.map((cand, i) => ({
@@ -374,47 +380,63 @@ Deno.serve(async (req) => {
     }));
     const scores = await scorePostsForBuyingIntent(forAI, c);
 
-    // ── STAGE 4: Keep score ≥80, dedupe authors, build leads
+    // ── STAGE 4: Tiered keep — try ≥80 first; if <3 results, fall back to ≥65; minimum floor 50.
+    //            This prevents the "0 leads" outcome when posts are clearly relevant but not perfectly phrased.
     const seenAuthors = new Set<string>();
-    const leads: LeadOut[] = [];
+    function buildLeads(threshold: number): LeadOut[] {
+      const out: LeadOut[] = [];
+      for (let i = 0; i < toScore.length; i++) {
+        const scoreData = scores.get(String(i));
+        if (!scoreData || scoreData.score < threshold) continue;
 
-    for (let i = 0; i < toScore.length; i++) {
-      const scoreData = scores.get(String(i));
-      if (!scoreData || scoreData.score < 80) continue;
+        const { post, text, author, url } = toScore[i];
+        const lowUrl = url.toLowerCase();
+        if (seenAuthors.has(lowUrl)) continue;
+        seenAuthors.add(lowUrl);
 
-      const { post, text, author, url } = toScore[i];
-      const lowUrl = url.toLowerCase();
-      if (seenAuthors.has(lowUrl)) continue;
-      seenAuthors.add(lowUrl);
+        const fullName =
+          author.name ||
+          `${author.first_name || author.firstName || ""} ${author.last_name || author.lastName || ""}`.trim();
+        const firstName = author.first_name || author.firstName || fullName.split(" ")[0] || "";
+        const lastName = author.last_name || author.lastName || fullName.split(" ").slice(1).join(" ") || "";
 
-      const fullName =
-        author.name ||
-        `${author.first_name || author.firstName || ""} ${author.last_name || author.lastName || ""}`.trim();
-      const firstName = author.first_name || author.firstName || fullName.split(" ")[0] || "";
-      const lastName = author.last_name || author.lastName || fullName.split(" ").slice(1).join(" ") || "";
+        out.push({
+          linkedin_url: url,
+          first_name: firstName,
+          last_name: lastName,
+          full_name: fullName || "Unknown",
+          title: String(author.headline || author.title || ""),
+          company: String(author.current_company || author.company || ""),
+          location: String(author.location || ""),
+          avatar_url: author.profile_picture_url || author.avatar_url || undefined,
+          match_score: scoreData.score,
+          reasons: [scoreData.reason || `Buying intent ${scoreData.score}/100`, `“${text.slice(0, 90)}…”`],
+          signal_post_url: extractPostUrl(post) || undefined,
+          signal_post_excerpt: text.slice(0, 240),
+        });
+      }
+      return out;
+    }
 
-      leads.push({
-        linkedin_url: url,
-        first_name: firstName,
-        last_name: lastName,
-        full_name: fullName || "Unknown",
-        title: String(author.headline || author.title || ""),
-        company: String(author.current_company || author.company || ""),
-        location: String(author.location || ""),
-        avatar_url: author.profile_picture_url || author.avatar_url || undefined,
-        match_score: scoreData.score,
-        reasons: [scoreData.reason || `Buying intent ${scoreData.score}/100`, `“${text.slice(0, 90)}…”`],
-        signal_post_url: extractPostUrl(post) || undefined,
-        signal_post_excerpt: text.slice(0, 240),
-      });
+    let leads = buildLeads(80);
+    let usedThreshold = 80;
+    if (leads.length < 3) {
+      seenAuthors.clear();
+      leads = buildLeads(65);
+      usedThreshold = 65;
+    }
+    if (leads.length === 0) {
+      seenAuthors.clear();
+      leads = buildLeads(50);
+      usedThreshold = 50;
     }
 
     leads.sort((a, b) => b.match_score - a.match_score);
     const top = leads.slice(0, 15);
 
-    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} kept:${leads.length}`);
+    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} kept:${leads.length}`);
 
-    return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries }), {
+    return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries, threshold: usedThreshold }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
