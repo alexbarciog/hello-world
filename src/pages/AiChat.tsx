@@ -52,11 +52,14 @@ export default function AiChat() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("ai_chat_criteria")
+        .select("ai_chat_criteria, ai_chat_lead_status")
         .eq("user_id", user.id)
         .maybeSingle();
       if (profile && (profile as any).ai_chat_criteria) {
         setCriteria((profile as any).ai_chat_criteria as SearchCriteria);
+      }
+      if (profile && (profile as any).ai_chat_lead_status) {
+        setLeadStatus((profile as any).ai_chat_lead_status as LeadStatus);
       }
 
       const { data: msgs } = await supabase
