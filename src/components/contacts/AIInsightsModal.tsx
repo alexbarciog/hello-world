@@ -357,7 +357,7 @@ function PersonalityTab({
             ))}
           </ul>
         </InfoCard>
-        <InfoCard icon={<Mail className="w-3.5 h-3.5" />} title="Email tips">
+        <InfoCard icon={<Mail className="w-3.5 h-3.5" />} title="Message tips">
           <ul className="space-y-1.5">
             {personality.email_tips.map((it, i) => (
               <li key={i} className="text-xs text-slate-700 leading-snug">• {it}</li>
