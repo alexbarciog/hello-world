@@ -334,13 +334,7 @@ export default function AiChat() {
           </div>
         )}
         {searching && <SearchProgress />}
-        {!sending && !searching && showCTAStartSearch && allLeads.length === 0 && (
-          <div className="flex justify-center pt-2">
-            <Button onClick={runSearch} className="bg-[hsl(var(--md-secondary))] hover:bg-[hsl(var(--md-secondary)/0.9)] text-white">
-              Start search
-            </Button>
-          </div>
-        )}
+      
       </div>
       <div className="p-3 border-t border-border bg-white">
         <ChatInput
