@@ -168,7 +168,8 @@ ${isFollowUp && meetingContext ? '- This is a scheduled follow-up related to a m
 ${meetingContext ? `- ${meetingContext}` : ''}
 - ${replyPhase}
 - Language: ${req.language || 'English'}
-${req.customTraining ? `- Additional context: ${req.customTraining}` : ''}`;
+${req.customTraining ? `- Additional context: ${req.customTraining}` : ''}
+${formatPersonalityBlock(req.personality)}`;
 
   const userPrompt = `Lead: ${lead.firstName} ${lead.lastName || ''}, ${lead.title || ''} at ${lead.company || ''}
 Your company: ${req.companyName || 'our company'}
