@@ -513,6 +513,7 @@ async function processCampaignReplies(
             firstName: contact.first_name, lastName: contact.last_name,
             leadCompany: contact.company, leadTitle: contact.title,
             buyingSignal: contact.signal, leadIndustry: contact.industry,
+            personality: contact.personality_prediction,
             repliesCount: cr.ai_replies_count,
             maxReplies: maxReplies, isFollowUp: false,
             meetingContext: meetingContext,
