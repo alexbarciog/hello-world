@@ -401,7 +401,7 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
   return (
     <table className="w-full">
       <thead>
-        <tr><TH>Email</TH><TH>Name</TH><TH>Website</TH><TH>Onboarded</TH><TH>Plan</TH><TH>Free Trial</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
+        <tr><TH>Status</TH><TH>Email</TH><TH>Name</TH><TH>Website</TH><TH>Onboarded</TH><TH>Plan</TH><TH>Free Trial</TH><TH>Credits</TH><TH>LinkedIn</TH><TH>Created</TH><TH>{" "}</TH></tr>
       </thead>
       <tbody className="divide-y divide-md-outline-variant/20">
         {data.map((u: any) => {
@@ -414,6 +414,7 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
           return (
             <>
               <tr key={id} className="hover:bg-md-surface-container/30 transition-colors cursor-pointer" onClick={() => setExpandedRow(isExpanded ? null : id)}>
+                <TD><PresenceCell lastSeenAt={u.last_seen_at} /></TD>
                 <TD><CopyCell value={u.email} /></TD>
                 <TD>{name}</TD>
                 <TD>
