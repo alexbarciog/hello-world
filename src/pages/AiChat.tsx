@@ -52,11 +52,14 @@ export default function AiChat() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("ai_chat_criteria")
+        .select("ai_chat_criteria, ai_chat_lead_status")
         .eq("user_id", user.id)
         .maybeSingle();
       if (profile && (profile as any).ai_chat_criteria) {
         setCriteria((profile as any).ai_chat_criteria as SearchCriteria);
+      }
+      if (profile && (profile as any).ai_chat_lead_status) {
+        setLeadStatus((profile as any).ai_chat_lead_status as LeadStatus);
       }
 
       const { data: msgs } = await supabase
@@ -71,6 +74,23 @@ export default function AiChat() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, sending, searching]);
+
+  // Persist lead status (saved/skipped) to profile so it survives reloads
+  const leadStatusInitialized = useRef(false);
+  useEffect(() => {
+    if (!leadStatusInitialized.current) {
+      leadStatusInitialized.current = true;
+      return;
+    }
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase
+        .from("profiles")
+        .update({ ai_chat_lead_status: leadStatus as any } as any)
+        .eq("user_id", user.id);
+    })();
+  }, [leadStatus]);
 
   const allLeads = useMemo(() => {
     const out: { lead: LeadResult; status: "review" | "saved" | "skipped" }[] = [];
@@ -162,6 +182,14 @@ export default function AiChat() {
       if (user) {
         await supabase.from("profiles").update({ ai_chat_criteria: newCriteria as any } as any).eq("user_id", user.id);
       }
+
+      // Auto-trigger a fresh search whenever the user explicitly asks or the
+      // assistant signals it has enough criteria.
+      const userText = trimmed.toLowerCase();
+      const userWantsSearch = /\b(search|find( me)?( more)?( leads)?|go|start|kick.?off|launch|run it)\b/.test(userText);
+      if (data.ready_to_search || userWantsSearch) {
+        runSearch();
+      }
     } catch (e: any) {
       toast.error(e.message ?? "Something went wrong");
     } finally {
@@ -223,7 +251,7 @@ export default function AiChat() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("ai_chat_messages").delete().eq("user_id", user.id);
-    await supabase.from("profiles").update({ ai_chat_criteria: null as any } as any).eq("user_id", user.id);
+    await supabase.from("profiles").update({ ai_chat_criteria: null as any, ai_chat_lead_status: {} as any } as any).eq("user_id", user.id);
     setMessages([]);
     setCriteria({});
     setLeadStatus({});

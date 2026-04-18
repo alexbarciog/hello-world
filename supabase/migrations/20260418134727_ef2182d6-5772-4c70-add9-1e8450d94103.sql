@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ai_chat_lead_status jsonb DEFAULT '{}'::jsonb;
