@@ -35,6 +35,9 @@ export default function AiChat() {
   const [firstName, setFirstName] = useState("");
   const [saveDialog, setSaveDialog] = useState<{ open: boolean; lead: LeadResult | null }>({ open: false, lead: null });
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Track every keyword phrase the search backend has used in this session,
+  // so each new search asks for fresh angles instead of repeating queries.
+  const usedKeywordsRef = useRef<string[]>([]);
 
   // Auto-scroll to bottom on new messages / typing / searching
   useEffect(() => {
