@@ -431,6 +431,8 @@ export type Database = {
           linkedin_profile_id: string | null
           linkedin_url: string | null
           list_name: string | null
+          personality_generated_at: string | null
+          personality_prediction: Json | null
           relevance_tier: string
           signal: string | null
           signal_a_hit: boolean | null
@@ -458,6 +460,8 @@ export type Database = {
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
+          personality_generated_at?: string | null
+          personality_prediction?: Json | null
           relevance_tier?: string
           signal?: string | null
           signal_a_hit?: boolean | null
@@ -485,6 +489,8 @@ export type Database = {
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
+          personality_generated_at?: string | null
+          personality_prediction?: Json | null
           relevance_tier?: string
           signal?: string | null
           signal_a_hit?: boolean | null
