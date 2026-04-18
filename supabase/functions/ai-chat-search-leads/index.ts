@@ -88,6 +88,20 @@ Example for "lead generation platform" (already tried: "need leads"):
     if (!match) return fallback;
     const arr = JSON.parse(match[0]);
     if (!Array.isArray(arr)) return fallback;
+    const prevSet = new Set(cleanPrev);
+    const cleaned = arr
+      .map(String)
+      .map((s) => s.trim().replace(/["'#]/g, "").replace(/\s+/g, " "))
+      .filter(Boolean)
+      .filter((s) => {
+        const wc = s.split(" ").length;
+        return wc >= 2 && wc <= 3;
+      })
+      .filter((s) => !prevSet.has(s.toLowerCase()))
+      .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i)
+      .slice(0, 5);
+    return cleaned.length > 0 ? cleaned : fallback;
+    if (!Array.isArray(arr)) return fallback;
     return arr.map(String).map((s) => s.trim()).filter(Boolean).slice(0, 6);
   } catch (e) {
     console.warn("[AI_CHAT_SEARCH] keyword gen failed:", e instanceof Error ? e.message : e);
