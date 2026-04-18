@@ -556,10 +556,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── STAGE 4: Tiered relaxation ladder.
-    // Old logic returned 0 leads constantly because intent threshold + decisioner=70 was way too strict.
-    // New logic: progressively relax both intent AND decisioner so we always surface SOMETHING usable
-    // when there are matching candidates, while still preferring high-quality leads at the top.
+    // ── STAGE 4: Strict thresholds — intent > 60, decisioner > 70.
     const seenAuthors = new Set<string>();
     let filteredOutByDecisioner = 0;
     function buildLeads(intentThreshold: number, decisionerThreshold: number): LeadOut[] {
@@ -604,24 +601,14 @@ Deno.serve(async (req) => {
       return out;
     }
 
-    // Relaxation ladder: [intent, decisioner]
-    const ladder: Array<[number, number]> = [
-      [80, 70], // ideal: hot intent + clear decision-maker
-      [65, 70], // strong fit + decision-maker
-      [55, 60], // decent fit + senior IC / lead
-      [45, 50], // any meaningful relevance + manager-level
-    ];
-    let leads: LeadOut[] = [];
-    let usedThreshold = 80;
-    let usedDecisioner = 70;
-    for (const [intent, dec] of ladder) {
-      seenAuthors.clear();
-      filteredOutByDecisioner = 0;
-      leads = buildLeads(intent, dec);
-      usedThreshold = intent;
-      usedDecisioner = dec;
-      if (leads.length >= 3) break;
-    }
+    // Strict thresholds — no relaxation. Quality over quantity.
+    const INTENT_THRESHOLD = 61;     // > 60
+    const DECISIONER_MIN = 71;       // > 70
+    const usedThreshold = INTENT_THRESHOLD;
+    const usedDecisioner = DECISIONER_MIN;
+    seenAuthors.clear();
+    filteredOutByDecisioner = 0;
+    const leads: LeadOut[] = buildLeads(INTENT_THRESHOLD, DECISIONER_MIN);
 
     leads.sort((a, b) => (b.match_score - a.match_score) || (b.decisioner_score - a.decisioner_score));
     const top = leads.slice(0, 15);
