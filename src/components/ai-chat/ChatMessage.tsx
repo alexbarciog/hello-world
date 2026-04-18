@@ -51,8 +51,8 @@ export function ChatMessage({ message, onQuickReply, isLatest }: Props) {
     <div className={cn("flex gap-3 group", isUser && "flex-row-reverse")}>
       {/* Logo avatar for AI messages */}
       {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center shrink-0 overflow-hidden">
-          <img src={intentslyIcon} alt="AI" className="w-4 h-4 object-contain" />
+        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden">
+          <img src={intentslyIcon} alt="AI" className="w-6 h-6 object-contain" />
         </div>
       )}
 
