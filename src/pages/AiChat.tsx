@@ -404,39 +404,41 @@ export default function AiChat() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full p-6">
-      <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-[20px]">
-          <h1 className="text-2xl font-semibold intentsly-ai-gradient">Intentsly AI</h1>
-          <Button variant="ghost" size="sm" onClick={newChat} className="text-foreground/60 gap-1.5">
-            <RotateCcw className="w-3.5 h-3.5" />
-            New search
-          </Button>
+      <div className="ai-border flex-1 flex flex-col rounded-[20px]">
+        <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-[20px]">
+            <h1 className="text-2xl font-semibold intentsly-ai-gradient">Intentsly AI</h1>
+            <Button variant="ghost" size="sm" onClick={newChat} className="text-foreground/60 gap-1.5">
+              <RotateCcw className="w-3.5 h-3.5" />
+              New search
+            </Button>
+          </div>
+
+        {/* Mobile tabs */}
+        <div className="md:hidden flex border-b border-border bg-white shrink-0">
+          <button
+            onClick={() => setMobileTab("chat")}
+            className={cn("flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5", mobileTab === "chat" ? "text-foreground border-b-2 border-foreground" : "text-foreground/50")}
+          >
+            <MessageSquare className="w-4 h-4" /> Chat
+          </button>
+          <button
+            onClick={() => setMobileTab("leads")}
+            className={cn("flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5", mobileTab === "leads" ? "text-foreground border-b-2 border-foreground" : "text-foreground/50")}
+          >
+            <Users className="w-4 h-4" /> Leads ({counts.review})
+          </button>
         </div>
 
-      {/* Mobile tabs */}
-      <div className="md:hidden flex border-b border-border bg-white shrink-0">
-        <button
-          onClick={() => setMobileTab("chat")}
-          className={cn("flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5", mobileTab === "chat" ? "text-foreground border-b-2 border-foreground" : "text-foreground/50")}
-        >
-          <MessageSquare className="w-4 h-4" /> Chat
-        </button>
-        <button
-          onClick={() => setMobileTab("leads")}
-          className={cn("flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-1.5", mobileTab === "leads" ? "text-foreground border-b-2 border-foreground" : "text-foreground/50")}
-        >
-          <Users className="w-4 h-4" /> Leads ({counts.review})
-        </button>
-      </div>
-
-        {/* Split view */}
-        <div className="flex-1 flex overflow-hidden min-h-0 rounded-b-[20px]">
-          <div className={cn("md:w-[35%] md:border-r md:border-border flex-1", mobileTab === "chat" ? "flex" : "hidden md:flex")}>
-            {ChatPane}
-          </div>
-          <div className={cn("md:w-[65%] flex-1", mobileTab === "leads" ? "flex" : "hidden md:flex")}>
-            {LeadsPane}
+          {/* Split view */}
+          <div className="flex-1 flex overflow-hidden min-h-0 rounded-b-[20px]">
+            <div className={cn("md:w-[35%] md:border-r md:border-border flex-1", mobileTab === "chat" ? "flex" : "hidden md:flex")}>
+              {ChatPane}
+            </div>
+            <div className={cn("md:w-[65%] flex-1", mobileTab === "leads" ? "flex" : "hidden md:flex")}>
+              {LeadsPane}
+            </div>
           </div>
         </div>
       </div>
