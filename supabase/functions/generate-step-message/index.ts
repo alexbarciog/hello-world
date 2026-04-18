@@ -295,6 +295,7 @@ Role category: ${roleCategory}
 BEFORE WRITING, think about what keeps this person up at night given their role at a ${lead.industry || ''} company. Your message must show you understand THEIR world, not just the signal.
 
 ${roleFraming}
+${formatPersonalityBlock(req.personality)}
 
 ===== SENDER =====
 Company: ${req.companyName || 'our company'}
