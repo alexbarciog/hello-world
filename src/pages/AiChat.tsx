@@ -36,6 +36,13 @@ export default function AiChat() {
   const [saveDialog, setSaveDialog] = useState<{ open: boolean; lead: LeadResult | null }>({ open: false, lead: null });
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to bottom on new messages / typing / searching
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages, sending, searching]);
+
   // Load user + history
   useEffect(() => {
     (async () => {
