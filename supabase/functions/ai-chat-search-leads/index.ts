@@ -85,6 +85,79 @@ Example for "lead generation platform":
   }
 }
 
+// ── Derive `selling` from the chat conversation when criteria.selling is missing.
+// This is critical: without `selling`, query generation hallucinates topics.
+async function deriveSellingFromConversation(
+  conversation: { role: string; content: string }[],
+): Promise<string> {
+  if (!LOVABLE_API_KEY || !Array.isArray(conversation) || conversation.length === 0) return "";
+  // Take the last ~20 turns of just user+assistant
+  const trimmed = conversation
+    .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+    .slice(-20)
+    .map((m) => `${m.role === "user" ? "USER" : "ASSISTANT"}: ${m.content.slice(0, 800)}`)
+    .join("\n");
+  if (!trimmed.trim()) return "";
+
+  const prompt = `Read this chat between a B2B founder (USER) and an AI lead-finder (ASSISTANT). Extract ONE sentence describing what the USER is selling/offering, written from a BUYER's perspective (what a buyer would search for). If the user is vague, use the most concrete clue. Return ONLY the sentence, no quotes, no preamble. If genuinely impossible, return an empty string.
+
+CHAT:
+${trimmed}
+
+OFFERING (one sentence, buyer's perspective):`;
+
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    if (!res.ok) return "";
+    const data = await res.json();
+    const txt: string = (data.choices?.[0]?.message?.content ?? "").trim().replace(/^["']|["']$/g, "");
+    if (txt.length < 5 || txt.length > 300) return "";
+    return txt;
+  } catch (e) {
+    console.warn("[AI_CHAT_SEARCH] deriveSelling failed:", e instanceof Error ? e.message : e);
+    return "";
+  }
+}
+
+// ── Cheap topical pre-filter: extract content words from `selling` and require
+// at least one to appear in the post text. Saves AI scoring on obvious off-topic posts.
+function extractTopicTokens(selling: string): string[] {
+  const STOP = new Set([
+    "a","an","the","and","or","of","for","to","in","on","with","that","is","are","be","my","our","your","their",
+    "this","these","those","it","at","as","by","from","into","up","down","out","over","under","i","we","you","they",
+    "platform","tool","tools","service","services","software","app","application","system","solution","solutions",
+    "product","products","company","companies","business","businesses","help","helps","helping","based","using","new",
+    "best","top","good","great","make","makes","making","get","getting","build","builds","building","provide","provides",
+    "people","customers","clients","users","leads","sales","outreach","b2b","saas","ai","auto","automatic","automated",
+    "small","large","big","more","less","other","any","some","all","one","two","etc",
+  ]);
+  return Array.from(
+    new Set(
+      selling
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length >= 4 && !STOP.has(w))
+    )
+  ).slice(0, 10);
+}
+
+function postMatchesTopic(text: string, tokens: string[]): boolean {
+  if (tokens.length === 0) return true; // no topic info → keep
+  const lower = text.toLowerCase();
+  return tokens.some((t) => lower.includes(t));
+}
+
 // ── STAGE 3 ── AI scores a batch of posts for buying intent
 async function scorePostsForBuyingIntent(
   posts: { id: string; text: string; authorHeadline: string }[],
