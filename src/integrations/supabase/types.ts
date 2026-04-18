@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_chat_messages: {
+        Row: {
+          attachment: Json | null
+          content: string
+          created_at: string
+          criteria_snapshot: Json | null
+          id: string
+          quick_replies: Json | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          attachment?: Json | null
+          content: string
+          created_at?: string
+          criteria_snapshot?: Json | null
+          id?: string
+          quick_replies?: Json | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          attachment?: Json | null
+          content?: string
+          created_at?: string
+          criteria_snapshot?: Json | null
+          id?: string
+          quick_replies?: Json | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           attendee_email: string | null
@@ -845,6 +878,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_chat_criteria: Json | null
           created_at: string
           credits: number
           daily_connections_limit: number
@@ -859,6 +893,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_chat_criteria?: Json | null
           created_at?: string
           credits?: number
           daily_connections_limit?: number
@@ -873,6 +908,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_chat_criteria?: Json | null
           created_at?: string
           credits?: number
           daily_connections_limit?: number

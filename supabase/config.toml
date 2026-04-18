@@ -65,3 +65,9 @@ verify_jwt = false
 
 [functions.drain-signal-agent-tasks]
 verify_jwt = false
+
+[functions.ai-chat-converse]
+verify_jwt = true
+
+[functions.ai-chat-search-leads]
+verify_jwt = true
