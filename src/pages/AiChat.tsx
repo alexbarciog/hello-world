@@ -407,7 +407,7 @@ export default function AiChat() {
       <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-[20px]">
-          <h1 className="text-base font-semibold text-foreground">AI Chat — Lead Finder</h1>
+          <h1 className="text-base font-semibold intentsly-ai-gradient">Intentsly AI</h1>
           <Button variant="ghost" size="sm" onClick={newChat} className="text-foreground/60 gap-1.5">
             <RotateCcw className="w-3.5 h-3.5" />
             New search

@@ -392,3 +392,26 @@
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
 }
+
+/* Animated brand-gradient text used for "Intentsly AI" header */
+.intentsly-ai-gradient {
+  background: linear-gradient(
+    90deg,
+    #00CCFF 0%,
+    #FF2AB8 50%,
+    #FFEA00 100%,
+    #FF2AB8 150%,
+    #00CCFF 200%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: intentsly-ai-wave 4s linear infinite;
+}
+
+@keyframes intentsly-ai-wave {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
