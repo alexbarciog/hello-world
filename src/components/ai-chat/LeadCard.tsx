@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin, Building2, Sparkles, Check, X } from "lucide-react";
+import { ExternalLink, MapPin, Building2, Sparkles, Check, X, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LeadResult } from "./types";
 
