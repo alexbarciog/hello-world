@@ -728,6 +728,7 @@ async function generateConversationalReply(
         buyingSignal: ctx.buyingSignal,
         leadIndustry: ctx.leadIndustry,
         meetingContext: ctx.meetingContext,
+        personality: ctx.personality,
       }),
     });
 
