@@ -212,21 +212,27 @@ async function scorePostsForBuyingIntent(
   const out = new Map<string, { score: number; reason: string }>();
   if (!LOVABLE_API_KEY || posts.length === 0) return out;
 
-  const prompt = `You are a B2B intent classifier. Score each LinkedIn post 0-100 for how strongly the AUTHOR is expressing buying intent for this offering:
+  const prompt = `You are a B2B intent classifier. Score each LinkedIn post 0-100 for how likely the AUTHOR is a great fit prospect for this offering — based on PAIN, TRIGGERS, or CONTEXT, not just explicit "I want to buy" language (which almost never appears on LinkedIn).
 
 OFFERING: ${c.selling || c.intent_keywords?.join(", ") || c.role || "(unspecified)"}
 
-SCORING RUBRIC:
-- 90-100: Author explicitly asking for/needing this product RIGHT NOW ("looking for…", "any recommendations for…", "tired of X, need Y")
-- 75-89: Author describing a pain that this product solves, in active research mode
-- 60-74: Author hinting at need or evaluating options, but not actively buying
-- 40-59: Topical interest only — talking about the space, no personal need
-- 0-39: Vendor/seller post, generic thought-leadership, unrelated, or job-seeker
+SCORING RUBRIC (be GENEROUS — implicit pain counts):
+- 90-100: Author explicitly asking/shopping ("looking for…", "any recommendations for…", "tired of X, need Y")
+- 75-89: Author describing a CLEAR pain this offering solves, OR a recent trigger event (just raised, scaling team, new role, migration). Implicit but strong.
+- 60-74: Author posting about the relevant problem space, workflow, or adjacent tools — likely fit even without an explicit ask. ALSO: founders/executives at companies that obviously match the ICP and post about the broader topic.
+- 40-59: Tangentially relevant — talks about the industry/category but no personal need signal.
+- 0-39: Off-topic, vendor pushing same offering, generic motivational, job-seeker.
+
+IMPORTANT INTERPRETATION RULES:
+- LinkedIn posts are mostly storytelling, not shopping lists. A founder venting about "spreadsheet hell" IS a hot CRM-consultancy lead even if they never say "I need a Salesforce consultant".
+- A post celebrating a fundraise / new hire / expansion IS a 75+ trigger-event lead for most B2B offerings if the company profile fits.
+- Score the AUTHOR's fit, not the post's literal words. The author headline tells you who they are.
+- Only score 0 for clear vendors of the SAME offering, recruiters, students, or totally unrelated content.
 
 REJECT (score 0):
-- Anyone SELLING this offering (vendors, agencies, "we help companies…")
-- Job-seekers, recruiters, "open to work"
-- Generic motivational content
+- Vendors/agencies selling the SAME thing as the offering
+- Job-seekers, "open to work", recruiters posting roles
+- Pure motivational quotes / generic thought-leadership with zero context
 
 POSTS:
 ${posts.map((p, i) => `[${i + 1}] id=${p.id}\nAuthor: ${p.authorHeadline || "(unknown)"}\nText: ${(p.text || "").slice(0, 600)}`).join("\n\n")}
