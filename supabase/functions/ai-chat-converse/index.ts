@@ -119,6 +119,8 @@ Deno.serve(async (req) => {
         messages: aiMessages,
         tools: TOOLS,
         tool_choice: "auto",
+        // Encourage tool use; Gemini occasionally drops tool calls without this hint.
+        parallel_tool_calls: true,
       }),
     });
 
