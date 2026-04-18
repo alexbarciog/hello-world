@@ -38,11 +38,15 @@ interface LeadOut {
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 // ── STAGE 1 ── AI generates demand-side, buyer-intent queries
-async function generateBuyerIntentQueries(c: Criteria): Promise<string[]> {
-  const fallback = (c.intent_keywords?.length ? c.intent_keywords : [c.role || "looking for help"]).slice(0, 5);
+//   - Exactly 5 short keyword queries
+//   - Each query is 2–3 words MAX (Unipile post search works best on tight phrases)
+//   - Avoid any keyword we already tried in previous searches this session
+async function generateBuyerIntentQueries(c: Criteria, previousKeywords: string[] = []): Promise<string[]> {
+  const cleanPrev = Array.from(new Set(previousKeywords.map((k) => String(k).toLowerCase().trim()).filter(Boolean)));
+  const fallback = (c.intent_keywords?.length ? c.intent_keywords : [c.role || "need help"]).slice(0, 5);
   if (!LOVABLE_API_KEY) return fallback;
 
-  const prompt = `You are a B2B buyer-intent research expert. Your job: produce LinkedIn POST search queries that surface people EXPRESSING DEMAND (not vendors selling).
+  const prompt = `You are a B2B buyer-intent research expert. Your job: produce LinkedIn POST search keywords that surface people EXPRESSING DEMAND (not vendors selling).
 
 INPUT CRITERIA:
 - Target role: ${c.role || "any"}
@@ -50,15 +54,20 @@ INPUT CRITERIA:
 - Locations: ${(c.locations || []).join(", ") || "any"}
 - What the user is offering / wants buyers for: ${c.selling || c.intent_keywords?.join(", ") || "(unspecified — infer from intent_keywords)"}
 
-RULES:
-- Output 6 short queries (2–6 words each), each targeting a DIFFERENT angle of demand.
-- Use BUYER LANGUAGE ("looking for", "any recommendations", "anyone use", "frustrated with", "switching from", "need a", "best tool for", "tired of").
-- NEVER use seller/vendor nouns alone (e.g. "lead generation tool", "CRM software"). Always pair with demand verbs ("need a CRM", "best CRM for…").
-- Avoid hashtags, quotes, AND/OR operators.
-- Return ONLY a JSON array of strings, nothing else.
+${cleanPrev.length > 0 ? `ALREADY TRIED (do NOT repeat these or close paraphrases — pick fresh angles):
+${cleanPrev.map((k) => `- ${k}`).join("\n")}
+` : ""}
+HARD RULES:
+- Return EXACTLY 5 keyword phrases.
+- Each phrase MUST be 2 or 3 words. Never 1 word, never 4+ words.
+- Use BUYER language pairing demand verbs/adjectives with the offering noun (e.g. "need recruiters", "hiring SDRs", "looking CRM", "tired Apollo", "best ATS", "switching HubSpot", "scaling outbound").
+- Each of the 5 phrases must target a DIFFERENT angle (pain, evaluation, switching, hiring trigger, growth trigger, frustration).
+- NEVER use vendor/seller phrasing ("our platform", "we help"). NEVER include hashtags, quotes, AND/OR operators, or punctuation.
+- Phrases must be DIFFERENT from anything in the ALREADY TRIED list (no synonyms, no plural variants).
+- Return ONLY a JSON array of 5 strings, nothing else.
 
-Example for "lead generation platform":
-["looking for lead gen tool", "anyone recommend lead generation", "need better outbound leads", "tired of buying bad leads", "best b2b lead platform", "switching from apollo"]`;
+Example for "lead generation platform" (already tried: "need leads"):
+["tired apollo", "switching zoominfo", "best b2b leads", "scaling outbound", "hiring SDRs"]`;
 
   try {
     const ctrl = new AbortController();
