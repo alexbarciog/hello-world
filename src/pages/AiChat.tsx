@@ -403,15 +403,16 @@ export default function AiChat() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-white shrink-0">
-        <h1 className="text-base font-semibold text-foreground">AI Chat — Lead Finder</h1>
-        <Button variant="ghost" size="sm" onClick={newChat} className="text-foreground/60 gap-1.5">
-          <RotateCcw className="w-3.5 h-3.5" />
-          New search
-        </Button>
-      </div>
+    <div className="flex-1 flex flex-col overflow-hidden h-full p-6">
+      <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-[20px]">
+          <h1 className="text-base font-semibold text-foreground">AI Chat — Lead Finder</h1>
+          <Button variant="ghost" size="sm" onClick={newChat} className="text-foreground/60 gap-1.5">
+            <RotateCcw className="w-3.5 h-3.5" />
+            New search
+          </Button>
+        </div>
 
       {/* Mobile tabs */}
       <div className="md:hidden flex border-b border-border bg-white shrink-0">
@@ -429,13 +430,14 @@ export default function AiChat() {
         </button>
       </div>
 
-      {/* Split view */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        <div className={cn("md:w-[35%] md:border-r md:border-border flex-1", mobileTab === "chat" ? "flex" : "hidden md:flex")}>
-          {ChatPane}
-        </div>
-        <div className={cn("md:w-[65%] flex-1", mobileTab === "leads" ? "flex" : "hidden md:flex")}>
-          {LeadsPane}
+        {/* Split view */}
+        <div className="flex-1 flex overflow-hidden min-h-0 rounded-b-[20px]">
+          <div className={cn("md:w-[35%] md:border-r md:border-border flex-1", mobileTab === "chat" ? "flex" : "hidden md:flex")}>
+            {ChatPane}
+          </div>
+          <div className={cn("md:w-[65%] flex-1", mobileTab === "leads" ? "flex" : "hidden md:flex")}>
+            {LeadsPane}
+          </div>
         </div>
       </div>
 
