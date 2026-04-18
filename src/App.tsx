@@ -20,6 +20,7 @@ import RedditSignals from "./pages/RedditSignals.tsx";
 import XSignals from "./pages/XSignals.tsx";
 import Unibox from "./pages/Unibox.tsx";
 import AiChat from "./pages/AiChat.tsx";
+import PublicAiChat from "./pages/PublicAiChat.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
@@ -202,6 +203,7 @@ const App = () => (
           <Route path="/support" element={<AuthGuard><DashboardLayout><Support /></DashboardLayout></AuthGuard>} />
           <Route path="/admin" element={<AuthGuard><DashboardLayout><AdminDashboard /></DashboardLayout></AuthGuard>} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/video" element={<VideoShowcase />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
