@@ -321,7 +321,7 @@ function PersonalityTab({
       {/* Do / Don't — flat, semantic icons */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="rounded-xl border border-slate-200/60 bg-white/60 p-4">
-          <p className="text-xs font-medium text-slate-700 tracking-tight mb-2.5 flex items-center gap-1.5">
+          <p className="tracking-tight mb-2.5 flex items-center gap-1.5 text-lg font-semibold text-slate-700">
             <Check className="w-3.5 h-3.5 text-emerald-500" /> Do
           </p>
           <ul className="space-y-2">
@@ -334,7 +334,7 @@ function PersonalityTab({
           </ul>
         </div>
         <div className="rounded-xl border border-slate-200/60 bg-white/60 p-4">
-          <p className="text-xs font-medium text-slate-700 tracking-tight mb-2.5 flex items-center gap-1.5">
+          <p className="text-slate-700 tracking-tight mb-2.5 flex items-center gap-1.5 text-lg font-semibold">
             <X className="w-3.5 h-3.5 text-rose-500" /> Don't
           </p>
           <ul className="space-y-2">
@@ -399,7 +399,7 @@ function InfoCard({
   return (
     <div className="rounded-xl border border-slate-200/60 bg-white/60 p-3.5 flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-medium text-slate-500 tracking-tight flex items-center gap-1.5">
+        <p className="font-medium text-slate-500 tracking-tight flex items-center gap-1.5 text-sm">
           {icon} {title}
         </p>
         {action}
