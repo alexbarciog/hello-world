@@ -234,9 +234,25 @@ export default function Contacts() {
 
   const handleGetInsights = async (contact: Contact) => {
     setInsightsOpen(contact.id);
-    if (insightsData[contact.id]) return; // already cached
+    if (insightsData[contact.id]) return; // session cache
     setInsightsLoading((prev) => new Set(prev).add(contact.id));
     try {
+      // 1) Try DB cache first — avoid hitting AI gateway entirely
+      const { data: cached } = await supabase
+        .from("contacts")
+        .select("intent_insights, intent_insights_generated_at")
+        .eq("id", contact.id)
+        .maybeSingle();
+
+      if (cached?.intent_insights) {
+        setInsightsData((prev) => ({
+          ...prev,
+          [contact.id]: { ...(cached.intent_insights as any), generated_at: cached.intent_insights_generated_at, cached: true },
+        }));
+        return;
+      }
+
+      // 2) Generate (function will also persist to DB)
       const { data, error } = await supabase.functions.invoke("generate-lead-insights", {
         body: { lead: contact },
       });
