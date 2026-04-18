@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
         // Get campaign and user profile limits
         const { data: campaign } = await serviceClient
           .from('campaigns')
-          .select('daily_connect_limit, user_id')
+          .select('daily_connect_limit, user_id, exclude_first_degree')
           .eq('id', campaignId)
           .eq('status', 'active')
           .single();
@@ -66,6 +66,8 @@ Deno.serve(async (req) => {
           console.log(`[send-conn] campaign ${campaignId} not active, skipping`);
           continue;
         }
+
+        const excludeFirstDegree = campaign.exclude_first_degree !== false; // default true
 
         // Use profile daily_connections_limit as the authoritative cap
         const { data: userProfile } = await serviceClient
