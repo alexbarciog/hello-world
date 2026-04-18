@@ -461,7 +461,7 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
               </tr>
               {isExpanded && (
                 <tr key={`${id}-detail`}>
-                  <td colSpan={10} className="px-6 py-4 bg-md-surface-container/20">
+                  <td colSpan={11} className="px-6 py-4 bg-md-surface-container/20">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                       <div><span className="text-md-on-surface-variant/60">User ID:</span> <CopyCell value={id} /></div>
                       <div><span className="text-md-on-surface-variant/60">Website:</span> <CopyCell value={website} /></div>
