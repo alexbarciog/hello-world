@@ -42,6 +42,10 @@ export default function AiChat() {
   // so each new search asks for fresh angles instead of repeating queries.
   const usedKeywordsRef = useRef<string[]>([]);
 
+  // Gate leads behind paid plan / active free trial
+  const { hasAccess, loading: subLoading } = useSubscription();
+  const leadsLocked = !subLoading && !hasAccess;
+
   // Auto-scroll to bottom on new messages / typing / searching
   useEffect(() => {
     const el = scrollRef.current;
