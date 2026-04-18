@@ -334,7 +334,9 @@ export default function AiChat() {
         ))}
         {sending && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-white border border-border" />
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden">
+              <img src={intentslyIcon} alt="AI" className="w-6 h-6 object-contain" />
+            </div>
             <TypingIndicator />
           </div>
         )}
