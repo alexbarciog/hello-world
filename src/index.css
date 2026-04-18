@@ -397,11 +397,13 @@
 .intentsly-ai-gradient {
   background: linear-gradient(
     90deg,
-    #00CCFF 0%,
-    #FF2AB8 50%,
+    #FFEA00 0%,
+    #00CCFF 33%,
+    #FF2AB8 66%,
     #FFEA00 100%,
-    #FF2AB8 150%,
-    #00CCFF 200%
+    #00CCFF 133%,
+    #FF2AB8 166%,
+    #FFEA00 200%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;
