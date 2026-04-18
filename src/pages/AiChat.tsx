@@ -404,7 +404,7 @@ export default function AiChat() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full p-6">
-      <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
+      <div className="ai-border flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 rounded-t-[20px]">
           <h1 className="text-2xl font-semibold intentsly-ai-gradient">Intentsly AI</h1>
