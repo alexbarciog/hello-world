@@ -219,7 +219,12 @@ export default function AiChat() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ criteria: effectiveCriteria, excludeLinkedInUrls: excludeUrls, conversation }),
+        body: JSON.stringify({
+          criteria: effectiveCriteria,
+          excludeLinkedInUrls: excludeUrls,
+          conversation,
+          previousKeywords: usedKeywordsRef.current,
+        }),
       });
       if (!res.ok) {
         const err = await res.text();
@@ -227,6 +232,12 @@ export default function AiChat() {
       }
       const data = await res.json();
       const leads: LeadResult[] = data.leads ?? [];
+      // Remember which keywords this run used so the next search asks for fresh ones
+      if (Array.isArray(data.queries)) {
+        const merged = [...usedKeywordsRef.current, ...data.queries.map((q: any) => String(q))];
+        // Cap memory at 50 to avoid bloating the prompt forever
+        usedKeywordsRef.current = Array.from(new Set(merged.map((s) => s.toLowerCase().trim()))).slice(-50);
+      }
 
       const summary = leads.length === 0
         ? "I couldn't find new leads matching this criteria. Try broadening locations, roles, or removing exclusions."
