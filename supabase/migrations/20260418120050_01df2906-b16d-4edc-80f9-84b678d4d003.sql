@@ -1,0 +1,1 @@
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS exclude_first_degree boolean NOT NULL DEFAULT true;

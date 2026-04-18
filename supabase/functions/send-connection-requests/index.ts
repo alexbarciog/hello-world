@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
         // Get campaign and user profile limits
         const { data: campaign } = await serviceClient
           .from('campaigns')
-          .select('daily_connect_limit, user_id')
+          .select('daily_connect_limit, user_id, exclude_first_degree')
           .eq('id', campaignId)
           .eq('status', 'active')
           .single();
@@ -66,6 +66,8 @@ Deno.serve(async (req) => {
           console.log(`[send-conn] campaign ${campaignId} not active, skipping`);
           continue;
         }
+
+        const excludeFirstDegree = campaign.exclude_first_degree !== false; // default true
 
         // Use profile daily_connections_limit as the authoritative cap
         const { data: userProfile } = await serviceClient
@@ -137,7 +139,7 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Step 1: Resolve public identifier to Unipile provider_id
+            // Step 1: Resolve public identifier to Unipile provider_id (also reveals network distance)
             const resolveRes = await fetch(
               `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
               { headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' } }
@@ -152,6 +154,21 @@ Deno.serve(async (req) => {
                 contact_id: contact.id,
                 user_id: sl.user_id,
                 status: 'failed',
+              });
+              continue;
+            }
+
+            // Guard: if Exclude 1st degree connections is enabled and this profile is already
+            // in the user's network (BEFORE the campaign sent any invite), skip entirely.
+            // This is safe — we only reach this code when no invite has been sent yet for this lead.
+            if (excludeFirstDegree && isFirstDegree(resolveData)) {
+              console.log(`[send-conn] contact ${contact.id} already 1st degree, skipping per campaign setting`);
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped');
+              await serviceClient.from('campaign_connection_requests').insert({
+                campaign_id: campaignId,
+                contact_id: contact.id,
+                user_id: sl.user_id,
+                status: 'skipped_already_connected',
               });
               continue;
             }
@@ -255,4 +272,24 @@ function jsonResponse(payload: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+// Detect if a Unipile profile response indicates the user is already a 1st-degree connection.
+// Mirrors the heuristic used in process-campaign-followups.
+function isFirstDegree(p: any): boolean {
+  if (!p) return false;
+  if (p.network_distance === 1 || p.network_distance === '1' || p.network_distance === 'FIRST_DEGREE' || p.network_distance === 'first_degree') return true;
+  if (p.is_connection === true || p.is_connection === 'true') return true;
+  if (p.relation_type === 'FIRST_DEGREE' || p.relation_type === 'first_degree') return true;
+  if (p.distance === 'DISTANCE_1' || p.distance === 1 || p.distance === '1') return true;
+  if (p.connection_degree === 1 || p.connection_degree === '1' || p.connection_degree === '1st') return true;
+  if (p.network === 'FIRST' || p.network === 'first' || p.network === 1) return true;
+  if (p.degree === 1 || p.degree === '1' || p.degree === 'FIRST') return true;
+  if (p.connected === true || p.connected === 'true') return true;
+  if (p.is_first_degree === true || p.is_first_degree === 'true') return true;
+  if (p.member_distance?.value === 'DISTANCE_1') return true;
+  if (p.connection_status === 'CONNECTED' || p.connection_status === 'connected') return true;
+  if (p.network?.distance === 'FIRST' || p.network?.distance === 1 || p.network?.distance === '1') return true;
+  if (p.connection?.type === 'FIRST_DEGREE') return true;
+  return false;
 }
