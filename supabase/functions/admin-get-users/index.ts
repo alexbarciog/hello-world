@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
         unipile_account_id: profile?.unipile_account_id ?? null,
         free_trial_enabled: profile?.free_trial_enabled ?? false,
         free_trial_limit: profile?.free_trial_limit ?? 1,
+        last_seen_at: profile?.last_seen_at ?? null,
         // Website from campaigns
         website: campaign?.website ?? null,
       };

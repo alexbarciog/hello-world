@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
+import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
 
 /**
  * Hook that waits for Supabase to fully restore its session from storage.
@@ -49,6 +50,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, isReady } = useAuthReady();
   const [allowed, setAllowed] = useState(false);
+  usePresenceHeartbeat();
 
   useEffect(() => {
     if (!isReady) return;
