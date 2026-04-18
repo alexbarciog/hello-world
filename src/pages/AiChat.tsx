@@ -182,6 +182,14 @@ export default function AiChat() {
       if (user) {
         await supabase.from("profiles").update({ ai_chat_criteria: newCriteria as any } as any).eq("user_id", user.id);
       }
+
+      // Auto-trigger a fresh search whenever the user explicitly asks or the
+      // assistant signals it has enough criteria.
+      const userText = trimmed.toLowerCase();
+      const userWantsSearch = /\b(search|find( me)?( more)?( leads)?|go|start|kick.?off|launch|run it)\b/.test(userText);
+      if (data.ready_to_search || userWantsSearch) {
+        runSearch();
+      }
     } catch (e: any) {
       toast.error(e.message ?? "Something went wrong");
     } finally {
