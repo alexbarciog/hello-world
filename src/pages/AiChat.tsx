@@ -403,7 +403,7 @@ export default function AiChat() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden h-full p-6">
+    <div className="flex-1 flex flex-col overflow-hidden h-full min-h-0 px-6 pt-6 pb-8">
       <div className="ai-border flex-1 flex flex-col rounded-3xl">
         <div className="flex-1 flex flex-col overflow-hidden bg-white rounded-[20px] border border-gray-200/60 shadow-sm">
           {/* Header */}
