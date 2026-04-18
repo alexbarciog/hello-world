@@ -173,14 +173,14 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
         {/* AI Insight block */}
         {lead.reasons && lead.reasons.length > 0 && (
           <div
-            className="relative rounded-lg p-[1px] animate-fade-in overflow-hidden"
+            className="relative rounded-xl p-[1.5px] animate-fade-in isolate"
             style={{
               background:
                 "conic-gradient(from var(--ai-angle, 0deg), #BC82F3, #F5B9EA, #8D99FF, #AA6EEE, #FF6778, #FFBA71, #C686FF, #BC82F3)",
               animation: "rotate-border 8s linear infinite",
             }}
           >
-            <div className="rounded-[7px] bg-gradient-to-br from-purple-50/70 via-white to-pink-50/40 p-2.5">
+            <div className="rounded-[10.5px] bg-gradient-to-br from-purple-50/70 via-white to-pink-50/40 p-2.5">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold">
                   <Sparkles className="w-3 h-3 text-[#AA6EEE] animate-pulse" />
