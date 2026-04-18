@@ -63,7 +63,7 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
           <Button
             onClick={onSave}
             size="sm"
-            className="flex-1 bg-[#C8FF00] hover:bg-[#B8EF00] text-foreground font-semibold gap-1.5"
+            className="flex-1 bg-[hsl(72_100%_50%)] hover:bg-[hsl(72_100%_45%)] text-foreground font-semibold gap-1.5"
           >
             <Check className="w-3.5 h-3.5" />
             Add to Outreach

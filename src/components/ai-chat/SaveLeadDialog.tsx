@@ -148,7 +148,7 @@ export function SaveLeadDialog({ open, onOpenChange, lead, onSaved }: Props) {
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-[#C8FF00] hover:bg-[#B8EF00] text-foreground font-semibold">
+          <Button onClick={handleSave} disabled={saving} className="bg-[hsl(72_100%_50%)] hover:bg-[hsl(72_100%_45%)] text-foreground font-semibold">
             {saving ? "Saving…" : "Add to outreach"}
           </Button>
         </DialogFooter>
