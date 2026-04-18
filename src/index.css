@@ -417,3 +417,113 @@
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Apple Intelligence-style animated gradient border
+   Usage: <div className="ai-border">...</div>
+   Variants: .ai-border-intense, .ai-border-subtle
+   Fallback: <div className="ai-border-wrapper"><div className="ai-border-inner">...</div></div>
+   ───────────────────────────────────────────────────────────── */
+
+@property --ai-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ai-rotate-border {
+  to { --ai-angle: 360deg; }
+}
+
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-border {
+  position: relative;
+  border-radius: 12px;
+  isolation: isolate;
+}
+
+.ai-border::before,
+.ai-border::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--ai-angle),
+    #BC82F3 17%,
+    #F5B9EA 24%,
+    #8D99FF 35%,
+    #AA6EEE 58%,
+    #FF6778 70%,
+    #FFBA71 81%,
+    #C686FF 92%,
+    #BC82F3 100%
+  );
+  animation: ai-rotate-border 4s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.ai-border::after {
+  inset: -6px;
+  filter: blur(12px);
+  opacity: 0.6;
+}
+
+/* Intense variant */
+.ai-border-intense::before,
+.ai-border-intense::after {
+  animation-duration: 3s;
+}
+.ai-border-intense::after {
+  inset: -10px;
+  filter: blur(20px);
+  opacity: 0.8;
+}
+
+/* Subtle variant */
+.ai-border-subtle::before,
+.ai-border-subtle::after {
+  animation-duration: 6s;
+}
+.ai-border-subtle::after {
+  inset: -3px;
+  filter: blur(6px);
+  opacity: 0.4;
+}
+
+/* Fallback wrapper approach (for browsers without @property support) */
+.ai-border-wrapper {
+  padding: 2px;
+  border-radius: 12px;
+  background: conic-gradient(
+    from 0deg,
+    #BC82F3, #F5B9EA, #8D99FF,
+    #AA6EEE, #FF6778, #FFBA71,
+    #C686FF, #BC82F3
+  );
+  animation: ai-spin 4s linear infinite;
+  position: relative;
+}
+
+.ai-border-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 16px;
+  background: inherit;
+  filter: blur(14px);
+  opacity: 0.55;
+  z-index: -1;
+  animation: ai-spin 4s linear infinite;
+}
+
+.ai-border-inner {
+  background: hsl(var(--background));
+  border-radius: 10px;
+  position: relative;
+  z-index: 1;
+}
