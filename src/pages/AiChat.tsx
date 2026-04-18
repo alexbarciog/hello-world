@@ -11,6 +11,7 @@ import { SaveLeadDialog } from "@/components/ai-chat/SaveLeadDialog";
 import type { ChatMessageData, LeadResult, SearchCriteria } from "@/components/ai-chat/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 
 const PROMPT_CHIPS = [
   "Founders of seed-stage SaaS in the US",
@@ -334,7 +335,9 @@ export default function AiChat() {
         ))}
         {sending && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-white border border-border" />
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden">
+              <img src={intentslyIcon} alt="AI" className="w-6 h-6 object-contain" />
+            </div>
             <TypingIndicator />
           </div>
         )}
