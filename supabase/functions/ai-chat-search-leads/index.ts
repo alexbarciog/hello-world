@@ -29,6 +29,7 @@ interface LeadOut {
   location: string;
   avatar_url?: string;
   match_score: number;
+  decisioner_score: number;
   reasons: string[];
   signal_post_url?: string;
   signal_post_excerpt?: string;
@@ -282,6 +283,77 @@ function buildLinkedInUrl(author: any): string {
   return pid ? `https://www.linkedin.com/in/${pid}` : "";
 }
 
+// ── Decisioner scoring: how senior/decision-making is this person at their company?
+// Heuristic first (instant + free), then AI for ambiguous titles.
+function heuristicDecisionerScore(headline: string): number | null {
+  const h = (headline || "").toLowerCase();
+  if (!h.trim()) return null;
+  if (/\b(student|intern|graduate|seeking|open to work|job seek|aspiring|trainee)\b/.test(h)) return 10;
+  if (/\b(founder|co-?founder|ceo|owner|managing director|\bmd\b|president|proprietor)\b/.test(h)) return 95;
+  if (/\bchief\s+\w+\s+officer\b|\b(cto|cfo|cmo|coo|cpo|cro|cso|ciso|cio)\b/.test(h)) return 90;
+  if (/\b(vp|vice president|svp|evp)\b/.test(h)) return 85;
+  if (/\b(head of|director of|director)\b/.test(h)) return 80;
+  if (/\b(principal|partner)\b/.test(h)) return 78;
+  if (/\b(senior manager|sr\.? manager|team lead|tech lead|\blead\b)\b/.test(h)) return 65;
+  if (/\b(assistant|associate|junior|jr\.?|coordinator|analyst)\b/.test(h) && !/\b(senior|lead|head|director|vp|chief)\b/.test(h)) return 35;
+  if (/\b(manager|mgr)\b/.test(h)) return 55;
+  if (/\b(senior|sr\.?|specialist)\b/.test(h)) return 50;
+  return null;
+}
+
+async function scoreDecisionersWithAI(
+  candidates: { id: string; headline: string; company: string }[],
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (!LOVABLE_API_KEY || candidates.length === 0) return out;
+
+  const prompt = `You are a B2B sales authority classifier. For each person, score 0-100 how likely they personally have BUDGET / DECISION-MAKING power to buy a B2B tool for their company.
+
+RUBRIC:
+- 90-100: Founders, CEOs, owners, MDs, Presidents (esp. small/mid orgs)
+- 80-89: C-level (CTO, CMO, COO, CFO, CRO, etc.), VPs, SVPs, EVPs
+- 70-79: Heads of <function>, Directors, Partners, Principals
+- 60-69: Senior Managers, Team Leads with budget influence
+- 40-59: Managers, ICs with some influence
+- 20-39: Junior staff, coordinators, assistants, analysts
+- 0-19: Students, interns, job-seekers, "open to work", retired, irrelevant
+
+PEOPLE:
+${candidates.map((p, i) => `[${i}] id=${p.id}\nHeadline: ${p.headline.slice(0, 200)}\nCompany: ${p.company.slice(0, 100)}`).join("\n\n")}
+
+Return ONLY a JSON array: [{"id":"...","score":NN}]`;
+
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${LOVABLE_API_KEY}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: prompt }],
+      }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    if (!res.ok) return out;
+    const data = await res.json();
+    const txt: string = data.choices?.[0]?.message?.content ?? "";
+    const match = txt.match(/\[[\s\S]*\]/);
+    if (!match) return out;
+    const arr = robustParseScoreArray(match[0]);
+    for (const r of arr) {
+      if (r?.id !== undefined && r?.id !== null) {
+        out.set(String(r.id), Math.max(0, Math.min(100, Number(r.score) || 0)));
+      }
+    }
+  } catch (e) {
+    console.warn("[AI_CHAT_SEARCH] decisioner scoring failed:", e instanceof Error ? e.message : e);
+  }
+  return out;
+}
+
+const DECISIONER_THRESHOLD = 70;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -411,14 +483,42 @@ Deno.serve(async (req) => {
     }));
     const scores = await scorePostsForBuyingIntent(forAI, c);
 
-    // ── STAGE 4: Tiered keep — try ≥80 first; if <3 results, fall back to ≥65; minimum floor 50.
-    //            This prevents the "0 leads" outcome when posts are clearly relevant but not perfectly phrased.
+    // ── STAGE 3b: Decisioner score per author (heuristic + AI fallback for ambiguous titles)
+    const decisionerScores = new Map<string, number>();
+    const ambiguous: { id: string; headline: string; company: string }[] = [];
+    for (let i = 0; i < toScore.length; i++) {
+      const author = toScore[i].author;
+      const headline = String(author.headline || author.title || "");
+      const company = String(author.current_company || author.company || "");
+      const heur = heuristicDecisionerScore(headline);
+      if (heur !== null) {
+        decisionerScores.set(String(i), heur);
+      } else {
+        ambiguous.push({ id: String(i), headline, company });
+      }
+    }
+    if (ambiguous.length > 0) {
+      const aiScores = await scoreDecisionersWithAI(ambiguous);
+      for (const [k, v] of aiScores.entries()) decisionerScores.set(k, v);
+      for (const a of ambiguous) {
+        if (!decisionerScores.has(a.id)) decisionerScores.set(a.id, 40);
+      }
+    }
+
+    // ── STAGE 4: Tiered intent threshold + ALWAYS require decisioner ≥ DECISIONER_THRESHOLD (70).
     const seenAuthors = new Set<string>();
+    let filteredOutByDecisioner = 0;
     function buildLeads(threshold: number): LeadOut[] {
       const out: LeadOut[] = [];
       for (let i = 0; i < toScore.length; i++) {
         const scoreData = scores.get(String(i));
         if (!scoreData || scoreData.score < threshold) continue;
+
+        const decisioner = decisionerScores.get(String(i)) ?? 0;
+        if (decisioner < DECISIONER_THRESHOLD) {
+          filteredOutByDecisioner++;
+          continue;
+        }
 
         const { post, text, author, url } = toScore[i];
         const lowUrl = url.toLowerCase();
@@ -441,6 +541,7 @@ Deno.serve(async (req) => {
           location: String(author.location || ""),
           avatar_url: author.profile_picture_url || author.avatar_url || undefined,
           match_score: scoreData.score,
+          decisioner_score: decisioner,
           reasons: [scoreData.reason || `Buying intent ${scoreData.score}/100`, `“${text.slice(0, 90)}…”`],
           signal_post_url: extractPostUrl(post) || undefined,
           signal_post_excerpt: text.slice(0, 240),
@@ -453,19 +554,21 @@ Deno.serve(async (req) => {
     let usedThreshold = 80;
     if (leads.length < 3) {
       seenAuthors.clear();
+      filteredOutByDecisioner = 0;
       leads = buildLeads(65);
       usedThreshold = 65;
     }
     if (leads.length === 0) {
       seenAuthors.clear();
+      filteredOutByDecisioner = 0;
       leads = buildLeads(50);
       usedThreshold = 50;
     }
 
-    leads.sort((a, b) => b.match_score - a.match_score);
+    leads.sort((a, b) => (b.match_score - a.match_score) || (b.decisioner_score - a.decisioner_score));
     const top = leads.slice(0, 15);
 
-    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} kept:${leads.length}`);
+    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} decisioner_threshold:${DECISIONER_THRESHOLD} dropped_low_decisioner:${filteredOutByDecisioner} kept:${leads.length}`);
 
     return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries, threshold: usedThreshold }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

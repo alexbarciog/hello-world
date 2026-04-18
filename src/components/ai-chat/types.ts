@@ -19,6 +19,8 @@ export interface LeadResult {
   location: string;
   avatar_url?: string;
   match_score: number;
+  /** 0-100 — how likely this person personally has buying authority at their company */
+  decisioner_score?: number;
   reasons: string[];
   signal_post_url?: string;
   signal_post_excerpt?: string;

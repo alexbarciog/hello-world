@@ -1,4 +1,4 @@
-import { ExternalLink, MapPin, Building2, Sparkles, Check, X, MessageSquare } from "lucide-react";
+import { ExternalLink, MapPin, Building2, Sparkles, Check, X, MessageSquare, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LeadResult } from "./types";
 
@@ -14,6 +14,12 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
   const scoreColor =
     lead.match_score >= 80 ? "text-emerald-600 bg-emerald-50" :
     lead.match_score >= 60 ? "text-amber-600 bg-amber-50" :
+    "text-foreground/60 bg-foreground/5";
+
+  const decisioner = lead.decisioner_score ?? 0;
+  const decisionerColor =
+    decisioner >= 85 ? "text-purple-600 bg-purple-50" :
+    decisioner >= 70 ? "text-indigo-600 bg-indigo-50" :
     "text-foreground/60 bg-foreground/5";
 
   return (
@@ -41,7 +47,14 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
             {lead.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{lead.location}</span>}
           </div>
         </div>
-        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${scoreColor}`}>{lead.match_score}</span>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span title="Buying intent" className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${scoreColor}`}>{lead.match_score}</span>
+          {decisioner > 0 && (
+            <span title="Decision-maker score" className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${decisionerColor}`}>
+              <Crown className="w-2.5 h-2.5" />{decisioner}
+            </span>
+          )}
+        </div>
       </div>
 
       {lead.signal_post_excerpt && (
