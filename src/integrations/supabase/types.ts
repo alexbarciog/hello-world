@@ -425,6 +425,8 @@ export type Database = {
           id: string
           imported_at: string
           industry: string | null
+          intent_insights: Json | null
+          intent_insights_generated_at: string | null
           last_name: string | null
           last_signal_at: string | null
           lead_status: string
@@ -454,6 +456,8 @@ export type Database = {
           id?: string
           imported_at?: string
           industry?: string | null
+          intent_insights?: Json | null
+          intent_insights_generated_at?: string | null
           last_name?: string | null
           last_signal_at?: string | null
           lead_status?: string
@@ -483,6 +487,8 @@ export type Database = {
           id?: string
           imported_at?: string
           industry?: string | null
+          intent_insights?: Json | null
+          intent_insights_generated_at?: string | null
           last_name?: string | null
           last_signal_at?: string | null
           lead_status?: string
