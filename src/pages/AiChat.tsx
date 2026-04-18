@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, MessageSquare, Users } from "lucide-react";
+import { RotateCcw, MessageSquare, Users, Lock, ArrowUpRight } from "lucide-react";
 import { ChatInput } from "@/components/ai-chat/ChatInput";
 import { ChatMessage } from "@/components/ai-chat/ChatMessage";
 import { TypingIndicator } from "@/components/ai-chat/TypingIndicator";
@@ -9,6 +10,7 @@ import { SearchProgress } from "@/components/ai-chat/SearchProgress";
 import { LeadCard } from "@/components/ai-chat/LeadCard";
 import { SaveLeadDialog } from "@/components/ai-chat/SaveLeadDialog";
 import type { ChatMessageData, LeadResult, SearchCriteria } from "@/components/ai-chat/types";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import intentslyIcon from "@/assets/intentsly-icon.png";
@@ -39,6 +41,10 @@ export default function AiChat() {
   // Track every keyword phrase the search backend has used in this session,
   // so each new search asks for fresh angles instead of repeating queries.
   const usedKeywordsRef = useRef<string[]>([]);
+
+  // Gate leads behind paid plan / active free trial
+  const { hasAccess, loading: subLoading } = useSubscription();
+  const leadsLocked = !subLoading && !hasAccess;
 
   // Auto-scroll to bottom on new messages / typing / searching
   useEffect(() => {
@@ -378,7 +384,7 @@ export default function AiChat() {
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[hsl(195_14%_97%)]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[hsl(195_14%_97%)] relative">
         {filteredLeads.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center text-foreground/40 py-16">
             <Users className="w-10 h-10 mb-3 opacity-40" />
@@ -388,15 +394,48 @@ export default function AiChat() {
             )}
           </div>
         ) : (
-          filteredLeads.map(({ lead, status }) => (
-            <LeadCard
-              key={lead.linkedin_url}
-              lead={lead}
-              status={status}
-              onSave={() => setSaveDialog({ open: true, lead })}
-              onSkip={() => setLeadStatus((s) => ({ ...s, [lead.linkedin_url]: "skipped" }))}
-            />
-          ))
+          <>
+            <div
+              className={cn(
+                "space-y-3 transition-all",
+                leadsLocked && "filter blur-[8px] pointer-events-none select-none"
+              )}
+              aria-hidden={leadsLocked}
+            >
+              {filteredLeads.map(({ lead, status }) => (
+                <LeadCard
+                  key={lead.linkedin_url}
+                  lead={lead}
+                  status={status}
+                  onSave={() => setSaveDialog({ open: true, lead })}
+                  onSkip={() => setLeadStatus((s) => ({ ...s, [lead.linkedin_url]: "skipped" }))}
+                />
+              ))}
+            </div>
+
+            {leadsLocked && (
+              <div className="absolute inset-0 flex items-start justify-center pt-16 px-4 z-10">
+                <div className="bg-white/95 backdrop-blur-md border border-border shadow-2xl rounded-2xl px-6 py-6 max-w-sm text-center">
+                  <div className="w-12 h-12 rounded-full bg-foreground text-primary-foreground flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground mb-1.5">
+                    {filteredLeads.length} high-intent {filteredLeads.length === 1 ? "lead" : "leads"} ready
+                  </h3>
+                  <p className="text-xs text-foreground/60 mb-4 leading-relaxed">
+                    Upgrade your plan to unlock these leads and start reaching out today.
+                  </p>
+                  <Link
+                    to="/billing"
+                    className="inline-flex items-center gap-1.5 bg-foreground text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity"
+                  >
+                    Upgrade to unlock
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
