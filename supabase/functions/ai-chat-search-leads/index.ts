@@ -46,7 +46,7 @@ async function generateBuyerIntentQueries(c: Criteria, previousKeywords: string[
   const fallback = (c.intent_keywords?.length ? c.intent_keywords : [c.role || "need help"]).slice(0, 5);
   if (!LOVABLE_API_KEY) return fallback;
 
-  const prompt = `You are a B2B buyer-intent research expert. Your job: produce LinkedIn POST search keywords that surface people EXPRESSING DEMAND (not vendors selling).
+  const prompt = `You are a world-class B2B demand-research strategist. Your job: produce LinkedIn POST search keywords that surface buyers EXPRESSING THE PAIN, TRIGGER, OR CONTEXT this offering solves — not literal "I want to buy X" posts (those almost never exist on LinkedIn).
 
 INPUT CRITERIA:
 - Target role: ${c.role || "any"}
@@ -57,17 +57,27 @@ INPUT CRITERIA:
 ${cleanPrev.length > 0 ? `ALREADY TRIED (do NOT repeat these or close paraphrases — pick fresh angles):
 ${cleanPrev.map((k) => `- ${k}`).join("\n")}
 ` : ""}
+THINK FIRST (do not output this thinking — only the final JSON):
+1. What concrete PAIN does this offering remove? (e.g. for Salesforce consultancy: messy CRM data, low adoption, broken reports, slow pipeline visibility)
+2. What TRIGGER EVENT creates urgency for this offering? (e.g. just raised funding, scaling team, new VP of sales, migrating ERP)
+3. What ADJACENT TOOLS / WORKFLOWS would a buyer mention? (e.g. spreadsheets, HubSpot migration, RevOps, sales ops)
+4. What COMPLAINTS would a buyer post publicly? (e.g. "drowning in spreadsheets", "pipeline a mess", "reports are broken")
+
 HARD RULES:
 - Return EXACTLY 5 keyword phrases.
 - Each phrase MUST be 2 or 3 words. Never 1 word, never 4+ words.
-- Use BUYER language pairing demand verbs/adjectives with the offering noun (e.g. "need recruiters", "hiring SDRs", "looking CRM", "tired Apollo", "best ATS", "switching HubSpot", "scaling outbound").
-- Each of the 5 phrases must target a DIFFERENT angle (pain, evaluation, switching, hiring trigger, growth trigger, frustration).
+- The 5 phrases MUST come from 5 DIFFERENT angles (do NOT all start with or contain the same noun). Cover at minimum: 1 pain phrase, 1 trigger-event phrase, 1 complaint phrase, 1 adjacent-workflow phrase, 1 evaluation/switch phrase.
+- AVOID monotone patterns like "verb + offering noun" repeated 5 times (e.g. all 5 ending in "salesforce" is forbidden — that just returns the same posts).
+- Use real human posting language, not marketing language. Things real people type when venting/asking on LinkedIn.
 - NEVER use vendor/seller phrasing ("our platform", "we help"). NEVER include hashtags, quotes, AND/OR operators, or punctuation.
 - Phrases must be DIFFERENT from anything in the ALREADY TRIED list (no synonyms, no plural variants).
 - Return ONLY a JSON array of 5 strings, nothing else.
 
-Example for "lead generation platform" (already tried: "need leads"):
-["tired apollo", "switching zoominfo", "best b2b leads", "scaling outbound", "hiring SDRs"]`;
+Example for "Salesforce consultancy services":
+["crm data mess", "just raised seed", "drowning in spreadsheets", "salesforce adoption low", "migrating from hubspot"]
+
+Example for "AI cold-email writer for SDRs":
+["pipeline is dry", "outbound not working", "scaling sdr team", "tired writing emails", "reply rates low"]`;
 
   try {
     const ctrl = new AbortController();
@@ -98,9 +108,23 @@ Example for "lead generation platform" (already tried: "need leads"):
         return wc >= 2 && wc <= 3;
       })
       .filter((s) => !prevSet.has(s.toLowerCase()))
-      .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i)
-      .slice(0, 5);
-    return cleaned.length > 0 ? cleaned : fallback;
+      .filter((s, i, a) => a.findIndex((x) => x.toLowerCase() === s.toLowerCase()) === i);
+
+    // Enforce angle diversity: no single content word may appear in more than 2 of the 5 phrases.
+    // This prevents the "fixing salesforce / planning salesforce / growing salesforce …" failure mode
+    // where every query returns the same overlapping results.
+    const STOP = new Set(["a","an","the","and","or","of","for","to","in","on","with","my","our","your","is","are","be","new","best","top","need","needs","needed","want","wants","wanted"]);
+    const wordCounts = new Map<string, number>();
+    const diverse: string[] = [];
+    for (const phrase of cleaned) {
+      const words = phrase.toLowerCase().split(/\s+/).filter((w) => w.length >= 3 && !STOP.has(w));
+      // Skip if this phrase would push any of its words past the 2-phrase cap
+      if (words.some((w) => (wordCounts.get(w) ?? 0) >= 2)) continue;
+      diverse.push(phrase);
+      for (const w of words) wordCounts.set(w, (wordCounts.get(w) ?? 0) + 1);
+      if (diverse.length === 5) break;
+    }
+    return diverse.length > 0 ? diverse : (cleaned.slice(0, 5).length > 0 ? cleaned.slice(0, 5) : fallback);
   } catch (e) {
     console.warn("[AI_CHAT_SEARCH] keyword gen failed:", e instanceof Error ? e.message : e);
     return fallback;
@@ -188,21 +212,27 @@ async function scorePostsForBuyingIntent(
   const out = new Map<string, { score: number; reason: string }>();
   if (!LOVABLE_API_KEY || posts.length === 0) return out;
 
-  const prompt = `You are a B2B intent classifier. Score each LinkedIn post 0-100 for how strongly the AUTHOR is expressing buying intent for this offering:
+  const prompt = `You are a B2B intent classifier. Score each LinkedIn post 0-100 for how likely the AUTHOR is a great fit prospect for this offering — based on PAIN, TRIGGERS, or CONTEXT, not just explicit "I want to buy" language (which almost never appears on LinkedIn).
 
 OFFERING: ${c.selling || c.intent_keywords?.join(", ") || c.role || "(unspecified)"}
 
-SCORING RUBRIC:
-- 90-100: Author explicitly asking for/needing this product RIGHT NOW ("looking for…", "any recommendations for…", "tired of X, need Y")
-- 75-89: Author describing a pain that this product solves, in active research mode
-- 60-74: Author hinting at need or evaluating options, but not actively buying
-- 40-59: Topical interest only — talking about the space, no personal need
-- 0-39: Vendor/seller post, generic thought-leadership, unrelated, or job-seeker
+SCORING RUBRIC (be GENEROUS — implicit pain counts):
+- 90-100: Author explicitly asking/shopping ("looking for…", "any recommendations for…", "tired of X, need Y")
+- 75-89: Author describing a CLEAR pain this offering solves, OR a recent trigger event (just raised, scaling team, new role, migration). Implicit but strong.
+- 60-74: Author posting about the relevant problem space, workflow, or adjacent tools — likely fit even without an explicit ask. ALSO: founders/executives at companies that obviously match the ICP and post about the broader topic.
+- 40-59: Tangentially relevant — talks about the industry/category but no personal need signal.
+- 0-39: Off-topic, vendor pushing same offering, generic motivational, job-seeker.
+
+IMPORTANT INTERPRETATION RULES:
+- LinkedIn posts are mostly storytelling, not shopping lists. A founder venting about "spreadsheet hell" IS a hot CRM-consultancy lead even if they never say "I need a Salesforce consultant".
+- A post celebrating a fundraise / new hire / expansion IS a 75+ trigger-event lead for most B2B offerings if the company profile fits.
+- Score the AUTHOR's fit, not the post's literal words. The author headline tells you who they are.
+- Only score 0 for clear vendors of the SAME offering, recruiters, students, or totally unrelated content.
 
 REJECT (score 0):
-- Anyone SELLING this offering (vendors, agencies, "we help companies…")
-- Job-seekers, recruiters, "open to work"
-- Generic motivational content
+- Vendors/agencies selling the SAME thing as the offering
+- Job-seekers, "open to work", recruiters posting roles
+- Pure motivational quotes / generic thought-leadership with zero context
 
 POSTS:
 ${posts.map((p, i) => `[${i + 1}] id=${p.id}\nAuthor: ${p.authorHeadline || "(unknown)"}\nText: ${(p.text || "").slice(0, 600)}`).join("\n\n")}
@@ -526,17 +556,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── STAGE 4: Tiered intent threshold + ALWAYS require decisioner ≥ DECISIONER_THRESHOLD (70).
+    // ── STAGE 4: Tiered relaxation ladder.
+    // Old logic returned 0 leads constantly because intent threshold + decisioner=70 was way too strict.
+    // New logic: progressively relax both intent AND decisioner so we always surface SOMETHING usable
+    // when there are matching candidates, while still preferring high-quality leads at the top.
     const seenAuthors = new Set<string>();
     let filteredOutByDecisioner = 0;
-    function buildLeads(threshold: number): LeadOut[] {
+    function buildLeads(intentThreshold: number, decisionerThreshold: number): LeadOut[] {
       const out: LeadOut[] = [];
       for (let i = 0; i < toScore.length; i++) {
         const scoreData = scores.get(String(i));
-        if (!scoreData || scoreData.score < threshold) continue;
+        if (!scoreData || scoreData.score < intentThreshold) continue;
 
         const decisioner = decisionerScores.get(String(i)) ?? 0;
-        if (decisioner < DECISIONER_THRESHOLD) {
+        if (decisioner < decisionerThreshold) {
           filteredOutByDecisioner++;
           continue;
         }
@@ -571,25 +604,29 @@ Deno.serve(async (req) => {
       return out;
     }
 
-    let leads = buildLeads(80);
+    // Relaxation ladder: [intent, decisioner]
+    const ladder: Array<[number, number]> = [
+      [80, 70], // ideal: hot intent + clear decision-maker
+      [65, 70], // strong fit + decision-maker
+      [55, 60], // decent fit + senior IC / lead
+      [45, 50], // any meaningful relevance + manager-level
+    ];
+    let leads: LeadOut[] = [];
     let usedThreshold = 80;
-    if (leads.length < 3) {
+    let usedDecisioner = 70;
+    for (const [intent, dec] of ladder) {
       seenAuthors.clear();
       filteredOutByDecisioner = 0;
-      leads = buildLeads(65);
-      usedThreshold = 65;
-    }
-    if (leads.length === 0) {
-      seenAuthors.clear();
-      filteredOutByDecisioner = 0;
-      leads = buildLeads(50);
-      usedThreshold = 50;
+      leads = buildLeads(intent, dec);
+      usedThreshold = intent;
+      usedDecisioner = dec;
+      if (leads.length >= 3) break;
     }
 
     leads.sort((a, b) => (b.match_score - a.match_score) || (b.decisioner_score - a.decisioner_score));
     const top = leads.slice(0, 15);
 
-    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} decisioner_threshold:${DECISIONER_THRESHOLD} dropped_low_decisioner:${filteredOutByDecisioner} kept:${leads.length}`);
+    console.log(`[AI_CHAT_SEARCH] DONE — queries:${queries.length} posts:${allPosts.length} candidates:${candidates.length} scored:${scores.size} threshold:${usedThreshold} decisioner_threshold:${usedDecisioner} dropped_low_decisioner:${filteredOutByDecisioner} kept:${leads.length}`);
 
     return new Response(JSON.stringify({ leads: top, total_found: allPosts.length, queries, threshold: usedThreshold }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
