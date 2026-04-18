@@ -251,7 +251,7 @@ export default function AiChat() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from("ai_chat_messages").delete().eq("user_id", user.id);
-    await supabase.from("profiles").update({ ai_chat_criteria: null as any } as any).eq("user_id", user.id);
+    await supabase.from("profiles").update({ ai_chat_criteria: null as any, ai_chat_lead_status: {} as any } as any).eq("user_id", user.id);
     setMessages([]);
     setCriteria({});
     setLeadStatus({});
