@@ -35,6 +35,9 @@ export default function AiChat() {
   const [firstName, setFirstName] = useState("");
   const [saveDialog, setSaveDialog] = useState<{ open: boolean; lead: LeadResult | null }>({ open: false, lead: null });
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Track every keyword phrase the search backend has used in this session,
+  // so each new search asks for fresh angles instead of repeating queries.
+  const usedKeywordsRef = useRef<string[]>([]);
 
   // Auto-scroll to bottom on new messages / typing / searching
   useEffect(() => {
@@ -216,7 +219,12 @@ export default function AiChat() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ criteria: effectiveCriteria, excludeLinkedInUrls: excludeUrls, conversation }),
+        body: JSON.stringify({
+          criteria: effectiveCriteria,
+          excludeLinkedInUrls: excludeUrls,
+          conversation,
+          previousKeywords: usedKeywordsRef.current,
+        }),
       });
       if (!res.ok) {
         const err = await res.text();
@@ -224,6 +232,12 @@ export default function AiChat() {
       }
       const data = await res.json();
       const leads: LeadResult[] = data.leads ?? [];
+      // Remember which keywords this run used so the next search asks for fresh ones
+      if (Array.isArray(data.queries)) {
+        const merged = [...usedKeywordsRef.current, ...data.queries.map((q: any) => String(q))];
+        // Cap memory at 50 to avoid bloating the prompt forever
+        usedKeywordsRef.current = Array.from(new Set(merged.map((s) => s.toLowerCase().trim()))).slice(-50);
+      }
 
       const summary = leads.length === 0
         ? "I couldn't find new leads matching this criteria. Try broadening locations, roles, or removing exclusions."
@@ -261,6 +275,7 @@ export default function AiChat() {
     setMessages([]);
     setCriteria({});
     setLeadStatus({});
+    usedKeywordsRef.current = [];
   }
 
   // ─── Empty state ────────────────────────────────────────────
