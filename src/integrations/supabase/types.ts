@@ -215,6 +215,7 @@ export type Database = {
           description: string | null
           discovery_keywords: string[] | null
           engagement_keywords: string[] | null
+          exclude_first_degree: boolean
           icp_company_sizes: string[] | null
           icp_company_types: string[] | null
           icp_exclude_keywords: string[] | null
@@ -267,6 +268,7 @@ export type Database = {
           description?: string | null
           discovery_keywords?: string[] | null
           engagement_keywords?: string[] | null
+          exclude_first_degree?: boolean
           icp_company_sizes?: string[] | null
           icp_company_types?: string[] | null
           icp_exclude_keywords?: string[] | null
@@ -319,6 +321,7 @@ export type Database = {
           description?: string | null
           discovery_keywords?: string[] | null
           engagement_keywords?: string[] | null
+          exclude_first_degree?: boolean
           icp_company_sizes?: string[] | null
           icp_company_types?: string[] | null
           icp_exclude_keywords?: string[] | null
