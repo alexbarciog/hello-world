@@ -391,7 +391,7 @@ Deno.serve(async (req) => {
     if (!userRes.ok) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const user = await userRes.json();
 
-    const { criteria = {}, excludeLinkedInUrls = [], conversation = [] } = await req.json();
+    const { criteria = {}, excludeLinkedInUrls = [], conversation = [], previousKeywords = [] } = await req.json();
     const c = criteria as Criteria;
 
     // ── If `selling` is missing, derive it from the chat conversation.
