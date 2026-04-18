@@ -879,6 +879,7 @@ export type Database = {
       profiles: {
         Row: {
           ai_chat_criteria: Json | null
+          ai_chat_lead_status: Json | null
           created_at: string
           credits: number
           daily_connections_limit: number
@@ -894,6 +895,7 @@ export type Database = {
         }
         Insert: {
           ai_chat_criteria?: Json | null
+          ai_chat_lead_status?: Json | null
           created_at?: string
           credits?: number
           daily_connections_limit?: number
@@ -909,6 +911,7 @@ export type Database = {
         }
         Update: {
           ai_chat_criteria?: Json | null
+          ai_chat_lead_status?: Json | null
           created_at?: string
           credits?: number
           daily_connections_limit?: number
