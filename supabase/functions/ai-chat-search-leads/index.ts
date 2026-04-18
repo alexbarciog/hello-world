@@ -588,9 +588,22 @@ Deno.serve(async (req) => {
           first_name: firstName,
           last_name: lastName,
           full_name: fullName || "Unknown",
-          title: String(author.headline || author.title || ""),
-          company: String(author.current_company || author.company || ""),
-          location: String(author.location || ""),
+          title: String(author.headline || author.title || author.occupation || ""),
+          company: String(
+            author.current_company ||
+            author.company ||
+            author.current_company_name ||
+            author.company_name ||
+            (author.experience && author.experience[0]?.company) ||
+            ""
+          ),
+          industry: String(
+            author.industry ||
+            author.company_industry ||
+            (author.current_company && typeof author.current_company === "object" && (author.current_company as any).industry) ||
+            ""
+          ),
+          location: String(author.location || author.country || ""),
           avatar_url: author.profile_picture_url || author.avatar_url || undefined,
           match_score: scoreData.score,
           decisioner_score: decisioner,
