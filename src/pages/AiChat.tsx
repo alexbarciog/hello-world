@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, MessageSquare, Users } from "lucide-react";
+import { RotateCcw, MessageSquare, Users, Lock, ArrowUpRight } from "lucide-react";
 import { ChatInput } from "@/components/ai-chat/ChatInput";
 import { ChatMessage } from "@/components/ai-chat/ChatMessage";
 import { TypingIndicator } from "@/components/ai-chat/TypingIndicator";
@@ -9,6 +10,7 @@ import { SearchProgress } from "@/components/ai-chat/SearchProgress";
 import { LeadCard } from "@/components/ai-chat/LeadCard";
 import { SaveLeadDialog } from "@/components/ai-chat/SaveLeadDialog";
 import type { ChatMessageData, LeadResult, SearchCriteria } from "@/components/ai-chat/types";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import intentslyIcon from "@/assets/intentsly-icon.png";
