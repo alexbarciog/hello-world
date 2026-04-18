@@ -275,8 +275,13 @@ export default function AiChat() {
   const ChatPane = (
     <div className="flex flex-col h-full bg-white md:bg-transparent w-full">
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" ref={scrollRef}>
-        {messages.map((m) => (
-          <ChatMessage key={m.id} message={m} onQuickReply={handleQuickReply} />
+        {messages.map((m, i) => (
+          <ChatMessage
+            key={m.id}
+            message={m}
+            onQuickReply={handleQuickReply}
+            isLatest={i === messages.length - 1}
+          />
         ))}
         {sending && (
           <div className="flex gap-3">
