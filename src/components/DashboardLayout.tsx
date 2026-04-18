@@ -174,41 +174,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {allNavItems.map((item) => {
             const active = location.pathname === item.path;
             const Icon = item.icon;
-            const isAiChat = item.path === "/ai-chat";
-            const buttonEl = (
-              <button
-                onClick={() => navigate(item.path)}
-                title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group relative ${
-                  active
-                    ? "bg-white text-foreground shadow-sm"
-                    : isAiChat
-                      ? "bg-[#F1F3F4] text-foreground/50 hover:text-foreground/80"
-                      : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
-                }`}
-              >
-                <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
-                  <Icon className="w-4 h-4" />
-                </span>
-                {!collapsed && (
-                  <span className="flex-1 text-left truncate flex items-center gap-1.5">
-                    {item.label}
-                    {(item as any).badge && (
-                      <span className="text-[9px] font-semibold uppercase tracking-wider bg-md-secondary/15 text-md-secondary px-1.5 py-0.5 rounded-full leading-none">
-                        {(item as any).badge}
-                      </span>
-                    )}
-                  </span>
-                )}
-              </button>
-            );
             return (
               <div key={item.path} className="relative">
-                {isAiChat ? (
-                  <div className="ai-border rounded-md">{buttonEl}</div>
-                ) : (
-                  buttonEl
-                )}
+                <button
+                  onClick={() => navigate(item.path)}
+                  title={collapsed ? item.label : undefined}
+                  className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
+                    active ? "bg-white text-foreground shadow-sm" : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
+                  }`}
+                >
+                  <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  {!collapsed && (
+                    <span className="flex-1 text-left truncate flex items-center gap-1.5">
+                      {item.label}
+                      {(item as any).badge && (
+                        <span className="text-[9px] font-semibold uppercase tracking-wider bg-md-secondary/15 text-md-secondary px-1.5 py-0.5 rounded-full leading-none">
+                          {(item as any).badge}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </button>
                 {/* Free plan tooltip for Signals Agents */}
                 {item.path === "/signals" && !collapsed && showAgentTooltip && (
                   <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 animate-in fade-in slide-in-from-left-2 duration-300">
