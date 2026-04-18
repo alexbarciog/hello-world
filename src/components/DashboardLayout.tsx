@@ -205,7 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <div key={item.path} className="relative">
                 {isAiChat ? (
-                  <div className="ai-border-subtle rounded-md">{buttonEl}</div>
+                  <div className="ai-border rounded-md">{buttonEl}</div>
                 ) : (
                   buttonEl
                 )}
