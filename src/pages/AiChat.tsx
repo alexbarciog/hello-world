@@ -433,10 +433,10 @@ export default function AiChat() {
 
           {/* Split view */}
           <div className="flex-1 flex overflow-hidden min-h-0 rounded-b-3xl">
-            <div className={cn("md:w-[30%] md:shrink-0 md:border-r md:border-border flex-1", mobileTab === "chat" ? "flex" : "hidden md:flex")}>
+            <div className={cn("md:w-[30%] md:shrink-0 md:flex-none md:border-r md:border-border flex-1", mobileTab === "chat" ? "flex" : "hidden md:flex")}>
               {ChatPane}
             </div>
-            <div className={cn("md:w-[70%] md:shrink-0 flex-1", mobileTab === "leads" ? "flex" : "hidden md:flex")}>
+            <div className={cn("md:w-[70%] md:shrink-0 md:flex-none flex-1", mobileTab === "leads" ? "flex" : "hidden md:flex")}>
               {LeadsPane}
             </div>
           </div>
