@@ -56,6 +56,7 @@ type CampaignFull = {
   language: string | null;
   conversational_ai: boolean;
   max_ai_replies: number;
+  exclude_first_degree: boolean;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "insights" | "settings";
@@ -349,6 +350,7 @@ export default function CampaignDetail() {
       setSettingsDailyLimit((c as any).daily_connect_limit || 25);
       setSettingsConversationalAi((c as any).conversational_ai || false);
       setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
+      setSettingsExcludeFirst((c as any).exclude_first_degree ?? true);
 
       // Parallel batch 1: profile, agent, step1 counts, today's queue
       const { data: authData } = await supabase.auth.getUser();
@@ -974,10 +976,11 @@ export default function CampaignDetail() {
       daily_connect_limit: settingsDailyLimit,
       conversational_ai: settingsConversationalAi,
       max_ai_replies: settingsMaxAiReplies,
+      exclude_first_degree: settingsExcludeFirst,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies, exclude_first_degree: settingsExcludeFirst });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
