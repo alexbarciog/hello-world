@@ -312,6 +312,42 @@ function TD({ children, className = "" }: { children: React.ReactNode; className
   return <td className={`px-4 py-3 text-sm text-md-on-surface ${className}`}>{children}</td>;
 }
 
+function PresenceCell({ lastSeenAt }: { lastSeenAt: string | null }) {
+  if (!lastSeenAt) return <span className="text-md-on-surface-variant/40 text-xs">Never</span>;
+  const last = new Date(lastSeenAt).getTime();
+  const ageMs = Date.now() - last;
+  const isOnline = ageMs < 2 * 60 * 1000; // 2 min
+
+  if (isOnline) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        Online
+      </span>
+    );
+  }
+
+  // Format relative time
+  const mins = Math.floor(ageMs / 60_000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  let label: string;
+  if (mins < 60) label = `${mins}m ago`;
+  else if (hours < 24) label = `${hours}h ago`;
+  else if (days < 30) label = `${days}d ago`;
+  else label = new Date(lastSeenAt).toLocaleDateString("ro-RO", { day: "2-digit", month: "short" });
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-md-on-surface-variant">
+      <span className="h-2 w-2 rounded-full bg-slate-300" />
+      {label}
+    </span>
+  );
+}
+
 function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expandedRow: string | null; setExpandedRow: (id: string | null) => void }) {
   const queryClient = useQueryClient();
   const [updatingUser, setUpdatingUser] = useState<string | null>(null);
