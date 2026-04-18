@@ -887,6 +887,7 @@ export type Database = {
           free_trial_enabled: boolean
           free_trial_limit: number
           id: string
+          last_seen_at: string | null
           linkedin_display_name: string | null
           onboarding_complete: boolean
           unipile_account_id: string | null
@@ -903,6 +904,7 @@ export type Database = {
           free_trial_enabled?: boolean
           free_trial_limit?: number
           id?: string
+          last_seen_at?: string | null
           linkedin_display_name?: string | null
           onboarding_complete?: boolean
           unipile_account_id?: string | null
@@ -919,6 +921,7 @@ export type Database = {
           free_trial_enabled?: boolean
           free_trial_limit?: number
           id?: string
+          last_seen_at?: string | null
           linkedin_display_name?: string | null
           onboarding_complete?: boolean
           unipile_account_id?: string | null
