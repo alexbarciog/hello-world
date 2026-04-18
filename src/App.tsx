@@ -19,6 +19,7 @@ import Contacts from "./pages/Contacts.tsx";
 import RedditSignals from "./pages/RedditSignals.tsx";
 import XSignals from "./pages/XSignals.tsx";
 import Unibox from "./pages/Unibox.tsx";
+import AiChat from "./pages/AiChat.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
@@ -182,6 +183,10 @@ const App = () => (
           <Route
             path="/unibox"
             element={<AuthGuard><DashboardLayout><Unibox /></DashboardLayout></AuthGuard>}
+          />
+          <Route
+            path="/ai-chat"
+            element={<AuthGuard><DashboardLayout><AiChat /></DashboardLayout></AuthGuard>}
           />
           <Route
             path="/integrations"
