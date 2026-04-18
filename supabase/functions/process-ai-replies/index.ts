@@ -374,7 +374,7 @@ async function processCampaignReplies(
           // Get full contact info
           const { data: contact } = await supabase
             .from('contacts')
-            .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
+            .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier, personality_prediction')
             .eq('id', cr.contact_id)
             .single();
           if (!contact) continue;
@@ -513,6 +513,7 @@ async function processCampaignReplies(
             firstName: contact.first_name, lastName: contact.last_name,
             leadCompany: contact.company, leadTitle: contact.title,
             buyingSignal: contact.signal, leadIndustry: contact.industry,
+            personality: contact.personality_prediction,
             repliesCount: cr.ai_replies_count,
             maxReplies: maxReplies, isFollowUp: false,
             meetingContext: meetingContext,
@@ -609,7 +610,7 @@ async function processCampaignReplies(
 
       const { data: contact } = await supabase
         .from('contacts')
-        .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier')
+        .select('first_name, last_name, company, title, signal, industry, linkedin_url, linkedin_profile_id, signal_post_url, relevance_tier, personality_prediction')
         .eq('id', cr.contact_id)
         .single();
       if (!contact) continue;
@@ -649,6 +650,7 @@ async function processCampaignReplies(
         firstName: contact.first_name, lastName: contact.last_name,
         leadCompany: contact.company, leadTitle: contact.title,
         buyingSignal: contact.signal, leadIndustry: contact.industry,
+        personality: contact.personality_prediction,
         repliesCount: cr.ai_replies_count,
         maxReplies: maxReplies, isFollowUp: true,
         meetingContext: meetingContext,
@@ -726,6 +728,7 @@ async function generateConversationalReply(
         buyingSignal: ctx.buyingSignal,
         leadIndustry: ctx.leadIndustry,
         meetingContext: ctx.meetingContext,
+        personality: ctx.personality,
       }),
     });
 

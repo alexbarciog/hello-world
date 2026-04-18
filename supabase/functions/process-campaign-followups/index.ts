@@ -574,6 +574,38 @@ async function processCampaign(
 
         // Immediately generate next message for newly accepted
         if (wasAccepted && lovableApiKey) {
+          // ── Kick off personality prediction (fire-and-forget) for this lead ──
+          // The edge function is idempotent (caches result); it skips if already generated.
+          // We don't await — message generation should not be blocked.
+          try {
+            const { data: existingPersonality } = await supabase
+              .from('contacts')
+              .select('first_name, last_name, title, company, signal, personality_prediction')
+              .eq('id', req.contact_id)
+              .single();
+
+            if (existingPersonality && !existingPersonality.personality_prediction) {
+              fetch(`${supabaseUrl}/functions/v1/generate-personality-prediction`, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${supabaseServiceRoleKey}`,
+                  apikey: supabaseServiceRoleKey,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  contactId: req.contact_id,
+                  name: [existingPersonality.first_name, existingPersonality.last_name].filter(Boolean).join(' '),
+                  headline: existingPersonality.title || '',
+                  postText: existingPersonality.signal || '',
+                  jobTitle: existingPersonality.title || '',
+                  company: existingPersonality.company || '',
+                }),
+              }).catch((e) => console.warn(`[followup] personality gen kickoff failed for ${req.contact_id}:`, e?.message));
+            }
+          } catch (e) {
+            console.warn(`[followup] personality precheck failed for ${req.contact_id}:`, (e as Error)?.message);
+          }
+
           const wfIdx = getNextWorkflowIndex(1, workflowSteps);
           const gen = await generateNextStepMessage(
             supabase,
@@ -757,7 +789,7 @@ async function generateNextStepMessage(
 
   const { data: contact } = await supabase
     .from('contacts')
-    .select('first_name, last_name, company, title, signal, industry')
+    .select('first_name, last_name, company, title, signal, industry, personality_prediction')
     .eq('id', req.contact_id)
     .single();
 
@@ -803,6 +835,7 @@ async function generateNextStepMessage(
       leadTitle: contact.title,
       buyingSignal: contact.signal,
       leadIndustry: contact.industry,
+      personality: contact.personality_prediction,
     });
 
     if (!message.trim()) {

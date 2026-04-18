@@ -12,6 +12,36 @@ type LeadContext = {
   industry: string;
 };
 
+// ── Personality context formatter ──
+// Converts the cached personality_prediction JSON into a compact, prompt-ready block.
+// Returns empty string if data is missing or malformed.
+function formatPersonalityBlock(personality: any): string {
+  if (!personality || typeof personality !== 'object') return '';
+  const traits = Array.isArray(personality.primary_traits) ? personality.primary_traits.slice(0, 3).join(', ') : '';
+  const approach = Array.isArray(personality.how_to_approach) ? personality.how_to_approach.slice(0, 3).map((s: string) => `• ${s}`).join('\n') : '';
+  const avoid = Array.isArray(personality.what_to_avoid) ? personality.what_to_avoid.slice(0, 3).map((s: string) => `• ${s}`).join('\n') : '';
+  const energizes = Array.isArray(personality.what_energizes) ? personality.what_energizes.slice(0, 2).map((s: string) => `• ${s}`).join('\n') : '';
+  const style = typeof personality.communication_style === 'string' ? personality.communication_style.trim() : '';
+  const hook = typeof personality.best_hook === 'string' ? personality.best_hook.trim() : '';
+
+  if (!traits && !approach && !style) return '';
+
+  return `
+===== LEAD PERSONALITY (use to shape tone & angle — never reveal you analyzed them) =====
+${personality.disc_label ? `Profile: ${personality.disc_label}` : ''}
+${traits ? `Traits: ${traits}` : ''}
+${style ? `Communication style: ${style}` : ''}
+${approach ? `How to approach:\n${approach}` : ''}
+${avoid ? `Avoid:\n${avoid}` : ''}
+${energizes ? `What energizes them:\n${energizes}` : ''}
+${hook ? `Suggested hook angle (paraphrase, do NOT copy verbatim): "${hook}"` : ''}
+
+PERSONALITY RULES:
+- Match the lead's natural style (analytical → data/specifics; driver → direct/results; supporter → warm/relational; initiator → energetic/big-picture).
+- NEVER mention DISC, "personality", "I analyzed you", or any meta-language.
+- Personality shapes HOW you write, not WHAT you say. The signal is still the backbone of the message.`;
+}
+
 function isJobChangeSignal(signal: string): boolean {
   if (!signal) return false;
   return /(new role|joined|promot|started|hired|appointed|moved to|transitioned)/i.test(signal);
@@ -138,7 +168,8 @@ ${isFollowUp && meetingContext ? '- This is a scheduled follow-up related to a m
 ${meetingContext ? `- ${meetingContext}` : ''}
 - ${replyPhase}
 - Language: ${req.language || 'English'}
-${req.customTraining ? `- Additional context: ${req.customTraining}` : ''}`;
+${req.customTraining ? `- Additional context: ${req.customTraining}` : ''}
+${formatPersonalityBlock(req.personality)}`;
 
   const userPrompt = `Lead: ${lead.firstName} ${lead.lastName || ''}, ${lead.title || ''} at ${lead.company || ''}
 Your company: ${req.companyName || 'our company'}
@@ -265,6 +296,7 @@ Role category: ${roleCategory}
 BEFORE WRITING, think about what keeps this person up at night given their role at a ${lead.industry || ''} company. Your message must show you understand THEIR world, not just the signal.
 
 ${roleFraming}
+${formatPersonalityBlock(req.personality)}
 
 ===== SENDER =====
 Company: ${req.companyName || 'our company'}
