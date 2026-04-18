@@ -46,7 +46,7 @@ async function generateBuyerIntentQueries(c: Criteria, previousKeywords: string[
   const fallback = (c.intent_keywords?.length ? c.intent_keywords : [c.role || "need help"]).slice(0, 5);
   if (!LOVABLE_API_KEY) return fallback;
 
-  const prompt = `You are a B2B buyer-intent research expert. Your job: produce LinkedIn POST search keywords that surface people EXPRESSING DEMAND (not vendors selling).
+  const prompt = `You are a world-class B2B demand-research strategist. Your job: produce LinkedIn POST search keywords that surface buyers EXPRESSING THE PAIN, TRIGGER, OR CONTEXT this offering solves — not literal "I want to buy X" posts (those almost never exist on LinkedIn).
 
 INPUT CRITERIA:
 - Target role: ${c.role || "any"}
@@ -57,17 +57,27 @@ INPUT CRITERIA:
 ${cleanPrev.length > 0 ? `ALREADY TRIED (do NOT repeat these or close paraphrases — pick fresh angles):
 ${cleanPrev.map((k) => `- ${k}`).join("\n")}
 ` : ""}
+THINK FIRST (do not output this thinking — only the final JSON):
+1. What concrete PAIN does this offering remove? (e.g. for Salesforce consultancy: messy CRM data, low adoption, broken reports, slow pipeline visibility)
+2. What TRIGGER EVENT creates urgency for this offering? (e.g. just raised funding, scaling team, new VP of sales, migrating ERP)
+3. What ADJACENT TOOLS / WORKFLOWS would a buyer mention? (e.g. spreadsheets, HubSpot migration, RevOps, sales ops)
+4. What COMPLAINTS would a buyer post publicly? (e.g. "drowning in spreadsheets", "pipeline a mess", "reports are broken")
+
 HARD RULES:
 - Return EXACTLY 5 keyword phrases.
 - Each phrase MUST be 2 or 3 words. Never 1 word, never 4+ words.
-- Use BUYER language pairing demand verbs/adjectives with the offering noun (e.g. "need recruiters", "hiring SDRs", "looking CRM", "tired Apollo", "best ATS", "switching HubSpot", "scaling outbound").
-- Each of the 5 phrases must target a DIFFERENT angle (pain, evaluation, switching, hiring trigger, growth trigger, frustration).
+- The 5 phrases MUST come from 5 DIFFERENT angles (do NOT all start with or contain the same noun). Cover at minimum: 1 pain phrase, 1 trigger-event phrase, 1 complaint phrase, 1 adjacent-workflow phrase, 1 evaluation/switch phrase.
+- AVOID monotone patterns like "verb + offering noun" repeated 5 times (e.g. all 5 ending in "salesforce" is forbidden — that just returns the same posts).
+- Use real human posting language, not marketing language. Things real people type when venting/asking on LinkedIn.
 - NEVER use vendor/seller phrasing ("our platform", "we help"). NEVER include hashtags, quotes, AND/OR operators, or punctuation.
 - Phrases must be DIFFERENT from anything in the ALREADY TRIED list (no synonyms, no plural variants).
 - Return ONLY a JSON array of 5 strings, nothing else.
 
-Example for "lead generation platform" (already tried: "need leads"):
-["tired apollo", "switching zoominfo", "best b2b leads", "scaling outbound", "hiring SDRs"]`;
+Example for "Salesforce consultancy services":
+["crm data mess", "just raised seed", "drowning in spreadsheets", "salesforce adoption low", "migrating from hubspot"]
+
+Example for "AI cold-email writer for SDRs":
+["pipeline is dry", "outbound not working", "scaling sdr team", "tired writing emails", "reply rates low"]`;
 
   try {
     const ctrl = new AbortController();
