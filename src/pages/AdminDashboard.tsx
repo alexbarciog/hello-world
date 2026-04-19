@@ -256,6 +256,44 @@ export default function AdminDashboard() {
 // ── Platform Settings Panel ──
 
 function PlatformSettingsPanel() {
+  const [testEmail, setTestEmail] = useState("alexbarciog22@gmail.com");
+  const [sending, setSending] = useState(false);
+  const [blasting, setBlasting] = useState(false);
+
+  const sendTest = async () => {
+    if (!testEmail) return toast.error("Enter a test email");
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-marketing-blast", {
+        body: { testEmail },
+      });
+      if (error) throw error;
+      if (data?.ok === false || data?.error) throw new Error(data.error || JSON.stringify(data));
+      toast.success(`Test email sent to ${testEmail}`);
+    } catch (e: any) {
+      toast.error(`Failed: ${e.message || "Unknown error"}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const sendBlast = async () => {
+    if (!confirm("Send the marketing email to ALL registered users? This cannot be undone.")) return;
+    setBlasting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-marketing-blast", {
+        body: { confirm: true },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Blast complete — sent: ${data.sent}, failed: ${data.failed} (of ${data.total})`);
+    } catch (e: any) {
+      toast.error(`Failed: ${e.message || "Unknown error"}`);
+    } finally {
+      setBlasting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="p-5 rounded-xl bg-md-surface-container/50">
@@ -263,6 +301,40 @@ function PlatformSettingsPanel() {
         <p className="text-xs text-md-on-surface-variant leading-relaxed">
           Free trial is now managed per-user from the Users tab. Expand a user row to toggle their free trial on/off and set the meeting limit before auto-charge.
         </p>
+      </div>
+
+      <div className="p-5 rounded-xl bg-md-surface-container/50 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-md-on-surface mb-1">Marketing Email Blast</h3>
+          <p className="text-xs text-md-on-surface-variant leading-relaxed">
+            Send the "Personality Prediction + AI Chat" announcement via Resend. Test first, then blast all registered users.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="email"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            placeholder="test@example.com"
+            className="flex-1 px-3 py-2 text-sm rounded-lg border border-border bg-white"
+          />
+          <button
+            onClick={sendTest}
+            disabled={sending}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-black text-white hover:bg-black/85 disabled:opacity-50 transition-colors"
+          >
+            {sending ? "Sending…" : "Send test"}
+          </button>
+        </div>
+        <div className="pt-2 border-t border-border/40">
+          <button
+            onClick={sendBlast}
+            disabled={blasting}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 transition-colors"
+          >
+            {blasting ? "Sending to all users…" : "🚀 Send blast to ALL users"}
+          </button>
+        </div>
       </div>
     </div>
   );
