@@ -6,80 +6,131 @@ const corsHeaders = {
 };
 
 const FROM = 'Intentsly Updates <updates@intentsly.com>';
-const SUBJECT = "Alex, your leads now come with a personality cheat sheet 🧠";
+const SUBJECT = "Two new things inside Intentsly →";
 const APP_URL = 'https://intentsly.com';
 
 function buildHtml(firstName: string | null) {
-  const greeting = firstName ? `Hey ${firstName},` : 'Hey,';
+  const greeting = firstName ? `Hi ${firstName},` : 'Hi,';
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${SUBJECT}</title></head>
-<body style="margin:0;padding:0;background:#f6f7f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;color:#0a0a0a;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:40px 16px;">
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>${SUBJECT}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Helvetica,Arial,sans-serif;color:#1A1A2E;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Personality Prediction + AI Chat are live. Open one lead to see the difference.</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5;padding:48px 16px;">
     <tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <tr><td style="padding:32px 40px 8px 40px;">
-          <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;color:#0a0a0a;">Intentsly</div>
+
+      <!-- Wordmark -->
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin-bottom:20px;">
+        <tr><td style="padding:0 4px;">
+          <div style="font-size:13px;font-weight:600;letter-spacing:-0.01em;color:#1A1A2E;">Intentsly</div>
+        </td></tr>
+      </table>
+
+      <!-- Card -->
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:20px;overflow:hidden;">
+
+        <!-- Eyebrow -->
+        <tr><td style="padding:44px 48px 0 48px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#6E6E80;">Product update · April 2026</div>
         </td></tr>
 
-        <tr><td style="padding:8px 40px 0 40px;">
-          <h1 style="font-size:26px;line-height:1.25;font-weight:700;letter-spacing:-0.02em;color:#0a0a0a;margin:16px 0 16px 0;">
-            We just shipped two things that change how you sell.
+        <!-- Headline -->
+        <tr><td style="padding:18px 48px 0 48px;">
+          <h1 style="font-size:32px;line-height:1.15;font-weight:700;letter-spacing:-0.025em;color:#1A1A2E;margin:0;">
+            Stop guessing how to open the conversation.
           </h1>
-          <p style="font-size:15px;line-height:1.6;color:#3a3a3a;margin:0 0 12px 0;">${greeting}</p>
-          <p style="font-size:15px;line-height:1.6;color:#3a3a3a;margin:0 0 20px 0;">
-            I'll be quick. Most outreach fails because you're guessing — guessing what to say, guessing if they're a fit, guessing how they'll react. We just killed two of those guesses.
+        </td></tr>
+
+        <!-- Lede -->
+        <tr><td style="padding:20px 48px 0 48px;">
+          <p style="font-size:16px;line-height:1.6;color:#3A3A4A;margin:0;">${greeting}</p>
+          <p style="font-size:16px;line-height:1.6;color:#3A3A4A;margin:14px 0 0 0;">
+            We shipped two things this week that change the answer to <em style="color:#1A1A2E;font-style:italic;">"who do I message, and what do I say?"</em> Both are live in your account right now.
           </p>
         </td></tr>
 
-        <tr><td style="padding:8px 40px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9fa;border-radius:12px;padding:20px;">
-            <tr><td>
-              <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#1A8FE3;margin-bottom:8px;">New · Personality Prediction</div>
-              <div style="font-size:17px;font-weight:600;letter-spacing:-0.01em;color:#0a0a0a;margin-bottom:8px;">Know how to pitch — before you send the message.</div>
-              <p style="font-size:14px;line-height:1.6;color:#55575d;margin:0;">
-                Every lead in your contacts now comes with a DISC personality read: how they communicate, what motivates them, what to avoid, and the single best opening line for <em>that specific person</em>. No more cold-template guessing.
-              </p>
-            </td></tr>
+        <!-- Divider -->
+        <tr><td style="padding:36px 48px 0 48px;">
+          <div style="height:1px;background:#EBEBED;line-height:1px;font-size:0;">&nbsp;</div>
+        </td></tr>
+
+        <!-- Feature 1 -->
+        <tr><td style="padding:32px 48px 0 48px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="44" valign="top" style="padding-right:16px;">
+                <div style="width:44px;height:44px;background:#EDEEFC;border-radius:12px;text-align:center;line-height:44px;font-size:18px;font-weight:700;color:#4F46E5;letter-spacing:-0.02em;">01</div>
+              </td>
+              <td valign="top">
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4F46E5;margin-bottom:6px;">New</div>
+                <div style="font-size:19px;font-weight:600;letter-spacing:-0.015em;color:#1A1A2E;margin-bottom:10px;">Personality Prediction</div>
+                <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0;">
+                  Every contact now comes with a DISC read: how they communicate, what motivates them, what to avoid, and the single best opening line for <em style="color:#1A1A2E;font-style:italic;">that</em> person. Built from their public footprint — no template guessing.
+                </p>
+              </td>
+            </tr>
           </table>
         </td></tr>
 
-        <tr><td style="padding:12px 40px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9f9fa;border-radius:12px;padding:20px;">
-            <tr><td>
-              <div style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#1A8FE3;margin-bottom:8px;">New · AI Chat</div>
-              <div style="font-size:17px;font-weight:600;letter-spacing:-0.01em;color:#0a0a0a;margin-bottom:8px;">Describe your ideal customer. Get the leads.</div>
-              <p style="font-size:14px;line-height:1.6;color:#55575d;margin:0;">
-                Open the new AI Chat and just type: <em>"founders of seed-stage SaaS in the US who recently posted about hiring SDRs"</em>. It searches LinkedIn, scores each profile against your ICP, and hands you a list to save in one click. No filters, no Sales Nav.
-              </p>
-            </td></tr>
+        <!-- Feature 2 -->
+        <tr><td style="padding:32px 48px 0 48px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="44" valign="top" style="padding-right:16px;">
+                <div style="width:44px;height:44px;background:#E6F1FD;border-radius:12px;text-align:center;line-height:44px;font-size:18px;font-weight:700;color:#1A8FE3;letter-spacing:-0.02em;">02</div>
+              </td>
+              <td valign="top">
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#1A8FE3;margin-bottom:6px;">New</div>
+                <div style="font-size:19px;font-weight:600;letter-spacing:-0.015em;color:#1A1A2E;margin-bottom:10px;">AI Chat — describe your buyer, get the leads</div>
+                <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0;">
+                  Type something like <em style="color:#1A1A2E;font-style:italic;">"founders of seed-stage SaaS in the US who recently posted about hiring SDRs"</em>. AI Chat searches LinkedIn, scores each profile against your ICP, and hands you a list to save in one click. No filters. No Sales Nav.
+                </p>
+              </td>
+            </tr>
           </table>
         </td></tr>
 
-        <tr><td align="center" style="padding:28px 40px 8px 40px;">
-          <a href="${APP_URL}/dashboard" style="display:inline-block;background:#0a0a0a;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 28px;border-radius:10px;letter-spacing:-0.01em;">Try them now →</a>
-        </td></tr>
-
-        <tr><td style="padding:16px 40px 8px 40px;">
-          <p style="font-size:14px;line-height:1.6;color:#3a3a3a;margin:0;">
-            Both are live in your account right now. Takes about 30 seconds to see your first personality read.
+        <!-- CTA -->
+        <tr><td style="padding:40px 48px 0 48px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr><td style="background:#1A1A2E;border-radius:12px;">
+              <a href="${APP_URL}/dashboard" style="display:inline-block;padding:15px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:-0.01em;">Open Intentsly →</a>
+            </td></tr>
+          </table>
+          <p style="font-size:13px;line-height:1.6;color:#6E6E80;margin:14px 0 0 0;">
+            Takes ~30 seconds to see the personality read on your top lead.
           </p>
         </td></tr>
 
-        <tr><td style="padding:24px 40px 32px 40px;border-top:1px solid #ececef;">
-          <p style="font-size:14px;line-height:1.6;color:#3a3a3a;margin:16px 0 4px 0;">— Alex</p>
-          <p style="font-size:13px;line-height:1.5;color:#8a8d93;margin:0;">Founder, Intentsly</p>
-          <p style="font-size:13px;line-height:1.6;color:#55575d;margin:18px 0 0 0;">
-            <strong style="color:#0a0a0a;">P.S.</strong> If the personality read on your top lead doesn't make you rewrite your next message, hit reply and tell me — I read every response.
+        <!-- Sign-off -->
+        <tr><td style="padding:44px 48px 0 48px;">
+          <div style="height:1px;background:#EBEBED;line-height:1px;font-size:0;margin-bottom:28px;">&nbsp;</div>
+          <p style="font-size:15px;line-height:1.6;color:#1A1A2E;margin:0;font-weight:500;">— Alex</p>
+          <p style="font-size:13px;line-height:1.5;color:#6E6E80;margin:2px 0 0 0;">Founder, Intentsly</p>
+          <p style="font-size:14px;line-height:1.65;color:#3A3A4A;margin:22px 0 0 0;">
+            <span style="color:#1A1A2E;font-weight:600;">P.S.</span> If the personality read on your top lead doesn't make you rewrite your next message, hit reply and tell me. I read every response.
           </p>
         </td></tr>
 
-        <tr><td style="padding:20px 40px;background:#fafafa;text-align:center;">
-          <p style="font-size:11px;line-height:1.5;color:#9a9da3;margin:0;">
+        <tr><td style="padding:48px;"></td></tr>
+      </table>
+
+      <!-- Footer -->
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;margin-top:20px;">
+        <tr><td align="center" style="padding:0 24px;">
+          <p style="font-size:12px;line-height:1.6;color:#6E6E80;margin:0;">
             You're receiving this because you have an Intentsly account.<br>
-            Intentsly · <a href="${APP_URL}" style="color:#9a9da3;text-decoration:underline;">intentsly.com</a>
+            <a href="${APP_URL}" style="color:#6E6E80;text-decoration:underline;">intentsly.com</a>
           </p>
         </td></tr>
       </table>
+
     </td></tr>
   </table>
 </body></html>`;
