@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const FROM = 'Intentsly Updates <updates@intentsly.com>';
-const SUBJECT = "Two new things inside Intentsly →";
+const SUBJECT = "Heads up: Intentsly pricing is going up →";
 const APP_URL = 'https://intentsly.com';
 
 function buildHtml(firstName: string | null) {
@@ -20,7 +20,7 @@ function buildHtml(firstName: string | null) {
 <title>${SUBJECT}</title>
 </head>
 <body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',Helvetica,Arial,sans-serif;color:#1A1A2E;-webkit-font-smoothing:antialiased;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Personality Prediction + AI Chat are live. Open one lead to see the difference.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Intentsly is going from $59 to $97/mo. Lock in $59 before it changes.</div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5;padding:48px 16px;">
     <tr><td align="center">
@@ -37,13 +37,13 @@ function buildHtml(firstName: string | null) {
 
         <!-- Eyebrow -->
         <tr><td style="padding:44px 48px 0 48px;">
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#6E6E80;">Product update · April 2026</div>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#6E6E80;">Pricing update · A heads-up for early users</div>
         </td></tr>
 
         <!-- Headline -->
         <tr><td style="padding:18px 48px 0 48px;">
           <h1 style="font-size:32px;line-height:1.15;font-weight:700;letter-spacing:-0.025em;color:#1A1A2E;margin:0;">
-            Stop guessing how to open the conversation.
+            Intentsly is going from <span style="text-decoration:line-through;color:#9A9AA8;font-weight:600;">$59</span> to $97/mo.
           </h1>
         </td></tr>
 
@@ -51,60 +51,59 @@ function buildHtml(firstName: string | null) {
         <tr><td style="padding:20px 48px 0 48px;">
           <p style="font-size:16px;line-height:1.6;color:#3A3A4A;margin:0;">${greeting}</p>
           <p style="font-size:16px;line-height:1.6;color:#3A3A4A;margin:14px 0 0 0;">
-            We shipped two things this week that change the answer to <em style="color:#1A1A2E;font-style:italic;">"who do I message, and what do I say?"</em> Both are live in your account right now.
+            Quick, honest note before you see it on the pricing page. Intentsly is moving from <strong style="color:#1A1A2E;">$59/mo to $97/mo</strong>. The product has grown a lot — Personality Prediction, AI Chat, signal agents across LinkedIn, Reddit and X — and the price needs to catch up to what it actually does.
+          </p>
+          <p style="font-size:16px;line-height:1.6;color:#3A3A4A;margin:14px 0 0 0;">
+            But you were here early. So here's the deal:
           </p>
         </td></tr>
 
-        <!-- Divider -->
-        <tr><td style="padding:36px 48px 0 48px;">
-          <div style="height:1px;background:#EBEBED;line-height:1px;font-size:0;">&nbsp;</div>
-        </td></tr>
-
-        <!-- Feature 1 -->
-        <tr><td style="padding:32px 48px 0 48px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <!-- Price comparison card -->
+        <tr><td style="padding:28px 48px 0 48px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F7F7F9;border-radius:16px;">
             <tr>
-              <td width="44" valign="top" style="padding-right:16px;">
-                <div style="width:44px;height:44px;background:#EDEEFC;border-radius:12px;text-align:center;line-height:44px;font-size:18px;font-weight:700;color:#4F46E5;letter-spacing:-0.02em;">01</div>
+              <td width="50%" valign="top" style="padding:24px 24px 24px 28px;border-right:1px solid #EBEBED;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#10B981;margin-bottom:8px;">Lock in now</div>
+                <div style="font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#1A1A2E;line-height:1;">$59<span style="font-size:14px;font-weight:500;color:#6E6E80;">/mo</span></div>
+                <div style="font-size:13px;line-height:1.55;color:#6E6E80;margin-top:10px;">Activate before the change and you keep $59/mo for as long as your subscription stays active.</div>
               </td>
-              <td valign="top">
-                <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#4F46E5;margin-bottom:6px;">New</div>
-                <div style="font-size:19px;font-weight:600;letter-spacing:-0.015em;color:#1A1A2E;margin-bottom:10px;">Personality Prediction</div>
-                <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0;">
-                  Every contact now comes with a DISC read: how they communicate, what motivates them, what to avoid, and the single best opening line for <em style="color:#1A1A2E;font-style:italic;">that</em> person. Built from their public footprint — no template guessing.
-                </p>
+              <td width="50%" valign="top" style="padding:24px 28px 24px 24px;">
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#6E6E80;margin-bottom:8px;">New price</div>
+                <div style="font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#1A1A2E;line-height:1;">$97<span style="font-size:14px;font-weight:500;color:#6E6E80;">/mo</span></div>
+                <div style="font-size:13px;line-height:1.55;color:#6E6E80;margin-top:10px;">What every new user will pay starting next week.</div>
               </td>
             </tr>
           </table>
         </td></tr>
 
-        <!-- Feature 2 -->
+        <!-- Why -->
         <tr><td style="padding:32px 48px 0 48px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td width="44" valign="top" style="padding-right:16px;">
-                <div style="width:44px;height:44px;background:#E6F1FD;border-radius:12px;text-align:center;line-height:44px;font-size:18px;font-weight:700;color:#1A8FE3;letter-spacing:-0.02em;">02</div>
-              </td>
-              <td valign="top">
-                <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#1A8FE3;margin-bottom:6px;">New</div>
-                <div style="font-size:19px;font-weight:600;letter-spacing:-0.015em;color:#1A1A2E;margin-bottom:10px;">AI Chat — describe your buyer, get the leads</div>
-                <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0;">
-                  Type something like <em style="color:#1A1A2E;font-style:italic;">"founders of seed-stage SaaS in the US who recently posted about hiring SDRs"</em>. AI Chat searches LinkedIn, scores each profile against your ICP, and hands you a list to save in one click. No filters. No Sales Nav.
-                </p>
-              </td>
-            </tr>
-          </table>
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#6E6E80;margin-bottom:10px;">Why we're raising it</div>
+          <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0;">
+            Intentsly today is a different product than the one you signed up for. You now get a full AI SDR running on LinkedIn, real-time intent signals from Reddit and X, DISC-based personality reads on every contact, and an AI Chat that finds buyers from a sentence. $59 doesn't reflect that anymore — and honestly, keeping it there means we can't keep shipping at the pace you've seen.
+          </p>
+        </td></tr>
+
+        <!-- What you should do -->
+        <tr><td style="padding:32px 48px 0 48px;">
+          <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#6E6E80;margin-bottom:10px;">What this means for you</div>
+          <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0 0 10px 0;">
+            <strong style="color:#1A1A2E;">If you're already subscribed:</strong> nothing changes. You're locked at your current price.
+          </p>
+          <p style="font-size:15px;line-height:1.65;color:#3A3A4A;margin:0;">
+            <strong style="color:#1A1A2E;">If you haven't activated yet:</strong> add a card now (you only pay after your first booked meeting — that part hasn't changed) and you'll be grandfathered in at $59/mo. Wait, and you'll start at $97.
+          </p>
         </td></tr>
 
         <!-- CTA -->
-        <tr><td style="padding:40px 48px 0 48px;">
+        <tr><td style="padding:36px 48px 0 48px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr><td style="background:#1A1A2E;border-radius:12px;">
-              <a href="${APP_URL}/dashboard" style="display:inline-block;padding:15px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:-0.01em;">Open Intentsly →</a>
+              <a href="${APP_URL}/billing" style="display:inline-block;padding:15px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:-0.01em;">Lock in $59/mo →</a>
             </td></tr>
           </table>
           <p style="font-size:13px;line-height:1.6;color:#6E6E80;margin:14px 0 0 0;">
-            Takes ~30 seconds to see the personality read on your top lead.
+            No charge today — Pay-on-Success still applies. You only get billed after Intentsly books you a meeting.
           </p>
         </td></tr>
 
@@ -114,7 +113,7 @@ function buildHtml(firstName: string | null) {
           <p style="font-size:15px;line-height:1.6;color:#1A1A2E;margin:0;font-weight:500;">— Alex</p>
           <p style="font-size:13px;line-height:1.5;color:#6E6E80;margin:2px 0 0 0;">Founder, Intentsly</p>
           <p style="font-size:14px;line-height:1.65;color:#3A3A4A;margin:22px 0 0 0;">
-            <span style="color:#1A1A2E;font-weight:600;">P.S.</span> If the personality read on your top lead doesn't make you rewrite your next message, hit reply and tell me. I read every response.
+            <span style="color:#1A1A2E;font-weight:600;">P.S.</span> I'm sending this before the price changes, not after, because that's how I'd want to be told. If you have questions, just hit reply.
           </p>
         </td></tr>
 
