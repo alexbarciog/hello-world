@@ -107,22 +107,30 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { testEmail, confirm } = body as { testEmail?: string; confirm?: boolean };
 
-    // Auth: require admin
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing auth' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // Service-role bypass (for internal/admin curl tests)
+    const isServiceRole = authHeader === `Bearer ${SERVICE_ROLE}`;
+
+    let isAdmin = isServiceRole;
+    if (!isServiceRole) {
+      // Auth: require admin
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: 'Missing auth' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      const userClient = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user } } = await userClient.auth.getUser();
+      if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+      const adminCheck = createClient(SUPABASE_URL, SERVICE_ROLE);
+      const { data } = await adminCheck.rpc('has_role', { _user_id: user.id, _role: 'admin' });
+      isAdmin = !!data;
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
-    const userClient = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-    const { data: isAdmin } = await admin.rpc('has_role', { _user_id: user.id, _role: 'admin' });
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: 'Admin only' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
 
     // TEST MODE
     if (testEmail) {
