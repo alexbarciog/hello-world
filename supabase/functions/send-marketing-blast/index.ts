@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { testEmail, confirm } = body as { testEmail?: string; confirm?: boolean };
 
+    const authHeader = req.headers.get('Authorization');
     // Service-role bypass (for internal/admin curl tests)
     const isServiceRole = authHeader === `Bearer ${SERVICE_ROLE}`;
 
