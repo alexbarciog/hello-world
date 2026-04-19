@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.public-ai-chat]
 verify_jwt = false
+
+[functions.send-marketing-blast]
+verify_jwt = false
