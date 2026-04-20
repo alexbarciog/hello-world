@@ -1,104 +1,41 @@
 import { useEffect } from "react";
-import { ArrowUpRight, TrendingUp, Calendar, Sparkles, Target, Zap, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, TrendingUp, Calendar, Sparkles, Target, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
-import intentslyIcon from "@/assets/intentsly-icon.png";
-import massoftindLogo from "@/assets/logo-massoftind.png";
-import logicmelonLogo from "@/assets/logo-logicmelon.png";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
-
-interface CaseStudy {
-  slug: string;
-  company: string;
-  domain: string;
-  industry: string;
-  headline: string;
-  result: string;
-  resultLabel: string;
-  timeframe: string;
-  meetings: number;
-  challenge: string;
-  solution: string;
-  outcome: string;
-  bgClass: string;
-  accentText: string;
-  accentBg: string;
-  logo?: string;
-}
-
-const caseStudies: CaseStudy[] = [
-  {
-    slug: "intentsly",
-    company: "Intentsly",
-    domain: "intentsly.com",
-    industry: "AI Sales Platform",
-    headline: "How we used our own platform to book 14 meetings in 2 weeks",
-    result: "14",
-    resultLabel: "meetings booked",
-    timeframe: "2 weeks",
-    meetings: 14,
-    challenge:
-      "Launching a new AI sales platform in a noisy market — competing against established outreach tools with massive budgets and existing brand awareness.",
-    solution:
-      "We deployed our own intent signals + AI SDR on LinkedIn. Targeted founders complaining about cold outreach burnout, ran conversational AI replies, and let the system book demos automatically.",
-    outcome:
-      "14 qualified demos in 14 days. Zero manual outreach. Reply rate 4× our previous cold campaigns. Most leads came from intent signals we caught in real-time.",
-    bgClass: "bg-[#1A8FE3]",
-    accentText: "text-[#1A8FE3]",
-    accentBg: "bg-[#1A8FE3]/10",
-    logo: intentslyIcon,
-  },
-  {
-    slug: "massoftind",
-    company: "Massoftind",
-    domain: "massoftind.com",
-    industry: "Software Development Agency",
-    headline: "A dev agency booked 3 qualified meetings in less than a week",
-    result: "3",
-    resultLabel: "meetings booked",
-    timeframe: "< 1 week",
-    meetings: 3,
-    challenge:
-      "A boutique software agency tired of low-conversion cold email and unreliable referrals. They needed a predictable channel for inbound-quality conversations without hiring an SDR.",
-    solution:
-      "We set up a Conversational AI campaign targeting startup founders and CTOs actively posting about engineering bottlenecks. Each invite was personalized off the lead's actual signal.",
-    outcome:
-      "3 demo calls in their first 6 days live — all founders with active hiring or build-vs-buy posts. Two converted to scoping calls within the same week.",
-    bgClass: "bg-[#0F172A]",
-    accentText: "text-[#1A1A2E]",
-    accentBg: "bg-[#EDEEFC]",
-    logo: massoftindLogo,
-  },
-  {
-    slug: "logicmelon",
-    company: "LogicMelon",
-    domain: "logicmelon.com",
-    industry: "HR Tech / Recruitment Software",
-    headline: "An enterprise recruitment platform booked a meeting in 2 days",
-    result: "1",
-    resultLabel: "meeting in 48h",
-    timeframe: "2 days",
-    meetings: 1,
-    challenge:
-      "Selling enterprise recruitment software requires reaching busy HR directors and TA leaders — a notoriously hard audience to break into via cold channels.",
-    solution:
-      "We launched a high-precision agent surfacing TA leaders engaging with hiring-pain content on LinkedIn. AI SDR opened with the lead's specific signal — not a generic pitch.",
-    outcome:
-      "First qualified meeting booked within 48 hours of going live, with an HR Director at a 500+ employee org. Pipeline started compounding from week one.",
-    bgClass: "bg-[#C8FF00]",
-    accentText: "text-[#1A1A2E]",
-    accentBg: "bg-[#C8FF00]/30",
-    logo: logicmelonLogo,
-  },
-];
-
-const totalMeetings = caseStudies.reduce((sum, c) => sum + c.meetings, 0);
+import { caseStudies, totalMeetings } from "@/data/caseStudies";
 
 const CaseStudies = () => {
   useEffect(() => {
     ttqViewContent("Case Studies", "case-studies");
-    document.title = "Case Studies — Real customers booking real meetings | Intentsly";
+    const title = "Case Studies — Real customers booking real meetings | Intentsly";
+    const description =
+      "Real teams using Intentsly to book qualified LinkedIn meetings in days, not quarters. Read the playbooks behind 18+ meetings booked across SaaS, dev agencies, and enterprise HR Tech.";
+    document.title = title;
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+      if (!el) {
+        if (selector.startsWith("link")) {
+          el = document.createElement("link");
+          (el as HTMLLinkElement).rel = "canonical";
+        } else {
+          el = document.createElement("meta");
+          const name = selector.match(/\[(name|property)="([^"]+)"\]/);
+          if (name) (el as HTMLMetaElement).setAttribute(name[1], name[2]);
+        }
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+
+    setMeta('meta[name="description"]', "content", description);
+    setMeta('meta[property="og:title"]', "content", title);
+    setMeta('meta[property="og:description"]', "content", description);
+    setMeta('meta[property="og:type"]', "content", "website");
+    setMeta('link[rel="canonical"]', "href", `${window.location.origin}/case-studies`);
   }, []);
 
   return (
@@ -191,8 +128,10 @@ const CaseStudies = () => {
             className="grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-4 items-stretch"
           >
             {/* Visual side */}
-            <div
-              className={`lg:col-span-5 ${idx % 2 === 1 ? "lg:order-2" : ""} relative rounded-[28px] overflow-hidden min-h-[340px] ${study.bgClass} flex items-center justify-center p-10`}
+            <Link
+              to={`/case-studies/${study.slug}`}
+              aria-label={`Read the ${study.company} case study`}
+              className={`lg:col-span-5 ${idx % 2 === 1 ? "lg:order-2" : ""} relative rounded-[28px] overflow-hidden min-h-[340px] ${study.bgClass} flex items-center justify-center p-10 group transition-transform hover:scale-[1.005]`}
             >
               {/* Decorative grid */}
               <div className="absolute inset-0 opacity-20" style={{
@@ -212,7 +151,7 @@ const CaseStudies = () => {
                   in {study.timeframe}
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Copy side */}
             <div className={`lg:col-span-7 ${idx % 2 === 1 ? "lg:order-1" : ""} bg-[#f9f9fa] rounded-[28px] p-8 md:p-12 flex flex-col justify-center`}>
@@ -231,7 +170,9 @@ const CaseStudies = () => {
               </div>
 
               <h3 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight leading-[1.1] text-foreground mb-8">
-                {study.headline}
+                <Link to={`/case-studies/${study.slug}`} className="hover:underline underline-offset-4">
+                  {study.headline}
+                </Link>
               </h3>
 
               <div className="grid sm:grid-cols-3 gap-3 mb-8">
@@ -240,9 +181,18 @@ const CaseStudies = () => {
                 <DetailBlock icon={TrendingUp} label="Outcome" body={study.outcome} />
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-foreground/50">
-                <Sparkles className="w-3.5 h-3.5" />
-                Powered by Intentsly intent signals + Conversational AI SDR
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2 text-xs text-foreground/50">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Powered by Intentsly intent signals + Conversational AI SDR
+                </div>
+                <Link
+                  to={`/case-studies/${study.slug}`}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:gap-2 transition-all"
+                >
+                  Read the full story
+                  <ArrowUpRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </article>
