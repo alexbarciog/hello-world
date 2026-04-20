@@ -749,6 +749,12 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Restricted countries / roles (hard ban — applies in both modes)
+        if (isRestricted(fp, icp.restrictedCountries, icp.restrictedRoles)) {
+          pipelineStats.excluded_competitor_employee++;
+          continue;
+        }
+
         // Competitor employee exclusion (global list)
         if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) {
           pipelineStats.excluded_competitor_employee++;
@@ -1027,6 +1033,7 @@ Deno.serve(async (req) => {
                 if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { pipelineStats.excluded_own_company++; continue; }
                 // Explicit competitor employee exclusion: skip people who work at THIS competitor
                 if (worksAtCompany(fp, companyName)) { pipelineStats.excluded_competitor_direct_employee = (pipelineStats.excluded_competitor_direct_employee || 0) + 1; continue; }
+                if (isRestricted(fp, icp.restrictedCountries, icp.restrictedRoles)) { pipelineStats.excluded_competitor_employee++; continue; }
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { pipelineStats.excluded_competitor_employee++; continue; }
                 const hl = fp.headline || fp.title || '';
                 if (isClearlyIrrelevant(hl)) { pipelineStats.excluded_irrelevant_title++; continue; }

@@ -365,6 +365,7 @@ Deno.serve(async (req) => {
             const match = scoreProfileAgainstICP(fullProfile, icp);
             const hl = fullProfile.headline || fullProfile.title || '';
             if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fullProfile, 'icp_match_failed'); continue; }
+            if (isRestricted(fullProfile, icp.restrictedCountries, icp.restrictedRoles)) { diag.excluded_competitor++; continue; }
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
             // Fix 5: seller filter — reject engagers whose headline screams "I sell this"
             if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
@@ -467,6 +468,7 @@ Deno.serve(async (req) => {
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
               if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
+              if (isRestricted(fp, icp.restrictedCountries, icp.restrictedRoles)) { diag.excluded_competitor++; continue; }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
               // Fix 5: seller filter
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }

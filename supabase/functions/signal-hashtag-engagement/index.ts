@@ -429,6 +429,7 @@ Deno.serve(async (req) => {
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
           if (!matchesIndustry(fullProfile, match, icp)) { diag.excluded_no_icp_match++; continue; }
+          if (isRestricted(fullProfile, icp.restrictedCountries, icp.restrictedRoles)) { diag.excluded_competitor++; continue; }
           if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
           // Fix 5: seller filter
           if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
