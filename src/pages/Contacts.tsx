@@ -42,6 +42,8 @@ export default function Contacts() {
   const [selectNumber, setSelectNumber] = useState(25);
   const selectPopoverRef = useRef<HTMLDivElement>(null);
   const [agents, setAgents] = useState<Record<string, string>>({});
+  // Map of normalized list name -> agent name (fallback when lists.source_agent_id is not set)
+  const [agentsByListName, setAgentsByListName] = useState<Record<string, string>>({});
   const [sdrActiveContacts, setSdrActiveContacts] = useState<Record<string, string>>({}); // contact_id -> connection_request_id
   const [stoppingSDR, setStoppingSDR] = useState<Set<string>>(new Set());
   const [insightsOpen, setInsightsOpen] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function Contacts() {
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
       supabase.from("campaign_connection_requests").select("id, contact_id, status, sent_at, accepted_at, current_step, conversation_stopped, campaign_id").eq("user_id", user.id).order("sent_at", { ascending: false }),
       supabase.from("meetings" as any).select("*").eq("user_id", user.id).order("scheduled_at", { ascending: true }),
-      supabase.from("signal_agents").select("id, name").eq("user_id", user.id),
+      supabase.from("signal_agents").select("id, name, leads_list_name").eq("user_id", user.id),
       supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
     ]);
 
@@ -163,13 +165,19 @@ export default function Contacts() {
       setSdrActiveContacts(sdrMap);
     }
 
-    // Build agents map (id -> name)
+    // Build agents map (id -> name) and (normalized list-name -> agent name)
     if (agentsRes.data) {
       const aMap: Record<string, string> = {};
-      for (const a of agentsRes.data as { id: string; name: string }[]) {
+      const byListName: Record<string, string> = {};
+      for (const a of agentsRes.data as { id: string; name: string; leads_list_name: string | null }[]) {
         aMap[a.id] = a.name;
+        const candidates = [a.leads_list_name, a.name].filter(Boolean) as string[];
+        for (const c of candidates) {
+          byListName[c.trim().toLowerCase()] = a.name;
+        }
       }
       setAgents(aMap);
+      setAgentsByListName(byListName);
     }
 
     setLoading(false);
@@ -403,9 +411,15 @@ export default function Contacts() {
     const listIds = contactListMap[contactId] || [];
     for (const lid of listIds) {
       const list = lists.find((l) => l.id === lid);
-      if (list?.source_agent_id && agents[list.source_agent_id]) {
+      if (!list) continue;
+      // 1) Direct link via lists.source_agent_id
+      if (list.source_agent_id && agents[list.source_agent_id]) {
         return agents[list.source_agent_id];
       }
+      // 2) Fallback: match by list name -> agent (covers lists created before
+      //    source_agent_id was set, or lists that share a name with an agent).
+      const byName = agentsByListName[list.name?.trim().toLowerCase() || ""];
+      if (byName) return byName;
     }
     return null;
   }
