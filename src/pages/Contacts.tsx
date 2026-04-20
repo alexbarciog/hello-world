@@ -5,7 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
-  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock,
+  Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock, Bot,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -33,6 +33,7 @@ export default function Contacts() {
   const [page, setPage] = useState(1);
   const [listFilter, setListFilter] = useState<string>("all");
   const [signalFilter, setSignalFilter] = useState<string>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("all");
   const [showCreateList, setShowCreateList] = useState(false);
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
@@ -346,6 +347,13 @@ export default function Contacts() {
     if (signalFilter !== "all") {
       result = result.filter((c) => getSignalType(c.signal) === signalFilter);
     }
+    if (agentFilter !== "all") {
+      if (agentFilter === "__none__") {
+        result = result.filter((c) => !getContactAgentName(c.id));
+      } else {
+        result = result.filter((c) => getContactAgentName(c.id) === agentFilter);
+      }
+    }
     if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
     return result.filter(
@@ -355,7 +363,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter, signalFilter, tab, contactListMap, getSignalType]);
+  }, [contacts, searchQuery, listFilter, signalFilter, agentFilter, tab, contactListMap, lists, agents, agentsByListName, getSignalType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
@@ -537,6 +545,38 @@ export default function Contacts() {
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
           </div>
+
+          {/* Source Agent filter dropdown */}
+          {(() => {
+            // Build counts per agent name across loaded contacts
+            const agentCounts: Record<string, number> = {};
+            let noneCount = 0;
+            for (const c of contacts) {
+              const name = getContactAgentName(c.id);
+              if (name) agentCounts[name] = (agentCounts[name] || 0) + 1;
+              else noneCount += 1;
+            }
+            const agentNames = Array.from(new Set(Object.values(agents))).sort();
+            return (
+              <div className="relative">
+                <Bot className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                <select
+                  value={agentFilter}
+                  onChange={(e) => { setAgentFilter(e.target.value); setPage(1); }}
+                  className="border border-border rounded-lg pl-7 pr-7 py-2 text-xs bg-background focus:outline-none appearance-none text-foreground"
+                >
+                  <option value="all">All agents</option>
+                  {agentNames.map((name) => (
+                    <option key={name} value={name}>{name} ({agentCounts[name] || 0})</option>
+                  ))}
+                  {noneCount > 0 && (
+                    <option value="__none__">No agent ({noneCount})</option>
+                  )}
+                </select>
+                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+              </div>
+            );
+          })()}
           {selectedIds.size > 0 && (
             <>
               <button
