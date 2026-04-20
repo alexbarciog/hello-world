@@ -8,7 +8,7 @@ import { ttqViewContent } from "@/lib/tiktok-pixel";
 import { caseStudies, getCaseStudyBySlug } from "@/data/caseStudies";
 
 const setOrCreateMeta = (selector: string, value: string) => {
-  let el = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+  let el = document.head.querySelector(selector) as HTMLElement | null;
   if (!el) {
     if (selector.startsWith("link")) {
       const link = document.createElement("link");
@@ -18,7 +18,7 @@ const setOrCreateMeta = (selector: string, value: string) => {
       const s = document.createElement("script");
       s.type = "application/ld+json";
       s.id = "case-study-jsonld";
-      el = s as unknown as HTMLMetaElement;
+      el = s;
     } else {
       const meta = document.createElement("meta");
       const m = selector.match(/\[(name|property)="([^"]+)"\]/);

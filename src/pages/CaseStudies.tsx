@@ -128,8 +128,10 @@ const CaseStudies = () => {
             className="grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-4 items-stretch"
           >
             {/* Visual side */}
-            <div
-              className={`lg:col-span-5 ${idx % 2 === 1 ? "lg:order-2" : ""} relative rounded-[28px] overflow-hidden min-h-[340px] ${study.bgClass} flex items-center justify-center p-10`}
+            <Link
+              to={`/case-studies/${study.slug}`}
+              aria-label={`Read the ${study.company} case study`}
+              className={`lg:col-span-5 ${idx % 2 === 1 ? "lg:order-2" : ""} relative rounded-[28px] overflow-hidden min-h-[340px] ${study.bgClass} flex items-center justify-center p-10 group transition-transform hover:scale-[1.005]`}
             >
               {/* Decorative grid */}
               <div className="absolute inset-0 opacity-20" style={{
@@ -149,7 +151,7 @@ const CaseStudies = () => {
                   in {study.timeframe}
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Copy side */}
             <div className={`lg:col-span-7 ${idx % 2 === 1 ? "lg:order-1" : ""} bg-[#f9f9fa] rounded-[28px] p-8 md:p-12 flex flex-col justify-center`}>
@@ -168,7 +170,9 @@ const CaseStudies = () => {
               </div>
 
               <h3 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight leading-[1.1] text-foreground mb-8">
-                {study.headline}
+                <Link to={`/case-studies/${study.slug}`} className="hover:underline underline-offset-4">
+                  {study.headline}
+                </Link>
               </h3>
 
               <div className="grid sm:grid-cols-3 gap-3 mb-8">
@@ -177,9 +181,18 @@ const CaseStudies = () => {
                 <DetailBlock icon={TrendingUp} label="Outcome" body={study.outcome} />
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-foreground/50">
-                <Sparkles className="w-3.5 h-3.5" />
-                Powered by Intentsly intent signals + Conversational AI SDR
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2 text-xs text-foreground/50">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Powered by Intentsly intent signals + Conversational AI SDR
+                </div>
+                <Link
+                  to={`/case-studies/${study.slug}`}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:gap-2 transition-all"
+                >
+                  Read the full story
+                  <ArrowUpRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </article>
