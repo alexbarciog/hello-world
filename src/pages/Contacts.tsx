@@ -590,10 +590,10 @@ export default function Contacts() {
             )}
             {/* ── Desktop table ── */}
             <div className="hidden md:block border-x border-border overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full border-separate border-spacing-0">
                 <thead>
-                  <tr className="border-b border-border bg-muted/30">
-                    <th className="w-10 px-4 py-3 relative">
+                  <tr className="bg-muted/30">
+                    <th className="sticky left-0 z-20 bg-muted/30 w-10 px-4 py-3 relative border-b border-border">
                       <input
                         type="checkbox"
                         checked={selectedIds.size > 0}
@@ -675,8 +675,17 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    {["Contact", "Signal", "Score", "Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
-                      <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
+                    <th style={{ left: 40, width: 280 }} className="sticky z-20 bg-muted/30 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
+                      Contact
+                    </th>
+                    <th style={{ left: 320, width: 180 }} className="sticky z-20 bg-muted/30 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border">
+                      Signal
+                    </th>
+                    <th style={{ left: 500, width: 90 }} className="sticky z-20 bg-muted/30 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
+                      Score
+                    </th>
+                    {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
+                      <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
                         {h}
                       </th>
                     ))}
@@ -686,12 +695,12 @@ export default function Contacts() {
                   {paged.map((c) => {
                     const cLists = getContactListNames(c.id);
                     return (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                      <td className="w-10 px-4 py-3">
+                    <tr key={c.id} className="group hover:bg-muted/20 transition-colors">
+                      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/20 w-10 px-4 py-3 border-b border-border/50">
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
-                      <td className="px-3 py-3">
+                      <td style={{ left: 40, width: 280 }} className="sticky z-10 bg-background group-hover:bg-muted/20 px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
@@ -727,7 +736,7 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[220px]">
+                      <td style={{ left: 320, width: 180 }} className="sticky z-10 bg-background group-hover:bg-muted/20 px-3 py-3 max-w-[220px] border-b border-border/50">
                         {c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
                             {c.signal}
@@ -736,7 +745,7 @@ export default function Contacts() {
                           <span className="text-xs text-muted-foreground truncate block max-w-[200px]">{c.signal}</span>
                         )}
                       </td>
-                      <td className="px-3 py-3">
+                      <td style={{ left: 500, width: 90 }} className="sticky z-10 bg-background group-hover:bg-muted/20 px-3 py-3 border-b border-r border-border/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
                         <div className="flex items-center gap-0.5">
                           {(() => {
                             const tier = c.relevance_tier?.toLowerCase();
@@ -747,22 +756,22 @@ export default function Contacts() {
                           })()}
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[180px]">
+                      <td className="px-3 py-3 max-w-[180px] border-b border-border/50">
                         <span className="text-xs text-foreground truncate block max-w-[170px]" title={c.title || ""}>
                           {c.title || <span className="text-muted-foreground">—</span>}
                         </span>
                       </td>
-                      <td className="px-3 py-3 max-w-[160px]">
+                      <td className="px-3 py-3 max-w-[160px] border-b border-border/50">
                         <span className="text-xs text-foreground truncate block max-w-[150px]" title={c.company || ""}>
                           {c.company || <span className="text-muted-foreground">—</span>}
                         </span>
                       </td>
-                      <td className="px-3 py-3 max-w-[140px]">
+                      <td className="px-3 py-3 max-w-[140px] border-b border-border/50">
                         <span className="text-xs text-muted-foreground truncate block max-w-[130px]" title={c.industry || ""}>
                           {c.industry || <span className="text-muted-foreground/60">—</span>}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex flex-col gap-1">
                           {c.lead_status === 'meeting_booked' && meetings[c.id] && (
                             <div className="flex items-center gap-1">
@@ -805,10 +814,10 @@ export default function Contacts() {
                           })()}
                         </div>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <span className="text-xs text-muted-foreground">{timeAgo(c.imported_at)}</span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex flex-wrap gap-1">
                           {cLists.length > 0 ? cLists.map((name) => (
                             <span key={name} className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full truncate max-w-[100px]">
@@ -819,7 +828,7 @@ export default function Contacts() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         {(() => {
                           const agentName = getContactAgentName(c.id);
                           return agentName ? (
@@ -831,7 +840,7 @@ export default function Contacts() {
                           );
                         })()}
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-1 relative">
                           {sdrActiveContacts[c.id] && (
                             <button
