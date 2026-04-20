@@ -477,6 +477,32 @@ export default function Contacts() {
           <div className="hidden md:flex items-center gap-2">
             {selectedIds.size > 0 && (
               <>
+                {/* Bulk approve/reject — show when any selected contacts are pending */}
+                {(() => {
+                  const pendingSelected = Array.from(selectedIds).filter((id) => {
+                    const c = contacts.find((ct) => ct.id === id);
+                    return c && (c as any).approval_status === 'pending';
+                  });
+                  if (pendingSelected.length === 0) return null;
+                  return (
+                    <>
+                      <button
+                        onClick={() => handleApproveReject(pendingSelected, 'approved')}
+                        disabled={approvingIds.size > 0}
+                        className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 border border-emerald-200 rounded-lg px-3 py-2 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30 transition-colors disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve ({pendingSelected.length})
+                      </button>
+                      <button
+                        onClick={() => handleApproveReject(pendingSelected, 'rejected')}
+                        disabled={approvingIds.size > 0}
+                        className="flex items-center gap-1.5 text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-2 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Reject ({pendingSelected.length})
+                      </button>
+                    </>
+                  );
+                })()}
                 <button
                   onClick={() => setShowCreateList(true)}
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
@@ -486,7 +512,7 @@ export default function Contacts() {
                 <button
                   onClick={handleDeleteSelected}
                   disabled={deleting}
-                  className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-2 hover:bg-destructive/10 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> {deleting ? 'Deleting...' : 'Delete'}
                 </button>
