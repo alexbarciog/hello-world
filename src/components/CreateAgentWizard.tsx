@@ -136,6 +136,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [showNewList, setShowNewList] = useState(false);
   const [existingLists, setExistingLists] = useState<string[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
+  const [manualApproval, setManualApproval] = useState(false);
 
   // Dropdowns
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -158,6 +159,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         setRestrictedRoles((data as any).icp_restricted_roles || []);
         setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
         setLeadsListName(data.leads_list_name || "");
+        setManualApproval((data as any).manual_approval || false);
         const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
         if (config?.enabled) {
           const map: Record<string, boolean> = {};
@@ -400,9 +402,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         enabled: activeSubSignals,
         keywords: signalKeywords,
       },
-      // If no list selected, default to the agent name so the auto-created
-      // list is predictable and filterable in the Contacts tab.
       leads_list_name: (leadsListName || agentName || "My Agent").trim(),
+      manual_approval: manualApproval,
     };
 
     let error;
@@ -1115,6 +1116,40 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                     <p className="text-xs text-muted-foreground mt-4">
                       After creating the agent, you can launch an outreach campaign for this list. You'll be able to filter these leads in the Contacts tab by list name.
                     </p>
+                  </div>
+
+                  {/* Manual Approval Toggle */}
+                  <div className="border border-border rounded-xl p-5 mt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 mr-4">
+                        <p className="font-semibold text-sm text-foreground">Require manual approval</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Review and approve each lead before they are available for campaigns. You'll receive a daily email digest of new leads needing review.
+                        </p>
+                      </div>
+                      <div
+                        onClick={() => setManualApproval(!manualApproval)}
+                        className={`w-11 h-6 rounded-full cursor-pointer transition-colors relative shrink-0 ${manualApproval ? "bg-foreground" : "bg-border"}`}
+                      >
+                        <div className={`absolute top-0.5 w-5 h-5 bg-background rounded-full shadow transition-transform ${manualApproval ? "translate-x-5" : "translate-x-0.5"}`} />
+                      </div>
+                    </div>
+                    {manualApproval && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="mt-3 p-3 rounded-lg bg-muted/50 border border-border/50"
+                      >
+                        <div className="flex items-start gap-2">
+                          <Info className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <p>New leads will appear as <strong className="text-foreground">Pending</strong> in the Contacts tab until you approve or reject them.</p>
+                            <p>Only approved leads will be used in outreach campaigns.</p>
+                            <p>You'll get a daily email when new leads are waiting for your review.</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
               </motion.div>

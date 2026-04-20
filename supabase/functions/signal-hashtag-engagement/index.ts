@@ -146,7 +146,7 @@ function isSeller(postText: string, authorHeadline: string): boolean {
 }
 
 // Rule 3 (Hard Skip): returns 'exists' if profile already in contacts
-async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters): Promise<'inserted'|'exists'|'failed'> {
+async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted'|'exists'|'failed'> {
   const linkedinProfileId = profile.public_id||profile.public_identifier||profile.provider_id||profile.id;
   if (!linkedinProfileId) return 'failed';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
@@ -167,6 +167,7 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
     email_enriched: false, list_name: listName,
     company_icon_color: ['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier: relevanceTier,
+    approval_status: manualApproval ? 'pending' : 'auto_approved',
   }).select('id').single();
   if (error) { console.error(`Insert contact error: ${error.message}`); return 'failed'; }
   if (inserted?.id && listName) { const listId = await ensureList(supabase, userId, listName, agentId); if (listId) await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId }); }
@@ -310,7 +311,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, run_id, task_key } = await req.json();
+    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, run_id, task_key, manual_approval } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -436,7 +437,7 @@ Deno.serve(async (req) => {
           const cls = classifyContact(match, icp, hl);
           if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
           const signal = `Engaged with ${post._hashtag}`;
-          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
+          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval);
           if (result === 'exists') { diag.already_in_contacts++; continue; }
           if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
         }

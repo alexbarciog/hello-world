@@ -132,7 +132,7 @@ async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<s
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }
 // Rule 3 (Hard Skip): returns 'exists' if profile already in contacts, 'inserted' on success, 'failed' otherwise
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters): Promise<'inserted'|'exists'|'failed'>{
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted'|'exists'|'failed'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'failed';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'exists';
@@ -147,6 +147,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,ai_score:as,
     signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],relevance_tier:rt,
+    approval_status: manualApproval ? 'pending' : 'auto_approved',
   }).select('id').single();
   if(error){console.error(`Insert contact error: ${error.message}`);return 'failed';}
   if(ins?.id&&ln){const lid=await ensureList(sb,uid,ln,aid);if(lid) await sb.from('contact_lists').insert({contact_id:ins.id,list_id:lid});}
@@ -206,6 +207,7 @@ Deno.serve(async (req) => {
       task_key,
       signal_type = 'post_engagers',
       precision_mode,
+      manual_approval,
     } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
@@ -372,7 +374,7 @@ Deno.serve(async (req) => {
             const cls = classifyContact(match, icp, hl);
             if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
+            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval);
             if (result === 'exists') { diag.already_in_contacts++; continue; }
             if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
@@ -474,7 +476,7 @@ Deno.serve(async (req) => {
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }
               const cls2 = classifyContact(match, icp, hl);
               if (cls2 === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
-              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp);
+              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval);
               if (result === 'exists') { diag.already_in_contacts++; continue; }
               if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }

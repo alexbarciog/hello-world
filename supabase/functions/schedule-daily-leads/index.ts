@@ -146,14 +146,15 @@ Deno.serve(async (req) => {
               console.log(`[schedule-daily] campaign ${campaign.id}: ${allContactIds.length} total, ${doneSet.size} done, ${unseenIds.length} unseen`);
 
               if (unseenIds.length > 0) {
-                // Fetch with relevance tier — batch in chunks of 100
+                // Fetch with relevance tier — batch in chunks of 100, only approved/auto_approved
                 let contactsWithTier: any[] = [];
                 for (let i = 0; i < unseenIds.length; i += 100) {
                   const batch = unseenIds.slice(i, i + 100);
                   const { data, error: tierErr } = await supabase
                     .from('contacts')
-                    .select('id, relevance_tier')
-                    .in('id', batch);
+                    .select('id, relevance_tier, approval_status')
+                    .in('id', batch)
+                    .in('approval_status', ['approved', 'auto_approved']);
                   if (tierErr) {
                     console.error(`[schedule-daily] contacts batch error:`, tierErr.message);
                   }
@@ -190,7 +191,37 @@ Deno.serve(async (req) => {
                     }
                   }
                 } else {
-                  console.log(`[schedule-daily] campaign ${campaign.id}: no contacts with tier data found`);
+                  // No approved contacts left — check if campaign's agent has manual_approval
+                  // and there are pending contacts that could be approved
+                  if (campaign.source_agent_id) {
+                    const { data: agentInfo } = await supabase.from('signal_agents').select('manual_approval, name').eq('id', campaign.source_agent_id).single();
+                    if (agentInfo?.manual_approval) {
+                      // Count pending contacts in this list
+                      let pendingCount = 0;
+                      for (let i = 0; i < unseenIds.length; i += 100) {
+                        const batch = unseenIds.slice(i, i + 100);
+                        const { count } = await supabase.from('contacts').select('id', { count: 'exact', head: true }).in('id', batch).eq('approval_status', 'pending');
+                        pendingCount += (count || 0);
+                      }
+                      if (pendingCount > 0) {
+                        console.log(`[schedule-daily] campaign ${campaign.id}: ${pendingCount} pending leads need approval`);
+                        await supabase.from('notifications').insert({
+                          user_id: userId,
+                          title: `Campaign ran out of approved leads`,
+                          body: `Your campaign has no more approved leads to reach out to. You have ${pendingCount} leads waiting for your approval from agent "${agentInfo.name}".`,
+                          type: 'warning',
+                          link: '/contacts',
+                        });
+                        // Send email notification
+                        try {
+                          await supabase.functions.invoke('send-notification-email', {
+                            body: { record: { user_id: userId, title: `⚠️ Campaign ran out of approved leads`, body: `Your campaign has no more approved leads. You have ${pendingCount} leads waiting for approval from agent "${agentInfo.name}". Go to your Contacts tab to review and approve them.`, link: '/contacts', type: 'warning' } },
+                          });
+                        } catch (e) { console.error('[schedule-daily] email notify error:', e); }
+                      }
+                    }
+                  }
+                  console.log(`[schedule-daily] campaign ${campaign.id}: no approved contacts with tier data found`);
                 }
               }
             } else {

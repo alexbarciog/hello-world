@@ -456,6 +456,7 @@ export type Database = {
       contacts: {
         Row: {
           ai_score: number | null
+          approval_status: string
           company: string | null
           company_icon_color: string | null
           email: string | null
@@ -487,6 +488,7 @@ export type Database = {
         }
         Insert: {
           ai_score?: number | null
+          approval_status?: string
           company?: string | null
           company_icon_color?: string | null
           email?: string | null
@@ -518,6 +520,7 @@ export type Database = {
         }
         Update: {
           ai_score?: number | null
+          approval_status?: string
           company?: string | null
           company_icon_color?: string | null
           email?: string | null
@@ -1211,6 +1214,7 @@ export type Database = {
           keywords: string[] | null
           last_launched_at: string | null
           leads_list_name: string | null
+          manual_approval: boolean
           name: string
           next_launch_at: string | null
           precision_mode: string | null
@@ -1235,6 +1239,7 @@ export type Database = {
           keywords?: string[] | null
           last_launched_at?: string | null
           leads_list_name?: string | null
+          manual_approval?: boolean
           name?: string
           next_launch_at?: string | null
           precision_mode?: string | null
@@ -1259,6 +1264,7 @@ export type Database = {
           keywords?: string[] | null
           last_launched_at?: string | null
           leads_list_name?: string | null
+          manual_approval?: boolean
           name?: string
           next_launch_at?: string | null
           precision_mode?: string | null

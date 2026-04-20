@@ -19,6 +19,7 @@ export interface Contact {
   imported_at: string;
   relevance_tier: 'hot' | 'warm' | 'cold';
   lead_status: string;
+  approval_status: 'auto_approved' | 'pending' | 'approved' | 'rejected';
 }
 
 export interface ContactList {

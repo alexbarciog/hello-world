@@ -6,6 +6,7 @@ import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
   Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock, Bot,
+  CheckCircle2, XCircle, ShieldCheck,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -15,7 +16,7 @@ import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { toast } from "sonner";
 
-type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
+type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked" | "pending_approval";
 
 export default function Contacts() {
   const navigate = useNavigate();
@@ -51,6 +52,7 @@ export default function Contacts() {
   const [insightsData, setInsightsData] = useState<Record<string, any>>({});
   const [insightsLoading, setInsightsLoading] = useState<Set<string>>(new Set());
   const insightsRef = useRef<HTMLDivElement>(null);
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -283,11 +285,30 @@ export default function Contacts() {
     }
   };
 
+  const handleApproveReject = async (contactIds: string[], status: 'approved' | 'rejected') => {
+    setApprovingIds((prev) => { const next = new Set(prev); contactIds.forEach((id) => next.add(id)); return next; });
+    try {
+      for (let i = 0; i < contactIds.length; i += 50) {
+        const batch = contactIds.slice(i, i + 50);
+        const { error } = await supabase.from("contacts").update({ approval_status: status }).in("id", batch);
+        if (error) throw error;
+      }
+      toast.success(`${contactIds.length} contact(s) ${status === 'approved' ? 'approved' : 'rejected'}`);
+      setContacts((prev) => prev.map((c) => contactIds.includes(c.id) ? { ...c, approval_status: status } as Contact : c));
+      if (selectedIds.size > 0) setSelectedIds(new Set());
+    } catch (err: any) {
+      toast.error(`Failed to ${status} contacts`);
+    } finally {
+      setApprovingIds((prev) => { const next = new Set(prev); contactIds.forEach((id) => next.delete(id)); return next; });
+    }
+  };
+
   const tierCounts = useMemo(() => {
-    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0 };
+    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0, pending_approval: 0 };
     contacts.forEach((c) => {
       if (c.lead_status === 'not_interested') counts.not_interested++;
       if (c.lead_status === 'meeting_booked') counts.meeting_booked++;
+      if ((c as any).approval_status === 'pending') counts.pending_approval++;
       if (c.relevance_tier in counts) (counts as any)[c.relevance_tier]++;
     });
     return counts;
@@ -334,7 +355,9 @@ export default function Contacts() {
 
   const filtered = useMemo(() => {
     let result = contacts;
-    if (tab === "not_interested") {
+    if (tab === "pending_approval") {
+      result = result.filter((c) => (c as any).approval_status === 'pending');
+    } else if (tab === "not_interested") {
       result = result.filter((c) => c.lead_status === 'not_interested');
     } else if (tab === "meeting_booked") {
       result = result.filter((c) => c.lead_status === 'meeting_booked');
@@ -454,6 +477,32 @@ export default function Contacts() {
           <div className="hidden md:flex items-center gap-2">
             {selectedIds.size > 0 && (
               <>
+                {/* Bulk approve/reject — show when any selected contacts are pending */}
+                {(() => {
+                  const pendingSelected = Array.from(selectedIds).filter((id) => {
+                    const c = contacts.find((ct) => ct.id === id);
+                    return c && (c as any).approval_status === 'pending';
+                  });
+                  if (pendingSelected.length === 0) return null;
+                  return (
+                    <>
+                      <button
+                        onClick={() => handleApproveReject(pendingSelected, 'approved')}
+                        disabled={approvingIds.size > 0}
+                        className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 border border-emerald-200 rounded-lg px-3 py-2 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-950/30 transition-colors disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Approve ({pendingSelected.length})
+                      </button>
+                      <button
+                        onClick={() => handleApproveReject(pendingSelected, 'rejected')}
+                        disabled={approvingIds.size > 0}
+                        className="flex items-center gap-1.5 text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-2 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> Reject ({pendingSelected.length})
+                      </button>
+                    </>
+                  );
+                })()}
                 <button
                   onClick={() => setShowCreateList(true)}
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
@@ -463,7 +512,7 @@ export default function Contacts() {
                 <button
                   onClick={handleDeleteSelected}
                   disabled={deleting}
-                  className="flex items-center gap-1.5 text-xs font-medium text-red-500 border border-red-200 rounded-lg px-3 py-2 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-950/30 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-2 hover:bg-destructive/10 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> {deleting ? 'Deleting...' : 'Delete'}
                 </button>
@@ -480,6 +529,7 @@ export default function Contacts() {
         <div className="flex items-center gap-3 md:gap-5 mt-3 overflow-x-auto scrollbar-none">
           {([
             { key: "all" as Tab, label: "All", count: contacts.length },
+            ...(tierCounts.pending_approval > 0 ? [{ key: "pending_approval" as Tab, label: "⏳ Pending Approval", count: tierCounts.pending_approval }] : []),
             { key: "hot" as Tab, label: "🔥 Hot", count: tierCounts.hot },
             { key: "warm" as Tab, label: "☀️ Warm", count: tierCounts.warm },
             { key: "cold" as Tab, label: "❄️ Cold", count: tierCounts.cold },
@@ -743,7 +793,7 @@ export default function Contacts() {
                     <th style={{ left: 500, width: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                       Score
                     </th>
-                    {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
+                    {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border bg-[hsl(var(--muted))]">
                         {h}
                       </th>
@@ -898,6 +948,36 @@ export default function Contacts() {
                             <span className="text-xs text-muted-foreground">—</span>
                           );
                         })()}
+                      </td>
+                      <td className="px-3 py-3 border-b border-border/50">
+                        <div className="flex items-center gap-1">
+                          {(c as any).approval_status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleApproveReject([c.id], 'approved'); }}
+                                disabled={approvingIds.has(c.id)}
+                                className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Approve
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleApproveReject([c.id], 'rejected'); }}
+                                disabled={approvingIds.has(c.id)}
+                                className="text-[10px] font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <XCircle className="w-3 h-3" /> Reject
+                              </button>
+                            </>
+                          ) : (c as any).approval_status === 'rejected' ? (
+                            <span className="text-[10px] font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Rejected
+                            </span>
+                          ) : (c as any).approval_status === 'approved' ? (
+                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" /> Approved
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-1 relative">
