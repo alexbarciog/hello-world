@@ -109,7 +109,7 @@ const CaseStudies = () => {
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C8FF00] to-[#1A8FE3] border-2 border-white" />
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0F172A] to-[#1A8FE3] border-2 border-white" />
               </div>
-              <span className="text-sm text-foreground/60">Trusted by founders & growth teams</span>
+              <span className="text-sm text-foreground/60">{totalMeetings}+ meetings booked across 3 customers</span>
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium leading-[1.05] tracking-tight text-foreground mb-6">
