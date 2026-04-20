@@ -696,11 +696,11 @@ export default function Contacts() {
                     const cLists = getContactListNames(c.id);
                     return (
                     <tr key={c.id} className="group hover:bg-muted/20 transition-colors">
-                      <td className="w-10 px-4 py-3">
+                      <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/20 w-10 px-4 py-3 border-b border-border/50">
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
-                      <td className="px-3 py-3">
+                      <td style={{ left: 40, width: 280 }} className="sticky z-10 bg-background group-hover:bg-muted/20 px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
@@ -736,7 +736,7 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[220px]">
+                      <td style={{ left: 320, width: 180 }} className="sticky z-10 bg-background group-hover:bg-muted/20 px-3 py-3 max-w-[220px] border-b border-border/50">
                         {c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
                             {c.signal}
@@ -745,7 +745,7 @@ export default function Contacts() {
                           <span className="text-xs text-muted-foreground truncate block max-w-[200px]">{c.signal}</span>
                         )}
                       </td>
-                      <td className="px-3 py-3">
+                      <td style={{ left: 500, width: 90 }} className="sticky z-10 bg-background group-hover:bg-muted/20 px-3 py-3 border-b border-r border-border/50 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
                         <div className="flex items-center gap-0.5">
                           {(() => {
                             const tier = c.relevance_tier?.toLowerCase();
