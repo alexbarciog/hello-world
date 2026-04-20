@@ -393,13 +393,51 @@ async function resolveConnectedAccount({
   unipileDsn: string;
 }): Promise<{ accountId: string; displayName: string | null } | null> {
   const stored = await getStoredAccountInfo(userId, supabaseUrl, serviceRoleKey);
-  if (stored?.accountId) return stored;
+
+  if (stored?.accountId) {
+    // Live-verify the stored account is still active on Unipile
+    const alive = await verifyAccountAlive(stored.accountId, unipileApiKey, unipileDsn);
+    if (alive) return stored;
+
+    // Account is dead on Unipile — clear it and handle disconnection
+    console.log('[check_status] stored account no longer alive on Unipile, clearing:', stored.accountId);
+    await handleAccountDisconnection(stored.accountId, 'DISCONNECTED', supabaseUrl, serviceRoleKey);
+    return null;
+  }
 
   const remote = await findRemoteLinkedinAccount(userId, unipileApiKey, unipileDsn);
   if (!remote) return null;
 
   await saveAccountInfo(userId, remote.accountId, remote.displayName, supabaseUrl, serviceRoleKey);
   return remote;
+}
+
+async function verifyAccountAlive(accountId: string, unipileApiKey: string, unipileDsn: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://${unipileDsn}/api/v1/accounts/${accountId}`, {
+      headers: { ...buildUnipileAuthHeaders(unipileApiKey), 'Accept': 'application/json' },
+    });
+
+    if (!res.ok) {
+      console.log('[verify_alive] Unipile returned', res.status, 'for account', accountId);
+      return false;
+    }
+
+    const data = await safeJson(res);
+    const status = getString(data.status, data.message).toUpperCase();
+    const DEAD_STATUSES = ['DISCONNECTED', 'DELETED', 'REMOVED', 'ERROR', 'CREATION_FAIL', 'CONNECTION_ERROR', 'ACCOUNT_DISCONNECTED'];
+
+    if (DEAD_STATUSES.includes(status)) {
+      console.log('[verify_alive] account status is dead:', status);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('[verify_alive] error checking account:', err);
+    // On network error, assume alive to avoid false disconnections
+    return true;
+  }
 }
 
 async function getStoredAccountInfo(userId: string, supabaseUrl: string, serviceRoleKey: string): Promise<{ accountId: string; displayName: string | null } | null> {
