@@ -146,14 +146,15 @@ Deno.serve(async (req) => {
               console.log(`[schedule-daily] campaign ${campaign.id}: ${allContactIds.length} total, ${doneSet.size} done, ${unseenIds.length} unseen`);
 
               if (unseenIds.length > 0) {
-                // Fetch with relevance tier — batch in chunks of 100
+                // Fetch with relevance tier — batch in chunks of 100, only approved/auto_approved
                 let contactsWithTier: any[] = [];
                 for (let i = 0; i < unseenIds.length; i += 100) {
                   const batch = unseenIds.slice(i, i + 100);
                   const { data, error: tierErr } = await supabase
                     .from('contacts')
-                    .select('id, relevance_tier')
-                    .in('id', batch);
+                    .select('id, relevance_tier, approval_status')
+                    .in('id', batch)
+                    .in('approval_status', ['approved', 'auto_approved']);
                   if (tierErr) {
                     console.error(`[schedule-daily] contacts batch error:`, tierErr.message);
                   }
