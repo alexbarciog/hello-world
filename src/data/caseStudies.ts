@@ -1,6 +1,9 @@
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import massoftindLogo from "@/assets/logo-massoftind.png";
 import logicmelonLogo from "@/assets/logo-logicmelon.png";
+import ogIntentsly from "@/assets/og/case-study-intentsly.jpg";
+import ogMassoftind from "@/assets/og/case-study-massoftind.jpg";
+import ogLogicmelon from "@/assets/og/case-study-logicmelon.jpg";
 
 export interface CaseStudyMetric {
   label: string;
@@ -29,6 +32,7 @@ export interface CaseStudy {
   // SEO
   metaTitle: string;
   metaDescription: string;
+  ogImage: string;
   // Long-form content
   context: string[];
   approach: { title: string; body: string }[];
@@ -65,6 +69,7 @@ export const caseStudies: CaseStudy[] = [
     metaTitle: "Intentsly Case Study — 14 LinkedIn meetings booked in 2 weeks | Intentsly",
     metaDescription:
       "How Intentsly used its own AI SDR + intent signals to book 14 qualified LinkedIn demos in 14 days — zero ad spend, zero manual outreach. Read the playbook.",
+    ogImage: ogIntentsly,
     publishedAt: "2025-03-15",
     context: [
       "Intentsly launched into a saturated outbound market dominated by tools with massive ad budgets, established brand awareness, and inbound funnels we couldn't match.",
@@ -128,6 +133,7 @@ export const caseStudies: CaseStudy[] = [
     metaTitle: "Massoftind Case Study — Dev agency booked 3 meetings in 6 days | Intentsly",
     metaDescription:
       "How a boutique software dev agency used Intentsly's Conversational AI SDR to book 3 qualified founder/CTO meetings in under a week — no SDR, no ad spend.",
+    ogImage: ogMassoftind,
     publishedAt: "2025-03-22",
     context: [
       "Massoftind is a boutique software development agency that historically grew through referrals and the occasional cold-email push — both unpredictable, both slow.",
@@ -191,6 +197,7 @@ export const caseStudies: CaseStudy[] = [
     metaTitle: "LogicMelon Case Study — Enterprise meeting booked in 48 hours | Intentsly",
     metaDescription:
       "How LogicMelon, an enterprise recruitment platform, booked an HR Director at a 500+ employee org within 48 hours using Intentsly's High-Precision agent and AI SDR.",
+    ogImage: ogLogicmelon,
     publishedAt: "2025-04-02",
     context: [
       "LogicMelon sells ATS, CRM, and multi-poster software to recruitment agencies and in-house TA teams — a buyer notoriously protective of their inbox and skeptical of outbound.",
