@@ -1,6 +1,9 @@
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import massoftindLogo from "@/assets/logo-massoftind.png";
 import logicmelonLogo from "@/assets/logo-logicmelon.png";
+import ogIntentsly from "@/assets/og/case-study-intentsly.jpg";
+import ogMassoftind from "@/assets/og/case-study-massoftind.jpg";
+import ogLogicmelon from "@/assets/og/case-study-logicmelon.jpg";
 
 export interface CaseStudyMetric {
   label: string;
@@ -29,6 +32,7 @@ export interface CaseStudy {
   // SEO
   metaTitle: string;
   metaDescription: string;
+  ogImage: string;
   // Long-form content
   context: string[];
   approach: { title: string; body: string }[];
