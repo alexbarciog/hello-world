@@ -756,22 +756,22 @@ export default function Contacts() {
                           })()}
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[180px]">
+                      <td className="px-3 py-3 max-w-[180px] border-b border-border/50">
                         <span className="text-xs text-foreground truncate block max-w-[170px]" title={c.title || ""}>
                           {c.title || <span className="text-muted-foreground">—</span>}
                         </span>
                       </td>
-                      <td className="px-3 py-3 max-w-[160px]">
+                      <td className="px-3 py-3 max-w-[160px] border-b border-border/50">
                         <span className="text-xs text-foreground truncate block max-w-[150px]" title={c.company || ""}>
                           {c.company || <span className="text-muted-foreground">—</span>}
                         </span>
                       </td>
-                      <td className="px-3 py-3 max-w-[140px]">
+                      <td className="px-3 py-3 max-w-[140px] border-b border-border/50">
                         <span className="text-xs text-muted-foreground truncate block max-w-[130px]" title={c.industry || ""}>
                           {c.industry || <span className="text-muted-foreground/60">—</span>}
                         </span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex flex-col gap-1">
                           {c.lead_status === 'meeting_booked' && meetings[c.id] && (
                             <div className="flex items-center gap-1">
