@@ -255,6 +255,8 @@ export type Database = {
           icp_industries: string[] | null
           icp_job_titles: string[] | null
           icp_locations: string[] | null
+          icp_restricted_countries: string[] | null
+          icp_restricted_roles: string[] | null
           id: string
           industry: string | null
           influencer_profiles: string[] | null
@@ -308,6 +310,8 @@ export type Database = {
           icp_industries?: string[] | null
           icp_job_titles?: string[] | null
           icp_locations?: string[] | null
+          icp_restricted_countries?: string[] | null
+          icp_restricted_roles?: string[] | null
           id?: string
           industry?: string | null
           influencer_profiles?: string[] | null
@@ -361,6 +365,8 @@ export type Database = {
           icp_industries?: string[] | null
           icp_job_titles?: string[] | null
           icp_locations?: string[] | null
+          icp_restricted_countries?: string[] | null
+          icp_restricted_roles?: string[] | null
           id?: string
           industry?: string | null
           influencer_profiles?: string[] | null
@@ -1199,6 +1205,8 @@ export type Database = {
           icp_industries: string[] | null
           icp_job_titles: string[] | null
           icp_locations: string[] | null
+          icp_restricted_countries: string[] | null
+          icp_restricted_roles: string[] | null
           id: string
           keywords: string[] | null
           last_launched_at: string | null
@@ -1221,6 +1229,8 @@ export type Database = {
           icp_industries?: string[] | null
           icp_job_titles?: string[] | null
           icp_locations?: string[] | null
+          icp_restricted_countries?: string[] | null
+          icp_restricted_roles?: string[] | null
           id?: string
           keywords?: string[] | null
           last_launched_at?: string | null
@@ -1243,6 +1253,8 @@ export type Database = {
           icp_industries?: string[] | null
           icp_job_titles?: string[] | null
           icp_locations?: string[] | null
+          icp_restricted_countries?: string[] | null
+          icp_restricted_roles?: string[] | null
           id?: string
           keywords?: string[] | null
           last_launched_at?: string | null
