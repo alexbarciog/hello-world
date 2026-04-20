@@ -1,94 +1,71 @@
 
 
-## AI Chat — Conversational Lead Finder
+# Manual Lead Approval System
 
-A two-pane chat experience matching the reference UX, where users describe who they want to reach and the AI returns LinkedIn lead cards they can save into a contact list. Reuses the existing Unipile + ICP infra.
+## Overview
+Add a manual approval gate between signal agent lead discovery and campaign enrollment. When enabled on an agent, discovered leads require explicit approve/reject action before they can be used in campaigns. Daily email notifications inform the user of new leads needing review, and campaigns notify when they run out of approved leads.
 
-### Layout (mirrors reference, restyled to SnowUI / Intentsly)
+## Database Changes
 
-**Empty state** (no messages yet)
-- Centered greeting: "Hey {firstName}!" + "Let's find your next customers."
-- Big input card (textarea + Search button) styled with sky-blue accent on the send button
-- 6 prompt chips below: Industry, Role, Location, Company size, Pain point, Recent funding → click prefills the textarea
+### 1. Add `manual_approval` column to `signal_agents`
+- `manual_approval boolean NOT NULL DEFAULT false`
 
-**Active state** (after first message)
-- 30 / 70 split, full-height inside DashboardLayout
-- **Left (30%)**: chat thread, typing indicator, search-progress + enrichment-progress widgets, ChatInput at bottom
-- **Right (70%)**: status tabs `To Review · Saved · Skipped` then a vertical scrollable list of lead cards
-- Mobile: tabs swap between Chat and Leads
-- "New Search" button top-right resets the conversation
+### 2. Add `approval_status` column to `contacts`
+- `approval_status text NOT NULL DEFAULT 'auto_approved'`
+- Values: `auto_approved` (default, for agents without manual approval), `pending`, `approved`, `rejected`
 
-### Lead card (right pane)
+## Frontend Changes
 
-Per lead, in SnowUI style (white card, 12px radius, no big shadows):
-- Avatar + Name + Title + Company + Location + LinkedIn link
-- Match score (0–100) and 2–3 short "why this lead" bullets
-- Buttons: lime green **Add to Outreach** + ghost **Skip**
+### 3. Agent Wizard — Manual Approval Toggle (Step 3)
+In `src/components/CreateAgentWizard.tsx`, add a switch toggle in Step 3 (Leads Management) below the list selector:
+- New state: `manualApproval` (boolean)
+- Toggle UI: "Require manual approval" with description "Review and approve each lead before they are available for campaigns"
+- Save `manual_approval` field in the `agentData` object
+- Load the field when editing an existing agent
 
-### Conversation flow
+### 4. Contacts Page — Approve/Reject Buttons + Filter
+In `src/pages/Contacts.tsx`:
+- Add a new tab or filter for "Pending Approval" contacts (`approval_status = 'pending'`)
+- Show Approve (check icon, green) and Reject (X icon, red) buttons in the actions column for contacts with `approval_status = 'pending'`
+- Bulk approve/reject using existing selection mechanism
+- On approve: update `approval_status` to `'approved'`
+- On reject: update `approval_status` to `'rejected'`
+- Add visual badge showing pending/approved/rejected status
 
-1. User describes target: e.g. "Find me founders of seed-stage SaaS in the US who recently posted about hiring SDRs."
-2. AI extracts structured criteria via tool-calling and replies with quick-reply chips: `Start search` / `Refine` / `Add a filter`.
-3. AI may ask 1–2 clarifying questions if criteria are too vague (location? company size? job titles?).
-4. On `Start search`: progress widget → call `ai-chat-search-leads` edge function → render lead cards.
-5. User saves/skips. On **Add to Outreach**, a small dialog asks: pick existing list or create new → lead is inserted into `contacts` + `contact_lists`.
-6. User can keep chatting to refine ("only in Europe", "exclude agencies") → re-runs search appending or replacing.
+### 5. Contact Types Update
+In `src/components/contacts/types.ts`, add `approval_status` to the `Contact` interface.
 
-### Technical design
+## Backend Changes
 
-**New components** (under `src/components/ai-chat/`)
-- `ChatMessage.tsx` — markdown renderer (react-markdown), quick-reply chips, attachments
-- `ChatInput.tsx` — textarea + send, Enter-to-send
-- `TypingIndicator.tsx` — three dots
-- `SearchProgress.tsx` — animated "Searching LinkedIn…" card
-- `LeadCard.tsx` — the right-pane lead card with Save/Skip
-- `SaveLeadDialog.tsx` — choose existing list or type a new one (reuses lookups against `lists`)
+### 6. Signal Agent Lead Discovery — Set `approval_status`
+In `supabase/functions/signal-keyword-posts/index.ts` (and other signal functions that insert contacts):
+- When inserting a new contact, check the agent's `manual_approval` flag
+- If `true`, set `approval_status = 'pending'`; otherwise `'auto_approved'`
 
-**Page**: rewrite `src/pages/AiChat.tsx` to match reference structure (initial state vs split view), wired to the new components. Keep within `DashboardLayout`.
+### 7. Schedule Daily Leads — Filter by Approval Status
+In `supabase/functions/schedule-daily-leads/index.ts`:
+- When fetching contacts from a list for Step 1 scheduling, add a filter: only include contacts where `approval_status IN ('approved', 'auto_approved')`
+- When no eligible contacts remain (all pending or rejected), detect this "ran out of approved leads" condition
+- If the campaign's source agent has `manual_approval = true` and there ARE pending leads, send a notification email to the user
 
-**Edge functions** (two new, both `verify_jwt = true`)
-1. `ai-chat-converse` — receives full message history, calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with a system prompt for a friendly sales copilot. Uses tool-calling with two tools:
-   - `update_search_criteria(role, industries, locations, company_sizes, exclude_keywords, intent_keywords)` — server merges into the session's criteria
-   - `ready_to_search()` — signals frontend to show "Start search" CTA
-   Streams SSE response. Persists assistant + user messages.
-2. `ai-chat-search-leads` — takes the accumulated criteria + `excludeLinkedInUrls`, calls Unipile search (same logic as `discover-leads`), scores each profile against ICP, returns up to 15 ranked leads with match reasons. No DB writes — frontend decides what to save.
+### 8. Daily "New Leads Found" Email
+Create new edge function `supabase/functions/send-approval-digest/index.ts`:
+- Runs daily (add pg_cron job)
+- For each agent with `manual_approval = true`, count contacts with `approval_status = 'pending'` added in the last 24 hours
+- If count > 0, send email via existing `send-notification-email` pattern (Resend) with subject like "🎯 X new leads need your approval — Intentsly"
+- Email body: "Hey {name}, your agent '{agentName}' found {count} leads today. Review and approve them to keep your campaigns running."
+- Include CTA link to `/contacts` page
 
-**Save flow**: client-side. On confirm in `SaveLeadDialog`, insert one row in `contacts` (with `user_id`, name, title, company, linkedin_url, list_name, `relevance_tier` derived from match score) and one in `contact_lists` linking to the chosen `lists.id`. If "Create new", insert into `lists` first.
+### 9. "Campaign Ran Out of Leads" Email
+Within `schedule-daily-leads/index.ts`:
+- After determining `unseenIds.length === 0` for a campaign, check if the source agent has `manual_approval = true`
+- Query for pending contacts in the same list
+- If pending count > 0, call the existing `send-notification-email` function with: "Your campaign '{campaignName}' has run out of approved leads. You have {pendingCount} leads waiting for approval."
 
-### Database
+## Technical Details
 
-One new table for single-session persistence:
-
-```sql
-create table public.ai_chat_messages (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null,
-  role text not null check (role in ('user','assistant','system')),
-  content text not null,
-  quick_replies jsonb,
-  attachment jsonb,        -- { type: 'leads', data: [...] }
-  criteria_snapshot jsonb, -- accumulated criteria at this point
-  created_at timestamptz not null default now()
-);
--- RLS: user can read/insert own; service role full access
-create index on public.ai_chat_messages (user_id, created_at);
-```
-
-A small `ai_chat_state` row per user (or a single jsonb column on `profiles`) holds the latest accumulated `criteria` for resuming sessions. Plan picks: add `ai_chat_criteria jsonb` to `profiles` (one column, no new table needed).
-
-### Out of scope (v1)
-- Multi-conversation history sidebar — single ongoing session per user
-- Recurring Signal Agent creation from chat
-- Reddit/X intent posts as a source
-- Voice input, file upload (icons rendered but disabled)
-- Editing already-saved leads from chat
-
-### Files
-
-- New: `src/pages/AiChat.tsx` (rewrite)
-- New: `src/components/ai-chat/{ChatMessage,ChatInput,TypingIndicator,SearchProgress,LeadCard,SaveLeadDialog}.tsx`
-- New: `supabase/functions/ai-chat-converse/index.ts`
-- New: `supabase/functions/ai-chat-search-leads/index.ts`
-- Migration: create `ai_chat_messages` table + RLS, add `ai_chat_criteria jsonb` to `profiles`
-- `supabase/config.toml`: register both functions
+- The `approval_status` column defaults to `'auto_approved'` so all existing contacts continue working without migration issues
+- The `schedule-daily-leads` filter change is the enforcement point — pending/rejected leads simply never get scheduled
+- Email notifications reuse the existing `send-notification-email` edge function and Resend integration
+- The daily digest cron job runs once per day (e.g., 08:00 UTC) after signal agents complete their runs
 
