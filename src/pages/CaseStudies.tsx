@@ -3,6 +3,7 @@ import { ArrowUpRight, TrendingUp, Calendar, Sparkles, Target, Zap, Users } from
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
+import intentslyIcon from "@/assets/intentsly-icon.png";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
 
 interface CaseStudy {
