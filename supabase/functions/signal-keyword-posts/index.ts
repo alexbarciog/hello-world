@@ -224,7 +224,7 @@ async function ensureList(supabase: any, userId: string, listName: string, agent
 async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
-  intentScore?: number, intentReason?: string,
+  intentScore?: number, intentReason?: string, manualApproval?: boolean,
 ): Promise<'inserted' | 'duplicate' | 'rejected'> {
   const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
   if (!linkedinProfileId) return 'rejected';
@@ -255,6 +255,7 @@ async function insertContact(
     email_enriched: false, list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
     relevance_tier: relevanceTier,
+    approval_status: manualApproval ? 'pending' : 'auto_approved',
   }).select('id').single();
   if (error) { console.error(`Insert contact error: ${error.message}`); return 'rejected'; }
   if (inserted?.id && listName) {
