@@ -93,6 +93,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
               </AnimatePresence>
             </div>
 
+            <button onClick={() => navigate("/case-studies")} className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}>Case Studies</button>
             <button onClick={() => navigate("/pricing")} className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}>Pricing</button>
             <button onClick={() => navigate("/dashboard")} className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}>Dashboard</button>
           </div>
@@ -152,6 +153,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
                   </button>
                 ))}
 
+                <button onClick={() => { close(); navigate("/case-studies"); }} className="flex items-center text-sm font-medium hover:text-foreground transition-colors py-3 uppercase tracking-wider text-xs text-left" style={{ color: "hsl(var(--aeline-dark))" }}>Case Studies</button>
                 <a href="#pricing" onClick={close} className="flex items-center text-sm font-medium hover:text-foreground transition-colors py-3 uppercase tracking-wider text-xs" style={{ color: "hsl(var(--aeline-dark))" }}>Pricing</a>
               </div>
 
