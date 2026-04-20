@@ -336,7 +336,9 @@ export default function Contacts() {
 
   const filtered = useMemo(() => {
     let result = contacts;
-    if (tab === "not_interested") {
+    if (tab === "pending_approval") {
+      result = result.filter((c) => (c as any).approval_status === 'pending');
+    } else if (tab === "not_interested") {
       result = result.filter((c) => c.lead_status === 'not_interested');
     } else if (tab === "meeting_booked") {
       result = result.filter((c) => c.lead_status === 'meeting_booked');
