@@ -207,6 +207,7 @@ Deno.serve(async (req) => {
       task_key,
       signal_type = 'post_engagers',
       precision_mode,
+      manual_approval,
     } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
