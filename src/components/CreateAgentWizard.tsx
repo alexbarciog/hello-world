@@ -400,7 +400,9 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         enabled: activeSubSignals,
         keywords: signalKeywords,
       },
-      leads_list_name: leadsListName || null,
+      // If no list selected, default to the agent name so the auto-created
+      // list is predictable and filterable in the Contacts tab.
+      leads_list_name: (leadsListName || agentName || "My Agent").trim(),
     };
 
     let error;
@@ -1095,19 +1097,23 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                       )}
                     </AnimatePresence>
 
-                    {leadsListName && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-3 flex items-center gap-2 text-sm text-foreground"
-                      >
-                        <Check className="w-4 h-4" />
-                        <span>Leads will be added to: <strong>{leadsListName}</strong></span>
-                      </motion.div>
-                    )}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-3 flex items-center gap-2 text-sm text-foreground"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>
+                        Leads will be added to:{" "}
+                        <strong>{leadsListName || agentName || "your agent's name"}</strong>
+                        {!leadsListName && (
+                          <span className="text-muted-foreground font-normal"> (auto-created from agent name)</span>
+                        )}
+                      </span>
+                    </motion.div>
 
                     <p className="text-xs text-muted-foreground mt-4">
-                      After creating the agent, you can launch an outreach campaign for this list.
+                      After creating the agent, you can launch an outreach campaign for this list. You'll be able to filter these leads in the Contacts tab by list name.
                     </p>
                   </div>
                 </div>
