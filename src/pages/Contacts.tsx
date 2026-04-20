@@ -52,6 +52,7 @@ export default function Contacts() {
   const [insightsData, setInsightsData] = useState<Record<string, any>>({});
   const [insightsLoading, setInsightsLoading] = useState<Set<string>>(new Set());
   const insightsRef = useRef<HTMLDivElement>(null);
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
