@@ -112,6 +112,10 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [selectedCompanySizes, setSelectedCompanySizes] = useState<string[]>([]);
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
   const [excludeInput, setExcludeInput] = useState("");
+  const [restrictedCountries, setRestrictedCountries] = useState<string[]>([]);
+  const [restrictedCountryInput, setRestrictedCountryInput] = useState("");
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+  const [restrictedRoleInput, setRestrictedRoleInput] = useState("");
   const [precisionMode, setPrecisionMode] = useState<"discovery" | "high_precision">("discovery");
 
   // Step 2: Signals
@@ -150,6 +154,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         setSelectedCompanyTypes(data.icp_company_types || []);
         setSelectedCompanySizes(data.icp_company_sizes || []);
         setExcludeKeywords(data.icp_exclude_keywords || []);
+        setRestrictedCountries((data as any).icp_restricted_countries || []);
+        setRestrictedRoles((data as any).icp_restricted_roles || []);
         setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
         setLeadsListName(data.leads_list_name || "");
         const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
@@ -186,6 +192,16 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   function addExclude() {
     const v = excludeInput.trim();
     if (v && !excludeKeywords.includes(v)) { setExcludeKeywords([...excludeKeywords, v]); setExcludeInput(""); }
+  }
+
+  function addRestrictedCountry() {
+    const v = restrictedCountryInput.trim();
+    if (v && !restrictedCountries.includes(v)) { setRestrictedCountries([...restrictedCountries, v]); setRestrictedCountryInput(""); }
+  }
+
+  function addRestrictedRole() {
+    const v = restrictedRoleInput.trim();
+    if (v && !restrictedRoles.includes(v)) { setRestrictedRoles([...restrictedRoles, v]); setRestrictedRoleInput(""); }
   }
 
   function toggleInArray(arr: string[], val: string, setter: (a: string[]) => void) {
@@ -377,6 +393,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       icp_company_types: selectedCompanyTypes,
       icp_company_sizes: selectedCompanySizes,
       icp_exclude_keywords: excludeKeywords,
+      icp_restricted_countries: restrictedCountries,
+      icp_restricted_roles: restrictedRoles,
       precision_mode: precisionMode,
       signals_config: {
         enabled: activeSubSignals,
