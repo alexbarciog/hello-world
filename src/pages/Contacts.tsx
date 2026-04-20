@@ -950,6 +950,36 @@ export default function Contacts() {
                         })()}
                       </td>
                       <td className="px-3 py-3 border-b border-border/50">
+                        <div className="flex items-center gap-1">
+                          {(c as any).approval_status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleApproveReject([c.id], 'approved'); }}
+                                disabled={approvingIds.has(c.id)}
+                                className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Approve
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleApproveReject([c.id], 'rejected'); }}
+                                disabled={approvingIds.has(c.id)}
+                                className="text-[10px] font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 px-2 py-1 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <XCircle className="w-3 h-3" /> Reject
+                              </button>
+                            </>
+                          ) : (c as any).approval_status === 'rejected' ? (
+                            <span className="text-[10px] font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Rejected
+                            </span>
+                          ) : (c as any).approval_status === 'approved' ? (
+                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" /> Approved
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-1 relative">
                           {sdrActiveContacts[c.id] && (
                             <button
