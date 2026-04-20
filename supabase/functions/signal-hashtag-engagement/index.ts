@@ -95,6 +95,18 @@ function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies
   return excludeKeywords.some(kw => text.includes(kw));
 }
 
+function isRestricted(profile: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [profile.location, profile.country, profile.city, profile.region].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [profile.headline, profile.title, profile.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
+}
+
 function unipileGet(path: string, apiKey: string, dsn: string) { return fetch(`https://${dsn}${path}`, { headers: { 'X-API-KEY': apiKey } }); }
 function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }

@@ -71,6 +71,18 @@ function classifyCompetitorContact(m: MatchResult, icp: ICPFilters, hl?: string)
   return null;
 }
 
+function isRestricted(p: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [p.location, p.country, p.city, p.region].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [p.headline, p.title, p.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
+}
+
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   const companyFields = collectCompanyFields(p);
   const profileUrl = (p.linkedin_url || p.public_url || p.profile_url || '').toLowerCase();

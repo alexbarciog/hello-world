@@ -42,6 +42,17 @@ function classifyContact(m: MatchResult,icp: ICPFilters,hl?:string): 'hot'|'warm
   return null;
 }
 function matchesTitleOrIndustry(m: MatchResult,icp: ICPFilters,hl?:string): boolean { return classifyContact(m,icp,hl)!==null; }
+function isRestricted(p: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [p.location, p.country, p.city, p.region].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [p.headline, p.title, p.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
+}
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   const companyFields: string[] = [];
   if (p.company) companyFields.push(p.company);
