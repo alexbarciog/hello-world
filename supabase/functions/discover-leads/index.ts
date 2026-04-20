@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
         // ── Score & filter with precision mode ──
         const scoredCandidates = candidateProfiles
           .map((p) => ({ profile: p, match: scoreProfileAgainstICP(p, icp) }))
+          .filter((c) => !isRestricted(c.profile, icp.restrictedCountries, icp.restrictedRoles))
           .filter((c) => !isExcluded(c.profile, icp.excludeKeywords))
           .sort((a, b) => b.match.score - a.match.score);
 
