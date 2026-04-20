@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
-interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
+interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; restrictedCountries: string[]; restrictedRoles: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
 // Timer moved inside request handler (fixes warm isolate bug)
@@ -127,7 +127,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   if(ex?.length>0) return 'exists';
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
-  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
+  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[]};
   const rt=classifyContact(m,icp||ei,hl)||'cold';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({

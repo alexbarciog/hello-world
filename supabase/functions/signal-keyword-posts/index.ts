@@ -1060,6 +1060,13 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Restricted countries / roles (hard ban — applies in both modes)
+        if (isRestricted(author, icp.restrictedCountries, icp.restrictedRoles)) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: restricted (country or role)`);
+          keywordSkipped.excluded++;
+          continue;
+        }
+
         // Competitor employee exclusion
         if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);

@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ─── Shared types & helpers (same as signal-keyword-posts) ────────────────────
 
-interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
+interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; restrictedCountries: string[]; restrictedRoles: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
 // Timer moved inside request handler (fixes warm isolate bug)
@@ -142,7 +142,7 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
   const firstName = profile.first_name||profile.name?.split(' ')[0]||'Unknown';
   const lastName = profile.last_name||profile.name?.split(' ').slice(1).join(' ')||'';
   const hl = profile.headline||profile.title||'';
-  const emptyIcp: ICPFilters = { jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[] };
+  const emptyIcp: ICPFilters = { jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[] };
   const relevanceTier = classifyContact(match, icp||emptyIcp, hl)||'cold';
   const signalAHit = true; const signalBHit = match.score >= 60; const signalCHit = match.score >= 80;
   const aiScore = Math.min(3, [signalAHit,signalBHit,signalCHit].filter(Boolean).length);
