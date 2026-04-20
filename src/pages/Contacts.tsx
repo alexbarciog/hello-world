@@ -814,10 +814,10 @@ export default function Contacts() {
                           })()}
                         </div>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <span className="text-xs text-muted-foreground">{timeAgo(c.imported_at)}</span>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex flex-wrap gap-1">
                           {cLists.length > 0 ? cLists.map((name) => (
                             <span key={name} className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full truncate max-w-[100px]">
@@ -828,7 +828,7 @@ export default function Contacts() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         {(() => {
                           const agentName = getContactAgentName(c.id);
                           return agentName ? (
@@ -840,7 +840,7 @@ export default function Contacts() {
                           );
                         })()}
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-1 relative">
                           {sdrActiveContacts[c.id] && (
                             <button
