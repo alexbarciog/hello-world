@@ -103,13 +103,12 @@ const CaseStudies = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-4 min-h-[calc(100vh-6rem)]">
           {/* Left: copy */}
           <div className="bg-[#f4f4f5] rounded-[32px] p-8 md:p-16 flex flex-col justify-center">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="flex -space-x-2">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A8FE3] to-[#0F172A] border-2 border-white" />
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C8FF00] to-[#1A8FE3] border-2 border-white" />
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0F172A] to-[#1A8FE3] border-2 border-white" />
-              </div>
-              <span className="text-sm text-foreground/60">{totalMeetings}+ meetings booked across 3 customers</span>
+            <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full bg-white border border-border/60 w-fit">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#16A34A] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#16A34A]" />
+              </span>
+              <span className="text-sm font-medium text-foreground">Avg. time to first booked call: <span className="text-[#16A34A]">under 48h</span> ⚡</span>
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium leading-[1.05] tracking-tight text-foreground mb-6">
