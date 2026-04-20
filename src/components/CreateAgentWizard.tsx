@@ -112,6 +112,10 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [selectedCompanySizes, setSelectedCompanySizes] = useState<string[]>([]);
   const [excludeKeywords, setExcludeKeywords] = useState<string[]>([]);
   const [excludeInput, setExcludeInput] = useState("");
+  const [restrictedCountries, setRestrictedCountries] = useState<string[]>([]);
+  const [restrictedCountryInput, setRestrictedCountryInput] = useState("");
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+  const [restrictedRoleInput, setRestrictedRoleInput] = useState("");
   const [precisionMode, setPrecisionMode] = useState<"discovery" | "high_precision">("discovery");
 
   // Step 2: Signals
@@ -150,6 +154,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         setSelectedCompanyTypes(data.icp_company_types || []);
         setSelectedCompanySizes(data.icp_company_sizes || []);
         setExcludeKeywords(data.icp_exclude_keywords || []);
+        setRestrictedCountries((data as any).icp_restricted_countries || []);
+        setRestrictedRoles((data as any).icp_restricted_roles || []);
         setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
         setLeadsListName(data.leads_list_name || "");
         const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
@@ -186,6 +192,16 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   function addExclude() {
     const v = excludeInput.trim();
     if (v && !excludeKeywords.includes(v)) { setExcludeKeywords([...excludeKeywords, v]); setExcludeInput(""); }
+  }
+
+  function addRestrictedCountry() {
+    const v = restrictedCountryInput.trim();
+    if (v && !restrictedCountries.includes(v)) { setRestrictedCountries([...restrictedCountries, v]); setRestrictedCountryInput(""); }
+  }
+
+  function addRestrictedRole() {
+    const v = restrictedRoleInput.trim();
+    if (v && !restrictedRoles.includes(v)) { setRestrictedRoles([...restrictedRoles, v]); setRestrictedRoleInput(""); }
   }
 
   function toggleInArray(arr: string[], val: string, setter: (a: string[]) => void) {
@@ -377,6 +393,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       icp_company_types: selectedCompanyTypes,
       icp_company_sizes: selectedCompanySizes,
       icp_exclude_keywords: excludeKeywords,
+      icp_restricted_countries: restrictedCountries,
+      icp_restricted_roles: restrictedRoles,
       precision_mode: precisionMode,
       signals_config: {
         enabled: activeSubSignals,
@@ -695,9 +713,74 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                         </div>
                       )}
                     </div>
+
+                    {/* Restricted Countries */}
+                    <div>
+                      <label className="flex items-center gap-1 text-xs font-semibold text-foreground mb-1.5">
+                        Restricted Countries
+                        <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          value={restrictedCountryInput}
+                          onChange={(e) => setRestrictedCountryInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addRestrictedCountry())}
+                          placeholder="e.g., India, Pakistan"
+                          className={`flex-1 ${inputCls}`}
+                        />
+                        <button onClick={addRestrictedCountry} className="text-sm font-medium text-foreground hover:text-foreground/70 px-3 transition-colors">
+                          Add
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">Leads located in these countries are always banned, even in Discovery mode.</p>
+                      {restrictedCountries.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {restrictedCountries.map((k) => (
+                            <span key={k} className="inline-flex items-center gap-1 text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 rounded-full px-2.5 py-1">
+                              {k}
+                              <button onClick={() => setRestrictedCountries(restrictedCountries.filter((x) => x !== k))} className="hover:text-destructive">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Restricted Roles */}
+                    <div>
+                      <label className="flex items-center gap-1 text-xs font-semibold text-foreground mb-1.5">
+                        Restricted Roles
+                        <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          value={restrictedRoleInput}
+                          onChange={(e) => setRestrictedRoleInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addRestrictedRole())}
+                          placeholder="e.g., Intern, Student"
+                          className={`flex-1 ${inputCls}`}
+                        />
+                        <button onClick={addRestrictedRole} className="text-sm font-medium text-foreground hover:text-foreground/70 px-3 transition-colors">
+                          Add
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">Leads whose title contains any of these terms are always banned, even in Discovery mode.</p>
+                      {restrictedRoles.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {restrictedRoles.map((k) => (
+                            <span key={k} className="inline-flex items-center gap-1 text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20 rounded-full px-2.5 py-1">
+                              {k}
+                              <button onClick={() => setRestrictedRoles(restrictedRoles.filter((x) => x !== k))} className="hover:text-destructive">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Lead Matching Mode */}
                   <div className="mt-6">
                     <label className="flex items-center gap-1 text-xs font-semibold text-foreground mb-3">
                       Lead Matching Mode

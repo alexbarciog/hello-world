@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ─── Shared types & helpers (same as signal-keyword-posts) ────────────────────
 
-interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
+interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; restrictedCountries: string[]; restrictedRoles: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
 // Timer moved inside request handler (fixes warm isolate bug)
@@ -95,6 +95,18 @@ function isExcluded(profile: any, excludeKeywords: string[], competitorCompanies
   return excludeKeywords.some(kw => text.includes(kw));
 }
 
+function isRestricted(profile: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [profile.location, profile.country, profile.city, profile.region].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [profile.headline, profile.title, profile.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
+}
+
 function unipileGet(path: string, apiKey: string, dsn: string) { return fetch(`https://${dsn}${path}`, { headers: { 'X-API-KEY': apiKey } }); }
 function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
@@ -142,7 +154,7 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
   const firstName = profile.first_name||profile.name?.split(' ')[0]||'Unknown';
   const lastName = profile.last_name||profile.name?.split(' ').slice(1).join(' ')||'';
   const hl = profile.headline||profile.title||'';
-  const emptyIcp: ICPFilters = { jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[] };
+  const emptyIcp: ICPFilters = { jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[] };
   const relevanceTier = classifyContact(match, icp||emptyIcp, hl)||'cold';
   const signalAHit = true; const signalBHit = match.score >= 60; const signalCHit = match.score >= 80;
   const aiScore = Math.min(3, [signalAHit,signalBHit,signalCHit].filter(Boolean).length);
@@ -315,6 +327,8 @@ Deno.serve(async (req) => {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
+      restrictedCountries: (icpRaw?.restrictedCountries||[]).map((s: string) => s.toLowerCase()),
+      restrictedRoles: (icpRaw?.restrictedRoles||[]).map((s: string) => s.toLowerCase()),
     };
 
     let inserted = 0;
@@ -415,6 +429,7 @@ Deno.serve(async (req) => {
           const hl = fullProfile.headline || fullProfile.title || '';
           if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; continue; }
           if (!matchesIndustry(fullProfile, match, icp)) { diag.excluded_no_icp_match++; continue; }
+          if (isRestricted(fullProfile, icp.restrictedCountries, icp.restrictedRoles)) { diag.excluded_competitor++; continue; }
           if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
           // Fix 5: seller filter
           if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }

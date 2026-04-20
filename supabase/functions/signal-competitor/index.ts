@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
-interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
+interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; restrictedCountries: string[]; restrictedRoles: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
 const BUYING_INTENT_KEYWORDS = ['ceo','cto','coo','cfo','cmo','cro','cpo','cio','founder','co-founder','cofounder','owner','partner','president','principal','vp','vice president','director','head of','chief','general manager','managing director','svp','evp','avp'];
@@ -69,6 +69,18 @@ function classifyCompetitorContact(m: MatchResult, icp: ICPFilters, hl?: string)
   if(h.length>5) return 'warm';
   if(icp.jobTitles.length===0&&icp.industries.length===0) return 'warm';
   return null;
+}
+
+function isRestricted(p: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [p.location, p.country, p.city, p.region].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [p.headline, p.title, p.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
 }
 
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
@@ -317,6 +329,8 @@ Deno.serve(async (req) => {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
+      restrictedCountries: (icpRaw?.restrictedCountries||[]).map((s: string) => s.toLowerCase()),
+      restrictedRoles: (icpRaw?.restrictedRoles||[]).map((s: string) => s.toLowerCase()),
     };
 
     // Lightweight rejected-profile collector for AI suggestions (capped at 200 / task)
@@ -735,6 +749,12 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Restricted countries / roles (hard ban — applies in both modes)
+        if (isRestricted(fp, icp.restrictedCountries, icp.restrictedRoles)) {
+          pipelineStats.excluded_competitor_employee++;
+          continue;
+        }
+
         // Competitor employee exclusion (global list)
         if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) {
           pipelineStats.excluded_competitor_employee++;
@@ -1013,6 +1033,7 @@ Deno.serve(async (req) => {
                 if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(fp, ownCompanyLower)) { pipelineStats.excluded_own_company++; continue; }
                 // Explicit competitor employee exclusion: skip people who work at THIS competitor
                 if (worksAtCompany(fp, companyName)) { pipelineStats.excluded_competitor_direct_employee = (pipelineStats.excluded_competitor_direct_employee || 0) + 1; continue; }
+                if (isRestricted(fp, icp.restrictedCountries, icp.restrictedRoles)) { pipelineStats.excluded_competitor_employee++; continue; }
                 if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { pipelineStats.excluded_competitor_employee++; continue; }
                 const hl = fp.headline || fp.title || '';
                 if (isClearlyIrrelevant(hl)) { pipelineStats.excluded_irrelevant_title++; continue; }

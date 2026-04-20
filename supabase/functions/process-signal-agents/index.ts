@@ -231,6 +231,8 @@ async function processSingleAgent(agentId: string, runId: string) {
     companySizes: (agent.icp_company_sizes || []).map((s: string) => s.trim()).filter(Boolean),
     companyTypes: (agent.icp_company_types || []).map((s: string) => s.trim()).filter(Boolean),
     excludeKeywords: (agent.icp_exclude_keywords || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+    restrictedCountries: (agent.icp_restricted_countries || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+    restrictedRoles: (agent.icp_restricted_roles || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
   };
 
   const basePayload = {

@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
-interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; }
+interface ICPFilters { jobTitles: string[]; industries: string[]; locations: string[]; companySizes: string[]; companyTypes: string[]; excludeKeywords: string[]; competitorCompanies: string[]; restrictedCountries: string[]; restrictedRoles: string[]; }
 interface MatchResult { titleMatch: boolean; industryMatch: boolean; locationMatch: boolean; score: number; matchedFields: string[]; }
 
 // Timer moved inside request handler (fixes warm isolate bug)
@@ -42,6 +42,17 @@ function classifyContact(m: MatchResult,icp: ICPFilters,hl?:string): 'hot'|'warm
   return null;
 }
 function matchesTitleOrIndustry(m: MatchResult,icp: ICPFilters,hl?:string): boolean { return classifyContact(m,icp,hl)!==null; }
+function isRestricted(p: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [p.location, p.country, p.city, p.region].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [p.headline, p.title, p.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
+}
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   const companyFields: string[] = [];
   if (p.company) companyFields.push(p.company);
@@ -127,7 +138,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   if(ex?.length>0) return 'exists';
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
-  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
+  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[]};
   const rt=classifyContact(m,icp||ei,hl)||'cold';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({
@@ -212,6 +223,8 @@ Deno.serve(async (req) => {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
       excludeKeywords: icpRaw?.excludeKeywords||[], competitorCompanies: competitor_companies||[],
+      restrictedCountries: (icpRaw?.restrictedCountries||[]).map((s: string) => s.toLowerCase()),
+      restrictedRoles: (icpRaw?.restrictedRoles||[]).map((s: string) => s.toLowerCase()),
     };
     const isHighPrecision = precision_mode === 'high_precision';
 
@@ -352,6 +365,7 @@ Deno.serve(async (req) => {
             const match = scoreProfileAgainstICP(fullProfile, icp);
             const hl = fullProfile.headline || fullProfile.title || '';
             if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fullProfile, 'icp_match_failed'); continue; }
+            if (isRestricted(fullProfile, icp.restrictedCountries, icp.restrictedRoles)) { diag.excluded_competitor++; continue; }
             if (isExcluded(fullProfile, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
             // Fix 5: seller filter — reject engagers whose headline screams "I sell this"
             if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
@@ -454,6 +468,7 @@ Deno.serve(async (req) => {
               const match = scoreProfileAgainstICP(fp, icp);
               const hl = fp.headline||fp.title||'';
               if (!matchesTitleOrIndustry(match, icp, hl)) { diag.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
+              if (isRestricted(fp, icp.restrictedCountries, icp.restrictedRoles)) { diag.excluded_competitor++; continue; }
               if (isExcluded(fp, icp.excludeKeywords, icp.competitorCompanies)) { diag.excluded_competitor++; continue; }
               // Fix 5: seller filter
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }

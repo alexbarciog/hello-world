@@ -15,6 +15,8 @@ interface ICPFilters {
   companyTypes: string[];
   excludeKeywords: string[];
   competitorCompanies: string[];
+  restrictedCountries: string[];
+  restrictedRoles: string[];
 }
 
 interface MatchResult {
@@ -231,7 +233,7 @@ async function insertContact(
   const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
-  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [], competitorCompanies: [] };
+  const emptyIcp: ICPFilters = { jobTitles: [], industries: [], locations: [], companySizes: [], companyTypes: [], excludeKeywords: [], competitorCompanies: [], restrictedCountries: [], restrictedRoles: [] };
   const relevanceTier = classifyContactWithIntentScore(match, icp || emptyIcp, hl, intentScore) || 'cold';
   const signalAHit = true;
   const signalBHit = match.score >= 60 || (intentScore !== undefined && intentScore >= 60);
@@ -631,6 +633,8 @@ Deno.serve(async (req) => {
       companyTypes: icpRaw?.companyTypes || [],
       excludeKeywords: icpRaw?.excludeKeywords || [],
       competitorCompanies: competitor_companies || [],
+      restrictedCountries: (icpRaw?.restrictedCountries || []).map((s: string) => s.toLowerCase()),
+      restrictedRoles: (icpRaw?.restrictedRoles || []).map((s: string) => s.toLowerCase()),
     };
 
     console.log(`[CONFIG] ICP: titles=[${icp.jobTitles.join(',')}], industries=[${icp.industries.join(',')}], locations=[${icp.locations.join(',')}], ownCompany="${ownCompanyLower}", minScore=${MIN_INTENT_SCORE}`);
@@ -1053,6 +1057,13 @@ Deno.serve(async (req) => {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
           keywordSkipped.ownCompany++;
           pipelineStats.rejected_own_company++;
+          continue;
+        }
+
+        // Restricted countries / roles (hard ban — applies in both modes)
+        if (isRestricted(author, icp.restrictedCountries, icp.restrictedRoles)) {
+          console.log(`[PIPELINE] ⏭ ${lpid}: restricted (country or role)`);
+          keywordSkipped.excluded++;
           continue;
         }
 
