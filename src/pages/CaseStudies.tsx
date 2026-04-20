@@ -211,8 +211,8 @@ const CaseStudies = () => {
             {/* Copy side */}
             <div className={`lg:col-span-7 ${idx % 2 === 1 ? "lg:order-1" : ""} bg-[#f9f9fa] rounded-[28px] p-8 md:p-12 flex flex-col justify-center`}>
               <div className="flex items-center gap-3 mb-6">
-                <div className={`w-10 h-10 rounded-xl ${study.accentBg} flex items-center justify-center`}>
-                  <span className={`text-xs font-semibold ${study.accentText}`}>{String(idx + 1).padStart(2, "0")}</span>
+                <div className="w-10 h-10 rounded-xl bg-white border border-border/60 flex items-center justify-center overflow-hidden">
+                  <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
                 </div>
                 <div>
                   <div className="text-sm font-medium text-foreground">{study.company}</div>
