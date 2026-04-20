@@ -5,6 +5,7 @@ import { CTASection, Footer } from "@/components/CTAFooter";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import massoftindLogo from "@/assets/logo-massoftind.png";
+import logicmelonLogo from "@/assets/logo-logicmelon.png";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
 
 interface CaseStudy {
@@ -88,6 +89,7 @@ const caseStudies: CaseStudy[] = [
     bgClass: "bg-[#C8FF00]",
     accentText: "text-[#1A1A2E]",
     accentBg: "bg-[#C8FF00]/30",
+    logo: logicmelonLogo,
   },
 ];
 
