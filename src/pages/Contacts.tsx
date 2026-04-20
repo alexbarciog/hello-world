@@ -675,8 +675,17 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    {["Contact", "Signal", "Score", "Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
-                      <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3">
+                    <th style={{ left: 40, width: 280 }} className="sticky z-20 bg-muted/30 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
+                      Contact
+                    </th>
+                    <th style={{ left: 320, width: 180 }} className="sticky z-20 bg-muted/30 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border">
+                      Signal
+                    </th>
+                    <th style={{ left: 500, width: 90 }} className="sticky z-20 bg-muted/30 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
+                      Score
+                    </th>
+                    {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", ""].map((h) => (
+                      <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
                         {h}
                       </th>
                     ))}
@@ -686,7 +695,7 @@ export default function Contacts() {
                   {paged.map((c) => {
                     const cLists = getContactListNames(c.id);
                     return (
-                    <tr key={c.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                    <tr key={c.id} className="group hover:bg-muted/20 transition-colors">
                       <td className="w-10 px-4 py-3">
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
