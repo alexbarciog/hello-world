@@ -1,99 +1,11 @@
 import { useEffect } from "react";
-import { ArrowUpRight, TrendingUp, Calendar, Sparkles, Target, Zap, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, TrendingUp, Calendar, Sparkles, Target, Zap } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
-import intentslyIcon from "@/assets/intentsly-icon.png";
-import massoftindLogo from "@/assets/logo-massoftind.png";
-import logicmelonLogo from "@/assets/logo-logicmelon.png";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
-
-interface CaseStudy {
-  slug: string;
-  company: string;
-  domain: string;
-  industry: string;
-  headline: string;
-  result: string;
-  resultLabel: string;
-  timeframe: string;
-  meetings: number;
-  challenge: string;
-  solution: string;
-  outcome: string;
-  bgClass: string;
-  accentText: string;
-  accentBg: string;
-  logo?: string;
-}
-
-const caseStudies: CaseStudy[] = [
-  {
-    slug: "intentsly",
-    company: "Intentsly",
-    domain: "intentsly.com",
-    industry: "AI Sales Platform",
-    headline: "How we used our own platform to book 14 meetings in 2 weeks",
-    result: "14",
-    resultLabel: "meetings booked",
-    timeframe: "2 weeks",
-    meetings: 14,
-    challenge:
-      "Launching a new AI sales platform in a noisy market — competing against established outreach tools with massive budgets and existing brand awareness.",
-    solution:
-      "We deployed our own intent signals + AI SDR on LinkedIn. Targeted founders complaining about cold outreach burnout, ran conversational AI replies, and let the system book demos automatically.",
-    outcome:
-      "14 qualified demos in 14 days. Zero manual outreach. Reply rate 4× our previous cold campaigns. Most leads came from intent signals we caught in real-time.",
-    bgClass: "bg-[#1A8FE3]",
-    accentText: "text-[#1A8FE3]",
-    accentBg: "bg-[#1A8FE3]/10",
-    logo: intentslyIcon,
-  },
-  {
-    slug: "massoftind",
-    company: "Massoftind",
-    domain: "massoftind.com",
-    industry: "Software Development Agency",
-    headline: "A dev agency booked 3 qualified meetings in less than a week",
-    result: "3",
-    resultLabel: "meetings booked",
-    timeframe: "< 1 week",
-    meetings: 3,
-    challenge:
-      "A boutique software agency tired of low-conversion cold email and unreliable referrals. They needed a predictable channel for inbound-quality conversations without hiring an SDR.",
-    solution:
-      "We set up a Conversational AI campaign targeting startup founders and CTOs actively posting about engineering bottlenecks. Each invite was personalized off the lead's actual signal.",
-    outcome:
-      "3 demo calls in their first 6 days live — all founders with active hiring or build-vs-buy posts. Two converted to scoping calls within the same week.",
-    bgClass: "bg-[#0F172A]",
-    accentText: "text-[#1A1A2E]",
-    accentBg: "bg-[#EDEEFC]",
-    logo: massoftindLogo,
-  },
-  {
-    slug: "logicmelon",
-    company: "LogicMelon",
-    domain: "logicmelon.com",
-    industry: "HR Tech / Recruitment Software",
-    headline: "An enterprise recruitment platform booked a meeting in 2 days",
-    result: "1",
-    resultLabel: "meeting in 48h",
-    timeframe: "2 days",
-    meetings: 1,
-    challenge:
-      "Selling enterprise recruitment software requires reaching busy HR directors and TA leaders — a notoriously hard audience to break into via cold channels.",
-    solution:
-      "We launched a high-precision agent surfacing TA leaders engaging with hiring-pain content on LinkedIn. AI SDR opened with the lead's specific signal — not a generic pitch.",
-    outcome:
-      "First qualified meeting booked within 48 hours of going live, with an HR Director at a 500+ employee org. Pipeline started compounding from week one.",
-    bgClass: "bg-[#C8FF00]",
-    accentText: "text-[#1A1A2E]",
-    accentBg: "bg-[#C8FF00]/30",
-    logo: logicmelonLogo,
-  },
-];
-
-const totalMeetings = caseStudies.reduce((sum, c) => sum + c.meetings, 0);
+import { caseStudies, totalMeetings } from "@/data/caseStudies";
 
 const CaseStudies = () => {
   useEffect(() => {
