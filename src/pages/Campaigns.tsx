@@ -185,6 +185,7 @@ export default function CampaignsPage() {
   const sub = useSubscription();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
+  const [meetingsCount, setMeetingsCount] = useState(0);
 
 
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
@@ -255,6 +256,15 @@ export default function CampaignsPage() {
       })
     );
     setCampaigns(withCounts);
+    // Load opportunities (meetings) for current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { count: mCount } = await supabase
+        .from("meetings")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      setMeetingsCount(mCount ?? 0);
+    }
     setLoading(false);
   };
 
@@ -405,12 +415,14 @@ export default function CampaignsPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
         
           {[
         { label: "Total Leads", value: totalLeads, icon: Users, accent: "primary" as const },
         { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, accent: "emerald" as const },
         { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, accent: "secondary" as const },
+        { label: "Conversations Started", value: totalAccepted.toLocaleString(), icon: Bot, accent: "secondary" as const },
+        { label: "Opportunities", value: meetingsCount.toLocaleString(), icon: Sparkles, accent: "emerald" as const },
         { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, accent: "tertiary" as const }].
         map((stat, index) => {
           const isFeatured = stat.label === "Total Leads";
