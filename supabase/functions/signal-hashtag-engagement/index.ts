@@ -146,7 +146,7 @@ function isSeller(postText: string, authorHeadline: string): boolean {
 }
 
 // Rule 3 (Hard Skip): returns 'exists' if profile already in contacts
-async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters): Promise<'inserted'|'exists'|'failed'> {
+async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted'|'exists'|'failed'> {
   const linkedinProfileId = profile.public_id||profile.public_identifier||profile.provider_id||profile.id;
   if (!linkedinProfileId) return 'failed';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
@@ -167,6 +167,7 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
     email_enriched: false, list_name: listName,
     company_icon_color: ['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier: relevanceTier,
+    approval_status: manualApproval ? 'pending' : 'auto_approved',
   }).select('id').single();
   if (error) { console.error(`Insert contact error: ${error.message}`); return 'failed'; }
   if (inserted?.id && listName) { const listId = await ensureList(supabase, userId, listName, agentId); if (listId) await supabase.from('contact_lists').insert({ contact_id: inserted.id, list_id: listId }); }

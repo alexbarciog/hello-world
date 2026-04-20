@@ -188,7 +188,7 @@ async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<s
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }
 
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters): Promise<'inserted' | 'duplicate' | 'rejected'>{
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted' | 'duplicate' | 'rejected'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'duplicate';
@@ -205,6 +205,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     ai_score:as,signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier:rt,
+    approval_status: manualApproval ? 'pending' : 'auto_approved',
   }).select('id').single();
   if(error){console.error(`Insert contact error: ${error.message}`);return 'rejected';}
   if(ins?.id&&ln){const lid=await ensureList(sb,uid,ln,aid);if(lid) await sb.from('contact_lists').insert({contact_id:ins.id,list_id:lid});}
