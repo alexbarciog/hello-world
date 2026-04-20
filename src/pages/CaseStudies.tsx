@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import massoftindLogo from "@/assets/logo-massoftind.png";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
 
 interface CaseStudy {
@@ -22,6 +23,7 @@ interface CaseStudy {
   bgClass: string;
   accentText: string;
   accentBg: string;
+  logo?: string;
 }
 
 const caseStudies: CaseStudy[] = [
@@ -44,6 +46,7 @@ const caseStudies: CaseStudy[] = [
     bgClass: "bg-[#1A8FE3]",
     accentText: "text-[#1A8FE3]",
     accentBg: "bg-[#1A8FE3]/10",
+    logo: intentslyIcon,
   },
   {
     slug: "massoftind",
@@ -64,6 +67,7 @@ const caseStudies: CaseStudy[] = [
     bgClass: "bg-[#0F172A]",
     accentText: "text-[#1A1A2E]",
     accentBg: "bg-[#EDEEFC]",
+    logo: massoftindLogo,
   },
   {
     slug: "logicmelon",
@@ -212,7 +216,11 @@ const CaseStudies = () => {
             <div className={`lg:col-span-7 ${idx % 2 === 1 ? "lg:order-1" : ""} bg-[#f9f9fa] rounded-[28px] p-8 md:p-12 flex flex-col justify-center`}>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-white border border-border/60 flex items-center justify-center overflow-hidden">
-                  <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
+                  {study.logo ? (
+                    <img src={study.logo} alt={study.company} className="w-7 h-7 object-contain" />
+                  ) : (
+                    <span className={`text-xs font-semibold ${study.accentText}`}>{study.company.slice(0, 2).toUpperCase()}</span>
+                  )}
                 </div>
                 <div>
                   <div className="text-sm font-medium text-foreground">{study.company}</div>
