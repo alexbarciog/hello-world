@@ -245,6 +245,7 @@ async function processSingleAgent(agentId: string, runId: string) {
     business_context: businessContext,
     user_company_name: userCompanyName,
     precision_mode: agent.precision_mode || 'discovery',
+    manual_approval: (agent as any).manual_approval || false,
   };
 
   // ── Build task list ──
