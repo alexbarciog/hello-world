@@ -2,7 +2,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import massoftindLogo from "@/assets/logo-massoftind.png";
 import logicmelonLogo from "@/assets/logo-logicmelon.png";
 import ogIntentsly from "@/assets/og/case-study-intentsly.jpg";
-import ogMassoftind from "@/assets/og/case-study-massoftind.jpg";
+import ogMassoftind from "@/assets/og/case-study-massoftind.png";
 import ogLogicmelon from "@/assets/og/case-study-logicmelon.png";
 
 export interface CaseStudyMetric {
