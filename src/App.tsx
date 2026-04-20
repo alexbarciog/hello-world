@@ -29,6 +29,7 @@ import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import VideoShowcase from "./pages/VideoShowcase.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
+import CaseStudies from "./pages/CaseStudies.tsx";
 import IntegrationsPage from "./pages/Integrations.tsx";
 import AiSdrOutreach from "./pages/features/AiSdrOutreach.tsx";
 import ConversationalAi from "./pages/features/ConversationalAi.tsx";
@@ -203,6 +204,7 @@ const App = () => (
           <Route path="/support" element={<AuthGuard><DashboardLayout><Support /></DashboardLayout></AuthGuard>} />
           <Route path="/admin" element={<AuthGuard><DashboardLayout><AdminDashboard /></DashboardLayout></AuthGuard>} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/video" element={<VideoShowcase />} />
           <Route path="*" element={<NotFound />} />
