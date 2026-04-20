@@ -6,6 +6,7 @@ import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
   Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock, Bot,
+  CheckCircle2, XCircle, ShieldCheck,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -15,7 +16,7 @@ import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { toast } from "sonner";
 
-type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked";
+type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked" | "pending_approval";
 
 export default function Contacts() {
   const navigate = useNavigate();
