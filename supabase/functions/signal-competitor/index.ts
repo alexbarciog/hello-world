@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies, user_company_name, precision_mode, run_id, task_key } = await req.json();
+    const { agent_id, account_id, user_id, list_name, signal_type, urls, icp: icpRaw, competitor_companies, user_company_name, precision_mode, run_id, task_key, manual_approval } = await req.json();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
