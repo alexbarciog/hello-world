@@ -10,7 +10,32 @@ import { caseStudies, totalMeetings } from "@/data/caseStudies";
 const CaseStudies = () => {
   useEffect(() => {
     ttqViewContent("Case Studies", "case-studies");
-    document.title = "Case Studies — Real customers booking real meetings | Intentsly";
+    const title = "Case Studies — Real customers booking real meetings | Intentsly";
+    const description =
+      "Real teams using Intentsly to book qualified LinkedIn meetings in days, not quarters. Read the playbooks behind 18+ meetings booked across SaaS, dev agencies, and enterprise HR Tech.";
+    document.title = title;
+
+    const setMeta = (selector: string, attr: string, value: string) => {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
+      if (!el) {
+        if (selector.startsWith("link")) {
+          el = document.createElement("link");
+          (el as HTMLLinkElement).rel = "canonical";
+        } else {
+          el = document.createElement("meta");
+          const name = selector.match(/\[(name|property)="([^"]+)"\]/);
+          if (name) (el as HTMLMetaElement).setAttribute(name[1], name[2]);
+        }
+        document.head.appendChild(el);
+      }
+      el.setAttribute(attr, value);
+    };
+
+    setMeta('meta[name="description"]', "content", description);
+    setMeta('meta[property="og:title"]', "content", title);
+    setMeta('meta[property="og:description"]', "content", description);
+    setMeta('meta[property="og:type"]', "content", "website");
+    setMeta('link[rel="canonical"]', "href", `${window.location.origin}/case-studies`);
   }, []);
 
   return (
