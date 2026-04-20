@@ -128,6 +128,11 @@ export default function Contacts() {
       setMeetings(mMap);
     }
 
+    // Populate lists state
+    if (listsRes.data) {
+      setLists(listsRes.data as ContactList[]);
+    }
+
     // Build contact -> list_ids map
     if (junctionRes.data) {
       const map: Record<string, string[]> = {};
