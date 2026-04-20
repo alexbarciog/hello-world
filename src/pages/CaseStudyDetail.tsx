@@ -44,15 +44,20 @@ const CaseStudyDetail = () => {
     document.title = study.metaTitle;
 
     const url = `${window.location.origin}/case-studies/${study.slug}`;
+    const ogImageUrl = `${window.location.origin}${study.ogImage}`;
 
     setOrCreateMeta('meta[name="description"]', study.metaDescription);
     setOrCreateMeta('meta[property="og:title"]', study.metaTitle);
     setOrCreateMeta('meta[property="og:description"]', study.metaDescription);
     setOrCreateMeta('meta[property="og:type"]', "article");
     setOrCreateMeta('meta[property="og:url"]', url);
+    setOrCreateMeta('meta[property="og:image"]', ogImageUrl);
+    setOrCreateMeta('meta[property="og:image:width"]', "1200");
+    setOrCreateMeta('meta[property="og:image:height"]', "630");
     setOrCreateMeta('meta[name="twitter:card"]', "summary_large_image");
     setOrCreateMeta('meta[name="twitter:title"]', study.metaTitle);
     setOrCreateMeta('meta[name="twitter:description"]', study.metaDescription);
+    setOrCreateMeta('meta[name="twitter:image"]', ogImageUrl);
     setOrCreateMeta('link[rel="canonical"]', url);
 
     // JSON-LD Article schema
