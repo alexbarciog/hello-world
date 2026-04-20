@@ -727,21 +727,6 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 max-w-[180px]">
-                        <span className="text-xs text-foreground truncate block max-w-[170px]" title={c.title || ""}>
-                          {c.title || <span className="text-muted-foreground">—</span>}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 max-w-[160px]">
-                        <span className="text-xs text-foreground truncate block max-w-[150px]" title={c.company || ""}>
-                          {c.company || <span className="text-muted-foreground">—</span>}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 max-w-[140px]">
-                        <span className="text-xs text-muted-foreground truncate block max-w-[130px]" title={c.industry || ""}>
-                          {c.industry || <span className="text-muted-foreground/60">—</span>}
-                        </span>
-                      </td>
                       <td className="px-3 py-3 max-w-[220px]">
                         {c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
@@ -761,6 +746,21 @@ export default function Contacts() {
                             ));
                           })()}
                         </div>
+                      </td>
+                      <td className="px-3 py-3 max-w-[180px]">
+                        <span className="text-xs text-foreground truncate block max-w-[170px]" title={c.title || ""}>
+                          {c.title || <span className="text-muted-foreground">—</span>}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 max-w-[160px]">
+                        <span className="text-xs text-foreground truncate block max-w-[150px]" title={c.company || ""}>
+                          {c.company || <span className="text-muted-foreground">—</span>}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 max-w-[140px]">
+                        <span className="text-xs text-muted-foreground truncate block max-w-[130px]" title={c.industry || ""}>
+                          {c.industry || <span className="text-muted-foreground/60">—</span>}
+                        </span>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex flex-col gap-1">
