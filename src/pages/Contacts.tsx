@@ -303,7 +303,7 @@ export default function Contacts() {
     }
   };
 
-
+  const tierCounts = useMemo(() => {
     const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0, pending_approval: 0 };
     contacts.forEach((c) => {
       if (c.lead_status === 'not_interested') counts.not_interested++;
