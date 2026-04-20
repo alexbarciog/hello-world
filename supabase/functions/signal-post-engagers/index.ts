@@ -374,7 +374,7 @@ Deno.serve(async (req) => {
             const cls = classifyContact(match, icp, hl);
             if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp);
+            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval);
             if (result === 'exists') { diag.already_in_contacts++; continue; }
             if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
@@ -476,7 +476,7 @@ Deno.serve(async (req) => {
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }
               const cls2 = classifyContact(match, icp, hl);
               if (cls2 === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
-              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp);
+              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval);
               if (result === 'exists') { diag.already_in_contacts++; continue; }
               if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }

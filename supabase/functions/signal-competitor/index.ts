@@ -847,7 +847,7 @@ Deno.serve(async (req) => {
         const signal = engager.signalType === 'comment'
           ? `Commented on ${companyName}'s post`
           : `Reacted to ${companyName}'s post`;
-        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp);
+        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval);
 
         if (result === 'inserted') {
           const tier = classifyCompetitorContact(match, icp, hl) || 'warm';
@@ -1087,7 +1087,7 @@ Deno.serve(async (req) => {
                   if (!passes) { pipelineStats.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
-                const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp);
+                const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp, manual_approval);
                 if (result === 'inserted') { pipelineStats.inserted++; inserted++; }
                 else if (result === 'duplicate') { pipelineStats.duplicates++; }
                 else { pipelineStats.rejected++; }
