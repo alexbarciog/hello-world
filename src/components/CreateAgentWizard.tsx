@@ -136,6 +136,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [showNewList, setShowNewList] = useState(false);
   const [existingLists, setExistingLists] = useState<string[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
+  const [manualApproval, setManualApproval] = useState(false);
 
   // Dropdowns
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -158,6 +159,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         setRestrictedRoles((data as any).icp_restricted_roles || []);
         setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
         setLeadsListName(data.leads_list_name || "");
+        setManualApproval((data as any).manual_approval || false);
         const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
         if (config?.enabled) {
           const map: Record<string, boolean> = {};
@@ -400,9 +402,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         enabled: activeSubSignals,
         keywords: signalKeywords,
       },
-      // If no list selected, default to the agent name so the auto-created
-      // list is predictable and filterable in the Contacts tab.
       leads_list_name: (leadsListName || agentName || "My Agent").trim(),
+      manual_approval: manualApproval,
     };
 
     let error;
