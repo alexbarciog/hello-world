@@ -589,11 +589,11 @@ export default function Contacts() {
               </div>
             )}
             {/* ── Desktop table ── */}
-            <div className="hidden md:block border-x border-border overflow-x-auto">
+            <div className="hidden md:block border-x border-border overflow-x-auto bg-card">
               <table className="w-full border-separate border-spacing-0">
                 <thead>
-                  <tr className="bg-muted/30">
-                    <th className="sticky left-0 z-20 bg-muted/30 w-10 px-4 py-3 relative border-b border-border">
+                  <tr>
+                    <th className="sticky left-0 z-20 bg-[hsl(var(--muted))] w-10 px-4 py-3 relative border-b border-border">
                       <input
                         type="checkbox"
                         checked={selectedIds.size > 0}
