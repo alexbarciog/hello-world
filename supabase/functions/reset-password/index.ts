@@ -114,7 +114,7 @@ serve(async (req) => {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Intentsly <onboarding@resend.dev>',
+        from: 'Intentsly <no-reply@intentsly.com>',
         to: [email],
         subject: `${code} – Your Intentsly password reset code`,
         html,
