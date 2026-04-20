@@ -14,6 +14,8 @@ interface ICPFilters {
   companySizes: string[];
   companyTypes: string[];
   excludeKeywords: string[];
+  restrictedCountries: string[];
+  restrictedRoles: string[];
 }
 
 interface MatchResult {
@@ -82,6 +84,8 @@ Deno.serve(async (req) => {
           companySizes: (campaign.icp_company_sizes || []).map((s: string) => s.trim()).filter(Boolean),
           companyTypes: (campaign.icp_company_types || []).map((s: string) => s.trim()).filter(Boolean),
           excludeKeywords: (campaign.icp_exclude_keywords || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+          restrictedCountries: ((campaign as any).icp_restricted_countries || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
+          restrictedRoles: ((campaign as any).icp_restricted_roles || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
         };
 
         console.log(`Campaign ${campaign.id} [${precisionMode}]: ICP = titles:${icp.jobTitles.length}, industries:${icp.industries.length}, locations:${icp.locations.length}`);
@@ -294,6 +298,19 @@ function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
   }
 
   return { titleMatch, industryMatch, locationMatch, score: Math.min(100, score), matchedFields };
+}
+
+function isRestricted(profile: any, restrictedCountries: string[], restrictedRoles: string[]): boolean {
+  if (restrictedCountries.length > 0) {
+    const loc = [profile.location, profile.country, profile.city, profile.region]
+      .filter(Boolean).join(' ').toLowerCase();
+    if (restrictedCountries.some((c) => loc.includes(c))) return true;
+  }
+  if (restrictedRoles.length > 0) {
+    const role = [profile.headline, profile.title, profile.role].filter(Boolean).join(' ').toLowerCase();
+    if (restrictedRoles.some((r) => role.includes(r))) return true;
+  }
+  return false;
 }
 
 function isExcluded(profile: any, excludeKeywords: string[]): boolean {
