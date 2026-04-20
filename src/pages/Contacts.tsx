@@ -285,7 +285,25 @@ export default function Contacts() {
     }
   };
 
-  const tierCounts = useMemo(() => {
+  const handleApproveReject = async (contactIds: string[], status: 'approved' | 'rejected') => {
+    setApprovingIds((prev) => { const next = new Set(prev); contactIds.forEach((id) => next.add(id)); return next; });
+    try {
+      for (let i = 0; i < contactIds.length; i += 50) {
+        const batch = contactIds.slice(i, i + 50);
+        const { error } = await supabase.from("contacts").update({ approval_status: status }).in("id", batch);
+        if (error) throw error;
+      }
+      toast.success(`${contactIds.length} contact(s) ${status === 'approved' ? 'approved' : 'rejected'}`);
+      setContacts((prev) => prev.map((c) => contactIds.includes(c.id) ? { ...c, approval_status: status } as Contact : c));
+      if (selectedIds.size > 0) setSelectedIds(new Set());
+    } catch (err: any) {
+      toast.error(`Failed to ${status} contacts`);
+    } finally {
+      setApprovingIds((prev) => { const next = new Set(prev); contactIds.forEach((id) => next.delete(id)); return next; });
+    }
+  };
+
+
     const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0, pending_approval: 0 };
     contacts.forEach((c) => {
       if (c.lead_status === 'not_interested') counts.not_interested++;
