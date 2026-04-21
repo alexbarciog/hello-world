@@ -480,7 +480,26 @@ intent_score looks high. Buyer status and competitor status are independent
 fields — set both honestly. The pipeline will reject any is_competitor=true
 result regardless of intent score.
 
-When unsure / not enough author signal → is_competitor=false.`;
+When unsure / not enough author signal → is_competitor=false.${idealLeadDescription ? `
+
+═══════════════════════════════════════════════════════════════════════════════
+PERFECT LEAD MATCH (ICP fit check — independent of buyer & competitor checks)
+═══════════════════════════════════════════════════════════════════════════════
+The user has explicitly described their PERFECT LEAD as follows:
+
+"""
+${idealLeadDescription}
+"""
+
+For each post, you must ALSO decide whether the AUTHOR (based on their headline + post content) plausibly fits this description. Set matches_perfect_lead=true if the author's profile signals a reasonable fit, false if they clearly do NOT fit.
+
+Rules:
+- This is a SOFT fit check on free-text criteria, NOT a strict keyword match. Use judgment.
+- DEFAULT TO matches_perfect_lead=true when the author's role/seniority/industry is ambiguous or unknown — structured ICP filters already enforce hard requirements elsewhere.
+- Only set matches_perfect_lead=false when the author's headline CLEARLY contradicts the description (e.g. description says "VP of Marketing at e-commerce brands" and the author is a "Software Engineer at a bank").
+- Provide a 1-sentence match_reason explaining the decision.
+
+The pipeline will REJECT any post where matches_perfect_lead=false, regardless of intent score.` : ''}`;
 
   for (let i = 0; i < postsWithText.length; i += 8) {
     const batch = postsWithText.slice(i, i + 8);
@@ -531,8 +550,10 @@ When unsure / not enough author signal → is_competitor=false.`;
                         signal_type: { type: 'string', enum: ['seeking_recommendation', 'actively_evaluating', 'frustrated_with_current', 'problem_aware', 'not_a_buyer'] },
                         is_competitor: { type: 'boolean', description: 'True if the AUTHOR is a service provider in the same/similar space as the user (competitor). Independent of buyer status.' },
                         competitor_reason: { type: 'string', description: 'One sentence explaining why the author is or is not a competitor.' },
+                        matches_perfect_lead: { type: 'boolean', description: 'True if the AUTHOR plausibly fits the user\'s free-text "Perfect Lead" description. Default true when unsure.' },
+                        match_reason: { type: 'string', description: 'One sentence explaining the perfect-lead match decision.' },
                       },
-                      required: ['id', 'is_buyer', 'intent_score', 'reason', 'signal_type', 'is_competitor', 'competitor_reason'],
+                      required: ['id', 'is_buyer', 'intent_score', 'reason', 'signal_type', 'is_competitor', 'competitor_reason', 'matches_perfect_lead', 'match_reason'],
                       additionalProperties: false,
                     },
                   },
