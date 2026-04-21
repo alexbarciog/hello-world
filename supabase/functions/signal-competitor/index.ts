@@ -316,18 +316,19 @@ async function companyIcpGate(profile: any, accountId: string, apiKey: string, d
   return { verdict: 'reject', company, reason: ai.reason };
 }
 
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted' | 'duplicate' | 'rejected'>{
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null): Promise<'inserted' | 'duplicate' | 'rejected'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'duplicate';
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
-  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
+  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[]};
   const rt=classifyCompetitorContact(m,icp||ei,hl)||'warm';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({
     user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
-    company:p.company||p.current_company?.name||null,
+    company: enrichedCompany?.name || p.company || p.current_company?.name || null,
+    industry: enrichedCompany?.industry || p.industry || null,
     linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
     linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,
     ai_score:as,signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
