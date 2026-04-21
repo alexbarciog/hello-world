@@ -414,6 +414,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       const { data: inserted, error: insertErr } = await supabase.from("signal_agents").insert({
         ...agentData,
         user_id: user.id,
+        organization_id: currentOrg?.id ?? null,
         status: "active",
         last_launched_at: new Date().toISOString(),
       }).select("id").single();

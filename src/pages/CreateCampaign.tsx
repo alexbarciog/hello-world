@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { scrapeWebsite } from "@/lib/api/firecrawl";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface AgentData {
   id: string;
@@ -180,6 +181,7 @@ export default function CreateCampaign() {
 
     const campaignData = {
       user_id: user.id,
+      organization_id: currentOrg?.id ?? null,
       company_name: selectedAgent?.name || "My Campaign",
       website: website.trim() || null,
       description: valueProposition.trim() || null,
