@@ -188,6 +188,44 @@ async function ensureList(sb: any,uid: string,ln: string,aid: string): Promise<s
   if(error){console.error(`Create list error: ${error.message}`);return null;} return c?.id||null;
 }
 
+// ─── AI "Perfect Lead" gate (only runs when user provided a description) ─────
+// Per-profile AI check: compares headline + company against the user's free-text
+// "ideal lead" description. Defaults to ACCEPT on errors/ambiguity (false negatives
+// are worse than false positives — structured ICP already enforces hard rules).
+async function checkPerfectLeadMatch(
+  profile: any,
+  idealLeadDescription: string,
+  businessContext: string,
+): Promise<{ matches: boolean; reason: string }> {
+  if (!idealLeadDescription) return { matches: true, reason: '' };
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return { matches: true, reason: 'no AI key' };
+  const headline = String(profile?.headline || profile?.title || '').slice(0, 200);
+  const company = String(profile?.company || profile?.current_company?.name || '').slice(0, 100);
+  if (!headline && !company) return { matches: true, reason: 'no profile data' };
+  try {
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: `You decide whether a LinkedIn user matches the user's "Perfect Lead" description.\n\nUSER'S BUSINESS: "${businessContext || 'N/A'}"\n\nUSER'S PERFECT LEAD DESCRIPTION:\n"""\n${idealLeadDescription}\n"""\n\nDecide if the LinkedIn person below plausibly fits this description.\n\nCRITICAL: DEFAULT TO matches=true when role/seniority/industry is ambiguous — structured ICP filters already enforce hard requirements. Only matches=false when the headline CLEARLY contradicts the description.\n\nRespond ONLY via the tool call.` },
+          { role: 'user', content: `HEADLINE: ${headline || '(none)'}\nCOMPANY: ${company || '(none)'}` },
+        ],
+        tools: [{ type: 'function', function: { name: 'check_match', description: 'Decide match.', parameters: { type: 'object', properties: { matches: { type: 'boolean' }, reason: { type: 'string' } }, required: ['matches', 'reason'], additionalProperties: false } } }],
+        tool_choice: { type: 'function', function: { name: 'check_match' } },
+      }),
+    });
+    if (!res.ok) return { matches: true, reason: `HTTP ${res.status}` };
+    const data = await res.json();
+    const tc = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!tc) return { matches: true, reason: 'no tool call' };
+    const parsed = JSON.parse(tc.function.arguments);
+    return { matches: parsed.matches !== false, reason: String(parsed.reason || '') };
+  } catch (e) { console.warn('[COMP] perfect-lead check error:', e); return { matches: true, reason: 'error' }; }
+}
+
 async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted' | 'duplicate' | 'rejected'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
