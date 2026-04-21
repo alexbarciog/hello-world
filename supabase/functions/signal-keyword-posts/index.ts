@@ -377,6 +377,8 @@ interface IntentClassification {
   intent_score: number;
   reason: string;
   signal_type: string;
+  is_competitor?: boolean;
+  competitor_reason?: string;
 }
 
 function extractPostText(post: any): string {
