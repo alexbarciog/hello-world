@@ -506,6 +506,10 @@ Deno.serve(async (req) => {
     };
     const isHighPrecision = precision_mode === 'high_precision';
 
+    // Per-run caches for company-level ICP gate (HIGH_PRECISION only)
+    const companyEnrichCache = new Map<string, EnrichedCompany | null>();
+    const companyAiCache = new Map<string, boolean>();
+
     // Lightweight rejected-profile collector for AI suggestions (cap 200/task)
     const rejectedProfiles: Array<{ headline: string; industry: string; company: string; companyIndustry: string; rejectionReason: string; signalType: string; }> = [];
     function captureRejected(fp: any, reason: string) {
@@ -670,8 +674,17 @@ Deno.serve(async (req) => {
             if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
             const cls = classifyContact(match, icp, hl);
             if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
+            // Company-level ICP gate (HIGH_PRECISION only)
+            let enrichedCo: EnrichedCompany | null = null;
+            if (isHighPrecision) {
+              const gate = await companyIcpGate(fullProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
+              if (gate.verdict === 'reject') { diag.company_icp_mismatch++; captureRejected(fullProfile, 'company_icp_mismatch'); continue; }
+              if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+              else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
+              enrichedCo = gate.company;
+            }
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval);
+            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCo);
             if (result === 'exists') { diag.already_in_contacts++; continue; }
             if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
@@ -791,7 +804,16 @@ Deno.serve(async (req) => {
               if (isSeller(postText2, hl)) { diag.rejected_seller++; continue; }
               const cls2 = classifyContact(match, icp, hl);
               if (cls2 === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
-              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval);
+              // Company-level ICP gate (HIGH_PRECISION only)
+              let enrichedCo2: EnrichedCompany | null = null;
+              if (isHighPrecision) {
+                const gate = await companyIcpGate(fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
+                if (gate.verdict === 'reject') { diag.company_icp_mismatch++; captureRejected(fp, 'company_icp_mismatch'); continue; }
+                if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+                else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
+                enrichedCo2 = gate.company;
+              }
+              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval, enrichedCo2);
               if (result === 'exists') { diag.already_in_contacts++; continue; }
               if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }
