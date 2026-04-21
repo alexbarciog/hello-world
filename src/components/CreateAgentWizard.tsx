@@ -160,6 +160,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
         setExcludeKeywords(data.icp_exclude_keywords || []);
         setRestrictedCountries((data as any).icp_restricted_countries || []);
         setRestrictedRoles((data as any).icp_restricted_roles || []);
+        setIdealLeadDescription((data as any).ideal_lead_description || "");
         setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
         setLeadsListName(data.leads_list_name || "");
         setManualApproval((data as any).manual_approval || false);
