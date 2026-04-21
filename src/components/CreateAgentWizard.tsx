@@ -401,6 +401,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       icp_exclude_keywords: excludeKeywords,
       icp_restricted_countries: restrictedCountries,
       icp_restricted_roles: restrictedRoles,
+      ideal_lead_description: idealLeadDescription.trim() || null,
       precision_mode: precisionMode,
       signals_config: {
         enabled: activeSubSignals,
