@@ -188,8 +188,13 @@ function isBlacklistOnlyMatch(hashtag: string): boolean {
   return words.length > 0 && words.every(w => GENERIC_BLACKLIST.has(w));
 }
 
-async function filterIrrelevantPosts(posts: { id: string; text: string; hashtag: string }[], businessContext: string): Promise<Set<string>> {
+async function filterIrrelevantPosts(
+  posts: { id: string; text: string; hashtag: string; authorHeadline?: string; authorCompany?: string }[],
+  businessContext: string,
+  idealLeadDescription: string = '',
+): Promise<{ validIds: Set<string>; perfectLeadMismatchIds: Set<string> }> {
   const validIds = new Set<string>();
+  const perfectLeadMismatchIds = new Set<string>();
 
   const postsWithText = posts.filter(p => {
     if (!p.text || p.text.length < 20) {
@@ -199,16 +204,16 @@ async function filterIrrelevantPosts(posts: { id: string; text: string; hashtag:
     return true;
   });
 
-  if (postsWithText.length === 0) return validIds;
+  if (postsWithText.length === 0) return { validIds, perfectLeadMismatchIds };
 
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) {
     console.warn('[RELEVANCE] No LOVABLE_API_KEY — skipping AI filter');
     postsWithText.forEach(p => validIds.add(p.id));
-    return validIds;
+    return { validIds, perfectLeadMismatchIds };
   }
 
-  const systemPrompt = businessContext
+  const baseSystemPrompt = businessContext
     ? `You are a LinkedIn buying-intent classifier for B2B sales prospecting.
 
 The user's company sells: "${businessContext}"
@@ -229,9 +234,44 @@ IRRELEVANT: personal, lifestyle, self-promotion, metaphorical stories.
 
 Be strict.`;
 
+  const systemPrompt = idealLeadDescription
+    ? `${baseSystemPrompt}
+
+═══════════════════════════════════════════════════════════════════════════════
+PERFECT LEAD MATCH (ICP fit check on AUTHOR)
+═══════════════════════════════════════════════════════════════════════════════
+The user has explicitly described their PERFECT LEAD as follows:
+
+"""
+${idealLeadDescription}
+"""
+
+For each post, ALSO decide whether the AUTHOR (based on their headline + company) plausibly fits this description.
+- DEFAULT TO matches_perfect_lead=true when the role/seniority/industry is ambiguous or unknown.
+- Only set matches_perfect_lead=false when the author headline/company CLEARLY contradicts the description.
+- The pipeline will SKIP any post where matches_perfect_lead=false.`
+    : baseSystemPrompt;
+
+  const schemaProps: Record<string, any> = {
+    id: { type: 'string' },
+    relevant: { type: 'boolean' },
+    reason: { type: 'string', description: 'Brief: buyer_intent, self_promoter, or irrelevant' },
+  };
+  const required = ['id', 'relevant', 'reason'];
+  if (idealLeadDescription) {
+    schemaProps.matches_perfect_lead = { type: 'boolean', description: 'True if author plausibly fits user\'s "Perfect Lead" description. Default true when unsure.' };
+    schemaProps.match_reason = { type: 'string' };
+    required.push('matches_perfect_lead', 'match_reason');
+  }
+
   for (let i = 0; i < postsWithText.length; i += 10) {
     const batch = postsWithText.slice(i, i + 10);
-    const postList = batch.map((p, idx) => `POST ${idx + 1} [id=${p.id}]:\n${p.text.slice(0, 400)}`).join('\n\n');
+    const postList = batch.map((p, idx) => {
+      const authorLine = (p.authorHeadline || p.authorCompany)
+        ? `\nAUTHOR: ${p.authorHeadline || ''}${p.authorCompany ? ` @ ${p.authorCompany}` : ''}`
+        : '';
+      return `POST ${idx + 1} [id=${p.id}]:${authorLine}\n${p.text.slice(0, 400)}`;
+    }).join('\n\n');
 
     try {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -255,12 +295,8 @@ Be strict.`;
                     type: 'array',
                     items: {
                       type: 'object',
-                      properties: {
-                        id: { type: 'string' },
-                        relevant: { type: 'boolean' },
-                        reason: { type: 'string', description: 'Brief: buyer_intent, self_promoter, or irrelevant' },
-                      },
-                      required: ['id', 'relevant', 'reason'],
+                      properties: schemaProps,
+                      required,
                       additionalProperties: false,
                     },
                   },
@@ -287,22 +323,29 @@ Be strict.`;
 
       const result = JSON.parse(toolCall.function.arguments);
       const classifications = result.results || [];
-      let relevant = 0, irrelevant = 0;
+      let relevant = 0, irrelevant = 0, mismatch = 0;
       for (const cls of classifications) {
+        // Perfect-lead gate (when description provided)
+        if (idealLeadDescription && cls.matches_perfect_lead === false) {
+          perfectLeadMismatchIds.add(cls.id);
+          mismatch++;
+          console.log(`[AI] 🚫 perfect-lead-mismatch: post ${cls.id} — ${cls.match_reason || ''}`);
+          continue;
+        }
         if (cls.relevant) { validIds.add(cls.id); relevant++; console.log(`[RELEVANCE] ✅ ${cls.id}: ${cls.reason}`); }
         else { console.log(`[RELEVANCE] ❌ Filtered ${cls.id}: ${cls.reason}`); irrelevant++; }
       }
       for (const p of batch) {
         if (!classifications.some((c: any) => c.id === p.id)) validIds.add(p.id);
       }
-      console.log(`[RELEVANCE] Batch: ${relevant} buyer_intent, ${irrelevant} filtered`);
+      console.log(`[RELEVANCE] Batch: ${relevant} buyer_intent, ${irrelevant} filtered, ${mismatch} perfect-lead-mismatch`);
     } catch (e) {
       console.error('[RELEVANCE] AI call failed:', e);
       batch.forEach(p => validIds.add(p.id));
     }
   }
 
-  return validIds;
+  return { validIds, perfectLeadMismatchIds };
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
@@ -311,7 +354,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, run_id, task_key, manual_approval } = await req.json();
+    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, ideal_lead_description, run_id, task_key, manual_approval } = await req.json();
+    const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -351,6 +395,7 @@ Deno.serve(async (req) => {
       already_in_contacts: 0,
       cold_capped: 0,
       inserted: 0,
+      perfect_lead_mismatch: 0,
     };
 
     console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length });
@@ -390,19 +435,25 @@ Deno.serve(async (req) => {
       .sort((a, b) => ((b.likes_count||0)+(b.comments_count||0)) - ((a.likes_count||0)+(a.comments_count||0)))
       .slice(0, 60);
 
-    // ─── AI Relevance Filter: buyer-intent classification ───────────
-    const postsForFilter = topPosts.map(p => ({
-      id: p.social_id || p.id || p.provider_id || String(Math.random()),
-      text: extractPostText(p),
-      hashtag: p._hashtag || '',
-    }));
-    const relevantPostIds = await filterIrrelevantPosts(postsForFilter, business_context || '');
+    // ─── AI Relevance Filter: buyer-intent + perfect-lead match ───────────
+    const postsForFilter = topPosts.map(p => {
+      const author = p.author || p.user || {};
+      return {
+        id: p.social_id || p.id || p.provider_id || String(Math.random()),
+        text: extractPostText(p),
+        hashtag: p._hashtag || '',
+        authorHeadline: String(author.headline || author.title || '').slice(0, 200),
+        authorCompany: String(author.company || author.current_company?.name || '').slice(0, 100),
+      };
+    });
+    const { validIds: relevantPostIds, perfectLeadMismatchIds } = await filterIrrelevantPosts(postsForFilter, business_context || '', idealLeadDescription);
+    diag.perfect_lead_mismatch += perfectLeadMismatchIds.size;
     const filteredPosts = topPosts.filter(p => {
       const id = p.social_id || p.id || p.provider_id;
       return relevantPostIds.has(id);
     });
     diag.ai_filtered_posts = filteredPosts.length;
-    console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
+    console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter (${perfectLeadMismatchIds.size} perfect-lead-mismatch)`);
 
     // Phase 2: Scan engagers on each filtered post
     for (const post of filteredPosts) {

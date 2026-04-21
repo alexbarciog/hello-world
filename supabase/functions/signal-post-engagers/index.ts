@@ -423,6 +423,7 @@ Deno.serve(async (req) => {
       already_in_contacts: 0, cold_capped: 0, inserted: 0, bytes_fetched_estimate: 0,
       precision_mode: (precision_mode || 'discovery') as any,
       discovery_passed: 0, discovery_rejected: 0, hp_passed: 0, hp_rejected: 0,
+      perfect_lead_mismatch: 0,
     };
 
     // Bandwidth ceiling (matches competitor function for symmetry)
@@ -518,8 +519,8 @@ Deno.serve(async (req) => {
           const postText = post.text || post.commentary || '';
           const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
 
-          // AI competitor pre-classification (batched, runs BEFORE Unipile profile fetch)
-          const competitorMap = await classifyEngagersForCompetitors(engagers, business_context || '');
+          // AI competitor + perfect-lead pre-classification (batched, runs BEFORE Unipile profile fetch)
+          const competitorMap = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription);
 
           for (const engager of engagers) {
             if (!hasTime()) break;
@@ -530,6 +531,13 @@ Deno.serve(async (req) => {
             if (compVerdict?.is_competitor) {
               diag.competitors_filtered++;
               console.log(`[engagers] 🚫 competitor: ${profile.first_name || profile.name || 'unknown'} — ${compVerdict.reason}`);
+              continue;
+            }
+            // Perfect-lead pre-check (only when user described their ideal lead)
+            if (idealLeadDescription && compVerdict && compVerdict.matches_perfect_lead === false) {
+              diag.perfect_lead_mismatch++;
+              console.log(`[AI] 🚫 perfect-lead-mismatch: ${profile.first_name || profile.name || 'unknown'} — ${compVerdict.match_reason}`);
+              captureRejected(profile, 'perfect_lead_mismatch');
               continue;
             }
             const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
@@ -632,8 +640,8 @@ Deno.serve(async (req) => {
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
             const postText2 = post.text || post.commentary || '';
 
-            // AI competitor pre-classification (batched, runs BEFORE Unipile profile fetch)
-            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '');
+            // AI competitor + perfect-lead pre-classification (batched, runs BEFORE Unipile profile fetch)
+            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription);
 
             for (const engager of engagers) {
               if (!hasTime()) break;
@@ -644,6 +652,13 @@ Deno.serve(async (req) => {
               if (compVerdict2?.is_competitor) {
                 diag.competitors_filtered++;
                 console.log(`[engagers] 🚫 competitor: ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.reason}`);
+                continue;
+              }
+              // Perfect-lead pre-check
+              if (idealLeadDescription && compVerdict2 && compVerdict2.matches_perfect_lead === false) {
+                diag.perfect_lead_mismatch++;
+                console.log(`[AI] 🚫 perfect-lead-mismatch: ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.match_reason}`);
+                captureRejected(ep2, 'perfect_lead_mismatch');
                 continue;
               }
               const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
