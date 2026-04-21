@@ -688,7 +688,8 @@ Deno.serve(async (req) => {
 
   try {
     const reqBody = await req.json();
-    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode, run_id: _run_id, task_key: _task_key, manual_approval } = reqBody;
+    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode, run_id: _run_id, task_key: _task_key, manual_approval, ideal_lead_description } = reqBody;
+    const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
     if (!agent_id || !account_id || !keywords?.length) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
