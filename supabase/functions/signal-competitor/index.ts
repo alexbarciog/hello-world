@@ -490,6 +490,8 @@ Deno.serve(async (req) => {
       icp_match_by_profile_industry: 0,
       icp_match_by_company_industry: 0,
       icp_match_failed: 0,
+      // Perfect-lead AI gate counter
+      perfect_lead_mismatch: 0,
       // Fix 6: URL sanitization + zero-result tracking
       url_sanitization_changed: urlSanitizationChanged,
     };
