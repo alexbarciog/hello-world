@@ -67,7 +67,7 @@ export default function Support() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] -mx-6 -my-8 overflow-hidden">
+    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden rounded-[20px] border border-gray-200/60 shadow-sm">
       {/* Sky hero background */}
       <img
         src={heroSkyBg}
