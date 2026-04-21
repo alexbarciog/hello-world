@@ -490,9 +490,13 @@ Deno.serve(async (req) => {
       cold_capped: 0,
       inserted: 0,
       perfect_lead_mismatch: 0,
+      // Company-level ICP gate (HIGH_PRECISION only)
+      company_enrichment_failed: 0,
+      company_industry_matched: 0,
+      company_icp_mismatch: 0,
     };
 
-    console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length });
+    console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length, isHighPrecision });
 
     // Phase 1: Search posts per hashtag with cursor pagination (up to 3 pages)
     for (let tag of hashtags) {
