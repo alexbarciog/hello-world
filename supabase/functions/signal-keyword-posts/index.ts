@@ -564,6 +564,10 @@ When unsure / not enough author signal → is_competitor=false.`;
       const classifications = parsed.results || [];
 
       for (const cls of classifications) {
+        // Normalize new fields (backward-compatible default)
+        if (typeof cls.is_competitor !== 'boolean') cls.is_competitor = false;
+        if (typeof cls.competitor_reason !== 'string') cls.competitor_reason = '';
+
         // BRUTAL LOG: Step 4 — log every AI output
         const matchingPost = batch.find((p: any) => p.id === cls.id);
         console.log('[AI_OUTPUT]', JSON.stringify({
@@ -573,9 +577,20 @@ When unsure / not enough author signal → is_competitor=false.`;
           intent_score: cls.intent_score,
           reason: cls.reason,
           signal_type: cls.signal_type,
+          is_competitor: cls.is_competitor,
+          competitor_reason: cls.competitor_reason,
           passedThreshold: cls.intent_score >= minIntentScore,
           threshold: minIntentScore,
         }));
+
+        // Competitor short-circuit: reject regardless of intent score.
+        if (cls.is_competitor === true) {
+          const rejected = { ...cls, is_buyer: false, reason: `competitor: ${cls.competitor_reason || 'author appears to sell similar services'}` };
+          results.set(`rejected:${cls.id}`, rejected);
+          console.log(`[AI] 🚫 competitor ${cls.id}: ${cls.competitor_reason}`);
+          continue;
+        }
+
         // Fix 8: belt-and-suspenders — even if AI returns is_buyer=true with a
         // borderline score, reject "problem_aware" unless it's a strong signal.
         // problem_aware = vague pain, not active solution-seeking.
