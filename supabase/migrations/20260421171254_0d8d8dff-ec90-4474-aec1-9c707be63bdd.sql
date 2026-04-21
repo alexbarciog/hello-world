@@ -1,0 +1,1 @@
+ALTER TABLE public.signal_agents ADD COLUMN IF NOT EXISTS ideal_lead_description TEXT;
