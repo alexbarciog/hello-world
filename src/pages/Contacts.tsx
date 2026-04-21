@@ -193,7 +193,7 @@ export default function Contacts() {
     }
 
     setLoading(false);
-  }, [sub.loading, sub.subscribed]);
+  }, [sub.loading, sub.subscribed, currentOrg?.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
