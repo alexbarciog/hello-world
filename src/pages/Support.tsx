@@ -2,8 +2,9 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Send, HelpCircle, MessageCircle, ChevronRight, Paperclip } from "lucide-react";
+import { ArrowUpRight, HelpCircle, MessageCircle, Paperclip, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import heroSkyBg from "@/assets/hero-sky-bg.webp";
 
 const CATEGORIES = [
   { value: "technical", label: "Technical Issue" },
@@ -66,43 +67,57 @@ export default function Support() {
   };
 
   return (
-    <div className="relative px-6 py-8 flex flex-col items-center min-h-[80vh] font-body">
-      {/* Background blurs */}
-      <div className="absolute top-1/4 -left-20 w-72 h-72 bg-md-secondary/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-20 w-72 h-72 bg-md-primary/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="relative min-h-[calc(100vh-4rem)] -mx-6 -my-8 overflow-hidden">
+      {/* Sky hero background */}
+      <img
+        src={heroSkyBg}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      {/* Soft fade to white at bottom for legibility */}
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-white/40 pointer-events-none" />
 
-      <div className="w-full max-w-2xl relative z-10">
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-md-on-surface-variant/60 text-[11px] mb-6 font-light tracking-widest uppercase font-body">
-          <span>Support</span>
-          <ChevronRight className="w-2.5 h-2.5" />
-          <span className="text-md-on-surface-variant">New Ticket</span>
+      <div className="relative z-10 flex flex-col items-center px-6 py-16 md:py-20">
+        {/* Hero text */}
+        <div className="text-center max-w-2xl mb-10 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white/90 text-[11px] uppercase tracking-[0.15em] font-medium mb-6">
+            <Sparkles className="w-3 h-3" />
+            Support
+          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-medium text-white leading-[1.05] tracking-tight mb-4">
+            How can we
+            <br />
+            <span className="text-white/70">help you today?</span>
+          </h1>
+          <p className="text-base text-white/80 leading-relaxed max-w-md mx-auto">
+            Send us a ticket and our team will get back to you within 24 hours.
+          </p>
         </div>
 
-        {/* Main Card */}
-        <section className="glass-card rounded-[1.5rem] p-6 md:p-10">
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-light tracking-tight text-foreground mb-2 font-headline">
-              Submit a Ticket
-            </h1>
-            <p className="text-md-on-surface-variant font-light text-sm leading-relaxed max-w-md font-body">
-              Describe your issue and we'll get back to you as soon as possible.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Glass form card */}
+        <section
+          className="w-full max-w-2xl rounded-[28px] p-6 md:p-10 border border-white/30 shadow-2xl animate-fade-in-up"
+          style={{
+            background: "rgba(255,255,255,0.55)",
+            backdropFilter: "blur(28px) saturate(140%)",
+            WebkitBackdropFilter: "blur(28px) saturate(140%)",
+            animationDelay: "120ms",
+          }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Category */}
             <div>
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-md-on-surface-variant/70 mb-2 ml-0.5 font-body">
+              <label className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground/60 mb-2">
                 Category
               </label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full bg-white/60 border-md-outline-variant/15 rounded-xl h-11 text-sm font-light font-body">
+                <SelectTrigger className="w-full bg-white/70 border-white/40 rounded-2xl h-12 text-sm">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value} className="font-body text-sm">{c.label}</SelectItem>
+                    <SelectItem key={c.value} value={c.value} className="text-sm">{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -110,7 +125,7 @@ export default function Support() {
 
             {/* Subject */}
             <div>
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-md-on-surface-variant/70 mb-2 ml-0.5 font-body">
+              <label className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground/60 mb-2">
                 Subject
               </label>
               <input
@@ -119,86 +134,93 @@ export default function Support() {
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 maxLength={200}
-                className="w-full bg-white/60 border border-md-outline-variant/15 rounded-xl px-4 py-3 h-11 text-sm font-light font-body focus:ring-2 focus:ring-md-primary/20 focus:border-md-primary/30 transition-all text-foreground placeholder:text-md-on-surface-variant/40 outline-none"
+                className="w-full bg-white/70 border border-white/40 rounded-2xl px-4 h-12 text-sm focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all text-foreground placeholder:text-foreground/40 outline-none"
               />
             </div>
 
             {/* Message */}
             <div>
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-md-on-surface-variant/70 mb-2 ml-0.5 font-body">
+              <label className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-foreground/60 mb-2">
                 Message
               </label>
               <textarea
                 placeholder="Please provide as much detail as possible..."
                 value={message}
                 onChange={e => setMessage(e.target.value)}
-                rows={5}
+                rows={6}
                 maxLength={2000}
-                className="w-full bg-white/60 border border-md-outline-variant/15 rounded-xl px-4 py-3 text-sm font-light font-body focus:ring-2 focus:ring-md-primary/20 focus:border-md-primary/30 transition-all text-foreground placeholder:text-md-on-surface-variant/40 outline-none resize-none"
+                className="w-full bg-white/70 border border-white/40 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all text-foreground placeholder:text-foreground/40 outline-none resize-none"
               />
             </div>
 
             {/* Attachment placeholder */}
-            <div className="flex items-center justify-between px-4 py-3 bg-md-surface-container/30 border border-dashed border-md-outline-variant/30 rounded-xl">
+            <div className="flex items-center justify-between px-4 py-3 bg-white/40 border border-dashed border-foreground/15 rounded-2xl">
               <div className="flex items-center gap-2.5">
-                <Paperclip className="w-4 h-4 text-md-primary/60" />
-                <span className="text-xs font-light text-md-on-surface-variant font-body">Add screenshot or file</span>
+                <Paperclip className="w-4 h-4 text-foreground/50" />
+                <span className="text-xs text-foreground/70">Add screenshot or file</span>
               </div>
-              <button type="button" className="text-xs font-medium text-md-primary hover:underline underline-offset-4 font-body">
+              <button type="button" className="text-xs font-semibold text-foreground hover:underline underline-offset-4">
                 Browse files
               </button>
             </div>
 
-            {/* Submit */}
-            <div className="pt-2">
+            {/* Submit (lime CTA) */}
+            <div className="pt-2 flex flex-col items-center gap-3">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-8 rounded-full bg-gradient-to-r from-md-primary to-md-secondary text-white font-medium text-sm shadow-lg shadow-md-secondary/20 hover:brightness-110 hover:scale-[1.02] active:scale-95 active:brightness-90 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none font-body outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-md-primary/30"
-                style={{ WebkitTapHighlightColor: "transparent" }}
+                className="btn-cta disabled:opacity-50 disabled:pointer-events-none"
               >
-                <span>{loading ? "Sending..." : "Submit Ticket"}</span>
-                <Send className="w-4 h-4" />
+                {loading ? "Sending..." : "Submit Ticket"}
+                <ArrowUpRight className="w-4 h-4" />
               </button>
-              <p className="text-center text-[10px] text-md-on-surface-variant/50 mt-4 tracking-widest uppercase font-body">
-                Average response time: &lt; 24 hours
+              <p className="text-[10px] text-foreground/50 tracking-[0.15em] uppercase">
+                Average response time · &lt; 24 hours
               </p>
             </div>
           </form>
         </section>
 
         {/* Info Cards */}
-        <div className="mt-8 grid grid-cols-2 gap-4">
-          <div
+        <div className="w-full max-w-2xl mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in-up" style={{ animationDelay: "240ms" }}>
+          <button
             onClick={() => navigate("/help")}
-            className="glass-card p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all"
+            className="group flex items-center gap-4 p-5 rounded-2xl border border-white/30 text-left transition-all hover:scale-[1.01]"
+            style={{
+              background: "rgba(255,255,255,0.45)",
+              backdropFilter: "blur(20px) saturate(140%)",
+              WebkitBackdropFilter: "blur(20px) saturate(140%)",
+            }}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-md-primary/10 flex items-center justify-center text-md-primary">
-                <HelpCircle className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-medium text-foreground font-body">Self-Service Docs</h3>
-                <p className="text-[11px] font-light text-md-on-surface-variant font-body">Find instant answers in our portal.</p>
-              </div>
+            <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/80 shrink-0">
+              <HelpCircle className="w-4 h-4" />
             </div>
-          </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-foreground">Self-Service Docs</h3>
+              <p className="text-xs text-foreground/60 mt-0.5">Find instant answers in our portal.</p>
+            </div>
+            <ArrowUpRight className="w-4 h-4 text-foreground/40 group-hover:text-foreground transition-colors shrink-0" />
+          </button>
 
           <a
             href="https://discord.gg/intentsly"
             target="_blank"
             rel="noopener noreferrer"
-            className="glass-card p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all"
+            className="group flex items-center gap-4 p-5 rounded-2xl border border-white/30 transition-all hover:scale-[1.01]"
+            style={{
+              background: "rgba(255,255,255,0.45)",
+              backdropFilter: "blur(20px) saturate(140%)",
+              WebkitBackdropFilter: "blur(20px) saturate(140%)",
+            }}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-md-secondary/10 flex items-center justify-center text-md-secondary">
-                <MessageCircle className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-medium text-foreground font-body">Live Community</h3>
-                <p className="text-[11px] font-light text-md-on-surface-variant font-body">Join 2,000+ creators on Discord.</p>
-              </div>
+            <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center text-foreground/80 shrink-0">
+              <MessageCircle className="w-4 h-4" />
             </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-medium text-foreground">Live Community</h3>
+              <p className="text-xs text-foreground/60 mt-0.5">Join 2,000+ creators on Discord.</p>
+            </div>
+            <ArrowUpRight className="w-4 h-4 text-foreground/40 group-hover:text-foreground transition-colors shrink-0" />
           </a>
         </div>
       </div>
