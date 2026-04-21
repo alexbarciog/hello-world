@@ -819,6 +819,10 @@ Deno.serve(async (req) => {
     const MIN_INTENT_SCORE = isHighPrecision ? 80 : 70;
     console.log(`[CONFIG] precision_mode="${precision_mode || 'discovery'}" → country+industry filtering ${isHighPrecision ? 'ENABLED' : 'DISABLED (discovery)'}`);
 
+    // Per-run caches for company-level ICP gate (HIGH_PRECISION only)
+    const companyEnrichCache = new Map<string, EnrichedCompany | null>();
+    const companyAiCache = new Map<string, boolean>();
+
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles || [],
       industries: icpRaw?.industries || [],
@@ -884,6 +888,10 @@ Deno.serve(async (req) => {
       rejected_seller: 0,
       // New: leads rejected because they don't match the user's "Perfect Lead" free-text description
       perfect_lead_mismatch: 0,
+      // New: company-level ICP gate diagnostics (HIGH_PRECISION only)
+      company_enrichment_failed: 0,
+      company_industry_matched: 0,
+      company_icp_mismatch: 0,
       // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
       min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
