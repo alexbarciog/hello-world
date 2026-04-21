@@ -118,6 +118,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [restrictedCountryInput, setRestrictedCountryInput] = useState("");
   const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
   const [restrictedRoleInput, setRestrictedRoleInput] = useState("");
+  const [idealLeadDescription, setIdealLeadDescription] = useState("");
   const [precisionMode, setPrecisionMode] = useState<"discovery" | "high_precision">("discovery");
 
   // Step 2: Signals
