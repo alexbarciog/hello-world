@@ -38,6 +38,9 @@ import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
 import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
+import InviteAccept from "./pages/InviteAccept.tsx";
+import { OrganizationProvider } from "./contexts/OrganizationContext.tsx";
+import { RefCodeCapture } from "./components/RefCodeCapture.tsx";
 import { useEffect, useRef } from "react";
 import { ttqPage, ttqIdentify } from "@/lib/tiktok-pixel";
 import { supabase } from "@/integrations/supabase/client";
@@ -140,6 +143,8 @@ const App = () => (
       <BrowserRouter>
         <TikTokPageTracker />
         <CalendarOAuthHandler />
+        <RefCodeCapture />
+        <OrganizationProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/features/ai-sdr" element={<AiSdrOutreach />} />
@@ -209,8 +214,10 @@ const App = () => (
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
           <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/video" element={<VideoShowcase />} />
+          <Route path="/invite/:token" element={<InviteAccept />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </OrganizationProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

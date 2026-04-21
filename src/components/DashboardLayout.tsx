@@ -7,6 +7,7 @@ import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Progress } from "@/components/ui/progress";
+import { OrgSwitcher } from "@/components/organizations/OrgSwitcher";
 
 import {
   LayoutDashboard,
@@ -167,6 +168,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* Org Switcher */}
+        <div className="px-2 pb-1">
+          <OrgSwitcher collapsed={collapsed} />
         </div>
 
         {/* Nav items */}
