@@ -193,8 +193,10 @@ RESPOND ONLY via the tool call.`;
                         id: { type: 'string' },
                         is_competitor: { type: 'boolean' },
                         reason: { type: 'string' },
+                        matches_perfect_lead: { type: 'boolean', description: 'True if person plausibly fits the user\'s "Perfect Lead" description. Default true when unsure.' },
+                        match_reason: { type: 'string' },
                       },
-                      required: ['id', 'is_competitor', 'reason'],
+                      required: ['id', 'is_competitor', 'reason', 'matches_perfect_lead', 'match_reason'],
                       additionalProperties: false,
                     },
                   },
@@ -221,6 +223,8 @@ RESPOND ONLY via the tool call.`;
           out.set(r.id, {
             is_competitor: r.is_competitor === true,
             reason: String(r.reason || ''),
+            matches_perfect_lead: typeof r.matches_perfect_lead === 'boolean' ? r.matches_perfect_lead : true,
+            match_reason: String(r.match_reason || ''),
           });
         }
       }
@@ -368,7 +372,9 @@ Deno.serve(async (req) => {
       precision_mode,
       manual_approval,
       business_context,
+      ideal_lead_description,
     } = await req.json();
+    const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
