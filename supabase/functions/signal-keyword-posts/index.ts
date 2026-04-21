@@ -589,6 +589,9 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
         // Normalize new fields (backward-compatible default)
         if (typeof cls.is_competitor !== 'boolean') cls.is_competitor = false;
         if (typeof cls.competitor_reason !== 'string') cls.competitor_reason = '';
+        // Default ACCEPT when AI omits the perfect-lead fields (back-compat / when description is empty).
+        if (typeof cls.matches_perfect_lead !== 'boolean') cls.matches_perfect_lead = true;
+        if (typeof cls.match_reason !== 'string') cls.match_reason = '';
 
         // BRUTAL LOG: Step 4 — log every AI output
         const matchingPost = batch.find((p: any) => p.id === cls.id);
@@ -601,6 +604,8 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
           signal_type: cls.signal_type,
           is_competitor: cls.is_competitor,
           competitor_reason: cls.competitor_reason,
+          matches_perfect_lead: cls.matches_perfect_lead,
+          match_reason: cls.match_reason,
           passedThreshold: cls.intent_score >= minIntentScore,
           threshold: minIntentScore,
         }));
@@ -610,6 +615,14 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
           const rejected = { ...cls, is_buyer: false, reason: `competitor: ${cls.competitor_reason || 'author appears to sell similar services'}` };
           results.set(`rejected:${cls.id}`, rejected);
           console.log(`[AI] 🚫 competitor ${cls.id}: ${cls.competitor_reason}`);
+          continue;
+        }
+
+        // Perfect-lead mismatch short-circuit: only enforced if the user provided a description.
+        if (idealLeadDescription && cls.matches_perfect_lead === false) {
+          const rejected = { ...cls, is_buyer: false, reason: `perfect_lead_mismatch: ${cls.match_reason || "author does not fit the user's perfect-lead description"}` };
+          results.set(`rejected:${cls.id}`, rejected);
+          console.log(`[AI] 🚫 perfect-lead-mismatch ${cls.id}: ${cls.match_reason}`);
           continue;
         }
 
