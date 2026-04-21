@@ -277,6 +277,25 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
 
 const QUICK_REJECT_TITLES = ['student','intern','freelance','looking for work','job seeker','fresher','trainee','apprentice'];
 
+const TITLE_STOPWORDS = new Set([
+  'of','the','and','for','to','in','at','a','an','&','|','-','/','senior','sr','jr','junior','lead',
+  'head','chief','vice','vp','svp','evp','associate','assistant','manager','director','officer',
+]);
+
+// Token-based fuzzy title match (see signal-competitor for rationale).
+function fuzzyTitleMatch(hl: string, jobTitles: string[]): boolean {
+  if (!hl || jobTitles.length === 0) return false;
+  const hlLower = hl.toLowerCase();
+  for (const t of jobTitles) {
+    const needle = t.toLowerCase().trim();
+    if (!needle) continue;
+    if (needle.length >= 3 && hlLower.includes(needle)) return true;
+    const tokens = needle.split(/[\s/,&|\-]+/).filter(w => w.length >= 3 && !TITLE_STOPWORDS.has(w));
+    if (tokens.some(tok => hlLower.includes(tok))) return true;
+  }
+  return false;
+}
+
 // Mode-aware pre-filter (mirrors signal-competitor).
 function engagerPreFilter(headline: string | undefined, icp: ICPFilters, isHighPrecision: boolean): 'strong_pass' | 'pass' | 'reject' {
   const hl = (headline || '').toLowerCase();
@@ -285,16 +304,20 @@ function engagerPreFilter(headline: string | undefined, icp: ICPFilters, isHighP
   if (!headline) return 'pass';
 
   if (hasBuyingIntent(hl)) return 'strong_pass';
-  if (icp.jobTitles.length > 0) {
-    const titleMatch = icp.jobTitles.some(t => { const n = t.toLowerCase().trim(); return n.length >= 3 && hl.includes(n); });
-    if (titleMatch) return 'strong_pass';
-  }
+  if (fuzzyTitleMatch(hl, icp.jobTitles)) return 'strong_pass';
 
   if (isHighPrecision) {
     if (QUICK_REJECT_TITLES.some(t => hl.includes(t))) return 'reject';
     if (isClearlyIrrelevant(hl)) return 'reject';
-    if (icp.jobTitles.length > 0 && hl.length > 5) return 'reject';
-    return 'pass';
+
+    const SENIORITY = ['founder','co-founder','owner','director','head of','vp','vice president','chief','ceo','cto','cmo','coo','president','partner','principal','lead','manager','senior','sr.','general manager','managing director','svp','evp'];
+    if (SENIORITY.some(s => hl.includes(s))) return 'pass';
+    const DEPTS = ['sales','revenue','growth','marketing','business development','bd','account','partnerships','operations','product','strategy','commercial','customer success','go-to-market'];
+    if (DEPTS.some(d => hl.includes(d))) return 'pass';
+    if (icp.industries.some(ind => ind && hl.includes(ind.toLowerCase()))) return 'pass';
+
+    // No ICP signal at all → reject
+    return 'reject';
   }
 
   const SENIORITY = ['founder','co-founder','owner','director','head of','vp','vice president','chief','ceo','cto','cmo','coo','president','partner','principal','lead','manager','senior','sr.','general manager','managing director'];
