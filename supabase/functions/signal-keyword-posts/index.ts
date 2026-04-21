@@ -450,7 +450,36 @@ STRICT SCORING:
 CRITICAL: When in doubt, REJECT. False negatives are FAR better than false positives. The user is paying for high-intent leads only.
 
 signal_type must be one of: "seeking_recommendation", "actively_evaluating", "frustrated_with_current", "problem_aware", "not_a_buyer".
-"problem_aware" alone is NOT enough to be a buyer — only use it if score >= 60 AND there is an explicit solution-seeking phrase.`;
+"problem_aware" alone is NOT enough to be a buyer — only use it if score >= 60 AND there is an explicit solution-seeking phrase.
+
+═══════════════════════════════════════════════════════════════════════════════
+COMPETITOR CHECK (CRITICAL — runs IN ADDITION to the buyer check above)
+═══════════════════════════════════════════════════════════════════════════════
+Given the COMPANY CONTEXT above (what the user sells), you must ALSO determine
+whether the AUTHOR is themselves a COMPETITOR / service provider in the same or
+substantially similar space. Set is_competitor=true if so, with a 1-sentence
+competitor_reason. Default is_competitor=false when in doubt.
+
+A competitor is anyone who appears to SELL the same/similar service the user
+sells, based on their headline + post content. Examples (assume user sells AI
+lead-gen / outbound automation):
+- AUTHOR headline: "Founder @ OutreachAgency" → is_competitor=true
+- AUTHOR headline: "We help B2B companies book more meetings via cold outbound" → is_competitor=true
+- AUTHOR headline: "Lead-gen consultant | DM for a free audit" → is_competitor=true
+- POST: "Anyone need help scaling outbound? DM me 👇" + agency-style headline → is_competitor=true (soft-promotional fishing post from a service provider — NOT a buyer)
+- POST: "Here's how we book 30 meetings/month for clients..." → is_competitor=true (case study from competitor)
+
+If the user sells SEO services, an SEO agency posting "Our SEO clients are
+seeing 3x growth — anyone want to know how?" is a competitor, NOT a buyer.
+
+CRITICAL: Many "soft promotional" posts disguise themselves as questions
+("anyone need help with X? DM me"). When the author is clearly a service
+provider in the same category, ALWAYS flag as is_competitor=true even if the
+intent_score looks high. Buyer status and competitor status are independent
+fields — set both honestly. The pipeline will reject any is_competitor=true
+result regardless of intent score.
+
+When unsure / not enough author signal → is_competitor=false.`;
 
   for (let i = 0; i < postsWithText.length; i += 8) {
     const batch = postsWithText.slice(i, i + 8);
