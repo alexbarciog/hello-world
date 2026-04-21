@@ -434,7 +434,7 @@ export default function CampaignDetail() {
         const leadsListName = (agentRes.data as any).leads_list_name;
         if (leadsListName) {
           const [contactDataRes, listCountRes] = await Promise.all([
-            supabase.from("contacts").select("*").eq("list_name", leadsListName).order("imported_at", { ascending: false }),
+            supabase.from("contacts").select("*").eq("list_name", leadsListName).in("approval_status", ["approved", "auto_approved"]).order("imported_at", { ascending: false }),
             (supabase.from("lists") as any).select("id", { count: "exact", head: true }).eq("name", leadsListName),
           ]);
           if (contactDataRes.data) {
@@ -455,21 +455,47 @@ export default function CampaignDetail() {
       if (listsRes.data) {
         const listsWithCounts = await Promise.all(
           (listsRes.data as any[]).map(async (l: any) => {
-            const { count } = await supabase.from("contact_lists").select("id", { count: "exact", head: true }).eq("list_id", l.id);
-            return { id: l.id, name: l.name, contact_count: count || 0 };
+            // Count only contacts that are approved/auto_approved (eligible for the campaign)
+            const { data: links } = await supabase.from("contact_lists").select("contact_id").eq("list_id", l.id);
+            const ids = (links || []).map((x: any) => x.contact_id);
+            let eligibleCount = 0;
+            for (let i = 0; i < ids.length; i += 200) {
+              const batch = ids.slice(i, i + 200);
+              const { count } = await supabase
+                .from("contacts")
+                .select("id", { count: "exact", head: true })
+                .in("id", batch)
+                .in("approval_status", ["approved", "auto_approved"]);
+              eligibleCount += count || 0;
+            }
+            return { id: l.id, name: l.name, contact_count: eligibleCount };
           })
         );
         setAvailableLists(listsWithCounts);
       }
 
       if (c.source_list_id && contactLinksRes.data) {
-        const currentContactIds = (contactLinksRes.data as any[]).map((cl: any) => cl.contact_id);
-        const { count: sentForCurrentList } = await supabase
-          .from("campaign_connection_requests" as any)
-          .select("id", { count: "exact", head: true })
-          .eq("campaign_id", campaignId)
-          .in("contact_id", currentContactIds)
-          .in("status", ["sent", "accepted"]);
+        const allContactIds = (contactLinksRes.data as any[]).map((cl: any) => cl.contact_id);
+        // Restrict to approved/auto_approved contacts — pending/rejected are excluded from the campaign
+        let eligibleIds: string[] = [];
+        for (let i = 0; i < allContactIds.length; i += 200) {
+          const batch = allContactIds.slice(i, i + 200);
+          const { data: eligible } = await supabase
+            .from("contacts")
+            .select("id")
+            .in("id", batch)
+            .in("approval_status", ["approved", "auto_approved"]);
+          eligibleIds.push(...((eligible || []) as any[]).map((r: any) => r.id));
+        }
+        const currentContactIds = eligibleIds;
+        const { count: sentForCurrentList } = currentContactIds.length > 0
+          ? await supabase
+              .from("campaign_connection_requests" as any)
+              .select("id", { count: "exact", head: true })
+              .eq("campaign_id", campaignId)
+              .in("contact_id", currentContactIds)
+              .in("status", ["sent", "accepted"])
+          : { count: 0 } as any;
         setRemainingContacts(Math.max(0, currentContactIds.length - (sentForCurrentList || 0)));
       } else {
         const totalContacts = loadedContactsTotal ?? contactsCount ?? 0;
@@ -875,20 +901,25 @@ export default function CampaignDetail() {
   }
 
   async function loadContactsForList(listId: string) {
-    // Use batched approach to avoid PostgREST URL length limits with large .in() queries
+    // Only show contacts that are eligible to enter the campaign (approved or auto_approved).
+    // Pending / rejected leads are excluded — they are not enrolled by schedule-daily-leads.
     const { data: contactLinks } = await supabase.from("contact_lists").select("contact_id").eq("list_id", listId);
     if (contactLinks && contactLinks.length > 0) {
       const contactIds = contactLinks.map(cl => cl.contact_id);
-      
+
       // Batch into chunks of 200 to stay within URL length limits
       const BATCH_SIZE = 200;
       const allContacts: any[] = [];
       for (let i = 0; i < contactIds.length; i += BATCH_SIZE) {
         const batch = contactIds.slice(i, i + BATCH_SIZE);
-        const { data: contactData } = await supabase.from("contacts").select("*").in("id", batch);
+        const { data: contactData } = await supabase
+          .from("contacts")
+          .select("*")
+          .in("id", batch)
+          .in("approval_status", ["approved", "auto_approved"]);
         if (contactData) allContacts.push(...contactData);
       }
-      
+
       // Sort by imported_at descending
       allContacts.sort((a, b) => new Date(b.imported_at).getTime() - new Date(a.imported_at).getTime());
       setContacts(allContacts as Contact[]);
@@ -897,7 +928,12 @@ export default function CampaignDetail() {
       // Fallback: try by list name
       const { data: listData } = await supabase.from("lists").select("name").eq("id", listId).single();
       if (listData?.name) {
-        const { data: contactData } = await supabase.from("contacts").select("*").eq("list_name", listData.name).order("imported_at", { ascending: false });
+        const { data: contactData } = await supabase
+          .from("contacts")
+          .select("*")
+          .eq("list_name", listData.name)
+          .in("approval_status", ["approved", "auto_approved"])
+          .order("imported_at", { ascending: false });
         if (contactData) { setContacts(contactData as Contact[]); setContactsCount(contactData.length); }
       } else {
         setContacts([]); setContactsCount(0);
