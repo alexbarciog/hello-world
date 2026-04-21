@@ -377,6 +377,8 @@ interface IntentClassification {
   intent_score: number;
   reason: string;
   signal_type: string;
+  is_competitor?: boolean;
+  competitor_reason?: string;
 }
 
 function extractPostText(post: any): string {
@@ -448,7 +450,36 @@ STRICT SCORING:
 CRITICAL: When in doubt, REJECT. False negatives are FAR better than false positives. The user is paying for high-intent leads only.
 
 signal_type must be one of: "seeking_recommendation", "actively_evaluating", "frustrated_with_current", "problem_aware", "not_a_buyer".
-"problem_aware" alone is NOT enough to be a buyer — only use it if score >= 60 AND there is an explicit solution-seeking phrase.`;
+"problem_aware" alone is NOT enough to be a buyer — only use it if score >= 60 AND there is an explicit solution-seeking phrase.
+
+═══════════════════════════════════════════════════════════════════════════════
+COMPETITOR CHECK (CRITICAL — runs IN ADDITION to the buyer check above)
+═══════════════════════════════════════════════════════════════════════════════
+Given the COMPANY CONTEXT above (what the user sells), you must ALSO determine
+whether the AUTHOR is themselves a COMPETITOR / service provider in the same or
+substantially similar space. Set is_competitor=true if so, with a 1-sentence
+competitor_reason. Default is_competitor=false when in doubt.
+
+A competitor is anyone who appears to SELL the same/similar service the user
+sells, based on their headline + post content. Examples (assume user sells AI
+lead-gen / outbound automation):
+- AUTHOR headline: "Founder @ OutreachAgency" → is_competitor=true
+- AUTHOR headline: "We help B2B companies book more meetings via cold outbound" → is_competitor=true
+- AUTHOR headline: "Lead-gen consultant | DM for a free audit" → is_competitor=true
+- POST: "Anyone need help scaling outbound? DM me 👇" + agency-style headline → is_competitor=true (soft-promotional fishing post from a service provider — NOT a buyer)
+- POST: "Here's how we book 30 meetings/month for clients..." → is_competitor=true (case study from competitor)
+
+If the user sells SEO services, an SEO agency posting "Our SEO clients are
+seeing 3x growth — anyone want to know how?" is a competitor, NOT a buyer.
+
+CRITICAL: Many "soft promotional" posts disguise themselves as questions
+("anyone need help with X? DM me"). When the author is clearly a service
+provider in the same category, ALWAYS flag as is_competitor=true even if the
+intent_score looks high. Buyer status and competitor status are independent
+fields — set both honestly. The pipeline will reject any is_competitor=true
+result regardless of intent score.
+
+When unsure / not enough author signal → is_competitor=false.`;
 
   for (let i = 0; i < postsWithText.length; i += 8) {
     const batch = postsWithText.slice(i, i + 8);
@@ -495,10 +526,12 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
                         id: { type: 'string' },
                         is_buyer: { type: 'boolean' },
                         intent_score: { type: 'number', description: '0-100 intent score' },
-                        reason: { type: 'string', description: 'One sentence explaining the decision' },
+                        reason: { type: 'string', description: 'One sentence explaining the buyer/intent decision' },
                         signal_type: { type: 'string', enum: ['seeking_recommendation', 'actively_evaluating', 'frustrated_with_current', 'problem_aware', 'not_a_buyer'] },
+                        is_competitor: { type: 'boolean', description: 'True if the AUTHOR is a service provider in the same/similar space as the user (competitor). Independent of buyer status.' },
+                        competitor_reason: { type: 'string', description: 'One sentence explaining why the author is or is not a competitor.' },
                       },
-                      required: ['id', 'is_buyer', 'intent_score', 'reason', 'signal_type'],
+                      required: ['id', 'is_buyer', 'intent_score', 'reason', 'signal_type', 'is_competitor', 'competitor_reason'],
                       additionalProperties: false,
                     },
                   },
@@ -531,6 +564,10 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
       const classifications = parsed.results || [];
 
       for (const cls of classifications) {
+        // Normalize new fields (backward-compatible default)
+        if (typeof cls.is_competitor !== 'boolean') cls.is_competitor = false;
+        if (typeof cls.competitor_reason !== 'string') cls.competitor_reason = '';
+
         // BRUTAL LOG: Step 4 — log every AI output
         const matchingPost = batch.find((p: any) => p.id === cls.id);
         console.log('[AI_OUTPUT]', JSON.stringify({
@@ -540,9 +577,20 @@ signal_type must be one of: "seeking_recommendation", "actively_evaluating", "fr
           intent_score: cls.intent_score,
           reason: cls.reason,
           signal_type: cls.signal_type,
+          is_competitor: cls.is_competitor,
+          competitor_reason: cls.competitor_reason,
           passedThreshold: cls.intent_score >= minIntentScore,
           threshold: minIntentScore,
         }));
+
+        // Competitor short-circuit: reject regardless of intent score.
+        if (cls.is_competitor === true) {
+          const rejected = { ...cls, is_buyer: false, reason: `competitor: ${cls.competitor_reason || 'author appears to sell similar services'}` };
+          results.set(`rejected:${cls.id}`, rejected);
+          console.log(`[AI] 🚫 competitor ${cls.id}: ${cls.competitor_reason}`);
+          continue;
+        }
+
         // Fix 8: belt-and-suspenders — even if AI returns is_buyer=true with a
         // borderline score, reject "problem_aware" unless it's a strong signal.
         // problem_aware = vague pain, not active solution-seeking.
