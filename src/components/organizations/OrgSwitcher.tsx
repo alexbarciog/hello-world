@@ -253,7 +253,7 @@ export function OrgSwitcher({ collapsed = false }: { collapsed?: boolean }) {
                     {switching === org.id ? (
                       <Loader2 className="w-3.5 h-3.5 text-muted-foreground animate-spin shrink-0" />
                     ) : org.id === currentOrg.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-primary shrink-0" />
                     ) : (
                       <span className="w-3.5 shrink-0" />
                     )}
