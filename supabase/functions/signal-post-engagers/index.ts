@@ -95,6 +95,125 @@ function sanitizeLinkedinUrl(raw: string): string {
   }
 }
 
+// ─── AI competitor classifier for engagers ───────────────────────────────────
+// Lightweight batched call: takes engager headlines + companies and decides
+// which ones are competitors of the user (selling same/similar services).
+// Returns Map keyed by the engager's stable id (provider_id || public_id || id || name).
+function engagerKey(p: any): string {
+  return String(p?.provider_id || p?.public_id || p?.public_identifier || p?.id || `${p?.first_name || p?.name || ''}|${p?.headline || p?.title || ''}`).slice(0, 200);
+}
+async function classifyEngagersForCompetitors(
+  engagers: any[],
+  businessContext: string,
+): Promise<Map<string, { is_competitor: boolean; reason: string }>> {
+  const out = new Map<string, { is_competitor: boolean; reason: string }>();
+  if (!businessContext || engagers.length === 0) return out;
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return out;
+
+  // Build a deduped list of engagers with at least a headline OR company.
+  const seen = new Set<string>();
+  const items: { id: string; headline: string; company: string }[] = [];
+  for (const e of engagers) {
+    const p = e?.author || e;
+    const key = engagerKey(p);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const headline = String(p?.headline || p?.title || '').slice(0, 200);
+    const company = String(p?.company || p?.current_company?.name || '').slice(0, 100);
+    if (!headline && !company) continue;
+    items.push({ id: key, headline, company });
+  }
+  if (items.length === 0) return out;
+
+  const systemPrompt = `You decide whether each LinkedIn user is a COMPETITOR of the user's business.
+
+USER'S BUSINESS CONTEXT: "${businessContext}"
+
+A "competitor" is a person who SELLS the same or substantially similar service the user above sells (e.g. another agency, consultant, or vendor in the same category). You only see their headline + current company name — that is enough to flag obvious competitors.
+
+Mark is_competitor=true when the headline clearly indicates the person sells the same/similar service. Examples (assume user sells AI lead-gen / outbound automation):
+- "Founder @ OutreachAgency" → competitor
+- "We help B2B companies book more meetings" → competitor
+- "Lead-gen consultant | DM for free audit" → competitor
+- Company "ColdEmailPro" with headline "CEO" → competitor
+- Headline "Head of Growth at SomeSaaS" → NOT a competitor (in-house buyer)
+- Headline "VP Sales at Acme Corp" → NOT a competitor (potential buyer)
+
+When unsure, return is_competitor=false. Default to false. Provide a 1-sentence reason for each.
+
+RESPOND ONLY via the tool call.`;
+
+  for (let i = 0; i < items.length; i += 10) {
+    const batch = items.slice(i, i + 10);
+    const userMsg = batch.map((b, idx) =>
+      `PERSON ${idx + 1} [id=${b.id}]:\nHEADLINE: ${b.headline || '(none)'}\nCOMPANY: ${b.company || '(none)'}`
+    ).join('\n\n');
+
+    try {
+      const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMsg },
+          ],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'classify_competitors',
+              description: 'Flag each person as competitor or not.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  results: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        is_competitor: { type: 'boolean' },
+                        reason: { type: 'string' },
+                      },
+                      required: ['id', 'is_competitor', 'reason'],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ['results'],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: 'function', function: { name: 'classify_competitors' } },
+        }),
+      });
+
+      if (!res.ok) {
+        console.warn(`[engagers] competitor classifier HTTP ${res.status}`);
+        continue;
+      }
+      const data = await res.json();
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) continue;
+      const parsed = JSON.parse(toolCall.function.arguments);
+      for (const r of (parsed.results || [])) {
+        if (typeof r?.id === 'string') {
+          out.set(r.id, {
+            is_competitor: r.is_competitor === true,
+            reason: String(r.reason || ''),
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[engagers] competitor classifier error:', e);
+    }
+  }
+  return out;
+}
+
 // Fix 5: Seller detection — reject engagers whose headline screams "I sell this".
 // Sellers commonly engage with competitors' posts to fish for clients; they are NOT buyers.
 const SELLER_PHRASES = [
