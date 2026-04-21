@@ -354,7 +354,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, run_id, task_key, manual_approval } = await req.json();
+    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, ideal_lead_description, run_id, task_key, manual_approval } = await req.json();
+    const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -394,6 +395,7 @@ Deno.serve(async (req) => {
       already_in_contacts: 0,
       cold_capped: 0,
       inserted: 0,
+      perfect_lead_mismatch: 0,
     };
 
     console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length });
@@ -433,19 +435,25 @@ Deno.serve(async (req) => {
       .sort((a, b) => ((b.likes_count||0)+(b.comments_count||0)) - ((a.likes_count||0)+(a.comments_count||0)))
       .slice(0, 60);
 
-    // ─── AI Relevance Filter: buyer-intent classification ───────────
-    const postsForFilter = topPosts.map(p => ({
-      id: p.social_id || p.id || p.provider_id || String(Math.random()),
-      text: extractPostText(p),
-      hashtag: p._hashtag || '',
-    }));
-    const relevantPostIds = await filterIrrelevantPosts(postsForFilter, business_context || '');
+    // ─── AI Relevance Filter: buyer-intent + perfect-lead match ───────────
+    const postsForFilter = topPosts.map(p => {
+      const author = p.author || p.user || {};
+      return {
+        id: p.social_id || p.id || p.provider_id || String(Math.random()),
+        text: extractPostText(p),
+        hashtag: p._hashtag || '',
+        authorHeadline: String(author.headline || author.title || '').slice(0, 200),
+        authorCompany: String(author.company || author.current_company?.name || '').slice(0, 100),
+      };
+    });
+    const { validIds: relevantPostIds, perfectLeadMismatchIds } = await filterIrrelevantPosts(postsForFilter, business_context || '', idealLeadDescription);
+    diag.perfect_lead_mismatch += perfectLeadMismatchIds.size;
     const filteredPosts = topPosts.filter(p => {
       const id = p.social_id || p.id || p.provider_id;
       return relevantPostIds.has(id);
     });
     diag.ai_filtered_posts = filteredPosts.length;
-    console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter`);
+    console.log(`[RELEVANCE] ${topPosts.length} posts → ${filteredPosts.length} after AI filter (${perfectLeadMismatchIds.size} perfect-lead-mismatch)`);
 
     // Phase 2: Scan engagers on each filtered post
     for (const post of filteredPosts) {
