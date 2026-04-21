@@ -389,6 +389,7 @@ async function classifyIntentBatch(
   posts: { id: string; text: string; keyword: string; authorHeadline?: string; matchedPhrase?: string }[],
   businessContext: string,
   minIntentScore: number,
+  idealLeadDescription: string = '',
 ): Promise<Map<string, IntentClassification>> {
   const results = new Map<string, IntentClassification>();
 
@@ -479,7 +480,26 @@ intent_score looks high. Buyer status and competitor status are independent
 fields — set both honestly. The pipeline will reject any is_competitor=true
 result regardless of intent score.
 
-When unsure / not enough author signal → is_competitor=false.`;
+When unsure / not enough author signal → is_competitor=false.${idealLeadDescription ? `
+
+═══════════════════════════════════════════════════════════════════════════════
+PERFECT LEAD MATCH (ICP fit check — independent of buyer & competitor checks)
+═══════════════════════════════════════════════════════════════════════════════
+The user has explicitly described their PERFECT LEAD as follows:
+
+"""
+${idealLeadDescription}
+"""
+
+For each post, you must ALSO decide whether the AUTHOR (based on their headline + post content) plausibly fits this description. Set matches_perfect_lead=true if the author's profile signals a reasonable fit, false if they clearly do NOT fit.
+
+Rules:
+- This is a SOFT fit check on free-text criteria, NOT a strict keyword match. Use judgment.
+- DEFAULT TO matches_perfect_lead=true when the author's role/seniority/industry is ambiguous or unknown — structured ICP filters already enforce hard requirements elsewhere.
+- Only set matches_perfect_lead=false when the author's headline CLEARLY contradicts the description (e.g. description says "VP of Marketing at e-commerce brands" and the author is a "Software Engineer at a bank").
+- Provide a 1-sentence match_reason explaining the decision.
+
+The pipeline will REJECT any post where matches_perfect_lead=false, regardless of intent score.` : ''}`;
 
   for (let i = 0; i < postsWithText.length; i += 8) {
     const batch = postsWithText.slice(i, i + 8);
@@ -530,8 +550,10 @@ When unsure / not enough author signal → is_competitor=false.`;
                         signal_type: { type: 'string', enum: ['seeking_recommendation', 'actively_evaluating', 'frustrated_with_current', 'problem_aware', 'not_a_buyer'] },
                         is_competitor: { type: 'boolean', description: 'True if the AUTHOR is a service provider in the same/similar space as the user (competitor). Independent of buyer status.' },
                         competitor_reason: { type: 'string', description: 'One sentence explaining why the author is or is not a competitor.' },
+                        matches_perfect_lead: { type: 'boolean', description: 'True if the AUTHOR plausibly fits the user\'s free-text "Perfect Lead" description. Default true when unsure.' },
+                        match_reason: { type: 'string', description: 'One sentence explaining the perfect-lead match decision.' },
                       },
-                      required: ['id', 'is_buyer', 'intent_score', 'reason', 'signal_type', 'is_competitor', 'competitor_reason'],
+                      required: ['id', 'is_buyer', 'intent_score', 'reason', 'signal_type', 'is_competitor', 'competitor_reason', 'matches_perfect_lead', 'match_reason'],
                       additionalProperties: false,
                     },
                   },
@@ -567,6 +589,9 @@ When unsure / not enough author signal → is_competitor=false.`;
         // Normalize new fields (backward-compatible default)
         if (typeof cls.is_competitor !== 'boolean') cls.is_competitor = false;
         if (typeof cls.competitor_reason !== 'string') cls.competitor_reason = '';
+        // Default ACCEPT when AI omits the perfect-lead fields (back-compat / when description is empty).
+        if (typeof cls.matches_perfect_lead !== 'boolean') cls.matches_perfect_lead = true;
+        if (typeof cls.match_reason !== 'string') cls.match_reason = '';
 
         // BRUTAL LOG: Step 4 — log every AI output
         const matchingPost = batch.find((p: any) => p.id === cls.id);
@@ -579,6 +604,8 @@ When unsure / not enough author signal → is_competitor=false.`;
           signal_type: cls.signal_type,
           is_competitor: cls.is_competitor,
           competitor_reason: cls.competitor_reason,
+          matches_perfect_lead: cls.matches_perfect_lead,
+          match_reason: cls.match_reason,
           passedThreshold: cls.intent_score >= minIntentScore,
           threshold: minIntentScore,
         }));
@@ -588,6 +615,14 @@ When unsure / not enough author signal → is_competitor=false.`;
           const rejected = { ...cls, is_buyer: false, reason: `competitor: ${cls.competitor_reason || 'author appears to sell similar services'}` };
           results.set(`rejected:${cls.id}`, rejected);
           console.log(`[AI] 🚫 competitor ${cls.id}: ${cls.competitor_reason}`);
+          continue;
+        }
+
+        // Perfect-lead mismatch short-circuit: only enforced if the user provided a description.
+        if (idealLeadDescription && cls.matches_perfect_lead === false) {
+          const rejected = { ...cls, is_buyer: false, reason: `perfect_lead_mismatch: ${cls.match_reason || "author does not fit the user's perfect-lead description"}` };
+          results.set(`rejected:${cls.id}`, rejected);
+          console.log(`[AI] 🚫 perfect-lead-mismatch ${cls.id}: ${cls.match_reason}`);
           continue;
         }
 
@@ -653,7 +688,8 @@ Deno.serve(async (req) => {
 
   try {
     const reqBody = await req.json();
-    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode, run_id: _run_id, task_key: _task_key, manual_approval } = reqBody;
+    const { agent_id, account_id, user_id, list_name, keywords, icp: icpRaw, competitor_companies, business_context, user_company_name, precision_mode, run_id: _run_id, task_key: _task_key, manual_approval, ideal_lead_description } = reqBody;
+    const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
     if (!agent_id || !account_id || !keywords?.length) {
       return new Response(JSON.stringify({ leads: 0, error: 'Missing required params' }), { status: 400, headers: corsHeaders });
     }
@@ -737,6 +773,8 @@ Deno.serve(async (req) => {
       rejected_no_author: 0,
       // Fix 5: seller-detection layer (sellers using buyer phrases as bait)
       rejected_seller: 0,
+      // New: leads rejected because they don't match the user's "Perfect Lead" free-text description
+      perfect_lead_mismatch: 0,
       // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
       min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
@@ -975,7 +1013,7 @@ Deno.serve(async (req) => {
 
       pipelineStats.sent_to_ai += postsForAI.length;
 
-      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE);
+      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription);
 
       // Track AI results in stats
       for (const p of postsForAI) {
@@ -987,7 +1025,9 @@ Deno.serve(async (req) => {
           }
           pipelineStats.passed_ai++;
         } else if (rejectedCls) {
-          if (!rejectedCls.is_buyer) {
+          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.startsWith('perfect_lead_mismatch')) {
+            pipelineStats.perfect_lead_mismatch++;
+          } else if (!rejectedCls.is_buyer) {
             pipelineStats.rejected_ai_not_buyer++;
           } else {
             pipelineStats.rejected_ai_low_score++;

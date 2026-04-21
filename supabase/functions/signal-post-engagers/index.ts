@@ -105,9 +105,10 @@ function engagerKey(p: any): string {
 async function classifyEngagersForCompetitors(
   engagers: any[],
   businessContext: string,
-): Promise<Map<string, { is_competitor: boolean; reason: string }>> {
-  const out = new Map<string, { is_competitor: boolean; reason: string }>();
-  if (!businessContext || engagers.length === 0) return out;
+  idealLeadDescription: string = '',
+): Promise<Map<string, { is_competitor: boolean; reason: string; matches_perfect_lead: boolean; match_reason: string }>> {
+  const out = new Map<string, { is_competitor: boolean; reason: string; matches_perfect_lead: boolean; match_reason: string }>();
+  if ((!businessContext && !idealLeadDescription) || engagers.length === 0) return out;
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) return out;
 
@@ -126,7 +127,7 @@ async function classifyEngagersForCompetitors(
   }
   if (items.length === 0) return out;
 
-  const systemPrompt = `You decide whether each LinkedIn user is a COMPETITOR of the user's business.
+  const systemPrompt = `You decide whether each LinkedIn user is a COMPETITOR of the user's business${idealLeadDescription ? ' AND whether they fit the user\'s "Perfect Lead" description' : ''}.
 
 USER'S BUSINESS CONTEXT: "${businessContext}"
 
@@ -140,7 +141,23 @@ Mark is_competitor=true when the headline clearly indicates the person sells the
 - Headline "Head of Growth at SomeSaaS" → NOT a competitor (in-house buyer)
 - Headline "VP Sales at Acme Corp" → NOT a competitor (potential buyer)
 
-When unsure, return is_competitor=false. Default to false. Provide a 1-sentence reason for each.
+When unsure, return is_competitor=false. Default to false. Provide a 1-sentence reason for each.${idealLeadDescription ? `
+
+═══════════════════════════════════════════════════════════════════════════════
+PERFECT LEAD MATCH (independent of competitor check)
+═══════════════════════════════════════════════════════════════════════════════
+The user has explicitly described their PERFECT LEAD as follows:
+
+"""
+${idealLeadDescription}
+"""
+
+For each person, ALSO decide whether the headline + company plausibly fits this description.
+- DEFAULT TO matches_perfect_lead=true when the role/seniority/industry is ambiguous or unknown — structured ICP filters already enforce hard requirements elsewhere.
+- Only set matches_perfect_lead=false when the headline CLEARLY contradicts the description.
+- Provide a 1-sentence match_reason.
+
+The pipeline will SKIP any person where matches_perfect_lead=false.` : ''}
 
 RESPOND ONLY via the tool call.`;
 
@@ -176,8 +193,10 @@ RESPOND ONLY via the tool call.`;
                         id: { type: 'string' },
                         is_competitor: { type: 'boolean' },
                         reason: { type: 'string' },
+                        matches_perfect_lead: { type: 'boolean', description: 'True if person plausibly fits the user\'s "Perfect Lead" description. Default true when unsure.' },
+                        match_reason: { type: 'string' },
                       },
-                      required: ['id', 'is_competitor', 'reason'],
+                      required: ['id', 'is_competitor', 'reason', 'matches_perfect_lead', 'match_reason'],
                       additionalProperties: false,
                     },
                   },
@@ -204,6 +223,8 @@ RESPOND ONLY via the tool call.`;
           out.set(r.id, {
             is_competitor: r.is_competitor === true,
             reason: String(r.reason || ''),
+            matches_perfect_lead: typeof r.matches_perfect_lead === 'boolean' ? r.matches_perfect_lead : true,
+            match_reason: String(r.match_reason || ''),
           });
         }
       }
@@ -351,7 +372,9 @@ Deno.serve(async (req) => {
       precision_mode,
       manual_approval,
       business_context,
+      ideal_lead_description,
     } = await req.json();
+    const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
