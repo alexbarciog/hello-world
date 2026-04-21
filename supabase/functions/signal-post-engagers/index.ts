@@ -585,10 +585,21 @@ Deno.serve(async (req) => {
             diag.bytes_fetched_estimate += 25_000 * 2;
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
             const postText2 = post.text || post.commentary || '';
+
+            // AI competitor pre-classification (batched, runs BEFORE Unipile profile fetch)
+            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '');
+
             for (const engager of engagers) {
               if (!hasTime()) break;
               const ep2 = engager.author||engager;
               const quickHl = ep2.headline || ep2.title || '';
+              // AI competitor short-circuit: skip BEFORE Unipile profile fetch to save credits
+              const compVerdict2 = competitorMap2.get(engagerKey(ep2));
+              if (compVerdict2?.is_competitor) {
+                diag.competitors_filtered++;
+                console.log(`[engagers] 🚫 competitor: ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.reason}`);
+                continue;
+              }
               const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
               if (pf === 'reject') { diag.failed_quick_icp++; if (isHighPrecision) diag.hp_rejected++; else diag.discovery_rejected++; continue; }
               if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
