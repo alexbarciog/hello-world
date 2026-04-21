@@ -924,6 +924,16 @@ Deno.serve(async (req) => {
         }
 
         const match = scoreProfileAgainstICP(fp, icp);
+        // Perfect-lead AI gate (only when user provided a description)
+        if (idealLeadDescription) {
+          const plm = await checkPerfectLeadMatch(fp, idealLeadDescription, business_context || '');
+          if (!plm.matches) {
+            pipelineStats.perfect_lead_mismatch++;
+            captureRejected(fp, 'perfect_lead_mismatch');
+            console.log(`[AI] 🚫 perfect-lead-mismatch: ${lpid} — ${plm.reason}`);
+            continue;
+          }
+        }
         const signal = engager.signalType === 'comment'
           ? `Commented on ${companyName}'s post`
           : `Reacted to ${companyName}'s post`;
