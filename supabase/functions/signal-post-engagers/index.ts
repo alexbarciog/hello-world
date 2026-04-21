@@ -423,6 +423,7 @@ Deno.serve(async (req) => {
       already_in_contacts: 0, cold_capped: 0, inserted: 0, bytes_fetched_estimate: 0,
       precision_mode: (precision_mode || 'discovery') as any,
       discovery_passed: 0, discovery_rejected: 0, hp_passed: 0, hp_rejected: 0,
+      perfect_lead_mismatch: 0,
     };
 
     // Bandwidth ceiling (matches competitor function for symmetry)
