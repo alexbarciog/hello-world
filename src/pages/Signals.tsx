@@ -454,7 +454,7 @@ export default function Signals() {
     const keywords = newKeywords.split(",").map((k) => k.trim()).filter(Boolean);
     const { data, error } = await supabase
       .from("signal_agents")
-      .insert({ user_id: user.id, name: newName, agent_type: newType, keywords, status: "active", last_launched_at: new Date().toISOString() })
+      .insert({ user_id: user.id, organization_id: currentOrg?.id ?? null, name: newName, agent_type: newType, keywords, status: "active", last_launched_at: new Date().toISOString() })
       .select()
       .single();
     if (!error && data) {
