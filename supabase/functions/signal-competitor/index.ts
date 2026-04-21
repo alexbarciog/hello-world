@@ -1177,6 +1177,16 @@ Deno.serve(async (req) => {
                   if (!passes) { pipelineStats.excluded_no_icp_match++; captureRejected(fp, 'icp_match_failed'); continue; }
                 }
                 const match = scoreProfileAgainstICP(fp, icp);
+                // Perfect-lead AI gate (only when user provided a description)
+                if (idealLeadDescription) {
+                  const plm = await checkPerfectLeadMatch(fp, idealLeadDescription, business_context || '');
+                  if (!plm.matches) {
+                    pipelineStats.perfect_lead_mismatch++;
+                    captureRejected(fp, 'perfect_lead_mismatch');
+                    console.log(`[AI] 🚫 perfect-lead-mismatch (follower): ${lpid} — ${plm.reason}`);
+                    continue;
+                  }
+                }
                 const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp, manual_approval);
                 if (result === 'inserted') { pipelineStats.inserted++; inserted++; }
                 else if (result === 'duplicate') { pipelineStats.duplicates++; }
