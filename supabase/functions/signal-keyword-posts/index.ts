@@ -389,6 +389,7 @@ async function classifyIntentBatch(
   posts: { id: string; text: string; keyword: string; authorHeadline?: string; matchedPhrase?: string }[],
   businessContext: string,
   minIntentScore: number,
+  idealLeadDescription: string = '',
 ): Promise<Map<string, IntentClassification>> {
   const results = new Map<string, IntentClassification>();
 
