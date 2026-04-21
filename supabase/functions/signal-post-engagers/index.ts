@@ -640,8 +640,8 @@ Deno.serve(async (req) => {
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
             const postText2 = post.text || post.commentary || '';
 
-            // AI competitor pre-classification (batched, runs BEFORE Unipile profile fetch)
-            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '');
+            // AI competitor + perfect-lead pre-classification (batched, runs BEFORE Unipile profile fetch)
+            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription);
 
             for (const engager of engagers) {
               if (!hasTime()) break;
@@ -652,6 +652,13 @@ Deno.serve(async (req) => {
               if (compVerdict2?.is_competitor) {
                 diag.competitors_filtered++;
                 console.log(`[engagers] 🚫 competitor: ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.reason}`);
+                continue;
+              }
+              // Perfect-lead pre-check
+              if (idealLeadDescription && compVerdict2 && compVerdict2.matches_perfect_lead === false) {
+                diag.perfect_lead_mismatch++;
+                console.log(`[AI] 🚫 perfect-lead-mismatch: ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.match_reason}`);
+                captureRejected(ep2, 'perfect_lead_mismatch');
                 continue;
               }
               const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
