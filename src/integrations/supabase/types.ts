@@ -1439,6 +1439,7 @@ export type Database = {
           icp_restricted_countries: string[] | null
           icp_restricted_roles: string[] | null
           id: string
+          ideal_lead_description: string | null
           keywords: string[] | null
           last_launched_at: string | null
           leads_list_name: string | null
@@ -1465,6 +1466,7 @@ export type Database = {
           icp_restricted_countries?: string[] | null
           icp_restricted_roles?: string[] | null
           id?: string
+          ideal_lead_description?: string | null
           keywords?: string[] | null
           last_launched_at?: string | null
           leads_list_name?: string | null
@@ -1491,6 +1493,7 @@ export type Database = {
           icp_restricted_countries?: string[] | null
           icp_restricted_roles?: string[] | null
           id?: string
+          ideal_lead_description?: string | null
           keywords?: string[] | null
           last_launched_at?: string | null
           leads_list_name?: string | null
