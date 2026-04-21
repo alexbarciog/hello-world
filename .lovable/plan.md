@@ -1,71 +1,42 @@
 
 
-# Manual Lead Approval System
+## Add Competitor Detection to All Buying-Intent Classifiers
 
-## Overview
-Add a manual approval gate between signal agent lead discovery and campaign enrollment. When enabled on an agent, discovered leads require explicit approve/reject action before they can be used in campaigns. Daily email notifications inform the user of new leads needing review, and campaigns notify when they run out of approved leads.
+### Problem
+The AI classifier currently checks if a post shows buying intent — but it doesn't check whether the AUTHOR (or engager) is themselves a competitor selling the same service the user does. This causes "fake signals": e.g. a rival lead-gen agency posting "anyone need help with outbound?" gets flagged as a hot buyer, when really they're a competitor fishing for clients. The same problem exists for the post-engagement signal type, where engagers (likers/commenters on competitor or hashtag posts) are not currently filtered for competitor status at all.
 
-## Database Changes
+### Solution
+Extend the AI classifier in BOTH `signal-keyword-posts` and `signal-post-engagers` so that, in addition to scoring buying intent, it also evaluates whether the analyzed person (post author OR post engager) is a competitor / service provider in the same space as the user. Reject any lead flagged as a competitor, regardless of intent score.
 
-### 1. Add `manual_approval` column to `signal_agents`
-- `manual_approval boolean NOT NULL DEFAULT false`
+### Changes
 
-### 2. Add `approval_status` column to `contacts`
-- `approval_status text NOT NULL DEFAULT 'auto_approved'`
-- Values: `auto_approved` (default, for agents without manual approval), `pending`, `approved`, `rejected`
+**File 1: `supabase/functions/signal-keyword-posts/index.ts`**
 
-## Frontend Changes
+1. Extend `IntentClassification` interface — add `is_competitor: boolean` and `competitor_reason: string`.
+2. Update the system prompt in `classifyIntentBatch`:
+   - Add a "COMPETITOR CHECK" layer. Given the COMPANY CONTEXT (what the user sells), instruct the AI to analyze the AUTHOR's headline + post content and decide if they offer the SAME or substantially similar services.
+   - Examples: User sells AI lead-gen → reject "Founder @ OutreachAgency", "We help B2B companies book more meetings", "Lead-gen consultant". User sells SEO → reject SEO agencies posting promotional questions.
+   - Soft-promotional posts ("Anyone need help scaling outbound? DM me") from service-providers must be flagged as `is_competitor=true`, NOT as buyers.
+3. Update the `classify_intent` tool schema to require `is_competitor` and `competitor_reason`.
+4. Post-classification logic: if `is_competitor === true` → reject and store under `rejected:` with reason `"competitor: <reason>"`. Add `[AI] 🚫 competitor` log line.
+5. Extend `[AI_OUTPUT]` log to include the new fields.
 
-### 3. Agent Wizard — Manual Approval Toggle (Step 3)
-In `src/components/CreateAgentWizard.tsx`, add a switch toggle in Step 3 (Leads Management) below the list selector:
-- New state: `manualApproval` (boolean)
-- Toggle UI: "Require manual approval" with description "Review and approve each lead before they are available for campaigns"
-- Save `manual_approval` field in the `agentData` object
-- Load the field when editing an existing agent
+**File 2: `supabase/functions/signal-post-engagers/index.ts`**
 
-### 4. Contacts Page — Approve/Reject Buttons + Filter
-In `src/pages/Contacts.tsx`:
-- Add a new tab or filter for "Pending Approval" contacts (`approval_status = 'pending'`)
-- Show Approve (check icon, green) and Reject (X icon, red) buttons in the actions column for contacts with `approval_status = 'pending'`
-- Bulk approve/reject using existing selection mechanism
-- On approve: update `approval_status` to `'approved'`
-- On reject: update `approval_status` to `'rejected'`
-- Add visual badge showing pending/approved/rejected status
+1. Add an equivalent AI competitor-classification step for each engager BEFORE they are inserted as a contact.
+   - Build a lightweight classifier call (reusing the same Lovable AI gateway pattern) that takes: company context (what the user sells) + engager's headline/title + company name.
+   - Returns `{ is_competitor: boolean, reason: string }`.
+2. Batch engagers (e.g. 10 per call) to keep token usage low — engagers don't have post content, only profile metadata, so the prompt is much shorter than the keyword-posts classifier.
+3. If `is_competitor === true` → skip the engager, log `[engagers] 🚫 competitor: <name> — <reason>`, increment a `competitors_filtered` counter for the run diagnostic summary.
+4. Add the counter to the existing diagnostic summary persisted on `signal_agent_tasks`.
 
-### 5. Contact Types Update
-In `src/components/contacts/types.ts`, add `approval_status` to the `Contact` interface.
+### Technical notes
+- No DB schema changes required.
+- No frontend changes required.
+- Pre-existing `competitorCompanies` ICP exclusion (profile-based, after Unipile enrichment) remains untouched — these new AI checks operate on the raw signal data BEFORE expensive Unipile profile enrichment, saving credits.
+- Backward compatible: if AI omits the new fields, default `is_competitor=false`.
+- For `signal-post-engagers`, the AI call adds latency; we batch to amortize it and keep the model small (`google/gemini-3-flash-preview`).
 
-## Backend Changes
-
-### 6. Signal Agent Lead Discovery — Set `approval_status`
-In `supabase/functions/signal-keyword-posts/index.ts` (and other signal functions that insert contacts):
-- When inserting a new contact, check the agent's `manual_approval` flag
-- If `true`, set `approval_status = 'pending'`; otherwise `'auto_approved'`
-
-### 7. Schedule Daily Leads — Filter by Approval Status
-In `supabase/functions/schedule-daily-leads/index.ts`:
-- When fetching contacts from a list for Step 1 scheduling, add a filter: only include contacts where `approval_status IN ('approved', 'auto_approved')`
-- When no eligible contacts remain (all pending or rejected), detect this "ran out of approved leads" condition
-- If the campaign's source agent has `manual_approval = true` and there ARE pending leads, send a notification email to the user
-
-### 8. Daily "New Leads Found" Email
-Create new edge function `supabase/functions/send-approval-digest/index.ts`:
-- Runs daily (add pg_cron job)
-- For each agent with `manual_approval = true`, count contacts with `approval_status = 'pending'` added in the last 24 hours
-- If count > 0, send email via existing `send-notification-email` pattern (Resend) with subject like "🎯 X new leads need your approval — Intentsly"
-- Email body: "Hey {name}, your agent '{agentName}' found {count} leads today. Review and approve them to keep your campaigns running."
-- Include CTA link to `/contacts` page
-
-### 9. "Campaign Ran Out of Leads" Email
-Within `schedule-daily-leads/index.ts`:
-- After determining `unseenIds.length === 0` for a campaign, check if the source agent has `manual_approval = true`
-- Query for pending contacts in the same list
-- If pending count > 0, call the existing `send-notification-email` function with: "Your campaign '{campaignName}' has run out of approved leads. You have {pendingCount} leads waiting for approval."
-
-## Technical Details
-
-- The `approval_status` column defaults to `'auto_approved'` so all existing contacts continue working without migration issues
-- The `schedule-daily-leads` filter change is the enforcement point — pending/rejected leads simply never get scheduled
-- Email notifications reuse the existing `send-notification-email` edge function and Resend integration
-- The daily digest cron job runs once per day (e.g., 08:00 UTC) after signal agents complete their runs
+### Out of scope
+- Not adding to X / Reddit signal agents in this pass (different classifier path). Can be added in a follow-up.
 
