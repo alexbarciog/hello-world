@@ -773,6 +773,8 @@ Deno.serve(async (req) => {
       rejected_no_author: 0,
       // Fix 5: seller-detection layer (sellers using buyer phrases as bait)
       rejected_seller: 0,
+      // New: leads rejected because they don't match the user's "Perfect Lead" free-text description
+      perfect_lead_mismatch: 0,
       // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
       min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
@@ -1011,7 +1013,7 @@ Deno.serve(async (req) => {
 
       pipelineStats.sent_to_ai += postsForAI.length;
 
-      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE);
+      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription);
 
       // Track AI results in stats
       for (const p of postsForAI) {
