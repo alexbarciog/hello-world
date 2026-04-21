@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { LeadResult } from "./types";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Props {
   open: boolean;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function SaveLeadDialog({ open, onOpenChange, lead, onSaved }: Props) {
+  const { currentOrg } = useOrganization();
   const [lists, setLists] = useState<{ id: string; name: string }[]>([]);
   const [selectedListId, setSelectedListId] = useState<string>("");
   const [newListName, setNewListName] = useState("");
@@ -51,7 +53,7 @@ export function SaveLeadDialog({ open, onOpenChange, lead, onSaved }: Props) {
         const name = newListName.trim() || "AI Chat Leads";
         const { data: created, error } = await supabase
           .from("lists")
-          .insert({ user_id: user.id, name })
+          .insert({ user_id: user.id, organization_id: currentOrg?.id ?? null, name })
           .select("id, name")
           .single();
         if (error) throw error;
@@ -67,6 +69,7 @@ export function SaveLeadDialog({ open, onOpenChange, lead, onSaved }: Props) {
         .from("contacts")
         .insert({
           user_id: user.id,
+          organization_id: currentOrg?.id ?? null,
           first_name: lead.first_name || lead.full_name.split(" ")[0] || "Unknown",
           last_name: lead.last_name || lead.full_name.split(" ").slice(1).join(" ") || null,
           title: lead.title || null,

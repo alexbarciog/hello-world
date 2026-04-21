@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactList } from "./types";
 import { Plus, FolderPlus } from "lucide-react";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface CreateListDialogProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface CreateListDialogProps {
 export function CreateListDialog({
   open, onOpenChange, selectedContactIds, existingLists, onCreated,
 }: CreateListDialogProps) {
+  const { currentOrg } = useOrganization();
   const [mode, setMode] = useState<"new" | "existing">("new");
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -37,7 +39,7 @@ export function CreateListDialog({
     if (mode === "new") {
       if (!newName.trim()) { setSaving(false); return; }
       const { data, error } = await (supabase.from("lists") as any)
-        .insert({ user_id: user.id, name: newName.trim(), description: newDesc.trim() || null })
+        .insert({ user_id: user.id, organization_id: currentOrg?.id ?? null, name: newName.trim(), description: newDesc.trim() || null })
         .select("id")
         .single();
       if (error || !data) { console.error(error); setSaving(false); return; }
