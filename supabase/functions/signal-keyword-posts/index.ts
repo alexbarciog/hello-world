@@ -1025,7 +1025,9 @@ Deno.serve(async (req) => {
           }
           pipelineStats.passed_ai++;
         } else if (rejectedCls) {
-          if (!rejectedCls.is_buyer) {
+          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.startsWith('perfect_lead_mismatch')) {
+            pipelineStats.perfect_lead_mismatch++;
+          } else if (!rejectedCls.is_buyer) {
             pipelineStats.rejected_ai_not_buyer++;
           } else {
             pipelineStats.rejected_ai_low_score++;
