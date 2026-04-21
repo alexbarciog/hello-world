@@ -444,8 +444,12 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, ideal_lead_description, run_id, task_key, manual_approval } = await req.json();
+    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, ideal_lead_description, run_id, task_key, manual_approval, precision_mode } = await req.json();
     const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
+    const isHighPrecision = precision_mode === 'high_precision';
+    // Per-run caches for company enrichment + AI ICP decisions
+    const companyEnrichCache = new Map<string, EnrichedCompany | null>();
+    const companyAiCache = new Map<string, boolean>();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
