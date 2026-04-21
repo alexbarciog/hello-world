@@ -794,6 +794,24 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
                     </div>
                   </div>
 
+                  {/* Ideal Lead Description (free text) */}
+                  <div className="mt-6">
+                    <label className="flex items-center gap-1 text-xs font-semibold text-foreground mb-1.5">
+                      Describe Your Perfect Lead
+                      <Info className="w-3.5 h-3.5 text-muted-foreground" />
+                    </label>
+                    <textarea
+                      value={idealLeadDescription}
+                      onChange={(e) => setIdealLeadDescription(e.target.value)}
+                      placeholder="e.g., Founders or growth leaders at $5M–$50M DTC brands struggling with rising CAC on Meta and looking to diversify into YouTube ads. Bonus if they've recently raised funding or are hiring marketers."
+                      rows={4}
+                      className={`${inputCls} resize-none leading-relaxed`}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Free-text description used by the AI to better qualify leads beyond the structured filters above. The more specific, the sharper the matching.
+                    </p>
+                  </div>
+
                   <div className="mt-6">
                     <label className="flex items-center gap-1 text-xs font-semibold text-foreground mb-3">
                       Lead Matching Mode
