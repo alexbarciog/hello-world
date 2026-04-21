@@ -235,6 +235,10 @@ async function processSingleAgent(agentId: string, runId: string) {
     restrictedRoles: (agent.icp_restricted_roles || []).map((s: string) => s.toLowerCase().trim()).filter(Boolean),
   };
 
+  // Free-text ICP description ("Describe Your Perfect Lead") — used as an
+  // additional AI gate downstream. Truncated to 800 chars to keep prompts lean.
+  const idealLeadDescription = String((agent as any).ideal_lead_description || '').trim().slice(0, 800);
+
   const basePayload = {
     agent_id: agentId,
     account_id: accountId,
@@ -246,6 +250,7 @@ async function processSingleAgent(agentId: string, runId: string) {
     user_company_name: userCompanyName,
     precision_mode: agent.precision_mode || 'discovery',
     manual_approval: (agent as any).manual_approval || false,
+    ideal_lead_description: idealLeadDescription,
   };
 
   // ── Build task list ──
