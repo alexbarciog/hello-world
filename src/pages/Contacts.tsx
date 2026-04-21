@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
@@ -21,6 +22,7 @@ type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked"
 export default function Contacts() {
   const navigate = useNavigate();
   const sub = useSubscription();
+  const { currentOrg } = useOrganization();
   const [isDataLocked, setIsDataLocked] = useState(false);
   const [tab, setTab] = useState<Tab>("all");
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -58,9 +60,11 @@ export default function Contacts() {
     setLoading(true);
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) { setLoading(false); return; }
+    if (!currentOrg?.id) { setContacts([]); setLoading(false); return; }
+    const orgId = currentOrg.id;
 
     // Helper to fetch all rows (bypasses 1000-row default limit)
-    async function fetchAllContacts(userId: string) {
+    async function fetchAllContacts(orgId: string) {
       const allRows: any[] = [];
       const pageSize = 1000;
       let from = 0;
@@ -68,7 +72,7 @@ export default function Contacts() {
         const { data, error } = await supabase
           .from("contacts")
           .select("*")
-          .eq("user_id", userId)
+          .eq("organization_id", orgId)
           .order("imported_at", { ascending: false })
           .range(from, from + pageSize - 1);
         if (error || !data || data.length === 0) break;
@@ -81,13 +85,13 @@ export default function Contacts() {
 
     // Fetch contacts, lists, and junction in parallel
     const [allContacts, listsRes, junctionRes, connReqRes, meetingsRes, agentsRes, campaignsRes] = await Promise.all([
-      fetchAllContacts(user.id),
-      (supabase.from("lists") as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      fetchAllContacts(orgId),
+      (supabase.from("lists") as any).select("*").eq("organization_id", orgId).order("created_at", { ascending: false }),
       (supabase.from("contact_lists") as any).select("contact_id, list_id"),
       supabase.from("campaign_connection_requests").select("id, contact_id, status, sent_at, accepted_at, current_step, conversation_stopped, campaign_id").eq("user_id", user.id).order("sent_at", { ascending: false }),
-      supabase.from("meetings" as any).select("*").eq("user_id", user.id).order("scheduled_at", { ascending: true }),
-      supabase.from("signal_agents").select("id, name, leads_list_name").eq("user_id", user.id),
-      supabase.from("campaigns").select("id, conversational_ai").eq("user_id", user.id),
+      supabase.from("meetings" as any).select("*").eq("organization_id", orgId).order("scheduled_at", { ascending: true }),
+      supabase.from("signal_agents").select("id, name, leads_list_name").eq("organization_id", orgId),
+      supabase.from("campaigns").select("id, conversational_ai").eq("organization_id", orgId),
     ]);
 
     // Check if data should be locked: user has ≥1 meeting and no active subscription
@@ -189,7 +193,7 @@ export default function Contacts() {
     }
 
     setLoading(false);
-  }, [sub.loading, sub.subscribed]);
+  }, [sub.loading, sub.subscribed, currentOrg?.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

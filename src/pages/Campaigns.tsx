@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -183,6 +184,7 @@ function CampaignCard({
 export default function CampaignsPage() {
   const navigate = useNavigate();
   const sub = useSubscription();
+  const { currentOrg } = useOrganization();
   const [campaigns, setCampaigns] = useState<CampaignWithLeads[]>([]);
   const [loading, setLoading] = useState(true);
   const [meetingsCount, setMeetingsCount] = useState(0);
@@ -191,9 +193,11 @@ export default function CampaignsPage() {
   const atLimit = campaigns.length >= MAX_CAMPAIGNS;
 
   const load = async () => {
+    if (!currentOrg?.id) { setCampaigns([]); setLoading(false); return; }
     const { data } = await supabase.
     from("campaigns").
     select("id, company_name, status, created_at, campaign_goal, invitations_sent, invitations_accepted, messages_sent, messages_replied, source_agent_id, source_list_id, source_type").
+    eq("organization_id", currentOrg.id).
     order("created_at", { ascending: false });
     const rows = (data ?? []) as (Campaign & { source_agent_id: string | null; source_list_id: string | null; source_type: string | null })[];
     const withCounts: CampaignWithLeads[] = await Promise.all(
@@ -218,6 +222,7 @@ export default function CampaignsPage() {
             const { count } = await supabase
               .from("contacts")
               .select("id", { count: "exact", head: true })
+              .eq("organization_id", currentOrg.id)
               .eq("list_name", agentData.leads_list_name);
             leadsCount = count ?? 0;
           }
@@ -256,19 +261,16 @@ export default function CampaignsPage() {
       })
     );
     setCampaigns(withCounts);
-    // Load opportunities (meetings) for current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { count: mCount } = await supabase
-        .from("meetings")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
-      setMeetingsCount(mCount ?? 0);
-    }
+    // Load opportunities (meetings) for current org
+    const { count: mCount } = await supabase
+      .from("meetings")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", currentOrg.id);
+    setMeetingsCount(mCount ?? 0);
     setLoading(false);
   };
 
-  useEffect(() => {load();}, []);
+  useEffect(() => {load();}, [currentOrg?.id]);
 
   const handleNewCampaign = () => {
     if (atLimit) {toast.error(`You've reached the limit of ${MAX_CAMPAIGNS} campaigns.`);return;}

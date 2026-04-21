@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
@@ -323,6 +324,7 @@ export default function Signals() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sub = useSubscription();
   const { data: isAdmin } = useAdminCheck();
+  const { currentOrg } = useOrganization();
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -348,7 +350,7 @@ export default function Signals() {
   useEffect(() => {
     fetchAgents();
     fetchRuns();
-  }, []);
+  }, [currentOrg?.id]);
 
   // Bandwidth-friendly polling: only when a run is in flight, every 15s, and
   // also refresh the run list so the History view stays current without
@@ -373,10 +375,12 @@ export default function Signals() {
   }, [searchParams]);
 
   async function fetchAgents() {
+    if (!currentOrg?.id) { setAgents([]); setLoading(false); return; }
     setLoading(true);
     const { data, error } = await supabase
       .from("signal_agents")
       .select("*")
+      .eq("organization_id", currentOrg.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
       // Enrich each agent with live contact count from its associated list
@@ -425,9 +429,11 @@ export default function Signals() {
   }
 
   async function fetchRuns() {
+    if (!currentOrg?.id) { setAgentRuns([]); return; }
     const { data: runs } = await supabase
       .from("signal_agent_runs")
       .select("*")
+      .eq("organization_id", currentOrg.id)
       .order("started_at", { ascending: false })
       .limit(50);
     if (runs) setAgentRuns(runs as AgentRun[]);
@@ -448,7 +454,7 @@ export default function Signals() {
     const keywords = newKeywords.split(",").map((k) => k.trim()).filter(Boolean);
     const { data, error } = await supabase
       .from("signal_agents")
-      .insert({ user_id: user.id, name: newName, agent_type: newType, keywords, status: "active", last_launched_at: new Date().toISOString() })
+      .insert({ user_id: user.id, organization_id: currentOrg?.id ?? null, name: newName, agent_type: newType, keywords, status: "active", last_launched_at: new Date().toISOString() })
       .select()
       .single();
     if (!error && data) {

@@ -182,10 +182,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           .eq("id", existingCampaignId);
         if (error) throw error;
       } else {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("current_organization_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
         const { data: inserted, error } = await supabase
           .from("campaigns")
           .insert({
             user_id: session.user.id,
+            organization_id: profile?.current_organization_id ?? null,
             current_step: nextStep,
             status: "draft",
             ...stepPayload,

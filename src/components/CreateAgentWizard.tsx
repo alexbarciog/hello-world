@@ -8,6 +8,7 @@ import {
   TrendingUp, Building2, Eye, Loader2,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface CreateAgentWizardProps {
   onClose: () => void;
@@ -98,6 +99,7 @@ const SIGNAL_CATEGORIES = [
 const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50";
 
 export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: CreateAgentWizardProps) {
+  const { currentOrg } = useOrganization();
   const [step, setStep] = useState(1);
   const [agentName, setAgentName] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -414,6 +416,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       const { data: inserted, error: insertErr } = await supabase.from("signal_agents").insert({
         ...agentData,
         user_id: user.id,
+        organization_id: currentOrg?.id ?? null,
         status: "active",
         last_launched_at: new Date().toISOString(),
       }).select("id").single();
