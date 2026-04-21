@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "Intentsly <no-reply@intentsly.com>",
+            from: "Intentsly <notifications@intentsly.com>",
             to: email,
             subject: `You've been invited to join ${org?.name || "a workspace"} on Intentsly`,
             html: `
