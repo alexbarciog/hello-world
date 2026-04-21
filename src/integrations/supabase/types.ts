@@ -268,6 +268,7 @@ export type Database = {
           message_tone: string | null
           messages_replied: number | null
           messages_sent: number | null
+          organization_id: string | null
           pain_points: string[] | null
           precision_mode: string | null
           session_id: string | null
@@ -323,6 +324,7 @@ export type Database = {
           message_tone?: string | null
           messages_replied?: number | null
           messages_sent?: number | null
+          organization_id?: string | null
           pain_points?: string[] | null
           precision_mode?: string | null
           session_id?: string | null
@@ -378,6 +380,7 @@ export type Database = {
           message_tone?: string | null
           messages_replied?: number | null
           messages_sent?: number | null
+          organization_id?: string | null
           pain_points?: string[] | null
           precision_mode?: string | null
           session_id?: string | null
@@ -401,6 +404,13 @@ export type Database = {
           workflow_steps?: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "campaigns_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "campaigns_source_agent_id_fkey"
             columns: ["source_agent_id"]
@@ -473,6 +483,7 @@ export type Database = {
           linkedin_profile_id: string | null
           linkedin_url: string | null
           list_name: string | null
+          organization_id: string | null
           personality_generated_at: string | null
           personality_prediction: Json | null
           relevance_tier: string
@@ -505,6 +516,7 @@ export type Database = {
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
+          organization_id?: string | null
           personality_generated_at?: string | null
           personality_prediction?: Json | null
           relevance_tier?: string
@@ -537,6 +549,7 @@ export type Database = {
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
+          organization_id?: string | null
           personality_generated_at?: string | null
           personality_prediction?: Json | null
           relevance_tier?: string
@@ -550,7 +563,15 @@ export type Database = {
           title?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_scheduled_leads: {
         Row: {
@@ -695,6 +716,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          organization_id: string | null
           source_agent_id: string | null
           user_id: string
         }
@@ -703,6 +725,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           source_agent_id?: string | null
           user_id: string
         }
@@ -711,10 +734,18 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           source_agent_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lists_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lists_source_agent_id_fkey"
             columns: ["source_agent_id"]
@@ -731,6 +762,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          organization_id: string | null
           prep_generated_at: string | null
           prep_research: Json | null
           scheduled_at: string
@@ -743,6 +775,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          organization_id?: string | null
           prep_generated_at?: string | null
           prep_research?: Json | null
           scheduled_at: string
@@ -755,6 +788,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          organization_id?: string | null
           prep_generated_at?: string | null
           prep_research?: Json | null
           scheduled_at?: string
@@ -774,6 +808,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -808,6 +849,115 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      organization_invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_members: {
+        Row: {
+          id: string
+          joined_at: string
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          organization_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          organization_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          calendar_integration_id: string | null
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          plan: string
+          slug: string | null
+          unipile_account_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          calendar_integration_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          plan?: string
+          slug?: string | null
+          unipile_account_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calendar_integration_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          plan?: string
+          slug?: string | null
+          unipile_account_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -891,6 +1041,7 @@ export type Database = {
           ai_chat_lead_status: Json | null
           created_at: string
           credits: number
+          current_organization_id: string | null
           daily_connections_limit: number
           daily_messages_limit: number
           free_trial_enabled: boolean
@@ -899,6 +1050,9 @@ export type Database = {
           last_seen_at: string | null
           linkedin_display_name: string | null
           onboarding_complete: boolean
+          referral_balance: number
+          referral_code: string | null
+          referred_by_code: string | null
           unipile_account_id: string | null
           updated_at: string
           user_id: string
@@ -908,6 +1062,7 @@ export type Database = {
           ai_chat_lead_status?: Json | null
           created_at?: string
           credits?: number
+          current_organization_id?: string | null
           daily_connections_limit?: number
           daily_messages_limit?: number
           free_trial_enabled?: boolean
@@ -916,6 +1071,9 @@ export type Database = {
           last_seen_at?: string | null
           linkedin_display_name?: string | null
           onboarding_complete?: boolean
+          referral_balance?: number
+          referral_code?: string | null
+          referred_by_code?: string | null
           unipile_account_id?: string | null
           updated_at?: string
           user_id: string
@@ -925,6 +1083,7 @@ export type Database = {
           ai_chat_lead_status?: Json | null
           created_at?: string
           credits?: number
+          current_organization_id?: string | null
           daily_connections_limit?: number
           daily_messages_limit?: number
           free_trial_enabled?: boolean
@@ -933,11 +1092,22 @@ export type Database = {
           last_seen_at?: string | null
           linkedin_display_name?: string | null
           onboarding_complete?: boolean
+          referral_balance?: number
+          referral_code?: string | null
+          referred_by_code?: string | null
           unipile_account_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_organization_id_fkey"
+            columns: ["current_organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reddit_keywords: {
         Row: {
@@ -1034,6 +1204,53 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string | null
+          paid_at: string | null
+          referred_email: string | null
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_amount: number
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          paid_at?: string | null
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_amount?: number
+          source?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string | null
+          paid_at?: string | null
+          referred_email?: string | null
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_amount?: number
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_messages: {
         Row: {
           campaign_id: string
@@ -1090,6 +1307,7 @@ export type Database = {
           completed_tasks: number
           error: string | null
           id: string
+          organization_id: string | null
           rejected_profiles_sample: Json
           started_at: string
           status: string
@@ -1105,6 +1323,7 @@ export type Database = {
           completed_tasks?: number
           error?: string | null
           id?: string
+          organization_id?: string | null
           rejected_profiles_sample?: Json
           started_at?: string
           status?: string
@@ -1120,6 +1339,7 @@ export type Database = {
           completed_tasks?: number
           error?: string | null
           id?: string
+          organization_id?: string | null
           rejected_profiles_sample?: Json
           started_at?: string
           status?: string
@@ -1128,7 +1348,15 @@ export type Database = {
           total_tasks?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "signal_agent_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       signal_agent_tasks: {
         Row: {
@@ -1217,6 +1445,7 @@ export type Database = {
           manual_approval: boolean
           name: string
           next_launch_at: string | null
+          organization_id: string | null
           precision_mode: string | null
           results_count: number
           signals_config: Json | null
@@ -1242,6 +1471,7 @@ export type Database = {
           manual_approval?: boolean
           name?: string
           next_launch_at?: string | null
+          organization_id?: string | null
           precision_mode?: string | null
           results_count?: number
           signals_config?: Json | null
@@ -1267,6 +1497,7 @@ export type Database = {
           manual_approval?: boolean
           name?: string
           next_launch_at?: string | null
+          organization_id?: string | null
           precision_mode?: string | null
           results_count?: number
           signals_config?: Json | null
@@ -1274,7 +1505,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "signal_agents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1398,6 +1637,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      user_org_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
