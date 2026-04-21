@@ -1033,10 +1033,28 @@ Deno.serve(async (req) => {
             continue;
           }
         }
+        // Company-level ICP gate (HIGH_PRECISION only)
+        let enrichedCompanyForInsert: EnrichedCompany | null = null;
+        if (isHighPrecision) {
+          const gate = await companyIcpGate(
+            fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
+            icp.industries, idealLeadDescription, business_context || '',
+            companyEnrichCache, companyAiCache,
+          );
+          if (gate.verdict === 'reject') {
+            pipelineStats.company_icp_mismatch++;
+            captureRejected(fp, 'company_icp_mismatch');
+            console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown'} — ${gate.reason}`);
+            continue;
+          }
+          if (gate.verdict === 'skip_no_enrichment') pipelineStats.company_enrichment_failed++;
+          else if (gate.verdict === 'accept_industry') pipelineStats.company_industry_matched++;
+          enrichedCompanyForInsert = gate.company;
+        }
         const signal = engager.signalType === 'comment'
           ? `Commented on ${companyName}'s post`
           : `Reacted to ${companyName}'s post`;
-        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval);
+        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval, enrichedCompanyForInsert);
 
         if (result === 'inserted') {
           const tier = classifyCompetitorContact(match, icp, hl) || 'warm';
