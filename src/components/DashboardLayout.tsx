@@ -334,6 +334,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </div>
 
+            {/* Org Switcher - Mobile */}
+            <div className="px-3 pb-2">
+              <OrgSwitcher collapsed={false} />
+            </div>
+
             <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
               {allNavItems.map((item) => {
                 const active = location.pathname === item.path;
