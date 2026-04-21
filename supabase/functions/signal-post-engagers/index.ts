@@ -390,7 +390,9 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   const rt=classifyContact(m,icp||ei,hl)||'cold';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({
-    user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,company:p.company||p.current_company?.name||null,
+    user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
+    company:enrichedCompany?.name||p.company||p.current_company?.name||null,
+    industry:enrichedCompany?.industry||p.industry||p.current_company?.industry||null,
     linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
     linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,ai_score:as,
     signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
