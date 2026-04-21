@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
       own_posts_scanned: 0, profile_urls_scanned: 0, profile_posts_scanned: 0,
       reactions_fetched: 0, comments_fetched: 0, total_engagers_raw: 0,
       failed_quick_icp: 0, strong_passes: 0, profiles_fetched: 0,
-      excluded_no_icp_match: 0, excluded_competitor: 0, rejected_seller: 0,
+      excluded_no_icp_match: 0, excluded_competitor: 0, rejected_seller: 0, competitors_filtered: 0,
       already_in_contacts: 0, cold_capped: 0, inserted: 0, bytes_fetched_estimate: 0,
       precision_mode: (precision_mode || 'discovery') as any,
       discovery_passed: 0, discovery_rejected: 0, hp_passed: 0, hp_rejected: 0,
