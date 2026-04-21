@@ -1,62 +1,93 @@
 
 
-## Plan: Use "Perfect Lead Description" as a Pre-Check Filter
+## Plan: Two-Stage Company-Level ICP Match (High Precision only)
 
 ### Goal
-Use the free-text **"Describe Your Perfect Lead"** field (`signal_agents.ideal_lead_description`) as an additional AI gate. Before a discovered lead is saved as a contact, an AI compares their LinkedIn **headline + company/title** against the user's free-text description and rejects them if they don't match.
+For **High Precision** signal agents, fetch the lead's employer LinkedIn page and validate it against the agent's ICP using a **two-stage OR gate**:
+
+1. **Stage 1 — Industry match (cheap, deterministic).** If the company's LinkedIn industry matches one of `icp.industries` → **accept immediately**, skip AI.
+2. **Stage 2 — AI ICP match (only on industry miss).** Compare the company's `{ name, industry, description }` against the agent's `ideal_lead_description` + `business_context`. Accept if AI says the company fits. Reject otherwise.
+
+Also persist the verified `company` and `industry` on the contact row so downstream UI shows real data instead of empty fields.
 
 ### Where it plugs in
 
-The four signal source functions all already receive `business_context` from `process-signal-agents`. We extend the same payload with a new `ideal_lead_description` field, and each function uses it to enrich the existing AI classifier (no extra round-trip — same call, extra check).
-
 ```text
-process-signal-agents
-  └── builds basePayload (adds: ideal_lead_description)
-       ├── signal-keyword-posts        ← extend classifyIntentBatch prompt + schema
-       ├── signal-post-engagers        ← extend classifyEngagersForCompetitors prompt + schema
-       ├── signal-hashtag-engagement   ← extend filterIrrelevantPosts prompt + schema
-       └── signal-competitor           ← add lightweight classifier (currently no AI gate)
+For each candidate lead (HIGH_PRECISION agents only):
+  1. Existing pre-filter (headline/role)         ← unchanged
+  2. Existing AI intent / perfect-lead gate      ← unchanged
+  3. NEW: enrichLeadCompany(profile)             ← Unipile /linkedin/company/{slug}
+       └─ soft-fail → fall back to current behavior, do not reject
+  4. NEW: Stage 1 — fuzzy industry match
+       ├─ MATCH  → accept, skip Stage 2 (no AI cost)
+       └─ MISS   → Stage 2
+  5. NEW: Stage 2 — AI company-vs-ICP-description check
+       ├─ matches_icp = true  → accept
+       └─ matches_icp = false → reject (diag.company_icp_mismatch++)
+  6. insertContact(... enriched company, industry ...)
 ```
+
+Discovery-mode agents skip steps 3–5 entirely (zero new cost, zero behavior change).
 
 ### Changes
 
-**1. `supabase/functions/process-signal-agents/index.ts`**
-- Pass `agent.ideal_lead_description` through `basePayload` to all 4 child functions.
-- Truncate to 800 chars to keep prompts lean.
+**1. New helper — `enrichLeadCompany(profile, accountId, cache)`** (inline in each signal function)
+- Extract company slug from the Unipile profile (`current_company.public_id` / `linkedin_url` / `name`).
+- Call `GET /api/v1/linkedin/company/{slug}?account_id=...` (same endpoint already used by `signal-competitor`).
+- Cache by slug in a `Map<string, CompanyData|null>` per run (companies repeat across leads).
+- Return `{ name, industry, description, slug }` or `null` on failure.
+- Soft-fail: Unipile errors / unknown company → return `null`, fall back to old behavior, increment `diag.company_enrichment_failed`.
 
-**2. `supabase/functions/signal-keyword-posts/index.ts`**
-- Accept `ideal_lead_description` from request body.
-- In `classifyIntentBatch` system prompt, add a new section: **"PERFECT LEAD MATCH (ICP fit check)"** that instructs the AI to compare each post AUTHOR's headline against the user's perfect-lead description.
-- Extend the `classify_intent` tool schema with two fields: `matches_perfect_lead: boolean`, `match_reason: string`.
-- Post-classification: if `ideal_lead_description` is set AND `matches_perfect_lead === false` → reject the lead, store under `rejected:perfect_lead_mismatch`, log `[AI] 🚫 perfect-lead-mismatch: <reason>`.
-- Skip the new check entirely when `ideal_lead_description` is empty (backward compatible).
+**2. New helper — `fuzzyIndustryMatch(companyIndustry, icpIndustries)`**
+- Lowercase + token-overlap match (e.g. "Computer Software" matches "Software" / "SaaS / Software").
+- Returns `true` on any token overlap or substring hit, `false` otherwise.
+- Pure function, no AI cost.
 
-**3. `supabase/functions/signal-post-engagers/index.ts`**
-- Accept `ideal_lead_description` from request body.
-- Extend the existing `classifyEngagersForCompetitors` batched call: rename internally to `classifyEngagers`, augment prompt to also evaluate "is this person a fit for the user's ideal customer description?", and return both `is_competitor` AND `matches_perfect_lead` per engager.
-- In the engager loop (both `runOwnPostEngagers` and `runProfileEngagers` branches), after the existing competitor reject, add: if `ideal_lead_description` is set AND `matches_perfect_lead === false` → skip + increment new `perfect_lead_mismatch` diagnostic counter.
+**3. New AI helper — `companyMatchesICP(companies[], icp, idealLeadDescription, businessContext)`**
+- Single batched call (batch size ~10 companies) — only invoked for companies that **failed** Stage 1.
+- Tool schema: `{ matches_icp: boolean, reason: string }` per company.
+- Prompt receives: agent's `icp.industries` (as context), `ideal_lead_description`, `business_context`, plus each company's `{ name, industry, description }`.
+- Default to **accept** when AI is unsure (consistent with existing perfect-lead gate philosophy).
 
-**4. `supabase/functions/signal-hashtag-engagement/index.ts`**
-- Accept `ideal_lead_description` from request body.
-- Extend the existing `filterIrrelevantPosts` AI prompt to also evaluate the AUTHOR against the perfect-lead description (one extra boolean field in the same tool schema). Reject if mismatch.
+**4. Wire into the four signal functions (HIGH_PRECISION branch only)**
+- `signal-keyword-posts/index.ts` → after existing perfect-lead gate, before `insertContact`.
+- `signal-post-engagers/index.ts` → in both `runOwnPostEngagers` and `runProfileEngagers` paths, after existing competitor + perfect-lead gates.
+- `signal-hashtag-engagement/index.ts` → after existing AI relevance filter.
+- `signal-competitor/index.ts` → before its existing `insertContact` calls in both engagers + followers branches.
 
-**5. `supabase/functions/signal-competitor/index.ts`**
-- Currently has no AI gate. Add a lightweight batched AI classifier (mirroring `signal-post-engagers`) that runs only when `ideal_lead_description` is set, before insertion. Skipped entirely otherwise to avoid added cost when the field is empty.
+All four functions: when enrichment succeeds, pass `{ name, industry }` into `insertContact` so `contacts.company` and `contacts.industry` get the **real** values from the company page (not the often-empty profile fields).
 
-**6. Diagnostic summary**
-- Add `perfect_lead_mismatch` counter to the diagnostic JSON persisted on `signal_agent_tasks` for each function, so admins can see how many leads were rejected by this new gate.
+**5. `insertContact` signature update (all 4 functions)**
+- Accept optional `enrichedCompany?: { name, industry }`.
+- When present, persist `contacts.company = enrichedCompany.name`, `contacts.industry = enrichedCompany.industry`. Otherwise fall back to current behavior.
 
-### Backward compatibility & cost
-- If `ideal_lead_description` is empty (existing agents), the new check is skipped entirely — zero behavior change, zero extra tokens.
-- For agents that DO use the field, the check piggybacks on the AI calls that are already being made (no additional round-trips for keyword-posts, post-engagers, hashtags). Only `signal-competitor` adds a new call, gated on the field being set.
-- Default to **accept** (`matches_perfect_lead=true`) when the AI is unsure — false negatives on a free-text field are worse than false positives, since structured ICP filters already enforce hard requirements.
+**6. Diagnostics**
+- Add three counters to the diagnostic JSON on `signal_agent_tasks` (alongside existing `perfect_lead_mismatch`):
+  - `company_enrichment_failed` — Unipile lookup failed
+  - `company_industry_matched` — passed Stage 1 (cheap path)
+  - `company_icp_mismatch` — failed Stage 2 (AI rejected)
+
+### Cost & safety
+- Discovery agents: **zero new calls**, **zero new AI tokens**.
+- High-precision agents:
+  - **+1 Unipile call per unique company per run** (cached).
+  - **AI call ONLY when Stage 1 misses** — most leads in a tightly-scoped agent will share industries that pass Stage 1, so AI cost stays low.
+  - Batched at ~10 companies per AI call to keep token overhead flat.
+- Soft-fail on Unipile errors → never blocks a lead due to infra hiccups.
+- Default-accept on AI uncertainty → no false negatives on edge cases.
+
+### Backward compatibility
+- No DB schema changes — `contacts.company` and `contacts.industry` already exist.
+- Discovery-mode agents and existing leads behave exactly as today.
+- If `ideal_lead_description` is empty, Stage 2 falls back to a lighter prompt comparing only against `icp.industries` + `business_context`.
 
 ### What stays the same
-- No DB schema changes (column already exists from previous turn).
-- No frontend changes — the textarea is already wired up and persisting.
-- Existing structured ICP filters (job titles, industries, locations, restricted roles, competitor companies) keep working exactly as today; this is an additive layer.
+- All existing pre-filters, AI gates, perfect-lead check, exclusion logic, deduplication.
+- Unipile API key, account_id passing, rate-limit handling.
+- Frontend / `CreateAgentWizard` / contacts table UI.
 
 ### Out of scope
-- X / Reddit signal agents (different classifier path; can mirror later).
-- Re-running the check against already-saved contacts (only applies to newly discovered leads going forward).
+- Reddit / X signal agents (different profile shape; can mirror later).
+- Backfilling already-saved contacts (only applies to new leads going forward; one-off backfill script can ship separately if requested).
+- Cross-run company cache table (defer until we measure repeat rate).
 
