@@ -250,7 +250,8 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
   const aiScore = Math.min(3, [signalAHit,signalBHit,signalCHit].filter(Boolean).length);
   const { data: inserted, error } = await supabase.from('contacts').insert({
     user_id: userId, first_name: firstName, last_name: lastName, title: profile.headline||profile.title||null,
-    company: profile.company||profile.current_company?.name||null,
+    company: enrichedCompany?.name || profile.company || profile.current_company?.name || null,
+    industry: enrichedCompany?.industry || profile.industry || null,
     linkedin_url: profile.linkedin_url||profile.public_url||profile.profile_url||(linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId, source_campaign_id: null, signal, signal_post_url: signalPostUrl,
     ai_score: aiScore, signal_a_hit: signalAHit, signal_b_hit: signalBHit, signal_c_hit: signalCHit,
@@ -444,8 +445,12 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, ideal_lead_description, run_id, task_key, manual_approval } = await req.json();
+    const { agent_id, account_id, user_id, list_name, hashtags, icp: icpRaw, competitor_companies, business_context, ideal_lead_description, run_id, task_key, manual_approval, precision_mode } = await req.json();
     const idealLeadDescription = String(ideal_lead_description || '').trim().slice(0, 800);
+    const isHighPrecision = precision_mode === 'high_precision';
+    // Per-run caches for company enrichment + AI ICP decisions
+    const companyEnrichCache = new Map<string, EnrichedCompany | null>();
+    const companyAiCache = new Map<string, boolean>();
     const START = Date.now();
     const MAX_RUNTIME_MS = 105_000;
     const hasTime = () => Date.now() - START < MAX_RUNTIME_MS;
@@ -486,9 +491,13 @@ Deno.serve(async (req) => {
       cold_capped: 0,
       inserted: 0,
       perfect_lead_mismatch: 0,
+      // Company-level ICP gate (HIGH_PRECISION only)
+      company_enrichment_failed: 0,
+      company_industry_matched: 0,
+      company_icp_mismatch: 0,
     };
 
-    console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length });
+    console.log('[FIX2_DEPLOYED]', { signal: 'hashtag_engagement', file: 'signal-hashtag-engagement', hashtagCount: hashtags.length, isHighPrecision });
 
     // Phase 1: Search posts per hashtag with cursor pagination (up to 3 pages)
     for (let tag of hashtags) {
@@ -577,8 +586,27 @@ Deno.serve(async (req) => {
           if (isSeller(postText, hl)) { diag.rejected_seller++; continue; }
           const cls = classifyContact(match, icp, hl);
           if (cls === 'cold' && !canInsertCold()) { diag.cold_capped++; continue; }
+
+          // Company-level ICP gate (HIGH_PRECISION only)
+          let enrichedCompanyForInsert: EnrichedCompany | null = null;
+          if (isHighPrecision) {
+            const gate = await companyIcpGate(
+              fullProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
+              icp.industries, idealLeadDescription, business_context || '',
+              companyEnrichCache, companyAiCache,
+            );
+            if (gate.verdict === 'reject') {
+              diag.company_icp_mismatch++;
+              console.log(`[COMPANY_ICP] 🚫 hashtag — ${gate.company?.name || 'unknown'} — ${gate.reason}`);
+              continue;
+            }
+            if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+            else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
+            enrichedCompanyForInsert = gate.company;
+          }
+
           const signal = `Engaged with ${post._hashtag}`;
-          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval);
+          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCompanyForInsert);
           if (result === 'exists') { diag.already_in_contacts++; continue; }
           if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
         }

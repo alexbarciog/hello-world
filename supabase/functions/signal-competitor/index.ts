@@ -226,18 +226,109 @@ async function checkPerfectLeadMatch(
   } catch (e) { console.warn('[COMP] perfect-lead check error:', e); return { matches: true, reason: 'error' }; }
 }
 
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean): Promise<'inserted' | 'duplicate' | 'rejected'>{
+// ─── Company-level ICP enrichment (HIGH_PRECISION only) ──────────────────
+interface EnrichedCompany { name: string; industry: string; description: string; slug: string; }
+
+function extractCompanySlug(profile: any): string | null {
+  const cc = profile?.current_company || profile?.company || {};
+  const direct = cc?.public_id || cc?.public_identifier || cc?.slug;
+  if (direct && typeof direct === 'string') return direct.toLowerCase().trim();
+  const url = cc?.linkedin_url || cc?.url || profile?.company_url || '';
+  if (url && typeof url === 'string') {
+    const m = url.match(/linkedin\.com\/company\/([^/?#]+)/i);
+    if (m) return m[1].toLowerCase().trim();
+  }
+  return null;
+}
+
+async function enrichLeadCompany(profile: any, accountId: string, apiKey: string, dsn: string, cache: Map<string, EnrichedCompany | null>): Promise<EnrichedCompany | null> {
+  const slug = extractCompanySlug(profile);
+  if (!slug) return null;
+  if (cache.has(slug)) return cache.get(slug)!;
+  try {
+    const res = await fetch(`https://${dsn}/api/v1/linkedin/company/${encodeURIComponent(slug)}?account_id=${accountId}`, { headers: { 'X-API-KEY': apiKey } });
+    if (!res.ok) { await res.text(); cache.set(slug, null); return null; }
+    const data = await res.json();
+    const enriched: EnrichedCompany = {
+      name: String(data.name || data.company_name || profile?.current_company?.name || '').slice(0, 200),
+      industry: String(data.industry || data.industries?.[0] || '').slice(0, 200),
+      description: String(data.description || data.about || '').slice(0, 1500),
+      slug,
+    };
+    cache.set(slug, enriched);
+    return enriched;
+  } catch (e) { console.warn(`[COMPANY_ENRICH] ${slug}:`, e); cache.set(slug, null); return null; }
+}
+
+const _COMPANY_INDUSTRY_STOPWORDS = new Set(['and','or','of','the','for','to','in','at','a','an','&','/','-','services','solutions','software','industry','technology','tech']);
+function _industryTokens(s: string): string[] {
+  return (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length >= 3 && !_COMPANY_INDUSTRY_STOPWORDS.has(t));
+}
+function fuzzyIndustryMatch(companyIndustry: string, icpIndustries: string[]): boolean {
+  const ci = (companyIndustry || '').toLowerCase().trim();
+  if (!ci || !icpIndustries?.length) return false;
+  const ciTokens = new Set(_industryTokens(ci));
+  for (const ind of icpIndustries) {
+    const indLower = (ind || '').toLowerCase().trim();
+    if (!indLower) continue;
+    if (ci.includes(indLower) || indLower.includes(ci)) return true;
+    const indTokens = _industryTokens(indLower);
+    if (indTokens.some(t => ciTokens.has(t))) return true;
+  }
+  return false;
+}
+
+async function companyMatchesICPDescription(company: EnrichedCompany, icpIndustries: string[], idealLeadDescription: string, businessContext: string, cache: Map<string, boolean>): Promise<{ matches: boolean; reason: string }> {
+  if (cache.has(company.slug)) return { matches: cache.get(company.slug)!, reason: 'cached' };
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return { matches: true, reason: 'no AI key' };
+  try {
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: `You decide if a COMPANY fits the user's Ideal Customer Profile.\n\nUSER'S BUSINESS: "${businessContext || 'N/A'}"\nICP TARGET INDUSTRIES: ${icpIndustries.length ? icpIndustries.join(', ') : '(none specified)'}\nIDEAL LEAD DESCRIPTION:\n"""\n${idealLeadDescription || '(none provided)'}\n"""\n\nDecide if the COMPANY below plausibly fits. DEFAULT TO matches_icp=true when ambiguous. Only matches_icp=false when CLEARLY irrelevant.\n\nRespond ONLY via the tool call.` },
+          { role: 'user', content: `COMPANY: ${company.name}\nINDUSTRY: ${company.industry || '(unknown)'}\nDESCRIPTION: ${company.description || '(none)'}` },
+        ],
+        tools: [{ type: 'function', function: { name: 'check_company_icp', description: 'Decide ICP match.', parameters: { type: 'object', properties: { matches_icp: { type: 'boolean' }, reason: { type: 'string' } }, required: ['matches_icp', 'reason'], additionalProperties: false } } }],
+        tool_choice: { type: 'function', function: { name: 'check_company_icp' } },
+      }),
+    });
+    if (!res.ok) { cache.set(company.slug, true); return { matches: true, reason: `HTTP ${res.status}` }; }
+    const data = await res.json();
+    const tc = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!tc) { cache.set(company.slug, true); return { matches: true, reason: 'no tool call' }; }
+    const parsed = JSON.parse(tc.function.arguments);
+    const matches = parsed.matches_icp !== false;
+    cache.set(company.slug, matches);
+    return { matches, reason: String(parsed.reason || '') };
+  } catch (e) { console.warn('[COMPANY_ICP] AI error:', e); cache.set(company.slug, true); return { matches: true, reason: 'error' }; }
+}
+
+async function companyIcpGate(profile: any, accountId: string, apiKey: string, dsn: string, icpIndustries: string[], idealLeadDescription: string, businessContext: string, enrichCache: Map<string, EnrichedCompany | null>, aiCache: Map<string, boolean>): Promise<{ verdict: 'accept_industry' | 'accept_ai' | 'reject' | 'skip_no_enrichment'; company: EnrichedCompany | null; reason: string }> {
+  const company = await enrichLeadCompany(profile, accountId, apiKey, dsn, enrichCache);
+  if (!company) return { verdict: 'skip_no_enrichment', company: null, reason: 'enrichment failed' };
+  if (icpIndustries.length > 0 && fuzzyIndustryMatch(company.industry, icpIndustries)) return { verdict: 'accept_industry', company, reason: `industry "${company.industry}" matches ICP` };
+  const ai = await companyMatchesICPDescription(company, icpIndustries, idealLeadDescription, businessContext, aiCache);
+  if (ai.matches) return { verdict: 'accept_ai', company, reason: ai.reason };
+  return { verdict: 'reject', company, reason: ai.reason };
+}
+
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null): Promise<'inserted' | 'duplicate' | 'rejected'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'duplicate';
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
-  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[]};
+  const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[]};
   const rt=classifyCompetitorContact(m,icp||ei,hl)||'warm';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({
     user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
-    company:p.company||p.current_company?.name||null,
+    company: enrichedCompany?.name || p.company || p.current_company?.name || null,
+    industry: enrichedCompany?.industry || p.industry || null,
     linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
     linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,
     ai_score:as,signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
@@ -404,6 +495,10 @@ Deno.serve(async (req) => {
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
     const isHighPrecision = precision_mode === 'high_precision';
 
+    // Per-run caches for company enrichment + AI ICP decisions (HIGH_PRECISION only)
+    const companyEnrichCache = new Map<string, EnrichedCompany | null>();
+    const companyAiCache = new Map<string, boolean>();
+
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
@@ -492,6 +587,10 @@ Deno.serve(async (req) => {
       icp_match_failed: 0,
       // Perfect-lead AI gate counter
       perfect_lead_mismatch: 0,
+      // Company-level ICP gate (HIGH_PRECISION only)
+      company_enrichment_failed: 0,
+      company_industry_matched: 0,
+      company_icp_mismatch: 0,
       // Fix 6: URL sanitization + zero-result tracking
       url_sanitization_changed: urlSanitizationChanged,
     };
@@ -934,10 +1033,28 @@ Deno.serve(async (req) => {
             continue;
           }
         }
+        // Company-level ICP gate (HIGH_PRECISION only)
+        let enrichedCompanyForInsert: EnrichedCompany | null = null;
+        if (isHighPrecision) {
+          const gate = await companyIcpGate(
+            fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
+            icp.industries, idealLeadDescription, business_context || '',
+            companyEnrichCache, companyAiCache,
+          );
+          if (gate.verdict === 'reject') {
+            pipelineStats.company_icp_mismatch++;
+            captureRejected(fp, 'company_icp_mismatch');
+            console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown'} — ${gate.reason}`);
+            continue;
+          }
+          if (gate.verdict === 'skip_no_enrichment') pipelineStats.company_enrichment_failed++;
+          else if (gate.verdict === 'accept_industry') pipelineStats.company_industry_matched++;
+          enrichedCompanyForInsert = gate.company;
+        }
         const signal = engager.signalType === 'comment'
           ? `Commented on ${companyName}'s post`
           : `Reacted to ${companyName}'s post`;
-        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval);
+        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval, enrichedCompanyForInsert);
 
         if (result === 'inserted') {
           const tier = classifyCompetitorContact(match, icp, hl) || 'warm';
@@ -1187,7 +1304,25 @@ Deno.serve(async (req) => {
                     continue;
                   }
                 }
-                const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp, manual_approval);
+                // Company-level ICP gate (HIGH_PRECISION only)
+                let enrichedCompanyForInsert: EnrichedCompany | null = null;
+                if (isHighPrecision) {
+                  const gate = await companyIcpGate(
+                    fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
+                    icp.industries, idealLeadDescription, business_context || '',
+                    companyEnrichCache, companyAiCache,
+                  );
+                  if (gate.verdict === 'reject') {
+                    pipelineStats.company_icp_mismatch++;
+                    captureRejected(fp, 'company_icp_mismatch');
+                    console.log(`[COMPANY_ICP] 🚫 follower ${lpid}: ${gate.company?.name || 'unknown'} — ${gate.reason}`);
+                    continue;
+                  }
+                  if (gate.verdict === 'skip_no_enrichment') pipelineStats.company_enrichment_failed++;
+                  else if (gate.verdict === 'accept_industry') pipelineStats.company_industry_matched++;
+                  enrichedCompanyForInsert = gate.company;
+                }
+                const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Follows ${companyName}`, url, icp, manual_approval, enrichedCompanyForInsert);
                 if (result === 'inserted') { pipelineStats.inserted++; inserted++; }
                 else if (result === 'duplicate') { pipelineStats.duplicates++; }
                 else { pipelineStats.rejected++; }
