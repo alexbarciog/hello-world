@@ -461,6 +461,10 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
     selected: string[]; setSelected: (v: string[]) => void; required?: boolean;
   }) {
     const isOpen = openDropdown === id;
+    // Include any selected values that aren't in the predefined options
+    // (e.g. AI-generated values) so users can always uncheck them.
+    const extraSelected = selected.filter((s) => !options.includes(s));
+    const allOptions = [...extraSelected, ...options];
     return (
       <div>
         <label className="block text-xs font-semibold text-foreground mb-1.5">
@@ -483,7 +487,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
               animate={{ opacity: 1, y: 0 }}
               className="absolute z-20 mt-1 w-full bg-card border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto"
             >
-              {options.map((opt) => (
+              {allOptions.map((opt) => (
                 <button
                   key={opt}
                   type="button"
