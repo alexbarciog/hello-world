@@ -250,7 +250,8 @@ async function insertContact(supabase: any, profile: any, userId: string, agentI
   const aiScore = Math.min(3, [signalAHit,signalBHit,signalCHit].filter(Boolean).length);
   const { data: inserted, error } = await supabase.from('contacts').insert({
     user_id: userId, first_name: firstName, last_name: lastName, title: profile.headline||profile.title||null,
-    company: profile.company||profile.current_company?.name||null,
+    company: enrichedCompany?.name || profile.company || profile.current_company?.name || null,
+    industry: enrichedCompany?.industry || profile.industry || null,
     linkedin_url: profile.linkedin_url||profile.public_url||profile.profile_url||(linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId, source_campaign_id: null, signal, signal_post_url: signalPostUrl,
     ai_score: aiScore, signal_a_hit: signalAHit, signal_b_hit: signalBHit, signal_c_hit: signalCHit,
