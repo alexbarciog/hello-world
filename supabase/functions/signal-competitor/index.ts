@@ -495,6 +495,10 @@ Deno.serve(async (req) => {
     const ownCompanyLower = (user_company_name || '').toLowerCase().trim();
     const isHighPrecision = precision_mode === 'high_precision';
 
+    // Per-run caches for company enrichment + AI ICP decisions (HIGH_PRECISION only)
+    const companyEnrichCache = new Map<string, EnrichedCompany | null>();
+    const companyAiCache = new Map<string, boolean>();
+
     const icp: ICPFilters = {
       jobTitles: icpRaw?.jobTitles||[], industries: icpRaw?.industries||[], locations: icpRaw?.locations||[],
       companySizes: icpRaw?.companySizes||[], companyTypes: icpRaw?.companyTypes||[],
