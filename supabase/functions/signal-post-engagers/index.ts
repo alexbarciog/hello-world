@@ -472,10 +472,20 @@ Deno.serve(async (req) => {
           const postText = post.text || post.commentary || '';
           const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
 
+          // AI competitor pre-classification (batched, runs BEFORE Unipile profile fetch)
+          const competitorMap = await classifyEngagersForCompetitors(engagers, business_context || '');
+
           for (const engager of engagers) {
             if (!hasTime()) break;
             const profile = engager.author || engager;
             const quickHl = profile.headline || profile.title || '';
+            // AI competitor short-circuit: skip BEFORE Unipile profile fetch to save credits
+            const compVerdict = competitorMap.get(engagerKey(profile));
+            if (compVerdict?.is_competitor) {
+              diag.competitors_filtered++;
+              console.log(`[engagers] 🚫 competitor: ${profile.first_name || profile.name || 'unknown'} — ${compVerdict.reason}`);
+              continue;
+            }
             const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
             if (pf === 'reject') { diag.failed_quick_icp++; if (isHighPrecision) diag.hp_rejected++; else diag.discovery_rejected++; continue; }
             if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
