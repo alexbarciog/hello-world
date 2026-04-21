@@ -1310,10 +1310,33 @@ Deno.serve(async (req) => {
         const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
         const signal = `Posted about "${keyword}" (${intentData?.signal_type || 'buyer_intent'})`;
 
+        // ── Company-level ICP gate (HIGH_PRECISION only) ──
+        let enrichedCompanyForInsert: EnrichedCompany | null = null;
+        if (isHighPrecision) {
+          const gate = await companyIcpGate(
+            author, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
+            icp.industries, idealLeadDescription, business_context || '',
+            companyEnrichCache, companyAiCache,
+          );
+          if (gate.verdict === 'reject') {
+            pipelineStats.company_icp_mismatch++;
+            console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown company'} — ${gate.reason}`);
+            keywordSkipped.rejected++;
+            continue;
+          }
+          if (gate.verdict === 'skip_no_enrichment') {
+            pipelineStats.company_enrichment_failed++;
+          } else if (gate.verdict === 'accept_industry') {
+            pipelineStats.company_industry_matched++;
+          }
+          enrichedCompanyForInsert = gate.company;
+        }
+
         // Insert with intent score driving the tier
         const result = await insertContact(
           supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp,
           intentData?.intent_score, intentData?.reason, manual_approval,
+          enrichedCompanyForInsert,
         );
 
         if (result === 'inserted') {
