@@ -62,6 +62,7 @@ export default function CreateCampaign() {
   const [onboardingWebsiteLoaded, setOnboardingWebsiteLoaded] = useState(false);
   const [autoAnalyzed, setAutoAnalyzed] = useState(false);
 
+  const { currentOrg } = useOrganization();
   const [sourceType, setSourceType] = useState<"agent" | "list">("agent");
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [lists, setLists] = useState<ListData[]>([]);
