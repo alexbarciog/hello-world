@@ -1245,83 +1245,25 @@ Deno.serve(async (req) => {
         continue pageLoop;
       }
 
-      // ── Step 4: AI INTENT CLASSIFIER — structured scoring ──
-      const postsForAI = preFilteredPosts.map(({ post, matchedPhrase }) => {
-        const authorData = post.author || post.actor || post.author_detail || null;
-        return {
-          id: post.social_id || post.id || post.provider_id || String(Math.random()),
-          text: extractPostText(post),
-          keyword,
-          authorHeadline: authorData?.headline || authorData?.title || '',
-          matchedPhrase,
-        };
-      });
+      // ── Step 4: AUTHOR QUALIFICATION (no AI) ──
+      // Lead-first: dedup → profile fetch → ICP gate → competitor check.
+      // Only posts whose author survives go to the AI buying-intent classifier.
+      type Survivor = {
+        post: any;
+        matchedPhrase: string;
+        author: any;
+        authorId: string | null;
+        enrichedCompany: EnrichedCompany | null;
+      };
+      const survivors: Survivor[] = [];
 
-      pipelineStats.sent_to_ai += postsForAI.length;
-
-      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription);
-
-      // Track AI results in stats
-      for (const p of postsForAI) {
-        const cls = intentResults.get(p.id);
-        const rejectedCls = intentResults.get(`rejected:${p.id}`);
-        if (cls) {
-          if (cls.reason === 'ai_fallback' || cls.reason === 'ai_error' || cls.reason === 'ai_no_response' || cls.reason === 'ai_missing_response' || cls.reason === 'no_ai_key_default') {
-            pipelineStats.ai_fallback_used++;
-          }
-          pipelineStats.passed_ai++;
-        } else if (rejectedCls) {
-          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.startsWith('perfect_lead_mismatch')) {
-            pipelineStats.perfect_lead_mismatch++;
-          } else if (!rejectedCls.is_buyer) {
-            pipelineStats.rejected_ai_not_buyer++;
-          } else {
-            pipelineStats.rejected_ai_low_score++;
-          }
-          // Count strict-buyer rejections (the new default-deny path)
-          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.endsWith('_rejected')) {
-            pipelineStats.strict_buyer_rejected++;
-          }
-          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
-            pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 160),
-              is_buyer: rejectedCls.is_buyer,
-              intent_score: rejectedCls.intent_score,
-              reason: rejectedCls.reason,
-            });
-          }
-        } else {
-          pipelineStats.rejected_ai_not_buyer++;
-          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
-            pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 160),
-              is_buyer: false,
-              intent_score: 0,
-              reason: 'no_ai_response_for_post',
-            });
-          }
-        }
-      }
-
-      const qualifiedPosts = preFilteredPosts.filter(({ post }) => {
-        const id = post.social_id || post.id || post.provider_id;
-        return intentResults.has(id);
-      });
-
-      console.log(`[AI] "${keyword}" p${page + 1}: ${preFilteredPosts.length} → ${qualifiedPosts.length} qualified (score >= ${MIN_INTENT_SCORE})`);
-      totalQualifiedThisKeyword += qualifiedPosts.length;
-
-      // ── Step 5: Process qualified posts — early dedup → full profile → insert ──
-
-      for (const { post, matchedPhrase } of qualifiedPosts) {
+      for (const { post, matchedPhrase } of preFilteredPosts) {
         if (!hasTime()) break;
         if (!runHasBudget()) {
-          console.log(`[BUDGET] mid-keyword stop: profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}`);
+          console.log(`[BUDGET] mid-keyword stop (qualification): profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}`);
           break;
         }
 
-        const postId = post.social_id || post.id || post.provider_id;
-        const intentData = intentResults.get(postId);
         const authorData = post.author || post.actor || post.author_detail || null;
         if (!authorData) { keywordSkipped.noAuthor++; pipelineStats.rejected_no_author++; continue; }
 
@@ -1332,7 +1274,7 @@ Deno.serve(async (req) => {
         if (authorId && globalSeenAuthorIds.has(authorId)) { keywordSkipped.dupAuthor++; pipelineStats.rejected_author_dedup++; continue; }
         if (authorId) globalSeenAuthorIds.add(authorId);
 
-        // Early dedup against DB — Rule 3: HARD SKIP (no update, no re-insert)
+        // Early dedup against DB — Rule 3: HARD SKIP
         if (authorId) {
           const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', user_id).eq('linkedin_profile_id', authorId).limit(1);
           if (existing && existing.length > 0) {
@@ -1343,11 +1285,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // ── BANDWIDTH-FIRST: pre-screen on the lightweight author payload included
-        // in the search response BEFORE doing the expensive full profile fetch.
-        // This drops ~70% of profile fetches without losing real leads, because
-        // posts that already passed the AI intent classifier with a real-looking
-        // author headline almost always represent a genuine person.
+        // Lightweight preview-headline screen
         const previewHeadline = (authorData.headline || authorData.title || '').trim();
         if (previewHeadline) {
           if (isClearlyIrrelevant(previewHeadline)) {
@@ -1355,7 +1293,6 @@ Deno.serve(async (req) => {
             pipelineStats.rejected_irrelevant_title++;
             continue;
           }
-          // Own-company exclusion using preview text only
           if (ownCompanyLower && ownCompanyLower.length > 1 && previewHeadline.toLowerCase().includes(ownCompanyLower)) {
             keywordSkipped.ownCompany++;
             pipelineStats.rejected_own_company++;
@@ -1363,7 +1300,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Full profile fetch (only for genuinely new leads that survived pre-screen)
+        // Full profile fetch
         pipelineStats.profile_fetches_attempted++;
         runProfileFetchesSoFar++;
         const fullAuthor = await fetchFullProfile(authorData, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
@@ -1390,7 +1327,7 @@ Deno.serve(async (req) => {
 
         const lpid = authorId || 'unknown';
 
-        // Own-company exclusion
+        // Own-company exclusion (full profile)
         if (ownCompanyLower && ownCompanyLower.length > 1 && worksAtCompany(author, ownCompanyLower)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (own company "${ownCompanyLower}")`);
           keywordSkipped.ownCompany++;
@@ -1398,14 +1335,14 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Restricted countries / roles (hard ban — applies in both modes)
+        // Restricted countries / roles (hard ban)
         if (isRestricted(author, icp.restrictedCountries, icp.restrictedRoles)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: restricted (country or role)`);
           keywordSkipped.excluded++;
           continue;
         }
 
-        // Competitor employee exclusion
+        // Competitor employee exclusion (by company name)
         if (isExcluded(author, icp.excludeKeywords, icp.competitorCompanies)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: excluded (competitor employee)`);
           keywordSkipped.excluded++;
@@ -1413,7 +1350,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Clearly irrelevant title check
+        // Clearly irrelevant title check (full headline)
         const hl = author.headline || author.title || '';
         if (isClearlyIrrelevant(hl)) {
           console.log(`[PIPELINE] ⏭ ${lpid}: irrelevant title "${hl.slice(0, 50)}"`);
@@ -1422,7 +1359,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // ── POST-PROFILE country/industry re-check with full data (high_precision only) ──
+        // POST-PROFILE country re-check (high_precision only)
         if (isHighPrecision && icp.locations.length > 0) {
           const fullLocation = (author.location || author.country || '').toLowerCase();
           if (fullLocation) {
@@ -1438,65 +1375,153 @@ Deno.serve(async (req) => {
           }
         }
 
+        // ── Company-level ICP gate (now runs in BOTH precision modes) ──
+        const gate = await companyIcpGate(
+          author, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
+          icp.industries, idealLeadDescription, business_context || '',
+          companyEnrichCache, companyAiCache,
+        );
+        if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') {
+          pipelineStats.company_icp_mismatch++;
+          console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown company'} — ${gate.reason}`);
+          if (pipelineStats.sample_icp_rejections.length < SAMPLE_CAP) {
+            pipelineStats.sample_icp_rejections.push({
+              name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+              headline: (author.headline || '').slice(0, 120),
+              company: gate.company?.name ?? null,
+              company_url: gate.company?.slug ? `https://www.linkedin.com/company/${gate.company.slug}` : null,
+              industry: gate.company?.industry ?? null,
+              reason: gate.reason,
+            });
+          }
+          keywordSkipped.rejected++;
+          continue;
+        }
+        if (gate.verdict === 'accept_headline') pipelineStats.company_enrichment_failed++;
+        else if (gate.verdict === 'accept_industry') pipelineStats.company_industry_matched++;
+        if (pipelineStats.sample_icp_passed.length < SAMPLE_CAP && gate.company) {
+          pipelineStats.sample_icp_passed.push({
+            name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+            headline: (author.headline || '').slice(0, 120),
+            company: gate.company.name,
+            company_url: gate.company.slug ? `https://www.linkedin.com/company/${gate.company.slug}` : null,
+            industry: gate.company.industry,
+            verdict: gate.verdict,
+            reason: gate.reason,
+          });
+        }
+        pipelineStats.passed_company_icp++;
+
+        // ── Headline+About "do they sell our service?" check (now runs in BOTH modes) ──
+        const seller = looksLikeAgencySeller(author);
+        if (seller.seller) {
+          pipelineStats.rejected_competitor_seller++;
+          console.log(`[COMPETITOR_SELLER] 🚫 ${lpid}: ${(author.headline || '').slice(0, 80)} — matched: "${seller.matched}"`);
+          if (pipelineStats.sample_competitor_rejections.length < SAMPLE_CAP) {
+            pipelineStats.sample_competitor_rejections.push({
+              name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+              headline: (author.headline || '').slice(0, 120),
+              company: gate.company?.name ?? null,
+              matched_pattern: seller.matched || 'unknown',
+            });
+          }
+          keywordSkipped.rejected++;
+          continue;
+        }
+
+        survivors.push({ post, matchedPhrase, author, authorId, enrichedCompany: gate.company });
+      }
+
+      console.log(`[QUALIFY] "${keyword}" p${page + 1}: ${preFilteredPosts.length} pre-filtered → ${survivors.length} survived ICP+competitor`);
+
+      if (survivors.length === 0) {
+        if (!cursor || keywordInserted >= STARVED_THRESHOLD) break pageLoop;
+        continue pageLoop;
+      }
+
+      // ── Step 5: AI BUYER-INTENT on survivors only ──
+      const postsForAI = survivors.map(({ post, matchedPhrase, author }) => ({
+        id: post.social_id || post.id || post.provider_id || String(Math.random()),
+        text: extractPostText(post),
+        keyword,
+        authorHeadline: author.headline || author.title || '',
+        matchedPhrase,
+      }));
+
+      pipelineStats.sent_to_ai += postsForAI.length;
+
+      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription);
+
+      // Track AI results in stats
+      for (const p of postsForAI) {
+        const cls = intentResults.get(p.id);
+        const rejectedCls = intentResults.get(`rejected:${p.id}`);
+        if (cls) {
+          if (cls.reason === 'ai_fallback' || cls.reason === 'ai_error' || cls.reason === 'ai_no_response' || cls.reason === 'ai_missing_response' || cls.reason === 'no_ai_key_default') {
+            pipelineStats.ai_fallback_used++;
+          }
+          pipelineStats.passed_ai++;
+        } else if (rejectedCls) {
+          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.startsWith('perfect_lead_mismatch')) {
+            pipelineStats.perfect_lead_mismatch++;
+          } else if (!rejectedCls.is_buyer) {
+            pipelineStats.rejected_ai_not_buyer++;
+          } else {
+            pipelineStats.rejected_ai_low_score++;
+          }
+          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.endsWith('_rejected')) {
+            pipelineStats.strict_buyer_rejected++;
+          }
+          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
+            pipelineStats.sample_ai_rejections.push({
+              postSample: p.text.substring(0, 160),
+              is_buyer: rejectedCls.is_buyer,
+              intent_score: rejectedCls.intent_score,
+              reason: rejectedCls.reason,
+            });
+          }
+        } else {
+          pipelineStats.rejected_ai_not_buyer++;
+          if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
+            pipelineStats.sample_ai_rejections.push({
+              postSample: p.text.substring(0, 160),
+              is_buyer: false,
+              intent_score: 0,
+              reason: 'no_ai_response_for_post',
+            });
+          }
+        }
+      }
+
+      const qualifiedSurvivors = survivors.filter(({ post }) => {
+        const id = post.social_id || post.id || post.provider_id;
+        return intentResults.has(id);
+      });
+
+      console.log(`[AI] "${keyword}" p${page + 1}: ${survivors.length} → ${qualifiedSurvivors.length} qualified (score >= ${MIN_INTENT_SCORE})`);
+      totalQualifiedThisKeyword += qualifiedSurvivors.length;
+
+      // ── Step 6: Insert qualified survivors ──
+      for (const { post, author, authorId, enrichedCompany } of qualifiedSurvivors) {
+        if (!hasTime()) break;
+        if (!runHasBudget()) {
+          console.log(`[BUDGET] mid-keyword stop (insert): profiles=${runProfileFetchesSoFar}/${RUN_PROFILE_FETCH_CAP}, inserts=${runInsertsSoFar + inserted}/${RUN_INSERT_CAP}`);
+          break;
+        }
+
+        const postId = post.social_id || post.id || post.provider_id;
+        const intentData = intentResults.get(postId);
+        const lpid = authorId || 'unknown';
+        const hl = author.headline || author.title || '';
+
         const match = scoreProfileAgainstICP(author, icp);
         const postUrl = post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
         const signal = `Posted about "${keyword}" (${intentData?.signal_type || 'buyer_intent'})`;
 
-        // ── Company-level ICP gate (HIGH_PRECISION only) ──
-        let enrichedCompanyForInsert: EnrichedCompany | null = null;
-        if (isHighPrecision) {
-          const seller = looksLikeAgencySeller(author);
-          if (seller.seller) {
-            pipelineStats.company_icp_mismatch++;
-            console.log(`[AGENCY_SELLER] 🚫 ${lpid}: ${(author.headline||'').slice(0,80)} — matched: "${seller.matched}"`);
-            keywordSkipped.rejected++;
-            continue;
-          }
-          const gate = await companyIcpGate(
-            author, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
-            icp.industries, idealLeadDescription, business_context || '',
-            companyEnrichCache, companyAiCache,
-          );
-          if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') {
-            pipelineStats.company_icp_mismatch++;
-            console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown company'} — ${gate.reason}`);
-            if (pipelineStats.sample_icp_rejections.length < SAMPLE_CAP) {
-              pipelineStats.sample_icp_rejections.push({
-                name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
-                headline: (author.headline || '').slice(0, 120),
-                company: gate.company?.name ?? null,
-                company_url: gate.company?.slug ? `https://www.linkedin.com/company/${gate.company.slug}` : null,
-                industry: gate.company?.industry ?? null,
-                reason: gate.reason,
-              });
-            }
-            keywordSkipped.rejected++;
-            continue;
-          }
-          if (gate.verdict === 'accept_headline') {
-            pipelineStats.company_enrichment_failed++;
-          } else if (gate.verdict === 'accept_industry') {
-            pipelineStats.company_industry_matched++;
-          }
-          if (pipelineStats.sample_icp_passed.length < SAMPLE_CAP && gate.company) {
-            pipelineStats.sample_icp_passed.push({
-              name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
-              headline: (author.headline || '').slice(0, 120),
-              company: gate.company.name,
-              company_url: gate.company.slug ? `https://www.linkedin.com/company/${gate.company.slug}` : null,
-              industry: gate.company.industry,
-              verdict: gate.verdict,
-              reason: gate.reason,
-            });
-          }
-          enrichedCompanyForInsert = gate.company;
-        }
-
-        // Insert with intent score driving the tier
         const result = await insertContact(
           supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp,
           intentData?.intent_score, intentData?.reason, manual_approval,
-          enrichedCompanyForInsert,
+          enrichedCompany,
         );
 
         if (result === 'inserted') {
@@ -1506,20 +1531,19 @@ Deno.serve(async (req) => {
           runInsertsSoFar++;
           const tier = classifyContactWithIntentScore(match, icp, hl, intentData?.intent_score) || 'warm';
           console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier} (score=${intentData?.intent_score}, kw="${keyword}")`);
-          // Capture sample inserted (max SAMPLE_CAP)
           if (pipelineStats.sample_inserted.length < SAMPLE_CAP) {
             const linkedinUrl = author.linkedin_url || author.public_url || author.profile_url
               || (lpid ? `https://www.linkedin.com/in/${lpid}` : null);
             pipelineStats.sample_inserted.push({
               name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
               headline: hl.substring(0, 120),
-              company: enrichedCompanyForInsert?.name ?? null,
-              company_url: enrichedCompanyForInsert?.slug ? `https://www.linkedin.com/company/${enrichedCompanyForInsert.slug}` : null,
+              company: enrichedCompany?.name ?? null,
+              company_url: enrichedCompany?.slug ? `https://www.linkedin.com/company/${enrichedCompany.slug}` : null,
               linkedin_url: linkedinUrl,
               intentScore: intentData?.intent_score || 0,
               matched_keyword: keyword,
-              matched_industry: enrichedCompanyForInsert?.industry ?? null,
-              icp_verdict: isHighPrecision ? (enrichedCompanyForInsert ? 'icp_match' : null) : null,
+              matched_industry: enrichedCompany?.industry ?? null,
+              icp_verdict: enrichedCompany ? 'icp_match' : null,
               icp_reason: null,
             });
           }
