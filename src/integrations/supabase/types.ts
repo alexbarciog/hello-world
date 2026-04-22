@@ -1299,6 +1299,78 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_lead_link_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          link_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          link_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_lead_link_contacts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_lead_link_contacts_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "shared_lead_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_lead_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          lead_count: number
+          name: string | null
+          organization_id: string
+          revoked: boolean
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          lead_count?: number
+          name?: string | null
+          organization_id: string
+          revoked?: boolean
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          lead_count?: number
+          name?: string | null
+          organization_id?: string
+          revoked?: boolean
+          token?: string
+        }
+        Relationships: []
+      }
       signal_agent_runs: {
         Row: {
           agent_id: string
@@ -1633,6 +1705,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_shared_leads: { Args: { _token: string }; Returns: Json }
+      get_shared_leads: {
+        Args: { _token: string }
+        Returns: {
+          ai_score: number
+          company: string
+          first_name: string
+          id: string
+          imported_at: string
+          industry: string
+          last_name: string
+          lead_status: string
+          linkedin_url: string
+          list_name: string
+          relevance_tier: string
+          share_name: string
+          shared_count: number
+          signal: string
+          signal_a_hit: boolean
+          signal_b_hit: boolean
+          signal_c_hit: boolean
+          signal_post_url: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

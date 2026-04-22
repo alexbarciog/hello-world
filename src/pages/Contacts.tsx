@@ -7,7 +7,7 @@ import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
   Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock, Bot,
-  CheckCircle2, XCircle, ShieldCheck,
+  CheckCircle2, XCircle, ShieldCheck, Share2,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -16,6 +16,7 @@ import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
 import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
+import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -59,6 +60,7 @@ export default function Contacts() {
   const insightsRef = useRef<HTMLDivElement>(null);
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -534,6 +536,12 @@ export default function Contacts() {
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
                 >
                   <FolderPlus className="w-3.5 h-3.5" /> Add to list
+                </button>
+                <button
+                  onClick={() => setShowShare(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/5 transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Share link
                 </button>
                 <button
                   onClick={handleDeleteSelected}
@@ -1231,6 +1239,13 @@ export default function Contacts() {
         onOpenChange={setShowImport}
         lists={lists}
         onImported={fetchData}
+      />
+
+      {/* ── Share Leads Dialog ── */}
+      <ShareLeadsDialog
+        open={showShare}
+        onOpenChange={setShowShare}
+        selectedContactIds={Array.from(selectedIds)}
       />
 
       {/* ── Book Meeting Dialog ── */}
