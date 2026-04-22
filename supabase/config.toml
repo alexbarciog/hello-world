@@ -80,3 +80,9 @@ verify_jwt = false
 
 [functions.import-sales-nav]
 verify_jwt = false
+
+[functions.create-shared-lead-link]
+verify_jwt = false
+
+[functions.claim-shared-leads]
+verify_jwt = false

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { ttqCompleteRegistration } from "@/lib/tiktok-pixel";
+import { PENDING_SHARE_TOKEN_KEY } from "@/components/shared/AuthPromptDialog";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
 import registerBg from "@/assets/hero-bg-2.avif";
@@ -29,6 +30,8 @@ export default function Register() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const inviteToken = searchParams.get("invite");
+  const redirectParam = searchParams.get("redirect");
+  const claimParam = searchParams.get("claim");
 
   // Step state
   const [step, setStep] = useState(1);
@@ -138,6 +141,25 @@ export default function Register() {
 
     setLoading(false);
     ttqCompleteRegistration();
+
+    // If user came from a shared leads link, claim them now
+    if (claimParam === "1") {
+      let token: string | null = null;
+      try { token = localStorage.getItem(PENDING_SHARE_TOKEN_KEY); } catch { /* ignore */ }
+      if (token) {
+        try {
+          await supabase.functions.invoke("claim-shared-leads", { body: { token } });
+        } catch (err) {
+          console.error("claim-shared-leads failed:", err);
+        } finally {
+          try { localStorage.removeItem(PENDING_SHARE_TOKEN_KEY); } catch { /* ignore */ }
+        }
+      }
+      toast.success("Account created! Your shared leads have been saved.");
+      navigate(redirectParam || "/dashboard");
+      return;
+    }
+
     toast.success("Account created! Let's set up your first campaign.");
     navigate("/onboarding");
   };
