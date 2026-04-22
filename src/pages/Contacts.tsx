@@ -370,6 +370,15 @@ export default function Contacts() {
     } else {
       // Exclude pending-approval leads from all other tabs
       result = result.filter((c) => (c as any).approval_status !== 'pending');
+      // Apply Approved/Rejected filter (default: approved)
+      if (approvalFilter === "rejected") {
+        result = result.filter((c) => (c as any).approval_status === 'rejected');
+      } else {
+        result = result.filter((c) => {
+          const s = (c as any).approval_status;
+          return s === 'approved' || s === 'auto_approved' || !s;
+        });
+      }
       if (tab === "not_interested") {
         result = result.filter((c) => c.lead_status === 'not_interested');
       } else if (tab === "meeting_booked") {
@@ -405,7 +414,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter, signalFilter, agentFilter, tab, contactListMap, lists, agents, agentsByListName, getSignalType]);
+  }, [contacts, searchQuery, listFilter, signalFilter, agentFilter, approvalFilter, tab, contactListMap, lists, agents, agentsByListName, getSignalType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
