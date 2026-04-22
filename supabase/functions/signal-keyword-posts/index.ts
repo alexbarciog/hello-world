@@ -1254,6 +1254,10 @@ Deno.serve(async (req) => {
           } else {
             pipelineStats.rejected_ai_low_score++;
           }
+          // Count strict-buyer rejections (the new default-deny path)
+          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.endsWith('_rejected')) {
+            pipelineStats.strict_buyer_rejected++;
+          }
           if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 160),
