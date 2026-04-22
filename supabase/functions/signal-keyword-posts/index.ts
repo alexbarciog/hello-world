@@ -1238,9 +1238,14 @@ Deno.serve(async (req) => {
         console.warn(`[KEYWORD: "${keyword}"] ALL ${uniquePosts.length} posts rejected at pre-filter. Check phrase variants.`);
       }
 
-      console.log(`[PRE-FILTER] "${keyword}": ${uniquePosts.length} → ${preFilteredPosts.length} passed (rejected: phrase=${preFilterStats.no_phrase} country=${preFilterStats.wrong_country} industry=${preFilterStats.wrong_industry})`);
+      console.log(`[PRE-FILTER] "${keyword}" p${page + 1}: ${uniquePosts.length} → ${preFilteredPosts.length} passed (rejected: phrase=${preFilterStats.no_phrase} country=${preFilterStats.wrong_country} industry=${preFilterStats.wrong_industry})`);
+      totalPreFilteredThisKeyword += preFilteredPosts.length;
 
-      if (preFilteredPosts.length === 0) continue;
+      if (preFilteredPosts.length === 0) {
+        // Try next page if cursor available and still starved
+        if (!cursor || keywordInserted >= STARVED_THRESHOLD) break pageLoop;
+        continue pageLoop;
+      }
 
       // ── Step 4: AI INTENT CLASSIFIER — structured scoring ──
       const postsForAI = preFilteredPosts.map(({ post, matchedPhrase }) => {
@@ -1305,11 +1310,10 @@ Deno.serve(async (req) => {
         return intentResults.has(id);
       });
 
-      console.log(`[AI] "${keyword}": ${preFilteredPosts.length} → ${qualifiedPosts.length} qualified (score >= ${MIN_INTENT_SCORE})`);
+      console.log(`[AI] "${keyword}" p${page + 1}: ${preFilteredPosts.length} → ${qualifiedPosts.length} qualified (score >= ${MIN_INTENT_SCORE})`);
+      totalQualifiedThisKeyword += qualifiedPosts.length;
 
       // ── Step 5: Process qualified posts — early dedup → full profile → insert ──
-      let keywordInserted = 0;
-      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, earlyDedup: 0, excluded: 0, ownCompany: 0, duplicate: 0, rejected: 0, irrelevant: 0 };
 
       for (const { post, matchedPhrase } of qualifiedPosts) {
         if (!hasTime()) break;
