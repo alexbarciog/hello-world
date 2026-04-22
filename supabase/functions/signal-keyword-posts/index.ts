@@ -858,7 +858,7 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
       // Any post not in AI response — accept with medium score
       for (const p of batch) {
         if (!classifications.some((c: any) => c.id === p.id) && !results.has(p.id)) {
-          results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_missing_response', signal_type: 'unknown' });
+          results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_missing_response_rejected', signal_type: 'not_a_buyer' });
         }
       }
 
