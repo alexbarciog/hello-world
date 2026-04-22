@@ -1004,7 +1004,9 @@ Deno.serve(async (req) => {
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
       sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
-      sample_inserted: [] as Array<{ name: string; headline: string; intentScore: number }>,
+      sample_inserted: [] as Array<{ name: string; headline: string; company: string | null; company_url: string | null; linkedin_url: string | null; intentScore: number; matched_keyword: string; matched_industry: string | null; icp_verdict: string | null; icp_reason: string | null }>,
+      sample_icp_passed: [] as Array<{ name: string; headline: string; company: string; company_url: string | null; industry: string; verdict: string; reason: string }>,
+      sample_icp_rejections: [] as Array<{ name: string; headline: string; company: string | null; company_url: string | null; industry: string | null; reason: string }>,
     };
     // Cap diagnostic sample arrays to keep the row small (was 50 each → ~50KB rows).
     const SAMPLE_CAP = 5;
@@ -1462,6 +1464,16 @@ Deno.serve(async (req) => {
           if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') {
             pipelineStats.company_icp_mismatch++;
             console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown company'} — ${gate.reason}`);
+            if (pipelineStats.sample_icp_rejections.length < SAMPLE_CAP) {
+              pipelineStats.sample_icp_rejections.push({
+                name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+                headline: (author.headline || '').slice(0, 120),
+                company: gate.company?.name ?? null,
+                company_url: gate.company?.slug ? `https://www.linkedin.com/company/${gate.company.slug}` : null,
+                industry: gate.company?.industry ?? null,
+                reason: gate.reason,
+              });
+            }
             keywordSkipped.rejected++;
             continue;
           }
@@ -1469,6 +1481,17 @@ Deno.serve(async (req) => {
             pipelineStats.company_enrichment_failed++;
           } else if (gate.verdict === 'accept_industry') {
             pipelineStats.company_industry_matched++;
+          }
+          if (pipelineStats.sample_icp_passed.length < SAMPLE_CAP && gate.company) {
+            pipelineStats.sample_icp_passed.push({
+              name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
+              headline: (author.headline || '').slice(0, 120),
+              company: gate.company.name,
+              company_url: gate.company.slug ? `https://www.linkedin.com/company/${gate.company.slug}` : null,
+              industry: gate.company.industry,
+              verdict: gate.verdict,
+              reason: gate.reason,
+            });
           }
           enrichedCompanyForInsert = gate.company;
         }
@@ -1487,12 +1510,21 @@ Deno.serve(async (req) => {
           runInsertsSoFar++;
           const tier = classifyContactWithIntentScore(match, icp, hl, intentData?.intent_score) || 'warm';
           console.log(`[PIPELINE] ✅ ${lpid}: inserted as ${tier} (score=${intentData?.intent_score}, kw="${keyword}")`);
-          // Capture sample inserted (max 3)
-          if (pipelineStats.sample_inserted.length < 3) {
+          // Capture sample inserted (max SAMPLE_CAP)
+          if (pipelineStats.sample_inserted.length < SAMPLE_CAP) {
+            const linkedinUrl = author.linkedin_url || author.public_url || author.profile_url
+              || (lpid ? `https://www.linkedin.com/in/${lpid}` : null);
             pipelineStats.sample_inserted.push({
               name: `${author.first_name || ''} ${author.last_name || ''}`.trim(),
-              headline: hl.substring(0, 100),
+              headline: hl.substring(0, 120),
+              company: enrichedCompanyForInsert?.name ?? null,
+              company_url: enrichedCompanyForInsert?.slug ? `https://www.linkedin.com/company/${enrichedCompanyForInsert.slug}` : null,
+              linkedin_url: linkedinUrl,
               intentScore: intentData?.intent_score || 0,
+              matched_keyword: keyword,
+              matched_industry: enrichedCompanyForInsert?.industry ?? null,
+              icp_verdict: isHighPrecision ? (enrichedCompanyForInsert ? 'icp_match' : null) : null,
+              icp_reason: null,
             });
           }
         } else if (result === 'duplicate') {

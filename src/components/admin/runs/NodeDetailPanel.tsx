@@ -55,33 +55,92 @@ function SampleItem({ item }: { item: unknown }) {
     "—";
   const role = (obj.role as string) || (obj.title as string) || (obj.headline as string);
   const company = (obj.company as string) || (obj.company_name as string);
+  const companyUrl = (obj.company_url as string) || (obj.company_linkedin_url as string);
+  const industry = (obj.industry as string) || (obj.matched_industry as string);
+  const matchedKeyword = obj.matched_keyword as string | undefined;
+  const verdict = (obj.icp_verdict as string) || (obj.verdict as string);
+  const intentScore = obj.intentScore as number | undefined;
   const reason =
     (obj.reason as string) ||
     (obj.rejection_reason as string) ||
-    (obj.ai_reason as string);
-  const url =
+    (obj.ai_reason as string) ||
+    (obj.icp_reason as string);
+  const profileUrl =
     (obj.linkedin_url as string) ||
     (obj.url as string) ||
     (obj.profile_url as string);
 
+  const knownKeys = new Set([
+    "name", "full_name", "headline", "title", "author", "role",
+    "company", "company_name", "company_url", "company_linkedin_url",
+    "industry", "matched_industry", "matched_keyword",
+    "icp_verdict", "verdict", "intentScore",
+    "reason", "rejection_reason", "ai_reason", "icp_reason",
+    "linkedin_url", "url", "profile_url",
+  ]);
+  const hasAnyKnown =
+    role || company || companyUrl || industry || matchedKeyword ||
+    verdict || intentScore !== undefined || reason || profileUrl;
+
   return (
-    <div className="rounded-lg border border-border bg-card p-3 space-y-1">
+    <div className="rounded-lg border border-border bg-card p-3 space-y-1.5">
       <div className="flex items-start justify-between gap-2">
         <div className="text-sm font-medium text-foreground truncate">{name}</div>
-        {url && (
+        {profileUrl && (
           <a
-            href={url}
+            href={profileUrl}
             target="_blank"
             rel="noreferrer"
             className="text-muted-foreground hover:text-primary shrink-0"
+            title="Open LinkedIn profile"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         )}
       </div>
-      {(role || company) && (
-        <div className="text-xs text-muted-foreground truncate">
-          {[role, company].filter(Boolean).join(" · ")}
+      {role && (
+        <div className="text-xs text-muted-foreground leading-snug">{role}</div>
+      )}
+      {(company || companyUrl) && (
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">Company:</span>
+          {companyUrl ? (
+            <a
+              href={companyUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline inline-flex items-center gap-1 truncate"
+            >
+              {company || companyUrl}
+              <ExternalLink className="w-3 h-3 shrink-0" />
+            </a>
+          ) : (
+            <span className="text-foreground truncate">{company}</span>
+          )}
+        </div>
+      )}
+      {industry && (
+        <div className="text-xs">
+          <span className="text-muted-foreground">Industry:</span>{" "}
+          <span className="text-foreground">{industry}</span>
+        </div>
+      )}
+      {matchedKeyword && (
+        <div className="text-xs">
+          <span className="text-muted-foreground">Matched keyword:</span>{" "}
+          <span className="text-foreground font-medium">"{matchedKeyword}"</span>
+        </div>
+      )}
+      {verdict && (
+        <div className="text-xs">
+          <span className="text-muted-foreground">ICP verdict:</span>{" "}
+          <span className="text-foreground font-medium">{verdict}</span>
+        </div>
+      )}
+      {intentScore !== undefined && (
+        <div className="text-xs">
+          <span className="text-muted-foreground">Intent score:</span>{" "}
+          <span className="text-foreground font-medium tabular-nums">{intentScore}</span>
         </div>
       )}
       {reason && (
@@ -89,7 +148,7 @@ function SampleItem({ item }: { item: unknown }) {
           "{reason}"
         </div>
       )}
-      {!role && !company && !reason && (
+      {!hasAnyKnown && (
         <pre className="text-[10px] text-muted-foreground mt-1 overflow-x-auto whitespace-pre-wrap break-all">
           {JSON.stringify(obj, null, 2).slice(0, 500)}
         </pre>
