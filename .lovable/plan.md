@@ -1,79 +1,92 @@
 
 
-# Share leads via link → public read-only Contacts clone with login wall
+# Lightning Onboarding + In-Dashboard Setup Wizard
 
-Add a **Share** button to the Contacts page selection bar that creates a share token covering the selected leads and copies a public link like `/shared/leads/<token>`. Anyone with the link gets a Contacts-page clone (sidebar + table) showing only those leads. All interactions (sidebar nav, LinkedIn click, signal click) trigger a login/signup popup. After signup, the shared leads are automatically copied into the new user's organization.
+Slash onboarding from 6 forms to **2 screens**: scan website → see services + AI pain points → "Get Buyers". Then guide setup inside the real app via a prominent top-of-dashboard wizard.
 
-## Database
+## New onboarding flow (2 screens, ~30 seconds)
 
-New migration creates two tables.
+**Screen 1 — Scan Website**
+- Single input: website URL.
+- Big "Analyze my website" CTA. Same Firecrawl scrape as today.
+- Loading state with animated steps: "Reading your site… → Identifying services… → Generating buyer pain points…".
 
-**`shared_lead_links`** — one row per share
-- `id uuid pk`, `token text unique not null default encode(gen_random_bytes(24), 'hex')`
-- `created_by uuid not null` (sharer's user_id), `organization_id uuid not null`
-- `name text` (auto: "Shared by <name> · 12 leads"), `lead_count int not null`
-- `expires_at timestamptz` (default `now() + 30 days`), `revoked boolean default false`
-- `created_at timestamptz default now()`
-- RLS: owner can `select/update/delete` own rows; service role full access. **No public select** — public access goes through the SECURITY DEFINER RPC below.
+**Screen 2 — Services & Pain Points Preview**
+- Top card: company name + 1-line description (editable inline if user wants).
+- Two side-by-side bento blocks:
+  - **What you sell** — 3-5 service bullets (AI-extracted from site).
+  - **Buyer pain points** — 3 pain points your buyers feel (AI-generated).
+- Big primary CTA: **"Get Buyers →"**.
+- Tiny secondary link below: "Edit later in settings".
 
-**`shared_lead_link_contacts`** — join table
-- `id uuid pk`, `link_id uuid not null`, `contact_id uuid not null`, `created_at timestamptz default now()`
-- Unique `(link_id, contact_id)`
-- RLS: service role only. Reads happen via RPC.
+Clicking **Get Buyers** does the minimum:
+1. Create/update the user's `campaigns` row with `{ website, company_name, description, industry, language, services[], pain_points[], status: 'paused', current_step: 6 }`. No agent, no scoring, no discovery yet.
+2. Set `profiles.onboarding_complete = true`.
+3. `navigate('/dashboard')`.
 
-**RPC `get_shared_leads(_token text)`** — `SECURITY DEFINER`, returns the masked, read-safe contact rows for a valid (non-revoked, non-expired) token. Columns: `id, first_name, last_name, title, company, industry, linkedin_url, signal, signal_post_url, ai_score, signal_a_hit, signal_b_hit, signal_c_hit, relevance_tier, lead_status, imported_at, list_name`. Excludes `email`, `intent_insights`, `personality_prediction`, `linkedin_profile_id`, internal IDs unrelated to display. Granted `EXECUTE` to `anon` and `authenticated`.
+## New AI extraction: services
 
-**RPC `claim_shared_leads(_token text)`** — `SECURITY DEFINER`, callable by `authenticated`. Validates the token, then for each linked contact inserts a copy into `contacts` scoped to the caller's `current_organization_id` (skipping duplicates by `linkedin_url`), and assigns them to a new list named "Shared with me · <date>". Returns `{ inserted: int, list_id: uuid }`.
+New edge function **`generate-services`** (mirror of `generate-pain-points`):
+- Input: `{ companyName, industry, description, markdown }` (markdown already returned from `firecrawl-scrape`).
+- Lovable AI Gateway, `google/gemini-3-flash-preview`, tool-calling for `{ services: string[] }` (3-5 items, each ≤ 8 words).
+- Stored on `campaigns` in a new `services text[]` column.
 
-## Routes & files
+**Pain points** reuse the existing `generate-pain-points` function but called with no ICP (industry only), so we get reasonable results without forcing the user to define ICP.
 
-**New route** `/shared/leads/:token` → `src/pages/SharedLeads.tsx` (no `AuthGuard`). Renders inside a new `PublicLayout` (sidebar clone + content area).
+Both edge functions are called **in parallel** from screen 1's loading transition so the preview is ready the moment scrape finishes.
 
-**New components**
-- `src/components/shared/PublicDashboardLayout.tsx` — visual clone of `DashboardLayout` (logo, nav items, pricing card, help/support). Every nav item, every bottom button, and the user slot all call `requireAuth()` instead of navigating. Bottom user slot is replaced by a single **"Login / Sign up"** button. No `useSubscription`, no `useAdminCheck`, no Supabase user fetch.
-- `src/components/shared/AuthPromptDialog.tsx` — shadcn `Dialog` with copy "Create a free Intentsly account to view this lead's profile and signal." Two buttons: **Sign up free** → `/register?redirect=/shared/leads/<token>&claim=1`, **Log in** → `/login?redirect=/shared/leads/<token>&claim=1`. Stores `intentsly_pending_share_token` in `localStorage` so the claim survives the OAuth/email round-trip.
-- `src/components/contacts/ShareLeadsDialog.tsx` — opens from the Contacts selection bar; calls `supabase.functions.invoke('create-shared-lead-link', { selected_ids })`, shows the resulting URL with a Copy button.
+## In-dashboard setup wizard (replaces QuickStartPanel)
+
+New component `src/components/dashboard/SetupWizardBanner.tsx` — full-width hero card pinned to the top of `/dashboard`, above `SubscriptionBanner`.
+
+Layout:
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  Set up your AI SDR — 0 of 3 done           ▓▓░░░░░░░░  33% │
+│                                                              │
+│  ① Connect LinkedIn         ② Create signal agent  ③ Launch │
+│     Required to send invites   AI finds buyers     campaign │
+│     [Connect LinkedIn →]       [disabled]          [disabled]│
+└──────────────────────────────────────────────────────────────┘
+```
+
+- Three numbered cards in a row (stack on mobile).
+- Each card: number circle, title, one-line desc, primary action button.
+- Steps unlock sequentially. Locked cards show a small lock icon and a muted tooltip "Complete previous step first".
+- When a step is `done`, its card collapses to a single line with a green check + "Done — Edit".
+- When **all 3 done**, the banner collapses into a thin success bar: `✓ Setup complete — your AI SDR is live`. Dismissable with an X (saves `localStorage.intentsly_setup_dismissed`).
+
+**Step targets:**
+1. **Connect LinkedIn** → `navigate('/settings?tab=linkedin')`. Done when `profiles.unipile_account_id` is set.
+2. **Create signal agent** → `navigate('/signals?create=1')`. Done when at least one row exists in `signal_agents` for the org. Signals page already has `CreateAgentWizard`; we read the `?create=1` param and auto-open it.
+3. **Launch campaign** → `navigate('/campaigns?autoStart=true')` (already wired). Done when at least one campaign has `status='active'`.
+
+Removes the right-side `QuickStartPanel` from the dashboard grid; `PerformanceChart` becomes full-width on the row it shared.
+
+## Files
+
+**New**
+- `src/pages/Onboarding.tsx` — replaced with 2-screen flow (keep file, replace contents). Old multi-step components stay on disk untouched (unused) so we don't risk breaking drafts.
+- `src/components/onboarding/Step1Scan.tsx` — URL input + scan trigger.
+- `src/components/onboarding/Step2Preview.tsx` — services + pain points preview + Get Buyers CTA.
+- `src/components/dashboard/SetupWizardBanner.tsx` — the new top-of-dashboard 3-step wizard.
+- `supabase/functions/generate-services/index.ts` — AI services extractor.
 
 **Modified**
-- `src/pages/Contacts.tsx` — add a **Share** button (Share2 icon) in the desktop selection bar at line ~545, visible only when `selectedIds.size > 0`. Wires `showShareDialog` state.
-- `src/App.tsx` — add `<Route path="/shared/leads/:token" element={<SharedLeads />} />` (no guard).
-- `src/pages/Login.tsx` and `src/pages/Register.tsx` — read `redirect` and `claim` from URL params; after successful auth, if `claim=1` and a `pending_share_token` is present, invoke `claim-shared-leads` then `navigate(redirect)`. Existing session restore (`localStorage`-backed Supabase auth) already keeps users logged in across reloads, so requirement #10 is satisfied.
+- `src/contexts/OnboardingContext.tsx` — slimmed: only `website`, `companyName`, `description`, `industry`, `language`, `services`, `painPoints`. Drop ICP/precision/signals/objectives state. Existing draft loader gracefully ignores unknown fields.
+- `src/lib/api/firecrawl.ts` — `scrapeWebsite` returns the raw `markdown` too, so we can pass it to `generate-services`.
+- `src/pages/Dashboard.tsx` — remove `QuickStartPanel` import + grid slot; mount `<SetupWizardBanner />` above `<SubscriptionBanner />`; expand `PerformanceChart` to full row.
+- `src/pages/Signals.tsx` — read `?create=1` query param and auto-open `CreateAgentWizard`.
+- `supabase/config.toml` — register `[functions.generate-services]` with `verify_jwt = false`.
 
-## Edge functions
-
-- **`create-shared-lead-link`** (`verify_jwt = false`, JWT-validate in code): body `{ contact_ids: uuid[], expires_in_days?: number }`. Verifies caller owns each contact (org check), inserts a `shared_lead_links` row + N `shared_lead_link_contacts` rows, returns `{ token, url }`.
-- **`claim-shared-leads`** (`verify_jwt = false`, JWT-validate in code): body `{ token }`. Calls the `claim_shared_leads` RPC and returns its result.
-
-Public read of leads on the share page does **not** need an edge function — the page calls `supabase.rpc('get_shared_leads', { _token })` directly with the anon key. The RPC enforces token validity.
-
-## SharedLeads page behavior
-
-- On mount: `supabase.rpc('get_shared_leads', { _token })`. If empty/error → show "This share link is invalid or has expired" card.
-- Renders the **same table layout** as `/contacts` (avatar + initials, name, title, company, signal pill, AI score, tier badge, list name, imported time-ago). Reuses `Contact` type, `avatarColor`, `getInitials`, `timeAgo`, `LinkedInIcon`. **No** Approve/Reject, Book, Delete, AI Insights, Stop SDR, or Import buttons. **No** filters/tabs/pagination toolbar — single flat list.
-- Behavior:
-  - LinkedIn icon click → if logged in, `window.open(linkedin_url)`; else open `AuthPromptDialog`.
-  - Signal pill click → same gate. When logged in, opens `signal_post_url` in a new tab.
-  - Any sidebar nav button → `AuthPromptDialog`.
-  - Bottom "Login / Sign up" button → `/login?redirect=...&claim=1`.
-- Banner at top: "Shared with you · {N} leads. Sign up to save them to your account." with a **Save to my account** CTA (visible whether logged in or not). Logged-in users get an inline "Save to my account" that calls `claim-shared-leads` and toasts "Saved to your Contacts under list 'Shared with me · …'".
-
-## Auth + claim flow (requirements 9 & 10)
-
-1. User clicks **Sign up free** in the prompt → we set `localStorage.intentsly_pending_share_token = token` and navigate to `/register?redirect=/shared/leads/<token>&claim=1`.
-2. After `signUp` succeeds, Register reads `claim=1`, invokes `claim-shared-leads` with the stored token, clears the localStorage flag, then navigates to `redirect`.
-3. Supabase auth already persists the session in `localStorage` (`persistSession: true`, `autoRefreshToken: true` in `src/integrations/supabase/client.ts`). So on next visit, the `SharedLeads` page sees the user as logged in and skips the auth gate. No additional work needed for "keep session active".
-
-## Security notes
-
-- `shared_lead_links` rows are never directly readable by anon. Token validation lives inside `get_shared_leads` and `claim_shared_leads` (SECURITY DEFINER, with `revoked = false AND (expires_at IS NULL OR expires_at > now())` guard).
-- The RPC returns only display-safe columns — emails, internal IDs, AI insights, personality predictions are never exposed to anon.
-- Claim RPC scopes inserts to the caller's `current_organization_id` and dedupes by `linkedin_url` to prevent abuse.
-- Share token is 48 hex chars (192 bits) — unguessable.
+**Database**
+- Migration: add `services text[] default '{}'::text[]` to `public.campaigns`. Nullable, no default trigger needed.
 
 ## Out of scope
 
-- Editing/revoking share links from a UI (DB columns exist; admin/UI later).
-- Email-gated sharing (recipient email restriction).
-- Mobile sidebar variant of the public layout — desktop layout reused on mobile via existing responsive classes; full mobile slide-in menu skipped.
-- Analytics on link views.
+- Touching `Step3ICP`/`Step4Precision`/`Step5IntentSignals`/`Step6Objectives` (kept as orphan files for now; can delete in a follow-up).
+- Auto-creating signal_agents during onboarding — user creates them in-app via the wizard.
+- Re-running scrape on edit — user edits inside dashboard later.
+- Mobile-specific redesign of the setup banner — uses the same stack-on-narrow pattern as existing banners.
 
