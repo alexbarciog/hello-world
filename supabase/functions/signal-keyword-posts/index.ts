@@ -996,6 +996,11 @@ Deno.serve(async (req) => {
       min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
       inserted: 0,
+      // Pagination + fuzzy + strict-buyer instrumentation
+      fuzzy_filter_passed: 0,
+      strict_buyer_rejected: 0,
+      pagination_triggered_keywords: 0,
+      pagination_pages_fetched: 0,
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
       sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
