@@ -53,6 +53,31 @@ function isRestricted(p: any, restrictedCountries: string[], restrictedRoles: st
   }
   return false;
 }
+
+// Semantic agency-seller pre-filter (HIGH_PRECISION only). Catches headlines that scream
+// "I sell services" without using literal keywords like "agency"/"freelancer"/"consultant".
+const AGENCY_SELLER_PATTERNS: RegExp[] = [
+  /\bi\s+help\s+(?:\w+\s+){0,4}(?:build|scale|grow|launch|optimi[sz]e|automate|monetis|monetiz)/i,
+  /\b(?:helped|scaled|grew|launched|managed)\s+\d+\+?\s*(?:brands?|companies|businesses|stores?|clients?|sellers?)/i,
+  /\b(?:ppc|seo|sem|fba|dtc|d2c|cro|email|paid\s*(?:ads|media|search|social))\s*(?:specialist|expert|strateg(?:ist|y)|consultant|manager|pro)/i,
+  /\b(?:amazon|shopify|tiktok|google|meta|facebook)\s*(?:ads?\s*)?(?:specialist|expert|strateg(?:ist|y)|consultant|manager|pro|growth)/i,
+  /\$\s*\d[\d.,]*\s*[mk]?\+?\s*(?:in\s+)?(?:sales|revenue|ad\s*spend|gmv|profit)\s*(?:managed|generated|driven|delivered|for\s+clients)?/i,
+  /\b(?:dm|message|ping|reach\s*out\s*to)\s+me\s+(?:to|for|if)\b/i,
+  /\bbook\s+a\s+(?:free\s+)?(?:call|demo|strategy\s*(?:call|session)|consultation)/i,
+  /\b(?:growth\s+partner|fractional\s+(?:cmo|cgo|growth)|done[\s-]for[\s-]you)\b/i,
+  /\b(?:we|i)\s+(?:manage|scale|run|build|grow)\s+(?:\w+\s+){0,3}(?:brands?|stores?|campaigns?|accounts?|funnels?)\s+for\b/i,
+  /\b(?:results[\s-]driven|conversion[\s-]focused|roi[\s-]obsessed)\s+(?:\w+\s+){0,3}for\s+(?:brands?|ecom|dtc|stores?)/i,
+  /\bcertified\s+(?:partner|expert|specialist|professional)\b/i,
+];
+function looksLikeAgencySeller(profile: any): { seller: boolean; matched?: string } {
+  const text = [profile?.headline, profile?.title, profile?.role, profile?.summary].filter(Boolean).join(' ').slice(0, 600);
+  if (!text) return { seller: false };
+  for (const re of AGENCY_SELLER_PATTERNS) {
+    const m = text.match(re);
+    if (m) return { seller: true, matched: m[0] };
+  }
+  return { seller: false };
+}
 function isExcluded(p: any,ek: string[],cc: string[]=[]): boolean {
   const companyFields: string[] = [];
   if (p.company) companyFields.push(p.company);
@@ -713,6 +738,13 @@ Deno.serve(async (req) => {
             // Company-level ICP gate (HIGH_PRECISION only)
             let enrichedCo: EnrichedCompany | null = null;
             if (isHighPrecision) {
+              const seller = looksLikeAgencySeller(fullProfile);
+              if (seller.seller) {
+                diag.company_icp_mismatch++;
+                captureRejected(fullProfile, 'agency_seller');
+                console.log(`[AGENCY_SELLER] 🚫 own-post — ${(fullProfile.headline||'').slice(0,80)} — matched: "${seller.matched}"`);
+                continue;
+              }
               const gate = await companyIcpGate(fullProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
               if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') { diag.company_icp_mismatch++; captureRejected(fullProfile, 'company_icp_mismatch'); continue; }
               if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
@@ -843,6 +875,13 @@ Deno.serve(async (req) => {
               // Company-level ICP gate (HIGH_PRECISION only)
               let enrichedCo2: EnrichedCompany | null = null;
               if (isHighPrecision) {
+                const seller = looksLikeAgencySeller(fp);
+                if (seller.seller) {
+                  diag.company_icp_mismatch++;
+                  captureRejected(fp, 'agency_seller');
+                  console.log(`[AGENCY_SELLER] 🚫 profile-engager — ${(fp.headline||'').slice(0,80)} — matched: "${seller.matched}"`);
+                  continue;
+                }
                 const gate = await companyIcpGate(fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
                 if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') { diag.company_icp_mismatch++; captureRejected(fp, 'company_icp_mismatch'); continue; }
                 if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
