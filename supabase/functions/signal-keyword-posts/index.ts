@@ -1534,7 +1534,6 @@ Deno.serve(async (req) => {
           }
         }
       }
-      }
 
       const qualifiedSurvivors = survivors.filter(({ post }) => {
         const id = post.social_id || post.id || post.provider_id;
