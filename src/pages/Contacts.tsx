@@ -7,7 +7,7 @@ import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
   Flame, AtSign, Plus, Sparkles, Users, SlidersHorizontal, FolderPlus, List, Trash2,
   Send, UserCheck, MessageSquare, Clock, ThumbsDown, CalendarDays, StopCircle, BrainCircuit, Loader2, X, Lock, Bot,
-  CheckCircle2, XCircle, ShieldCheck,
+  CheckCircle2, XCircle, ShieldCheck, Share2,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
@@ -16,6 +16,7 @@ import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
 import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
+import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -59,6 +60,7 @@ export default function Contacts() {
   const insightsRef = useRef<HTMLDivElement>(null);
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);

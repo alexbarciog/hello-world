@@ -21,6 +21,7 @@ import XSignals from "./pages/XSignals.tsx";
 import Unibox from "./pages/Unibox.tsx";
 import AiChat from "./pages/AiChat.tsx";
 import PublicAiChat from "./pages/PublicAiChat.tsx";
+import SharedLeads from "./pages/SharedLeads.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
@@ -215,6 +216,7 @@ const App = () => (
           <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/video" element={<VideoShowcase />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
+          <Route path="/shared/leads/:token" element={<SharedLeads />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </OrganizationProvider>
