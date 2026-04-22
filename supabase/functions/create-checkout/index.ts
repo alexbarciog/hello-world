@@ -44,9 +44,7 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       allow_promotion_codes: true,
-      subscription_data: {
-        trial_period_days: 3,
-      },
+      // No trial — charge immediately on checkout completion.
       success_url: `${req.headers.get("origin")}/billing?success=true`,
       cancel_url: `${req.headers.get("origin")}/billing?canceled=true`,
     });
