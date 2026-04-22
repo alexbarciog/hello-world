@@ -864,7 +864,7 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
 
     } catch (e) {
       console.error('[AI] Intent classifier error:', e);
-      batch.forEach(p => results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_error', signal_type: 'unknown' }));
+      batch.forEach(p => results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_error_rejected', signal_type: 'not_a_buyer' }));
     }
   }
 
