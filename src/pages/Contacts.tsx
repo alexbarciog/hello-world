@@ -538,6 +538,12 @@ export default function Contacts() {
                   <FolderPlus className="w-3.5 h-3.5" /> Add to list
                 </button>
                 <button
+                  onClick={() => setShowShare(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/5 transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Share link
+                </button>
+                <button
                   onClick={handleDeleteSelected}
                   disabled={deleting}
                   className="flex items-center gap-1.5 text-xs font-medium text-destructive border border-destructive/30 rounded-lg px-3 py-2 hover:bg-destructive/10 transition-colors disabled:opacity-50"
@@ -1233,6 +1239,13 @@ export default function Contacts() {
         onOpenChange={setShowImport}
         lists={lists}
         onImported={fetchData}
+      />
+
+      {/* ── Share Leads Dialog ── */}
+      <ShareLeadsDialog
+        open={showShare}
+        onOpenChange={setShowShare}
+        selectedContactIds={Array.from(selectedIds)}
       />
 
       {/* ── Book Meeting Dialog ── */}
