@@ -271,6 +271,7 @@ export type Database = {
           organization_id: string | null
           pain_points: string[] | null
           precision_mode: string | null
+          services: string[]
           session_id: string | null
           source_agent_id: string | null
           source_list_id: string | null
@@ -327,6 +328,7 @@ export type Database = {
           organization_id?: string | null
           pain_points?: string[] | null
           precision_mode?: string | null
+          services?: string[]
           session_id?: string | null
           source_agent_id?: string | null
           source_list_id?: string | null
@@ -383,6 +385,7 @@ export type Database = {
           organization_id?: string | null
           pain_points?: string[] | null
           precision_mode?: string | null
+          services?: string[]
           session_id?: string | null
           source_agent_id?: string | null
           source_list_id?: string | null

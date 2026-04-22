@@ -1,146 +1,159 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import intentslyIcon from "@/assets/intentsly-icon.png";
-import { OnboardingProgressBar } from "@/components/onboarding/OnboardingProgressBar";
-import { Step1Website } from "@/components/onboarding/Step1Website";
-import { Step2LinkedIn } from "@/components/onboarding/Step2LinkedIn";
-import { Step3ICP } from "@/components/onboarding/Step3ICP";
-import { Step4Precision } from "@/components/onboarding/Step4Precision";
-import { Step5IntentSignals } from "@/components/onboarding/Step5IntentSignals";
-import { Step6Objectives } from "@/components/onboarding/Step6Objectives";
-import { StepComplete } from "@/components/onboarding/StepComplete";
+import { supabase } from "@/integrations/supabase/client";
+import { scrapeWebsite } from "@/lib/api/firecrawl";
 import { markOnboardingComplete, OnboardingEntryGuard } from "@/components/OnboardingGuard";
-import { OnboardingProvider, useOnboarding } from "@/contexts/OnboardingContext";
-import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
-import type { OnboardingStep } from "@/contexts/OnboardingContext";
+import { Step1Scan } from "@/components/onboarding/Step1Scan";
+import { Step2Preview } from "@/components/onboarding/Step2Preview";
+import { toast } from "sonner";
 
-// ─── Draft Saved Indicator ───────────────────────────────────────────────────
-
-function DraftIndicator() {
-  const { saveStatus } = useOnboarding();
-
-  if (saveStatus === "idle") return null;
-
-  const config = {
-    saving: {
-      icon: <Loader2 className="w-3 h-3 animate-spin" />,
-      text: "Saving…",
-      color: "hsl(var(--goji-text-muted))",
-    },
-    saved: {
-      icon: <CheckCircle2 className="w-3 h-3" />,
-      text: "Draft saved",
-      color: "hsl(142 71% 45%)",
-    },
-    error: {
-      icon: <AlertCircle className="w-3 h-3" />,
-      text: "Save failed",
-      color: "hsl(0 72% 51%)",
-    },
-  }[saveStatus];
-
-  if (!config) return null;
-
-  return (
-    <div
-      className="flex items-center gap-1.5 text-xs font-medium transition-all duration-300 animate-fade-in"
-      style={{ color: config.color }}
-    >
-      {config.icon}
-      {config.text}
-    </div>
-  );
-}
-
-// ─── Inner Page ──────────────────────────────────────────────────────────────
+type Phase = "scan" | "preview";
 
 function OnboardingInner() {
-  const {
-    currentStep,
-    setCurrentStep,
-    data,
-    icp,
-    precision,
-    signals,
-    objectives,
-    patch,
-    patchIcp,
-    setPrecision,
-    patchSignals,
-    patchObjectives,
-    saveCurrentStep,
-    isLoadingDraft,
-    campaignId,
-  } = useOnboarding();
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState<Phase>("scan");
 
-  const [showComplete, setShowComplete] = useState(false);
-  const [direction, setDirection] = useState<"forward" | "backward">("forward");
-  const [transitioning, setTransitioning] = useState(false);
-  const pendingStep = useRef<OnboardingStep>(1);
+  const [website, setWebsite] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [description, setDescription] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [language, setLanguage] = useState("English (US)");
+  const [services, setServices] = useState<string[]>([]);
+  const [painPoints, setPainPoints] = useState<string[]>([]);
 
-  function transition(to: OnboardingStep, dir: "forward" | "backward") {
-    if (transitioning) return;
-    pendingStep.current = to;
-    setDirection(dir);
-    setTransitioning(true);
-    setTimeout(() => {
-      setCurrentStep(to);
-      setTransitioning(false);
-    }, 320);
-  }
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
-  async function handleNext() {
-    if (currentStep === 6) {
-      await saveCurrentStep(6, 6);
-      markOnboardingComplete();
-      setShowComplete(true);
-      return;
+  async function handleAnalyze() {
+    setLoading(true);
+    setErrorMsg("");
+    setLoadingStep(0);
+
+    try {
+      // Step 1: Scrape
+      const scraped = await scrapeWebsite(website.trim());
+      setCompanyName(scraped.companyName);
+      setDescription(scraped.description);
+      setIndustry(scraped.industry);
+      setLanguage(scraped.language);
+
+      // Step 2 & 3: AI extraction in parallel
+      setLoadingStep(1);
+
+      const [servicesRes, painsRes] = await Promise.allSettled([
+        supabase.functions.invoke("generate-services", {
+          body: {
+            companyName: scraped.companyName,
+            industry: scraped.industry,
+            description: scraped.description,
+            markdown: scraped.markdown,
+          },
+        }),
+        supabase.functions.invoke("generate-pain-points", {
+          body: {
+            companyName: scraped.companyName,
+            industry: scraped.industry,
+            description: scraped.description,
+            jobTitles: [],
+            targetIndustries: [],
+          },
+        }),
+      ]);
+
+      // Show pain-points step briefly mid-flight for animation feel
+      setLoadingStep(2);
+
+      if (servicesRes.status === "fulfilled" && !servicesRes.value.error) {
+        const list = (servicesRes.value.data as { services?: string[] })?.services ?? [];
+        setServices(Array.isArray(list) ? list.slice(0, 5) : []);
+      }
+      if (painsRes.status === "fulfilled" && !painsRes.value.error) {
+        const list = (painsRes.value.data as { painPoints?: string[] })?.painPoints ?? [];
+        setPainPoints(Array.isArray(list) ? list.slice(0, 3) : []);
+      }
+
+      // small reveal delay
+      await new Promise((r) => setTimeout(r, 300));
+      setPhase("preview");
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(
+        "We couldn't analyze your website. Double-check the URL and try again."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    const next = (currentStep + 1) as OnboardingStep;
-    await saveCurrentStep(currentStep, next);
-    transition(next, "forward");
   }
 
-  async function handlePrev() {
-    if (currentStep === 1) return;
-    const prev = (currentStep - 1) as OnboardingStep;
-    await saveCurrentStep(currentStep, prev);
-    transition(prev, "backward");
-  }
+  async function handleContinue() {
+    setSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        toast.error("You must be logged in to continue.");
+        setSubmitting(false);
+        return;
+      }
 
-  const exitTranslate = direction === "forward" ? "-100%" : "100%";
-  const isWide = currentStep === 3 || currentStep === 5;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("current_organization_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
 
-  if (isLoadingDraft) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: "hsl(195 14% 95%)" }}
-      >
-        <div className="flex flex-col items-center gap-3">
-          <Loader2
-            className="w-8 h-8 animate-spin"
-            style={{ color: "hsl(var(--goji-coral))" }}
-          />
-          <p className="text-sm" style={{ color: "hsl(var(--goji-text-muted))" }}>
-            Loading your progress…
-          </p>
-        </div>
-      </div>
-    );
-  }
+      // Find any existing draft for this user
+      const { data: existing } = await supabase
+        .from("campaigns")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("status", "draft")
+        .order("updated_at", { ascending: false })
+        .limit(1);
 
-  if (showComplete) {
-    return (
-      <StepComplete
-        data={data}
-        icp={icp}
-        precision={precision}
-        signals={signals}
-        objectives={objectives}
-        existingCampaignId={campaignId}
-      />
-    );
+      const payload = {
+        user_id: session.user.id,
+        organization_id: profile?.current_organization_id ?? null,
+        website: website.trim(),
+        company_name: companyName,
+        description,
+        industry,
+        language,
+        services,
+        pain_points: painPoints,
+        status: "paused" as const,
+        current_step: 6,
+      };
+
+      if (existing && existing.length > 0) {
+        const { error } = await supabase
+          .from("campaigns")
+          .update(payload as any)
+          .eq("id", existing[0].id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("campaigns")
+          .insert(payload as any);
+        if (error) throw error;
+      }
+
+      // Mark onboarding complete on profile
+      const { error: profErr } = await supabase
+        .from("profiles")
+        .update({ onboarding_complete: true } as any)
+        .eq("user_id", session.user.id);
+      if (profErr) console.warn("Failed to set onboarding_complete:", profErr);
+
+      markOnboardingComplete();
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't save your setup. Please try again.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -148,119 +161,53 @@ function OnboardingInner() {
       className="min-h-screen flex flex-col items-center px-3 py-6 md:py-12 md:px-4"
       style={{ background: "hsl(195 14% 95%)" }}
     >
-      {/* Logo */}
       <a href="/" className="flex items-center gap-2 mb-6 md:mb-10 shrink-0">
         <img src={intentslyIcon} alt="Intentsly" className="h-7 md:h-8 object-contain" />
         <span className="text-lg md:text-xl font-bold tracking-tight text-foreground">Intentsly</span>
       </a>
 
-      {/* Card */}
       <div
-        className="w-full rounded-2xl md:rounded-3xl bg-card border-2 border-background overflow-hidden transition-all duration-500 flex flex-col"
+        className="w-full rounded-2xl md:rounded-3xl bg-card border-2 border-background overflow-hidden flex flex-col"
         style={{
-          maxWidth: isWide ? "780px" : "600px",
+          maxWidth: "640px",
           boxShadow: "0 8px 40px hsl(220 14% 10% / 0.08)",
         }}
       >
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-4 pt-5 pb-2 md:px-10 md:pt-10 md:pb-4">
-          {/* Progress + Draft indicator row */}
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex-1">
-              <OnboardingProgressBar step={currentStep} />
-            </div>
-            <div className="ml-3 min-w-[80px] flex justify-end">
-              <DraftIndicator />
-            </div>
-          </div>
-
-          {currentStep === 1 && (
-            <div className="mb-6 mt-2">
-              <h1
-                className="text-xl md:text-2xl font-normal tracking-tight mb-2"
-                style={{ color: "hsl(var(--foreground))" }}
-              >
-                Create your first AI campaign
-              </h1>
-              <p
-                className="text-sm leading-relaxed"
-                style={{ color: "hsl(var(--goji-text-muted))" }}
-              >
-                We'll use your website and AI to generate it automatically
-              </p>
-            </div>
+        <div className="flex-1 px-5 pt-8 pb-8 md:px-10 md:pt-10 md:pb-10">
+          {phase === "scan" && (
+            <Step1Scan
+              website={website}
+              onWebsiteChange={setWebsite}
+              onAnalyze={handleAnalyze}
+              loading={loading}
+              loadingStep={loadingStep}
+              errorMsg={errorMsg}
+            />
           )}
-
-          <div className="relative overflow-hidden">
-            <div
-              className="transition-all duration-300 ease-in-out"
-              style={{
-                transform: transitioning ? `translateX(${exitTranslate})` : "translateX(0%)",
-                opacity: transitioning ? 0 : 1,
-              }}
-            >
-              {currentStep === 1 && (
-                <Step1Website data={data} onChange={patch} onNext={handleNext} />
-              )}
-              {currentStep === 2 && (
-                <Step2LinkedIn data={data} onChange={patch} onNext={handleNext} onPrev={handlePrev} />
-              )}
-              {currentStep === 3 && (
-                <Step3ICP
-                  data={data}
-                  icp={icp}
-                  onICPChange={patchIcp}
-                  onNext={handleNext}
-                  onPrev={handlePrev}
-                />
-              )}
-              {currentStep === 4 && (
-                <Step4Precision
-                  precision={precision}
-                  onPrecisionChange={setPrecision}
-                  onNext={handleNext}
-                  onPrev={handlePrev}
-                />
-              )}
-              {currentStep === 5 && (
-                <Step5IntentSignals
-                  data={data}
-                  icp={icp}
-                  signals={signals}
-                  onSignalsChange={patchSignals}
-                  onNext={handleNext}
-                  onPrev={handlePrev}
-                />
-              )}
-              {currentStep === 6 && (
-                <Step6Objectives
-                  data={data}
-                  icp={icp}
-                  objectives={objectives}
-                  onObjectivesChange={patchObjectives}
-                  onNext={handleNext}
-                  onPrev={handlePrev}
-                />
-              )}
-            </div>
-          </div>
+          {phase === "preview" && (
+            <Step2Preview
+              companyName={companyName}
+              description={description}
+              services={services}
+              painPoints={painPoints}
+              onCompanyNameChange={setCompanyName}
+              onDescriptionChange={setDescription}
+              onContinue={handleContinue}
+              submitting={submitting}
+            />
+          )}
         </div>
       </div>
 
-      {/* Safe area spacer for mobile */}
       <div className="h-4 md:hidden shrink-0" />
     </div>
   );
 }
 
-// ─── Page Export (wraps with provider + entry guard) ──────────────────────────
-
 export default function OnboardingPage() {
   return (
     <OnboardingEntryGuard>
-      <OnboardingProvider>
-        <OnboardingInner />
-      </OnboardingProvider>
+      <OnboardingInner />
     </OnboardingEntryGuard>
   );
 }

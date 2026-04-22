@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
-import { QuickStartPanel } from "@/components/dashboard/QuickStartPanel";
 import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
+import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
 import { ChevronDown } from "lucide-react";
@@ -338,38 +338,10 @@ export default function Dashboard() {
   const leadsEngaged = engagementData?.leadsEngaged ?? 0;
   const conversations = engagementData?.conversations ?? 0;
   const activeSignals = signalData?.activeCount ?? 0;
-  const linkedinConnected = profileData?.linkedinConnected ?? false;
-  const totalCampaigns = campaignMeta?.totalCampaigns ?? 0;
-  const hasIcp = campaignMeta?.hasIcp ?? false;
-  const hasLaunched = campaignMeta?.hasLaunched ?? false;
-  const firstName = userData?.firstName ?? "there";
-
-  const quickStartSteps = [
-    {
-      label: "Connect LinkedIn",
-      desc: linkedinConnected ? "Profile synced & verified" : "Required to start outreach",
-      done: linkedinConnected,
-      href: "/settings?tab=linkedin",
-    },
-    {
-      label: "Create your first campaign",
-      desc: totalCampaigns > 0 ? `${totalCampaigns} campaign(s) created` : "Set up outreach sequence",
-      done: totalCampaigns > 0,
-      href: "/campaigns?autoStart=true",
-    },
-    {
-      label: "Add your ICP",
-      desc: hasIcp ? "Customer profile defined" : "Define ideal customer profile",
-      done: hasIcp,
-      href: "/campaigns",
-    },
-    {
-      label: "Launch first outreach",
-      desc: hasLaunched ? "Outreach is live!" : "Start engaging leads",
-      done: hasLaunched,
-      href: "/campaigns",
-    },
-  ];
+  void profileData;
+  void campaignMeta;
+  void navigate;
+  void userData;
 
   return (
     <div className="flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
@@ -384,6 +356,8 @@ export default function Dashboard() {
           </button>
         </header>
 
+        <SetupWizardBanner />
+
         <SubscriptionBanner />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -393,11 +367,8 @@ export default function Dashboard() {
           <MetricCard title="Active Signals" value={activeSignals} />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2">
-            <PerformanceChart chartData={chartData} />
-          </div>
-          <QuickStartPanel steps={quickStartSteps} />
+        <div className="grid grid-cols-1 gap-4">
+          <PerformanceChart chartData={chartData} />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">

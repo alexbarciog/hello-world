@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.claim-shared-leads]
 verify_jwt = false
+
+[functions.generate-services]
+verify_jwt = false
