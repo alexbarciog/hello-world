@@ -797,13 +797,13 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    <th style={{ left: 40, width: 280 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
+                    <th style={{ left: 40, width: 220 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
                       Contact
                     </th>
-                    <th style={{ left: 320, width: 180 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border">
+                    <th style={{ left: 260, width: 180 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border">
                       Signal
                     </th>
-                    <th style={{ left: 500, width: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                    <th style={{ left: 440, width: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                       Score
                     </th>
                     {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
@@ -822,7 +822,7 @@ export default function Contacts() {
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
-                      <td style={{ left: 40, width: 280 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-border/50">
+                      <td style={{ left: 40, width: 220 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
@@ -858,7 +858,7 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ left: 320, width: 180 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 max-w-[220px] border-b border-border/50">
+                      <td style={{ left: 260, width: 180 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 max-w-[220px] border-b border-border/50">
                         {c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
                             {c.signal}
@@ -867,7 +867,7 @@ export default function Contacts() {
                           <span className="text-xs text-muted-foreground truncate block max-w-[200px]">{c.signal}</span>
                         )}
                       </td>
-                      <td style={{ left: 500, width: 90 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-r border-border/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                      <td style={{ left: 440, width: 90 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-r border-border/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                         <div className="flex items-center gap-0.5">
                           {(() => {
                             const tier = c.relevance_tier?.toLowerCase();
