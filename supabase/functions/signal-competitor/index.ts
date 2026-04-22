@@ -1074,13 +1074,13 @@ Deno.serve(async (req) => {
             icp.industries, idealLeadDescription, business_context || '',
             companyEnrichCache, companyAiCache,
           );
-          if (gate.verdict === 'reject') {
+          if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') {
             pipelineStats.company_icp_mismatch++;
             captureRejected(fp, 'company_icp_mismatch');
             console.log(`[COMPANY_ICP] 🚫 ${lpid}: ${gate.company?.name || 'unknown'} — ${gate.reason}`);
             continue;
           }
-          if (gate.verdict === 'skip_no_enrichment') pipelineStats.company_enrichment_failed++;
+          if (gate.verdict === 'accept_headline') pipelineStats.company_enrichment_failed++;
           else if (gate.verdict === 'accept_industry') pipelineStats.company_industry_matched++;
           enrichedCompanyForInsert = gate.company;
         }
@@ -1345,13 +1345,13 @@ Deno.serve(async (req) => {
                     icp.industries, idealLeadDescription, business_context || '',
                     companyEnrichCache, companyAiCache,
                   );
-                  if (gate.verdict === 'reject') {
+                  if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') {
                     pipelineStats.company_icp_mismatch++;
                     captureRejected(fp, 'company_icp_mismatch');
                     console.log(`[COMPANY_ICP] 🚫 follower ${lpid}: ${gate.company?.name || 'unknown'} — ${gate.reason}`);
                     continue;
                   }
-                  if (gate.verdict === 'skip_no_enrichment') pipelineStats.company_enrichment_failed++;
+                  if (gate.verdict === 'accept_headline') pipelineStats.company_enrichment_failed++;
                   else if (gate.verdict === 'accept_industry') pipelineStats.company_industry_matched++;
                   enrichedCompanyForInsert = gate.company;
                 }
