@@ -1,83 +1,68 @@
 
 
-# Reorder keyword pipeline: ICP + competitor check BEFORE AI buying intent
+# Import leads from Sales Navigator (paste search URL)
 
-Today the keyword-posts pipeline does: **fetch → phrase match → AI buyer intent → fetch full profile → company ICP gate**. That wastes AI budget on posts whose author would later be rejected for ICP/industry, and the strict phrase pre-filter throws away buyers who phrase their pain differently.
+Add an **Import** button in the Contacts page header that opens a dialog where the user pastes a Sales Navigator **lead search URL** and picks (or names) a list. The backend uses Unipile's LinkedIn Sales Navigator search to walk pages of results and insert each profile as a contact.
 
-We'll flip this so we **filter on the lead first** (cheap), and only run the AI buying-intent classifier on posts whose author already passed ICP + is not a competitor.
+## UX
 
-## New pipeline (per keyword, per page)
+**New "Import" button** in the Contacts page header (next to the existing actions on line 500), Plus icon + label. Visible only on the `all` tab so it doesn't clutter filtered views.
 
-```text
-1. Fetch posts by keyword (Unipile)
-2. Cross-run + in-run dedup (unchanged)
-3. SKIP "phrase match" pre-filter         ← removed for now
-4. SELLER / agency-seller short-circuit    (cheap regex on headline+post)
-5. Fetch full author profile + enrich company
-6. Company ICP gate
-   ├─ industry / location of company match → continue
-   └─ no match → reject  (logged as icp_mismatch)
-7. Headline + About "do they sell our service?" check
-   ├─ provides similar services → reject as competitor
-   └─ not a service provider → continue
-8. AI buying-intent score on the POST (only for survivors)
-   ├─ score ≥ MIN_INTENT_SCORE → INSERT lead
-   └─ below threshold → reject
-9. Insert + dedup (unchanged)
-```
+**Dialog: "Import from Sales Navigator"**
+1. Big textarea for the Sales Nav search URL, with a one-line example placeholder (`https://www.linkedin.com/sales/search/people?...`).
+2. Helper text: "Paste a Sales Navigator lead search URL. We'll import up to 500 leads from the first ~20 result pages."
+3. Slider/select: **Max leads to import** — 50 / 100 / 250 / 500 (default 100). Caps protect Unipile budget.
+4. **Destination list** — a select listing the user's existing lists + an "Create new list…" option that reveals a name input. Default = create new with auto-name `Sales Nav — <today>`.
+5. URL validation: must start with `https://www.linkedin.com/sales/search/` (regex). Error inline if not.
+6. Primary button: **Import** (disabled while running, shows spinner + "Importing… X / Y").
+7. On success: toast `Imported N leads (skipped M duplicates)`, close dialog, refetch contacts.
 
-The flow is "lead-first, post-second": once we know the lead is in our ICP and isn't a competitor, the AI only judges whether *this specific post* expresses buying intent.
+The dialog is non-blocking on background — once it returns, results show in the table immediately.
 
-## What changes in `supabase/functions/signal-keyword-posts/index.ts`
+## Backend: new edge function `import-sales-nav`
 
-**Skip the phrase match (temporary)**
-- In `preFilterPost`, remove the `no_phrase_match` rejection for both `discovery` and `high_precision` modes. Keep the seller short-circuit, country, and industry guards.
-- Still compute `matchedPhrase` if found, just for diagnostics — never reject on its absence.
-- Keep `pipelineStats.rejected_no_phrase_match` field but it should stay at 0 going forward.
+Lives in `supabase/functions/import-sales-nav/index.ts`. Registered in `supabase/config.toml` with `verify_jwt = false` (we validate the JWT in code, like other Unipile-touching functions).
 
-**Reorder Step 4 (AI) and Step 5 (profile + ICP)**
-Today Step 4 calls `classifyIntentBatch` on all pre-filtered posts, then Step 5 fetches the profile and runs `companyIcpGate`. We swap them:
+**Input** (JSON body):
+- `search_url` (string, required) — Sales Nav search URL
+- `max_leads` (number, default 100, max 500)
+- `list_id` (uuid, optional) — existing list to add to
+- `new_list_name` (string, optional) — create this list and add leads to it
 
-1. New **Step 4 — Author qualification loop** (runs once per post, no AI):
-   - Author dedup (in-memory + DB) — same as current Step 5 head.
-   - Lightweight preview-headline screen (`isClearlyIrrelevant`, own-company) — unchanged.
-   - `fetchFullProfile` (counts against `RUN_PROFILE_FETCH_CAP` as today).
-   - Restricted countries/roles, competitor exclusion list, post-profile country re-check — unchanged.
-   - **Always run `companyIcpGate`** (currently `if (isHighPrecision)`). For `discovery` mode we keep it lenient (existing AI gate already defaults to `matches=true` when ambiguous), so it won't over-reject. Drop on `reject` / `reject_headline`.
-   - **Run `looksLikeAgencySeller(author)`** here too (was high-precision only). If matched → reject as competitor (new bucket `rejected_competitor_seller`).
+**Flow**:
+1. Validate JWT, resolve `user_id` + `current_organization_id` from `profiles`.
+2. Look up the org's `unipile_account_id` from `organizations`.
+3. If `new_list_name` is provided, insert a row into `lists` and use that id; else use `list_id`.
+4. Call Unipile classic-style search with the Sales Navigator API:
+   - `POST https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`
+   - body: `{ api: 'sales_navigator', url: search_url, limit: 50 }` (Unipile resolves the search URL server-side and returns paginated results).
+5. Page through results using the returned `cursor` until either `max_leads` reached or no `cursor`. Hard cap at 20 pages.
+6. For each profile returned (`items[]`):
+   - Skip if `linkedin_profile_id` already exists in `contacts` for this `organization_id` (single batched `select` per page).
+   - Insert into `contacts` with:
+     - `first_name`, `last_name`, `title` (headline), `company` (current company name), `industry` (if present), `linkedin_url` (built from `public_id`/`public_identifier`), `linkedin_profile_id`
+     - `relevance_tier: 'cold'`, `approval_status: 'auto_approved'`, `signal: 'Imported from Sales Navigator'`, `signal_a_hit: true`, `ai_score: 1`
+     - `user_id`, `organization_id`
+   - On success, insert a `contact_lists` row linking the new contact to the chosen list.
+7. Track `inserted` and `duplicates` counters; return them in the response.
 
-2. New **Step 5 — AI intent on survivors**:
-   - Build `postsForAI` only from posts whose authors survived Step 4 (typically 1–5 per page instead of 20+).
-   - Call `classifyIntentBatch` → if `intent_score >= MIN_INTENT_SCORE` insert; otherwise log to `sample_ai_rejections`.
-   - The `is_competitor` branch inside the AI prompt becomes a backup; the main competitor decision now happens in Step 4.
+**Auth header**: standard `Authorization: Bearer <jwt>`. We use `createClient(SUPABASE_URL, SERVICE_ROLE_KEY)` server-side after JWT verification to bypass RLS for the bulk insert.
 
-**Diagnostics additions**
-- `rejected_competitor_seller` (post-ICP service-provider catch).
-- `passed_company_icp` counter (so the funnel diagram has a clean "Company / ICP" pass count regardless of precision mode).
-- `sample_competitor_rejections` array (cap 5): name, headline, company, matched_pattern.
-- Keep `sample_icp_passed` / `sample_icp_rejections` populated in **both** modes (today only HP populates them).
-- `MIN_INTENT_SCORE` semantics unchanged.
+**Rate-friendly**: 250 ms delay between Unipile pages; 30 s overall timeout via `AbortController`.
 
-## What changes in the Admin Run Diagram (`FunnelTemplates.ts`)
+## Files
 
-Update `buildLinkedInFunnel` to reflect the new order so the visualisation matches reality:
+**New**:
+- `supabase/functions/import-sales-nav/index.ts` — edge function
+- `src/components/contacts/ImportSalesNavDialog.tsx` — the dialog component
 
-```text
-Fetched → Dedup → Company / ICP → Not a competitor → AI buyer intent → Inserted
-                       │                  │                  │
-                       └─ ICP mismatch    └─ Competitor      └─ Not buyer / low score
-```
-
-- Move the "Company / ICP" node **before** "AI buyer intent".
-- Add a dedicated "Competitor / Seller" node between ICP and AI, fed by `rejected_competitor_seller + rejected_competitor + rejected_seller`, sample key `sample_competitor_rejections`.
-- Drop the standalone "Match keywords" node (since we're skipping phrase match) — replace with a passthrough so existing runs that still have those counters render gracefully (show only if `rejected_no_phrase_match > 0`, for backward compat with old runs).
-
-No DB schema changes. No RLS changes. No UI route changes.
+**Modified**:
+- `src/pages/Contacts.tsx` — add `Import` button in header (line ~500), wire `showImport` state + dialog mount; on success call `fetchData()`
+- `supabase/config.toml` — register `[functions.import-sales-nav]` with `verify_jwt = false`
 
 ## Out of scope
 
-- Phrase match removal is **temporary** — flagged in code with a `// TEMP: phrase match disabled` comment so we can flip it back on with one boolean.
-- Re-tuning `MIN_INTENT_SCORE` thresholds. We keep the current 80 / 70.
-- Other agent types (`hashtag_engagement`, `post_engagers`, `competitor`, `reddit`, `x`) — unchanged.
-- Backfilling diagnostics for old runs — old runs keep rendering with the legacy template fallbacks.
+- CSV upload, profile-URL list paste, AI scoring on import, email enrichment — explicitly skipped per your choices.
+- Deduping across organizations (we only dedupe within the current org).
+- Resuming an interrupted import — single-shot only; user can re-paste the same URL and dedup will skip already-imported leads.
 
