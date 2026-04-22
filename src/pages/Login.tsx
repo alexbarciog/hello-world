@@ -1,18 +1,38 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { PENDING_SHARE_TOKEN_KEY } from "@/components/shared/AuthPromptDialog";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
+  const claimParam = searchParams.get("claim");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function maybeClaimSharedLeads() {
+    if (claimParam !== "1") return;
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem(PENDING_SHARE_TOKEN_KEY);
+    } catch { /* ignore */ }
+    if (!token) return;
+    try {
+      await supabase.functions.invoke("claim-shared-leads", { body: { token } });
+    } catch (err) {
+      console.error("claim-shared-leads failed:", err);
+    } finally {
+      try { localStorage.removeItem(PENDING_SHARE_TOKEN_KEY); } catch { /* ignore */ }
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +55,11 @@ export default function Login() {
       }
     } else {
       toast.success("Welcome back!");
+      await maybeClaimSharedLeads();
+      if (redirectParam) {
+        navigate(redirectParam);
+        return;
+      }
       const { data: profile } = await supabase.
       from("profiles").
       select("onboarding_complete").
