@@ -1503,7 +1503,22 @@ Deno.serve(async (req) => {
         }
       }
 
-      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${preFilteredPosts.length} pre-filtered → ${qualifiedPosts.length} AI-qualified → ${keywordInserted} inserted (skip: noAuthor=${keywordSkipped.noAuthor} dupAuthor=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} irrel=${keywordSkipped.irrelevant} dup=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
+        // ── End-of-page check: stop paginating if we hit threshold or no cursor ──
+        console.log(`[KEYWORD] "${keyword}" p${page + 1}: +${keywordInserted - (page === 0 ? 0 : keywordInserted)} this page, ${keywordInserted} total leads`);
+        if (keywordInserted >= STARVED_THRESHOLD) {
+          console.log(`[KEYWORD] "${keyword}": hit threshold (${keywordInserted} >= ${STARVED_THRESHOLD}) — no pagination needed`);
+          break pageLoop;
+        }
+        if (!cursor) {
+          console.log(`[KEYWORD] "${keyword}": no more cursor available — stopping pagination`);
+          break pageLoop;
+        }
+      } // end pageLoop
+
+      // Inter-keyword spacing — generous to stay well under Unipile's per-account search budget.
+      if (hasTime()) await delay(4000 + Math.floor(Math.random() * 2000));
+
+      console.log(`[KEYWORD] "${keyword}": ${totalFetchedThisKeyword} fetched → ${totalUniqueThisKeyword} unique → ${totalPreFilteredThisKeyword} pre-filtered → ${totalQualifiedThisKeyword} AI-qualified → ${keywordInserted} inserted (skip: noAuthor=${keywordSkipped.noAuthor} dupAuthor=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} irrel=${keywordSkipped.irrelevant} dup=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
     }
 
     // ── Save all processed post IDs for cross-run dedup ──
