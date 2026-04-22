@@ -37,6 +37,7 @@ export default function Contacts() {
   const [listFilter, setListFilter] = useState<string>("all");
   const [signalFilter, setSignalFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [approvalFilter, setApprovalFilter] = useState<"approved" | "rejected">("approved");
   const [showCreateList, setShowCreateList] = useState(false);
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
