@@ -867,7 +867,7 @@ export default function Contacts() {
                           <span className="text-xs text-muted-foreground truncate block max-w-[200px]">{c.signal}</span>
                         )}
                       </td>
-                      <td style={{ left: 500, width: 90 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-r border-border/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                      <td style={{ left: 440, width: 90 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-r border-border/50 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                         <div className="flex items-center gap-0.5">
                           {(() => {
                             const tier = c.relevance_tier?.toLowerCase();
