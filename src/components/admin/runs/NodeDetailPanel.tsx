@@ -142,11 +142,41 @@ function SampleItem({ item }: { item: unknown }) {
           <span className="text-foreground font-medium">{verdict}</span>
         </div>
       )}
-      {intentScore !== undefined && (
+      {intentScore !== undefined && intentScore !== null && (
         <div className="text-xs">
           <span className="text-muted-foreground">Intent score:</span>{" "}
           <span className="text-foreground font-medium tabular-nums">{intentScore}</span>
+          {isBuyer !== undefined && isBuyer !== null && (
+            <span
+              className={`ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                isBuyer
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-red-50 text-red-700 border border-red-200"
+              }`}
+            >
+              {isBuyer ? "buyer" : "not buyer"}
+            </span>
+          )}
         </div>
+      )}
+      {postSample && (
+        <div className="mt-1.5 rounded-md bg-muted/50 border border-border px-2 py-1.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Post</div>
+          <div className="text-xs text-foreground/80 leading-snug line-clamp-4 whitespace-pre-wrap">
+            {postSample}
+          </div>
+        </div>
+      )}
+      {postUrl && (
+        <a
+          href={postUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+        >
+          Open post on LinkedIn
+          <ExternalLink className="w-3 h-3" />
+        </a>
       )}
       {reason && (
         <div className="text-xs italic text-foreground/70 mt-1 leading-snug">
