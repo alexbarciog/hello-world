@@ -338,38 +338,10 @@ export default function Dashboard() {
   const leadsEngaged = engagementData?.leadsEngaged ?? 0;
   const conversations = engagementData?.conversations ?? 0;
   const activeSignals = signalData?.activeCount ?? 0;
-  const linkedinConnected = profileData?.linkedinConnected ?? false;
-  const totalCampaigns = campaignMeta?.totalCampaigns ?? 0;
-  const hasIcp = campaignMeta?.hasIcp ?? false;
-  const hasLaunched = campaignMeta?.hasLaunched ?? false;
-  const firstName = userData?.firstName ?? "there";
-
-  const quickStartSteps = [
-    {
-      label: "Connect LinkedIn",
-      desc: linkedinConnected ? "Profile synced & verified" : "Required to start outreach",
-      done: linkedinConnected,
-      href: "/settings?tab=linkedin",
-    },
-    {
-      label: "Create your first campaign",
-      desc: totalCampaigns > 0 ? `${totalCampaigns} campaign(s) created` : "Set up outreach sequence",
-      done: totalCampaigns > 0,
-      href: "/campaigns?autoStart=true",
-    },
-    {
-      label: "Add your ICP",
-      desc: hasIcp ? "Customer profile defined" : "Define ideal customer profile",
-      done: hasIcp,
-      href: "/campaigns",
-    },
-    {
-      label: "Launch first outreach",
-      desc: hasLaunched ? "Outreach is live!" : "Start engaging leads",
-      done: hasLaunched,
-      href: "/campaigns",
-    },
-  ];
+  void profileData;
+  void campaignMeta;
+  void navigate;
+  void userData;
 
   return (
     <div className="flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
