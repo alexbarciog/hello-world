@@ -59,7 +59,8 @@ function SampleItem({ item }: { item: unknown }) {
   const industry = (obj.industry as string) || (obj.matched_industry as string);
   const matchedKeyword = obj.matched_keyword as string | undefined;
   const verdict = (obj.icp_verdict as string) || (obj.verdict as string);
-  const intentScore = obj.intentScore as number | undefined;
+  const intentScore = (obj.intent_score as number | undefined) ?? (obj.intentScore as number | undefined);
+  const isBuyer = obj.is_buyer as boolean | undefined;
   const reason =
     (obj.reason as string) ||
     (obj.rejection_reason as string) ||
@@ -69,18 +70,22 @@ function SampleItem({ item }: { item: unknown }) {
     (obj.linkedin_url as string) ||
     (obj.url as string) ||
     (obj.profile_url as string);
+  const postUrl = obj.postUrl as string | undefined;
+  const postSample = obj.postSample as string | undefined;
 
   const knownKeys = new Set([
     "name", "full_name", "headline", "title", "author", "role",
     "company", "company_name", "company_url", "company_linkedin_url",
     "industry", "matched_industry", "matched_keyword",
-    "icp_verdict", "verdict", "intentScore",
+    "icp_verdict", "verdict", "intentScore", "intent_score", "is_buyer",
     "reason", "rejection_reason", "ai_reason", "icp_reason",
     "linkedin_url", "url", "profile_url",
+    "postUrl", "postSample",
   ]);
   const hasAnyKnown =
     role || company || companyUrl || industry || matchedKeyword ||
-    verdict || intentScore !== undefined || reason || profileUrl;
+    verdict || intentScore !== undefined || isBuyer !== undefined ||
+    reason || profileUrl || postUrl || postSample;
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 space-y-1.5">
@@ -137,11 +142,41 @@ function SampleItem({ item }: { item: unknown }) {
           <span className="text-foreground font-medium">{verdict}</span>
         </div>
       )}
-      {intentScore !== undefined && (
+      {intentScore !== undefined && intentScore !== null && (
         <div className="text-xs">
           <span className="text-muted-foreground">Intent score:</span>{" "}
           <span className="text-foreground font-medium tabular-nums">{intentScore}</span>
+          {isBuyer !== undefined && isBuyer !== null && (
+            <span
+              className={`ml-2 inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                isBuyer
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-red-50 text-red-700 border border-red-200"
+              }`}
+            >
+              {isBuyer ? "buyer" : "not buyer"}
+            </span>
+          )}
         </div>
+      )}
+      {postSample && (
+        <div className="mt-1.5 rounded-md bg-muted/50 border border-border px-2 py-1.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Post</div>
+          <div className="text-xs text-foreground/80 leading-snug line-clamp-4 whitespace-pre-wrap">
+            {postSample}
+          </div>
+        </div>
+      )}
+      {postUrl && (
+        <a
+          href={postUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+        >
+          Open post on LinkedIn
+          <ExternalLink className="w-3 h-3" />
+        </a>
       )}
       {reason && (
         <div className="text-xs italic text-foreground/70 mt-1 leading-snug">
