@@ -478,6 +478,34 @@ function generatePhraseVariants(keyword: string): string[] {
   return [...new Set(variants)];
 }
 
+/**
+ * Fuzzy phrase match — punctuation-tolerant token match.
+ * Normalizes both sides (lowercase, strip punctuation, collapse whitespace),
+ * then verifies every token in `phrase` appears in `text` within a sliding
+ * window of `tokens.length + 3`.
+ *
+ * Returns true for "ecommerce growth" vs "e-commerce reflects a broader growth".
+ */
+function fuzzyPhraseMatch(text: string, phrase: string): boolean {
+  const normalize = (s: string) =>
+    (s || '').toLowerCase().replace(/[\-.'’,;:!?()\[\]"]/g, ' ').replace(/\s+/g, ' ').trim();
+  const normText = normalize(text);
+  const normPhrase = normalize(phrase);
+  if (!normText || !normPhrase) return false;
+  // Quick literal hit on normalized text
+  if (normText.includes(normPhrase)) return true;
+  const phraseTokens = normPhrase.split(' ').filter(t => t.length >= 2);
+  if (phraseTokens.length === 0) return false;
+  const textTokens = normText.split(' ');
+  const windowSize = phraseTokens.length + 3;
+  for (let i = 0; i <= textTokens.length - 1; i++) {
+    const windowEnd = Math.min(i + windowSize, textTokens.length);
+    const window = new Set(textTokens.slice(i, windowEnd));
+    if (phraseTokens.every(pt => window.has(pt))) return true;
+  }
+  return false;
+}
+
 function preFilterPost(
   postText: string,
   keyword: string,
