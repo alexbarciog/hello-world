@@ -374,6 +374,15 @@ export default function Signals() {
     }
   }, [searchParams]);
 
+  // Auto-open the Create Agent wizard when arriving with ?create=1 (from setup wizard).
+  useEffect(() => {
+    if (searchParams.get("create") === "1") {
+      setShowCreate(true);
+      searchParams.delete("create");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams]);
+
   async function fetchAgents() {
     if (!currentOrg?.id) { setAgents([]); setLoading(false); return; }
     setLoading(true);
