@@ -37,6 +37,7 @@ export default function Contacts() {
   const [listFilter, setListFilter] = useState<string>("all");
   const [signalFilter, setSignalFilter] = useState<string>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [approvalFilter, setApprovalFilter] = useState<"approved" | "rejected">("approved");
   const [showCreateList, setShowCreateList] = useState(false);
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
@@ -369,6 +370,15 @@ export default function Contacts() {
     } else {
       // Exclude pending-approval leads from all other tabs
       result = result.filter((c) => (c as any).approval_status !== 'pending');
+      // Apply Approved/Rejected filter (default: approved)
+      if (approvalFilter === "rejected") {
+        result = result.filter((c) => (c as any).approval_status === 'rejected');
+      } else {
+        result = result.filter((c) => {
+          const s = (c as any).approval_status;
+          return s === 'approved' || s === 'auto_approved' || !s;
+        });
+      }
       if (tab === "not_interested") {
         result = result.filter((c) => c.lead_status === 'not_interested');
       } else if (tab === "meeting_booked") {
@@ -404,7 +414,7 @@ export default function Contacts() {
         (c.company || "").toLowerCase().includes(q) ||
         (c.title || "").toLowerCase().includes(q)
     );
-  }, [contacts, searchQuery, listFilter, signalFilter, agentFilter, tab, contactListMap, lists, agents, agentsByListName, getSignalType]);
+  }, [contacts, searchQuery, listFilter, signalFilter, agentFilter, approvalFilter, tab, contactListMap, lists, agents, agentsByListName, getSignalType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
@@ -645,6 +655,20 @@ export default function Contacts() {
               </div>
             );
           })()}
+          {tab !== "pending_approval" && (
+            <div className="relative">
+              <ShieldCheck className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+              <select
+                value={approvalFilter}
+                onChange={(e) => { setApprovalFilter(e.target.value as "approved" | "rejected"); setPage(1); }}
+                className="border border-border rounded-lg pl-7 pr-7 py-2 text-xs bg-background focus:outline-none appearance-none text-foreground"
+              >
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+            </div>
+          )}
           {selectedIds.size > 0 && (
             <>
               <button
