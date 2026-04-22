@@ -1145,7 +1145,6 @@ Deno.serve(async (req) => {
         totalFetchedThisKeyword += keywordPosts.length;
 
 
-      // ── Step 2: Dedupe posts ──
       // ── Step 2: Dedupe posts (in-run + cross-run) ──
       const uniquePosts = keywordPosts.filter(p => {
         const id = p.social_id || p.id || p.provider_id;
@@ -1164,10 +1163,13 @@ Deno.serve(async (req) => {
       const dupsThisKeyword = keywordPosts.length - uniquePosts.length;
       pipelineStats.duplicates_removed += dupsThisKeyword;
       pipelineStats.posts_after_dedup += uniquePosts.length;
+      totalUniqueThisKeyword += uniquePosts.length;
 
       if (uniquePosts.length === 0) {
-        console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched, 0 unique — skipping`);
-        continue;
+        console.log(`[KEYWORD] "${keyword}" p${page + 1}: ${keywordPosts.length} fetched, 0 unique`);
+        // Continue to next page if cursor available and still starved
+        if (!cursor || keywordInserted >= STARVED_THRESHOLD) break pageLoop;
+        continue pageLoop;
       }
 
       // ── Step 3: PRE-FILTER — phrase match + country + industry ──
