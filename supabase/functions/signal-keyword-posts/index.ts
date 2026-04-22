@@ -980,10 +980,13 @@ Deno.serve(async (req) => {
       rejected_seller: 0,
       // New: leads rejected because they don't match the user's "Perfect Lead" free-text description
       perfect_lead_mismatch: 0,
-      // New: company-level ICP gate diagnostics (HIGH_PRECISION only)
+      // New: company-level ICP gate diagnostics (now run in BOTH precision modes)
       company_enrichment_failed: 0,
       company_industry_matched: 0,
       company_icp_mismatch: 0,
+      passed_company_icp: 0,
+      // New: post-ICP service-provider catch (was previously folded into company_icp_mismatch)
+      rejected_competitor_seller: 0,
       // Fix 7: track new threshold + already_in_contacts (Rule 3 — never update existing)
       min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
@@ -999,6 +1002,7 @@ Deno.serve(async (req) => {
       sample_inserted: [] as Array<{ name: string; headline: string; company: string | null; company_url: string | null; linkedin_url: string | null; intentScore: number; matched_keyword: string; matched_industry: string | null; icp_verdict: string | null; icp_reason: string | null }>,
       sample_icp_passed: [] as Array<{ name: string; headline: string; company: string; company_url: string | null; industry: string; verdict: string; reason: string }>,
       sample_icp_rejections: [] as Array<{ name: string; headline: string; company: string | null; company_url: string | null; industry: string | null; reason: string }>,
+      sample_competitor_rejections: [] as Array<{ name: string; headline: string; company: string | null; matched_pattern: string }>,
     };
     // Cap diagnostic sample arrays to keep the row small (was 50 each → ~50KB rows).
     const SAMPLE_CAP = 5;
