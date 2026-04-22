@@ -308,11 +308,16 @@ export default function Contacts() {
   };
 
   const tierCounts = useMemo(() => {
-    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0, pending_approval: 0 };
+    const counts = { hot: 0, warm: 0, cold: 0, not_interested: 0, meeting_booked: 0, pending_approval: 0, approved_total: 0 };
     contacts.forEach((c) => {
+      const approval = (c as any).approval_status;
+      if (approval === 'pending') {
+        counts.pending_approval++;
+        return; // Exclude pending leads from all other tier/status counts
+      }
+      counts.approved_total++;
       if (c.lead_status === 'not_interested') counts.not_interested++;
       if (c.lead_status === 'meeting_booked') counts.meeting_booked++;
-      if ((c as any).approval_status === 'pending') counts.pending_approval++;
       if (c.relevance_tier in counts) (counts as any)[c.relevance_tier]++;
     });
     return counts;
