@@ -7,9 +7,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Users, Radio, Megaphone, MessageSquare, Eye, Hash,
   Copy, Check, ExternalLink, Shield, Database, Activity,
-  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings, LogIn
+  Search, ChevronDown, ChevronUp, Mail, Globe, Flame, Settings, LogIn, GitBranch
 } from "lucide-react";
 import { toast } from "sonner";
+import { RunsTable } from "@/components/admin/runs/RunsTable";
 
 // ── Types ──
 interface TabDef {
@@ -159,6 +160,7 @@ export default function AdminDashboard() {
     { id: "campaigns", label: "Campaigns", icon: <Megaphone className="w-4 h-4" />, count: campaigns.length },
     { id: "contacts", label: "Contacts", icon: <Users className="w-4 h-4" />, count: contacts.length },
     { id: "agents", label: "Signal Agents", icon: <Radio className="w-4 h-4" />, count: agents.length },
+    { id: "runs", label: "Agent Runs", icon: <GitBranch className="w-4 h-4" /> },
     { id: "reddit", label: "Reddit Mentions", icon: <MessageSquare className="w-4 h-4" />, count: redditMentions.length },
     { id: "x", label: "X Mentions", icon: <Globe className="w-4 h-4" />, count: xMentions.length },
     { id: "notifications", label: "Notifications", icon: <Mail className="w-4 h-4" />, count: notifications.length },
@@ -244,6 +246,7 @@ export default function AdminDashboard() {
         {activeTab === "campaigns" && <CampaignsTable data={filterData(campaigns)} />}
         {activeTab === "contacts" && <ContactsTable data={filterData(contacts)} />}
         {activeTab === "agents" && <AgentsTable data={filterData(agents)} />}
+        {activeTab === "runs" && <RunsTable />}
         {activeTab === "reddit" && <RedditTable data={filterData(redditMentions)} />}
         {activeTab === "x" && <XTable data={filterData(xMentions)} />}
         {activeTab === "notifications" && <NotificationsTable data={filterData(notifications)} />}
