@@ -822,7 +822,7 @@ export default function Contacts() {
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
-                      <td style={{ left: 40, width: 220 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-border/50">
+                      <td style={{ left: 40, width: 220, minWidth: 220, maxWidth: 220 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-border/50">
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
