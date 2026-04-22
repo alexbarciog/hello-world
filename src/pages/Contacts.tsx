@@ -818,7 +818,7 @@ export default function Contacts() {
                     const cLists = getContactListNames(c.id);
                     return (
                     <tr key={c.id} className="group hover:bg-muted/20 transition-colors">
-                      <td className="sticky left-0 z-10 bg-card group-hover:bg-[hsl(var(--muted))] w-10 px-4 py-3 border-b border-border/50">
+                      <td style={{ width: 40, minWidth: 40, maxWidth: 40 }} className="sticky left-0 z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-4 py-3 border-b border-border/50">
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
