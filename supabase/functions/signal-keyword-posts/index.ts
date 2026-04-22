@@ -1383,6 +1383,13 @@ Deno.serve(async (req) => {
         // ── Company-level ICP gate (HIGH_PRECISION only) ──
         let enrichedCompanyForInsert: EnrichedCompany | null = null;
         if (isHighPrecision) {
+          const seller = looksLikeAgencySeller(author);
+          if (seller.seller) {
+            pipelineStats.company_icp_mismatch++;
+            console.log(`[AGENCY_SELLER] 🚫 ${lpid}: ${(author.headline||'').slice(0,80)} — matched: "${seller.matched}"`);
+            keywordSkipped.rejected++;
+            continue;
+          }
           const gate = await companyIcpGate(
             author, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
             icp.industries, idealLeadDescription, business_context || '',
