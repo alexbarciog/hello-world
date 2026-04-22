@@ -1449,6 +1449,15 @@ Deno.serve(async (req) => {
         matchedPhrase,
       }));
 
+      // Build a quick lookup so we can attach author + post URL to AI samples.
+      const survivorById = new Map<string, typeof survivors[number]>();
+      for (const s of survivors) {
+        const id = s.post.social_id || s.post.id || s.post.provider_id;
+        if (id) survivorById.set(id, s);
+      }
+      const buildPostUrl = (post: any): string | null =>
+        post.url || post.share_url || post.permalink || (post.id ? `https://www.linkedin.com/feed/update/${post.id}` : null);
+
       pipelineStats.sent_to_ai += postsForAI.length;
 
       const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription);
@@ -1457,6 +1466,30 @@ Deno.serve(async (req) => {
       for (const p of postsForAI) {
         const cls = intentResults.get(p.id);
         const rejectedCls = intentResults.get(`rejected:${p.id}`);
+        const surv = survivorById.get(p.id);
+        const author = surv?.author ?? {};
+        const postUrl = surv ? buildPostUrl(surv.post) : null;
+        const authorName = [author.first_name, author.last_name].filter(Boolean).join(' ').trim() || author.name || author.full_name || '—';
+        const authorHeadline = author.headline || author.title || '';
+        const authorCompany = author.company || author.company_name || null;
+        const authorLinkedinUrl = author.linkedin_url || author.public_profile_url || author.url || null;
+
+        // Always log to sample_ai_sent (cap)
+        if (pipelineStats.sample_ai_sent.length < SAMPLE_CAP) {
+          pipelineStats.sample_ai_sent.push({
+            name: authorName,
+            headline: authorHeadline,
+            company: authorCompany,
+            linkedin_url: authorLinkedinUrl,
+            postSample: p.text.substring(0, 220),
+            postUrl,
+            matched_keyword: keyword,
+            intent_score: cls?.intent_score ?? rejectedCls?.intent_score ?? null,
+            is_buyer: cls?.is_buyer ?? rejectedCls?.is_buyer ?? null,
+            reason: cls?.reason ?? rejectedCls?.reason ?? null,
+          });
+        }
+
         if (cls) {
           if (cls.reason === 'ai_fallback' || cls.reason === 'ai_error' || cls.reason === 'ai_no_response' || cls.reason === 'ai_missing_response' || cls.reason === 'no_ai_key_default') {
             pipelineStats.ai_fallback_used++;
@@ -1475,7 +1508,11 @@ Deno.serve(async (req) => {
           }
           if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 160),
+              name: authorName,
+              headline: authorHeadline,
+              company: authorCompany,
+              postSample: p.text.substring(0, 220),
+              postUrl,
               is_buyer: rejectedCls.is_buyer,
               intent_score: rejectedCls.intent_score,
               reason: rejectedCls.reason,
@@ -1485,13 +1522,18 @@ Deno.serve(async (req) => {
           pipelineStats.rejected_ai_not_buyer++;
           if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_ai_rejections.push({
-              postSample: p.text.substring(0, 160),
+              name: authorName,
+              headline: authorHeadline,
+              company: authorCompany,
+              postSample: p.text.substring(0, 220),
+              postUrl,
               is_buyer: false,
               intent_score: 0,
               reason: 'no_ai_response_for_post',
             });
           }
         }
+      }
       }
 
       const qualifiedSurvivors = survivors.filter(({ post }) => {
