@@ -1225,6 +1225,14 @@ export default function Contacts() {
         onCreated={() => { fetchData(); setSelectedIds(new Set()); }}
       />
 
+      {/* ── Import from Sales Navigator Dialog ── */}
+      <ImportSalesNavDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        lists={lists}
+        onImported={fetchData}
+      />
+
       {/* ── Book Meeting Dialog ── */}
       <BookMeetingDialog
         open={!!bookMeetingContact}
