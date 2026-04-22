@@ -797,13 +797,13 @@ export default function Contacts() {
                         </div>
                       )}
                     </th>
-                    <th style={{ left: 40, width: 220 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
+                    <th style={{ left: 40, width: 220, minWidth: 220, maxWidth: 220 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
                       Contact
                     </th>
-                    <th style={{ left: 260, width: 180 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border">
+                    <th style={{ left: 260, width: 180, minWidth: 180, maxWidth: 180 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border">
                       Signal
                     </th>
-                    <th style={{ left: 440, width: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
+                    <th style={{ left: 440, width: 90, minWidth: 90, maxWidth: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                       Score
                     </th>
                     {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
