@@ -712,7 +712,7 @@ export default function Contacts() {
             )}
             {/* ── Desktop table ── */}
             <div className="hidden md:block border-x border-border overflow-x-auto bg-card">
-              <table className="w-full border-separate border-spacing-0">
+              <table className="border-separate border-spacing-0" style={{ minWidth: '100%' }}>
                 <thead>
                   <tr>
                     <th className="sticky left-0 z-20 bg-[hsl(var(--muted))] w-10 px-4 py-3 relative border-b border-border">
