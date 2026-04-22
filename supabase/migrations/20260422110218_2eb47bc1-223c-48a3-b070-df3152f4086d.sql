@@ -1,0 +1,1 @@
+DELETE FROM public.processed_posts WHERE agent_id = '16a74b6b-5f6f-4f0c-b5b8-43cf72e2304d';
