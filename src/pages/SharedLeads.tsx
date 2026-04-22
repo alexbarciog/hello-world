@@ -245,7 +245,7 @@ export default function SharedLeads() {
                                   className="shrink-0 hover:opacity-70 transition-opacity"
                                   title={isAuthed ? "Open LinkedIn profile" : "Sign up to view"}
                                 >
-                                  <LinkedInIcon className="w-3.5 h-3.5" />
+                                  <LinkedInIcon />
                                 </button>
                               )}
                             </div>
