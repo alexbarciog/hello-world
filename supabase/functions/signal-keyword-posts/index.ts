@@ -787,7 +787,7 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
       const aiData = await res.json();
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
-        batch.forEach(p => results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_no_response', signal_type: 'unknown' }));
+        batch.forEach(p => results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_no_response_rejected', signal_type: 'not_a_buyer' }));
         continue;
       }
 
