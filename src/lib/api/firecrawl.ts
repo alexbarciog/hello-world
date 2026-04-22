@@ -5,6 +5,7 @@ export type ScrapedSiteData = {
   description: string;
   industry: string;
   language: string;
+  markdown: string;
 };
 
 type FirecrawlMetadata = {
@@ -183,7 +184,7 @@ export async function scrapeWebsite(url: string): Promise<ScrapedSiteData> {
   const industry = inferIndustry(contentText || title);
   const language = inferLanguage(contentText, locale);
 
-  return { companyName, description, industry, language };
+  return { companyName, description, industry, language, markdown };
 }
 
 export { INDUSTRY_LIST };
