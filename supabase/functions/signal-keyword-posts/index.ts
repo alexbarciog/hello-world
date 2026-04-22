@@ -1504,7 +1504,7 @@ Deno.serve(async (req) => {
       }
 
         // ── End-of-page check: stop paginating if we hit threshold or no cursor ──
-        console.log(`[KEYWORD] "${keyword}" p${page + 1}: +${keywordInserted - (page === 0 ? 0 : keywordInserted)} this page, ${keywordInserted} total leads`);
+        console.log(`[KEYWORD] "${keyword}" p${page + 1}: ${keywordInserted} total leads so far`);
         if (keywordInserted >= STARVED_THRESHOLD) {
           console.log(`[KEYWORD] "${keyword}": hit threshold (${keywordInserted} >= ${STARVED_THRESHOLD}) — no pagination needed`);
           break pageLoop;
