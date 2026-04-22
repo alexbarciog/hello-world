@@ -478,6 +478,34 @@ function generatePhraseVariants(keyword: string): string[] {
   return [...new Set(variants)];
 }
 
+/**
+ * Fuzzy phrase match — punctuation-tolerant token match.
+ * Normalizes both sides (lowercase, strip punctuation, collapse whitespace),
+ * then verifies every token in `phrase` appears in `text` within a sliding
+ * window of `tokens.length + 3`.
+ *
+ * Returns true for "ecommerce growth" vs "e-commerce reflects a broader growth".
+ */
+function fuzzyPhraseMatch(text: string, phrase: string): boolean {
+  const normalize = (s: string) =>
+    (s || '').toLowerCase().replace(/[\-.'’,;:!?()\[\]"]/g, ' ').replace(/\s+/g, ' ').trim();
+  const normText = normalize(text);
+  const normPhrase = normalize(phrase);
+  if (!normText || !normPhrase) return false;
+  // Quick literal hit on normalized text
+  if (normText.includes(normPhrase)) return true;
+  const phraseTokens = normPhrase.split(' ').filter(t => t.length >= 2);
+  if (phraseTokens.length === 0) return false;
+  const textTokens = normText.split(' ');
+  const windowSize = phraseTokens.length + 3;
+  for (let i = 0; i <= textTokens.length - 1; i++) {
+    const windowEnd = Math.min(i + windowSize, textTokens.length);
+    const window = new Set(textTokens.slice(i, windowEnd));
+    if (phraseTokens.every(pt => window.has(pt))) return true;
+  }
+  return false;
+}
+
 function preFilterPost(
   postText: string,
   keyword: string,
@@ -497,7 +525,9 @@ function preFilterPost(
   // In HIGH_PRECISION mode we keep the strict phrase guard to avoid garbage,
   // but require a minimum post length so the AI has something to work with.
   const phraseVariants = generatePhraseVariants(keyword);
-  const matchedPhrase = phraseVariants.find(phrase => text.includes(phrase));
+  // Use fuzzy match (punctuation + token-window tolerant) instead of literal includes.
+  // This makes "ecommerce growth" match "e-commerce ... broader growth".
+  const matchedPhrase = phraseVariants.find(phrase => fuzzyPhraseMatch(postText, phrase));
 
   if (!matchedPhrase) {
     if (isHighPrecision) {
@@ -749,15 +779,15 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
       if (!res.ok) {
         const errText = await res.text();
         console.error(`[AI] Intent classifier HTTP ${res.status}: ${errText.slice(0, 200)}`);
-        // On AI failure, accept all with medium score
-        batch.forEach(p => results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_fallback', signal_type: 'unknown' }));
+        // STRICT: on AI failure, REJECT (default-deny). Quality > volume.
+        batch.forEach(p => results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_fallback_rejected', signal_type: 'not_a_buyer' }));
         continue;
       }
 
       const aiData = await res.json();
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
-        batch.forEach(p => results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_no_response', signal_type: 'unknown' }));
+        batch.forEach(p => results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_no_response_rejected', signal_type: 'not_a_buyer' }));
         continue;
       }
 
@@ -828,13 +858,13 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
       // Any post not in AI response — accept with medium score
       for (const p of batch) {
         if (!classifications.some((c: any) => c.id === p.id) && !results.has(p.id)) {
-          results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_missing_response', signal_type: 'unknown' });
+          results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_missing_response_rejected', signal_type: 'not_a_buyer' });
         }
       }
 
     } catch (e) {
       console.error('[AI] Intent classifier error:', e);
-      batch.forEach(p => results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_error', signal_type: 'unknown' }));
+      batch.forEach(p => results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_error_rejected', signal_type: 'not_a_buyer' }));
     }
   }
 
@@ -966,6 +996,11 @@ Deno.serve(async (req) => {
       min_intent_score: MIN_INTENT_SCORE,
       already_in_contacts: 0,
       inserted: 0,
+      // Pagination + fuzzy + strict-buyer instrumentation
+      fuzzy_filter_passed: 0,
+      strict_buyer_rejected: 0,
+      pagination_triggered_keywords: 0,
+      pagination_pages_fetched: 0,
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
       sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
@@ -1019,16 +1054,37 @@ Deno.serve(async (req) => {
       // Heartbeat so the reaper doesn't think we're stuck.
       await heartbeat(supabase, _run_id, _task_key);
 
-      // ── Step 1: Fetch ONE page (~25 posts). Bandwidth-first: stop paginating. ──
-      // Real intent phrases rarely have more than ~25 high-quality matches per week,
-      // and going past page 1 mostly returns noise — at the cost of ~50 KB per page.
-      const keywordPosts: any[] = [];
+      // ── Per-keyword pagination loop ──
+      // Fetch page 1 first. If < 3 leads were saved for this keyword, fetch page 2.
+      // Repeat for page 3 if still under-yielding. Hard cap at page 3 to bound Unipile cost.
+      const MAX_PAGES_PER_KEYWORD = 3;
+      const STARVED_THRESHOLD = 3;
       let cursor: string | null = null;
-      const MAX_PAGES = 1;
-      const TARGET_POSTS = 25;
+      let keywordInserted = 0;
+      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, earlyDedup: 0, excluded: 0, ownCompany: 0, duplicate: 0, rejected: 0, irrelevant: 0 };
+      let totalFetchedThisKeyword = 0;
+      let totalUniqueThisKeyword = 0;
+      let totalPreFilteredThisKeyword = 0;
+      let totalQualifiedThisKeyword = 0;
+      let paginationTriggeredForThisKeyword = false;
 
-      try {
-        for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
+      pageLoop: for (let page = 0; page < MAX_PAGES_PER_KEYWORD; page++) {
+        if (!hasTime()) break;
+        if (!runHasBudget()) break;
+
+        // Track pagination diagnostics: any page beyond the first counts as starved-fallback.
+        if (page > 0) {
+          pipelineStats.pagination_pages_fetched++;
+          if (!paginationTriggeredForThisKeyword) {
+            paginationTriggeredForThisKeyword = true;
+            pipelineStats.pagination_triggered_keywords++;
+          }
+          console.log(`[PAGINATION] keyword "${keyword}": only ${keywordInserted} lead(s) saved — fetching page ${page + 1}`);
+        }
+
+        // ── Step 1: Fetch ONE page (~25 posts) ──
+        const keywordPosts: any[] = [];
+        try {
           const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 25 };
           if (cursor) searchBody.cursor = cursor;
 
@@ -1052,20 +1108,18 @@ Deno.serve(async (req) => {
             pipelineStats.unipile_errors++;
             if (res?.status === 429) {
               consecutive429s++;
-              // Circuit breaker: 3 consecutive 429s → 30s cool-off
               if (consecutive429s >= 3 && hasTime()) {
                 console.warn(`[CIRCUIT-BREAKER] ${consecutive429s} consecutive 429s — sleeping 30s`);
                 await delay(30_000);
                 consecutive429s = 0;
               }
             }
-            break;
+            break pageLoop;
           }
-          consecutive429s = 0; // success — reset circuit breaker
+          consecutive429s = 0;
           const data = await res.json();
           const items = data.items || data.results || [];
           if (items.length === 0) pipelineStats.unipile_empty_responses++;
-          // BRUTAL LOG: Step 2 — zero response audit
           if (items.length === 0) {
             console.error('[UNIPILE_ZERO]', JSON.stringify({
               endpoint: searchUrl,
@@ -1075,24 +1129,22 @@ Deno.serve(async (req) => {
             }));
           }
           keywordPosts.push(...items);
-          console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
+          console.log(`[KEYWORD: "${keyword}"] p${page + 1}: fetched ${items.length} posts. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}.`);
           cursor = data.cursor || data.next_cursor || null;
-          if (!cursor || items.length === 0) break;
-          // Inter-page spacing
-          if (page < MAX_PAGES - 1 && hasTime()) await delay(1200 + Math.floor(Math.random() * 600));
+          if (items.length === 0) break pageLoop;
+        } catch (e) {
+          console.error(`Keyword search "${keyword}" p${page + 1}:`, e);
+          pipelineStats.unipile_errors++;
+          break pageLoop;
         }
-      } catch (e) {
-        console.error(`Keyword search "${keyword}":`, e);
-        pipelineStats.unipile_errors++;
-      }
 
-      // Inter-keyword spacing — generous to stay well under Unipile's per-account search budget.
-      // Target: ~12 keywords/min ceiling per account.
-      if (hasTime()) await delay(4000 + Math.floor(Math.random() * 2000));
+        // Inter-page spacing inside the keyword loop
+        if (hasTime()) await delay(1500 + Math.floor(Math.random() * 800));
 
-      pipelineStats.total_posts_fetched += keywordPosts.length;
+        pipelineStats.total_posts_fetched += keywordPosts.length;
+        totalFetchedThisKeyword += keywordPosts.length;
 
-      // ── Step 2: Dedupe posts ──
+
       // ── Step 2: Dedupe posts (in-run + cross-run) ──
       const uniquePosts = keywordPosts.filter(p => {
         const id = p.social_id || p.id || p.provider_id;
@@ -1111,10 +1163,13 @@ Deno.serve(async (req) => {
       const dupsThisKeyword = keywordPosts.length - uniquePosts.length;
       pipelineStats.duplicates_removed += dupsThisKeyword;
       pipelineStats.posts_after_dedup += uniquePosts.length;
+      totalUniqueThisKeyword += uniquePosts.length;
 
       if (uniquePosts.length === 0) {
-        console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched, 0 unique — skipping`);
-        continue;
+        console.log(`[KEYWORD] "${keyword}" p${page + 1}: ${keywordPosts.length} fetched, 0 unique`);
+        // Continue to next page if cursor available and still starved
+        if (!cursor || keywordInserted >= STARVED_THRESHOLD) break pageLoop;
+        continue pageLoop;
       }
 
       // ── Step 3: PRE-FILTER — phrase match + country + industry ──
@@ -1174,6 +1229,7 @@ Deno.serve(async (req) => {
 
         preFilterStats.passed++;
         pipelineStats.passed_prefilter++;
+        if (filterResult.matchedPhrase) pipelineStats.fuzzy_filter_passed++;
         preFilteredPosts.push({ post, matchedPhrase: filterResult.matchedPhrase! });
       }
 
@@ -1182,9 +1238,14 @@ Deno.serve(async (req) => {
         console.warn(`[KEYWORD: "${keyword}"] ALL ${uniquePosts.length} posts rejected at pre-filter. Check phrase variants.`);
       }
 
-      console.log(`[PRE-FILTER] "${keyword}": ${uniquePosts.length} → ${preFilteredPosts.length} passed (rejected: phrase=${preFilterStats.no_phrase} country=${preFilterStats.wrong_country} industry=${preFilterStats.wrong_industry})`);
+      console.log(`[PRE-FILTER] "${keyword}" p${page + 1}: ${uniquePosts.length} → ${preFilteredPosts.length} passed (rejected: phrase=${preFilterStats.no_phrase} country=${preFilterStats.wrong_country} industry=${preFilterStats.wrong_industry})`);
+      totalPreFilteredThisKeyword += preFilteredPosts.length;
 
-      if (preFilteredPosts.length === 0) continue;
+      if (preFilteredPosts.length === 0) {
+        // Try next page if cursor available and still starved
+        if (!cursor || keywordInserted >= STARVED_THRESHOLD) break pageLoop;
+        continue pageLoop;
+      }
 
       // ── Step 4: AI INTENT CLASSIFIER — structured scoring ──
       const postsForAI = preFilteredPosts.map(({ post, matchedPhrase }) => {
@@ -1219,6 +1280,10 @@ Deno.serve(async (req) => {
           } else {
             pipelineStats.rejected_ai_low_score++;
           }
+          // Count strict-buyer rejections (the new default-deny path)
+          if (typeof rejectedCls.reason === 'string' && rejectedCls.reason.endsWith('_rejected')) {
+            pipelineStats.strict_buyer_rejected++;
+          }
           if (pipelineStats.sample_ai_rejections.length < SAMPLE_CAP) {
             pipelineStats.sample_ai_rejections.push({
               postSample: p.text.substring(0, 160),
@@ -1245,11 +1310,10 @@ Deno.serve(async (req) => {
         return intentResults.has(id);
       });
 
-      console.log(`[AI] "${keyword}": ${preFilteredPosts.length} → ${qualifiedPosts.length} qualified (score >= ${MIN_INTENT_SCORE})`);
+      console.log(`[AI] "${keyword}" p${page + 1}: ${preFilteredPosts.length} → ${qualifiedPosts.length} qualified (score >= ${MIN_INTENT_SCORE})`);
+      totalQualifiedThisKeyword += qualifiedPosts.length;
 
       // ── Step 5: Process qualified posts — early dedup → full profile → insert ──
-      let keywordInserted = 0;
-      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, earlyDedup: 0, excluded: 0, ownCompany: 0, duplicate: 0, rejected: 0, irrelevant: 0 };
 
       for (const { post, matchedPhrase } of qualifiedPosts) {
         if (!hasTime()) break;
@@ -1439,7 +1503,22 @@ Deno.serve(async (req) => {
         }
       }
 
-      console.log(`[KEYWORD] "${keyword}": ${keywordPosts.length} fetched → ${uniquePosts.length} unique → ${preFilteredPosts.length} pre-filtered → ${qualifiedPosts.length} AI-qualified → ${keywordInserted} inserted (skip: noAuthor=${keywordSkipped.noAuthor} dupAuthor=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} irrel=${keywordSkipped.irrelevant} dup=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
+        // ── End-of-page check: stop paginating if we hit threshold or no cursor ──
+        console.log(`[KEYWORD] "${keyword}" p${page + 1}: ${keywordInserted} total leads so far`);
+        if (keywordInserted >= STARVED_THRESHOLD) {
+          console.log(`[KEYWORD] "${keyword}": hit threshold (${keywordInserted} >= ${STARVED_THRESHOLD}) — no pagination needed`);
+          break pageLoop;
+        }
+        if (!cursor) {
+          console.log(`[KEYWORD] "${keyword}": no more cursor available — stopping pagination`);
+          break pageLoop;
+        }
+      } // end pageLoop
+
+      // Inter-keyword spacing — generous to stay well under Unipile's per-account search budget.
+      if (hasTime()) await delay(4000 + Math.floor(Math.random() * 2000));
+
+      console.log(`[KEYWORD] "${keyword}": ${totalFetchedThisKeyword} fetched → ${totalUniqueThisKeyword} unique → ${totalPreFilteredThisKeyword} pre-filtered → ${totalQualifiedThisKeyword} AI-qualified → ${keywordInserted} inserted (skip: noAuthor=${keywordSkipped.noAuthor} dupAuthor=${keywordSkipped.dupAuthor} earlyDedup=${keywordSkipped.earlyDedup} ownCo=${keywordSkipped.ownCompany} excl=${keywordSkipped.excluded} irrel=${keywordSkipped.irrelevant} dup=${keywordSkipped.duplicate} reject=${keywordSkipped.rejected})`);
     }
 
     // ── Save all processed post IDs for cross-run dedup ──
