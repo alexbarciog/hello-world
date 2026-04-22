@@ -1,68 +1,79 @@
 
 
-# Import leads from Sales Navigator (paste search URL)
+# Share leads via link → public read-only Contacts clone with login wall
 
-Add an **Import** button in the Contacts page header that opens a dialog where the user pastes a Sales Navigator **lead search URL** and picks (or names) a list. The backend uses Unipile's LinkedIn Sales Navigator search to walk pages of results and insert each profile as a contact.
+Add a **Share** button to the Contacts page selection bar that creates a share token covering the selected leads and copies a public link like `/shared/leads/<token>`. Anyone with the link gets a Contacts-page clone (sidebar + table) showing only those leads. All interactions (sidebar nav, LinkedIn click, signal click) trigger a login/signup popup. After signup, the shared leads are automatically copied into the new user's organization.
 
-## UX
+## Database
 
-**New "Import" button** in the Contacts page header (next to the existing actions on line 500), Plus icon + label. Visible only on the `all` tab so it doesn't clutter filtered views.
+New migration creates two tables.
 
-**Dialog: "Import from Sales Navigator"**
-1. Big textarea for the Sales Nav search URL, with a one-line example placeholder (`https://www.linkedin.com/sales/search/people?...`).
-2. Helper text: "Paste a Sales Navigator lead search URL. We'll import up to 500 leads from the first ~20 result pages."
-3. Slider/select: **Max leads to import** — 50 / 100 / 250 / 500 (default 100). Caps protect Unipile budget.
-4. **Destination list** — a select listing the user's existing lists + an "Create new list…" option that reveals a name input. Default = create new with auto-name `Sales Nav — <today>`.
-5. URL validation: must start with `https://www.linkedin.com/sales/search/` (regex). Error inline if not.
-6. Primary button: **Import** (disabled while running, shows spinner + "Importing… X / Y").
-7. On success: toast `Imported N leads (skipped M duplicates)`, close dialog, refetch contacts.
+**`shared_lead_links`** — one row per share
+- `id uuid pk`, `token text unique not null default encode(gen_random_bytes(24), 'hex')`
+- `created_by uuid not null` (sharer's user_id), `organization_id uuid not null`
+- `name text` (auto: "Shared by <name> · 12 leads"), `lead_count int not null`
+- `expires_at timestamptz` (default `now() + 30 days`), `revoked boolean default false`
+- `created_at timestamptz default now()`
+- RLS: owner can `select/update/delete` own rows; service role full access. **No public select** — public access goes through the SECURITY DEFINER RPC below.
 
-The dialog is non-blocking on background — once it returns, results show in the table immediately.
+**`shared_lead_link_contacts`** — join table
+- `id uuid pk`, `link_id uuid not null`, `contact_id uuid not null`, `created_at timestamptz default now()`
+- Unique `(link_id, contact_id)`
+- RLS: service role only. Reads happen via RPC.
 
-## Backend: new edge function `import-sales-nav`
+**RPC `get_shared_leads(_token text)`** — `SECURITY DEFINER`, returns the masked, read-safe contact rows for a valid (non-revoked, non-expired) token. Columns: `id, first_name, last_name, title, company, industry, linkedin_url, signal, signal_post_url, ai_score, signal_a_hit, signal_b_hit, signal_c_hit, relevance_tier, lead_status, imported_at, list_name`. Excludes `email`, `intent_insights`, `personality_prediction`, `linkedin_profile_id`, internal IDs unrelated to display. Granted `EXECUTE` to `anon` and `authenticated`.
 
-Lives in `supabase/functions/import-sales-nav/index.ts`. Registered in `supabase/config.toml` with `verify_jwt = false` (we validate the JWT in code, like other Unipile-touching functions).
+**RPC `claim_shared_leads(_token text)`** — `SECURITY DEFINER`, callable by `authenticated`. Validates the token, then for each linked contact inserts a copy into `contacts` scoped to the caller's `current_organization_id` (skipping duplicates by `linkedin_url`), and assigns them to a new list named "Shared with me · <date>". Returns `{ inserted: int, list_id: uuid }`.
 
-**Input** (JSON body):
-- `search_url` (string, required) — Sales Nav search URL
-- `max_leads` (number, default 100, max 500)
-- `list_id` (uuid, optional) — existing list to add to
-- `new_list_name` (string, optional) — create this list and add leads to it
+## Routes & files
 
-**Flow**:
-1. Validate JWT, resolve `user_id` + `current_organization_id` from `profiles`.
-2. Look up the org's `unipile_account_id` from `organizations`.
-3. If `new_list_name` is provided, insert a row into `lists` and use that id; else use `list_id`.
-4. Call Unipile classic-style search with the Sales Navigator API:
-   - `POST https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${account_id}`
-   - body: `{ api: 'sales_navigator', url: search_url, limit: 50 }` (Unipile resolves the search URL server-side and returns paginated results).
-5. Page through results using the returned `cursor` until either `max_leads` reached or no `cursor`. Hard cap at 20 pages.
-6. For each profile returned (`items[]`):
-   - Skip if `linkedin_profile_id` already exists in `contacts` for this `organization_id` (single batched `select` per page).
-   - Insert into `contacts` with:
-     - `first_name`, `last_name`, `title` (headline), `company` (current company name), `industry` (if present), `linkedin_url` (built from `public_id`/`public_identifier`), `linkedin_profile_id`
-     - `relevance_tier: 'cold'`, `approval_status: 'auto_approved'`, `signal: 'Imported from Sales Navigator'`, `signal_a_hit: true`, `ai_score: 1`
-     - `user_id`, `organization_id`
-   - On success, insert a `contact_lists` row linking the new contact to the chosen list.
-7. Track `inserted` and `duplicates` counters; return them in the response.
+**New route** `/shared/leads/:token` → `src/pages/SharedLeads.tsx` (no `AuthGuard`). Renders inside a new `PublicLayout` (sidebar clone + content area).
 
-**Auth header**: standard `Authorization: Bearer <jwt>`. We use `createClient(SUPABASE_URL, SERVICE_ROLE_KEY)` server-side after JWT verification to bypass RLS for the bulk insert.
+**New components**
+- `src/components/shared/PublicDashboardLayout.tsx` — visual clone of `DashboardLayout` (logo, nav items, pricing card, help/support). Every nav item, every bottom button, and the user slot all call `requireAuth()` instead of navigating. Bottom user slot is replaced by a single **"Login / Sign up"** button. No `useSubscription`, no `useAdminCheck`, no Supabase user fetch.
+- `src/components/shared/AuthPromptDialog.tsx` — shadcn `Dialog` with copy "Create a free Intentsly account to view this lead's profile and signal." Two buttons: **Sign up free** → `/register?redirect=/shared/leads/<token>&claim=1`, **Log in** → `/login?redirect=/shared/leads/<token>&claim=1`. Stores `intentsly_pending_share_token` in `localStorage` so the claim survives the OAuth/email round-trip.
+- `src/components/contacts/ShareLeadsDialog.tsx` — opens from the Contacts selection bar; calls `supabase.functions.invoke('create-shared-lead-link', { selected_ids })`, shows the resulting URL with a Copy button.
 
-**Rate-friendly**: 250 ms delay between Unipile pages; 30 s overall timeout via `AbortController`.
+**Modified**
+- `src/pages/Contacts.tsx` — add a **Share** button (Share2 icon) in the desktop selection bar at line ~545, visible only when `selectedIds.size > 0`. Wires `showShareDialog` state.
+- `src/App.tsx` — add `<Route path="/shared/leads/:token" element={<SharedLeads />} />` (no guard).
+- `src/pages/Login.tsx` and `src/pages/Register.tsx` — read `redirect` and `claim` from URL params; after successful auth, if `claim=1` and a `pending_share_token` is present, invoke `claim-shared-leads` then `navigate(redirect)`. Existing session restore (`localStorage`-backed Supabase auth) already keeps users logged in across reloads, so requirement #10 is satisfied.
 
-## Files
+## Edge functions
 
-**New**:
-- `supabase/functions/import-sales-nav/index.ts` — edge function
-- `src/components/contacts/ImportSalesNavDialog.tsx` — the dialog component
+- **`create-shared-lead-link`** (`verify_jwt = false`, JWT-validate in code): body `{ contact_ids: uuid[], expires_in_days?: number }`. Verifies caller owns each contact (org check), inserts a `shared_lead_links` row + N `shared_lead_link_contacts` rows, returns `{ token, url }`.
+- **`claim-shared-leads`** (`verify_jwt = false`, JWT-validate in code): body `{ token }`. Calls the `claim_shared_leads` RPC and returns its result.
 
-**Modified**:
-- `src/pages/Contacts.tsx` — add `Import` button in header (line ~500), wire `showImport` state + dialog mount; on success call `fetchData()`
-- `supabase/config.toml` — register `[functions.import-sales-nav]` with `verify_jwt = false`
+Public read of leads on the share page does **not** need an edge function — the page calls `supabase.rpc('get_shared_leads', { _token })` directly with the anon key. The RPC enforces token validity.
+
+## SharedLeads page behavior
+
+- On mount: `supabase.rpc('get_shared_leads', { _token })`. If empty/error → show "This share link is invalid or has expired" card.
+- Renders the **same table layout** as `/contacts` (avatar + initials, name, title, company, signal pill, AI score, tier badge, list name, imported time-ago). Reuses `Contact` type, `avatarColor`, `getInitials`, `timeAgo`, `LinkedInIcon`. **No** Approve/Reject, Book, Delete, AI Insights, Stop SDR, or Import buttons. **No** filters/tabs/pagination toolbar — single flat list.
+- Behavior:
+  - LinkedIn icon click → if logged in, `window.open(linkedin_url)`; else open `AuthPromptDialog`.
+  - Signal pill click → same gate. When logged in, opens `signal_post_url` in a new tab.
+  - Any sidebar nav button → `AuthPromptDialog`.
+  - Bottom "Login / Sign up" button → `/login?redirect=...&claim=1`.
+- Banner at top: "Shared with you · {N} leads. Sign up to save them to your account." with a **Save to my account** CTA (visible whether logged in or not). Logged-in users get an inline "Save to my account" that calls `claim-shared-leads` and toasts "Saved to your Contacts under list 'Shared with me · …'".
+
+## Auth + claim flow (requirements 9 & 10)
+
+1. User clicks **Sign up free** in the prompt → we set `localStorage.intentsly_pending_share_token = token` and navigate to `/register?redirect=/shared/leads/<token>&claim=1`.
+2. After `signUp` succeeds, Register reads `claim=1`, invokes `claim-shared-leads` with the stored token, clears the localStorage flag, then navigates to `redirect`.
+3. Supabase auth already persists the session in `localStorage` (`persistSession: true`, `autoRefreshToken: true` in `src/integrations/supabase/client.ts`). So on next visit, the `SharedLeads` page sees the user as logged in and skips the auth gate. No additional work needed for "keep session active".
+
+## Security notes
+
+- `shared_lead_links` rows are never directly readable by anon. Token validation lives inside `get_shared_leads` and `claim_shared_leads` (SECURITY DEFINER, with `revoked = false AND (expires_at IS NULL OR expires_at > now())` guard).
+- The RPC returns only display-safe columns — emails, internal IDs, AI insights, personality predictions are never exposed to anon.
+- Claim RPC scopes inserts to the caller's `current_organization_id` and dedupes by `linkedin_url` to prevent abuse.
+- Share token is 48 hex chars (192 bits) — unguessable.
 
 ## Out of scope
 
-- CSV upload, profile-URL list paste, AI scoring on import, email enrichment — explicitly skipped per your choices.
-- Deduping across organizations (we only dedupe within the current org).
-- Resuming an interrupted import — single-shot only; user can re-paste the same URL and dedup will skip already-imported leads.
+- Editing/revoking share links from a UI (DB columns exist; admin/UI later).
+- Email-gated sharing (recipient email restriction).
+- Mobile sidebar variant of the public layout — desktop layout reused on mobile via existing responsive classes; full mobile slide-in menu skipped.
+- Analytics on link views.
 
