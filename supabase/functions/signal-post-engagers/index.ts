@@ -251,9 +251,11 @@ function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
 }
-async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,dsn: string): Promise<any|null>{
+async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,dsn: string,forceFetch=false): Promise<any|null>{
   const norm = normalizeProfile({ ...item });
-  if(norm.first_name&&(norm.headline||norm.title)) return norm;
+  // In HP mode (forceFetch), always fetch the full profile so current_company is populated
+  // for company-level ICP enrichment. Engager payloads are too thin otherwise.
+  if(!forceFetch && norm.first_name&&(norm.headline||norm.title)) return norm;
   const id=item.public_identifier||item.provider_id||item.public_id||item.author_id;
   const numericOrUrn=item.id;
   const fetchId=id||(numericOrUrn&&!String(numericOrUrn).startsWith('urn:')&&!String(numericOrUrn).startsWith('ACo')?numericOrUrn:null);
@@ -363,14 +365,48 @@ async function companyMatchesICPDescription(
   } catch (e) { console.warn('[COMPANY_ICP] AI error:', e); cache.set(company.slug, true); return { matches: true, reason: 'error' }; }
 }
 
+// AI fallback when no company slug is extractable: classify based on headline + inline company.
+async function headlineMatchesICP(profile: any, icpIndustries: string[], idealLeadDescription: string, businessContext: string): Promise<{ matches: boolean; reason: string }> {
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) return { matches: true, reason: 'no AI key' };
+  const headline = String(profile?.headline || profile?.title || '').slice(0, 400);
+  const inlineCompany = String(profile?.company || profile?.current_company?.name || '').slice(0, 150);
+  if (!headline && !inlineCompany) return { matches: true, reason: 'no headline data' };
+  try {
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3-flash-preview',
+        messages: [
+          { role: 'system', content: `You decide if a LEAD's employer plausibly fits the user's ICP, using only the lead's headline and company name (the company's LinkedIn page could not be fetched).\n\nUSER'S BUSINESS: "${businessContext || 'N/A'}"\nICP TARGET INDUSTRIES: ${icpIndustries.length ? icpIndustries.join(', ') : '(none specified)'}\nIDEAL LEAD DESCRIPTION:\n"""\n${idealLeadDescription || '(none provided)'}\n"""\n\nReturn matches_icp=false ONLY when the headline + company CLEARLY signal an irrelevant employer. Otherwise return true.\n\nRespond ONLY via the tool call.` },
+          { role: 'user', content: `HEADLINE: ${headline}\nCOMPANY: ${inlineCompany || '(unknown)'}` },
+        ],
+        tools: [{ type: 'function', function: { name: 'check_lead_icp', description: 'Decide ICP match from headline.', parameters: { type: 'object', properties: { matches_icp: { type: 'boolean' }, reason: { type: 'string' } }, required: ['matches_icp', 'reason'], additionalProperties: false } } }],
+        tool_choice: { type: 'function', function: { name: 'check_lead_icp' } },
+      }),
+    });
+    if (!res.ok) { await res.text(); return { matches: true, reason: `HTTP ${res.status}` }; }
+    const data = await res.json();
+    const tc = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!tc) return { matches: true, reason: 'no tool call' };
+    const parsed = JSON.parse(tc.function.arguments);
+    return { matches: parsed.matches_icp !== false, reason: String(parsed.reason || '') };
+  } catch (e) { console.warn('[HEADLINE_ICP] AI error:', e); return { matches: true, reason: 'error' }; }
+}
+
 async function companyIcpGate(
   profile: any, accountId: string, apiKey: string, dsn: string,
   icpIndustries: string[], idealLeadDescription: string, businessContext: string,
   enrichCache: Map<string, EnrichedCompany | null>,
   aiCache: Map<string, boolean>,
-): Promise<{ verdict: 'accept_industry' | 'accept_ai' | 'reject' | 'skip_no_enrichment'; company: EnrichedCompany | null; reason: string }> {
+): Promise<{ verdict: 'accept_industry' | 'accept_ai' | 'accept_headline' | 'reject' | 'reject_headline'; company: EnrichedCompany | null; reason: string }> {
   const company = await enrichLeadCompany(profile, accountId, apiKey, dsn, enrichCache);
-  if (!company) return { verdict: 'skip_no_enrichment', company: null, reason: 'enrichment failed' };
+  if (!company) {
+    const hl = await headlineMatchesICP(profile, icpIndustries, idealLeadDescription, businessContext);
+    if (hl.matches) return { verdict: 'accept_headline', company: null, reason: `headline-fallback: ${hl.reason}` };
+    return { verdict: 'reject_headline', company: null, reason: `headline-fallback: ${hl.reason}` };
+  }
   if (icpIndustries.length > 0 && fuzzyIndustryMatch(company.industry, icpIndustries)) {
     return { verdict: 'accept_industry', company, reason: `industry "${company.industry}" matches ICP` };
   }
@@ -662,7 +698,7 @@ Deno.serve(async (req) => {
             if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
             if (pf === 'strong_pass') diag.strong_passes++;
             if (!hasBudget(pf)) { console.log(`[POST_ENG] own_posts budget reached`); break; }
-            const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+            const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, isHighPrecision);
             trackFetch(pf);
             if (!fullProfile) continue;
             const match = scoreProfileAgainstICP(fullProfile, icp);
@@ -678,8 +714,8 @@ Deno.serve(async (req) => {
             let enrichedCo: EnrichedCompany | null = null;
             if (isHighPrecision) {
               const gate = await companyIcpGate(fullProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
-              if (gate.verdict === 'reject') { diag.company_icp_mismatch++; captureRejected(fullProfile, 'company_icp_mismatch'); continue; }
-              if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+              if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') { diag.company_icp_mismatch++; captureRejected(fullProfile, 'company_icp_mismatch'); continue; }
+              if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
               else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
               enrichedCo = gate.company;
             }
@@ -792,7 +828,7 @@ Deno.serve(async (req) => {
               if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
               if (pf === 'strong_pass') diag.strong_passes++;
               if (!hasBudget(pf)) { console.log(`[POST_ENG] profile_engagers budget reached`); break; }
-              const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+              const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN, isHighPrecision);
               trackFetch(pf);
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
@@ -808,8 +844,8 @@ Deno.serve(async (req) => {
               let enrichedCo2: EnrichedCompany | null = null;
               if (isHighPrecision) {
                 const gate = await companyIcpGate(fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
-                if (gate.verdict === 'reject') { diag.company_icp_mismatch++; captureRejected(fp, 'company_icp_mismatch'); continue; }
-                if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+                if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') { diag.company_icp_mismatch++; captureRejected(fp, 'company_icp_mismatch'); continue; }
+                if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
                 else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
                 enrichedCo2 = gate.company;
               }
