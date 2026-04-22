@@ -1054,16 +1054,37 @@ Deno.serve(async (req) => {
       // Heartbeat so the reaper doesn't think we're stuck.
       await heartbeat(supabase, _run_id, _task_key);
 
-      // ── Step 1: Fetch ONE page (~25 posts). Bandwidth-first: stop paginating. ──
-      // Real intent phrases rarely have more than ~25 high-quality matches per week,
-      // and going past page 1 mostly returns noise — at the cost of ~50 KB per page.
-      const keywordPosts: any[] = [];
+      // ── Per-keyword pagination loop ──
+      // Fetch page 1 first. If < 3 leads were saved for this keyword, fetch page 2.
+      // Repeat for page 3 if still under-yielding. Hard cap at page 3 to bound Unipile cost.
+      const MAX_PAGES_PER_KEYWORD = 3;
+      const STARVED_THRESHOLD = 3;
       let cursor: string | null = null;
-      const MAX_PAGES = 1;
-      const TARGET_POSTS = 25;
+      let keywordInserted = 0;
+      let keywordSkipped = { noAuthor: 0, dupAuthor: 0, earlyDedup: 0, excluded: 0, ownCompany: 0, duplicate: 0, rejected: 0, irrelevant: 0 };
+      let totalFetchedThisKeyword = 0;
+      let totalUniqueThisKeyword = 0;
+      let totalPreFilteredThisKeyword = 0;
+      let totalQualifiedThisKeyword = 0;
+      let paginationTriggeredForThisKeyword = false;
 
-      try {
-        for (let page = 0; page < MAX_PAGES && hasTime() && keywordPosts.length < TARGET_POSTS; page++) {
+      pageLoop: for (let page = 0; page < MAX_PAGES_PER_KEYWORD; page++) {
+        if (!hasTime()) break;
+        if (!runHasBudget()) break;
+
+        // Track pagination diagnostics: any page beyond the first counts as starved-fallback.
+        if (page > 0) {
+          pipelineStats.pagination_pages_fetched++;
+          if (!paginationTriggeredForThisKeyword) {
+            paginationTriggeredForThisKeyword = true;
+            pipelineStats.pagination_triggered_keywords++;
+          }
+          console.log(`[PAGINATION] keyword "${keyword}": only ${keywordInserted} lead(s) saved — fetching page ${page + 1}`);
+        }
+
+        // ── Step 1: Fetch ONE page (~25 posts) ──
+        const keywordPosts: any[] = [];
+        try {
           const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 25 };
           if (cursor) searchBody.cursor = cursor;
 
@@ -1087,20 +1108,18 @@ Deno.serve(async (req) => {
             pipelineStats.unipile_errors++;
             if (res?.status === 429) {
               consecutive429s++;
-              // Circuit breaker: 3 consecutive 429s → 30s cool-off
               if (consecutive429s >= 3 && hasTime()) {
                 console.warn(`[CIRCUIT-BREAKER] ${consecutive429s} consecutive 429s — sleeping 30s`);
                 await delay(30_000);
                 consecutive429s = 0;
               }
             }
-            break;
+            break pageLoop;
           }
-          consecutive429s = 0; // success — reset circuit breaker
+          consecutive429s = 0;
           const data = await res.json();
           const items = data.items || data.results || [];
           if (items.length === 0) pipelineStats.unipile_empty_responses++;
-          // BRUTAL LOG: Step 2 — zero response audit
           if (items.length === 0) {
             console.error('[UNIPILE_ZERO]', JSON.stringify({
               endpoint: searchUrl,
@@ -1110,22 +1129,21 @@ Deno.serve(async (req) => {
             }));
           }
           keywordPosts.push(...items);
-          console.log(`[KEYWORD: "${keyword}"] Fetched ${items.length} posts from Unipile. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}. Page: ${page + 1}. Running total: ${keywordPosts.length}`);
+          console.log(`[KEYWORD: "${keyword}"] p${page + 1}: fetched ${items.length} posts. Cursor: ${data.cursor ?? data.next_cursor ?? 'none'}.`);
           cursor = data.cursor || data.next_cursor || null;
-          if (!cursor || items.length === 0) break;
-          // Inter-page spacing
-          if (page < MAX_PAGES - 1 && hasTime()) await delay(1200 + Math.floor(Math.random() * 600));
+          if (items.length === 0) break pageLoop;
+        } catch (e) {
+          console.error(`Keyword search "${keyword}" p${page + 1}:`, e);
+          pipelineStats.unipile_errors++;
+          break pageLoop;
         }
-      } catch (e) {
-        console.error(`Keyword search "${keyword}":`, e);
-        pipelineStats.unipile_errors++;
-      }
 
-      // Inter-keyword spacing — generous to stay well under Unipile's per-account search budget.
-      // Target: ~12 keywords/min ceiling per account.
-      if (hasTime()) await delay(4000 + Math.floor(Math.random() * 2000));
+        // Inter-page spacing inside the keyword loop
+        if (hasTime()) await delay(1500 + Math.floor(Math.random() * 800));
 
-      pipelineStats.total_posts_fetched += keywordPosts.length;
+        pipelineStats.total_posts_fetched += keywordPosts.length;
+        totalFetchedThisKeyword += keywordPosts.length;
+
 
       // ── Step 2: Dedupe posts ──
       // ── Step 2: Dedupe posts (in-run + cross-run) ──
