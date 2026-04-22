@@ -715,7 +715,7 @@ export default function Contacts() {
               <table className="border-separate border-spacing-0" style={{ minWidth: '100%' }}>
                 <thead>
                   <tr>
-                    <th className="sticky left-0 z-20 bg-[hsl(var(--muted))] w-10 px-4 py-3 relative border-b border-border">
+                    <th style={{ width: 40, minWidth: 40, maxWidth: 40 }} className="sticky left-0 z-20 bg-[hsl(var(--muted))] px-4 py-3 relative border-b border-border">
                       <input
                         type="checkbox"
                         checked={selectedIds.size > 0}
