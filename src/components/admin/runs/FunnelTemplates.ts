@@ -239,7 +239,7 @@ function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
     label: "AI buyer intent",
     count: passedAi,
     tone: "pass",
-    sampleKey: "sample_ai_passed",
+    sampleKey: "sample_ai_sent",
     sublabel: sentToAi > 0 ? `${sentToAi} sent to AI` : undefined,
   }));
   edges.push(passEdge(prev, "ai"));
