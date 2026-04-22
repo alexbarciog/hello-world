@@ -79,25 +79,37 @@ export function RunsTable() {
       if (error) throw error;
 
       const agentIds = Array.from(new Set((runRows ?? []).map((r) => r.agent_id)));
-      const orgIds = Array.from(
-        new Set((runRows ?? []).map((r) => r.organization_id).filter(Boolean) as string[]),
-      );
 
-      const [{ data: agents }, { data: orgs }] = await Promise.all([
-        agentIds.length
-          ? supabase.from("signal_agents").select("id, name, agent_type").in("id", agentIds)
-          : Promise.resolve({ data: [] as any[] }),
-        orgIds.length
-          ? supabase.from("organizations").select("id, name").in("id", orgIds)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
+      // Fetch agents (which include their organization_id) so we can backfill
+      // the org for older runs where signal_agent_runs.organization_id is null.
+      const { data: agents } = agentIds.length
+        ? await supabase
+            .from("signal_agents")
+            .select("id, name, agent_type, organization_id")
+            .in("id", agentIds)
+        : { data: [] as any[] };
 
       const agentMap = new Map((agents ?? []).map((a: any) => [a.id, a]));
+
+      // Build org id set from BOTH the run row and the agent fallback.
+      const orgIds = Array.from(
+        new Set(
+          (runRows ?? [])
+            .map((r) => r.organization_id ?? agentMap.get(r.agent_id)?.organization_id)
+            .filter(Boolean) as string[],
+        ),
+      );
+
+      const { data: orgs } = orgIds.length
+        ? await supabase.from("organizations").select("id, name").in("id", orgIds)
+        : { data: [] as any[] };
+
       const orgMap = new Map((orgs ?? []).map((o: any) => [o.id, o]));
 
       return (runRows ?? []).map((r: any) => {
         const agent = agentMap.get(r.agent_id);
-        const org = r.organization_id ? orgMap.get(r.organization_id) : null;
+        const orgId = r.organization_id ?? agent?.organization_id ?? null;
+        const org = orgId ? orgMap.get(orgId) : null;
         return {
           ...r,
           agent_name: agent?.name ?? "—",
