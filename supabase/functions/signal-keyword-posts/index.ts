@@ -779,8 +779,8 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
       if (!res.ok) {
         const errText = await res.text();
         console.error(`[AI] Intent classifier HTTP ${res.status}: ${errText.slice(0, 200)}`);
-        // On AI failure, accept all with medium score
-        batch.forEach(p => results.set(p.id, { is_buyer: true, intent_score: 65, reason: 'ai_fallback', signal_type: 'unknown' }));
+        // STRICT: on AI failure, REJECT (default-deny). Quality > volume.
+        batch.forEach(p => results.set(`rejected:${p.id}`, { is_buyer: false, intent_score: 0, reason: 'ai_fallback_rejected', signal_type: 'not_a_buyer' }));
         continue;
       }
 
