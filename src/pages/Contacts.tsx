@@ -858,7 +858,7 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ left: 320, width: 180 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 max-w-[220px] border-b border-border/50">
+                      <td style={{ left: 260, width: 180 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 max-w-[220px] border-b border-border/50">
                         {c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
                             {c.signal}
