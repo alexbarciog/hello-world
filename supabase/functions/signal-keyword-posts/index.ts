@@ -1209,6 +1209,7 @@ Deno.serve(async (req) => {
 
         preFilterStats.passed++;
         pipelineStats.passed_prefilter++;
+        if (filterResult.matchedPhrase) pipelineStats.fuzzy_filter_passed++;
         preFilteredPosts.push({ post, matchedPhrase: filterResult.matchedPhrase! });
       }
 
