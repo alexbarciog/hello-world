@@ -515,29 +515,21 @@ function preFilterPost(
 ): PreFilterResult {
   const text = (postText || '').toLowerCase();
 
-  // ── Phrase match (best-effort, non-blocking in discovery mode) ──
-  // We still try to detect a sub-phrase match to give the AI a useful hint
-  // ("MATCHED PHRASE: ..."), but in DISCOVERY mode we no longer reject posts
-  // that lack the literal keyword. The AI semantic classifier will judge whether
-  // the author is genuinely expressing buying intent — even when they describe
-  // their need in different words than the configured keyword.
-  //
-  // In HIGH_PRECISION mode we keep the strict phrase guard to avoid garbage,
-  // but require a minimum post length so the AI has something to work with.
+  // ── Phrase match (best-effort, NEVER blocking) ──
+  // TEMP: phrase match disabled — flip PHRASE_MATCH_REQUIRED to true to re-enable hard reject.
+  // We still compute matchedPhrase so the AI prompt can include it as a hint, but we no longer
+  // reject posts that lack the literal keyword. The AI semantic classifier judges buying intent
+  // even when the author phrases their need in different words.
+  const PHRASE_MATCH_REQUIRED = false;
   const phraseVariants = generatePhraseVariants(keyword);
-  // Use fuzzy match (punctuation + token-window tolerant) instead of literal includes.
-  // This makes "ecommerce growth" match "e-commerce ... broader growth".
   const matchedPhrase = phraseVariants.find(phrase => fuzzyPhraseMatch(postText, phrase));
 
-  if (!matchedPhrase) {
-    if (isHighPrecision) {
-      return { pass: false, reason: 'no_phrase_match' };
-    }
-    // Discovery mode: require some substance before sending to AI
-    if (text.length < 40) {
-      return { pass: false, reason: 'no_phrase_match' };
-    }
-    // Fall through — let the AI decide if it's a buyer
+  if (!matchedPhrase && PHRASE_MATCH_REQUIRED && isHighPrecision) {
+    return { pass: false, reason: 'no_phrase_match' };
+  }
+  // Always require minimum substance so we don't burn AI budget on 1-word posts.
+  if (!matchedPhrase && text.length < 40) {
+    return { pass: false, reason: 'no_phrase_match' };
   }
 
   // ── Problem 4: Country filter (only in high_precision mode) ──
