@@ -525,7 +525,9 @@ function preFilterPost(
   // In HIGH_PRECISION mode we keep the strict phrase guard to avoid garbage,
   // but require a minimum post length so the AI has something to work with.
   const phraseVariants = generatePhraseVariants(keyword);
-  const matchedPhrase = phraseVariants.find(phrase => text.includes(phrase));
+  // Use fuzzy match (punctuation + token-window tolerant) instead of literal includes.
+  // This makes "ecommerce growth" match "e-commerce ... broader growth".
+  const matchedPhrase = phraseVariants.find(phrase => fuzzyPhraseMatch(postText, phrase));
 
   if (!matchedPhrase) {
     if (isHighPrecision) {
