@@ -998,7 +998,8 @@ Deno.serve(async (req) => {
       pagination_pages_fetched: 0,
       // Sample arrays kept tiny — diagnostics jsonb is read by every UI poll.
       sample_prefilter_rejections: [] as Array<{ keyword: string; variants: string[]; postSample: string; reason: string }>,
-      sample_ai_rejections: [] as Array<{ postSample: string; is_buyer: boolean; intent_score: number; reason: string }>,
+      sample_ai_rejections: [] as Array<{ name: string; headline: string; company: string | null; postSample: string; postUrl: string | null; is_buyer: boolean; intent_score: number; reason: string }>,
+      sample_ai_sent: [] as Array<{ name: string; headline: string; company: string | null; linkedin_url: string | null; postSample: string; postUrl: string | null; matched_keyword: string; intent_score: number | null; is_buyer: boolean | null; reason: string | null }>,
       sample_inserted: [] as Array<{ name: string; headline: string; company: string | null; company_url: string | null; linkedin_url: string | null; intentScore: number; matched_keyword: string; matched_industry: string | null; icp_verdict: string | null; icp_reason: string | null }>,
       sample_icp_passed: [] as Array<{ name: string; headline: string; company: string; company_url: string | null; industry: string; verdict: string; reason: string }>,
       sample_icp_rejections: [] as Array<{ name: string; headline: string; company: string | null; company_url: string | null; industry: string | null; reason: string }>,
