@@ -112,9 +112,11 @@ function normalizeProfile(item: any): any {
   if (!item.first_name && item.name) { const parts = item.name.split(' '); item.first_name = parts[0]; item.last_name = parts.slice(1).join(' ') || ''; }
   return item;
 }
-async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string): Promise<any|null> {
+async function fetchProfileIfNeeded(item: any, accountId: string, apiKey: string, dsn: string, forceFetch = false): Promise<any|null> {
   const norm = normalizeProfile({ ...item });
-  if (norm.first_name && (norm.headline || norm.title)) return norm;
+  // In HP mode (forceFetch), always fetch the full profile so current_company is populated
+  // for company-level ICP enrichment. Reactions/engager payloads are too thin otherwise.
+  if (!forceFetch && norm.first_name && (norm.headline || norm.title)) return norm;
   const id = item.public_identifier||item.provider_id||item.public_id||item.author_id;
   const numericOrUrn = item.id;
   const fetchId = id || (numericOrUrn && !String(numericOrUrn).startsWith('urn:') && !String(numericOrUrn).startsWith('ACo') ? numericOrUrn : null);
