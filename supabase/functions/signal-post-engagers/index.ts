@@ -698,7 +698,7 @@ Deno.serve(async (req) => {
             if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
             if (pf === 'strong_pass') diag.strong_passes++;
             if (!hasBudget(pf)) { console.log(`[POST_ENG] own_posts budget reached`); break; }
-            const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+            const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, isHighPrecision);
             trackFetch(pf);
             if (!fullProfile) continue;
             const match = scoreProfileAgainstICP(fullProfile, icp);
@@ -714,8 +714,8 @@ Deno.serve(async (req) => {
             let enrichedCo: EnrichedCompany | null = null;
             if (isHighPrecision) {
               const gate = await companyIcpGate(fullProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
-              if (gate.verdict === 'reject') { diag.company_icp_mismatch++; captureRejected(fullProfile, 'company_icp_mismatch'); continue; }
-              if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+              if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') { diag.company_icp_mismatch++; captureRejected(fullProfile, 'company_icp_mismatch'); continue; }
+              if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
               else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
               enrichedCo = gate.company;
             }
@@ -828,7 +828,7 @@ Deno.serve(async (req) => {
               if (isHighPrecision) diag.hp_passed++; else diag.discovery_passed++;
               if (pf === 'strong_pass') diag.strong_passes++;
               if (!hasBudget(pf)) { console.log(`[POST_ENG] profile_engagers budget reached`); break; }
-              const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+              const fp = await fetchProfileIfNeeded(ep2, account_id, UNIPILE_API_KEY, UNIPILE_DSN, isHighPrecision);
               trackFetch(pf);
               if (!fp) continue;
               const match = scoreProfileAgainstICP(fp, icp);
@@ -844,8 +844,8 @@ Deno.serve(async (req) => {
               let enrichedCo2: EnrichedCompany | null = null;
               if (isHighPrecision) {
                 const gate = await companyIcpGate(fp, account_id, UNIPILE_API_KEY, UNIPILE_DSN, icp.industries, idealLeadDescription, business_context || '', companyEnrichCache, companyAiCache);
-                if (gate.verdict === 'reject') { diag.company_icp_mismatch++; captureRejected(fp, 'company_icp_mismatch'); continue; }
-                if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+                if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') { diag.company_icp_mismatch++; captureRejected(fp, 'company_icp_mismatch'); continue; }
+                if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
                 else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
                 enrichedCo2 = gate.company;
               }
