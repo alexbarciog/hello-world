@@ -612,7 +612,7 @@ Deno.serve(async (req) => {
         for (const engager of engagers) {
           if (!hasTime()) break;
           const profile = engager.author || engager;
-          const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN);
+          const fullProfile = await fetchProfileIfNeeded(profile, account_id, UNIPILE_API_KEY, UNIPILE_DSN, isHighPrecision);
           if (!fullProfile) continue;
           const match = scoreProfileAgainstICP(fullProfile, icp);
           const hl = fullProfile.headline || fullProfile.title || '';
@@ -633,12 +633,12 @@ Deno.serve(async (req) => {
               icp.industries, idealLeadDescription, business_context || '',
               companyEnrichCache, companyAiCache,
             );
-            if (gate.verdict === 'reject') {
+            if (gate.verdict === 'reject' || gate.verdict === 'reject_headline') {
               diag.company_icp_mismatch++;
-              console.log(`[COMPANY_ICP] 🚫 hashtag — ${gate.company?.name || 'unknown'} — ${gate.reason}`);
+              console.log(`[COMPANY_ICP] 🚫 hashtag — ${gate.company?.name || profile?.headline?.slice(0,60) || 'unknown'} — ${gate.reason}`);
               continue;
             }
-            if (gate.verdict === 'skip_no_enrichment') diag.company_enrichment_failed++;
+            if (gate.verdict === 'accept_headline') diag.company_enrichment_failed++;
             else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
             enrichedCompanyForInsert = gate.company;
           }
