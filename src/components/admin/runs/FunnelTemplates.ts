@@ -77,6 +77,9 @@ function num(v: unknown): number {
 /**
  * keyword_posts / hashtag_engagement / post_engagers / competitor
  * all share enough counters to use a unified LinkedIn-style template.
+ *
+ * NEW ORDER (lead-first): Fetched → Dedup → [legacy phrase match if present]
+ *   → Company/ICP → Competitor/Seller → AI buyer intent → Inserted
  */
 function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
   const nodes: StageNode[] = [];
@@ -96,29 +99,38 @@ function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
     num(d.posts_after_dedup) ||
     Math.max(0, fetched - skippedDedup - dupRemoved);
 
+  // Legacy "phrase match" stage — only render if older runs still have rejections here.
   const rejectedNoMatch = num(d.rejected_no_phrase_match);
+  const showLegacyPrefilter = rejectedNoMatch > 0;
   const passedPrefilter =
-    num(d.passed_prefilter) || Math.max(0, afterDedup - rejectedNoMatch);
+    num(d.passed_prefilter) ||
+    Math.max(0, afterDedup - rejectedNoMatch);
 
-  const sentToAi = num(d.sent_to_ai) || passedPrefilter;
+  // Company / ICP stage
+  const rejectedOwnCompany = num(d.rejected_own_company);
+  const rejectedWrongCountry = num(d.rejected_wrong_country) + num(d.rejected_wrong_country_post_profile);
+  const rejectedWrongIndustry = num(d.rejected_wrong_industry);
+  const companyIcpMismatch = num(d.company_icp_mismatch);
+  const icpRejected =
+    rejectedOwnCompany + rejectedWrongCountry + rejectedWrongIndustry + companyIcpMismatch;
+
+  // Competitor / seller stage (post-ICP)
+  const rejectedCompetitorSeller = num(d.rejected_competitor_seller);
+  const rejectedCompetitor = num(d.rejected_competitor);
+  const rejectedSeller = num(d.rejected_seller);
+  const competitorRejected = rejectedCompetitorSeller + rejectedCompetitor + rejectedSeller;
+
+  // AI buying-intent stage
+  const sentToAi = num(d.sent_to_ai);
   const passedAi = num(d.passed_ai);
   const rejectedAiNotBuyer = num(d.rejected_ai_not_buyer);
   const rejectedAiLowScore = num(d.rejected_ai_low_score);
-  const rejectedCompetitor = num(d.rejected_competitor);
-  const rejectedSeller = num(d.rejected_seller);
-  const aiRejectedTotal =
-    rejectedAiNotBuyer + rejectedAiLowScore + rejectedCompetitor + rejectedSeller;
-
-  const rejectedOwnCompany = num(d.rejected_own_company);
-  const rejectedWrongCountry = num(d.rejected_wrong_country);
-  const rejectedWrongIndustry = num(d.rejected_wrong_industry);
-  const icpRejected =
-    rejectedOwnCompany + rejectedWrongCountry + rejectedWrongIndustry +
-    num(d.company_icp_mismatch);
+  const aiRejectedTotal = rejectedAiNotBuyer + rejectedAiLowScore;
 
   const inserted = num(d.inserted) || num(d.leads_inserted) || 0;
 
   let x = 0;
+  let prev = "fetched";
 
   // 1. Fetched
   nodes.push(makeStage("fetched", x, Y_MAIN, {
@@ -135,7 +147,7 @@ function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
     tone: "neutral",
     sublabel: skippedDedup > 0 ? `−${skippedDedup} already seen` : undefined,
   }));
-  edges.push(passEdge("fetched", "dedup"));
+  edges.push(passEdge(prev, "dedup"));
   if (skippedDedup > 0 || dupRemoved > 0) {
     nodes.push(makeStage("dedup_skip", x, Y_REJECT, {
       label: "Skipped",
@@ -143,29 +155,85 @@ function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
       tone: "skip",
       sampleKey: "sample_skipped",
     }));
-    edges.push(skipEdge("fetched", "dedup_skip", "already processed"));
+    edges.push(skipEdge(prev, "dedup_skip", "already processed"));
   }
+  prev = "dedup";
 
-  // 3. Phrase / pre-filter match
-  x += X_GAP;
-  nodes.push(makeStage("prefilter", x, Y_MAIN, {
-    label: "Match keywords",
-    count: passedPrefilter,
-    tone: "pass",
-    sampleKey: "sample_prefilter_passed",
-  }));
-  edges.push(passEdge("dedup", "prefilter"));
-  if (rejectedNoMatch > 0) {
+  // 3. (Legacy) Match keywords — only for old runs that still have phrase-match rejections.
+  if (showLegacyPrefilter) {
+    x += X_GAP;
+    nodes.push(makeStage("prefilter", x, Y_MAIN, {
+      label: "Match keywords",
+      count: passedPrefilter,
+      tone: "pass",
+      sampleKey: "sample_prefilter_passed",
+      sublabel: "legacy",
+    }));
+    edges.push(passEdge(prev, "prefilter"));
     nodes.push(makeStage("prefilter_reject", x, Y_REJECT, {
       label: "No phrase match",
       count: rejectedNoMatch,
       tone: "reject",
       sampleKey: "sample_prefilter_rejections",
     }));
-    edges.push(rejectEdge("dedup", "prefilter_reject", "missing"));
+    edges.push(rejectEdge(prev, "prefilter_reject", "missing"));
+    prev = "prefilter";
   }
 
-  // 4. AI buying intent
+  // 4. Company / ICP gate (now ALWAYS before AI, in both precision modes)
+  const passedCompanyIcp =
+    num(d.passed_company_icp) ||
+    Math.max(passedAi + competitorRejected + aiRejectedTotal, inserted);
+  x += X_GAP;
+  nodes.push(makeStage("icp", x, Y_MAIN, {
+    label: "Company / ICP",
+    count: passedCompanyIcp,
+    tone: "pass",
+    sampleKey: "sample_icp_passed",
+  }));
+  edges.push(passEdge(prev, "icp"));
+  if (icpRejected > 0) {
+    nodes.push(makeStage("icp_reject", x, Y_REJECT, {
+      label: "ICP mismatch",
+      count: icpRejected,
+      tone: "reject",
+      sampleKey: "sample_icp_rejections",
+      sublabel:
+        rejectedOwnCompany > 0
+          ? `${rejectedOwnCompany} own co.`
+          : rejectedWrongCountry > 0
+            ? `${rejectedWrongCountry} wrong country`
+            : companyIcpMismatch > 0
+              ? `${companyIcpMismatch} ICP mismatch`
+              : undefined,
+    }));
+    edges.push(rejectEdge(prev, "icp_reject"));
+  }
+  prev = "icp";
+
+  // 5. Competitor / Seller (post-ICP)
+  if (competitorRejected > 0 || passedCompanyIcp > 0) {
+    x += X_GAP;
+    const passedCompetitor = Math.max(passedCompanyIcp - competitorRejected, passedAi, inserted);
+    nodes.push(makeStage("competitor", x, Y_MAIN, {
+      label: "Not a competitor",
+      count: passedCompetitor,
+      tone: "pass",
+    }));
+    edges.push(passEdge(prev, "competitor"));
+    if (competitorRejected > 0) {
+      nodes.push(makeStage("competitor_reject", x, Y_REJECT, {
+        label: "Competitor / seller",
+        count: competitorRejected,
+        tone: "reject",
+        sampleKey: "sample_competitor_rejections",
+      }));
+      edges.push(rejectEdge(prev, "competitor_reject", "sells similar"));
+    }
+    prev = "competitor";
+  }
+
+  // 6. AI buyer intent (now LAST gate before insert)
   x += X_GAP;
   nodes.push(makeStage("ai", x, Y_MAIN, {
     label: "AI buyer intent",
@@ -174,7 +242,7 @@ function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
     sampleKey: "sample_ai_passed",
     sublabel: sentToAi > 0 ? `${sentToAi} sent to AI` : undefined,
   }));
-  edges.push(passEdge("prefilter", "ai"));
+  edges.push(passEdge(prev, "ai"));
   if (aiRejectedTotal > 0) {
     nodes.push(makeStage("ai_reject", x, Y_REJECT, {
       label: "Rejected by AI",
@@ -182,52 +250,25 @@ function buildLinkedInFunnel(d: Record<string, unknown>): BuildResult {
       tone: "reject",
       sampleKey: "sample_ai_rejections",
       sublabel:
-        rejectedCompetitor > 0
-          ? `${rejectedCompetitor} competitor`
-          : rejectedAiNotBuyer > 0
-            ? `${rejectedAiNotBuyer} not buyer`
+        rejectedAiNotBuyer > 0
+          ? `${rejectedAiNotBuyer} not buyer`
+          : rejectedAiLowScore > 0
+            ? `${rejectedAiLowScore} low score`
             : undefined,
     }));
-    edges.push(rejectEdge("prefilter", "ai_reject", "not buyer"));
+    edges.push(rejectEdge(prev, "ai_reject", "not buyer"));
   }
+  prev = "ai";
 
-  // 5. ICP / company gates
-  if (icpRejected > 0 || inserted > 0 || passedAi > 0) {
-    x += X_GAP;
-    const passedIcp = Math.max(passedAi - icpRejected, inserted);
-    nodes.push(makeStage("icp", x, Y_MAIN, {
-      label: "Company / ICP",
-      count: passedIcp,
-      tone: "pass",
-      sampleKey: "sample_icp_passed",
-    }));
-    edges.push(passEdge("ai", "icp"));
-    if (icpRejected > 0) {
-      nodes.push(makeStage("icp_reject", x, Y_REJECT, {
-        label: "ICP mismatch",
-        count: icpRejected,
-        tone: "reject",
-        sampleKey: "sample_icp_rejections",
-        sublabel:
-          rejectedOwnCompany > 0
-            ? `${rejectedOwnCompany} own co.`
-            : rejectedWrongCountry > 0
-              ? `${rejectedWrongCountry} wrong country`
-              : undefined,
-      }));
-      edges.push(rejectEdge("ai", "icp_reject"));
-    }
-
-    // 6. Inserted
-    x += X_GAP;
-    nodes.push(makeStage("inserted", x, Y_MAIN, {
-      label: "✓ Lead inserted",
-      count: inserted,
-      tone: "success",
-      sampleKey: "sample_inserted",
-    }));
-    edges.push(passEdge("icp", "inserted"));
-  }
+  // 7. Inserted
+  x += X_GAP;
+  nodes.push(makeStage("inserted", x, Y_MAIN, {
+    label: "✓ Lead inserted",
+    count: inserted,
+    tone: "success",
+    sampleKey: "sample_inserted",
+  }));
+  edges.push(passEdge(prev, "inserted"));
 
   return { nodes, edges };
 }
