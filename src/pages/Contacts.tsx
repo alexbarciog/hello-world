@@ -15,6 +15,8 @@ import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
 import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
+import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 
 type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked" | "pending_approval";
@@ -56,6 +58,7 @@ export default function Contacts() {
   const [insightsLoading, setInsightsLoading] = useState<Set<string>>(new Set());
   const insightsRef = useRef<HTMLDivElement>(null);
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
+  const [showImport, setShowImport] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -540,6 +543,14 @@ export default function Contacts() {
                   <Trash2 className="w-3.5 h-3.5" /> {deleting ? 'Deleting...' : 'Delete'}
                 </button>
               </>
+            )}
+            {selectedIds.size === 0 && tab === "all" && (
+              <button
+                onClick={() => setShowImport(true)}
+                className="flex items-center gap-1.5 text-xs font-medium text-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" /> Import from Sales Nav
+              </button>
             )}
           </div>
           {/* Mobile add button */}
@@ -1212,6 +1223,14 @@ export default function Contacts() {
         selectedContactIds={selectedIds}
         existingLists={lists}
         onCreated={() => { fetchData(); setSelectedIds(new Set()); }}
+      />
+
+      {/* ── Import from Sales Navigator Dialog ── */}
+      <ImportSalesNavDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        lists={lists}
+        onImported={fetchData}
       />
 
       {/* ── Book Meeting Dialog ── */}

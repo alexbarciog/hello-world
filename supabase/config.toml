@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.send-marketing-blast]
 verify_jwt = false
+
+[functions.import-sales-nav]
+verify_jwt = false
