@@ -656,6 +656,14 @@ Deno.serve(async (req) => {
           // Company-level ICP gate (HIGH_PRECISION only)
           let enrichedCompanyForInsert: EnrichedCompany | null = null;
           if (isHighPrecision) {
+            // Semantic agency-seller pre-filter — catches competitors whose headlines
+            // scream "I sell services" without using the literal blocked keywords.
+            const seller = looksLikeAgencySeller(fullProfile);
+            if (seller.seller) {
+              diag.company_icp_mismatch++;
+              console.log(`[AGENCY_SELLER] 🚫 hashtag — ${(fullProfile.headline||'').slice(0,80)} — matched: "${seller.matched}"`);
+              continue;
+            }
             const gate = await companyIcpGate(
               fullProfile, account_id, UNIPILE_API_KEY, UNIPILE_DSN,
               icp.industries, idealLeadDescription, business_context || '',
