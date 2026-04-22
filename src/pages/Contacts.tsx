@@ -537,7 +537,7 @@ export default function Contacts() {
         {/* Tabs */}
         <div className="flex items-center gap-3 md:gap-5 mt-3 overflow-x-auto scrollbar-none">
           {([
-            { key: "all" as Tab, label: "All", count: contacts.length },
+            { key: "all" as Tab, label: "All", count: tierCounts.approved_total },
             ...(tierCounts.pending_approval > 0 ? [{ key: "pending_approval" as Tab, label: "⏳ Pending Approval", count: tierCounts.pending_approval }] : []),
             { key: "hot" as Tab, label: "🔥 Hot", count: tierCounts.hot },
             { key: "warm" as Tab, label: "☀️ Warm", count: tierCounts.warm },
