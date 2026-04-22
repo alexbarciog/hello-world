@@ -59,7 +59,8 @@ function SampleItem({ item }: { item: unknown }) {
   const industry = (obj.industry as string) || (obj.matched_industry as string);
   const matchedKeyword = obj.matched_keyword as string | undefined;
   const verdict = (obj.icp_verdict as string) || (obj.verdict as string);
-  const intentScore = obj.intentScore as number | undefined;
+  const intentScore = (obj.intent_score as number | undefined) ?? (obj.intentScore as number | undefined);
+  const isBuyer = obj.is_buyer as boolean | undefined;
   const reason =
     (obj.reason as string) ||
     (obj.rejection_reason as string) ||
@@ -69,18 +70,22 @@ function SampleItem({ item }: { item: unknown }) {
     (obj.linkedin_url as string) ||
     (obj.url as string) ||
     (obj.profile_url as string);
+  const postUrl = obj.postUrl as string | undefined;
+  const postSample = obj.postSample as string | undefined;
 
   const knownKeys = new Set([
     "name", "full_name", "headline", "title", "author", "role",
     "company", "company_name", "company_url", "company_linkedin_url",
     "industry", "matched_industry", "matched_keyword",
-    "icp_verdict", "verdict", "intentScore",
+    "icp_verdict", "verdict", "intentScore", "intent_score", "is_buyer",
     "reason", "rejection_reason", "ai_reason", "icp_reason",
     "linkedin_url", "url", "profile_url",
+    "postUrl", "postSample",
   ]);
   const hasAnyKnown =
     role || company || companyUrl || industry || matchedKeyword ||
-    verdict || intentScore !== undefined || reason || profileUrl;
+    verdict || intentScore !== undefined || isBuyer !== undefined ||
+    reason || profileUrl || postUrl || postSample;
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 space-y-1.5">
