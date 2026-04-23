@@ -14,24 +14,32 @@ const staggerItem = {
 
 const faqs = [
   {
-    q: "How is Intentsly different from classic automation tools?",
-    a: "Unlike traditional automation tools that spray and pray, Intentsly uses AI to detect buying intent signals. We track when prospects engage with competitors, join relevant communities, get new roles, or raise funding — so you only reach out to people who are already in the market for your solution.",
+    q: "What does Intentsly actually do?",
+    a: "Intentsly helps B2B companies identify people and companies on LinkedIn showing signals that may indicate buying intent — so teams can prioritize better opportunities instead of working static lists.",
   },
   {
-    q: "Is this for sales teams, agencies or founders?",
-    a: "Intentsly is built for B2B founders, SDRs, solo sales operators, and small sales teams. If you're doing outbound on LinkedIn and want to reach only the warmest prospects, this is for you.",
+    q: "Is this just another lead database?",
+    a: "No. Intentsly is built around intent signals and timing, not just static contact data or generic lead lists. The goal is to find buyers who are showing movement right now.",
   },
   {
-    q: "How does Intentsly find high-intent leads?",
-    a: "Our AI Agents monitor 30+ intent signals across LinkedIn, the web, and various data sources. We track actions like engaging with competitor content, joining industry groups, new role announcements, funding rounds, and more.",
+    q: "Who is Intentsly best for?",
+    a: "B2B SaaS companies, lead-gen agencies, sales teams, founders, and B2B service businesses that want a better way to find likely buyers on LinkedIn.",
   },
   {
-    q: "How safe is it and does Intentsly risk my LinkedIn account?",
-    a: "We follow LinkedIn's usage limits and use safe, human-like sending patterns. Our system respects LinkedIn's terms of service and keeps your account activity within safe thresholds to minimize any risk.",
+    q: "Do I need a large outbound team to use it?",
+    a: "No. Intentsly is designed to help lean teams focus faster, not create more complexity. It works well for solo founders, SDRs, and small sales teams.",
   },
   {
-    q: "What kind of results can I realistically expect?",
-    a: "Our users typically see 2-3x higher reply rates compared to cold outreach, because they're reaching people who already have buying intent. Some teams report booking 5 demos from just 30 leads found by their AI Agent.",
+    q: "Does this replace my CRM or sales tools?",
+    a: "No. Intentsly improves targeting and prioritization. It fits alongside your existing CRM and sales workflow rather than replacing it.",
+  },
+  {
+    q: "How quickly can I get value?",
+    a: "Most users start identifying relevant opportunities shortly after setup. The onboarding is designed to get you to your first list of intent-based prospects fast.",
+  },
+  {
+    q: "Is there a contract?",
+    a: "No. It's a monthly subscription. Cancel anytime.",
   },
 ];
 
@@ -54,7 +62,7 @@ const FAQ = () => {
             Frequently asked questions
           </h2>
           <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto leading-relaxed">
-            Everything you need to know about our intent-driven AI outreach — from strategy to implementation.
+            Everything you need to know about finding intent-driven buyers on LinkedIn.
           </p>
         </motion.div>
 

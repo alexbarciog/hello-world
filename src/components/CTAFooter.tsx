@@ -10,13 +10,13 @@ const CTASection = () => {
 
         <div className="relative max-w-4xl mx-auto z-10 pl-4 md:pl-8">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl">
-            Stop chasing cold leads. Start closing warm ones.
+            Spot likely buyers on LinkedIn before everyone else does.
           </h2>
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
-            Your next best customers are already showing buying signals. Let AI find them, reach out, and book meetings — while you focus on selling.
+            Stop relying on broad prospect lists and start focusing on the people already showing movement.
           </p>
           <a href="/register" className="btn-cta">
-            Get Started
+            Start for $97
             <ArrowUpRight className="w-4 h-4" />
           </a>
         </div>

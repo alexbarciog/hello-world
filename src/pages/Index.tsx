@@ -4,13 +4,14 @@ import { ttqViewContent } from "@/lib/tiktok-pixel";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
-import AboutStats from "@/components/AboutStats";
-import ServicesSection from "@/components/ServicesSection";
-import ExpertiseSection from "@/components/ExpertiseSection";
+import ProblemSection from "@/components/landing/ProblemSection";
+import HowItWorks from "@/components/landing/HowItWorks";
+import WhyIntentsly from "@/components/landing/WhyIntentsly";
+import UseCases from "@/components/landing/UseCases";
 import Pricing from "@/components/Pricing";
-import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
-import { CTASection, Footer } from "@/components/CTAFooter";
+import FinalCTA from "@/components/landing/FinalCTA";
+import { Footer } from "@/components/CTAFooter";
 import { isOnboardingComplete } from "@/components/OnboardingGuard";
 
 const Index = () => {
@@ -23,13 +24,13 @@ const Index = () => {
       <Navbar showCampaigns={showCampaigns} />
       <Hero />
       <LogoMarquee />
-      <AboutStats />
-      <ServicesSection />
-      <ExpertiseSection />
+      <ProblemSection />
+      <HowItWorks />
+      <WhyIntentsly />
+      <UseCases />
       <Pricing />
-      {/* <Testimonials /> */}
       <FAQ />
-      <CTASection />
+      <FinalCTA />
       <Footer />
     </div>
   );
