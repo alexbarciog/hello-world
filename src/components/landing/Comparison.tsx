@@ -92,7 +92,7 @@ const Comparison = () => {
             <thead>
               <tr className="border-b border-border/60">
                 <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground"> </th>
-                <th className="px-4 py-4 relative">
+                <th className="px-4 py-4 relative align-top">
                   {/* Lime column glow — anchored directly to the Intentsly header */}
                   <div
                     className="hidden md:block pointer-events-none absolute left-1/2 -translate-x-1/2 top-2 w-[88%] rounded-2xl"
@@ -105,14 +105,13 @@ const Comparison = () => {
                     }}
                     aria-hidden
                   />
-                  <div className="relative z-10 inline-block">
-                    {/* Best value floating badge — sits directly above the pill */}
+                  <div className="relative z-10 flex flex-col items-center gap-2 pt-1">
                     <motion.div
                       initial={{ opacity: 0, y: -6 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-                      className="hidden md:flex absolute -top-3 left-1/2 -translate-x-1/2 items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 animate-float whitespace-nowrap"
+                      className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 animate-float whitespace-nowrap"
                     >
                       <Sparkles className="w-3 h-3 text-[#C8FF00]" />
                       Best value
