@@ -296,7 +296,7 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
             {/* Step 3: Review */}
             {step === 3 && (
               <div className="space-y-3">
-                <SummaryRow label="Seed leads" value={`${urls.length} profile${urls.length === 1 ? "" : "s"}`} />
+                <SummaryRow label="Seed companies" value={`${urls.length} compan${urls.length === 1 ? "y" : "ies"}`} />
                 <SummaryRow label="Industries" value={industries.length ? industries.join(", ") : "Auto-detect from seeds"} />
                 <SummaryRow label="Company size" value={companySizes.length ? companySizes.join(", ") : "Any"} />
                 <SummaryRow label="Locations" value={locations.length ? locations.join(", ") : "Any"} />
