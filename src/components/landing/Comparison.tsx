@@ -105,19 +105,21 @@ const Comparison = () => {
                     }}
                     aria-hidden
                   />
-                  {/* Best value floating badge — centered above pill */}
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.3 }}
-                    transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-                    className="hidden md:flex absolute -top-5 left-1/2 -translate-x-1/2 items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 animate-float whitespace-nowrap"
-                  >
-                    <Sparkles className="w-3 h-3 text-[#C8FF00]" />
-                    Best value
-                  </motion.div>
-                  <div className="relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#C8FF00]">
-                    <span className="text-sm font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
+                  <div className="relative z-10 inline-block">
+                    {/* Best value floating badge — sits directly above the pill */}
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
+                      className="hidden md:flex absolute -top-3 left-1/2 -translate-x-1/2 items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 animate-float whitespace-nowrap"
+                    >
+                      <Sparkles className="w-3 h-3 text-[#C8FF00]" />
+                      Best value
+                    </motion.div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#C8FF00]">
+                      <span className="text-sm font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
+                    </div>
                   </div>
                 </th>
                 {[
