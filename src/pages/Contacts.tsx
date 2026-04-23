@@ -16,6 +16,7 @@ import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
 import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
+import { FindLookalikesDialog } from "@/components/contacts/FindLookalikesDialog";
 import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ export default function Contacts() {
   const insightsRef = useRef<HTMLDivElement>(null);
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
+  const [showLookalikes, setShowLookalikes] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -553,12 +555,20 @@ export default function Contacts() {
               </>
             )}
             {selectedIds.size === 0 && tab === "all" && (
-              <button
-                onClick={() => setShowImport(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" /> Import from Sales Nav
-              </button>
+              <>
+                <button
+                  onClick={() => setShowLookalikes(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Find Lookalikes
+                </button>
+                <button
+                  onClick={() => setShowImport(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" /> Import from Sales Nav
+                </button>
+              </>
             )}
           </div>
           {/* Mobile add button */}
@@ -1231,6 +1241,14 @@ export default function Contacts() {
         selectedContactIds={selectedIds}
         existingLists={lists}
         onCreated={() => { fetchData(); setSelectedIds(new Set()); }}
+      />
+
+      {/* ── Find Lookalikes Dialog ── */}
+      <FindLookalikesDialog
+        open={showLookalikes}
+        onOpenChange={setShowLookalikes}
+        lists={lists}
+        onImported={fetchData}
       />
 
       {/* ── Import from Sales Navigator Dialog ── */}
