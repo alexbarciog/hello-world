@@ -325,7 +325,7 @@ Deno.serve(async (req) => {
 
       const allLeads: Array<{
         company: { id: string; name: string; industry?: string };
-        seedMatch: typeof seedProfiles[0];
+        seedMatch: typeof seedCompanies[0];
         candidate: any;
         rank: number;
       }> = [];
