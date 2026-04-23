@@ -7,6 +7,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 const navLinks = [
   { label: "How it Works", href: "#how-it-works" },
   { label: "Use Cases", href: "#use-cases" },
+  { label: "Compare", href: "#comparison" },
   { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
 ];
