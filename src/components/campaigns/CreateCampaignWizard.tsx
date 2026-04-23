@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   X, ChevronRight, ChevronLeft, Bot, List, ChevronDown,
   Globe, Sparkles, Briefcase, MapPin, Building2, Users, Check, Loader2,
-  Target, Shield, Mic,
+  Target, Shield, Mic, Clock,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
