@@ -191,18 +191,18 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
             {step === 1 && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold mb-1.5 block">Best customers' LinkedIn profiles (3–4)</label>
+                  <label className="text-xs font-semibold mb-1.5 block">Best customers' LinkedIn company pages (3–4)</label>
                   <Textarea
                     value={urlsText}
                     onChange={(e) => setUrlsText(e.target.value)}
-                    placeholder={"https://www.linkedin.com/in/jane-doe\nhttps://www.linkedin.com/in/john-smith\nhttps://www.linkedin.com/in/sara-lee"}
+                    placeholder={"https://www.linkedin.com/company/acme-inc\nhttps://www.linkedin.com/company/globex\nhttps://www.linkedin.com/company/initech"}
                     className="min-h-[140px] text-xs font-mono"
                   />
                   <div className="text-xs text-muted-foreground mt-1.5">
                     {urls.length} URL{urls.length === 1 ? "" : "s"} entered
                     {urls.length > 0 && !urlsValid && (
                       <span className="text-destructive ml-2">
-                        {urls.length < 3 ? "Need at least 3" : urls.length > 4 ? "Maximum 4" : "All URLs must be linkedin.com/in/…"}
+                        {urls.length < 3 ? "Need at least 3" : urls.length > 4 ? "Maximum 4" : "All URLs must be linkedin.com/company/…"}
                       </span>
                     )}
                   </div>
