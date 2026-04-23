@@ -452,7 +452,7 @@ Deno.serve(async (req) => {
           linkedin_profile_id: c.linkedin_profile_id,
           relevance_tier: "warm",
           approval_status: "auto_approved",
-          signal: signals[idx] || `Lookalike of ${c.seedMatch?.first_name || "your best client"}`,
+          signal: signals[idx] || `Lookalike of ${c.seedMatch?.name || "your best client"}`,
           signal_a_hit: true,
           ai_score: 7,
           company_icon_color: pickColor(c.company || c.first_name),
