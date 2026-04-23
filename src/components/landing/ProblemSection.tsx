@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Target, MessageSquareOff, Clock, X } from "lucide-react";
+import { Target, MessageSquareOff, Clock, X, ArrowRight } from "lucide-react";
+import { CountUp } from "@/lib/motion";
 
 const pains = [
   {
