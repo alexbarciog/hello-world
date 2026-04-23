@@ -55,9 +55,9 @@ const Hero = () => {
             Start for $97
             <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
           </a>
-          <a href="#how-it-works" className="btn-outline group w-full sm:w-auto justify-center">
+          <a href="https://www.loom.com/share/3dc9408fe0da4b979cb5642333f4b500" target="_blank" rel="noopener noreferrer" className="btn-outline group w-full sm:w-auto justify-center">
             <Play className="w-3.5 h-3.5 fill-current" />
-            Watch 60-sec demo
+            Watch demo video
           </a>
         </div>
 
