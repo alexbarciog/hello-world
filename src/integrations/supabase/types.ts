@@ -618,6 +618,30 @@ export type Database = {
         }
         Relationships: []
       }
+      discount40_email_log: {
+        Row: {
+          email: string
+          first_name: string | null
+          id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          email: string
+          first_name?: string | null
+          id?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          first_name?: string | null
+          id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
