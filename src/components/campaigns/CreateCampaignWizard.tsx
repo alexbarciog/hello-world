@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   X, ChevronRight, ChevronLeft, Bot, List, ChevronDown,
   Globe, Sparkles, Briefcase, MapPin, Building2, Users, Check, Loader2,
-  Target, Shield, Mic,
+  Target, Shield, Mic, Clock,
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,35 @@ const MESSAGE_TONES = [
   { value: "direct", label: "Direct", desc: "Bold, confident", icon: Target },
 ];
 
+// Common timezones — campaigns send between 08:00 and 18:00 in this zone
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Paris", label: "Paris / Berlin / Madrid (CET)" },
+  { value: "Europe/Athens", label: "Athens / Helsinki (EET)" },
+  { value: "Europe/Istanbul", label: "Istanbul (TRT)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+  { value: "America/New_York", label: "New York (EST/EDT)" },
+  { value: "America/Chicago", label: "Chicago (CST/CDT)" },
+  { value: "America/Denver", label: "Denver (MST/MDT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+  { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+];
+
+function detectBrowserTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TIMEZONES.some(t => t.value === tz)) return tz;
+    return tz || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
 const ease = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const contentVariant = {
   hidden: { opacity: 0, x: 20 },
@@ -85,6 +114,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   const [painPoints, setPainPoints] = useState("");
   const [campaignGoal, setCampaignGoal] = useState("conversations");
   const [messageTone, setMessageTone] = useState("professional");
+  const [timezone, setTimezone] = useState<string>(detectBrowserTimezone());
   const [linkedInName, setLinkedInName] = useState("LinkedIn Account");
 
   useEffect(() => {
@@ -142,6 +172,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     setPainPoints((data.pain_points || []).join("\n"));
     setCampaignGoal(data.campaign_goal || "conversations");
     setMessageTone(data.message_tone || "professional");
+    setTimezone((data as any).timezone || "UTC");
   }
 
   function resetForm() {
@@ -154,6 +185,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     setPainPoints("");
     setCampaignGoal("conversations");
     setMessageTone("professional");
+    setTimezone(detectBrowserTimezone());
     setAutoAnalyzed(false);
     setOnboardingWebsiteLoaded(false);
   }
@@ -233,6 +265,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
       pain_points: painPointsArr,
       campaign_goal: campaignGoal,
       message_tone: messageTone,
+      timezone,
       source_type: sourceType,
       source_agent_id: sourceType === "agent" ? selectedAgentId || null : null,
       source_list_id: sourceType === "list" ? selectedListId || null : null,
@@ -538,6 +571,32 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                   <p className="text-xs text-muted-foreground mt-2">Cannot be modified after campaign creation</p>
                 </div>
 
+                {/* Sending hours / timezone */}
+                <div className="rounded-xl border border-border p-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-4 h-4 text-foreground" />
+                    <p className="text-sm font-bold text-foreground">Sending hours</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Connection invites are sent between <span className="font-semibold">08:00–18:00</span> in this timezone.
+                  </p>
+                  <div className="relative">
+                    <select
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-2.5 pr-10 text-sm font-medium text-foreground focus:outline-none"
+                    >
+                      {TIMEZONES.some(t => t.value === timezone) ? null : (
+                        <option value={timezone}>{timezone}</option>
+                      )}
+                      {TIMEZONES.map(tz => (
+                        <option key={tz.value} value={tz.value}>{tz.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
+                  </div>
+                </div>
+
                 {/* Review Summary */}
                 <div className="rounded-xl border border-border bg-muted/20 p-5">
                   <h4 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
@@ -557,6 +616,10 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tone</span>
                       <span className="font-bold text-foreground capitalize">{messageTone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sending hours</span>
+                      <span className="font-bold text-foreground">08:00–18:00 · {timezone}</span>
                     </div>
                     {website && (
                       <div className="flex justify-between">
