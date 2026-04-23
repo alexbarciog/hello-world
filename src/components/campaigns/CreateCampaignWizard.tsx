@@ -571,6 +571,32 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                   <p className="text-xs text-muted-foreground mt-2">Cannot be modified after campaign creation</p>
                 </div>
 
+                {/* Sending hours / timezone */}
+                <div className="rounded-xl border border-border p-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-4 h-4 text-foreground" />
+                    <p className="text-sm font-bold text-foreground">Sending hours</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Connection invites are sent between <span className="font-semibold">08:00–18:00</span> in this timezone.
+                  </p>
+                  <div className="relative">
+                    <select
+                      value={timezone}
+                      onChange={(e) => setTimezone(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-border bg-background px-4 py-2.5 pr-10 text-sm font-medium text-foreground focus:outline-none"
+                    >
+                      {TIMEZONES.some(t => t.value === timezone) ? null : (
+                        <option value={timezone}>{timezone}</option>
+                      )}
+                      {TIMEZONES.map(tz => (
+                        <option key={tz.value} value={tz.value}>{tz.label}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground" />
+                  </div>
+                </div>
+
                 {/* Review Summary */}
                 <div className="rounded-xl border border-border bg-muted/20 p-5">
                   <h4 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
@@ -590,6 +616,10 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tone</span>
                       <span className="font-bold text-foreground capitalize">{messageTone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sending hours</span>
+                      <span className="font-bold text-foreground">08:00–18:00 · {timezone}</span>
                     </div>
                     {website && (
                       <div className="flex justify-between">
