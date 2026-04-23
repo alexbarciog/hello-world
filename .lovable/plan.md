@@ -1,91 +1,122 @@
 
 
-# UseCases — premium visual upgrade
+# HowItWorks — premium "I want this" upgrade
 
-The current cards feel "cheap" because: flat grey shells, tiny inner mocks floating in white boxes, weak typographic hierarchy, no depth, and an icon-chip-next-to-title pattern that reads like a generic SaaS template. This pass redesigns the card system to look like a premium B2B product showcase.
+The current 3-card grid feels like a generic feature recap: identical grey shells, tiny mocks crammed at the bottom, copy on top of visual. To create desire, we flip the section into a **scroll-driven product narrative** — bigger visuals up front, sharper outcome-led copy, and a unified "before → during → after" story that makes the user picture themselves using it.
 
-## Visual direction
-
-Move from *"flat grey card with a tiny mock inside"* to a **bento-style dark/light card system with full-bleed visuals**, depth, and stronger typography — closer to Linear, Vercel, and Attio marketing pages than to a generic Tailwind template.
-
-## New card anatomy (`src/components/landing/UseCases.tsx`)
+## New structure (`src/components/landing/HowItWorks.tsx`)
 
 ```text
-┌──────────────────────────────────┐
-│                                  │
-│    FULL-BLEED VISUAL             │
-│    (gradient bg, larger mock,    │
-│     floating depth, soft glow)   │
-│                                  │
-│ ─────────────────────────────────│
-│  B2B SaaS teams                  │  ← title big, no inline icon chip
-│  Find companies entering your    │  ← muted one-liner
-│  category.                       │
-│                                  │
-│  ↗ Use case  →                   │  ← tiny footer meta row
-└──────────────────────────────────┘
+HOW IT WORKS
+From cold list to qualified pipeline — in 3 moves.        [meta: 3 steps · ~5 min setup]
+
+┌─────────────────────────────────────────────────────────────────┐
+│ STEP 01 ─────────────────────  [tinted gradient bg, sky]        │
+│                                                                  │
+│   You define who matters.        ┌────────────────────────┐     │
+│   Industry, role, company        │   ICP MOCK (large,     │     │
+│   shape — in 60 seconds.         │   floating, shadow)    │     │
+│                                  │                        │     │
+│   ✓ No CSV uploads               │                        │     │
+│   ✓ Edit anytime                 └────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ STEP 02 ─────────────────────  [tinted gradient bg, indigo]     │
+│                                                                  │
+│  ┌────────────────────────┐   We watch LinkedIn for you.         │
+│  │   SIGNALS MOCK (large, │   Hiring spikes, competitor moves,   │
+│  │   live counter pulse,  │   problem-aware posts — 24/7.        │
+│  │   floating signal      │                                      │
+│  │   chips)               │   ⚡ 127 signals/day per ICP avg     │
+│  └────────────────────────┘   🟢 Updates every hour              │
+└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ STEP 03 ─────────────────────  [tinted gradient bg, lime]       │
+│                                                                  │
+│   You get a daily shortlist.     ┌────────────────────────┐     │
+│   People showing intent right    │  PRIORITIZED MOCK      │     │
+│   now — ranked, scored, ready.   │  (large, hot/warm pills│     │
+│                                  │   + "Book meeting" CTA │     │
+│   → 12 hot leads today           │   on top lead)         │     │
+│   → Avg 8 min to outreach        └────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
+
+         ─────  Closing line  ─────
+   "Stop hunting. Start replying."
+        [Start for $97 →]
 ```
 
-Each card becomes:
+## What changes
 
-- **Outer shell**: `bg-white rounded-[28px] border border-black/5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)]` — subtle layered shadow instead of flat grey. No more `bg-[#f5f5f5]` shells.
-- **Visual zone (top, ~180px)**: full-bleed, no inner white card. Each gets its own tinted gradient background (e.g. sky, lime, slate, indigo) with a soft radial highlight. Mock sits centered, larger (~140% of current size), with a soft drop shadow so it feels like a floating UI surface, not an embedded chip.
-- **Divider**: hairline `border-t border-black/[0.06]` between visual and copy.
-- **Copy zone (bottom, p-6)**:
-  - Title: `text-lg font-semibold tracking-tight` (bigger than now), no icon chip beside it.
-  - One-liner: `text-sm text-muted-foreground leading-relaxed`.
-  - Footer meta row: tiny `text-[11px] uppercase tracking-wider text-muted-foreground` label like *"Use case · SaaS"* + a small lucide arrow on the right.
+### 1. Layout: stacked, alternating, hero-sized rows
 
-## Per-card visual treatment
+- **Drop the 3-column grid.** Replace with 3 stacked full-width cards. Each card is `grid-cols-12` on `md+`:
+  - Step 01: copy left (col-span-5), visual right (col-span-7).
+  - Step 02: visual left (col-span-7), copy right (col-span-5). *(alternating creates rhythm)*
+  - Step 03: copy left, visual right.
+- Cards become tall (`min-h-[420px]`), giving each mock real estate to breathe — matches the premium UseCases bento we just built.
+- On mobile: copy on top, visual below, stacked normally.
 
-Each visual zone gets a distinct backdrop + upgraded mock so the grid reads as a curated bento, not 6 identical tiles:
+### 2. Card shell upgrade
 
-| Card | Backdrop | Mock upgrade |
-|---|---|---|
-| **B2B SaaS teams** | Soft sky→white gradient + faint grid pattern | Bigger signal card: company logo placeholder, "Hiring 3 AEs · last week", dual badges (`+42 intent`, `Hot`) |
-| **Lead-gen agencies** | Lime-tinted gradient (`#C8FF00` ~8% radial) | Three client rows with mini avatars + lead counters + a tiny sparkline per row |
-| **Sales teams** | Slate/indigo gradient | Larger lead row: avatar, name, role, **prominent red Hot · 92 pill**, plus a "replied 2h ago" subline |
-| **Founders** | Warm off-white + subtle noise | Single hero stat: huge `12` meetings + caption "from 1 founder, last 30 days" |
-| **B2B service businesses** | Lime gradient (accent) | Larger sparkline (full width, taller) + 3 micro-stats below: `Hiring +28%`, `Mentions ↑`, `Open roles 4` |
-| **RevOps / GTM operators** | Indigo→white gradient | Two larger progress bars (Fit, Intent) with numeric values + a third row "Recommendation: ✓ Add to outreach" |
+- Outer: `rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden`.
+- Visual zone: full-bleed tinted gradient backdrop per step (sky for 01, indigo for 02, lime for 03) with a soft radial highlight + faint dot pattern — same family as UseCases for visual coherence.
+- Mocks scaled up ~1.6× (currently `h-44`, becomes `h-[300px]`+), with a stronger floating shadow `shadow-[0_20px_40px_-16px_rgba(15,23,42,0.25)]` so they read as real product surfaces.
 
-All mocks: same family, but rendered at a size that *fills* the visual zone instead of floating tiny in the middle. Mock surfaces use `bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)]` to feel like a real product UI surface.
+### 3. Copy: outcome-led, shorter, desire-driven
 
-## Bento rhythm
+Replace feature descriptions with outcome statements + proof points.
 
-- Grid stays `lg:grid-cols-3`, but the **first card spans 2 columns on lg+** (`lg:col-span-2`) — gives B2B SaaS (the primary persona) a wide hero treatment with a horizontally-laid-out mock. The other 5 stay 1-column.
-- Result on `lg+`:
-  ```
-  [  B2B SaaS (wide)         ] [ Sales teams ]
-  [ Agencies ] [ Founders   ] [ B2B services ]
-  [ RevOps   ] (last row left-aligned, 1 col)
-  ```
-- On `md`: 2 cols, all equal. On mobile: 1 col.
-- Optional: keep current 6-equal-cards layout if the asymmetric bento feels off — single boolean at the top of the file to toggle.
+| Step | Old title | New title | New subtitle | Proof bullets |
+|---|---|---|---|---|
+| 01 | Define who you want to find | **You define who matters.** | Industry, role, company shape — in 60 seconds. | ✓ No CSV uploads · ✓ Edit anytime |
+| 02 | Track intent signals on LinkedIn | **We watch LinkedIn for you.** | Hiring spikes, competitor moves, problem-aware posts — 24/7. | ⚡ 127 signals/day per ICP avg · 🟢 Updates hourly |
+| 03 | Focus on the best opportunities | **You get a daily shortlist.** | People showing intent right now — ranked, scored, ready to reach out. | → 12 hot leads/day · → ~8 min to first outreach |
 
-## Section header polish
+- Step number becomes a large outline numeral (`text-[88px] font-light text-[#1A8FE3]/15`) sitting *behind* the title — editorial feel, used by Linear/Stripe.
+- Title bumps to `text-3xl md:text-4xl font-medium tracking-[-0.02em]`.
+- Proof bullets use small icon + value + label, not full sentences.
 
-- Eyebrow: keep `section-label` "Who Intentsly is for".
-- Headline: keep, but bump to `text-5xl md:text-6xl` and tighten to `tracking-[-0.02em]`.
-- Subheadline: shorten to *"One product. Six teams. Same edge: timing."*
-- Add a tiny right-aligned meta line above the grid on `md+`: *"6 use cases"* in muted small caps — gives the section an editorial feel.
+### 4. Mock upgrades (make them feel "live")
 
-## Motion
+- **Step 01 ICP mock**: add a subtle "✓ Saved" pill that fades in on view, plus a second floating chip behind it ("12,400 matches") to imply scale.
+- **Step 02 Signals mock**: animate the `127` counter ticking up on view (framer-motion `animate` from 100→127). Add a pulsing green dot next to "Live signals". Add one more floating signal chip (e.g. "Funding round announced") with a stagger entrance.
+- **Step 03 Prioritized mock**: add a hover-state "Book meeting" mini-button on the top lead row, and a small "+9 more" affordance below to imply depth. Promote tier pills to gradient fills (red→orange for Hot) for more visual punch.
 
-- Keep framer-motion stagger but switch to a softer `y: 12, opacity: 0 → 1` with `duration: 0.5` and `ease: [0.22, 1, 0.36, 1]` for a more premium feel.
-- Add a subtle hover: `hover:shadow-[0_2px_4px_rgba(0,0,0,0.04),0_16px_40px_-16px_rgba(0,0,0,0.12)]` and `hover:-translate-y-[2px]` (no border change, per SnowUI rule).
+### 5. Section header polish
+
+- Eyebrow: `How it works` (kept).
+- Headline: change to **"From cold list to qualified pipeline — in 3 moves."** (outcome-driven, not "How Intentsly works").
+- Right-aligned meta on `md+`: `3 steps · ~5 min setup` in muted small caps — editorial.
+- Drop the existing closing sentence under the grid; replace with a stronger CTA block.
+
+### 6. Closing CTA block (new)
+
+Below the 3 cards, add a compact centered block:
+- One-liner: **"Stop hunting. Start replying."** (`text-2xl font-medium`).
+- Primary button: `Start for $97 →` linking to `/register` (matches FinalCTA).
+- Tiny sub-line: `No contracts · Cancel anytime`.
+
+This converts the section from "informational" to "active" — the user finishes reading and the next thing in their eye is a button.
+
+### 7. Motion
+
+- Each row enters with `y: 24, opacity: 0 → 1`, `duration: 0.6`, `ease: [0.22, 1, 0.36, 1]`, staggered by `index * 0.1`.
+- Mocks inside each row get a secondary delayed entrance (`delay: 0.2 + index * 0.1`) so the card frame appears first, then the "product" lands inside it — gives a satisfying micro-reveal.
+- The `127` counter animates only when in view (framer-motion `useInView` + `animate`).
 
 ## Files
 
 **Modified**
-- `src/components/landing/UseCases.tsx` — full rewrite of the card shell + bento grid + 6 upgraded mock components + new typography.
+- `src/components/landing/HowItWorks.tsx` — full rewrite of grid → stacked rows, upgraded mocks, new copy, closing CTA.
 
 **Untouched**
-- All other landing sections, navbar, hero, pricing, FAQ, ProblemSection, HowItWorks, WhyIntentsly, Comparison.
+- All other landing sections, `Index.tsx` order, navbar, hero, pricing, FAQ, ProblemSection, UseCases, WhyIntentsly, Comparison, FinalCTA.
 
 ## Out of scope
 
-- Real product screenshots (mocks stay JSX).
-- Adding/removing personas (still 6).
-- Restyling the section background or page rhythm above/below.
+- Replacing JSX mocks with real screenshots.
+- Adding/removing steps (still 3).
+- Background changes to the section itself (stays `bg-background`).
+- Wiring the proof numbers (`127`, `12 hot leads`) to real data — stays as illustrative mock copy.
 
