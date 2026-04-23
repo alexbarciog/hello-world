@@ -40,7 +40,7 @@ const LogoMarquee = () => {
         <div className="grid grid-cols-3 gap-3 sm:hidden text-center">
           <div className="flex flex-col items-center gap-1">
             <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={500} />+
+              <CountUp to={50} />+
             </span>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">teams</span>
           </div>
@@ -62,7 +62,7 @@ const LogoMarquee = () => {
         <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-center">
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={500} />+
+              <CountUp to={50} />+
             </span>
             <span className="text-xs uppercase tracking-wider text-muted-foreground">teams</span>
           </div>
