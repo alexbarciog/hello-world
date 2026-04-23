@@ -52,8 +52,8 @@ const SENIORITY_RANK: Record<string, number> = {
   "senior": 60,
 };
 
-function extractPublicId(url: string): string | null {
-  const m = url.match(/linkedin\.com\/in\/([^/?#]+)/i);
+function extractCompanyPublicId(url: string): string | null {
+  const m = url.match(/linkedin\.com\/(?:company|school|showcase)\/([^/?#]+)/i);
   return m ? decodeURIComponent(m[1]) : null;
 }
 
