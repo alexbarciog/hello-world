@@ -156,6 +156,7 @@ type UseCase = {
   title: string;
   desc: string;
   meta: string;
+  slug: string;
   Mock: React.FC;
   bg: string;
   wide?: boolean;
@@ -166,6 +167,7 @@ const cases: UseCase[] = [
     title: "B2B SaaS teams",
     desc: "Find companies entering your category before they hit any database.",
     meta: "Use case · SaaS",
+    slug: "saas",
     Mock: SaasMock,
     bg: "bg-[radial-gradient(ellipse_at_top_left,rgba(26,143,227,0.12),transparent_60%),linear-gradient(180deg,#F4F9FE_0%,#FFFFFF_100%)]",
     wide: true,
@@ -174,6 +176,7 @@ const cases: UseCase[] = [
     title: "Sales teams",
     desc: "Prioritize by timing, not just ICP fit.",
     meta: "Use case · Sales",
+    slug: "sales",
     Mock: SalesMock,
     bg: "bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.10),transparent_60%),linear-gradient(180deg,#F6F7FB_0%,#FFFFFF_100%)]",
   },
@@ -181,6 +184,7 @@ const cases: UseCase[] = [
     title: "Lead-gen agencies",
     desc: "Stronger angles for client outreach.",
     meta: "Use case · Agency",
+    slug: "agency",
     Mock: AgencyMock,
     bg: "bg-[radial-gradient(ellipse_at_top,rgba(200,255,0,0.18),transparent_60%),linear-gradient(180deg,#FAFCEF_0%,#FFFFFF_100%)]",
   },
@@ -188,6 +192,7 @@ const cases: UseCase[] = [
     title: "Founders",
     desc: "Lean outbound, no full SDR stack.",
     meta: "Use case · Founder",
+    slug: "founder",
     Mock: FounderMock,
     bg: "bg-[radial-gradient(ellipse_at_center,rgba(26,143,227,0.08),transparent_60%),linear-gradient(180deg,#FBF9F5_0%,#FFFFFF_100%)]",
   },
@@ -195,6 +200,7 @@ const cases: UseCase[] = [
     title: "B2B service businesses",
     desc: "Spot demand triggers as they happen.",
     meta: "Use case · Services",
+    slug: "services",
     Mock: ServicesMock,
     bg: "bg-[radial-gradient(ellipse_at_top_left,rgba(200,255,0,0.20),transparent_60%),linear-gradient(180deg,#F9FCEC_0%,#FFFFFF_100%)]",
   },
@@ -202,6 +208,7 @@ const cases: UseCase[] = [
     title: "RevOps / GTM operators",
     desc: "Better inputs for account selection.",
     meta: "Use case · RevOps",
+    slug: "revops",
     Mock: RevOpsMock,
     bg: "bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.12),transparent_60%),linear-gradient(180deg,#F5F6FB_0%,#FFFFFF_100%)]",
   },
