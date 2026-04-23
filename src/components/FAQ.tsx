@@ -82,15 +82,15 @@ const FAQ = () => {
               className="rounded-2xl bg-secondary/50 overflow-hidden"
             >
               <button
-                className="w-full flex items-center justify-between p-6 md:p-7 text-left"
+                className="w-full flex items-center justify-between p-5 md:p-7 text-left"
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
               >
-                <span className="font-medium text-lg md:text-xl pr-8 text-foreground">{faq.q}</span>
-                <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
+                <span className="font-medium text-base md:text-xl pr-6 md:pr-8 text-foreground">{faq.q}</span>
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
                   {openIndex === i ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                 </div>
               </button>
-              <div className={`overflow-hidden transition-all duration-300 ${openIndex === i ? "max-h-60 pb-6 px-6 md:px-7" : "max-h-0"}`}>
+              <div className={`overflow-hidden transition-all duration-300 ${openIndex === i ? "max-h-60 pb-6 px-5 md:px-7" : "max-h-0"}`}>
                 <p className="text-base text-muted-foreground leading-relaxed">{faq.a}</p>
               </div>
             </motion.div>
@@ -111,10 +111,10 @@ const FAQ = () => {
           <p className="text-sm text-muted-foreground mb-6">
             Either path works — pick what feels right.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3">
             <a
               href="mailto:hello@intentsly.com?subject=10-min%20walkthrough"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-black/10 bg-white text-sm font-semibold hover:border-black/30 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.25)] transition-all"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-black/10 bg-white text-sm font-semibold hover:border-black/30 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.25)] transition-all w-full sm:w-auto"
               style={{ color: "hsl(var(--aeline-dark))" }}
             >
               <Calendar className="w-3.5 h-3.5" />
@@ -122,7 +122,7 @@ const FAQ = () => {
             </a>
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
+              className="inline-flex items-center justify-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] w-full sm:w-auto"
             >
               Start for $97
               <ArrowRight className="w-3.5 h-3.5" />

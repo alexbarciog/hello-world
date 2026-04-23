@@ -14,7 +14,7 @@ const FinalCTA = () => {
 
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
-      <div ref={ref} className="relative overflow-hidden rounded-[40px] py-28 px-8 md:px-12">
+      <div ref={ref} className="relative overflow-hidden rounded-[40px] py-20 px-6 md:py-28 md:px-12">
         <motion.img
           src={ctaBg}
           alt=""
@@ -23,7 +23,7 @@ const FinalCTA = () => {
           className="absolute inset-0 w-full h-[120%] object-cover"
         />
 
-        <div className="relative max-w-4xl mx-auto z-10 pl-4 md:pl-8">
+        <div className="relative max-w-4xl mx-auto z-10 pl-2 md:pl-8">
           {/* Live counter chip */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -33,7 +33,7 @@ const FinalCTA = () => {
             className="inline-flex items-center gap-2 mb-6 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25"
           >
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-white">
@@ -41,14 +41,14 @@ const FinalCTA = () => {
             </span>
           </motion.div>
 
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl">
+          <h2 className="text-[28px] md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl">
             Spot likely buyers on LinkedIn before everyone else does.
           </h2>
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
             Stop relying on broad prospect lists and start focusing on the people already showing movement.
           </p>
-          <div className="flex flex-wrap items-center gap-4">
-            <a href="/register" className="btn-cta btn-shimmer group">
+          <div className="flex flex-col items-start sm:flex-row sm:flex-wrap sm:items-center gap-4">
+            <a href="/register" className="btn-cta btn-shimmer group w-full sm:w-auto justify-center">
               Start for $97
               <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
             </a>
@@ -58,7 +58,7 @@ const FinalCTA = () => {
           </div>
 
           {/* Avatar trust strip */}
-          <div className="mt-8 flex items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <div className="flex -space-x-2">
               {[
                 "from-pink-400 to-orange-400",
@@ -69,12 +69,12 @@ const FinalCTA = () => {
               ].map((g, i) => (
                 <div
                   key={i}
-                  className={`w-7 h-7 rounded-full bg-gradient-to-br ${g} ring-2 ring-white/40`}
+                  className={`w-6 h-6 md:w-7 md:h-7 rounded-full bg-gradient-to-br ${g} ring-2 ring-white/40`}
                   aria-hidden
                 />
               ))}
             </div>
-            <p className="text-sm text-white/85">
+            <p className="text-xs md:text-sm text-white/85 leading-snug">
               Sarah, Marcus, Priya + <span className="font-semibold text-white">500 more</span> started this month
             </p>
           </div>

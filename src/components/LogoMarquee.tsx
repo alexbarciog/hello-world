@@ -21,7 +21,7 @@ const LogoMarquee = () => {
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
         <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-l from-background to-transparent" />
 
-        <div className="animate-marquee flex items-center gap-16 px-8">
+        <div className="animate-marquee flex items-center gap-10 md:gap-16 px-8">
           {doubled.map((logo, i) => (
             <img
               key={i}
@@ -36,7 +36,30 @@ const LogoMarquee = () => {
 
       {/* Stat bar */}
       <Reveal as="div" className="max-w-4xl mx-auto mt-10 px-6">
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-center">
+        {/* Mobile: 3-col grid */}
+        <div className="grid grid-cols-3 gap-3 sm:hidden text-center">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={500} />+
+            </span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">teams</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={127} />
+            </span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">signals/day</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={8} />
+            </span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">min to outreach</span>
+          </div>
+        </div>
+
+        {/* sm+ : inline row */}
+        <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-center">
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
               <CountUp to={500} />+

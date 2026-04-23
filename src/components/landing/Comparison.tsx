@@ -73,12 +73,13 @@ const Comparison = () => {
           </p>
         </motion.div>
 
+        {/* Desktop: full table */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="relative rounded-3xl bg-[#f5f5f5] p-4 md:p-6 overflow-x-auto"
+          className="hidden md:block relative rounded-3xl bg-[#f5f5f5] p-4 md:p-6 overflow-x-auto"
         >
           <table className="w-full min-w-[720px] relative" style={{ tableLayout: "fixed" }}>
             <colgroup>
@@ -111,7 +112,7 @@ const Comparison = () => {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
                       transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-                      className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 animate-float whitespace-nowrap"
+                      className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 motion-safe:animate-float whitespace-nowrap"
                     >
                       <Sparkles className="w-3 h-3 text-[#C8FF00]" />
                       Best value
@@ -170,6 +171,74 @@ const Comparison = () => {
             </tbody>
           </table>
         </motion.div>
+
+        {/* Mobile: stacked card per row */}
+        <div className="md:hidden space-y-3">
+          {rows.map((row, i) => {
+            const competitors = [
+              { name: "Apollo", domain: "apollo.io", value: row.apollo },
+              { name: "Clay", domain: "clay.com", value: row.clay },
+              { name: "Sales Nav", domain: "linkedin.com", value: row.salesnav },
+              { name: "Agencies", domain: null, value: row.agency },
+            ];
+            const renderValue = (v: boolean | string) => {
+              if (v === true) return <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />;
+              if (v === false) return <X className="w-3.5 h-3.5 text-muted-foreground/60" />;
+              return <span className="text-[11px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>{v}</span>;
+            };
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: i * 0.05, ease: EASE }}
+                className="rounded-2xl bg-[#f5f5f5] p-4"
+              >
+                <p className="text-sm font-semibold mb-3" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  {row.feature}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Intentsly pill — highlighted */}
+                  <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white ring-1.5 ring-[#C8FF00] shadow-[0_0_0_2px_rgba(200,255,0,0.25)]" style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,255,0,0.7), 0 4px 12px -4px rgba(200,255,0,0.4)" }}>
+                    <span className="text-[11px] font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
+                    <span className="flex items-center justify-center min-w-[20px]">
+                      {row.intentsly === true ? (
+                        <span className="w-5 h-5 rounded-full bg-[#C8FF00] flex items-center justify-center">
+                          <Check className="w-3 h-3" style={{ color: "hsl(var(--aeline-dark))" }} strokeWidth={3} />
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>{String(row.intentsly)}</span>
+                      )}
+                    </span>
+                  </div>
+                  {competitors.map((c) => (
+                    <div key={c.name} className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white border border-border/40">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {c.domain ? (
+                          <img
+                            src={`https://www.google.com/s2/favicons?domain=${c.domain}&sz=64`}
+                            alt=""
+                            loading="lazy"
+                            className="w-3.5 h-3.5 rounded object-contain shrink-0"
+                          />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded bg-muted-foreground/15 flex items-center justify-center shrink-0">
+                            <span className="text-[7px] font-bold text-muted-foreground">A</span>
+                          </div>
+                        )}
+                        <span className="text-[11px] font-medium text-muted-foreground truncate">{c.name}</span>
+                      </div>
+                      <span className="flex items-center justify-center min-w-[20px] shrink-0">
+                        {renderValue(c.value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
 
         {/* CTA below table */}
         <motion.div

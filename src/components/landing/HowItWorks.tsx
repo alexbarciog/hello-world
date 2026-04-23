@@ -324,17 +324,17 @@ const HowItWorks = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.15 }}
                 transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-                className="rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden"
+                className="rounded-[24px] md:rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden"
               >
-                <div className="grid grid-cols-1 md:grid-cols-12 min-h-[420px]">
+                <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[420px]">
                   {/* Copy zone */}
                   <div
-                    className={`md:col-span-5 p-8 md:p-12 flex flex-col justify-center relative ${
+                    className={`md:col-span-5 p-6 md:p-12 flex flex-col justify-center relative ${
                       s.visualLeft ? "md:order-2" : ""
                     }`}
                   >
                     <span
-                      className="absolute top-6 right-8 md:top-10 md:right-12 text-[88px] font-light leading-none text-[#1A8FE3]/[0.10] select-none pointer-events-none"
+                      className="absolute top-4 right-5 md:top-10 md:right-12 text-[64px] md:text-[88px] font-light leading-none text-[#1A8FE3]/[0.10] select-none pointer-events-none"
                       aria-hidden
                     >
                       {s.num}
@@ -363,7 +363,7 @@ const HowItWorks = () => {
 
                   {/* Visual zone */}
                   <div
-                    className={`md:col-span-7 relative min-h-[320px] md:min-h-[420px] ${s.bgClass} ${
+                    className={`md:col-span-7 relative min-h-[260px] md:min-h-[420px] ${s.bgClass} ${
                       s.visualLeft ? "md:order-1" : ""
                     }`}
                   >
@@ -390,7 +390,7 @@ const HowItWorks = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.5 }}
                   transition={{ duration: 0.5, ease: EASE }}
-                  className="my-6 mx-2 md:mx-8 rounded-2xl bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-[#1A8FE3]/15 px-5 py-4 flex flex-wrap items-center justify-between gap-3"
+                  className="my-6 mx-2 md:mx-8 rounded-2xl bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-[#1A8FE3]/15 px-5 py-4 flex flex-col items-start md:flex-row md:flex-wrap md:items-center md:justify-between gap-3"
                 >
                   <p className="text-sm font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
                     This is what your competitors don't have yet.

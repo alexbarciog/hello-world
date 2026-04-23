@@ -46,10 +46,10 @@ const ColdListMock = () => (
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">Intent</span>
       </div>
 
-      {/* Rows */}
+      {/* Rows — fewer on mobile */}
       <div className="divide-y divide-border/40">
         {fakeLeads.map((l, i) => (
-          <div key={i} className="grid grid-cols-[1fr_auto] gap-3 items-center py-2.5 px-1">
+          <div key={i} className={`grid grid-cols-[1fr_auto] gap-3 items-center py-2.5 px-1 ${i === 4 ? "hidden sm:grid" : ""}`}>
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0">
                 <span className="text-[10px] font-semibold text-muted-foreground/70">{l.initials}</span>
@@ -91,7 +91,7 @@ const ColdListMock = () => (
           whileInView={{ opacity: 1, rotate: -18, scale: 1 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="text-[64px] font-bold text-destructive/[0.06] tracking-widest select-none"
+          className="text-[44px] md:text-[64px] font-bold text-destructive/[0.06] tracking-widest select-none whitespace-nowrap"
         >
           NO SIGNAL
         </motion.span>
@@ -143,7 +143,7 @@ const ProblemSection = () => {
             <div className="rounded-3xl bg-[#f5f5f5] p-3 md:p-4">
               <div className="divide-y divide-border/50">
                 {pains.map((p, i) => (
-                  <div key={i} className="flex items-start gap-4 p-4 md:p-5">
+                  <div key={i} className="flex items-start gap-4 p-3 md:p-5">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-destructive/10 relative">
                       <p.icon className="w-4 h-4 text-destructive" />
                       <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">

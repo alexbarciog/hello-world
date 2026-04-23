@@ -86,10 +86,10 @@ const Pricing = () => {
         </div>
 
         <div className="max-w-md mx-auto">
-          <div className="relative rounded-3xl bg-[#f5f5f5] p-8 md:p-10 flex flex-col">
+          <div className="relative rounded-3xl bg-[#f5f5f5] p-6 md:p-10 flex flex-col">
             {/* Most popular ribbon */}
             {!isActive && (
-              <div className="absolute -top-3 right-6 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8FF00] text-[10px] font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(200,255,0,0.6)]" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <div className="absolute -top-2.5 right-4 md:-top-3 md:right-6 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8FF00] text-[10px] font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(200,255,0,0.6)]" style={{ color: "hsl(var(--aeline-dark))" }}>
                 <Star className="w-3 h-3 fill-current" />
                 Most popular
               </div>
@@ -134,17 +134,17 @@ const Pricing = () => {
             )}
 
             {/* Trust row */}
-            <div className="flex items-center justify-center gap-4 mt-5 pt-5 border-t border-border/50">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-4 mt-5 pt-5 border-t border-border/50">
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Lock className="w-3 h-3" />
                 Secure checkout
               </div>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="hidden sm:inline text-muted-foreground/30">·</span>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <RotateCcw className="w-3 h-3" />
                 Cancel anytime
               </div>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="hidden sm:inline text-muted-foreground/30">·</span>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Zap className="w-3 h-3" />
                 Live in 5 min
