@@ -7,18 +7,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SEQUENCES_PER_DAY = 20; // 20 x 30-min slots between 08:00-18:00
 
+// Returns the local hour (0-23) in the given IANA timezone, or null if invalid.
+function getHourInTimezone(tz: string): number | null {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(new Date());
+    const h = parts.find(p => p.type === 'hour')?.value;
+    if (h === undefined) return null;
+    const n = parseInt(h, 10);
+    // Intl can return 24 for midnight in some runtimes — normalize.
+    return Number.isFinite(n) ? n % 24 : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Business-hours guard: only send between 08:00–18:00 UTC
-    const currentHour = new Date().getUTCHours();
-    if (currentHour < 8 || currentHour >= 18) {
-      return jsonResponse({ status: 'outside_business_hours', hour: currentHour });
-    }
-
     const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
     const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
