@@ -296,14 +296,13 @@ Deno.serve(async (req) => {
           keywords: searchKeywords,
           limit: Math.min(COMPANY_PAGE_SIZE, max_companies - companies.length),
         };
-        if (companySizes.length) searchBody.company_size = companySizes;
-        if (locations.length) searchBody.location = locations;
         if (cursor) searchBody.cursor = cursor;
 
+        console.log("[lookalike] company search payload:", JSON.stringify(searchBody));
         const { ok, payload, status, text } = await unipileFetch(`/api/v1/linkedin/search`, accountId, searchBody, controller.signal);
         if (!ok) {
-          console.error("Company search failed", status, text.slice(0, 300));
-          if (p === 0) throw new Error(`Company search failed (${status})`);
+          console.error("Company search failed", status, text.slice(0, 1500));
+          if (p === 0) throw new Error(`Company search failed (${status}): ${text.slice(0, 300)}`);
           break;
         }
         const items: any[] = payload.items || payload.data || [];
