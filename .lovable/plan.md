@@ -1,208 +1,166 @@
 
 
-# Landing page — high-conversion + motion upgrade
+# Mobile optimization for the landing page
 
-A psychology-driven pass across the whole landing page. Goal: more CTAs at every scroll-stop, stronger urgency/social-proof triggers, and tasteful motion (floating, reveal, pulse, count-up, tilt) that signals "premium product" without feeling busy.
+The desktop landing page is dialed in, but on mobile (≤768px) several sections feel cramped, the hero hits an awkward second-screen, the comparison table forces horizontal scrolling, and the sticky CTA collides with browser chrome. This pass tightens spacing, swaps a few heavy desktop layouts for mobile-native variants, and fixes the readability issues — without changing copy, brand, or animation language.
 
-## Conversion principles applied
+## Goals
 
-1. **Never let the user scroll without a CTA in sight** — add a CTA after every major section.
-2. **Stack social proof before commitment** — ratings, logos, counters, scarcity badges near every CTA.
-3. **Loss aversion + urgency** — "while your competitor sees them too", live counters, "today's shortlist".
-4. **Reduce risk perception** — repeat "Cancel anytime · No contract · No card to start trial" near CTAs.
-5. **Anchor with a number** — every section gets one bold stat (signals/day, time-to-meeting, % reply lift).
-6. **Motion = perceived quality** — subtle, never decorative. Reveal on scroll, float idle, pulse for "live".
-
----
-
-## 1. Global motion system (new `src/lib/motion.ts` + CSS)
-
-Create reusable primitives so every section feels coherent:
-
-- **`<Reveal>`** wrapper — `opacity 0→1, y: 16→0`, `duration 0.6`, `ease [0.22,1,0.36,1]`, `whileInView, once: true`. Replaces the ~12 ad-hoc framer-motion blocks.
-- **`<Float>`** wrapper — idle `y: [0,-6,0]` loop, `duration 4-6s`, `ease easeInOut`. Used on hero badges, mock chips, floating pills.
-- **CSS keyframes added to `src/index.css`**:
-  - `@keyframes float-slow` (6s up/down 6px)
-  - `@keyframes pulse-ring` (1.6s expanding ring for "live" dots)
-  - `@keyframes shimmer` (2.5s gradient sweep for CTA buttons)
-  - `@keyframes tilt-in` (one-shot 3D tilt-in for hero mock)
-  - `@keyframes count-pulse` (subtle scale on number change)
-- **Utility classes**: `.animate-float`, `.animate-pulse-ring`, `.btn-shimmer` (adds animated sheen across `.btn-cta` on hover), `.reveal-stagger > *` (CSS-only stagger fallback).
-- **Respects `prefers-reduced-motion`** — wrap all loop animations in `@media (prefers-reduced-motion: no-preference)`.
+1. Every section legible on a 375px screen without zoom.
+2. No horizontal scroll anywhere except where intentional (logo marquee).
+3. Sticky mobile CTA is always tappable, never blocking content or browser bars.
+4. Smaller, lighter motion on mobile (perf + battery).
+5. Hero fits in one viewport on phones (no awkward CTA-below-fold).
 
 ---
 
-## 2. Hero (`src/components/Hero.tsx`)
+## 1. Hero (`src/components/Hero.tsx`)
 
-Add urgency + secondary trust signals + motion polish.
+Currently the hero is `min-h-screen` then immediately renders a tilted carousel + rating + scroll cue, all of which push the CTA below fold on phones. Fix:
 
-- **Urgency badge above headline** (new): small lime pill `⚡ 127 buyers showed intent in the last hour` with a pulsing green dot. Floats subtly. Anchors the whole page in "live activity".
-- **Headline**: keep wording, but add `animate-fade-in-up` with a staggered word reveal (split on words, 40ms each) for premium feel.
-- **Subhead**: append a benefit clause — *"…so you reach the right people at the right moment — before your competitors do."* (loss aversion).
-- **Primary CTA**: keep "Start for $97", add a tiny `→` arrow that translates 4px on hover, plus a `.btn-shimmer` sheen sweep every 4s to draw the eye.
-- **Micro-trust line under CTAs** (new): `No contract · Cancel anytime · 5-min setup` in `text-[11px] uppercase text-white/70`.
-- **Secondary CTA**: change "See how it works" → "Watch 60-sec demo" with a play icon (links to `#how-it-works`, no video required — copy alone lifts CTR).
-- **Rating row**: bump to *"Rated 4.9/5 by 500+ B2B teams"* and add 3 small avatar circles (gradient placeholders) to the left of the stars — *"Join Sarah, Marcus + 500 others"* social proof primitive.
-- **HeroCards carousel**: add a one-shot `tilt-in` on first reveal, then a very slow idle `float-slow` on the whole carousel container.
-- **Scroll cue at bottom**: small bouncing chevron + `Scroll to see how` (subtle `animate-bounce` slowed to 2.5s).
+- Drop `min-h-screen` on mobile (use `min-h-[88vh] md:min-h-screen`) so the page doesn't feel padded with empty sky.
+- Reduce top padding: `pt-24 md:pt-36` (was `pt-28 md:pt-36`).
+- Headline: `text-4xl` on mobile (currently `text-5xl`), tighter `leading-[1.08]`. The inline LinkedIn glyph is `w-12 h-12` — drop to `w-9 h-9` on mobile so the second line doesn't break awkwardly.
+- Urgency badge copy is too long ("127 buyers showed intent in the last hour"). On mobile, shorten to **"127 buyers showed intent today"** via a `hidden sm:inline` / `sm:hidden` swap.
+- CTA row: stack vertically full-width on mobile (`flex-col w-full` with both buttons `w-full justify-center`), keep side-by-side from `sm:` up.
+- Microtrust line: shrink letter-spacing on mobile so it doesn't wrap.
+- Rating row: collapse to a single line — avatar stack + "500+ teams · 4.9★" — currently it's 2 rows, takes too much vertical space.
+- Scroll cue: hide on mobile (`hidden sm:flex`). On phones the page is already visibly scrollable.
+- HeroCards carousel margin: `mt-8` on mobile (was `mt-12`).
 
----
+## 2. HeroCards (`src/components/HeroCards.tsx`)
 
-## 3. LogoMarquee — add a stat bar
+The 3-card grid stacks vertically on mobile (`grid-cols-1 md:grid-cols-3`), so users scroll through three full cards with `mx-6` inner padding inside an already-padded section — too dense.
 
-Just below the marquee, add a thin 3-stat band (no card, just inline text):
+- Switch mobile to a **horizontal snap carousel**: `flex overflow-x-auto snap-x snap-mandatory gap-4 -mx-4 px-4 pb-4` with each card `min-w-[85%] snap-center`. From `md:` up, keep current 3-col grid.
+- Reduce inner mock padding on mobile (`mx-3` instead of `mx-6`).
+- Add a small dot indicator under the carousel showing 1/3 · 2/3 · 3/3.
+- Disable the idle `animate-float` wrapper on mobile (no `animate-float` class below `md:`) — it makes horizontal scroll feel wobbly.
 
-```
-500+ teams · 127 avg signals/day · 8 min to first outreach
-```
+## 3. LogoMarquee (`src/components/LogoMarquee.tsx`)
 
-Each number reveals with a count-up on scroll. Adds quantitative credibility before the Problem section.
+Stat bar wraps awkwardly on small screens (3 stats + dots).
 
----
+- Stats: switch to a `grid grid-cols-3` on mobile (no dots, no wrap), each cell stacked (`flex-col`) with the number on top and label below. From `sm:` up keep the inline row with dots.
+- Marquee gap: `gap-10` on mobile (was `gap-16`).
 
 ## 4. ProblemSection (`src/components/landing/ProblemSection.tsx`)
 
-- **Animate the watermark**: "NO SIGNAL" stamp fades in + slight rotate on reveal (psychological "stamp of failure").
-- **Pain rows**: stagger reveal (60ms each), tiny `X` badges pulse once on entry.
-- **Add a transition CTA below "Intent fixes all three. ↓"**: a single ghost button `See how Intentsly fixes this →` that smooth-scrolls to `#how-it-works`. Currently the user has nothing to click here.
-- **"3 competitors already reached out"** stat in the mock — animate the number from 0→3 on view (loss aversion micro-moment).
+ColdListMock has 5 fake leads + footer stats, which on a 360px screen overflows the right column when stacked.
+
+- Reduce fake leads to 4 on mobile (slice).
+- Footer stats grid: keep 2-col but tighten — already fine.
+- Pain stack: spacing reduces from `p-4 md:p-5` → `p-3 md:p-5`.
+- Watermark "NO SIGNAL": shrink to `text-[44px]` on mobile (was 64px) — currently overflows the card horizontally.
+
+## 5. HowItWorks (`src/components/landing/HowItWorks.tsx`)
+
+Each step card is `min-h-[420px]` and the visual zone is `min-h-[320px]` — on mobile this means each step is ~740px tall before content. Plus the absolute `[88px]` step-number watermark collides with the `Step 02` label on narrow screens.
+
+- Card padding mobile: `p-6 md:p-12` (was `p-8`).
+- Step number watermark: `text-[64px] md:text-[88px]` and reposition `top-4 right-5` on mobile.
+- Visual zone min-height mobile: `min-h-[260px] md:min-h-[420px]`.
+- Inside each Visual mock, internal padding `px-4 py-6 md:px-6 md:py-8`.
+- Cards go to `border-radius: 24px` on mobile (the `[32px]` looks oversized at 360px width).
+- The mid-section nudge band: stack vertically on mobile (`flex-col items-start`) so the CTA sits under the line, not squished beside it.
+- Section header right-side meta ("3 steps · ~5 min setup") stays `hidden md:block`.
+
+## 6. UseCases (`src/components/landing/UseCases.tsx`)
+
+Mostly fine — already collapses to 1 column. Two fixes:
+
+- Visual zone height: `h-[170px] md:h-[200px]` (mocks have plenty of breathing room and shorter cards make the bento feel less endless).
+- CTA footer band: stack vertically on mobile (`flex-col text-left`) with the CTA `w-full justify-center` — currently it wraps strangely with the green check + 2 lines + button.
+- Hero headline `text-5xl md:text-6xl` → `text-4xl md:text-6xl` (currently overruns on iPhone SE width).
+
+## 7. WhyIntentsly (`src/components/landing/WhyIntentsly.tsx`)
+
+Container is `p-8 md:p-12` and the two-column grid has `gap-10` on mobile when stacked — too much vertical air.
+
+- Container: `p-5 md:p-12`.
+- Stacked column gap: `gap-8 md:gap-16`.
+- The Intentsly column has a `md:border-l md:pl-12` which is correct — also add a thin `border-t border-border/60 pt-8 md:border-t-0 md:pt-0` to visually separate the two stacks on mobile.
+- Headline stat pill: `text-[11px]` on mobile so it doesn't wrap "Teams switching report ~3× higher reply rates" onto 3 lines.
+
+## 8. Comparison (`src/components/landing/Comparison.tsx`) — **biggest mobile fix**
+
+Currently the table is `min-w-[720px]` inside `overflow-x-auto`, so mobile users get a horizontal scrollbar inside the section. The "Best value" badge and lime glow are already `hidden md:block`. Fix with a **mobile-native card stack**:
+
+- Below `md:`, replace the table entirely with a **stacked card per row**:
+  ```
+  ┌────────────────────────────┐
+  │  Intent-based targeting    │
+  │  ✅ Intentsly  ❌ Apollo    │
+  │  ❌ Clay      ❌ Sales Nav  │
+  │  Manual Agencies           │
+  └────────────────────────────┘
+  ```
+  Each feature row becomes a card with a 2×3 grid of competitor pills (logo + value/check/X). The Intentsly pill gets the lime border + glow.
+- From `md:` up, keep the current table.
+- This kills the horizontal scroll, makes every value glanceable, and the Intentsly highlight stays visible without absolute positioning.
+- CTA below stays as-is.
+
+## 9. Pricing (`src/components/Pricing.tsx`)
+
+- Card padding: `p-6 md:p-10` (was `p-8 md:p-10`).
+- "Most popular" ribbon: position changes from `right-6` to `right-4 -top-2.5` on mobile so it doesn't overhang the section edge.
+- Trust row (`Secure checkout · Cancel anytime · Live in 5 min`) currently squeezes 3 items in a row — on iPhone SE the dots and items overlap. Switch to `flex-col gap-2 sm:flex-row sm:gap-4` and hide the · dots on mobile (`hidden sm:inline`).
+- Price `text-5xl` is fine; keep.
+
+## 10. FAQ (`src/components/FAQ.tsx`)
+
+- Question text `text-lg md:text-xl` → `text-base md:text-xl` so long questions don't wrap into 3 lines beside the +/- button on 360px.
+- Card padding `p-6 md:p-7` → `p-5 md:p-7`.
+- Closing CTA card buttons stack full-width on mobile (`w-full sm:w-auto`).
+
+## 11. FinalCTA (`src/components/landing/FinalCTA.tsx`)
+
+- Section outer padding: `px-2 md:px-4` is fine.
+- Inner padding `py-28 px-8` → `py-20 px-6 md:py-28 md:px-12` (currently feels like a lot of vertical air on phones).
+- Headline `text-3xl md:text-5xl lg:text-6xl` → `text-[28px] md:text-5xl lg:text-6xl` to prevent 4-line wrap on small phones.
+- CTA row + secondary link: stack on mobile (`flex-col items-start sm:flex-row sm:items-center`).
+- Avatar trust strip: shrink avatars to `w-6 h-6` on mobile, allow text to wrap onto a second line cleanly.
+
+## 12. StickyMobileCTA (`src/components/landing/StickyMobileCTA.tsx`)
+
+Three issues to fix:
+
+- Currently triggers at `scrollY > window.innerHeight * 0.9` — on tall hero pages this is correct, but feels late. Trigger at `0.6` so the bar is present early in the journey.
+- Pad bottom: add `safe-area-inset-bottom` support — `bottom-3` becomes `bottom-[max(0.75rem,env(safe-area-inset-bottom))]` so the bar clears the iOS home indicator.
+- Add a small lime "live" dot before "$97/month" to match brand language.
+- Add 60–70px of padding at the very bottom of `Index.tsx` (a single spacer `<div className="md:hidden h-16" />` before `<Footer />`) so the FinalCTA's last line isn't hidden under the sticky bar.
+- Hide the bar when the in-page Pricing card is in view (use `IntersectionObserver` on `#pricing`) — the bar becomes redundant if the user is already looking at price + CTA.
+
+## 13. Global motion / perf
+
+In `src/lib/motion.tsx` `<Reveal>` and `<Float>`, gate decorative loop animations under `prefers-reduced-motion: no-preference` (already partly done in CSS — extend to JS hooks). Specifically:
+
+- `animate-float`, `animate-pulse-ring`, `animate-tilt-in`, `animate-slow-bounce`: wrap in a single class `motion-safe:animate-float` etc. via Tailwind's `motion-safe` variant — replace direct `animate-*` with `motion-safe:animate-*` in Hero, FinalCTA, ProblemSection.
+- Skips noise on iOS Low Power Mode and respects user accessibility settings.
 
 ---
 
-## 5. HowItWorks — add CTA + motion polish
+## Files to modify
 
-Already premium. Add:
-
-- **Floating badge on each step's mock**: small pill that floats idle (`animate-float`) — e.g. on Step 02 the "Live signals" dot becomes a `pulse-ring`.
-- **Inline CTA between Step 02 and Step 03** (new, full-width thin band): *"This is what your competitors don't have yet."* + small `Start free →` link button. Breaks the 3-step monotony with a conversion nudge mid-scroll.
-- **Existing closing CTA**: add the trust microline (`No contract · Cancel anytime · Setup in 5 min`) under the button.
-
----
-
-## 6. UseCases — add CTA footer
-
-After the bento grid:
-
-- **One-liner + CTA band**: *"Whichever team you're on — you're 5 minutes from your first hot lead."* + `Start for $97 →`.
-- Each card already has `ArrowUpRight` — make the whole card clickable to `/register?ref=usecase-{slug}` (tracks intent + raises card click affordance).
-- Add a `scale: 1.01` on hover at the card level (subtle, not 1.05 — premium restraint).
-
----
-
-## 7. WhyIntentsly (`WhyIntentsly.tsx`)
-
-- **Animate row reveals**: traditional column fades in *grey/muted*, Intentsly column fades in *with the lime check briefly pulsing* — visual reinforcement of "the right side is the answer".
-- **Add CTA below the "If your team sells…" line**: `Switch to intent-based prospecting →` button (links `/register`).
-- **Add a small comparison stat above the grid**: `Teams switching report ~3× higher reply rates` (illustrative, matches existing tone).
-
----
-
-## 8. Comparison — gamify it
-
-- **Animate each row in sequence** on scroll (60ms stagger) — table feels "scored live".
-- **Highlight the Intentsly column**: add a subtle lime vertical glow `box-shadow: 0 0 0 1px #C8FF00, 0 8px 32px -12px rgba(200,255,0,0.4)` on the column container, plus a small floating `Best value` badge above the Intentsly header.
-- **Animate the green checks**: each Intentsly cell's check scales in (`scale 0→1`, 200ms, staggered) when row enters viewport — feels like a checklist being completed in real time.
-- **Add CTA below the table**: *"Save thousands. Get better leads."* + `Start for $97 →`. Currently this section dead-ends.
-
----
-
-## 9. Pricing — high-impact upgrades
-
-- **Scarcity/urgency bar above the card** (subtle, honest): `🔥 12 teams started this week` with a pulsing dot.
-- **Most popular badge**: lime ribbon top-right of the card (`Most popular` or `Best for B2B teams`).
-- **Original-price anchor** (perceived discount, optional toggle): show `$197` struck-through next to `$97` with text *"Launch pricing"* — anchors a higher reference price. *(Only include if the user is OK with this framing — see question below.)*
-- **Animate the price**: count-up `0 → 97` on reveal.
-- **Trust row under CTA**: 3 micro-icons — `🔒 Secure checkout · ↺ Cancel anytime · ⚡ Live in 5 min`.
-- **Money-back / guarantee microline** (new): *"7-day no-questions refund."* (only if the user confirms they offer it — see question).
-- **Risk-reversal line at bottom**: *"If you don't book a meeting in 30 days, we'll work with you free until you do."* — only with user confirmation.
-
----
-
-## 10. FAQ — add CTA at the end
-
-Below the last FAQ, add a soft "still on the fence?" card:
-
-```
-Still have questions?
-[Book a 10-min walkthrough →]   [Start for $97 →]
-```
-
-Two-button row. Walkthrough = lower-commitment alternative for skeptics.
-
----
-
-## 11. FinalCTA (`FinalCTA.tsx`)
-
-- **Headline**: keep, but add a small live counter chip above it: `🟢 127 buyers showing intent right now` (count-pulses every few seconds, illustrative).
-- **Add a secondary trust strip below CTA**: 5 small avatar circles + `Sarah, Marcus, Priya + 500 more started this month`.
-- **Trust microline**: `No contract · Cancel anytime · 5-min setup` under the buttons.
-- **Background**: add a very subtle parallax (`y: -40 → 40` on scroll via framer-motion `useScroll`) on the bg image for depth.
-
----
-
-## 12. Sticky mobile CTA bar (new)
-
-On mobile only, after the user scrolls past the hero, slide up a thin bottom bar:
-
-```
-$97/month · Cancel anytime    [Start →]
-```
-
-`fixed bottom-3 inset-x-3 rounded-full bg-white/95 backdrop-blur shadow-xl border border-black/5 px-4 py-2.5 flex items-center justify-between z-40`. Slides in with `y: 80 → 0` once `scrollY > window.innerHeight`. Hides on `/register` & `/login`. This single element typically lifts mobile signups 15-30%.
-
----
-
-## 13. Exit-intent dialog (desktop) — optional, behind question
-
-When the cursor leaves the viewport upward (first time only, sessionStorage flag), show a dialog:
-
-```
-Wait — see your buyers first.
-We'll show you 5 leads showing intent for your ICP. Free.
-[Show me my 5 leads →]   [No thanks]
-```
-
-Routes to `/register`. Only ship if user confirms (some find it intrusive — see question below).
-
----
-
-## Files
-
-**Modified**
-- `src/index.css` — new keyframes + utilities (float, pulse-ring, shimmer, tilt-in, count-pulse).
-- `src/components/Hero.tsx` — urgency badge, microtrust, secondary CTA copy, scroll cue, motion polish.
-- `src/components/LogoMarquee.tsx` — append stat bar with count-up.
-- `src/components/landing/ProblemSection.tsx` — transition CTA + animated stamp + count-up on "3 competitors".
-- `src/components/landing/HowItWorks.tsx` — mid-section CTA band + microtrust under existing CTA + floating chips.
-- `src/components/landing/UseCases.tsx` — CTA footer band + clickable cards.
-- `src/components/landing/WhyIntentsly.tsx` — CTA below grid + animated rows + headline stat.
-- `src/components/landing/Comparison.tsx` — lime column glow, "Best value" floating badge, staggered checks, CTA below table.
-- `src/components/Pricing.tsx` — scarcity bar, popular badge, count-up price, trust icons, microtrust row.
-- `src/components/FAQ.tsx` — closing two-CTA card.
-- `src/components/landing/FinalCTA.tsx` — live counter chip, avatars, microtrust, parallax bg.
-
-**New**
-- `src/lib/motion.ts` — `<Reveal>`, `<Float>`, `<CountUp>` primitives.
-- `src/components/landing/StickyMobileCTA.tsx` — sticky mobile bar (mounted in `Index.tsx`).
-- `src/components/landing/ExitIntentDialog.tsx` — *only if user approves question 3*.
-
-**Untouched**
-- All product/dashboard code, auth pages, edge functions, navbar (already polished), footer.
-
----
-
-## Three quick decisions before I build
-
-I'll ask these via `ask_questions` once you approve the plan, but flagging now:
-
-1. **"Launch pricing" anchor**: show `$197` struck-through next to `$97`? (Stronger conversion, but only honest if the price genuinely went up later.)
-2. **Money-back / "free until you book a meeting" guarantee**: include either? (Big lift, only if you'll honor it.)
-3. **Exit-intent dialog**: ship it, or skip? (Lifts signups but some users find it pushy.)
+- `src/components/Hero.tsx` — sizes, stacking, hide scroll cue, shorten urgency copy
+- `src/components/HeroCards.tsx` — mobile snap carousel + dot indicators
+- `src/components/LogoMarquee.tsx` — stat bar grid on mobile
+- `src/components/landing/ProblemSection.tsx` — fewer rows, smaller watermark
+- `src/components/landing/HowItWorks.tsx` — padding, watermark size, stack mid-CTA
+- `src/components/landing/UseCases.tsx` — headline size, footer stack
+- `src/components/landing/WhyIntentsly.tsx` — padding, divider, pill size
+- `src/components/landing/Comparison.tsx` — replace table with stacked cards on mobile
+- `src/components/Pricing.tsx` — ribbon position, trust row stack
+- `src/components/FAQ.tsx` — question size, button stack
+- `src/components/landing/FinalCTA.tsx` — padding, headline size, stack
+- `src/components/landing/StickyMobileCTA.tsx` — earlier trigger, safe-area, hide near pricing
+- `src/pages/Index.tsx` — mobile spacer above footer
 
 ## Out of scope
 
-- Video creation for "Watch 60-sec demo" (reuses existing `#how-it-works` anchor).
-- A/B testing infra.
-- Real-data wiring for "127 signals", "12 teams this week", "500+ teams" — stays as illustrative copy in the same tone the site already uses.
-- Backend changes, pricing changes in Stripe, new edge functions.
+- Copy rewrites (only shortening one badge line).
+- Navbar (mobile burger already works well).
+- Any new sections, illustrations, or animations.
+- Tablet-specific tuning between 768–1024px (handled by existing `md:` breakpoints).
+- Backend / data wiring.
 
