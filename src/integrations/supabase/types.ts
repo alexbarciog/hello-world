@@ -758,6 +758,57 @@ export type Database = {
           },
         ]
       }
+      lookalike_runs: {
+        Row: {
+          companies_scanned: number
+          created_at: string
+          decision_makers_found: number
+          duplicates: number
+          error: string | null
+          filters: Json
+          id: string
+          inserted: number
+          list_id: string | null
+          organization_id: string | null
+          seed_urls: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          companies_scanned?: number
+          created_at?: string
+          decision_makers_found?: number
+          duplicates?: number
+          error?: string | null
+          filters?: Json
+          id?: string
+          inserted?: number
+          list_id?: string | null
+          organization_id?: string | null
+          seed_urls?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          companies_scanned?: number
+          created_at?: string
+          decision_makers_found?: number
+          duplicates?: number
+          error?: string | null
+          filters?: Json
+          id?: string
+          inserted?: number
+          list_id?: string | null
+          organization_id?: string | null
+          seed_urls?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           campaign_id: string | null
