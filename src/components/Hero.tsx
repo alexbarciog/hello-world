@@ -32,7 +32,7 @@ const Hero = () => {
           </span>
         </div>
 
-        <h1 className="text-[2rem] sm:text-5xl md:text-7xl lg:text-[5.5rem] font-medium text-white leading-[1.1] md:leading-[1.05] tracking-tight mb-6 px-2 sm:px-0 animate-fade-in-up" style={{ animationDelay: "80ms" }}>
+        <h1 className="text-[2.65rem] sm:text-5xl md:text-7xl lg:text-[5.5rem] font-medium text-white leading-[1.05] md:leading-[1.05] tracking-tight mb-6 px-2 sm:px-0 animate-fade-in-up" style={{ animationDelay: "80ms" }}>
           <span className="block">Find people already looking</span>
           <span className="block">for what you offer</span>
           <span className="text-white/70 inline-flex items-center justify-center gap-1.5 md:gap-2 flex-wrap">
