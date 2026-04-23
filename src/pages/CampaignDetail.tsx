@@ -52,6 +52,7 @@ type CampaignFull = {
   messages_sent: number;
   messages_replied: number;
   daily_connect_limit: number;
+  timezone?: string;
   custom_training: string | null;
   language: string | null;
   conversational_ai: boolean;
@@ -265,6 +266,7 @@ export default function CampaignDetail() {
   const [settingsCustomTraining, setSettingsCustomTraining] = useState("");
   const [settingsLanguage, setSettingsLanguage] = useState("English");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
+  const [settingsTimezone, setSettingsTimezone] = useState<string>("UTC");
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
   const [settingsConversationalAi, setSettingsConversationalAi] = useState(false);
   const [settingsMaxAiReplies, setSettingsMaxAiReplies] = useState(5);
@@ -351,6 +353,7 @@ export default function CampaignDetail() {
       setSettingsConversationalAi((c as any).conversational_ai || false);
       setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
       setSettingsExcludeFirst((c as any).exclude_first_degree ?? true);
+      setSettingsTimezone((c as any).timezone || "UTC");
 
       // Parallel batch 1: profile, agent, step1 counts, today's queue
       const { data: authData } = await supabase.auth.getUser();
@@ -1013,10 +1016,11 @@ export default function CampaignDetail() {
       conversational_ai: settingsConversationalAi,
       max_ai_replies: settingsMaxAiReplies,
       exclude_first_degree: settingsExcludeFirst,
+      timezone: settingsTimezone,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies, exclude_first_degree: settingsExcludeFirst });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies, exclude_first_degree: settingsExcludeFirst, timezone: settingsTimezone });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
@@ -2387,7 +2391,59 @@ export default function CampaignDetail() {
                             <span className="text-xs text-muted-foreground">/day</span>
                           </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-2">≈ {Math.max(1, Math.floor(settingsDailyLimit / 5))} invitations per run × 5 runs (08:00, 10:00, 12:00, 14:00, 16:00 UTC)</p>
+                        <p className="text-[10px] text-muted-foreground mt-2">≈ {Math.max(1, Math.floor(settingsDailyLimit / 5))} invitations per run × 5 runs (08:00, 10:00, 12:00, 14:00, 16:00 in your timezone)</p>
+                      </div>
+                      <div className="rounded-xl bg-muted/20 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-bold text-foreground">Sending timezone</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Invites & messages send between 08:00–18:00 in this timezone</p>
+                          </div>
+                          <select
+                            value={settingsTimezone}
+                            onChange={(e) => setSettingsTimezone(e.target.value)}
+                            className="px-3 py-1.5 border border-border rounded-lg text-sm font-medium bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring max-w-[240px]"
+                          >
+                            {[
+                              { value: "UTC", label: "UTC" },
+                              { value: "Europe/London", label: "London (GMT/BST)" },
+                              { value: "Europe/Paris", label: "Paris / Berlin / Madrid (CET)" },
+                              { value: "Europe/Athens", label: "Athens / Helsinki (EET)" },
+                              { value: "Europe/Istanbul", label: "Istanbul (TRT)" },
+                              { value: "Asia/Dubai", label: "Dubai (GST)" },
+                              { value: "Asia/Kolkata", label: "India (IST)" },
+                              { value: "Asia/Singapore", label: "Singapore (SGT)" },
+                              { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+                              { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+                              { value: "America/New_York", label: "New York (EST/EDT)" },
+                              { value: "America/Chicago", label: "Chicago (CST/CDT)" },
+                              { value: "America/Denver", label: "Denver (MST/MDT)" },
+                              { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+                              { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+                            ].some(t => t.value === settingsTimezone) ? null : (
+                              <option value={settingsTimezone}>{settingsTimezone}</option>
+                            )}
+                            {[
+                              { value: "UTC", label: "UTC" },
+                              { value: "Europe/London", label: "London (GMT/BST)" },
+                              { value: "Europe/Paris", label: "Paris / Berlin / Madrid (CET)" },
+                              { value: "Europe/Athens", label: "Athens / Helsinki (EET)" },
+                              { value: "Europe/Istanbul", label: "Istanbul (TRT)" },
+                              { value: "Asia/Dubai", label: "Dubai (GST)" },
+                              { value: "Asia/Kolkata", label: "India (IST)" },
+                              { value: "Asia/Singapore", label: "Singapore (SGT)" },
+                              { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+                              { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+                              { value: "America/New_York", label: "New York (EST/EDT)" },
+                              { value: "America/Chicago", label: "Chicago (CST/CDT)" },
+                              { value: "America/Denver", label: "Denver (MST/MDT)" },
+                              { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+                              { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+                            ].map(tz => (
+                              <option key={tz.value} value={tz.value}>{tz.label}</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </CollapsibleContent>
