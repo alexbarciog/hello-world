@@ -34,6 +34,8 @@ const Index = () => {
       <Pricing />
       <FAQ />
       <FinalCTA />
+      {/* Mobile spacer so sticky CTA doesn't cover footer content */}
+      <div className="md:hidden h-16" aria-hidden />
       <Footer />
       <StickyMobileCTA />
     </div>
