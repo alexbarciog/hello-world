@@ -80,34 +80,43 @@ const Comparison = () => {
           transition={{ duration: 0.5, ease: EASE }}
           className="relative rounded-3xl bg-[#f5f5f5] p-4 md:p-6 overflow-x-auto"
         >
-          {/* Lime column glow — positioned over the Intentsly column */}
-          <div
-            className="hidden md:block pointer-events-none absolute top-3 bottom-3 left-[180px] w-[110px] rounded-2xl"
-            style={{
-              boxShadow: "inset 0 0 0 1.5px rgba(200,255,0,0.55), 0 12px 36px -10px rgba(200,255,0,0.45)",
-              background: "linear-gradient(180deg, rgba(200,255,0,0.06) 0%, rgba(200,255,0,0) 100%)",
-            }}
-            aria-hidden
-          />
-
-          {/* Best value floating badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
-            className="hidden md:flex absolute -top-3 left-[195px] items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-10 animate-float"
-          >
-            <Sparkles className="w-3 h-3 text-[#C8FF00]" />
-            Best value
-          </motion.div>
-
-          <table className="w-full min-w-[720px] relative">
+          <table className="w-full min-w-[720px] relative" style={{ tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: "26%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "14.5%" }} />
+              <col style={{ width: "14.5%" }} />
+              <col style={{ width: "14.5%" }} />
+              <col style={{ width: "14.5%" }} />
+            </colgroup>
             <thead>
               <tr className="border-b border-border/60">
                 <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground"> </th>
-                <th className="px-4 py-4">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#C8FF00]">
+                <th className="px-4 py-4 relative">
+                  {/* Lime column glow — anchored directly to the Intentsly header */}
+                  <div
+                    className="hidden md:block pointer-events-none absolute left-1/2 -translate-x-1/2 top-2 w-[88%] rounded-2xl"
+                    style={{
+                      height: "calc(100% + 1000px)",
+                      maxHeight: "640px",
+                      boxShadow: "inset 0 0 0 1.5px rgba(200,255,0,0.55), 0 12px 36px -10px rgba(200,255,0,0.45)",
+                      background: "linear-gradient(180deg, rgba(200,255,0,0.06) 0%, rgba(200,255,0,0) 100%)",
+                      zIndex: 0,
+                    }}
+                    aria-hidden
+                  />
+                  {/* Best value floating badge — centered above pill */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
+                    className="hidden md:flex absolute -top-5 left-1/2 -translate-x-1/2 items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--aeline-dark))] text-white text-[10px] font-bold uppercase tracking-wider shadow-lg z-20 animate-float whitespace-nowrap"
+                  >
+                    <Sparkles className="w-3 h-3 text-[#C8FF00]" />
+                    Best value
+                  </motion.div>
+                  <div className="relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#C8FF00]">
                     <span className="text-sm font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
                   </div>
                 </th>
