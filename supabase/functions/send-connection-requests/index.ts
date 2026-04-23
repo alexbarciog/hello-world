@@ -69,13 +69,26 @@ Deno.serve(async (req) => {
         // Get campaign and user profile limits
         const { data: campaign } = await serviceClient
           .from('campaigns')
-          .select('daily_connect_limit, user_id, exclude_first_degree')
+          .select('daily_connect_limit, user_id, exclude_first_degree, timezone')
           .eq('id', campaignId)
           .eq('status', 'active')
           .single();
 
         if (!campaign) {
           console.log(`[send-conn] campaign ${campaignId} not active, skipping`);
+          continue;
+        }
+
+        // Per-campaign business-hours guard: only send between 08:00–18:00
+        // in the campaign's local timezone (defaults to UTC).
+        const tz = (campaign as any).timezone || 'UTC';
+        const localHour = getHourInTimezone(tz);
+        if (localHour === null) {
+          console.warn(`[send-conn] campaign ${campaignId} invalid timezone "${tz}", falling back to UTC`);
+        }
+        const hourToCheck = localHour ?? new Date().getUTCHours();
+        if (hourToCheck < 8 || hourToCheck >= 18) {
+          console.log(`[send-conn] campaign ${campaignId} outside business hours (local hour=${hourToCheck}, tz=${tz})`);
           continue;
         }
 
