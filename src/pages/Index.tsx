@@ -6,8 +6,9 @@ import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
 import ProblemSection from "@/components/landing/ProblemSection";
 import HowItWorks from "@/components/landing/HowItWorks";
-import WhyIntentsly from "@/components/landing/WhyIntentsly";
 import UseCases from "@/components/landing/UseCases";
+import WhyIntentsly from "@/components/landing/WhyIntentsly";
+import Comparison from "@/components/landing/Comparison";
 import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import FinalCTA from "@/components/landing/FinalCTA";
@@ -26,8 +27,9 @@ const Index = () => {
       <LogoMarquee />
       <ProblemSection />
       <HowItWorks />
-      <WhyIntentsly />
       <UseCases />
+      <WhyIntentsly />
+      <Comparison />
       <Pricing />
       <FAQ />
       <FinalCTA />
