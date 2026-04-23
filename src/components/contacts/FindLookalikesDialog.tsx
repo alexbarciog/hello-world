@@ -80,7 +80,7 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
 
   async function handleSubmit() {
     if (!urlsValid) {
-      toast.error("Please paste 3–4 valid LinkedIn profile URLs");
+      toast.error("Please paste 3–4 valid LinkedIn company URLs");
       setStep(1);
       return;
     }
