@@ -358,7 +358,7 @@ Deno.serve(async (req) => {
         }).sort((a, b) => b.rank - a.rank).slice(0, max_per_company);
 
         // Find best matching seed (by industry similarity, fall back to first)
-        const seedMatch = seedProfiles.find((s) => s.industry && company.industry && s.industry.toLowerCase() === String(company.industry).toLowerCase()) || seedProfiles[0];
+        const seedMatch = seedCompanies.find((s) => s.industry && company.industry && s.industry.toLowerCase() === String(company.industry).toLowerCase()) || seedCompanies[0];
 
         for (const { it, rank } of ranked) {
           allLeads.push({ company, seedMatch, candidate: it, rank });
