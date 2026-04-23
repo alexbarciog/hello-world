@@ -68,14 +68,34 @@ const Comparison = () => {
               <tr className="border-b border-border/60">
                 <th className="text-left px-4 py-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground"> </th>
                 <th className="px-4 py-4">
-                  <div className="inline-flex flex-col items-center gap-1 px-3 py-1.5 rounded-full bg-[#C8FF00]">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#C8FF00]">
                     <span className="text-sm font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
                   </div>
                 </th>
-                <th className="px-4 py-4 text-sm font-semibold text-muted-foreground">Apollo</th>
-                <th className="px-4 py-4 text-sm font-semibold text-muted-foreground">Clay</th>
-                <th className="px-4 py-4 text-sm font-semibold text-muted-foreground">Sales Nav</th>
-                <th className="px-4 py-4 text-sm font-semibold text-muted-foreground">Agencies</th>
+                {[
+                  { name: "Apollo", domain: "apollo.io" },
+                  { name: "Clay", domain: "clay.com" },
+                  { name: "Sales Nav", domain: "linkedin.com" },
+                  { name: "Agencies", domain: null },
+                ].map((c) => (
+                  <th key={c.name} className="px-4 py-4">
+                    <div className="inline-flex items-center gap-2">
+                      {c.domain ? (
+                        <img
+                          src={`https://www.google.com/s2/favicons?domain=${c.domain}&sz=64`}
+                          alt={`${c.name} logo`}
+                          loading="lazy"
+                          className="w-5 h-5 rounded-md object-contain"
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded-md bg-muted-foreground/15 flex items-center justify-center">
+                          <span className="text-[9px] font-bold text-muted-foreground">A</span>
+                        </div>
+                      )}
+                      <span className="text-sm font-semibold text-muted-foreground">{c.name}</span>
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
