@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.find-lookalike-leads]
 verify_jwt = false
+
+[functions.send-discount40-winback]
+verify_jwt = false
