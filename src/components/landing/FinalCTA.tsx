@@ -57,28 +57,6 @@ const FinalCTA = () => {
             </a>
           </div>
 
-          {/* Avatar trust strip */}
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <div className="flex -space-x-2">
-              {[
-                "from-pink-400 to-orange-400",
-                "from-sky-400 to-indigo-500",
-                "from-emerald-400 to-teal-500",
-                "from-purple-400 to-fuchsia-500",
-                "from-amber-400 to-rose-500",
-              ].map((g, i) => (
-                <div
-                  key={i}
-                  className={`w-6 h-6 md:w-7 md:h-7 rounded-full bg-gradient-to-br ${g} ring-2 ring-white/40`}
-                  aria-hidden
-                />
-              ))}
-            </div>
-            <p className="text-xs md:text-sm text-white/85 leading-snug">
-              Sarah, Marcus, Priya + <span className="font-semibold text-white">500 more</span> started this month
-            </p>
-          </div>
-
           {/* Microtrust */}
           <p className="mt-4 text-[11px] uppercase tracking-[0.18em] text-white/70">
             No contract · Cancel anytime · 5-min setup
