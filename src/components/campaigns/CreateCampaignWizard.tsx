@@ -46,6 +46,35 @@ const MESSAGE_TONES = [
   { value: "direct", label: "Direct", desc: "Bold, confident", icon: Target },
 ];
 
+// Common timezones — campaigns send between 08:00 and 18:00 in this zone
+const TIMEZONES: { value: string; label: string }[] = [
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/London", label: "London (GMT/BST)" },
+  { value: "Europe/Paris", label: "Paris / Berlin / Madrid (CET)" },
+  { value: "Europe/Athens", label: "Athens / Helsinki (EET)" },
+  { value: "Europe/Istanbul", label: "Istanbul (TRT)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
+  { value: "America/New_York", label: "New York (EST/EDT)" },
+  { value: "America/Chicago", label: "Chicago (CST/CDT)" },
+  { value: "America/Denver", label: "Denver (MST/MDT)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
+  { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
+];
+
+function detectBrowserTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TIMEZONES.some(t => t.value === tz)) return tz;
+    return tz || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
 const ease = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const contentVariant = {
   hidden: { opacity: 0, x: 20 },
@@ -85,6 +114,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
   const [painPoints, setPainPoints] = useState("");
   const [campaignGoal, setCampaignGoal] = useState("conversations");
   const [messageTone, setMessageTone] = useState("professional");
+  const [timezone, setTimezone] = useState<string>(detectBrowserTimezone());
   const [linkedInName, setLinkedInName] = useState("LinkedIn Account");
 
   useEffect(() => {
@@ -142,6 +172,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     setPainPoints((data.pain_points || []).join("\n"));
     setCampaignGoal(data.campaign_goal || "conversations");
     setMessageTone(data.message_tone || "professional");
+    setTimezone((data as any).timezone || "UTC");
   }
 
   function resetForm() {
@@ -154,6 +185,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
     setPainPoints("");
     setCampaignGoal("conversations");
     setMessageTone("professional");
+    setTimezone(detectBrowserTimezone());
     setAutoAnalyzed(false);
     setOnboardingWebsiteLoaded(false);
   }
@@ -233,6 +265,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
       pain_points: painPointsArr,
       campaign_goal: campaignGoal,
       message_tone: messageTone,
+      timezone,
       source_type: sourceType,
       source_agent_id: sourceType === "agent" ? selectedAgentId || null : null,
       source_list_id: sourceType === "list" ? selectedListId || null : null,
