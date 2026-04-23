@@ -52,6 +52,7 @@ type CampaignFull = {
   messages_sent: number;
   messages_replied: number;
   daily_connect_limit: number;
+  timezone?: string;
   custom_training: string | null;
   language: string | null;
   conversational_ai: boolean;
