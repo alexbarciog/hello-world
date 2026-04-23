@@ -16,7 +16,7 @@ interface Props {
   onImported: () => void;
 }
 
-const URL_REGEX = /linkedin\.com\/in\//i;
+const URL_REGEX = /linkedin\.com\/(company|school|showcase)\//i;
 
 const COMPANY_SIZES = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5000+"];
 const SENIORITIES = ["Owner", "Founder", "C-level", "VP", "Director", "Head of"];
@@ -80,7 +80,7 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
 
   async function handleSubmit() {
     if (!urlsValid) {
-      toast.error("Please paste 3–4 valid LinkedIn profile URLs");
+      toast.error("Please paste 3–4 valid LinkedIn company URLs");
       setStep(1);
       return;
     }
@@ -157,7 +157,7 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
             Find Lookalike Leads
           </DialogTitle>
           <DialogDescription>
-            Paste 3–4 of your best customers' LinkedIn profiles. We'll find similar companies and surface their top decision-makers.
+            Paste 3–4 LinkedIn company pages of your best customers. We'll find similar companies and surface their top decision-makers.
           </DialogDescription>
         </DialogHeader>
 
@@ -191,18 +191,18 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
             {step === 1 && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold mb-1.5 block">Best customers' LinkedIn profiles (3–4)</label>
+                  <label className="text-xs font-semibold mb-1.5 block">Best customers' LinkedIn company pages (3–4)</label>
                   <Textarea
                     value={urlsText}
                     onChange={(e) => setUrlsText(e.target.value)}
-                    placeholder={"https://www.linkedin.com/in/jane-doe\nhttps://www.linkedin.com/in/john-smith\nhttps://www.linkedin.com/in/sara-lee"}
+                    placeholder={"https://www.linkedin.com/company/acme-inc\nhttps://www.linkedin.com/company/globex\nhttps://www.linkedin.com/company/initech"}
                     className="min-h-[140px] text-xs font-mono"
                   />
                   <div className="text-xs text-muted-foreground mt-1.5">
                     {urls.length} URL{urls.length === 1 ? "" : "s"} entered
                     {urls.length > 0 && !urlsValid && (
                       <span className="text-destructive ml-2">
-                        {urls.length < 3 ? "Need at least 3" : urls.length > 4 ? "Maximum 4" : "All URLs must be linkedin.com/in/…"}
+                        {urls.length < 3 ? "Need at least 3" : urls.length > 4 ? "Maximum 4" : "All URLs must be linkedin.com/company/…"}
                       </span>
                     )}
                   </div>
@@ -296,7 +296,7 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
             {/* Step 3: Review */}
             {step === 3 && (
               <div className="space-y-3">
-                <SummaryRow label="Seed leads" value={`${urls.length} profile${urls.length === 1 ? "" : "s"}`} />
+                <SummaryRow label="Seed companies" value={`${urls.length} compan${urls.length === 1 ? "y" : "ies"}`} />
                 <SummaryRow label="Industries" value={industries.length ? industries.join(", ") : "Auto-detect from seeds"} />
                 <SummaryRow label="Company size" value={companySizes.length ? companySizes.join(", ") : "Any"} />
                 <SummaryRow label="Locations" value={locations.length ? locations.join(", ") : "Any"} />

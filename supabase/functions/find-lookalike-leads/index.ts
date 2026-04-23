@@ -52,8 +52,8 @@ const SENIORITY_RANK: Record<string, number> = {
   "senior": 60,
 };
 
-function extractPublicId(url: string): string | null {
-  const m = url.match(/linkedin\.com\/in\/([^/?#]+)/i);
+function extractCompanyPublicId(url: string): string | null {
+  const m = url.match(/linkedin\.com\/(?:company|school|showcase)\/([^/?#]+)/i);
   return m ? decodeURIComponent(m[1]) : null;
 }
 
@@ -138,10 +138,10 @@ Deno.serve(async (req) => {
     const signal_mode: "industry" | "ai" = body.signal_mode === "ai" ? "ai" : "industry";
 
     if (seed_urls.length < 3 || seed_urls.length > 4) {
-      return json({ error: "Provide 3 to 4 LinkedIn profile URLs" }, 400);
+      return json({ error: "Provide 3 to 4 LinkedIn company URLs" }, 400);
     }
-    if (!seed_urls.every((u) => /linkedin\.com\/in\//i.test(u))) {
-      return json({ error: "All seed URLs must be linkedin.com/in/... profiles" }, 400);
+    if (!seed_urls.every((u) => /linkedin\.com\/(?:company|school|showcase)\//i.test(u))) {
+      return json({ error: "All seed URLs must be linkedin.com/company/... pages" }, 400);
     }
     if (!list_id && !new_list_name) {
       return json({ error: "Provide list_id or new_list_name" }, 400);
@@ -221,20 +221,25 @@ Deno.serve(async (req) => {
     let decision_makers_found = 0;
 
     try {
-      // ───────── Step 1: Seed enrichment ─────────
-      const seedProfiles: Array<{ url: string; first_name: string; headline: string; industry: string; company: string }> = [];
+      // ───────── Step 1: Seed enrichment (companies) ─────────
+      const seedCompanies: Array<{ url: string; id: string | null; name: string; industry: string; description: string; size: string }> = [];
       for (const url of seed_urls) {
-        const publicId = extractPublicId(url);
+        const publicId = extractCompanyPublicId(url);
         if (!publicId) continue;
-        const { ok, payload } = await unipileGet(`/api/v1/users/${encodeURIComponent(publicId)}`, accountId, controller.signal);
-        if (!ok) continue;
+        const { ok, payload } = await unipileGet(`/api/v1/linkedin/company/${encodeURIComponent(publicId)}`, accountId, controller.signal);
+        if (!ok) {
+          // Still record minimal info so the pipeline can continue
+          seedCompanies.push({ url, id: null, name: publicId, industry: "", description: "", size: "" });
+          continue;
+        }
         const p = payload || {};
-        seedProfiles.push({
+        seedCompanies.push({
           url,
-          first_name: p.first_name || (p.name ? String(p.name).split(" ")[0] : "") || "Customer",
-          headline: p.headline || p.occupation || "",
-          industry: p.industry || p.industry_name || "",
-          company: p.current_company?.name || p.company?.name || (Array.isArray(p.work_experience) && p.work_experience[0]?.company) || "",
+          id: p.id || p.entity_urn || p.provider_id || null,
+          name: p.name || publicId,
+          industry: p.industry || p.industry_name || (Array.isArray(p.industries) ? p.industries[0] : "") || "",
+          description: p.description || p.tagline || "",
+          size: p.staff_count || p.staff_count_range || p.company_size || "",
         });
         await new Promise((r) => setTimeout(r, 150));
       }
@@ -242,20 +247,20 @@ Deno.serve(async (req) => {
       // ───────── Step 2: ICP synthesis ─────────
       await admin.from("lookalike_runs").update({ status: "searching_companies" }).eq("id", runId);
 
-      const seedSummary = seedProfiles.map((s, i) => `Seed ${i+1}: ${s.first_name} — ${s.headline} @ ${s.company} (industry: ${s.industry})`).join("\n");
+      const seedSummary = seedCompanies.map((s, i) => `Seed ${i+1}: ${s.name} — industry: ${s.industry || "n/a"}${s.description ? ` — ${String(s.description).slice(0, 200)}` : ""}`).join("\n");
       const userIndustriesText = userIndustries.length ? `User-selected industries: ${userIndustries.join(", ")}` : "";
-      const aiPrompt = `Best customers (lookalike seeds):\n${seedSummary}\n\n${userIndustriesText}\n\nReturn JSON with:\n- "industry_keywords": 3-5 short LinkedIn-search keywords for company industries (strings)\n- "icp_summary": one sentence describing the ICP`;
+      const aiPrompt = `Best customer companies (lookalike seeds):\n${seedSummary}\n\n${userIndustriesText}\n\nReturn JSON with:\n- "industry_keywords": 3-5 short LinkedIn-search keywords for company industries (strings)\n- "icp_summary": one sentence describing the ICP`;
       const aiRaw = await callAI(aiPrompt, "You are a B2B sales strategist. Return ONLY valid JSON, no markdown.");
       let icp: { industry_keywords: string[]; icp_summary: string } = { industry_keywords: [], icp_summary: "" };
       try {
         const cleaned = aiRaw.replace(/```json\s*|\s*```/g, "").trim();
         icp = JSON.parse(cleaned);
       } catch {
-        icp.industry_keywords = [...new Set(seedProfiles.map((s) => s.industry).filter(Boolean))].slice(0, 5);
+        icp.industry_keywords = [...new Set(seedCompanies.map((s) => s.industry).filter(Boolean))].slice(0, 5);
       }
       // Merge user-selected industries first
       const industryKeywords = [...new Set([...userIndustries, ...(icp.industry_keywords || [])])].slice(0, 5);
-      const searchKeywords = industryKeywords.join(" OR ") || seedProfiles[0]?.industry || "";
+      const searchKeywords = industryKeywords.join(" OR ") || seedCompanies[0]?.industry || "";
 
       // ───────── Step 3: Company search ─────────
       const companies: Array<{ id: string; name: string; industry?: string }> = [];
@@ -272,6 +277,8 @@ Deno.serve(async (req) => {
       const existingCompanies = new Set<string>(
         (existingContacts || []).map((r: any) => String(r.company || "").toLowerCase().trim()).filter(Boolean)
       );
+      // Also exclude the seed companies themselves
+      seedCompanies.forEach((s) => { if (s.name) existingCompanies.add(s.name.toLowerCase().trim()); });
 
       for (let p = 0; p < 5 && companies.length < max_companies; p++) {
         const searchBody: Record<string, unknown> = {
@@ -318,7 +325,7 @@ Deno.serve(async (req) => {
 
       const allLeads: Array<{
         company: { id: string; name: string; industry?: string };
-        seedMatch: typeof seedProfiles[0];
+        seedMatch: typeof seedCompanies[0];
         candidate: any;
         rank: number;
       }> = [];
@@ -351,7 +358,7 @@ Deno.serve(async (req) => {
         }).sort((a, b) => b.rank - a.rank).slice(0, max_per_company);
 
         // Find best matching seed (by industry similarity, fall back to first)
-        const seedMatch = seedProfiles.find((s) => s.industry && company.industry && s.industry.toLowerCase() === String(company.industry).toLowerCase()) || seedProfiles[0];
+        const seedMatch = seedCompanies.find((s) => s.industry && company.industry && s.industry.toLowerCase() === String(company.industry).toLowerCase()) || seedCompanies[0];
 
         for (const { it, rank } of ranked) {
           allLeads.push({ company, seedMatch, candidate: it, rank });
@@ -406,7 +413,7 @@ Deno.serve(async (req) => {
       if (signal_mode === "industry") {
         for (const c of toInsert) {
           const ind = c.industry || "their industry";
-          signals.push(`Works in ${ind} — lookalike of ${c.seedMatch?.first_name || "your best client"}`);
+          signals.push(`Works in ${ind} — lookalike of ${c.seedMatch?.name || "your best client"}`);
         }
       } else {
         // Batch AI calls (10 leads each)
@@ -414,8 +421,8 @@ Deno.serve(async (req) => {
         for (let i = 0; i < toInsert.length; i += BATCH) {
           if (controller.signal.aborted) break;
           const batch = toInsert.slice(i, i + BATCH);
-          const prompt = `For each lead, return a one-sentence signal (≤140 chars) explaining why this lead matches our ICP. Reference what makes them similar to our best customer.\n\n` +
-            batch.map((c, idx) => `${idx+1}. ${c.first_name} ${c.last_name || ""} — ${c.title || ""} @ ${c.company} (industry: ${c.industry || "n/a"}). Best-customer match: ${c.seedMatch?.first_name || ""} (${c.seedMatch?.headline || ""})`).join("\n") +
+          const prompt = `For each lead, return a one-sentence signal (≤140 chars) explaining why this lead matches our ICP. Reference what makes their company similar to our best customer.\n\n` +
+            batch.map((c, idx) => `${idx+1}. ${c.first_name} ${c.last_name || ""} — ${c.title || ""} @ ${c.company} (industry: ${c.industry || "n/a"}). Best-customer match: ${c.seedMatch?.name || ""} (industry: ${c.seedMatch?.industry || "n/a"})`).join("\n") +
             `\n\nReturn JSON: {"signals": ["sentence 1", "sentence 2", ...]} matching the order above.`;
           const raw = await callAI(prompt, "You write concise B2B sales signals. Return ONLY valid JSON.");
           let parsed: { signals: string[] } = { signals: [] };
@@ -426,7 +433,7 @@ Deno.serve(async (req) => {
           for (let j = 0; j < batch.length; j++) {
             const s = parsed.signals?.[j];
             if (s && typeof s === "string") signals.push(s.slice(0, 200));
-            else signals.push(`Decision-maker at ${batch[j].company} — lookalike of ${batch[j].seedMatch?.first_name || "your best client"}`);
+            else signals.push(`Decision-maker at ${batch[j].company} — lookalike of ${batch[j].seedMatch?.name || "your best client"}`);
           }
         }
       }
@@ -445,7 +452,7 @@ Deno.serve(async (req) => {
           linkedin_profile_id: c.linkedin_profile_id,
           relevance_tier: "warm",
           approval_status: "auto_approved",
-          signal: signals[idx] || `Lookalike of ${c.seedMatch?.first_name || "your best client"}`,
+          signal: signals[idx] || `Lookalike of ${c.seedMatch?.name || "your best client"}`,
           signal_a_hit: true,
           ai_score: 7,
           company_icon_color: pickColor(c.company || c.first_name),
