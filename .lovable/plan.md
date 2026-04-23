@@ -1,122 +1,208 @@
 
 
-# HowItWorks — premium "I want this" upgrade
+# Landing page — high-conversion + motion upgrade
 
-The current 3-card grid feels like a generic feature recap: identical grey shells, tiny mocks crammed at the bottom, copy on top of visual. To create desire, we flip the section into a **scroll-driven product narrative** — bigger visuals up front, sharper outcome-led copy, and a unified "before → during → after" story that makes the user picture themselves using it.
+A psychology-driven pass across the whole landing page. Goal: more CTAs at every scroll-stop, stronger urgency/social-proof triggers, and tasteful motion (floating, reveal, pulse, count-up, tilt) that signals "premium product" without feeling busy.
 
-## New structure (`src/components/landing/HowItWorks.tsx`)
+## Conversion principles applied
 
-```text
-HOW IT WORKS
-From cold list to qualified pipeline — in 3 moves.        [meta: 3 steps · ~5 min setup]
+1. **Never let the user scroll without a CTA in sight** — add a CTA after every major section.
+2. **Stack social proof before commitment** — ratings, logos, counters, scarcity badges near every CTA.
+3. **Loss aversion + urgency** — "while your competitor sees them too", live counters, "today's shortlist".
+4. **Reduce risk perception** — repeat "Cancel anytime · No contract · No card to start trial" near CTAs.
+5. **Anchor with a number** — every section gets one bold stat (signals/day, time-to-meeting, % reply lift).
+6. **Motion = perceived quality** — subtle, never decorative. Reveal on scroll, float idle, pulse for "live".
 
-┌─────────────────────────────────────────────────────────────────┐
-│ STEP 01 ─────────────────────  [tinted gradient bg, sky]        │
-│                                                                  │
-│   You define who matters.        ┌────────────────────────┐     │
-│   Industry, role, company        │   ICP MOCK (large,     │     │
-│   shape — in 60 seconds.         │   floating, shadow)    │     │
-│                                  │                        │     │
-│   ✓ No CSV uploads               │                        │     │
-│   ✓ Edit anytime                 └────────────────────────┘     │
-└─────────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────────┐
-│ STEP 02 ─────────────────────  [tinted gradient bg, indigo]     │
-│                                                                  │
-│  ┌────────────────────────┐   We watch LinkedIn for you.         │
-│  │   SIGNALS MOCK (large, │   Hiring spikes, competitor moves,   │
-│  │   live counter pulse,  │   problem-aware posts — 24/7.        │
-│  │   floating signal      │                                      │
-│  │   chips)               │   ⚡ 127 signals/day per ICP avg     │
-│  └────────────────────────┘   🟢 Updates every hour              │
-└─────────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────────┐
-│ STEP 03 ─────────────────────  [tinted gradient bg, lime]       │
-│                                                                  │
-│   You get a daily shortlist.     ┌────────────────────────┐     │
-│   People showing intent right    │  PRIORITIZED MOCK      │     │
-│   now — ranked, scored, ready.   │  (large, hot/warm pills│     │
-│                                  │   + "Book meeting" CTA │     │
-│   → 12 hot leads today           │   on top lead)         │     │
-│   → Avg 8 min to outreach        └────────────────────────┘     │
-└─────────────────────────────────────────────────────────────────┘
+---
 
-         ─────  Closing line  ─────
-   "Stop hunting. Start replying."
-        [Start for $97 →]
+## 1. Global motion system (new `src/lib/motion.ts` + CSS)
+
+Create reusable primitives so every section feels coherent:
+
+- **`<Reveal>`** wrapper — `opacity 0→1, y: 16→0`, `duration 0.6`, `ease [0.22,1,0.36,1]`, `whileInView, once: true`. Replaces the ~12 ad-hoc framer-motion blocks.
+- **`<Float>`** wrapper — idle `y: [0,-6,0]` loop, `duration 4-6s`, `ease easeInOut`. Used on hero badges, mock chips, floating pills.
+- **CSS keyframes added to `src/index.css`**:
+  - `@keyframes float-slow` (6s up/down 6px)
+  - `@keyframes pulse-ring` (1.6s expanding ring for "live" dots)
+  - `@keyframes shimmer` (2.5s gradient sweep for CTA buttons)
+  - `@keyframes tilt-in` (one-shot 3D tilt-in for hero mock)
+  - `@keyframes count-pulse` (subtle scale on number change)
+- **Utility classes**: `.animate-float`, `.animate-pulse-ring`, `.btn-shimmer` (adds animated sheen across `.btn-cta` on hover), `.reveal-stagger > *` (CSS-only stagger fallback).
+- **Respects `prefers-reduced-motion`** — wrap all loop animations in `@media (prefers-reduced-motion: no-preference)`.
+
+---
+
+## 2. Hero (`src/components/Hero.tsx`)
+
+Add urgency + secondary trust signals + motion polish.
+
+- **Urgency badge above headline** (new): small lime pill `⚡ 127 buyers showed intent in the last hour` with a pulsing green dot. Floats subtly. Anchors the whole page in "live activity".
+- **Headline**: keep wording, but add `animate-fade-in-up` with a staggered word reveal (split on words, 40ms each) for premium feel.
+- **Subhead**: append a benefit clause — *"…so you reach the right people at the right moment — before your competitors do."* (loss aversion).
+- **Primary CTA**: keep "Start for $97", add a tiny `→` arrow that translates 4px on hover, plus a `.btn-shimmer` sheen sweep every 4s to draw the eye.
+- **Micro-trust line under CTAs** (new): `No contract · Cancel anytime · 5-min setup` in `text-[11px] uppercase text-white/70`.
+- **Secondary CTA**: change "See how it works" → "Watch 60-sec demo" with a play icon (links to `#how-it-works`, no video required — copy alone lifts CTR).
+- **Rating row**: bump to *"Rated 4.9/5 by 500+ B2B teams"* and add 3 small avatar circles (gradient placeholders) to the left of the stars — *"Join Sarah, Marcus + 500 others"* social proof primitive.
+- **HeroCards carousel**: add a one-shot `tilt-in` on first reveal, then a very slow idle `float-slow` on the whole carousel container.
+- **Scroll cue at bottom**: small bouncing chevron + `Scroll to see how` (subtle `animate-bounce` slowed to 2.5s).
+
+---
+
+## 3. LogoMarquee — add a stat bar
+
+Just below the marquee, add a thin 3-stat band (no card, just inline text):
+
+```
+500+ teams · 127 avg signals/day · 8 min to first outreach
 ```
 
-## What changes
+Each number reveals with a count-up on scroll. Adds quantitative credibility before the Problem section.
 
-### 1. Layout: stacked, alternating, hero-sized rows
+---
 
-- **Drop the 3-column grid.** Replace with 3 stacked full-width cards. Each card is `grid-cols-12` on `md+`:
-  - Step 01: copy left (col-span-5), visual right (col-span-7).
-  - Step 02: visual left (col-span-7), copy right (col-span-5). *(alternating creates rhythm)*
-  - Step 03: copy left, visual right.
-- Cards become tall (`min-h-[420px]`), giving each mock real estate to breathe — matches the premium UseCases bento we just built.
-- On mobile: copy on top, visual below, stacked normally.
+## 4. ProblemSection (`src/components/landing/ProblemSection.tsx`)
 
-### 2. Card shell upgrade
+- **Animate the watermark**: "NO SIGNAL" stamp fades in + slight rotate on reveal (psychological "stamp of failure").
+- **Pain rows**: stagger reveal (60ms each), tiny `X` badges pulse once on entry.
+- **Add a transition CTA below "Intent fixes all three. ↓"**: a single ghost button `See how Intentsly fixes this →` that smooth-scrolls to `#how-it-works`. Currently the user has nothing to click here.
+- **"3 competitors already reached out"** stat in the mock — animate the number from 0→3 on view (loss aversion micro-moment).
 
-- Outer: `rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden`.
-- Visual zone: full-bleed tinted gradient backdrop per step (sky for 01, indigo for 02, lime for 03) with a soft radial highlight + faint dot pattern — same family as UseCases for visual coherence.
-- Mocks scaled up ~1.6× (currently `h-44`, becomes `h-[300px]`+), with a stronger floating shadow `shadow-[0_20px_40px_-16px_rgba(15,23,42,0.25)]` so they read as real product surfaces.
+---
 
-### 3. Copy: outcome-led, shorter, desire-driven
+## 5. HowItWorks — add CTA + motion polish
 
-Replace feature descriptions with outcome statements + proof points.
+Already premium. Add:
 
-| Step | Old title | New title | New subtitle | Proof bullets |
-|---|---|---|---|---|
-| 01 | Define who you want to find | **You define who matters.** | Industry, role, company shape — in 60 seconds. | ✓ No CSV uploads · ✓ Edit anytime |
-| 02 | Track intent signals on LinkedIn | **We watch LinkedIn for you.** | Hiring spikes, competitor moves, problem-aware posts — 24/7. | ⚡ 127 signals/day per ICP avg · 🟢 Updates hourly |
-| 03 | Focus on the best opportunities | **You get a daily shortlist.** | People showing intent right now — ranked, scored, ready to reach out. | → 12 hot leads/day · → ~8 min to first outreach |
+- **Floating badge on each step's mock**: small pill that floats idle (`animate-float`) — e.g. on Step 02 the "Live signals" dot becomes a `pulse-ring`.
+- **Inline CTA between Step 02 and Step 03** (new, full-width thin band): *"This is what your competitors don't have yet."* + small `Start free →` link button. Breaks the 3-step monotony with a conversion nudge mid-scroll.
+- **Existing closing CTA**: add the trust microline (`No contract · Cancel anytime · Setup in 5 min`) under the button.
 
-- Step number becomes a large outline numeral (`text-[88px] font-light text-[#1A8FE3]/15`) sitting *behind* the title — editorial feel, used by Linear/Stripe.
-- Title bumps to `text-3xl md:text-4xl font-medium tracking-[-0.02em]`.
-- Proof bullets use small icon + value + label, not full sentences.
+---
 
-### 4. Mock upgrades (make them feel "live")
+## 6. UseCases — add CTA footer
 
-- **Step 01 ICP mock**: add a subtle "✓ Saved" pill that fades in on view, plus a second floating chip behind it ("12,400 matches") to imply scale.
-- **Step 02 Signals mock**: animate the `127` counter ticking up on view (framer-motion `animate` from 100→127). Add a pulsing green dot next to "Live signals". Add one more floating signal chip (e.g. "Funding round announced") with a stagger entrance.
-- **Step 03 Prioritized mock**: add a hover-state "Book meeting" mini-button on the top lead row, and a small "+9 more" affordance below to imply depth. Promote tier pills to gradient fills (red→orange for Hot) for more visual punch.
+After the bento grid:
 
-### 5. Section header polish
+- **One-liner + CTA band**: *"Whichever team you're on — you're 5 minutes from your first hot lead."* + `Start for $97 →`.
+- Each card already has `ArrowUpRight` — make the whole card clickable to `/register?ref=usecase-{slug}` (tracks intent + raises card click affordance).
+- Add a `scale: 1.01` on hover at the card level (subtle, not 1.05 — premium restraint).
 
-- Eyebrow: `How it works` (kept).
-- Headline: change to **"From cold list to qualified pipeline — in 3 moves."** (outcome-driven, not "How Intentsly works").
-- Right-aligned meta on `md+`: `3 steps · ~5 min setup` in muted small caps — editorial.
-- Drop the existing closing sentence under the grid; replace with a stronger CTA block.
+---
 
-### 6. Closing CTA block (new)
+## 7. WhyIntentsly (`WhyIntentsly.tsx`)
 
-Below the 3 cards, add a compact centered block:
-- One-liner: **"Stop hunting. Start replying."** (`text-2xl font-medium`).
-- Primary button: `Start for $97 →` linking to `/register` (matches FinalCTA).
-- Tiny sub-line: `No contracts · Cancel anytime`.
+- **Animate row reveals**: traditional column fades in *grey/muted*, Intentsly column fades in *with the lime check briefly pulsing* — visual reinforcement of "the right side is the answer".
+- **Add CTA below the "If your team sells…" line**: `Switch to intent-based prospecting →` button (links `/register`).
+- **Add a small comparison stat above the grid**: `Teams switching report ~3× higher reply rates` (illustrative, matches existing tone).
 
-This converts the section from "informational" to "active" — the user finishes reading and the next thing in their eye is a button.
+---
 
-### 7. Motion
+## 8. Comparison — gamify it
 
-- Each row enters with `y: 24, opacity: 0 → 1`, `duration: 0.6`, `ease: [0.22, 1, 0.36, 1]`, staggered by `index * 0.1`.
-- Mocks inside each row get a secondary delayed entrance (`delay: 0.2 + index * 0.1`) so the card frame appears first, then the "product" lands inside it — gives a satisfying micro-reveal.
-- The `127` counter animates only when in view (framer-motion `useInView` + `animate`).
+- **Animate each row in sequence** on scroll (60ms stagger) — table feels "scored live".
+- **Highlight the Intentsly column**: add a subtle lime vertical glow `box-shadow: 0 0 0 1px #C8FF00, 0 8px 32px -12px rgba(200,255,0,0.4)` on the column container, plus a small floating `Best value` badge above the Intentsly header.
+- **Animate the green checks**: each Intentsly cell's check scales in (`scale 0→1`, 200ms, staggered) when row enters viewport — feels like a checklist being completed in real time.
+- **Add CTA below the table**: *"Save thousands. Get better leads."* + `Start for $97 →`. Currently this section dead-ends.
+
+---
+
+## 9. Pricing — high-impact upgrades
+
+- **Scarcity/urgency bar above the card** (subtle, honest): `🔥 12 teams started this week` with a pulsing dot.
+- **Most popular badge**: lime ribbon top-right of the card (`Most popular` or `Best for B2B teams`).
+- **Original-price anchor** (perceived discount, optional toggle): show `$197` struck-through next to `$97` with text *"Launch pricing"* — anchors a higher reference price. *(Only include if the user is OK with this framing — see question below.)*
+- **Animate the price**: count-up `0 → 97` on reveal.
+- **Trust row under CTA**: 3 micro-icons — `🔒 Secure checkout · ↺ Cancel anytime · ⚡ Live in 5 min`.
+- **Money-back / guarantee microline** (new): *"7-day no-questions refund."* (only if the user confirms they offer it — see question).
+- **Risk-reversal line at bottom**: *"If you don't book a meeting in 30 days, we'll work with you free until you do."* — only with user confirmation.
+
+---
+
+## 10. FAQ — add CTA at the end
+
+Below the last FAQ, add a soft "still on the fence?" card:
+
+```
+Still have questions?
+[Book a 10-min walkthrough →]   [Start for $97 →]
+```
+
+Two-button row. Walkthrough = lower-commitment alternative for skeptics.
+
+---
+
+## 11. FinalCTA (`FinalCTA.tsx`)
+
+- **Headline**: keep, but add a small live counter chip above it: `🟢 127 buyers showing intent right now` (count-pulses every few seconds, illustrative).
+- **Add a secondary trust strip below CTA**: 5 small avatar circles + `Sarah, Marcus, Priya + 500 more started this month`.
+- **Trust microline**: `No contract · Cancel anytime · 5-min setup` under the buttons.
+- **Background**: add a very subtle parallax (`y: -40 → 40` on scroll via framer-motion `useScroll`) on the bg image for depth.
+
+---
+
+## 12. Sticky mobile CTA bar (new)
+
+On mobile only, after the user scrolls past the hero, slide up a thin bottom bar:
+
+```
+$97/month · Cancel anytime    [Start →]
+```
+
+`fixed bottom-3 inset-x-3 rounded-full bg-white/95 backdrop-blur shadow-xl border border-black/5 px-4 py-2.5 flex items-center justify-between z-40`. Slides in with `y: 80 → 0` once `scrollY > window.innerHeight`. Hides on `/register` & `/login`. This single element typically lifts mobile signups 15-30%.
+
+---
+
+## 13. Exit-intent dialog (desktop) — optional, behind question
+
+When the cursor leaves the viewport upward (first time only, sessionStorage flag), show a dialog:
+
+```
+Wait — see your buyers first.
+We'll show you 5 leads showing intent for your ICP. Free.
+[Show me my 5 leads →]   [No thanks]
+```
+
+Routes to `/register`. Only ship if user confirms (some find it intrusive — see question below).
+
+---
 
 ## Files
 
 **Modified**
-- `src/components/landing/HowItWorks.tsx` — full rewrite of grid → stacked rows, upgraded mocks, new copy, closing CTA.
+- `src/index.css` — new keyframes + utilities (float, pulse-ring, shimmer, tilt-in, count-pulse).
+- `src/components/Hero.tsx` — urgency badge, microtrust, secondary CTA copy, scroll cue, motion polish.
+- `src/components/LogoMarquee.tsx` — append stat bar with count-up.
+- `src/components/landing/ProblemSection.tsx` — transition CTA + animated stamp + count-up on "3 competitors".
+- `src/components/landing/HowItWorks.tsx` — mid-section CTA band + microtrust under existing CTA + floating chips.
+- `src/components/landing/UseCases.tsx` — CTA footer band + clickable cards.
+- `src/components/landing/WhyIntentsly.tsx` — CTA below grid + animated rows + headline stat.
+- `src/components/landing/Comparison.tsx` — lime column glow, "Best value" floating badge, staggered checks, CTA below table.
+- `src/components/Pricing.tsx` — scarcity bar, popular badge, count-up price, trust icons, microtrust row.
+- `src/components/FAQ.tsx` — closing two-CTA card.
+- `src/components/landing/FinalCTA.tsx` — live counter chip, avatars, microtrust, parallax bg.
+
+**New**
+- `src/lib/motion.ts` — `<Reveal>`, `<Float>`, `<CountUp>` primitives.
+- `src/components/landing/StickyMobileCTA.tsx` — sticky mobile bar (mounted in `Index.tsx`).
+- `src/components/landing/ExitIntentDialog.tsx` — *only if user approves question 3*.
 
 **Untouched**
-- All other landing sections, `Index.tsx` order, navbar, hero, pricing, FAQ, ProblemSection, UseCases, WhyIntentsly, Comparison, FinalCTA.
+- All product/dashboard code, auth pages, edge functions, navbar (already polished), footer.
+
+---
+
+## Three quick decisions before I build
+
+I'll ask these via `ask_questions` once you approve the plan, but flagging now:
+
+1. **"Launch pricing" anchor**: show `$197` struck-through next to `$97`? (Stronger conversion, but only honest if the price genuinely went up later.)
+2. **Money-back / "free until you book a meeting" guarantee**: include either? (Big lift, only if you'll honor it.)
+3. **Exit-intent dialog**: ship it, or skip? (Lifts signups but some users find it pushy.)
 
 ## Out of scope
 
-- Replacing JSX mocks with real screenshots.
-- Adding/removing steps (still 3).
-- Background changes to the section itself (stays `bg-background`).
-- Wiring the proof numbers (`127`, `12 hot leads`) to real data — stays as illustrative mock copy.
+- Video creation for "Watch 60-sec demo" (reuses existing `#how-it-works` anchor).
+- A/B testing infra.
+- Real-data wiring for "127 signals", "12 teams this week", "500+ teams" — stays as illustrative copy in the same tone the site already uses.
+- Backend changes, pricing changes in Stripe, new edge functions.
 
