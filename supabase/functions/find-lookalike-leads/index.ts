@@ -162,10 +162,10 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // Resolve org & unipile account
+    // Resolve org & Unipile account
     const { data: profile } = await admin
       .from("profiles")
-      .select("current_organization_id")
+      .select("current_organization_id, unipile_account_id")
       .eq("user_id", userId)
       .maybeSingle();
     const orgId = profile?.current_organization_id;
@@ -176,8 +176,12 @@ Deno.serve(async (req) => {
       .select("unipile_account_id")
       .eq("id", orgId)
       .maybeSingle();
-    const accountId = org?.unipile_account_id;
-    if (!accountId) return json({ error: "LinkedIn account not connected for this workspace" }, 400);
+
+    const accountId = profile?.unipile_account_id || org?.unipile_account_id;
+    if (!accountId) {
+      console.log("[lookalike] reject: no unipile account", JSON.stringify({ userId, orgId }));
+      return json({ error: "LinkedIn account not connected" }, 400);
+    }
 
     // Resolve target list
     let targetListId = list_id;
