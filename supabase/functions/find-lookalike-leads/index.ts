@@ -221,20 +221,25 @@ Deno.serve(async (req) => {
     let decision_makers_found = 0;
 
     try {
-      // ───────── Step 1: Seed enrichment ─────────
-      const seedProfiles: Array<{ url: string; first_name: string; headline: string; industry: string; company: string }> = [];
+      // ───────── Step 1: Seed enrichment (companies) ─────────
+      const seedCompanies: Array<{ url: string; id: string | null; name: string; industry: string; description: string; size: string }> = [];
       for (const url of seed_urls) {
-        const publicId = extractPublicId(url);
+        const publicId = extractCompanyPublicId(url);
         if (!publicId) continue;
-        const { ok, payload } = await unipileGet(`/api/v1/users/${encodeURIComponent(publicId)}`, accountId, controller.signal);
-        if (!ok) continue;
+        const { ok, payload } = await unipileGet(`/api/v1/linkedin/company/${encodeURIComponent(publicId)}`, accountId, controller.signal);
+        if (!ok) {
+          // Still record minimal info so the pipeline can continue
+          seedCompanies.push({ url, id: null, name: publicId, industry: "", description: "", size: "" });
+          continue;
+        }
         const p = payload || {};
-        seedProfiles.push({
+        seedCompanies.push({
           url,
-          first_name: p.first_name || (p.name ? String(p.name).split(" ")[0] : "") || "Customer",
-          headline: p.headline || p.occupation || "",
-          industry: p.industry || p.industry_name || "",
-          company: p.current_company?.name || p.company?.name || (Array.isArray(p.work_experience) && p.work_experience[0]?.company) || "",
+          id: p.id || p.entity_urn || p.provider_id || null,
+          name: p.name || publicId,
+          industry: p.industry || p.industry_name || (Array.isArray(p.industries) ? p.industries[0] : "") || "",
+          description: p.description || p.tagline || "",
+          size: p.staff_count || p.staff_count_range || p.company_size || "",
         });
         await new Promise((r) => setTimeout(r, 150));
       }
@@ -242,20 +247,20 @@ Deno.serve(async (req) => {
       // ───────── Step 2: ICP synthesis ─────────
       await admin.from("lookalike_runs").update({ status: "searching_companies" }).eq("id", runId);
 
-      const seedSummary = seedProfiles.map((s, i) => `Seed ${i+1}: ${s.first_name} — ${s.headline} @ ${s.company} (industry: ${s.industry})`).join("\n");
+      const seedSummary = seedCompanies.map((s, i) => `Seed ${i+1}: ${s.name} — industry: ${s.industry || "n/a"}${s.description ? ` — ${String(s.description).slice(0, 200)}` : ""}`).join("\n");
       const userIndustriesText = userIndustries.length ? `User-selected industries: ${userIndustries.join(", ")}` : "";
-      const aiPrompt = `Best customers (lookalike seeds):\n${seedSummary}\n\n${userIndustriesText}\n\nReturn JSON with:\n- "industry_keywords": 3-5 short LinkedIn-search keywords for company industries (strings)\n- "icp_summary": one sentence describing the ICP`;
+      const aiPrompt = `Best customer companies (lookalike seeds):\n${seedSummary}\n\n${userIndustriesText}\n\nReturn JSON with:\n- "industry_keywords": 3-5 short LinkedIn-search keywords for company industries (strings)\n- "icp_summary": one sentence describing the ICP`;
       const aiRaw = await callAI(aiPrompt, "You are a B2B sales strategist. Return ONLY valid JSON, no markdown.");
       let icp: { industry_keywords: string[]; icp_summary: string } = { industry_keywords: [], icp_summary: "" };
       try {
         const cleaned = aiRaw.replace(/```json\s*|\s*```/g, "").trim();
         icp = JSON.parse(cleaned);
       } catch {
-        icp.industry_keywords = [...new Set(seedProfiles.map((s) => s.industry).filter(Boolean))].slice(0, 5);
+        icp.industry_keywords = [...new Set(seedCompanies.map((s) => s.industry).filter(Boolean))].slice(0, 5);
       }
       // Merge user-selected industries first
       const industryKeywords = [...new Set([...userIndustries, ...(icp.industry_keywords || [])])].slice(0, 5);
-      const searchKeywords = industryKeywords.join(" OR ") || seedProfiles[0]?.industry || "";
+      const searchKeywords = industryKeywords.join(" OR ") || seedCompanies[0]?.industry || "";
 
       // ───────── Step 3: Company search ─────────
       const companies: Array<{ id: string; name: string; industry?: string }> = [];
