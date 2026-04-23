@@ -413,7 +413,7 @@ Deno.serve(async (req) => {
       if (signal_mode === "industry") {
         for (const c of toInsert) {
           const ind = c.industry || "their industry";
-          signals.push(`Works in ${ind} — lookalike of ${c.seedMatch?.first_name || "your best client"}`);
+          signals.push(`Works in ${ind} — lookalike of ${c.seedMatch?.name || "your best client"}`);
         }
       } else {
         // Batch AI calls (10 leads each)
@@ -421,8 +421,8 @@ Deno.serve(async (req) => {
         for (let i = 0; i < toInsert.length; i += BATCH) {
           if (controller.signal.aborted) break;
           const batch = toInsert.slice(i, i + BATCH);
-          const prompt = `For each lead, return a one-sentence signal (≤140 chars) explaining why this lead matches our ICP. Reference what makes them similar to our best customer.\n\n` +
-            batch.map((c, idx) => `${idx+1}. ${c.first_name} ${c.last_name || ""} — ${c.title || ""} @ ${c.company} (industry: ${c.industry || "n/a"}). Best-customer match: ${c.seedMatch?.first_name || ""} (${c.seedMatch?.headline || ""})`).join("\n") +
+          const prompt = `For each lead, return a one-sentence signal (≤140 chars) explaining why this lead matches our ICP. Reference what makes their company similar to our best customer.\n\n` +
+            batch.map((c, idx) => `${idx+1}. ${c.first_name} ${c.last_name || ""} — ${c.title || ""} @ ${c.company} (industry: ${c.industry || "n/a"}). Best-customer match: ${c.seedMatch?.name || ""} (industry: ${c.seedMatch?.industry || "n/a"})`).join("\n") +
             `\n\nReturn JSON: {"signals": ["sentence 1", "sentence 2", ...]} matching the order above.`;
           const raw = await callAI(prompt, "You write concise B2B sales signals. Return ONLY valid JSON.");
           let parsed: { signals: string[] } = { signals: [] };
@@ -433,7 +433,7 @@ Deno.serve(async (req) => {
           for (let j = 0; j < batch.length; j++) {
             const s = parsed.signals?.[j];
             if (s && typeof s === "string") signals.push(s.slice(0, 200));
-            else signals.push(`Decision-maker at ${batch[j].company} — lookalike of ${batch[j].seedMatch?.first_name || "your best client"}`);
+            else signals.push(`Decision-maker at ${batch[j].company} — lookalike of ${batch[j].seedMatch?.name || "your best client"}`);
           }
         }
       }
