@@ -49,7 +49,7 @@ const WhyIntentsly = () => {
           className="inline-flex items-center gap-2 mb-8 px-3.5 py-1.5 rounded-full bg-[#C8FF00]/30 border border-[#C8FF00]/60"
         >
           <TrendingUp className="w-3.5 h-3.5" style={{ color: "hsl(var(--aeline-dark))" }} />
-          <span className="text-xs font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
+          <span className="text-[11px] md:text-xs font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
             Teams switching report ~3× higher reply rates
           </span>
         </motion.div>
@@ -59,9 +59,9 @@ const WhyIntentsly = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="rounded-3xl bg-[#f5f5f5] p-8 md:p-12"
+          className="rounded-3xl bg-[#f5f5f5] p-5 md:p-12"
         >
-          <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16">
             {/* Traditional */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
@@ -87,7 +87,7 @@ const WhyIntentsly = () => {
             </div>
 
             {/* Intentsly */}
-            <div className="md:border-l md:border-border/60 md:pl-12">
+            <div className="border-t border-border/60 pt-8 md:border-t-0 md:pt-0 md:border-l md:border-border/60 md:pl-12">
               <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: "hsl(var(--aeline-dark))" }}>
                 With Intentsly
               </p>

@@ -231,7 +231,7 @@ const UseCases = () => {
           >
             <span className="section-label mb-6 block">Who Intentsly is for</span>
             <h2
-              className="text-5xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] mb-4"
+              className="text-4xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] mb-4"
               style={{ color: "hsl(var(--aeline-dark))" }}
             >
               Built for B2B teams that care about timing
@@ -262,7 +262,7 @@ const UseCases = () => {
               >
                 {/* Visual zone */}
                 <div
-                  className={`relative ${c.bg} h-[200px] flex items-center justify-center px-6 overflow-hidden`}
+                  className={`relative ${c.bg} h-[170px] md:h-[200px] flex items-center justify-center px-6 overflow-hidden`}
                 >
                   {/* Faint grid pattern overlay */}
                   <div
@@ -308,7 +308,7 @@ const UseCases = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-12 rounded-[28px] bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-black/5 px-6 md:px-10 py-7 md:py-8 flex flex-wrap items-center justify-between gap-4"
+          className="mt-12 rounded-[28px] bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-black/5 px-6 md:px-10 py-7 md:py-8 flex flex-col md:flex-row md:flex-wrap md:items-center md:justify-between gap-5 md:gap-4"
         >
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-[#C8FF00] flex items-center justify-center shrink-0">
@@ -323,7 +323,7 @@ const UseCases = () => {
           </div>
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] shrink-0"
+            className="inline-flex items-center justify-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] w-full md:w-auto md:shrink-0"
           >
             Start for $97
             <ArrowRight className="w-4 h-4" />
