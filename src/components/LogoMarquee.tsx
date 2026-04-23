@@ -15,7 +15,7 @@ const LogoMarquee = () => {
   return (
     <section className="py-10 overflow-hidden bg-background">
       <p className="text-center text-xs font-medium uppercase tracking-widest text-muted-foreground mb-8">
-        Trusted by 500+ Small Sales Teams and B2B Founders
+        Trusted by 50+ Small Sales Teams and B2B Founders
       </p>
       <div className="relative">
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
