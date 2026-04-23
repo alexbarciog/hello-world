@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Target, MessageSquareOff, Clock, X } from "lucide-react";
+import { Target, MessageSquareOff, Clock, X, ArrowRight } from "lucide-react";
+import { CountUp } from "@/lib/motion";
 
 const pains = [
   {
@@ -75,7 +76,9 @@ const ColdListMock = () => (
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-amber-500" />
           <div className="min-w-0">
-            <div className="text-base font-semibold leading-none" style={{ color: "hsl(var(--aeline-dark))" }}>3</div>
+            <div className="text-base font-semibold leading-none" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={3} duration={1.4} />
+            </div>
             <div className="text-[10px] text-muted-foreground mt-1">competitors already reached out</div>
           </div>
         </div>
@@ -83,12 +86,15 @@ const ColdListMock = () => (
 
       {/* No-signal watermark */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <span
+        <motion.span
+          initial={{ opacity: 0, rotate: -8, scale: 1.1 }}
+          whileInView={{ opacity: 1, rotate: -18, scale: 1 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="text-[64px] font-bold text-destructive/[0.06] tracking-widest select-none"
-          style={{ transform: "rotate(-18deg)" }}
         >
           NO SIGNAL
-        </span>
+        </motion.span>
       </div>
     </div>
   </div>
@@ -157,15 +163,25 @@ const ProblemSection = () => {
           </motion.div>
         </div>
 
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-center text-sm text-muted-foreground mt-10"
+          className="text-center mt-12 flex flex-col items-center gap-5"
         >
-          Intent fixes all three. ↓
-        </motion.p>
+          <p className="text-sm text-muted-foreground">
+            Intent fixes all three. ↓
+          </p>
+          <a
+            href="#how-it-works"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-black/10 bg-white text-sm font-medium hover:border-black/30 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.25)] transition-all group"
+            style={{ color: "hsl(var(--aeline-dark))" }}
+          >
+            See how Intentsly fixes this
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+          </a>
+        </motion.div>
       </div>
     </section>
   );

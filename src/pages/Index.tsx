@@ -13,6 +13,7 @@ import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import FinalCTA from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/CTAFooter";
+import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
 import { isOnboardingComplete } from "@/components/OnboardingGuard";
 
 const Index = () => {
@@ -34,6 +35,7 @@ const Index = () => {
       <FAQ />
       <FinalCTA />
       <Footer />
+      <StickyMobileCTA />
     </div>
   );
 };

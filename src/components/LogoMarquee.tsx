@@ -1,3 +1,5 @@
+import { CountUp, Reveal } from "@/lib/motion";
+
 const logos = [
   { url: "https://framerusercontent.com/images/bEG9VzNL7xd61r4GEyImRx2WA.png", alt: "Company 1", w: 120 },
   { url: "https://framerusercontent.com/images/jlNEv4AA5ippzmMLDsKnFsjxso.png", alt: "Company 2", w: 80 },
@@ -31,6 +33,32 @@ const LogoMarquee = () => {
           ))}
         </div>
       </div>
+
+      {/* Stat bar */}
+      <Reveal as="div" className="max-w-4xl mx-auto mt-10 px-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-center">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={500} />+
+            </span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">teams</span>
+          </div>
+          <span className="text-muted-foreground/40">·</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={127} />
+            </span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">avg signals/day</span>
+          </div>
+          <span className="text-muted-foreground/40">·</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <CountUp to={8} />
+            </span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">min to first outreach</span>
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 };

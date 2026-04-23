@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Minus } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Plus, Minus, ArrowRight, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
 const staggerContainer = {
@@ -94,6 +95,39 @@ const FAQ = () => {
               </div>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Closing two-CTA card */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mt-10 rounded-2xl bg-gradient-to-br from-[#1A8FE3]/[0.06] via-white to-[#C8FF00]/[0.10] border border-black/5 p-7 md:p-9 text-center"
+        >
+          <p className="text-lg md:text-xl font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>
+            Still have questions?
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Either path works — pick what feels right.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="mailto:hello@intentsly.com?subject=10-min%20walkthrough"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-black/10 bg-white text-sm font-semibold hover:border-black/30 hover:shadow-[0_8px_24px_-12px_rgba(15,23,42,0.25)] transition-all"
+              style={{ color: "hsl(var(--aeline-dark))" }}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Book a 10-min walkthrough
+            </a>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
+            >
+              Start for $97
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </motion.div>
       </div>
     </section>

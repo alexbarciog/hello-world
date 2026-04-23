@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, ArrowRight, Check } from "lucide-react";
 
 /* ── Mini-mocks (premium, full-bleed) ─────────────────────────────────── */
 
@@ -155,6 +156,7 @@ type UseCase = {
   title: string;
   desc: string;
   meta: string;
+  slug: string;
   Mock: React.FC;
   bg: string;
   wide?: boolean;
@@ -165,6 +167,7 @@ const cases: UseCase[] = [
     title: "B2B SaaS teams",
     desc: "Find companies entering your category before they hit any database.",
     meta: "Use case · SaaS",
+    slug: "saas",
     Mock: SaasMock,
     bg: "bg-[radial-gradient(ellipse_at_top_left,rgba(26,143,227,0.12),transparent_60%),linear-gradient(180deg,#F4F9FE_0%,#FFFFFF_100%)]",
     wide: true,
@@ -173,6 +176,7 @@ const cases: UseCase[] = [
     title: "Sales teams",
     desc: "Prioritize by timing, not just ICP fit.",
     meta: "Use case · Sales",
+    slug: "sales",
     Mock: SalesMock,
     bg: "bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.10),transparent_60%),linear-gradient(180deg,#F6F7FB_0%,#FFFFFF_100%)]",
   },
@@ -180,6 +184,7 @@ const cases: UseCase[] = [
     title: "Lead-gen agencies",
     desc: "Stronger angles for client outreach.",
     meta: "Use case · Agency",
+    slug: "agency",
     Mock: AgencyMock,
     bg: "bg-[radial-gradient(ellipse_at_top,rgba(200,255,0,0.18),transparent_60%),linear-gradient(180deg,#FAFCEF_0%,#FFFFFF_100%)]",
   },
@@ -187,6 +192,7 @@ const cases: UseCase[] = [
     title: "Founders",
     desc: "Lean outbound, no full SDR stack.",
     meta: "Use case · Founder",
+    slug: "founder",
     Mock: FounderMock,
     bg: "bg-[radial-gradient(ellipse_at_center,rgba(26,143,227,0.08),transparent_60%),linear-gradient(180deg,#FBF9F5_0%,#FFFFFF_100%)]",
   },
@@ -194,6 +200,7 @@ const cases: UseCase[] = [
     title: "B2B service businesses",
     desc: "Spot demand triggers as they happen.",
     meta: "Use case · Services",
+    slug: "services",
     Mock: ServicesMock,
     bg: "bg-[radial-gradient(ellipse_at_top_left,rgba(200,255,0,0.20),transparent_60%),linear-gradient(180deg,#F9FCEC_0%,#FFFFFF_100%)]",
   },
@@ -201,6 +208,7 @@ const cases: UseCase[] = [
     title: "RevOps / GTM operators",
     desc: "Better inputs for account selection.",
     meta: "Use case · RevOps",
+    slug: "revops",
     Mock: RevOpsMock,
     bg: "bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.12),transparent_60%),linear-gradient(180deg,#F5F6FB_0%,#FFFFFF_100%)]",
   },
@@ -240,56 +248,87 @@ const UseCases = () => {
         {/* Bento grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {cases.map((c, i) => (
-            <motion.article
+            <motion.div
               key={i}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5, delay: (i % 3) * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              className={`group relative overflow-hidden rounded-[28px] bg-white border border-black/5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.04),0_16px_40px_-16px_rgba(0,0,0,0.12)] hover:-translate-y-[2px] transition-all duration-300 ${
-                c.wide ? "lg:col-span-2" : ""
-              }`}
+              className={c.wide ? "lg:col-span-2" : ""}
             >
-              {/* Visual zone */}
-              <div
-                className={`relative ${c.bg} h-[200px] flex items-center justify-center px-6 overflow-hidden`}
+              <Link
+                to={`/register?ref=usecase-${c.slug}`}
+                className="group relative block overflow-hidden rounded-[28px] bg-white border border-black/5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.04),0_20px_44px_-16px_rgba(0,0,0,0.14)] hover:-translate-y-[2px] hover:scale-[1.01] transition-all duration-300"
               >
-                {/* Faint grid pattern overlay */}
+                {/* Visual zone */}
                 <div
-                  className="absolute inset-0 opacity-[0.04]"
-                  style={{
-                    backgroundImage:
-                      "linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)",
-                    backgroundSize: "24px 24px",
-                  }}
-                />
-                <div className="relative z-10 w-full flex justify-center">
-                  <c.Mock />
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-black/[0.06]" />
-
-              {/* Copy zone */}
-              <div className="p-6">
-                <h3
-                  className="text-lg font-semibold tracking-tight mb-1.5"
-                  style={{ color: "hsl(var(--aeline-dark))" }}
+                  className={`relative ${c.bg} h-[200px] flex items-center justify-center px-6 overflow-hidden`}
                 >
-                  {c.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-5">{c.desc}</p>
-                <div className="flex items-center justify-between pt-3 border-t border-black/[0.04]">
-                  <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium">
-                    {c.meta}
-                  </span>
-                  <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-[#1A8FE3] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" />
+                  {/* Faint grid pattern overlay */}
+                  <div
+                    className="absolute inset-0 opacity-[0.04]"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)",
+                      backgroundSize: "24px 24px",
+                    }}
+                  />
+                  <div className="relative z-10 w-full flex justify-center">
+                    <c.Mock />
+                  </div>
                 </div>
-              </div>
-            </motion.article>
+
+                {/* Divider */}
+                <div className="border-t border-black/[0.06]" />
+
+                {/* Copy zone */}
+                <div className="p-6">
+                  <h3
+                    className="text-lg font-semibold tracking-tight mb-1.5"
+                    style={{ color: "hsl(var(--aeline-dark))" }}
+                  >
+                    {c.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-5">{c.desc}</p>
+                  <div className="flex items-center justify-between pt-3 border-t border-black/[0.04]">
+                    <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium">
+                      {c.meta}
+                    </span>
+                    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-[#1A8FE3] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
+
+        {/* CTA footer band */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-12 rounded-[28px] bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-black/5 px-6 md:px-10 py-7 md:py-8 flex flex-wrap items-center justify-between gap-4"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#C8FF00] flex items-center justify-center shrink-0">
+              <Check className="w-4 h-4" style={{ color: "hsl(var(--aeline-dark))" }} strokeWidth={3} />
+            </div>
+            <div>
+              <p className="text-base md:text-lg font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
+                Whichever team you're on — you're 5 minutes from your first hot lead.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">No contract · Cancel anytime · 5-min setup</p>
+            </div>
+          </div>
+          <Link
+            to="/register"
+            className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] shrink-0"
+          >
+            Start for $97
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
       </div>
     </section>
   );

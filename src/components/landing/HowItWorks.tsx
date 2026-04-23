@@ -318,70 +318,93 @@ const HowItWorks = () => {
         {/* Stacked steps */}
         <div className="space-y-6">
           {steps.map((s, i) => (
-            <motion.article
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-              className="rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-12 min-h-[420px]">
-                {/* Copy zone */}
-                <div
-                  className={`md:col-span-5 p-8 md:p-12 flex flex-col justify-center relative ${
-                    s.visualLeft ? "md:order-2" : ""
-                  }`}
-                >
-                  <span
-                    className="absolute top-6 right-8 md:top-10 md:right-12 text-[88px] font-light leading-none text-[#1A8FE3]/[0.10] select-none pointer-events-none"
-                    aria-hidden
-                  >
-                    {s.num}
-                  </span>
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-[#1A8FE3] font-semibold mb-4 relative">
-                    Step {s.num}
-                  </span>
-                  <h3
-                    className="text-3xl md:text-4xl font-medium tracking-[-0.02em] leading-[1.1] mb-3 relative"
-                    style={{ color: "hsl(var(--aeline-dark))" }}
-                  >
-                    {s.title}
-                  </h3>
-                  <p className="text-base text-muted-foreground leading-relaxed mb-6 relative">{s.subtitle}</p>
-                  <ul className="space-y-2 relative">
-                    {s.proofs.map((p, pi) => (
-                      <li key={pi} className="flex items-center gap-2.5 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
-                        <span className="w-5 h-5 rounded-full bg-[#1A8FE3]/10 flex items-center justify-center shrink-0">
-                          <p.icon className="w-3 h-3 text-[#1A8FE3]" strokeWidth={2.5} />
-                        </span>
-                        <span className="font-medium">{p.text}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Visual zone */}
-                <div
-                  className={`md:col-span-7 relative min-h-[320px] md:min-h-[420px] ${s.bgClass} ${
-                    s.visualLeft ? "md:order-1" : ""
-                  }`}
-                >
-                  <div className={`absolute inset-0 ${s.radialClass}`} />
+            <div key={i}>
+              <motion.article
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
+                className="rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-12 min-h-[420px]">
+                  {/* Copy zone */}
                   <div
-                    className="absolute inset-0 opacity-[0.25]"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle, rgba(15,23,42,0.18) 1px, transparent 1px)",
-                      backgroundSize: "18px 18px",
-                    }}
-                  />
-                  <div className="relative h-full">
-                    <s.Visual />
+                    className={`md:col-span-5 p-8 md:p-12 flex flex-col justify-center relative ${
+                      s.visualLeft ? "md:order-2" : ""
+                    }`}
+                  >
+                    <span
+                      className="absolute top-6 right-8 md:top-10 md:right-12 text-[88px] font-light leading-none text-[#1A8FE3]/[0.10] select-none pointer-events-none"
+                      aria-hidden
+                    >
+                      {s.num}
+                    </span>
+                    <span className="text-[11px] uppercase tracking-[0.18em] text-[#1A8FE3] font-semibold mb-4 relative">
+                      Step {s.num}
+                    </span>
+                    <h3
+                      className="text-3xl md:text-4xl font-medium tracking-[-0.02em] leading-[1.1] mb-3 relative"
+                      style={{ color: "hsl(var(--aeline-dark))" }}
+                    >
+                      {s.title}
+                    </h3>
+                    <p className="text-base text-muted-foreground leading-relaxed mb-6 relative">{s.subtitle}</p>
+                    <ul className="space-y-2 relative">
+                      {s.proofs.map((p, pi) => (
+                        <li key={pi} className="flex items-center gap-2.5 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
+                          <span className="w-5 h-5 rounded-full bg-[#1A8FE3]/10 flex items-center justify-center shrink-0">
+                            <p.icon className="w-3 h-3 text-[#1A8FE3]" strokeWidth={2.5} />
+                          </span>
+                          <span className="font-medium">{p.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Visual zone */}
+                  <div
+                    className={`md:col-span-7 relative min-h-[320px] md:min-h-[420px] ${s.bgClass} ${
+                      s.visualLeft ? "md:order-1" : ""
+                    }`}
+                  >
+                    <div className={`absolute inset-0 ${s.radialClass}`} />
+                    <div
+                      className="absolute inset-0 opacity-[0.25]"
+                      style={{
+                        backgroundImage:
+                          "radial-gradient(circle, rgba(15,23,42,0.18) 1px, transparent 1px)",
+                        backgroundSize: "18px 18px",
+                      }}
+                    />
+                    <div className="relative h-full">
+                      <s.Visual />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.article>
+              </motion.article>
+
+              {/* Mid-section conversion nudge between Step 02 and Step 03 */}
+              {i === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.5, ease: EASE }}
+                  className="my-6 mx-2 md:mx-8 rounded-2xl bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-[#1A8FE3]/15 px-5 py-4 flex flex-wrap items-center justify-between gap-3"
+                >
+                  <p className="text-sm font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
+                    This is what your competitors don't have yet.
+                  </p>
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1A8FE3] hover:gap-2.5 transition-all"
+                  >
+                    Start free
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </motion.div>
+              )}
+            </div>
           ))}
         </div>
 
@@ -406,7 +429,7 @@ const HowItWorks = () => {
             Start for $97
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <p className="text-xs text-muted-foreground mt-4">No contracts · Cancel anytime</p>
+          <p className="text-xs text-muted-foreground mt-4">No contract · Cancel anytime · Setup in 5 min</p>
         </motion.div>
       </div>
     </section>
