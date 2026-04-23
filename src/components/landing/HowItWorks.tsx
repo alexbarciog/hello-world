@@ -256,11 +256,12 @@ const steps = [
   },
   {
     num: "02",
-    title: "We watch LinkedIn for you.",
-    subtitle: "Hiring spikes, competitor moves, problem-aware posts — caught 24/7.",
+    title: "We catch people asking for what you sell.",
+    subtitle: "Every day, your buyers post and comment looking for your exact services. We surface them the moment it happens — before your competitors do.",
     proofs: [
-      { icon: Zap, text: "127 signals/day per ICP avg" },
-      { icon: Radar, text: "Updates every hour" },
+      { icon: Search, text: "Posts & comments scanned in real-time" },
+      { icon: Zap, text: "Buying-intent language flagged instantly" },
+      { icon: Radar, text: "Updated every hour, 24/7" },
     ],
     Visual: SignalsVisual,
     bgClass: "bg-gradient-to-br from-indigo-50 via-indigo-50/40 to-white",
