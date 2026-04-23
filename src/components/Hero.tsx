@@ -78,32 +78,6 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Rating — single line on mobile */}
-        <div className="mt-8 mb-6 flex items-center gap-3 animate-fade-in-up" style={{ animationDelay: "520ms" }}>
-          {/* Avatar stack */}
-          <div className="flex -space-x-2">
-            {[
-              "from-pink-400 to-orange-400",
-              "from-sky-400 to-indigo-500",
-              "from-emerald-400 to-teal-500",
-            ].map((g, i) => (
-              <div
-                key={i}
-                className={`w-6 h-6 rounded-full bg-gradient-to-br ${g} ring-2 ring-white/80`}
-                aria-hidden
-              />
-            ))}
-          </div>
-          <p className="text-xs sm:text-sm text-white/80 flex items-center gap-1.5">
-            <span className="font-semibold text-white">500+ teams</span>
-            <span className="text-white/40">·</span>
-            <span className="inline-flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-              4.9/5
-            </span>
-          </p>
-        </div>
-
         {/* Scroll cue — desktop only */}
         <a
           href="#problem"
