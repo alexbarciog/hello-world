@@ -136,13 +136,19 @@ Deno.serve(async (req) => {
     const new_list_name: string | undefined = body.new_list_name?.trim() || undefined;
     const signal_mode: "industry" | "ai" = body.signal_mode === "ai" ? "ai" : "industry";
 
+    console.log("[lookalike] body:", JSON.stringify({ seed_urls, list_id, new_list_name, signal_mode, filtersKeys: Object.keys(filters) }));
+
     if (seed_urls.length < 3 || seed_urls.length > 4) {
+      console.log("[lookalike] reject: seed_urls.length =", seed_urls.length);
       return json({ error: "Provide 3 to 4 LinkedIn company URLs" }, 400);
     }
-    if (!seed_urls.every((u) => /linkedin\.com\/(?:company|school|showcase)\//i.test(u))) {
-      return json({ error: "All seed URLs must be linkedin.com/company/... pages" }, 400);
+    const badUrls = seed_urls.filter((u) => !/linkedin\.com\/(?:company|school|showcase)\//i.test(u));
+    if (badUrls.length > 0) {
+      console.log("[lookalike] reject: bad urls =", badUrls);
+      return json({ error: `Invalid LinkedIn company URLs: ${badUrls.join(", ")}` }, 400);
     }
     if (!list_id && !new_list_name) {
+      console.log("[lookalike] reject: no list_id or new_list_name");
       return json({ error: "Provide list_id or new_list_name" }, 400);
     }
 
