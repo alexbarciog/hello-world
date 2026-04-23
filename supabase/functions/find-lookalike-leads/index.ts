@@ -138,10 +138,10 @@ Deno.serve(async (req) => {
     const signal_mode: "industry" | "ai" = body.signal_mode === "ai" ? "ai" : "industry";
 
     if (seed_urls.length < 3 || seed_urls.length > 4) {
-      return json({ error: "Provide 3 to 4 LinkedIn profile URLs" }, 400);
+      return json({ error: "Provide 3 to 4 LinkedIn company URLs" }, 400);
     }
-    if (!seed_urls.every((u) => /linkedin\.com\/in\//i.test(u))) {
-      return json({ error: "All seed URLs must be linkedin.com/in/... profiles" }, 400);
+    if (!seed_urls.every((u) => /linkedin\.com\/(?:company|school|showcase)\//i.test(u))) {
+      return json({ error: "All seed URLs must be linkedin.com/company/... pages" }, 400);
     }
     if (!list_id && !new_list_name) {
       return json({ error: "Provide list_id or new_list_name" }, 400);
