@@ -157,7 +157,7 @@ export function FindLookalikesDialog({ open, onOpenChange, lists, onImported }: 
             Find Lookalike Leads
           </DialogTitle>
           <DialogDescription>
-            Paste 3–4 of your best customers' LinkedIn profiles. We'll find similar companies and surface their top decision-makers.
+            Paste 3–4 LinkedIn company pages of your best customers. We'll find similar companies and surface their top decision-makers.
           </DialogDescription>
         </DialogHeader>
 
