@@ -1,92 +1,96 @@
 
 
-# Lightning Onboarding + In-Dashboard Setup Wizard
+# Landing page restructure — intent-focused, single $97 plan
 
-Slash onboarding from 6 forms to **2 screens**: scan website → see services + AI pain points → "Get Buyers". Then guide setup inside the real app via a prominent top-of-dashboard wizard.
+Rebuild the homepage around one message ("find B2B buyers showing intent on LinkedIn"), one CTA ("Start for $97"), and a tighter section flow. Hero stays exactly as it is today.
 
-## New onboarding flow (2 screens, ~30 seconds)
-
-**Screen 1 — Scan Website**
-- Single input: website URL.
-- Big "Analyze my website" CTA. Same Firecrawl scrape as today.
-- Loading state with animated steps: "Reading your site… → Identifying services… → Generating buyer pain points…".
-
-**Screen 2 — Services & Pain Points Preview**
-- Top card: company name + 1-line description (editable inline if user wants).
-- Two side-by-side bento blocks:
-  - **What you sell** — 3-5 service bullets (AI-extracted from site).
-  - **Buyer pain points** — 3 pain points your buyers feel (AI-generated).
-- Big primary CTA: **"Get Buyers →"**.
-- Tiny secondary link below: "Edit later in settings".
-
-Clicking **Get Buyers** does the minimum:
-1. Create/update the user's `campaigns` row with `{ website, company_name, description, industry, language, services[], pain_points[], status: 'paused', current_step: 6 }`. No agent, no scoring, no discovery yet.
-2. Set `profiles.onboarding_complete = true`.
-3. `navigate('/dashboard')`.
-
-## New AI extraction: services
-
-New edge function **`generate-services`** (mirror of `generate-pain-points`):
-- Input: `{ companyName, industry, description, markdown }` (markdown already returned from `firecrawl-scrape`).
-- Lovable AI Gateway, `google/gemini-3-flash-preview`, tool-calling for `{ services: string[] }` (3-5 items, each ≤ 8 words).
-- Stored on `campaigns` in a new `services text[]` column.
-
-**Pain points** reuse the existing `generate-pain-points` function but called with no ICP (industry only), so we get reasonable results without forcing the user to define ICP.
-
-Both edge functions are called **in parallel** from screen 1's loading transition so the preview is ready the moment scrape finishes.
-
-## In-dashboard setup wizard (replaces QuickStartPanel)
-
-New component `src/components/dashboard/SetupWizardBanner.tsx` — full-width hero card pinned to the top of `/dashboard`, above `SubscriptionBanner`.
-
-Layout:
+## New page order (`src/pages/Index.tsx`)
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  Set up your AI SDR — 0 of 3 done           ▓▓░░░░░░░░  33% │
-│                                                              │
-│  ① Connect LinkedIn         ② Create signal agent  ③ Launch │
-│     Required to send invites   AI finds buyers     campaign │
-│     [Connect LinkedIn →]       [disabled]          [disabled]│
-└──────────────────────────────────────────────────────────────┘
+Navbar → Hero (unchanged) → LogoMarquee (kept) →
+ProblemSection → HowItWorks → WhyIntentsly (comparison) →
+UseCases → Pricing (single $97) → FAQ → FinalCTA → Footer
 ```
 
-- Three numbered cards in a row (stack on mobile).
-- Each card: number circle, title, one-line desc, primary action button.
-- Steps unlock sequentially. Locked cards show a small lock icon and a muted tooltip "Complete previous step first".
-- When a step is `done`, its card collapses to a single line with a green check + "Done — Edit".
-- When **all 3 done**, the banner collapses into a thin success bar: `✓ Setup complete — your AI SDR is live`. Dismissable with an X (saves `localStorage.intentsly_setup_dismissed`).
+Removed from landing: `AboutStats`, `ServicesSection`, `ExpertiseSection` (files left on disk; only unimported from `Index.tsx` so case-study/feature pages that may use them keep working).
 
-**Step targets:**
-1. **Connect LinkedIn** → `navigate('/settings?tab=linkedin')`. Done when `profiles.unipile_account_id` is set.
-2. **Create signal agent** → `navigate('/signals?create=1')`. Done when at least one row exists in `signal_agents` for the org. Signals page already has `CreateAgentWizard`; we read the `?create=1` param and auto-open it.
-3. **Launch campaign** → `navigate('/campaigns?autoStart=true')` (already wired). Done when at least one campaign has `status='active'`.
+## Navbar changes (`src/components/Navbar.tsx`)
 
-Removes the right-side `QuickStartPanel` from the dashboard grid; `PerformanceChart` becomes full-width on the row it shared.
+Desktop links replaced with: **How it Works · Use Cases · Pricing · FAQ · Login**. Top-right CTA changes from "Get Started" → **"Start for $97"** (still routes to `/register`). Same change mirrored in the mobile sheet. Features dropdown and Case Studies link removed from the top nav (still reachable via footer).
+
+## New components
+
+**`src/components/landing/ProblemSection.tsx`**
+Section label "The problem". Headline: *"Most B2B teams are still targeting too early or too broadly."* Two-paragraph body. 3-column card grid below: *Guesswork targeting / Low-response outreach / Missed buying windows*. Same `bg-[#f5f5f5]` rounded cards used elsewhere for visual consistency.
+
+**`src/components/landing/HowItWorks.tsx`** (new file — replaces the unused old one if name collides; we'll namespace under `landing/`)
+Section label "How it works". Headline: *"How Intentsly works"*. 3 numbered cards in a row, each with a small mockup visual reusing the mini-dashboard style from `ServicesSection`:
+1. **Define who you want to find** — small ICP form mock.
+2. **Track intent signals on LinkedIn** — reuse the live-signals chip mock.
+3. **Focus on the best opportunities** — reuse the prioritized leads list mock.
+
+**`src/components/landing/WhyIntentsly.tsx`**
+Section label "Why Intentsly". Headline: *"Better than building another cold list."* Two-column comparison table inside a single rounded `[#f5f5f5]` panel:
+- Left column "Traditional prospecting" (muted/gray bullets with × icons).
+- Right column "With Intentsly" (lime check icons, dark text).
+Bottom line: *"If your team sells to B2B buyers, timing matters."*
+
+**`src/components/landing/UseCases.tsx`**
+Section label "Who Intentsly is for". Headline: *"Built for B2B teams that care about timing."* 6-card grid (3×2 on desktop, 1-col mobile): B2B SaaS teams, Lead-gen agencies, Sales teams, Founders, B2B service businesses, RevOps / GTM operators. Each card: small icon, bold title, 1-line description. Same rounded `bg-[#f5f5f5]` look.
+
+**`src/components/landing/FinalCTA.tsx`**
+Replaces current `CTASection` content (we re-export `Footer` from the existing file unchanged). Headline: *"Spot likely buyers on LinkedIn before everyone else does."* Sub: *"Stop relying on broad prospect lists and start focusing on the people already showing movement."* Primary CTA **Start for $97** → `/register`. Secondary text link **See how it works** → `#how-it-works`. Reuses existing `cta-bg.avif`.
+
+## Pricing rewrite (`src/components/Pricing.tsx`)
+
+Replace the 3-column grid with **a single centered card** at max-width ~480px:
+
+- Plan name: **Intentsly**
+- Price: **$97/month**
+- 5 bullets: LinkedIn intent discovery · Buyer/company targeting workflows · Signal-based prospect identification · Fast setup · Cancel anytime
+- CTA: **Start for $97** → calls `handleCheckout(PRO_PRICE_ID, "Intentsly", 97)`. Uses existing Growth Stripe price ID under the hood (real charge will be $99 — visual mismatch noted; you'll align Stripe later).
+- Caption below the card: *"A simple monthly subscription for B2B teams that want better timing and sharper targeting. Cancel anytime."*
+
+Section label "Pricing". Headline: *"Simple pricing"*. Subheadline: *"One plan. Everything you need to find buyers showing intent on LinkedIn."*
+
+The `useSubscription` "Active / Upgrade / Downgrade" logic is preserved for the single card so existing customers still see their state.
+
+## FAQ rewrite (`src/components/FAQ.tsx`)
+
+Replace the current 5 entries with the 7 from the wireframe (What does Intentsly actually do? · Is this just another lead database? · Who is Intentsly best for? · Do I need a large outbound team? · Does this replace my CRM? · How quickly can I get value? · Is there a contract?). Component structure (accordion) untouched.
+
+## Section IDs for nav anchors
+
+Add `id="how-it-works"`, `id="use-cases"`, `id="pricing"` (already), `id="faq"` (already) so the new navbar anchor links work.
 
 ## Files
 
 **New**
-- `src/pages/Onboarding.tsx` — replaced with 2-screen flow (keep file, replace contents). Old multi-step components stay on disk untouched (unused) so we don't risk breaking drafts.
-- `src/components/onboarding/Step1Scan.tsx` — URL input + scan trigger.
-- `src/components/onboarding/Step2Preview.tsx` — services + pain points preview + Get Buyers CTA.
-- `src/components/dashboard/SetupWizardBanner.tsx` — the new top-of-dashboard 3-step wizard.
-- `supabase/functions/generate-services/index.ts` — AI services extractor.
+- `src/components/landing/ProblemSection.tsx`
+- `src/components/landing/HowItWorks.tsx`
+- `src/components/landing/WhyIntentsly.tsx`
+- `src/components/landing/UseCases.tsx`
+- `src/components/landing/FinalCTA.tsx`
 
 **Modified**
-- `src/contexts/OnboardingContext.tsx` — slimmed: only `website`, `companyName`, `description`, `industry`, `language`, `services`, `painPoints`. Drop ICP/precision/signals/objectives state. Existing draft loader gracefully ignores unknown fields.
-- `src/lib/api/firecrawl.ts` — `scrapeWebsite` returns the raw `markdown` too, so we can pass it to `generate-services`.
-- `src/pages/Dashboard.tsx` — remove `QuickStartPanel` import + grid slot; mount `<SetupWizardBanner />` above `<SubscriptionBanner />`; expand `PerformanceChart` to full row.
-- `src/pages/Signals.tsx` — read `?create=1` query param and auto-open `CreateAgentWizard`.
-- `supabase/config.toml` — register `[functions.generate-services]` with `verify_jwt = false`.
+- `src/pages/Index.tsx` — new section order, drop AboutStats/ServicesSection/ExpertiseSection imports.
+- `src/components/Navbar.tsx` — link list + CTA label (desktop + mobile).
+- `src/components/Pricing.tsx` — single-card layout, $97 display, new copy.
+- `src/components/FAQ.tsx` — replace `faqs` array with new 7 questions.
+- `src/components/CTAFooter.tsx` — `CTASection` body rewritten (footer untouched).
 
-**Database**
-- Migration: add `services text[] default '{}'::text[]` to `public.campaigns`. Nullable, no default trigger needed.
+**Untouched**
+- `Hero.tsx`, `HeroCards.tsx`, `LogoMarquee.tsx`, `Footer` (in `CTAFooter.tsx`), all feature subpages, all dashboard code, all Stripe/edge functions.
+
+## Notes / known mismatches
+
+- Display says **$97**, real Stripe checkout still charges **$99** via the existing Growth `price_1TCpq6FsgTpFMX56cX4ufXJo`. Fix when ready by either updating the Stripe price or creating a new $97 product (separate request).
+- Old `AboutStats`, `ServicesSection`, `ExpertiseSection`, `Testimonials` files stay on disk untouched (orphaned) so we don't break anything if they're referenced elsewhere.
 
 ## Out of scope
 
-- Touching `Step3ICP`/`Step4Precision`/`Step5IntentSignals`/`Step6Objectives` (kept as orphan files for now; can delete in a follow-up).
-- Auto-creating signal_agents during onboarding — user creates them in-app via the wizard.
-- Re-running scrape on edit — user edits inside dashboard later.
-- Mobile-specific redesign of the setup banner — uses the same stack-on-narrow pattern as existing banners.
+- Adding real testimonials/logos (left as the existing `LogoMarquee` only).
+- Mobile-specific redesign beyond what the existing responsive classes already give.
+- Changing the Hero in any way.
+- Stripe price creation.
 
