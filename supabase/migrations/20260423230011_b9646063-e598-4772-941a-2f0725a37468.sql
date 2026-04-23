@@ -1,0 +1,2 @@
+ALTER TABLE public.campaigns
+ADD COLUMN IF NOT EXISTS timezone TEXT NOT NULL DEFAULT 'UTC';

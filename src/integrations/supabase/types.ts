@@ -283,6 +283,7 @@ export type Database = {
           step_4_data: Json | null
           step_5_data: Json | null
           step_6_data: Json | null
+          timezone: string
           trigger_funded_companies: boolean | null
           trigger_job_changes: boolean | null
           trigger_top_active: boolean | null
@@ -340,6 +341,7 @@ export type Database = {
           step_4_data?: Json | null
           step_5_data?: Json | null
           step_6_data?: Json | null
+          timezone?: string
           trigger_funded_companies?: boolean | null
           trigger_job_changes?: boolean | null
           trigger_top_active?: boolean | null
@@ -397,6 +399,7 @@ export type Database = {
           step_4_data?: Json | null
           step_5_data?: Json | null
           step_6_data?: Json | null
+          timezone?: string
           trigger_funded_companies?: boolean | null
           trigger_job_changes?: boolean | null
           trigger_top_active?: boolean | null
