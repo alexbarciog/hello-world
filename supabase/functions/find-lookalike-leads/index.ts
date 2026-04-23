@@ -296,14 +296,13 @@ Deno.serve(async (req) => {
           keywords: searchKeywords,
           limit: Math.min(COMPANY_PAGE_SIZE, max_companies - companies.length),
         };
-        if (companySizes.length) searchBody.company_size = companySizes;
-        if (locations.length) searchBody.location = locations;
         if (cursor) searchBody.cursor = cursor;
 
+        console.log("[lookalike] company search payload:", JSON.stringify(searchBody));
         const { ok, payload, status, text } = await unipileFetch(`/api/v1/linkedin/search`, accountId, searchBody, controller.signal);
         if (!ok) {
-          console.error("Company search failed", status, text.slice(0, 300));
-          if (p === 0) throw new Error(`Company search failed (${status})`);
+          console.error("Company search failed", status, text.slice(0, 1500));
+          if (p === 0) throw new Error(`Company search failed (${status}): ${text.slice(0, 300)}`);
           break;
         }
         const items: any[] = payload.items || payload.data || [];
@@ -339,19 +338,34 @@ Deno.serve(async (req) => {
         rank: number;
       }> = [];
 
+      // Build a people-keyword query from selected seniorities (e.g. "Founder OR CEO OR VP")
+      const senTerms = seniorities.map((s) => {
+        const k = s.toLowerCase();
+        if (k === "c-level") return "CEO OR CTO OR CFO OR COO OR CMO";
+        if (k === "head of") return "\"Head of\"";
+        if (k === "owner") return "Owner";
+        if (k === "founder") return "Founder OR Co-Founder";
+        if (k === "vp") return "VP OR \"Vice President\"";
+        if (k === "director") return "Director";
+        return s;
+      });
+      const seniorityQuery = senTerms.length ? `(${senTerms.join(" OR ")})` : "(Founder OR CEO OR Owner OR VP OR Director)";
+
       for (const company of companies) {
         if (controller.signal.aborted) break;
         const peopleBody: Record<string, unknown> = {
           api: "classic",
           category: "people",
-          company: [company.id],
+          keywords: `${seniorityQuery} ${company.name}`,
           limit: Math.max(5, max_per_company * 3),
         };
-        if (seniorityCodes.length) peopleBody.seniority = seniorityCodes;
-        if (functionCodes.length) peopleBody.function = functionCodes;
 
-        const { ok, payload } = await unipileFetch(`/api/v1/linkedin/search`, accountId, peopleBody, controller.signal);
-        if (!ok) continue;
+        console.log("[lookalike] people search payload:", JSON.stringify(peopleBody));
+        const { ok, payload, status, text } = await unipileFetch(`/api/v1/linkedin/search`, accountId, peopleBody, controller.signal);
+        if (!ok) {
+          console.error("People search failed", status, text.slice(0, 500));
+          continue;
+        }
         const items: any[] = payload.items || payload.data || [];
 
         const ranked = items.map((it) => {
