@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, ArrowRight, Check } from "lucide-react";
 
 /* ── Mini-mocks (premium, full-bleed) ─────────────────────────────────── */
 
