@@ -277,6 +277,8 @@ Deno.serve(async (req) => {
       const existingCompanies = new Set<string>(
         (existingContacts || []).map((r: any) => String(r.company || "").toLowerCase().trim()).filter(Boolean)
       );
+      // Also exclude the seed companies themselves
+      seedCompanies.forEach((s) => { if (s.name) existingCompanies.add(s.name.toLowerCase().trim()); });
 
       for (let p = 0; p < 5 && companies.length < max_companies; p++) {
         const searchBody: Record<string, unknown> = {
