@@ -183,9 +183,32 @@ serve(async (req) => {
 
     const sent: Array<{ email: string; id?: string }> = [];
     const failed: Array<{ email: string; error: string }> = [];
+    const skipped: Array<{ email: string; reason: string }> = [];
 
     for (const r of eligible) {
       try {
+        // CRITICAL: Reserve this user FIRST by inserting the log row.
+        // The DB has a UNIQUE index on user_id, so if another concurrent run
+        // already inserted (or this user was emailed previously), this throws
+        // and we skip — guaranteeing one-email-per-user-forever, even under
+        // overlapping cron invocations or retries.
+        const { error: reserveErr } = await admin
+          .from("discount40_email_log")
+          .insert({
+            user_id: r.user_id,
+            email: r.email,
+            first_name: r.first_name,
+          });
+
+        if (reserveErr) {
+          // Unique violation = already sent (or being sent). Safe to skip.
+          skipped.push({
+            email: r.email,
+            reason: reserveErr.message,
+          });
+          continue;
+        }
+
         const resp = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -201,18 +224,18 @@ serve(async (req) => {
         });
         const json = await resp.json();
         if (!resp.ok) {
+          // Roll back the reservation so the user can be retried on the
+          // next cron tick (e.g. transient Resend outage).
+          await admin
+            .from("discount40_email_log")
+            .delete()
+            .eq("user_id", r.user_id);
           failed.push({
             email: r.email,
             error: `Resend ${resp.status}: ${JSON.stringify(json)}`,
           });
           continue;
         }
-
-        await admin.from("discount40_email_log").insert({
-          user_id: r.user_id,
-          email: r.email,
-          first_name: r.first_name,
-        });
 
         sent.push({ email: r.email, id: json?.id });
 
