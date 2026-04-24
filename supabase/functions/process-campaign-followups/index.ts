@@ -11,7 +11,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  * current_step is 1-based: 1 = invitation done, 2 = step 2 done, etc.
  */
 function getNextWorkflowIndex(currentStep: number, workflowSteps: any[]): number {
-  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+  const firstType = workflowSteps[0]?.type;
+  const hasInvitation = firstType === 'invitation' || firstType === 'invite';
   // If invitation is in array: current_step=1 → index 1 (first message)
   // If invitation is NOT in array: current_step=1 → index 0 (first message)
   return hasInvitation ? currentStep : currentStep - 1;
@@ -121,7 +122,8 @@ async function processCampaign(
   const today = new Date().toISOString().split('T')[0];
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
-  console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${workflowSteps[0]?.type === 'invitation'}`);
+  const _firstType = workflowSteps[0]?.type;
+  console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${_firstType === 'invitation' || _firstType === 'invite'}`);
   if (messageStepsCount === 0) {
     console.log(`[followup][campaign ${campaign.id}] no message steps configured`);
     return { accepted: 0, messagesSent: 0, generated: 0 };
@@ -796,7 +798,7 @@ async function generateNextStepMessage(
   if (!contact) return false;
 
   let message = '';
-  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+  const hasInvitation = workflowSteps.length > 0 && (workflowSteps[0].type === 'invitation' || workflowSteps[0].type === 'invite');
   const displayStepNumber = hasInvitation ? wfIndex + 1 : wfIndex + 2; // Step 2, 3, 4...
 
   if (nextStep.ai_icebreaker) {
