@@ -246,7 +246,8 @@ Deno.serve(async (req) => {
 
           if (!acceptedRequests || acceptedRequests.length === 0) continue;
 
-          const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+          const firstType = workflowSteps[0]?.type;
+          const hasInvitation = firstType === 'invitation' || firstType === 'invite';
           let msgScheduledThisCampaign = 0;
 
           for (const req of acceptedRequests) {
