@@ -11,7 +11,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  * current_step is 1-based: 1 = invitation done, 2 = step 2 done, etc.
  */
 function getNextWorkflowIndex(currentStep: number, workflowSteps: any[]): number {
-  const hasInvitation = workflowSteps.length > 0 && workflowSteps[0].type === 'invitation';
+  const firstType = workflowSteps[0]?.type;
+  const hasInvitation = firstType === 'invitation' || firstType === 'invite';
   // If invitation is in array: current_step=1 → index 1 (first message)
   // If invitation is NOT in array: current_step=1 → index 0 (first message)
   return hasInvitation ? currentStep : currentStep - 1;
