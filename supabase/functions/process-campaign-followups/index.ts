@@ -122,7 +122,8 @@ async function processCampaign(
   const today = new Date().toISOString().split('T')[0];
   const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
-  console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${workflowSteps[0]?.type === 'invitation'}`);
+  const _firstType = workflowSteps[0]?.type;
+  console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${_firstType === 'invitation' || _firstType === 'invite'}`);
   if (messageStepsCount === 0) {
     console.log(`[followup][campaign ${campaign.id}] no message steps configured`);
     return { accepted: 0, messagesSent: 0, generated: 0 };
