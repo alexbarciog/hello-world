@@ -37,6 +37,7 @@ import AiSdrOutreach from "./pages/features/AiSdrOutreach.tsx";
 import ConversationalAi from "./pages/features/ConversationalAi.tsx";
 import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
 import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
+import StrawberryPitch from "./pages/pitch/Strawberry.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import InviteAccept from "./pages/InviteAccept.tsx";
@@ -215,6 +216,7 @@ const App = () => (
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
           <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/video" element={<VideoShowcase />} />
+          <Route path="/pitch/strawberry" element={<StrawberryPitch />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
           <Route path="/shared/leads/:token" element={<SharedLeads />} />
           <Route path="*" element={<NotFound />} />
