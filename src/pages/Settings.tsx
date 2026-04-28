@@ -767,6 +767,54 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
           </motion.div>
         )}
       </SectionCard>
+
+      <AnimatePresence>
+        {showUpgradeDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowUpgradeDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: easing }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: "hsl(48 100% 92%)" }}>
+                  <Sparkles className="w-5 h-5" style={{ color: "hsl(38 92% 45%)" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-bold text-foreground">Upgrade required</h3>
+                  <p className="text-sm text-muted-foreground mt-1.5">
+                    Connecting LinkedIn is a paid feature. Upgrade your subscription to enable automated outreach, AI SDR, and lead discovery.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-6">
+                <button
+                  onClick={() => setShowUpgradeDialog(false)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Maybe later
+                </button>
+                <button
+                  onClick={() => { setShowUpgradeDialog(false); navigate("/billing"); }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: "hsl(var(--goji-coral))" }}
+                >
+                  Upgrade plan
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
