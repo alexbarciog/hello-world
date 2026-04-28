@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Linkedin, Radio, Rocket, Check, Lock, X, ArrowRight, Pencil } from "lucide-react";
+import { Linkedin, Radio, Rocket, Check, Lock, X, ArrowRight, Pencil, Sparkles } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type StepKey = "linkedin" | "agent" | "campaign";
 
@@ -16,16 +17,27 @@ type Step = {
   href: string;
 };
 
-const STEPS: Step[] = [
-  {
-    key: "linkedin",
-    index: 1,
-    icon: Linkedin,
-    title: "Connect LinkedIn",
-    desc: "Required to send invites",
-    cta: "Connect LinkedIn",
-    href: "/settings?tab=linkedin",
-  },
+const LINKEDIN_STEP: Step = {
+  key: "linkedin",
+  index: 1,
+  icon: Linkedin,
+  title: "Connect LinkedIn",
+  desc: "Required to send invites",
+  cta: "Connect LinkedIn",
+  href: "/settings?tab=linkedin",
+};
+
+const UPGRADE_STEP: Step = {
+  key: "linkedin",
+  index: 1,
+  icon: Sparkles,
+  title: "Upgrade your plan",
+  desc: "Unlock LinkedIn outreach & AI SDR",
+  cta: "Upgrade plan",
+  href: "/billing",
+};
+
+const REST_STEPS: Step[] = [
   {
     key: "agent",
     index: 2,
@@ -50,12 +62,15 @@ const DISMISS_KEY = "intentsly_setup_dismissed";
 
 export function SetupWizardBanner() {
   const navigate = useNavigate();
+  const sub = useSubscription();
   const [dismissed, setDismissed] = useState<boolean>(
     () => typeof window !== "undefined" && localStorage.getItem(DISMISS_KEY) === "true"
   );
 
+  const STEPS: Step[] = [sub.hasAccess ? LINKEDIN_STEP : UPGRADE_STEP, ...REST_STEPS];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["setup-wizard-status"],
+    queryKey: ["setup-wizard-status", sub.hasAccess],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { linkedinConnected: false, agentCreated: false, campaignActive: false };
@@ -75,10 +90,10 @@ export function SetupWizardBanner() {
     staleTime: 15_000,
   });
 
-  if (isLoading || !data) return null;
+  if (isLoading || !data || sub.loading) return null;
 
   const status: Record<StepKey, boolean> = {
-    linkedin: data.linkedinConnected,
+    linkedin: sub.hasAccess ? data.linkedinConnected : false,
     agent: data.agentCreated,
     campaign: data.campaignActive,
   };
