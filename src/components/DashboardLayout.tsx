@@ -115,24 +115,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const user = session?.user;
       if (!user) return;
 
-      let linkedinConnected = false;
-      try {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ action: "check_status" }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          linkedinConnected = data.status === "connected" && Boolean(data.account_id);
-        }
-      } catch { /* fallback */ }
+      // Skip LinkedIn check entirely for free users — they should upgrade first
+      if (!sub.loading && sub.hasAccess) {
+        let linkedinConnected = false;
+        try {
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-linkedin`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+            body: JSON.stringify({ action: "check_status" }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            linkedinConnected = data.status === "connected" && Boolean(data.account_id);
+          }
+        } catch { /* fallback */ }
 
-      if (!linkedinConnected) {
-        const { data: profile } = await supabase.from("profiles").select("unipile_account_id").eq("user_id", user.id).single();
-        linkedinConnected = Boolean(profile?.unipile_account_id);
+        if (!linkedinConnected) {
+          const { data: profile } = await supabase.from("profiles").select("unipile_account_id").eq("user_id", user.id).single();
+          linkedinConnected = Boolean(profile?.unipile_account_id);
+        }
+        setShowLinkedInBanner(!linkedinConnected);
+      } else {
+        setShowLinkedInBanner(false);
       }
-      setShowLinkedInBanner(!linkedinConnected);
 
       const email = user.email ?? "";
       const firstName = user.user_metadata?.first_name || "";
