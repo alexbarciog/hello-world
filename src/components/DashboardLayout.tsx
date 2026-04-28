@@ -404,7 +404,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0" style={{ background: "hsl(195 14% 95%)" }}>
-          {showLinkedInBanner && (
+          {!sub.loading && !sub.hasAccess && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(38 92% 50%)" }} />
+                <p className="text-sm font-medium" style={{ color: "hsl(28 60% 25%)" }}>
+                  Upgrade your subscription to unlock LinkedIn outreach, campaigns, and AI SDR features.
+                </p>
+              </div>
+              <button onClick={() => navigate("/billing")} className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "hsl(var(--goji-coral))" }}>
+                Upgrade plan
+              </button>
+            </div>
+          )}
+          {showLinkedInBanner && sub.hasAccess && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(25 95% 95%)", borderColor: "hsl(25 90% 85%)" }}>
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(25 95% 53%)" }} />
