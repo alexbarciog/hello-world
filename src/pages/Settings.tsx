@@ -586,6 +586,8 @@ function AccountTab({ userEmail, campaignData, onSave }: { userEmail: string; ca
 
 // ─── LinkedIn Tab ─────────────────────────────────────────────────────────────
 function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
+  const navigate = useNavigate();
+  const sub = useSubscription();
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -595,6 +597,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   const [dailyConnections, setDailyConnections] = useState([15]);
   const [savingLimits, setSavingLimits] = useState(false);
   const [limitsUserId, setLimitsUserId] = useState<string | null>(null);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   // Load saved limits from profile
   useEffect(() => {
