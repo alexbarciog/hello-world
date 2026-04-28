@@ -147,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setUserDisplay({ name: fullName, email, initials });
     }
     loadUser();
-  }, []);
+  }, [sub.loading, sub.hasAccess]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[hsl(195_14%_95%)]">
