@@ -672,6 +672,10 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
   }
 
   async function handleConnect() {
+    if (!sub.loading && !sub.hasAccess) {
+      setShowUpgradeDialog(true);
+      return;
+    }
     setConnecting(true);
     try {
       const data = await callAPI({ action: "create_link", return_url: window.location.href });
