@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The 90-Day B2B Playbook: 0 to 100 Customers</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #ffffff;
+  --off: #f9f9f7;
+  --light: #f2f2ef;
+  --ink: #111110;
+  --ink2: #3a3a38;
+  --muted: #888884;
+  --border: #e4e4e0;
+  --border2: #d0d0cb;
+  --green: #1a7a3c;
+  --green-bg: #f0f8f3;
+  --green-mid: #a8d8b8;
+  --accent: #1a7a3c;
+  --tag-bg: #edfaf3;
+  --tag-border: #b8e8cc;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* PROGRESS */
+#prog {
+  position: fixed; top: 0; left: 0;
+  height: 2px; background: var(--green);
+  width: 0%; z-index: 300;
+  transition: width 0.08s linear;
+}
+
+/* INLINE CTA BUTTON */
+.inline-cta {
+  display: block;
+  background: var(--green);
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  padding: 16px 28px;
+  border-radius: 8px;
+  text-decoration: none;
+  text-align: center;
+  margin: 36px 0;
+  transition: background 0.15s, transform 0.15s;
+  letter-spacing: 0.01em;
+}
+.inline-cta:hover { background: #158534; transform: translateY(-2px); }
+.inline-cta::after { content: ' →'; }
+
+.inline-cta-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ink);
+  color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 7px;
+  text-decoration: none;
+  margin: 20px 0;
+  transition: background 0.15s;
+}
+.inline-cta-sm:hover { background: var(--green); }
+.inline-cta-sm::after { content: '→'; }
+
+/* COVER */
+.cover {
+  padding: 80px 56px 100px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  max-width: 1000px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 80px;
+  align-items: start;
+}
+
+.cover-left {}
+
+.cover-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 20px; padding: 5px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 600;
+  color: var(--green); letter-spacing: 0.06em;
+  text-transform: uppercase; margin-bottom: 28px;
+}
+
+.cover-eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%; background: var(--green);
+}
+
+.cover h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(38px, 5vw, 64px);
+  font-weight: 800; line-height: 1.0;
+  letter-spacing: -0.03em; color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.cover-subtitle {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(20px, 2.5vw, 28px);
+  font-style: italic; color: var(--muted);
+  margin-bottom: 32px; line-height: 1.3;
+}
+
+.cover-desc {
+  font-size: 16px; color: var(--ink2);
+  line-height: 1.75; max-width: 480px;
+  margin-bottom: 40px;
+}
+
+.cover-stats {
+  display: flex; gap: 0;
+  border-top: 1px solid var(--border);
+  padding-top: 32px;
+}
+
+.c-stat {
+  flex: 1; padding-right: 28px;
+  border-right: 1px solid var(--border);
+  margin-right: 28px;
+}
+.c-stat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+
+.c-stat-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px; font-weight: 800;
+  color: var(--green); line-height: 1; margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.c-stat-label {
+  font-size: 11px; color: var(--muted); line-height: 1.4;
+}
+
+/* TOC */
+.cover-right {
+  background: var(--off);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px;
+  position: sticky; top: 24px;
+}
+
+.toc-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 18px;
+}
+
+.toc-list { list-style: none; }
+.toc-item {
+  border-bottom: 1px solid var(--border);
+}
+.toc-item:last-child { border-bottom: none; }
+
+.toc-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; text-decoration: none;
+  transition: color 0.15s;
+}
+.toc-link:hover .toc-link-title { color: var(--green); }
+
+.toc-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  color: var(--muted); width: 20px; flex-shrink: 0;
+}
+
+.toc-link-title {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink2); transition: color 0.15s;
+  line-height: 1.3;
+}
+
+/* CONTENT */
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+/* CHAPTER */
+.chapter {
+  padding: 80px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.chapter-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+}
+
+.chapter-tag::before {
+  content: '';
+  display: block; width: 16px; height: 1px;
+  background: var(--muted);
+}
+
+.chapter-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 800; line-height: 1.05;
+  letter-spacing: -0.025em; color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.chapter-subtitle {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px; font-style: italic;
+  color: var(--muted); margin-bottom: 48px;
+}
+
+/* BODY */
+.body { padding: 0 0 80px; }
+
+.body p {
+  font-size: 16px; color: var(--ink2);
+  line-height: 1.85; margin-bottom: 20px;
+}
+
+.body p strong { color: var(--ink); font-weight: 600; }
+
+.body h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--ink); margin: 40px 0 12px;
+  letter-spacing: -0.01em;
+}
+
+.body h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--green); margin: 32px 0 10px;
+}
+
+/* CALLOUTS */
+.callout {
+  border-left: 2px solid var(--border2);
+  padding: 18px 22px; margin: 28px 0;
+  background: var(--off);
+  border-radius: 0 8px 8px 0;
+}
+
+.callout p {
+  font-size: 15px; color: var(--ink2);
+  margin-bottom: 0 !important;
+  line-height: 1.7;
+}
+
+.callout.green {
+  border-left-color: var(--green);
+  background: var(--green-bg);
+}
+
+.callout.green p { color: #1a4a2a; }
+.callout.green strong { color: var(--green); }
+
+/* INSIGHT BOX */
+.insight {
+  background: var(--ink);
+  border-radius: 10px; padding: 28px 32px;
+  margin: 36px 0;
+}
+
+.insight p {
+  font-family: 'Instrument Serif', serif;
+  font-size: 20px; color: rgba(255,255,255,0.85);
+  font-style: italic; line-height: 1.55;
+  margin-bottom: 0 !important;
+}
+
+.insight p em {
+  color: #6ee89a; font-style: normal;
+}
+
+/* STAT BOXES */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1px; background: var(--border);
+  border-radius: 10px; overflow: hidden;
+  margin: 32px 0;
+}
+
+.stat-box {
+  background: var(--white); padding: 22px 20px;
+}
+
+.stat-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 34px; font-weight: 800;
+  color: var(--green); letter-spacing: -0.03em;
+  line-height: 1; margin-bottom: 6px;
+}
+
+.stat-label {
+  font-size: 12px; color: var(--muted); line-height: 1.5;
+}
+
+/* LISTS */
+.body ul {
+  list-style: none; margin: 16px 0 24px;
+}
+
+.body ul li {
+  font-size: 15px; color: var(--ink2);
+  padding: 9px 0 9px 20px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.65; position: relative;
+}
+
+.body ul li:last-child { border-bottom: none; }
+.body ul li::before {
+  content: '→';
+  position: absolute; left: 0;
+  color: var(--green); font-size: 12px; top: 11px;
+}
+
+/* SIGNAL EXAMPLES */
+.signals {
+  background: var(--green-bg);
+  border: 1px solid var(--green-mid);
+  border-radius: 10px; padding: 22px 26px;
+  margin: 28px 0;
+}
+
+.signals-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 14px;
+}
+
+.signal-pill {
+  background: var(--white);
+  border: 1px solid rgba(26,122,60,0.15);
+  border-radius: 8px; padding: 10px 14px;
+  margin-bottom: 8px; font-size: 13px;
+  color: var(--ink2); line-height: 1.5;
+  font-style: italic;
+}
+
+.signal-pill:last-child { margin-bottom: 0; }
+
+/* DM SEQUENCE */
+.sequence { margin: 28px 0; }
+
+.seq-msg {
+  display: flex; gap: 14px; margin-bottom: 10px;
+  align-items: flex-start;
+}
+
+.seq-day {
+  background: var(--ink); color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 5px 10px; border-radius: 5px;
+  flex-shrink: 0; min-width: 52px;
+  text-align: center; margin-top: 2px;
+}
+
+.seq-bubble {
+  background: var(--off);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px;
+  flex: 1; font-size: 13px; color: var(--ink2);
+  line-height: 1.65;
+}
+
+/* FORMULA */
+.formula {
+  background: var(--off);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 24px 28px;
+  margin: 28px 0; text-align: center;
+}
+
+.formula-main {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--ink); line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.formula-main em { color: var(--green); font-style: italic; font-family: 'Instrument Serif', serif; }
+.formula-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* WEEK BLOCKS */
+.weeks { margin: 32px 0; }
+
+.wk {
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.wk-hdr {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; cursor: pointer;
+  background: var(--white); user-select: none;
+  transition: background 0.15s;
+}
+
+.wk-hdr:hover { background: var(--off); }
+
+.wk-badge {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--ink); color: white;
+}
+.wk-badge.g { background: var(--green); }
+
+.wk-name { font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; }
+.wk-goal { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.wk-arr { color: var(--muted); font-size: 14px; transition: transform 0.2s; flex-shrink: 0; }
+.wk-arr.open { transform: rotate(90deg); }
+
+.wk-body {
+  display: none; padding: 0 20px 20px;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+}
+.wk-body.open { display: block; }
+
+.wk-theme {
+  font-size: 13px; color: var(--muted);
+  font-style: italic; padding: 14px 0 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.wk-task {
+  display: flex; gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.wk-task:last-child { border-bottom: none; }
+
+.wk-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green-mid); flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.wk-task-body { flex: 1; }
+.wk-task-main { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.wk-task-detail { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* PLUG KIT */
+.plug-grid {
+  display: grid; grid-template-columns: repeat(2,1fr);
+  gap: 10px; margin: 24px 0;
+}
+
+.plug-card {
+  background: var(--off);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px;
+}
+
+.plug-card-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+.plug-card-body { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* DIVIDER */
+hr { border: none; border-top: 1px solid var(--border); }
+
+/* CTA */
+.cta-section {
+  background: var(--ink); margin-top: 0;
+  padding: 80px 56px; text-align: center;
+  position: relative; overflow: hidden;
+}
+
+.cta-section::before {
+  content: '';
+  position: absolute; top: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 500px; height: 300px;
+  background: radial-gradient(ellipse, rgba(26,122,60,0.25) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.cta-eyebrow {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); margin-bottom: 20px;
+}
+
+.cta-section h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 800; letter-spacing: -0.03em;
+  color: white; margin-bottom: 14px; line-height: 1.05;
+  position: relative;
+}
+
+.cta-section h2 em {
+  font-style: italic;
+  font-family: 'Instrument Serif', serif;
+  color: #6ee89a; font-weight: 400;
+}
+
+.cta-section p {
+  font-size: 16px; color: rgba(255,255,255,0.45);
+  max-width: 440px; margin: 0 auto 36px;
+  line-height: 1.7; position: relative;
+}
+
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green); color: white;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  padding: 16px 32px; border-radius: 8px;
+  text-decoration: none; border: none; cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  position: relative; letter-spacing: 0.01em;
+}
+.cta-btn:hover { background: #158534; transform: translateY(-2px); }
+.cta-btn::after { content: '→'; }
+
+.cta-note {
+  margin-top: 16px; font-size: 12px;
+  color: rgba(255,255,255,0.2); position: relative;
+}
+
+/* FOOTER */
+footer {
+  background: #0a0a0a; color: rgba(255,255,255,0.2);
+  padding: 28px 56px;
+  display: flex; justify-content: space-between;
+  align-items: center; font-size: 12px;
+}
+footer a { color: rgba(255,255,255,0.4); text-decoration: none; }
+
+/* SCROLL REVEAL */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.reveal.vis { opacity: 1; transform: none; }
+
+@media(max-width:768px){
+  nav { padding: 0 20px; }
+  .nav-right .nav-tag { display: none; }
+  .cover { grid-template-columns: 1fr; padding: 40px 20px 60px; gap: 40px; }
+  .cover-right { position: static; }
+  .page { padding: 0 20px; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .plug-grid { grid-template-columns: 1fr; }
+  .cover-stats { flex-direction: column; gap: 20px; }
+  .c-stat { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 20px; padding-right: 0; margin-right: 0; }
+  .c-stat:last-child { border-bottom: none; padding-bottom: 0; }
+  .cta-section { padding: 60px 20px; }
+  footer { flex-direction: column; gap: 10px; text-align: center; padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+
+<!-- COVER -->
+<div style="background: var(--white);">
+<div class="cover">
+  <div class="cover-left">
+    <div class="cover-eyebrow">Free Playbook · 2025</div>
+    <h1>The 90-Day<br>B2B Playbook</h1>
+    <p class="cover-subtitle">0 to 100 customers, week by week.</p>
+    <p class="cover-desc">A practical, no-fluff guide for B2B service founders who want to grow fast — without ad spend, without a sales team, and without burning out on cold email that doesn't work anymore.</p>
+    <div class="cover-stats">
+      <div class="c-stat">
+        <div class="c-stat-val">39%</div>
+        <div class="c-stat-label">Reply rate when you reach leads at the right moment</div>
+      </div>
+      <div class="c-stat">
+        <div class="c-stat-val">21×</div>
+        <div class="c-stat-label">More replies vs cold email at 1.8% industry average</div>
+      </div>
+      <div class="c-stat">
+        <div class="c-stat-val">$0</div>
+        <div class="c-stat-label">Ad spend required to reach your first 100 customers</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-right">
+    <div class="toc-title">What's inside</div>
+    <ul class="toc-list">
+      <li class="toc-item"><a href="#ch1" class="toc-link"><span class="toc-num">01</span><span class="toc-link-title">Why Most B2B Companies Never Hit 100</span></a></li>
+      <li class="toc-item"><a href="#ch2" class="toc-link"><span class="toc-num">02</span><span class="toc-link-title">The Only Metric That Matters</span></a></li>
+      <li class="toc-item"><a href="#ch3" class="toc-link"><span class="toc-num">03</span><span class="toc-link-title">Where Your Customers Already Are</span></a></li>
+      <li class="toc-item"><a href="#ch4" class="toc-link"><span class="toc-num">04</span><span class="toc-link-title">The Signal-First Outreach System</span></a></li>
+      <li class="toc-item"><a href="#ch5" class="toc-link"><span class="toc-num">05</span><span class="toc-link-title">Selling Without Sales Calls</span></a></li>
+      <li class="toc-item"><a href="#ch6" class="toc-link"><span class="toc-num">06</span><span class="toc-link-title">Content That Brings Customers to You</span></a></li>
+      <li class="toc-item"><a href="#ch7" class="toc-link"><span class="toc-num">07</span><span class="toc-link-title">The Referral & Affiliate Flywheel</span></a></li>
+      <li class="toc-item"><a href="#ch8" class="toc-link"><span class="toc-num">08</span><span class="toc-link-title">Week by Week: The 90-Day Roadmap</span></a></li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<!-- CONTENT -->
+<div class="page">
+
+<!-- INTRO -->
+<div style="padding: 72px 0 60px; border-bottom: 1px solid var(--border);" class="reveal">
+  <div class="chapter-tag">Before you start</div>
+  <h2 class="chapter-title" style="font-family:'Syne',sans-serif; font-size: clamp(24px,3vw,36px); font-weight:800; letter-spacing:-0.025em; margin-bottom:10px;">This playbook is for one type of founder.</h2>
+  <p class="chapter-subtitle">Someone with a working product and no idea why more people aren't paying for it.</p>
+
+  <div class="body">
+    <p>You've got a B2B service. It works. Your existing customers are happy. But growing past your first handful feels harder than it should — like you're constantly pushing uphill while other companies seem to just... grow.</p>
+
+    <p>This playbook is not theory. Every strategy here has been tested by B2B founders at the exact stage you're at — 0 to 100 customers, limited budget, limited time. The core insight that runs through all eight chapters is this:</p>
+
+    <div class="insight">
+      <p>Most B2B founders are trying to <em>create demand</em>. The ones who grow fastest have learned to find demand that <em>already exists</em> — and show up at exactly the right moment.</p>
+    </div>
+
+    <p>Read it front to back once. Then open Chapter 8 every Sunday and use it as your weekly execution guide. That's the habit that gets you to 100.</p>
+  </div>
+</div>
+
+<!-- CH1 -->
+<div id="ch1" class="chapter reveal">
+  <div class="chapter-tag">Chapter One</div>
+  <h2 class="chapter-title">Why Most B2B Companies<br>Never Hit 100 Customers</h2>
+  <p class="chapter-subtitle">The three traps that stall growth before it starts</p>
+</div>
+
+<div class="body reveal">
+  <p>Here's a counterintuitive truth: the 0–100 customer stage has almost nothing to do with your product. Companies with average products hit 100. Companies with exceptional products stall at 12. The difference comes down to three traps — and almost every early-stage B2B founder falls into at least one of them.</p>
+
+  <h3>Trap 1 — Targeting people who aren't ready to buy</h3>
+  <p>Most founders build a list and work it. They export from Apollo or LinkedIn, craft a sequence, and start reaching out to anyone who fits their ICP. The problem isn't the list. It's the timing.</p>
+  <p>A company that would be a perfect customer in six months is worthless to you today. They're not thinking about your problem. They're not searching for solutions. Your message lands in a brain with zero room for it — and gets deleted in under a second.</p>
+
+  <div class="callout">
+    <p>The cold email industry average reply rate is <strong>1.8%</strong>. For every 100 emails sent, 98 people ignored you. The fix isn't better copy. It's targeting people who are actively looking right now.</p>
+  </div>
+
+  <h3>Trap 2 — Pitching before trust exists</h3>
+  <p>You get someone interested. You've got 30 minutes. You want to use them well — so you walk through the product. Features, pricing, case studies. The whole thing. They nod, say "interesting, I'll think about it," and disappear.</p>
+  <p>Not because the product was bad. Because you pitched before you had permission. <strong>Trust comes from demonstrated value, not claimed value.</strong> The fastest path to trust is giving something genuinely useful before you ask for anything in return.</p>
+
+  <h3>Trap 3 — Waiting for referrals</h3>
+  <p>You close your first few clients. The product works. They like you. So you wait. Surely they'll tell people. Surely word will spread.</p>
+  <p>It doesn't. Not automatically. People are busy and they don't think about your growth. Referrals at scale require a system, an incentive, and an explicit ask. We'll cover that in Chapter 7.</p>
+
+  <div class="insight">
+    <p>The companies that hit 100 customers aren't smarter or better funded. They figured out that <em>timing beats targeting</em> — showing up when someone is actively looking is 40× more powerful than the right message at the wrong moment.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta-sm" target="_blank">See how Intentsly finds in-market leads for you</a>
+</div>
+
+<hr>
+
+<!-- CH2 -->
+<div id="ch2" class="chapter reveal">
+  <div class="chapter-tag">Chapter Two</div>
+  <h2 class="chapter-title">The Only Metric That<br>Matters Before 100</h2>
+  <p class="chapter-subtitle">Stop tracking the wrong numbers</p>
+</div>
+
+<div class="body reveal">
+  <p>Every B2B founder tracks MRR. Some track CAC. A few build dashboards with pipeline velocity and lead scores. None of it matters until you nail the one number that actually predicts growth at this stage.</p>
+
+  <div class="formula">
+    <div class="formula-main">Weekly conversations with people<br>who <em>already want</em> what you sell</div>
+    <div class="formula-note">This is the only metric that matters before 100 customers. Everything else is downstream from this.</div>
+  </div>
+
+  <p>Not calls with anyone who'll take a meeting. Not outreach volume. Not LinkedIn connections. <strong>Conversations with people already in a buying mindset</strong> — actively researching, actively asking for recommendations, actively frustrated with their current solution.</p>
+
+  <p>If you're having 3 of these per week, you'll hit 100 customers. If you're having zero, no amount of product improvement or pricing tweaks will save you.</p>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val">3×</div>
+      <div class="stat-label">In-market conversations per week at 40% close rate = ~5 new customers per month</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">40%</div>
+      <div class="stat-label">Typical close rate when talking to someone actively in-market vs 5–8% cold</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">5/wk</div>
+      <div class="stat-label">New customers per week needed across all channels to hit 100 in 90 days</div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <p><strong>The mindset shift:</strong> Stop thinking "lead generation." Start thinking "intent interception" — finding the exact moments when your ideal customer is actively looking, and showing up right then.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Start intercepting buyer intent with Intentsly — free</a>
+</div>
+
+<hr>
+
+<!-- CH3 -->
+<div id="ch3" class="chapter reveal">
+  <div class="chapter-tag">Chapter Three</div>
+  <h2 class="chapter-title">Where Your Next 100<br>Customers Already Are</h2>
+  <p class="chapter-subtitle">They're not in a database. They're in a conversation.</p>
+</div>
+
+<div class="body reveal">
+  <p>Your next 100 customers are not waiting passively for you to find them. They're actively talking. Posting questions. Asking for recommendations. Venting about their current tools. And they're doing it in public, right now, on LinkedIn, Reddit, and X — while almost no one is watching.</p>
+
+  <h4>LinkedIn</h4>
+  <p>B2B buyers post professionally about their problems. "Does anyone have experience with [category]?" They announce they're "exploring options." They comment "this is exactly what we're dealing with" on competitor content. They post job descriptions that signal they're scaling a function — which means they need tools to support it. Every one of these is a buying signal.</p>
+
+  <h4>Reddit</h4>
+  <p>Reddit is where buyers go for honest, unfiltered advice. "What are you actually using for [problem]?" and "We're evaluating [category], what should we know?" The intent is extremely high — people are there specifically to get answers to real problems, not to network. And they're brutally honest about what they need.</p>
+
+  <h4>X (Twitter)</h4>
+  <p>Frustrated buyers vent publicly on X. "Is there a tool that does X without Y?" and "Why is every [category] tool so bad at [specific thing]?" Someone frustrated enough with their current solution to tweet about it is actively looking for an alternative. That's your moment.</p>
+
+  <div class="signals">
+    <div class="signals-label">What buying signals look like in the wild</div>
+    <div class="signal-pill">Anyone know a good tool for finding warm leads without blasting cold emails? Our reply rates are abysmal.</div>
+    <div class="signal-pill">We're evaluating outbound tools — would love recommendations from people who've actually used them.</div>
+    <div class="signal-pill">Just switched away from [competitor]. The old approach isn't working. What's actually working for agencies in 2025?</div>
+    <div class="signal-pill">Our team needs a better lead gen system. Tired of cold email. Anyone doing something different?</div>
+    <div class="signal-pill">Hiring a Head of Sales next month — need to get our outbound system in order before they start.</div>
+  </div>
+
+  <h3>The timing problem</h3>
+  <p>These signals have a half-life of roughly 4 hours. A post asking for tool recommendations on LinkedIn gets 3–8 responses in the first hour from whoever is already watching. After 24 hours, the poster has started evaluating the first two or three options they received. After 72 hours, they may have already made a decision.</p>
+
+  <p>If you find that post three days later during a manual search, you're not late — you're invisible. <strong>The opportunity is completely gone.</strong> This is why systematically monitoring these platforms in real time is one of the highest-leverage activities a B2B founder can do at this stage.</p>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Monitor LinkedIn, Reddit & X for buying signals — try Intentsly free</a>
+</div>
+
+<hr>
+
+<!-- CH4 -->
+<div id="ch4" class="chapter reveal">
+  <div class="chapter-tag">Chapter Four</div>
+  <h2 class="chapter-title">The Signal-First<br>Outreach System</h2>
+  <p class="chapter-subtitle">How to reach the right person at the right moment</p>
+</div>
+
+<div class="body reveal">
+  <p>Signal-first outreach is the opposite of traditional outbound. Instead of building a list of people who <em>might</em> be interested and hoping your timing is right, you identify people who are <em>already interested right now</em> and show up in that conversation.</p>
+
+  <h3>Step 1 — Define your signal universe</h3>
+  <p>A buying signal is any public post indicating someone is actively in-market for what you sell. But most companies get this wrong — they think in analyst language: "B2B lead generation," "outbound optimisation." Your buyers don't talk like that.</p>
+  <p>Build your signal list from the language your buyers actually use when they're frustrated, searching, or switching. That's what gets caught. That's what converts.</p>
+
+  <ul>
+    <li>"Does anyone know a good [category] tool that actually works?"</li>
+    <li>"We're switching away from [competitor] — what are you using?"</li>
+    <li>"Our [process] is broken. Looking for recommendations."</li>
+    <li>"Hiring a [role] next quarter" — signals they're scaling and need your service</li>
+    <li>"Just had a terrible experience with [current tool]" — they're actively looking</li>
+  </ul>
+
+  <h3>Step 2 — Lead with value, always</h3>
+  <p>When you find a signal, your instinct will be to reply with your product. Don't. The fastest way to kill a warm opportunity is to turn it into a sales pitch the moment you show up. Answer the question genuinely. Give them something useful first. The product mention comes naturally from that foundation.</p>
+
+  <h3>Step 3 — The free sample approach</h3>
+  <p>The single most effective first move in B2B outreach at this stage: offer something valuable for free, before they've paid you anything. It completely inverts the traditional sales dynamic. You're not asking for anything — you're proving value first.</p>
+
+  <div class="sequence">
+    <div class="seq-msg">
+      <div class="seq-day">Day 0</div>
+      <div class="seq-bubble">Hey [Name] — saw your post about [problem]. I actually have some relevant examples/data/leads that might be useful. Want me to send them over? No pitch — just thought it might help.</div>
+    </div>
+    <div class="seq-msg">
+      <div class="seq-day">Day 1</div>
+      <div class="seq-bubble">Here they are: [the valuable thing]. This is essentially what our tool finds automatically. Happy to show you how it works — here's a quick walkthrough: [Loom/video]. No pressure.</div>
+    </div>
+    <div class="seq-msg">
+      <div class="seq-day">Day 3</div>
+      <div class="seq-bubble">Hey — just checking if that was useful. If you want to try [your tool] properly, I'm happy to set you up. And if the timing isn't right, no worries at all.</div>
+    </div>
+    <div class="seq-msg">
+      <div class="seq-day">Day 7</div>
+      <div class="seq-bubble">Last message from me — if the timing isn't right, totally fine. I'll leave you to it. If you ever want to revisit, you know where to find me. Good luck with [their goal].</div>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val">39%</div>
+      <div class="stat-label">Reply rate using signal-first + value-first approach</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">1.8%</div>
+      <div class="stat-label">Industry average reply rate on cold email</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">21×</div>
+      <div class="stat-label">More replies when you lead with value vs a pitch</div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <p><strong>Tools like Intentsly</strong> automate the signal monitoring — watching LinkedIn, Reddit, and X simultaneously and delivering enriched leads to your inbox in real time. This frees you to focus on the conversations, not the searching.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Get your first 5 free leads from Intentsly</a>
+</div>
+
+<hr>
+
+<!-- CH5 -->
+<div id="ch5" class="chapter reveal">
+  <div class="chapter-tag">Chapter Five</div>
+  <h2 class="chapter-title">Selling Without<br>Sales Calls</h2>
+  <p class="chapter-subtitle">Close customers asynchronously — while you sleep</p>
+</div>
+
+<div class="body reveal">
+  <p>At the 0–100 stage, your time is the scarcest resource you have. Every hour on a demo call is an hour not spent building, writing, or finding new customers. <strong>The math only works if you can close some customers asynchronously.</strong></p>
+
+  <p>A sales process that requires your personal presence for every conversion caps your growth at the number of hours you can spend on calls per week. An async process runs 24/7.</p>
+
+  <h3>The three assets you need</h3>
+
+  <h4>Asset 1: A Loom video (8–12 minutes)</h4>
+  <p>Not a features walkthrough. A story. Start with the problem your customer had. Show your product solving it live, with real results. End with a single CTA: a direct link to sign up or start a trial. No call booking. No form. Direct to action.</p>
+
+  <h4>Asset 2: One case study per major niche</h4>
+  <p>One page. Three sections: the problem before, what they did, the specific result. Real numbers only. "Booked 3 meetings in 48 hours" beats "significantly improved pipeline velocity" in every test. Specificity builds trust. Vagueness destroys it.</p>
+
+  <h4>Asset 3: A free sample of your product's value</h4>
+  <p>Whatever your product does — give a taste of it for free before asking for payment. This is your most powerful trust-building move. It removes the biggest friction point in early B2B sales: the risk of paying before seeing proof.</p>
+
+  <h3>The async sequence in practice</h3>
+  <p>Someone engages with your content or responds to your outreach. Instead of booking a call, you send: the free sample → the Loom → the relevant case study → a direct link. That's the full sales process. <strong>At the $97–$500/month price point, a well-designed async process closes 20–35% of warm leads without a single call.</strong></p>
+
+  <div class="callout">
+    <p><strong>The rule:</strong> Only offer a call to someone who has already watched the Loom, read a case study, and is asking specific questions that can't be answered in writing. Everyone else gets the async sequence first.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta-sm" target="_blank">Find warm leads to start your async sequence with Intentsly</a>
+</div>
+
+<hr>
+
+<!-- CH6 -->
+<div id="ch6" class="chapter reveal">
+  <div class="chapter-tag">Chapter Six</div>
+  <h2 class="chapter-title">Content That Brings<br>Customers to You</h2>
+  <p class="chapter-subtitle">One post a month can change your trajectory</p>
+</div>
+
+<div class="body reveal">
+  <p>Most founders treat content as a chore — something they do when they have time, when they feel inspired, when they have something to say. That produces inconsistency, and inconsistency is the death of content as a growth channel.</p>
+
+  <p>Content that drives B2B customer acquisition follows different rules. It's not about reach. <strong>It's about relevance.</strong> One post seen by 500 of your exact ICP is worth more than a viral post seen by 50,000 people who'll never buy from you.</p>
+
+  <h3>The three post types that drive growth</h3>
+
+  <h4>Type 1: The Result Post</h4>
+  <p>Lead with a specific, surprising number. Every element earns its place: the number, the timeframe, the contrast with the status quo. End with a low-friction CTA that forces engagement: "Comment [WORD] and I'll send you [valuable thing]." Engagement boosts reach and gives you a list of warm leads to follow up with in DMs.</p>
+
+  <h4>Type 2: The Contrarian Post</h4>
+  <p>Take a position your ICP secretly believes but hasn't seen stated clearly. These posts get shared because people want to show them to colleagues. The format: make a specific, slightly uncomfortable claim about why the conventional approach fails — then reveal the better way.</p>
+
+  <h4>Type 3: The Founder Truth Post</h4>
+  <p>Once a month, share your real numbers. Customers, MRR, what worked, what failed, what surprised you. Don't polish it. Founders building in public and sharing real failures get 3–10× the reach of founders who only share wins. People root for honesty. And every person following your journey is a warm lead who already feels like they know you.</p>
+
+  <h3>The Sunday Session — your most important habit</h3>
+  <p>Block 2–3 hours every Sunday. Write all three posts for the coming week. Create one lead magnet. Outline your video or newsletter. <strong>Everything planned before Monday starts.</strong> You wake up Tuesday and post what you already wrote. There's no "I need to think of something to post today."</p>
+  <p>The weeks you skip this will show up in your customer count three weeks later. Guard this time like a board meeting.</p>
+
+  <h3>Lead magnets that convert</h3>
+  <p>A lead magnet works when it delivers immediate, specific value to your exact ICP — and when consuming it makes them want your product. Generic tip lists don't do this. The best lead magnets:</p>
+  <ul>
+    <li>Give something so specific it feels almost unfair — a list, a framework, a template they can use today</li>
+    <li>Demonstrate your core value before they pay you anything</li>
+    <li>Are distributed via "comment to receive" — not a link — to maximise reach and warm leads</li>
+    <li>Pre-sell your product by making the reader think "I need a tool that does this automatically"</li>
+  </ul>
+
+  <div class="insight">
+    <p>The founder who posts consistently for 90 days will out-grow the one who goes viral once and disappears. <em>Consistency is the unfair advantage nobody talks about.</em></p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta-sm" target="_blank">Intentsly gives you real leads to turn into real content — try it free</a>
+</div>
+
+<hr>
+
+<!-- CH7 -->
+<div id="ch7" class="chapter reveal">
+  <div class="chapter-tag">Chapter Seven</div>
+  <h2 class="chapter-title">The Referral &<br>Affiliate Flywheel</h2>
+  <p class="chapter-subtitle">Turn 3 customers into 30 without extra outreach</p>
+</div>
+
+<div class="body reveal">
+  <p>Your existing customers are not an end point. They're the beginning of your most powerful growth channel. Every paying customer is a node in a network. The question is whether you activate that network or leave it dormant.</p>
+
+  <h3>The referral system</h3>
+  <p>Referrals without a system are wishes. With a system they're a channel — measurable, repeatable, and growable. The system is three things:</p>
+  <ul>
+    <li><strong>A clear incentive.</strong> One free month per referral that converts. Not a discount — actual free time with your product. This costs you almost nothing and the referred customer pays for 11+ months minimum.</li>
+    <li><strong>An explicit ask.</strong> Three days after signup, message every new customer personally: "Do you know 1–2 people who might get value from this? If they sign up, I'll give you a free month." Not a broadcast email. A real message.</li>
+    <li><strong>A low-friction path.</strong> They shouldn't have to do more than forward a two-sentence message to a friend. Make the ask easy: "Could you just introduce us on LinkedIn?"</li>
+  </ul>
+  <p>Warm referrals convert at 40–60%. One customer who sends you two referrals is worth more than 40 cold email leads.</p>
+
+  <h3>The affiliate system</h3>
+  <p>Affiliates are people who have your customers as their audience — consultants, coaches, newsletter creators, trainers. They don't use your product. They influence the people who do.</p>
+  <p>The offer: 30% recurring commission and a free account for life. One affiliate with 10,000 followers who mentions you once can send 5–15 signups — recurring revenue from a single post, forever.</p>
+
+  <h3>The Affiliate Plug Kit</h3>
+  <p>The reason most affiliate programs fail: they make the affiliate do too much work. The plug kit removes every excuse not to post.</p>
+
+  <div class="plug-grid">
+    <div class="plug-card">
+      <div class="plug-card-title">3 ready-to-post captions</div>
+      <div class="plug-card-body">Different angles: result-first, problem-first, humor. Zero writing required on their part. Copy, paste, post.</div>
+    </div>
+    <div class="plug-card">
+      <div class="plug-card-title">2 branded images</div>
+      <div class="plug-card-body">Your best performing creatives, sized for LinkedIn. Download and post. No design work needed.</div>
+    </div>
+    <div class="plug-card">
+      <div class="plug-card-title">Their unique tracking link</div>
+      <div class="plug-card-body">Automated commission tracking. Every signup through their link = payment. No manual management.</div>
+    </div>
+    <div class="plug-card">
+      <div class="plug-card-title">Monthly check-in</div>
+      <div class="plug-card-body">Fresh caption and image every month + their earnings update. Keep them engaged and earning.</div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <p><strong>The math:</strong> 10 active affiliates × 3 customers each = 30 customers per month. A channel that costs $0 in ad spend and runs largely on its own once the plug kit is built.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta-sm" target="_blank">Use Intentsly to find your first affiliate targets today</a>
+</div>
+
+<hr>
+
+<!-- CH8 -->
+<div id="ch8" class="chapter reveal">
+  <div class="chapter-tag">Chapter Eight</div>
+  <h2 class="chapter-title">Week by Week.<br>The 90-Day Roadmap.</h2>
+  <p class="chapter-subtitle">Open this every Sunday. Execute all week.</p>
+</div>
+
+<div class="body reveal">
+  <p>Everything in the previous seven chapters becomes useless without execution. This is the execution layer — the exact activities, in the exact order, across 90 days. Use it as a weekly operating system.</p>
+
+  <div class="weeks">
+
+    <div class="wk">
+      <div class="wk-hdr" onclick="tw(this)">
+        <span class="wk-badge">Week 1</span>
+        <span class="wk-name">Launch every channel simultaneously</span>
+        <span class="wk-goal">Target: first 10 customers</span>
+        <span class="wk-arr open">›</span>
+      </div>
+      <div class="wk-body open">
+        <div class="wk-theme">Theme: Deploy everything you already have. Don't wait until things are perfect. Ship now, optimise later.</div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post your first success story on LinkedIn (Tuesday)</div><div class="wk-task-detail">Result in line 1. Specific number. End with "Comment [WORD] and I'll send you [something valuable] from your niche for free." Reply every comment within 2 hours — algorithm rewards early velocity.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Create and post Lead Magnet #1</div><div class="wk-task-detail">Something specific and immediately useful to your ICP. Post it with "Comment to receive." Collect emails from everyone who engages. Goal: 50+ comments. Every commenter is a warm lead.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Record and post your Loom demo (8–12 min)</div><div class="wk-task-detail">Start with the problem, not the product. Show it solving a real problem with real results. End with a direct link to sign up. Upload to YouTube the same day — it becomes your evergreen intro video.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Set up Reddit monitoring and post one value-first thread</div><div class="wk-task-detail">Target subreddits where your ICP asks questions. 10 helpful comments per day. Post one original "what worked for us" thread — no pitch. Product mention only in comments when people ask.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">DM 5 potential affiliates with a 4-line offer</div><div class="wk-task-detail">GTM consultants, coaches, newsletter creators in your space. Keep it short: "[product], [customers], [price], 30% recurring + free account. Worth a chat?" Goal: 2 say yes.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Personally ask all existing customers for one referral</div><div class="wk-task-detail">Not a broadcast. A personal message today. "Do you know 1–2 people who might get value from this? If they sign up, I'll give you a free month." Warm referrals convert at 40–60%. This is your fastest win this week.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post 2 more LinkedIn pieces this week</div><div class="wk-task-detail">Thursday: a contrarian post or second success story. Friday: something more human or humorous. Consistency from day 1 trains the algorithm to treat you as an active creator.</div></div></div>
+      </div>
+    </div>
+
+    <div class="wk">
+      <div class="wk-hdr" onclick="tw(this)">
+        <span class="wk-badge">Week 2</span>
+        <span class="wk-name">Launch newsletter + YouTube episode 1 + onboard affiliates</span>
+        <span class="wk-goal">Target: 18 customers</span>
+        <span class="wk-arr">›</span>
+      </div>
+      <div class="wk-body">
+        <div class="wk-theme">Theme: Build the compounding channels. Newsletter and YouTube start paying off in month 2. Plant them now.</div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Email everyone who downloaded Week 1's lead magnet</div><div class="wk-task-detail">Email 1: deliver the resource + ask one question ("What's your biggest frustration with [topic]?"). Replies make your list warm and improve deliverability. Set up a 4-email welcome sequence: resource → case study → free sample → soft offer.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Record and publish YouTube Video #1</div><div class="wk-task-detail">10–15 min tutorial solving a real problem for your ICP. SEO-friendly title. Then cut 3 short clips (30–60 sec each) for LinkedIn — post one per day Tue/Wed/Thu. One recording = 4 pieces of content.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Create Lead Magnet #2 — niche-specific</div><div class="wk-task-detail">Target your single best-fit customer persona. Niche-specific magnets convert 3× better than generic ones. Add another 30–80 emails to your growing list.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Onboard first 2 affiliates with full plug kit</div><div class="wk-task-detail">Send everything in one message: captions, images, tracking link, your case study, their elevator pitch. Ask: "What would make you actually want to post about this?" Then do that thing.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post "comment [WORD] for free [thing]" on LinkedIn</div><div class="wk-task-detail">This is your highest-performing CTA format. No long explanation. Just: tell me your [niche/situation] in the comments and I'll send you [valuable thing]. Follow up with every commenter in DMs that day.</div></div></div>
+      </div>
+    </div>
+
+    <div class="wk">
+      <div class="wk-hdr" onclick="tw(this)">
+        <span class="wk-badge">Week 3</span>
+        <span class="wk-name">Double what worked + Slack communities + close Month 1</span>
+        <span class="wk-goal">Target: 27 customers</span>
+        <span class="wk-arr">›</span>
+      </div>
+      <div class="wk-body">
+        <div class="wk-theme">Theme: Analyse weeks 1–2. Double volume on what converted. Cut what didn't. Close the month strong.</div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Friday review: which post got the most DMs? Which outreach got the most replies?</div><div class="wk-task-detail">Same format, fresh content. Winning structures compound. Don't rotate just for variety — rotate when data tells you to.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post in 3–4 Slack communities your ICP lives in</div><div class="wk-task-detail">Case study thread, not an ad. "What worked for us: [specific result]." Engage every reply. Mention your product naturally. Revenue Collective, Pavilion, Demand Curve, GTM Alliance — these communities have thousands of active B2B buyers.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Re-engage all warm leads from weeks 1–2 that didn't convert</div><div class="wk-task-detail">"Hey — just checking in. Was [the thing you sent] useful? Happy to pull a fresh version for you." Re-open with value. Not "just following up."</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post "Month 1 in public" on LinkedIn — real numbers</div><div class="wk-task-detail">Customers, MRR, what worked, what failed. Raw, not polished. These posts get 3–10× normal reach because honesty is rare. Your next 10 customers are reading this and deciding whether to trust you.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Collect testimonials from your first customers — 1 sentence each</div><div class="wk-task-detail">Ask directly: "Would you be comfortable with a quick sentence I could share?" Use their exact words as hooks in month 2. Real customer language always beats polished copywriting.</div></div></div>
+      </div>
+    </div>
+
+    <div class="wk">
+      <div class="wk-hdr" onclick="tw(this)">
+        <span class="wk-badge g">Week 4–6</span>
+        <span class="wk-name">Scale affiliates to 10 · G2 reviews · newsletter converting · PH prep</span>
+        <span class="wk-goal">Target: 60 customers</span>
+        <span class="wk-arr">›</span>
+      </div>
+      <div class="wk-body">
+        <div class="wk-theme">Theme: Systemise everything. The channels are proven. Build the infrastructure that makes them run without your daily attention.</div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Set up G2 and Capterra — push to 10+ reviews</div><div class="wk-task-detail">5+ reviews puts you in "[category] tools" search results. Buyers actively searching for a specific solution convert at 30–50%. No selling required. Ask your existing customers — most will do it if you ask personally.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Scale affiliates to 10 active — build an affiliate page on your website</div><div class="wk-task-detail">Use Rewardful ($49/mo) or Lemon Squeezy (free) for self-serve tracking. 10 affiliates × 3 customers each = 30 customers per month. This is your single biggest lever in month 2.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Send weekly newsletter every week — tip + case study + CTA</div><div class="wk-task-detail">Short, useful, consistent. Your list should be 200–400 emails by week 6. At 5% conversion that's 10–20 customers from email alone. The list compounds — it never stops growing.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">1 YouTube video per week + 3 LinkedIn posts per week — locked in</div><div class="wk-task-detail">Sunday session protects this. The cadence is the strategy. Don't let busy weeks kill content — you'll feel the drop in customer count 3 weeks later.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Start collecting Product Hunt "notify me" signups</div><div class="wk-task-detail">Post on LinkedIn: "We're launching on PH in [X] weeks — hit notify me if you want to be first." Collect 50+ notifiers. These are your day-1 upvoters.</div></div></div>
+      </div>
+    </div>
+
+    <div class="wk">
+      <div class="wk-hdr" onclick="tw(this)">
+        <span class="wk-badge g">Week 7–9</span>
+        <span class="wk-name">Product Hunt launch · price anchor · all channels at full velocity</span>
+        <span class="wk-goal">Target: 80 customers</span>
+        <span class="wk-arr">›</span>
+      </div>
+      <div class="wk-body">
+        <div class="wk-theme">Theme: Create genuine urgency. Coordinate all channels simultaneously for maximum impact.</div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Product Hunt launch — Tuesday, 00:01 PST. Personal message every notifier on launch day.</div><div class="wk-task-detail">Personal messages, not a broadcast. Cross-post to LinkedIn, X, Reddit. Ask all affiliates to post on launch day. Send a dedicated email to your newsletter. Coordinated = top 5 on PH. Estimated: 10–25 customers from one good launch.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Announce a price increase when you hit your milestone</div><div class="wk-task-detail">Post it publicly. Email your list. DM every warm lead who hasn't converted yet. "Price goes up at [milestone] — wanted to give you first dibs." Genuine urgency. Fence-sitters convert. This typically adds 5–10 customers on its own.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post "60 days in public" — real, raw, honest</div><div class="wk-task-detail">MRR. What surprised you. One thing that genuinely failed. People who've been following your journey from month 1 will share this. It will be your biggest post yet.</div></div></div>
+      </div>
+    </div>
+
+    <div class="wk">
+      <div class="wk-hdr" onclick="tw(this)">
+        <span class="wk-badge g">Week 10–13</span>
+        <span class="wk-name">Close 100 — everything fires simultaneously</span>
+        <span class="wk-goal">Target: 100 customers 🎯</span>
+        <span class="wk-arr">›</span>
+      </div>
+      <div class="wk-body">
+        <div class="wk-theme">Theme: This is not the week to ease off because you're close. This is the week to go hardest.</div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Coordinate all affiliates to post in the same week</div><div class="wk-task-detail">"We're X customers away from [milestone]. If you post this week I'll extend your free account by 6 months." 10 affiliates posting in one week = perceived momentum that no single ad can replicate.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Email your full newsletter list: "X away from 100 — lock in current pricing"</div><div class="wk-task-detail">Your list is now 500–700 emails. Even 2% conversion = 10–14 customers from one email. This is why you built the list.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">DM every warm lead from months 1–2 that never converted</div><div class="wk-task-detail">"Price goes up soon — wanted to give you first dibs before it changes." One message, no follow up. Respect their decision.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Amplify your top 2 LinkedIn posts with $50–$100 each in paid promotion</div><div class="wk-task-detail">Only boost posts that already performed organically. Paid amplification on bad content wastes money. On proven content, $100 targeted well = 5–10 inbound leads.</div></div></div>
+        <div class="wk-task"><div class="wk-dot"></div><div class="wk-task-body"><div class="wk-task-main">Post "90 days. 0 to 100 customers. Here's everything." the day you hit it.</div><div class="wk-task-detail">Real numbers. What worked ranked by impact. What failed honestly. No polish. Post it the day you hit 100. This becomes your most important piece of content ever — your next 100 customers are reading it. And it starts the whole cycle again.</div></div></div>
+      </div>
+    </div>
+
+  </div><!-- end weeks -->
+
+  <div class="callout green">
+    <p><strong>The Sunday Session — your most important weekly habit:</strong> 2–3 hours every Sunday. Write all 3 posts. Build one lead magnet. Outline your video. The weeks you skip this will show up in your customer count 3 weeks later. Guard this time.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Ready to execute? Start finding warm leads with Intentsly — free</a>
+
+</div>
+
+</div><!-- end page -->
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-eyebrow">Built by Intentsly</div>
+  <h2>Find your next customers<br><em>before they find someone else.</em></h2>
+  <p>Intentsly monitors LinkedIn, Reddit and X in real time for buying signals from your ideal customers — and delivers enriched leads straight to your inbox.</p>
+  <a href="https://intentsly.com" class="cta-btn" target="_blank">Get 5 free leads from your niche</a>
+  <div class="cta-note">intentsly.com · No credit card required · Setup in 10 minutes</div>
+</div>
+
+<footer>
+  <div>The 90-Day B2B Playbook</div>
+  <a href="https://intentsly.com" target="_blank">Brought to you by Intentsly.com</a>
+  <div>Share freely · 2025</div>
+</footer>
+
+<script>
+// Progress bar
+window.addEventListener('scroll', () => {
+  const el = document.documentElement;
+  const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+  document.getElementById('prog').style.width = pct + '%';
+});
+
+// Scroll reveal
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.07 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Week accordion
+function tw(hdr) {
+  const body = hdr.nextElementSibling;
+  const arr = hdr.querySelector('.wk-arr');
+  const open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  arr.classList.toggle('open', !open);
+}
+</script>
+</body>
+</html>
