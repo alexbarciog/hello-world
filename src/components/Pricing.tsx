@@ -7,7 +7,7 @@ import { ttqInitiateCheckout, ttqAddToCart } from "@/lib/tiktok-pixel";
 import { CountUp } from "@/lib/motion";
 
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
-const PRO_PRICE_ID = "price_1TCpq6FsgTpFMX56cX4ufXJo";
+const PRO_PRICE_ID = "price_1TRekzFsgTpFMX56qcKFrGKS";
 
 const features = [
   "LinkedIn intent discovery",
