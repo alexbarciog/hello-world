@@ -39,6 +39,7 @@ import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
 import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import StrawberryPitch from "./pages/pitch/Strawberry.tsx";
 import Playbook from "./pages/Playbook.tsx";
+import SignalPlaybook from "./pages/SignalPlaybook.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import InviteAccept from "./pages/InviteAccept.tsx";
@@ -219,6 +220,7 @@ const App = () => (
           <Route path="/video" element={<VideoShowcase />} />
           <Route path="/pitch/strawberry" element={<StrawberryPitch />} />
           <Route path="/playbook" element={<Playbook />} />
+          <Route path="/signal-playbook" element={<SignalPlaybook />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
           <Route path="/shared/leads/:token" element={<SharedLeads />} />
           <Route path="*" element={<NotFound />} />
