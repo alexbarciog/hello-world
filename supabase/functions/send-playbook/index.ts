@@ -24,8 +24,7 @@ serve(async (req) => {
     }
 
     const safeName = typeof name === "string" ? name.trim().slice(0, 80) : "";
-    const origin = req.headers.get("origin") || "https://intentsly.com";
-    const playbookUrl = `${origin}/downloads/b2b-100-playbook.html`;
+    const playbookUrl = `https://intentsly.com/downloads/b2b-100-playbook.html`;
 
     const html = `<!DOCTYPE html>
 <html><body style="margin:0;padding:0;background:#f9f9f7;font-family:Arial,Helvetica,sans-serif;color:#111110">
