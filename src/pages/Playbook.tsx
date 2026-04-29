@@ -48,6 +48,15 @@ export default function Playbook() {
           className="absolute inset-0 w-full h-full object-cover"
           aria-hidden="true"
         />
+        {/* Legibility overlay — darker on the left where the text sits */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(8,18,40,0.55) 0%, rgba(8,18,40,0.35) 40%, rgba(8,18,40,0.1) 75%, rgba(8,18,40,0) 100%)",
+          }}
+        />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 pt-28 md:pt-36 pb-16">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center">
