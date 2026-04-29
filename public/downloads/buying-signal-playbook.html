@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Buying Signal Playbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white: #ffffff;
+  --off: #f8f8f6;
+  --ink: #111110;
+  --ink2: #3a3a38;
+  --muted: #888884;
+  --border: #e4e4e0;
+  --blue: #1a5cff;
+  --blue-bg: #f0f4ff;
+  --blue-mid: #a8bcff;
+  --blue-dark: #0f3db5;
+  --tag-bg: #eef2ff;
+  --tag-border: #c0ccff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+#prog {
+  position: fixed; top: 0; left: 0;
+  height: 2px; background: var(--blue);
+  width: 0%; z-index: 300;
+  transition: width 0.08s linear;
+}
+
+/* COVER */
+.cover {
+  min-height: 100vh;
+  background: var(--ink);
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  padding: 60px;
+  position: relative; overflow: hidden;
+}
+
+.cover-grain {
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.cover-glow {
+  position: absolute; top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(26,92,255,0.2) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.cover-glow2 {
+  position: absolute; bottom: -100px; left: -100px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(26,92,255,0.08) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.cover-top {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; position: relative;
+}
+
+.cover-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.cover-logo-mark {
+  width: 32px; height: 32px;
+  background: var(--blue);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+
+.cover-logo-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.02em;
+}
+
+.cover-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(26,92,255,0.15);
+  border: 1px solid rgba(26,92,255,0.3);
+  border-radius: 20px; padding: 5px 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 600;
+  color: #7aaaff; letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cover-badge::before {
+  content: ''; width: 5px; height: 5px;
+  border-radius: 50%; background: #7aaaff;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+.cover-mid { position: relative; padding: 60px 0; }
+
+.cover-eyebrow {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.cover-eyebrow::after {
+  content: ''; flex: 1; height: 1px;
+  background: rgba(255,255,255,0.08); max-width: 60px;
+}
+
+.cover h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(36px, 5.5vw, 72px);
+  font-weight: 800; line-height: 1.0;
+  letter-spacing: -0.03em; color: var(--white);
+  margin-bottom: 14px; max-width: 800px;
+}
+
+.cover h1 em {
+  font-style: italic;
+  font-family: 'Instrument Serif', serif;
+  color: #7aaaff; font-weight: 400;
+}
+
+.cover-sub {
+  font-family: 'Instrument Serif', serif;
+  font-size: clamp(18px, 2.5vw, 26px);
+  font-style: italic;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 0; line-height: 1.4;
+  max-width: 600px;
+}
+
+.cover-bottom {
+  display: flex; justify-content: space-between;
+  align-items: flex-end; position: relative;
+}
+
+.cover-stats {
+  display: flex; gap: 40px;
+}
+
+.cs { }
+.cs-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px; font-weight: 800;
+  color: #7aaaff; letter-spacing: -0.03em;
+  line-height: 1; margin-bottom: 4px;
+}
+.cs-label { font-size: 11px; color: rgba(255,255,255,0.25); line-height: 1.4; max-width: 120px; }
+
+.cover-toc {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 20px 24px;
+  min-width: 240px;
+}
+
+.cover-toc-title {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.2); margin-bottom: 12px;
+}
+
+.cover-toc-item {
+  display: flex; gap: 10px; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  text-decoration: none;
+}
+.cover-toc-item:last-child { border-bottom: none; }
+
+.cover-toc-num {
+  font-size: 10px; font-family: 'Syne', sans-serif;
+  color: rgba(255,255,255,0.2); font-weight: 700;
+  width: 18px; flex-shrink: 0;
+}
+
+.cover-toc-name {
+  font-size: 12px; color: rgba(255,255,255,0.45);
+  line-height: 1.3; transition: color 0.15s;
+}
+
+.cover-toc-item:hover .cover-toc-name { color: rgba(255,255,255,0.8); }
+
+/* PAGE */
+.page { max-width: 720px; margin: 0 auto; padding: 0 40px; }
+
+/* CHAPTER */
+.chapter { padding: 80px 0 0; border-top: 1px solid var(--border); }
+
+.chapter-tag {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.chapter-tag::before { content: ''; display: block; width: 16px; height: 1px; background: var(--muted); }
+
+.chapter-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 800; line-height: 1.05;
+  letter-spacing: -0.025em; color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.chapter-title em {
+  font-style: italic;
+  font-family: 'Instrument Serif', serif;
+  color: var(--blue); font-weight: 400;
+}
+
+.chapter-sub {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px; font-style: italic;
+  color: var(--muted); margin-bottom: 48px;
+}
+
+/* BODY */
+.body { padding: 0 0 80px; }
+
+.body p {
+  font-size: 16px; color: var(--ink2);
+  line-height: 1.85; margin-bottom: 20px;
+}
+
+.body p strong { color: var(--ink); font-weight: 600; }
+
+.body h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--ink); margin: 40px 0 12px;
+  letter-spacing: -0.01em;
+}
+
+.body h4 {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--blue); margin: 32px 0 10px;
+}
+
+/* CALLOUTS */
+.callout {
+  border-left: 2px solid var(--border);
+  padding: 18px 22px; margin: 28px 0;
+  background: var(--off);
+  border-radius: 0 8px 8px 0;
+}
+.callout p { font-size: 15px; color: var(--ink2); margin-bottom: 0 !important; line-height: 1.7; }
+
+.callout.blue { border-left-color: var(--blue); background: var(--blue-bg); }
+.callout.blue p { color: #1a3a8f; }
+.callout.blue strong { color: var(--blue); }
+
+/* INSIGHT */
+.insight {
+  background: var(--ink); border-radius: 10px;
+  padding: 28px 32px; margin: 36px 0;
+}
+.insight p {
+  font-family: 'Instrument Serif', serif;
+  font-size: 20px; color: rgba(255,255,255,0.85);
+  font-style: italic; line-height: 1.55;
+  margin-bottom: 0 !important;
+}
+.insight p em { color: #7aaaff; font-style: normal; }
+
+/* STATS */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 1px; background: var(--border);
+  border-radius: 10px; overflow: hidden; margin: 32px 0;
+}
+.stat-box { background: var(--white); padding: 22px 20px; }
+.stat-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 34px; font-weight: 800;
+  color: var(--blue); letter-spacing: -0.03em;
+  line-height: 1; margin-bottom: 6px;
+}
+.stat-label { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+/* LISTS */
+.body ul { list-style: none; margin: 16px 0 24px; }
+.body ul li {
+  font-size: 15px; color: var(--ink2);
+  padding: 9px 0 9px 20px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.65; position: relative;
+}
+.body ul li:last-child { border-bottom: none; }
+.body ul li::before { content: '→'; position: absolute; left: 0; color: var(--blue); font-size: 12px; top: 11px; }
+
+/* SIGNAL EXAMPLES */
+.signals {
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-mid);
+  border-radius: 10px; padding: 22px 26px; margin: 28px 0;
+}
+.signals-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 14px;
+}
+.signal-pill {
+  background: var(--white);
+  border: 1px solid rgba(26,92,255,0.12);
+  border-radius: 8px; padding: 12px 16px;
+  margin-bottom: 8px; font-size: 13px;
+  color: var(--ink2); line-height: 1.5;
+  font-style: italic; display: flex; gap: 10px; align-items: flex-start;
+}
+.signal-pill:last-child { margin-bottom: 0; }
+.signal-pill-platform {
+  font-size: 10px; font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  font-style: normal;
+  color: var(--blue); background: var(--blue-bg);
+  border: 1px solid var(--blue-mid);
+  border-radius: 4px; padding: 2px 7px;
+  flex-shrink: 0; margin-top: 1px;
+  letter-spacing: 0.04em;
+}
+.signal-note { font-size: 12px; color: var(--muted); margin-top: 14px; font-style: italic; text-align: center; }
+
+/* PLATFORM SECTIONS */
+.platform-block {
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden; margin: 20px 0;
+}
+.platform-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  background: var(--off); border-bottom: 1px solid var(--border);
+}
+.platform-icon {
+  width: 32px; height: 32px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.platform-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+.platform-desc { font-size: 12px; color: var(--muted); }
+.platform-body { padding: 20px; }
+.platform-body p { font-size: 14px; color: var(--ink2); line-height: 1.75; margin-bottom: 12px; }
+.platform-body p:last-child { margin-bottom: 0; }
+
+/* SCORE TABLE */
+.score-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+.score-table th {
+  font-family: 'Syne', sans-serif; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); padding: 10px 14px;
+  text-align: left; border-bottom: 1px solid var(--border);
+  background: var(--off);
+}
+.score-table td {
+  padding: 12px 14px; font-size: 13px; color: var(--ink2);
+  border-bottom: 1px solid var(--border); vertical-align: top;
+  line-height: 1.5;
+}
+.score-table tr:last-child td { border-bottom: none; }
+.score-badge {
+  display: inline-block; font-size: 10px; font-family: 'Syne', sans-serif;
+  font-weight: 700; padding: 3px 8px; border-radius: 4px;
+}
+.sb-high { background: #edfaf3; color: #1a7a3c; border: 1px solid #b8e8cc; }
+.sb-med { background: #fff8ec; color: #b8680a; border: 1px solid #ffd699; }
+.sb-low { background: #fff0f0; color: #c0392b; border: 1px solid #ffb8b8; }
+
+/* TEMPLATE BOX */
+.template {
+  background: var(--off); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px 24px; margin: 20px 0;
+}
+.template-label {
+  font-size: 10px; font-family: 'Syne', sans-serif; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 12px;
+}
+.template-msg {
+  font-size: 13px; font-family: 'DM Sans', sans-serif;
+  color: var(--ink2); line-height: 1.75;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px 18px;
+  white-space: pre-wrap;
+}
+.template-note { font-size: 12px; color: var(--muted); margin-top: 10px; font-style: italic; }
+
+/* INLINE CTA */
+.inline-cta {
+  display: block; background: var(--blue); color: white;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  padding: 16px 28px; border-radius: 8px; text-decoration: none;
+  text-align: center; margin: 36px 0;
+  transition: background 0.15s, transform 0.15s; letter-spacing: 0.01em;
+}
+.inline-cta:hover { background: var(--blue-dark); transform: translateY(-2px); }
+.inline-cta::after { content: ' →'; }
+
+.inline-cta-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ink); color: white;
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+  padding: 11px 22px; border-radius: 7px; text-decoration: none;
+  margin: 20px 0; transition: background 0.15s;
+}
+.inline-cta-sm:hover { background: var(--blue); }
+.inline-cta-sm::after { content: ' →'; }
+
+/* CHECKLIST */
+.checklist { margin: 20px 0; }
+.check-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.check-item:last-child { border-bottom: none; }
+.check-box {
+  width: 18px; height: 18px; border-radius: 5px;
+  border: 1.5px solid var(--blue-mid); flex-shrink: 0;
+  margin-top: 2px;
+}
+.check-body { flex: 1; }
+.check-main { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.check-detail { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+/* CTA SECTION */
+.cta-section {
+  background: var(--ink); padding: 80px 60px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.cta-section::before {
+  content: ''; position: absolute; top: -100px; left: 50%;
+  transform: translateX(-50%); width: 500px; height: 300px;
+  background: radial-gradient(ellipse, rgba(26,92,255,0.3) 0%, transparent 65%);
+  pointer-events: none;
+}
+.cta-eyebrow {
+  font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); margin-bottom: 20px;
+}
+.cta-section h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(28px, 4vw, 48px); font-weight: 800;
+  letter-spacing: -0.03em; color: white;
+  margin-bottom: 14px; line-height: 1.05; position: relative;
+}
+.cta-section h2 em {
+  font-style: italic; font-family: 'Instrument Serif', serif;
+  color: #7aaaff; font-weight: 400;
+}
+.cta-section p {
+  font-size: 16px; color: rgba(255,255,255,0.45);
+  max-width: 440px; margin: 0 auto 36px;
+  line-height: 1.7; position: relative;
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--blue); color: white;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  padding: 16px 32px; border-radius: 8px;
+  text-decoration: none; transition: background 0.15s, transform 0.15s;
+  position: relative; letter-spacing: 0.01em;
+}
+.cta-btn:hover { background: var(--blue-dark); transform: translateY(-2px); }
+.cta-btn::after { content: '→'; }
+.cta-note { margin-top: 16px; font-size: 12px; color: rgba(255,255,255,0.2); position: relative; }
+
+/* FOOTER */
+footer {
+  background: #0a0a0a; color: rgba(255,255,255,0.2);
+  padding: 28px 60px; display: flex;
+  justify-content: space-between; align-items: center; font-size: 12px;
+}
+footer a { color: rgba(255,255,255,0.4); text-decoration: none; }
+
+hr { border: none; border-top: 1px solid var(--border); }
+
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.reveal.vis { opacity: 1; transform: none; }
+
+@media(max-width:768px){
+  .cover { padding: 36px 24px; }
+  .cover-stats { flex-direction: column; gap: 20px; }
+  .cover-toc { display: none; }
+  .cover-bottom { flex-direction: column; gap: 32px; align-items: flex-start; }
+  .page { padding: 0 20px; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .cta-section { padding: 60px 24px; }
+  footer { flex-direction: column; gap: 10px; text-align: center; padding: 24px 20px; }
+}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-grain"></div>
+  <div class="cover-glow"></div>
+  <div class="cover-glow2"></div>
+
+  <div class="cover-top">
+    <div class="cover-logo">
+      <div class="cover-logo-mark">👻</div>
+      <span class="cover-logo-name">Intentsly</span>
+    </div>
+    <div class="cover-badge">Free Playbook · 2025</div>
+  </div>
+
+  <div class="cover-mid">
+    <div class="cover-eyebrow">Buying Signal Playbook</div>
+    <h1>How to find <em>warm leads</em><br>on LinkedIn, Reddit & X<br>before your competitors do.</h1>
+    <p class="cover-sub">The exact method that booked 47 meetings in 30 days with zero ad spend.</p>
+  </div>
+
+  <div class="cover-bottom">
+    <div class="cover-stats">
+      <div class="cs">
+        <div class="cs-val">39%</div>
+        <div class="cs-label">Reply rate on signal-based outreach</div>
+      </div>
+      <div class="cs">
+        <div class="cs-val">1.8%</div>
+        <div class="cs-label">Industry average on cold email</div>
+      </div>
+      <div class="cs">
+        <div class="cs-val">47</div>
+        <div class="cs-label">Meetings booked in 30 days, $0 spent</div>
+      </div>
+    </div>
+
+    <div class="cover-toc">
+      <div class="cover-toc-title">What's inside</div>
+      <a href="#ch1" class="cover-toc-item"><span class="cover-toc-num">01</span><span class="cover-toc-name">What a buying signal actually is</span></a>
+      <a href="#ch2" class="cover-toc-item"><span class="cover-toc-num">02</span><span class="cover-toc-name">Where to find them (all 3 platforms)</span></a>
+      <a href="#ch3" class="cover-toc-item"><span class="cover-toc-num">03</span><span class="cover-toc-name">How to score and filter signals</span></a>
+      <a href="#ch4" class="cover-toc-item"><span class="cover-toc-num">04</span><span class="cover-toc-name">How to reach out without pitching</span></a>
+      <a href="#ch5" class="cover-toc-item"><span class="cover-toc-num">05</span><span class="cover-toc-name">How to automate the whole thing</span></a>
+      <a href="#ch6" class="cover-toc-item"><span class="cover-toc-num">06</span><span class="cover-toc-name">The daily signal routine</span></a>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="page">
+
+<!-- INTRO -->
+<div style="padding: 72px 0 60px; border-bottom: 1px solid var(--border);" class="reveal">
+  <div class="chapter-tag">Before you start</div>
+  <h2 class="chapter-title" style="font-family:'Syne',sans-serif;font-size:clamp(24px,3vw,36px);font-weight:800;letter-spacing:-0.025em;margin-bottom:10px;">Your next customer posted about their problem today.</h2>
+  <p class="chapter-sub">You probably didn't see it.</p>
+
+  <div class="body">
+    <p>Right now, somewhere on LinkedIn, Reddit or X, someone in your exact ICP is typing one of these:</p>
+
+    <div class="signals" style="margin-bottom:28px;">
+      <div class="signals-label">Happening right now, publicly</div>
+      <div class="signal-pill"><span class="signal-pill-platform">LinkedIn</span>"Does anyone have experience with [tool category]? We're evaluating options."</div>
+      <div class="signal-pill"><span class="signal-pill-platform">Reddit</span>"Looking to switch from [competitor]. What are people actually using in 2025?"</div>
+      <div class="signal-pill"><span class="signal-pill-platform">X</span>"Why is every [category] tool so bad at [specific thing]? There has to be a better way."</div>
+      <div class="signal-pill"><span class="signal-pill-platform">LinkedIn</span>"We're hiring a Head of Sales next quarter — need to sort out our outbound stack first."</div>
+    </div>
+
+    <p>These are not passive leads sitting in a database. These are active buyers raising their hand in public — at the exact moment their problem is most painful, their budget is most available, and their mind is most open to a solution.</p>
+
+    <p>The companies that catch these signals first don't win because they're better. They win because they showed up at exactly the right moment. This playbook shows you how to be that company — systematically, across all three platforms, before your competitors even know the conversation happened.</p>
+
+    <div class="insight">
+      <p>The difference between cold outreach and signal-based outreach isn't the message. It's the <em>timing</em>. The same message sent at the wrong moment gets ignored. Sent at the right moment, it gets a reply in minutes.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CH1 -->
+<div id="ch1" class="chapter reveal">
+  <div class="chapter-tag">Chapter One</div>
+  <div class="chapter-title">What a Buying Signal<br><em>Actually Is</em></div>
+  <p class="chapter-sub">And why most people miss them completely</p>
+</div>
+
+<div class="body reveal">
+  <p>A buying signal is any publicly observable behaviour that indicates someone is actively in-market for a solution like yours. Not "might be interested eventually." Not "fits our ICP." <strong>Actively looking, right now, today.</strong></p>
+
+  <p>Most sales teams don't think this way. They build lists of companies that <em>should</em> want their product and reach out hoping the timing is right. It almost never is. The average cold email hits an inbox where the recipient is not thinking about the problem at all — which is why reply rates sit at 1.8%.</p>
+
+  <h3>The 4 types of buying signals</h3>
+
+  <h4>Type 1 — The Direct Ask</h4>
+  <p>Someone explicitly asks for recommendations. "Does anyone know a good tool for X?" "What are you using for Y?" "Looking for recommendations on Z." These are the purest signals — the person is actively soliciting solutions. Reply rate when you respond to these: dramatically higher than cold email.</p>
+
+  <h4>Type 2 — The Frustration Signal</h4>
+  <p>Someone vents about their current solution. "Our [competitor] instance is broken again." "I can't believe [tool] still doesn't do X." "Has anyone else had this problem with Y?" This person is not just in pain — they're already mentally shopping for alternatives. They just haven't started the search yet. You can start it for them.</p>
+
+  <h4>Type 3 — The Trigger Event</h4>
+  <p>Something changes in their business that creates a need for your product. New funding announcement. A senior hire in a relevant role. A job posting that signals they're scaling a function. A company rebranding or entering a new market. These events don't explicitly mention your category — but they create the conditions for a purchase.</p>
+
+  <h4>Type 4 — The Engagement Signal</h4>
+  <p>Someone engages heavily with content about your category — liking competitor posts, commenting on industry discussions, sharing articles about the problem your product solves. They haven't posted about their problem yet, but their behaviour says they're thinking about it.</p>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val">4hr</div>
+      <div class="stat-label">Half-life of a buying signal. After 4 hours, your competitors have already replied.</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">40×</div>
+      <div class="stat-label">More effective to reach someone actively in-market vs cold contact</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">39%</div>
+      <div class="stat-label">Reply rate when outreach is triggered by a genuine buying signal</div>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <p><strong>The most important thing to understand:</strong> buying signals are time-sensitive. A post asking for tool recommendations gets 3–8 responses in the first hour. After 24 hours, the poster has already started evaluating the top 2–3 options they received. After 72 hours, they may have already made a decision. Speed is everything.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta-sm" target="_blank">See how Intentsly catches these signals in real time</a>
+</div>
+
+<hr>
+
+<!-- CH2 -->
+<div id="ch2" class="chapter reveal">
+  <div class="chapter-tag">Chapter Two</div>
+  <div class="chapter-title">Where to Find Them<br><em>On All 3 Platforms</em></div>
+  <p class="chapter-sub">LinkedIn, Reddit, and X — each works differently</p>
+</div>
+
+<div class="body reveal">
+  <p>Each platform has a different culture, a different signal type, and a different optimal response strategy. What works on Reddit will get you ignored on LinkedIn. What works on X won't land on Reddit. Here's how to approach each one.</p>
+
+  <div class="platform-block">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#e8f0fe;">💼</div>
+      <div>
+        <div class="platform-name">LinkedIn</div>
+        <div class="platform-desc">Best for: professional buyer intent, trigger events, direct asks</div>
+      </div>
+    </div>
+    <div class="platform-body">
+      <p><strong>What to search for:</strong> posts containing phrases like "looking for recommendations," "does anyone use," "we're evaluating," "switching from," "anyone have experience with." Also monitor comments on competitor company pages — people who comment "do you integrate with X?" or "does this work for Y?" are actively researching.</p>
+      <p><strong>Trigger events to watch:</strong> new funding announcements in your target segment, senior hires in relevant roles (Head of Sales, VP Marketing, Head of Growth), company size milestones ("we just hit 50 employees"), and market expansion announcements.</p>
+      <p><strong>Best signal keywords for B2B service companies:</strong> "outbound," "lead generation," "cold email," "pipeline," "sales tool," "CRM," "prospecting," "intent data," and any term your ICP uses to describe your category.</p>
+    </div>
+  </div>
+
+  <div class="platform-block">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#fff0e8;">🔴</div>
+      <div>
+        <div class="platform-name">Reddit</div>
+        <div class="platform-desc">Best for: high-intent research, honest frustration signals, category comparisons</div>
+      </div>
+    </div>
+    <div class="platform-body">
+      <p><strong>What subreddits to monitor:</strong> r/sales, r/b2b_sales, r/entrepreneur, r/startups, r/leadgeneration, r/marketing, r/SaaS, and any niche subreddit specific to your industry. People on Reddit are brutally honest — when they ask for recommendations they mean it, and when they're frustrated they say exactly why.</p>
+      <p><strong>The Reddit buyer is different:</strong> they've usually already tried the obvious solutions and they want real opinions from practitioners, not vendor marketing. When you reply to a Reddit signal, never pitch. Answer the question genuinely. Mention your product only if it's directly relevant and be transparent that you built it.</p>
+      <p><strong>Best signal phrases on Reddit:</strong> "what are you using for," "alternatives to," "has anyone tried," "our team is evaluating," "just switched from," "looking for something that does."</p>
+    </div>
+  </div>
+
+  <div class="platform-block">
+    <div class="platform-header">
+      <div class="platform-icon" style="background:#f0f0f0;">✕</div>
+      <div>
+        <div class="platform-name">X (Twitter)</div>
+        <div class="platform-desc">Best for: frustration signals, real-time venting, niche community conversations</div>
+      </div>
+    </div>
+    <div class="platform-body">
+      <p><strong>What to look for:</strong> X is where frustrated buyers vent publicly. "Why is every [category] tool so bad at X?" and "Is there a tool that does Y without Z?" are classic X signal formats. Someone frustrated enough to tweet about their current tool is mentally shopping for an alternative.</p>
+      <p><strong>The X buyer is different:</strong> they're often more technical, more opinionated, and more likely to share their experience publicly — which makes them valuable not just as prospects but as potential advocates if you solve their problem.</p>
+      <p><strong>Best signal phrases on X:</strong> "does anyone know a tool that," "can't believe [tool] still doesn't," "looking for alternatives to," "finally switched from," "this is why I stopped using."</p>
+    </div>
+  </div>
+
+  <div class="signals">
+    <div class="signals-label">Real examples of high-intent signals — by platform</div>
+    <div class="signal-pill"><span class="signal-pill-platform">LinkedIn</span>"We're hiring a BDR next month — need to get our outbound stack sorted before they start. What are people using?"</div>
+    <div class="signal-pill"><span class="signal-pill-platform">Reddit</span>"Just switched off Apollo after 2 years. The list approach isn't working anymore. What's actually working for lead gen in 2025?"</div>
+    <div class="signal-pill"><span class="signal-pill-platform">X</span>"Is there a tool that monitors Reddit for potential customers? Doing it manually is insane but the leads are clearly there."</div>
+    <div class="signal-pill"><span class="signal-pill-platform">LinkedIn</span>"Announced our Series A today 🎉 Now the real work begins — scaling our sales motion from 0. Open to recommendations on outbound tools."</div>
+    <div class="signal-pill"><span class="signal-pill-platform">Reddit</span>"Our cold email reply rate dropped from 4% to under 1% this year. Is anyone else seeing this? What are you doing differently?"</div>
+    <div class="signal-note">Every one of these was a real deal for someone who was watching. The question is whether that someone was you or your competitor.</div>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Start monitoring all 3 platforms with Intentsly — free</a>
+</div>
+
+<hr>
+
+<!-- CH3 -->
+<div id="ch3" class="chapter reveal">
+  <div class="chapter-tag">Chapter Three</div>
+  <div class="chapter-title">How to Score<br><em>and Filter Signals</em></div>
+  <p class="chapter-sub">Not every signal is worth your time. Here's how to tell the difference.</p>
+</div>
+
+<div class="body reveal">
+  <p>Volume is not the goal. Finding the right signals — the ones most likely to convert — is the goal. A founder who responds to 5 high-quality signals per day will dramatically outperform one who responds to 50 low-quality ones.</p>
+
+  <h3>The signal scoring framework</h3>
+
+  <table class="score-table">
+    <thead>
+      <tr>
+        <th>Signal type</th>
+        <th>Intent level</th>
+        <th>Time sensitivity</th>
+        <th>Priority</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Direct ask for recommendations in your category</td>
+        <td>Very high</td>
+        <td>Act within 2 hours</td>
+        <td><span class="score-badge sb-high">🔥 Immediate</span></td>
+      </tr>
+      <tr>
+        <td>Frustration with a competitor product</td>
+        <td>High</td>
+        <td>Act within 4 hours</td>
+        <td><span class="score-badge sb-high">High</span></td>
+      </tr>
+      <tr>
+        <td>Trigger event (funding, hire, expansion)</td>
+        <td>Medium-high</td>
+        <td>Act within 24 hours</td>
+        <td><span class="score-badge sb-med">Medium</span></td>
+      </tr>
+      <tr>
+        <td>Engagement with competitor content</td>
+        <td>Medium</td>
+        <td>Act within 48 hours</td>
+        <td><span class="score-badge sb-med">Medium</span></td>
+      </tr>
+      <tr>
+        <td>General industry discussion (no direct intent)</td>
+        <td>Low</td>
+        <td>Monitor only</td>
+        <td><span class="score-badge sb-low">Low</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>The 3 filters to apply before you reach out</h3>
+
+  <ul>
+    <li><strong>Is this person in your ICP?</strong> Check their job title, company size, and industry before responding. A perfect signal from someone who will never be a customer is a waste of your time.</li>
+    <li><strong>Is the signal genuine?</strong> Some posts are fishing for engagement, not actually in-market. Look for specificity — the more specific the problem they describe, the more genuine the intent.</li>
+    <li><strong>Is the timing still right?</strong> A signal posted 3 days ago is almost always too late. Focus on signals from the last 24 hours. The fresher the signal, the higher the conversion rate.</li>
+  </ul>
+
+  <div class="insight">
+    <p>A signal from yesterday is worth 10% of a signal from an hour ago. <em>Recency is the most important variable in signal-based outreach.</em> Build your system around speed, not volume.</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- CH4 -->
+<div id="ch4" class="chapter reveal">
+  <div class="chapter-tag">Chapter Four</div>
+  <div class="chapter-title">How to Reach Out<br><em>Without Pitching</em></div>
+  <p class="chapter-sub">The message strategy that gets 39% reply rates</p>
+</div>
+
+<div class="body reveal">
+  <p>Finding the signal is only half the job. How you respond determines whether the opportunity converts or disappears. The biggest mistake people make when they find a warm signal: they pitch immediately. Don't.</p>
+
+  <p>Someone who just posted about their problem does not want to be sold to — even if they'd be a perfect customer. They want to be helped. <strong>The message that wins is the one that helps first and sells second.</strong></p>
+
+  <h3>The 3-message signal response system</h3>
+
+  <div class="template">
+    <div class="template-label">Message 1 — The value opener (send within 2 hours of signal)</div>
+    <div class="template-msg">Hey [Name] — saw your post about [specific problem they mentioned].
+
+I actually pulled [5 leads / a relevant resource / some data] that might be useful for your situation. Want me to send it over?
+
+No pitch — just thought it might help given what you described.</div>
+    <div class="template-note">Key: reference their specific post. Generic openers get ignored. Specific openers get replies.</div>
+  </div>
+
+  <div class="template">
+    <div class="template-label">Message 2 — The value delivery (after they say yes)</div>
+    <div class="template-msg">Here it is: [the valuable thing — leads, resource, data].
+
+For context, this is essentially what our tool [Intentsly] finds automatically by monitoring LinkedIn, Reddit and X for buying signals in real time.
+
+Here's a quick 9-min walkthrough if you're curious how it works: [Loom link]
+
+Happy to answer any questions here — no need for a call.</div>
+    <div class="template-note">Deliver the value first. Product mention is natural, not forced. Async demo respects their time.</div>
+  </div>
+
+  <div class="template">
+    <div class="template-label">Message 3 — The gentle follow-up (48 hours later)</div>
+    <div class="template-msg">Hey — just checking if those [leads/resources] were useful.
+
+If you want to try [Intentsly] properly, I'm happy to set you up. And if the timing isn't right, no worries at all — good luck with [the thing they mentioned].</div>
+    <div class="template-note">Short. Low pressure. Leaves the door open. Never follow up more than 3 times total.</div>
+  </div>
+
+  <h3>Platform-specific response rules</h3>
+
+  <ul>
+    <li><strong>LinkedIn:</strong> DM within 2 hours of the signal. Always reference the specific post. Don't connect and then immediately pitch — connect, wait for acceptance, then send message 1.</li>
+    <li><strong>Reddit:</strong> Reply in the thread first (publicly, helpfully, no pitch). Then DM if the thread response generates interest. Never pitch in a Reddit DM without a prior public interaction.</li>
+    <li><strong>X:</strong> Reply to the tweet publicly first. Make the reply genuinely useful. If they engage with your reply, then DM. A cold DM on X without prior engagement has near-zero conversion.</li>
+  </ul>
+
+  <div class="callout blue">
+    <p><strong>The golden rule:</strong> the first message you send should give something, not ask for something. Value before pitch. Always. No exceptions. The reply rate difference between a value-first opener and a product pitch opener is approximately 20×.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Get your first 5 free signal-based leads from Intentsly</a>
+</div>
+
+<hr>
+
+<!-- CH5 -->
+<div id="ch5" class="chapter reveal">
+  <div class="chapter-tag">Chapter Five</div>
+  <div class="chapter-title">How to Automate<br><em>the Whole Thing</em></div>
+  <p class="chapter-sub">Monitor 24/7 without spending 3 hours a day searching</p>
+</div>
+
+<div class="body reveal">
+  <p>If you try to monitor LinkedIn, Reddit, and X manually, you'll spend 3 hours a day searching and still miss 80% of the signals. The platforms move too fast, the volume is too high, and the half-life of each signal is too short. Manual monitoring is not a strategy — it's a starting point.</p>
+
+  <p>The goal is to automate the watching so you only have to do the reaching out. Here's how to build the system.</p>
+
+  <h3>The signal monitoring stack</h3>
+
+  <h4>Option 1 — Manual (starting out)</h4>
+  <p>Set up LinkedIn saved searches for your key signal phrases. Check them twice daily — morning and afternoon. Set up Google Alerts for relevant keywords that pull Reddit and X posts. This takes about 45 minutes a day and catches maybe 30% of relevant signals. Good enough to start. Not good enough to scale.</p>
+
+  <h4>Option 2 — Semi-automated</h4>
+  <p>Use tools like Zapier to monitor RSS feeds from relevant subreddits and push alerts to Slack. Use LinkedIn's native search with alerts for specific keywords. Set up X lists of accounts in your ICP to monitor their activity. This cuts the time to about 20 minutes a day and catches maybe 60% of signals.</p>
+
+  <h4>Option 3 — Fully automated (recommended)</h4>
+  <p>Use a purpose-built signal monitoring tool that watches all three platforms simultaneously, filters by your ICP criteria, scores signals by intent level, and delivers enriched leads (company name, contact details, the exact post, the reason it was flagged) to your inbox in real time. This is what Intentsly does. You respond to the signals — you don't search for them.</p>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val">3hrs</div>
+      <div class="stat-label">Time spent daily monitoring manually across 3 platforms</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">10min</div>
+      <div class="stat-label">Time spent daily responding to pre-filtered signals with automation</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val">80%</div>
+      <div class="stat-label">Signals missed when monitoring manually vs automated real-time monitoring</div>
+    </div>
+  </div>
+
+  <h3>What to automate vs what to keep human</h3>
+
+  <p><strong>Automate:</strong> the monitoring, the filtering, the scoring, the enrichment. These are pattern-matching tasks that software does better and faster than humans.</p>
+
+  <p><strong>Keep human:</strong> the actual first message. The moment your outreach feels automated, the trust evaporates. Use the time you save on monitoring to write better, more personalised first messages. A human reply to a warm signal is worth 10× a templated one.</p>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Automate your signal monitoring with Intentsly — try free</a>
+</div>
+
+<hr>
+
+<!-- CH6 -->
+<div id="ch6" class="chapter reveal">
+  <div class="chapter-tag">Chapter Six</div>
+  <div class="chapter-title">The Daily<br><em>Signal Routine</em></div>
+  <p class="chapter-sub">20 minutes a day that replaces 3 hours of cold outreach</p>
+</div>
+
+<div class="body reveal">
+  <p>The founders who get results from signal-based outreach aren't spending all day on it. They've built a daily routine that takes 20–30 minutes and produces more qualified conversations than a full day of cold outreach used to.</p>
+
+  <h3>The daily signal routine</h3>
+
+  <div class="checklist">
+    <div class="check-item">
+      <div class="check-box"></div>
+      <div class="check-body">
+        <div class="check-main">8:00am — Check overnight signals (5 minutes)</div>
+        <div class="check-detail">Review any signals that came in overnight. Flag anything that's still within the response window (posted less than 12 hours ago). Discard anything older than 24 hours — the window has closed.</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-box"></div>
+      <div class="check-body">
+        <div class="check-main">8:05am — Respond to priority signals (10 minutes)</div>
+        <div class="check-detail">Write personalised message 1s for the top 3–5 signals. Reference their specific post. Offer something valuable. Send. Don't overthink — speed matters more than perfection here.</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-box"></div>
+      <div class="check-body">
+        <div class="check-main">8:15am — Follow up on active conversations (5 minutes)</div>
+        <div class="check-detail">Send message 2 to anyone who replied to yesterday's message 1. Send message 3 to anyone who received message 2 two days ago. Keep the pipeline moving.</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-box"></div>
+      <div class="check-body">
+        <div class="check-main">12:00pm — Midday signal check (5 minutes)</div>
+        <div class="check-detail">Quick scan for any high-priority signals that came in during the morning. Respond to anything in the "immediate" category before the 2-hour window closes.</div>
+      </div>
+    </div>
+    <div class="check-item">
+      <div class="check-box"></div>
+      <div class="check-body">
+        <div class="check-main">Friday — Weekly review (15 minutes)</div>
+        <div class="check-detail">Count: signals found, responses sent, replies received, conversations started, deals progressed. If reply rate drops below 15%, rewrite your message 1 opener. If signal volume drops, expand your keyword list.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <p><strong>The weekly target to aim for:</strong> 5 new signal-based conversations per week. At a 40% close rate over a 4-week sales cycle, that's 2 new customers per month from signal-based outreach alone — without a single cold email, without any ad spend, without any outbound list.</p>
+  </div>
+
+  <div class="insight">
+    <p>The best time to respond to a buying signal is within the first hour. The second best time is right now. <em>Every hour you wait, the conversion probability drops.</em> Speed is the unfair advantage that doesn't require budget, headcount, or experience.</p>
+  </div>
+
+  <a href="https://intentsly.com" class="inline-cta" target="_blank">Start your signal routine with Intentsly — free for 14 days</a>
+</div>
+
+</div><!-- end page -->
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-eyebrow">Built by Intentsly</div>
+  <h2>Your next customer just<br>posted about their problem.<br><em>Are you watching?</em></h2>
+  <p>Intentsly monitors LinkedIn, Reddit and X 24/7 for real-time buying signals. We deliver enriched, scored leads to your inbox the moment someone signals buying intent for what you sell.</p>
+  <a href="https://intentsly.com" class="cta-btn" target="_blank">Start finding warm leads — free</a>
+  <div class="cta-note">intentsly.com · No credit card required · First signals in under 10 minutes</div>
+</div>
+
+<footer>
+  <div>The Buying Signal Playbook · 2025</div>
+  <a href="https://intentsly.com" target="_blank">Intentsly.com</a>
+  <div>Share freely · Built for B2B founders</div>
+</footer>
+
+<script>
+window.addEventListener('scroll', () => {
+  const el = document.documentElement;
+  const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+  document.getElementById('prog').style.width = pct + '%';
+});
+
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.07 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
