@@ -442,13 +442,12 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
         throw new Error("No session tokens returned");
       }
 
-      // Send the tokens to a dedicated impersonation landing page that
-      // explicitly calls supabase.auth.setSession() before redirecting to
-      // the dashboard. Avoids relying on supabase-js URL hash auto-detect.
+      // Pass tokens as query params (not hash) so supabase-js's
+      // detectSessionInUrl doesn't swallow them before our handler runs.
       const origin = window.location.origin;
-      const hash = `#access_token=${encodeURIComponent(data.access_token)}` +
-        `&refresh_token=${encodeURIComponent(data.refresh_token)}`;
-      const finalUrl = `${origin}/auth/impersonate${hash}`;
+      const qs = `?at=${encodeURIComponent(data.access_token)}` +
+        `&rt=${encodeURIComponent(data.refresh_token)}`;
+      const finalUrl = `${origin}/auth/impersonate${qs}`;
 
       if (newTab) {
         newTab.location.href = finalUrl;
