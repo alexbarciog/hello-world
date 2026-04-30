@@ -1747,6 +1747,24 @@ Deno.serve(async (req) => {
               console.warn('[SUGGESTIONS] waitUntil unavailable:', e);
             }
           }
+
+          // If this agent feeds an active campaign, kick off today's lead scheduling
+          // immediately so newly-discovered leads start outreach the same day.
+          if (totalLeads > 0) {
+            try {
+              // @ts-ignore EdgeRuntime
+              EdgeRuntime.waitUntil(
+                fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/schedule-daily-leads`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+                  body: JSON.stringify({ trigger: 'keyword_run_finalized', agent_id }),
+                }).catch((e) => console.warn('[SELF-REPORT] schedule-daily-leads trigger failed:', e))
+              );
+              console.log(`[SELF-REPORT] Triggered schedule-daily-leads for agent ${agent_id}`);
+            } catch (e) {
+              console.warn('[SELF-REPORT] waitUntil unavailable for schedule-daily-leads:', e);
+            }
+          }
         }
       } catch (e) {
         console.warn(`[SELF-REPORT] Failed to update task status:`, e);
