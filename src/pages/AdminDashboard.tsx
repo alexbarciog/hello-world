@@ -442,15 +442,13 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
         throw new Error("No session tokens returned");
       }
 
-      // Hand the session to the destination tab via the URL hash —
-      // supabase-js auto-detects access_token/refresh_token on load and
-      // calls setSession(). This avoids redirecting the browser to the
-      // raw supabase.co host (which can be DNS-blocked for some admins).
-      const dest = data.redirect_to || "https://intentsly.com/dashboard";
+      // Send the tokens to a dedicated impersonation landing page that
+      // explicitly calls supabase.auth.setSession() before redirecting to
+      // the dashboard. Avoids relying on supabase-js URL hash auto-detect.
+      const origin = window.location.origin;
       const hash = `#access_token=${encodeURIComponent(data.access_token)}` +
-        `&refresh_token=${encodeURIComponent(data.refresh_token)}` +
-        `&token_type=bearer&type=magiclink`;
-      const finalUrl = `${dest}${hash}`;
+        `&refresh_token=${encodeURIComponent(data.refresh_token)}`;
+      const finalUrl = `${origin}/auth/impersonate${hash}`;
 
       if (newTab) {
         newTab.location.href = finalUrl;
