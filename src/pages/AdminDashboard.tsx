@@ -434,18 +434,28 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
     const newTab = window.open("about:blank", "_blank");
     try {
       const { data, error } = await supabase.functions.invoke("admin-impersonate-user", {
-        body: {
-          target_user_id: userId,
-          redirect_to: `${window.location.origin}/dashboard`,
-        },
+        body: { target_user_id: userId },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (!data?.action_link) throw new Error("No login link returned");
+      if (!data?.access_token || !data?.refresh_token) {
+        throw new Error("No session tokens returned");
+      }
+
+      // Hand the session to the destination tab via the URL hash —
+      // supabase-js auto-detects access_token/refresh_token on load and
+      // calls setSession(). This avoids redirecting the browser to the
+      // raw supabase.co host (which can be DNS-blocked for some admins).
+      const dest = data.redirect_to || "https://intentsly.com/dashboard";
+      const hash = `#access_token=${encodeURIComponent(data.access_token)}` +
+        `&refresh_token=${encodeURIComponent(data.refresh_token)}` +
+        `&token_type=bearer&type=magiclink`;
+      const finalUrl = `${dest}${hash}`;
+
       if (newTab) {
-        newTab.location.href = data.action_link;
+        newTab.location.href = finalUrl;
       } else {
-        window.location.href = data.action_link;
+        window.location.href = finalUrl;
       }
       toast.success(`Logging in as ${email}…`);
     } catch (err: any) {
