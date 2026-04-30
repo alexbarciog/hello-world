@@ -44,34 +44,34 @@ Deno.serve(async (req) => {
 
     const email = targetUser.user.email;
 
-    // Always send the admin into the production app, regardless of where they
-    // triggered impersonation from (preview, localhost, etc.).
-    const targetOrigin = "https://intentsly.com";
-    const targetRedirect = `${targetOrigin}/dashboard`;
-
-    // Generate a magic link to obtain a token_hash. We won't use action_link directly
-    // because Supabase ignores redirectTo if it's not in the allowed list and falls
-    // back to the project's Site URL.
+    // Generate a magic link to obtain a token_hash. We then exchange it server-side
+    // for a real session so the admin's browser never has to touch the raw Supabase
+    // hostname (which can be blocked by DNS/VPN/ISP for some admins).
     const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
       type: "magiclink",
       email,
-      options: {
-        redirectTo: targetRedirect,
-      },
     });
     if (linkErr) throw linkErr;
 
     const tokenHash = linkData.properties?.hashed_token;
     if (!tokenHash) throw new Error("No token hash returned");
 
-    // Build a verify URL that goes through Supabase's /verify endpoint but redirects
-    // to intentsly.com regardless of Site URL config.
-    const verifyUrl = `${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=magiclink&redirect_to=${encodeURIComponent(targetRedirect)}`;
+    // Server-to-server: exchange the token_hash for a session.
+    const verifyClient = createClient(supabaseUrl, anonKey);
+    const { data: sessionData, error: verifyErr } = await verifyClient.auth.verifyOtp({
+      type: "magiclink",
+      token_hash: tokenHash,
+    });
+    if (verifyErr || !sessionData?.session) {
+      throw new Error(`Failed to mint session: ${verifyErr?.message || "no session"}`);
+    }
 
     return new Response(
       JSON.stringify({
-        action_link: verifyUrl,
         email,
+        access_token: sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
+        redirect_to: "https://intentsly.com/dashboard",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
