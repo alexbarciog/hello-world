@@ -6,13 +6,16 @@ import { scrapeWebsite } from "@/lib/api/firecrawl";
 import { markOnboardingComplete, OnboardingEntryGuard } from "@/components/OnboardingGuard";
 import { Step1Scan } from "@/components/onboarding/Step1Scan";
 import { Step2Preview } from "@/components/onboarding/Step2Preview";
+import { StepAccountType, type AccountType } from "@/components/onboarding/StepAccountType";
 import { toast } from "sonner";
 
-type Phase = "scan" | "preview";
+type Phase = "account_type" | "scan" | "preview";
 
 function OnboardingInner() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<Phase>("scan");
+  const [phase, setPhase] = useState<Phase>("account_type");
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  const [savingAccountType, setSavingAccountType] = useState(false);
 
   const [website, setWebsite] = useState("");
   const [companyName, setCompanyName] = useState("");
