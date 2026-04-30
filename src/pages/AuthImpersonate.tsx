@@ -15,12 +15,9 @@ export default function AuthImpersonate() {
   useEffect(() => {
     (async () => {
       try {
-        const hash = window.location.hash.startsWith("#")
-          ? window.location.hash.slice(1)
-          : window.location.hash;
-        const params = new URLSearchParams(hash);
-        const access_token = params.get("access_token");
-        const refresh_token = params.get("refresh_token");
+        const search = new URLSearchParams(window.location.search);
+        const access_token = search.get("at");
+        const refresh_token = search.get("rt");
 
         if (!access_token || !refresh_token) {
           throw new Error("Missing session tokens in URL");
