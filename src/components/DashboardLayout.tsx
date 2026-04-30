@@ -30,7 +30,10 @@ import {
   Menu,
   X,
   Shield,
+  Briefcase,
 } from "lucide-react";
+import { useAccountType } from "@/hooks/useAccountType";
+import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
 
 // Reddit icon component
 const RedditIcon = ({ className }: { className?: string }) => (
@@ -82,11 +85,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const userMenuRef = useRef<HTMLDivElement>(null);
   const sub = useSubscription();
   const { data: isAdmin } = useAdminCheck();
+  const { data: accountType } = useAccountType();
   const [showAgentTooltip, setShowAgentTooltip] = useState(false);
+  const isImpersonating = !!readImpersonation();
+
+  // Insert Client Accounts above Settings for agency partners (hidden while impersonating)
+  const baseWithAgency = (accountType === "agency" && !isImpersonating)
+    ? [
+        ...baseNavItems.slice(0, baseNavItems.length - 1),
+        { label: "Client Accounts", icon: Briefcase, path: "/dashboard/client-accounts" },
+        baseNavItems[baseNavItems.length - 1],
+      ]
+    : baseNavItems;
 
   const navItems = isAdmin
-    ? [...baseNavItems, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
-    : baseNavItems;
+    ? [...baseWithAgency, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
+    : baseWithAgency;
 
   const allNavItems = navItems;
 
@@ -385,6 +399,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <AgencyImpersonationBanner />
         {/* Top navbar */}
         <header className="flex items-center justify-between px-4 md:px-6 py-3 shrink-0" style={{ background: "hsl(195 14% 95%)" }}>
           {/* Hamburger — mobile only */}
