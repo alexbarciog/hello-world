@@ -7,6 +7,7 @@ import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
 import { LatestReplies } from "@/components/dashboard/LatestReplies";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
+import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
 import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
 import { ChevronDown } from "lucide-react";
@@ -355,6 +356,8 @@ export default function Dashboard() {
             <ChevronDown className="w-4 h-4" />
           </button>
         </header>
+
+        <AgencyWelcomeBanner />
 
         <SetupWizardBanner />
 

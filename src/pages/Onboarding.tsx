@@ -6,13 +6,16 @@ import { scrapeWebsite } from "@/lib/api/firecrawl";
 import { markOnboardingComplete, OnboardingEntryGuard } from "@/components/OnboardingGuard";
 import { Step1Scan } from "@/components/onboarding/Step1Scan";
 import { Step2Preview } from "@/components/onboarding/Step2Preview";
+import { StepAccountType, type AccountType } from "@/components/onboarding/StepAccountType";
 import { toast } from "sonner";
 
-type Phase = "scan" | "preview";
+type Phase = "account_type" | "scan" | "preview";
 
 function OnboardingInner() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<Phase>("scan");
+  const [phase, setPhase] = useState<Phase>("account_type");
+  const [accountType, setAccountType] = useState<AccountType | null>(null);
+  const [savingAccountType, setSavingAccountType] = useState(false);
 
   const [website, setWebsite] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -88,6 +91,35 @@ function OnboardingInner() {
     }
   }
 
+  async function handleAccountTypeContinue() {
+    if (!accountType) return;
+    setSavingAccountType(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        toast.error("You must be logged in to continue.");
+        setSavingAccountType(false);
+        return;
+      }
+      const { error } = await supabase
+        .from("profiles")
+        .update({ account_type: accountType } as any)
+        .eq("user_id", session.user.id);
+      if (error) {
+        console.warn("Failed to save account_type:", error);
+        toast.error("Couldn't save your selection. Please try again.");
+        setSavingAccountType(false);
+        return;
+      }
+      setPhase("scan");
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSavingAccountType(false);
+    }
+  }
+
   async function handleContinue() {
     setSubmitting(true);
     try {
@@ -148,7 +180,8 @@ function OnboardingInner() {
       if (profErr) console.warn("Failed to set onboarding_complete:", profErr);
 
       markOnboardingComplete();
-      navigate("/dashboard", { replace: true });
+      const dest = accountType === "agency" ? "/dashboard?welcome=agency" : "/dashboard";
+      navigate(dest, { replace: true });
     } catch (err) {
       console.error(err);
       toast.error("Couldn't save your setup. Please try again.");
@@ -174,6 +207,14 @@ function OnboardingInner() {
         }}
       >
         <div className="flex-1 px-5 pt-8 pb-8 md:px-10 md:pt-10 md:pb-10">
+          {phase === "account_type" && (
+            <StepAccountType
+              value={accountType}
+              onChange={setAccountType}
+              onContinue={handleAccountTypeContinue}
+              submitting={savingAccountType}
+            />
+          )}
           {phase === "scan" && (
             <Step1Scan
               website={website}
