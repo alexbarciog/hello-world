@@ -467,6 +467,23 @@ async function finalizeRun(
   // Trigger AI suggestions asynchronously if run was thin or had many ICP rejections
   await maybeTriggerSuggestions(runId, agentId, totalLeads, aggregatedRejected.length);
 
+  // If this agent feeds an active campaign, trigger today's lead scheduling
+  // immediately so newly-discovered leads enter outreach the same day.
+  if (totalLeads > 0) {
+    try {
+      // @ts-ignore EdgeRuntime
+      EdgeRuntime.waitUntil(
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/schedule-daily-leads`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+          body: JSON.stringify({ trigger: 'agent_run_finalized', agent_id: agentId }),
+        }).catch((e) => console.warn('[finalizeRun] schedule-daily-leads trigger failed:', e))
+      );
+    } catch (e) {
+      console.warn('[finalizeRun] waitUntil unavailable:', e);
+    }
+  }
+
   console.log(`✅ Run ${runId} finalized: ${totalLeads} leads, ${completedTasks}/${totalTasks} tasks, ${aggregatedRejected.length} rejected sampled`);
 }
 
