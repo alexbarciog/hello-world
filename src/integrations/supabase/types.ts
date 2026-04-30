@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      agency_clients: {
+        Row: {
+          activated_at: string | null
+          agency_user_id: string
+          client_email: string
+          client_name: string
+          client_user_id: string | null
+          created_at: string
+          id: string
+          monthly_commission: number
+          note: string | null
+          removed_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          agency_user_id: string
+          client_email: string
+          client_name: string
+          client_user_id?: string | null
+          created_at?: string
+          id?: string
+          monthly_commission?: number
+          note?: string | null
+          removed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          agency_user_id?: string
+          client_email?: string
+          client_name?: string
+          client_user_id?: string | null
+          created_at?: string
+          id?: string
+          monthly_commission?: number
+          note?: string | null
+          removed_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_chat_messages: {
         Row: {
           attachment: Json | null
