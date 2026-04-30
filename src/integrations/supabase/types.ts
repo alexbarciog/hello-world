@@ -1118,6 +1118,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
           ai_chat_criteria: Json | null
           ai_chat_lead_status: Json | null
           created_at: string
@@ -1139,6 +1140,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string
           ai_chat_criteria?: Json | null
           ai_chat_lead_status?: Json | null
           created_at?: string
@@ -1160,6 +1162,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string
           ai_chat_criteria?: Json | null
           ai_chat_lead_status?: Json | null
           created_at?: string
