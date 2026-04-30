@@ -329,8 +329,18 @@ export default function CampaignsPage() {
       }
     }
     const { error } = await supabase.from("campaigns").update({ status: newStatus }).eq("id", id);
-    if (error) toast.error("Failed to update campaign status");else
-    {setCampaigns((prev) => prev.map((c) => c.id === id ? { ...c, status: newStatus } : c));toast.success(newStatus === "active" ? "Campaign activated" : "Campaign paused");}
+    if (error) { toast.error("Failed to update campaign status"); return; }
+    setCampaigns((prev) => prev.map((c) => c.id === id ? { ...c, status: newStatus } : c));
+    toast.success(newStatus === "active" ? "Campaign activated" : "Campaign paused");
+
+    // When activating, immediately enqueue today's leads so the user doesn't wait for the cron.
+    if (newStatus === "active") {
+      try {
+        await supabase.functions.invoke("schedule-daily-leads");
+      } catch (e) {
+        console.warn("[Campaigns] schedule-daily-leads trigger failed:", e);
+      }
+    }
   };
 
   // Summary stats
