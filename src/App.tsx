@@ -41,6 +41,7 @@ import StrawberryPitch from "./pages/pitch/Strawberry.tsx";
 import Playbook from "./pages/Playbook.tsx";
 import SignalPlaybook from "./pages/SignalPlaybook.tsx";
 import Partners from "./pages/Partners.tsx";
+import ClientAccounts from "./pages/ClientAccounts.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import InviteAccept from "./pages/InviteAccept.tsx";
