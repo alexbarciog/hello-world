@@ -210,7 +210,12 @@ async function handleUnipileNotify(
 
   const upperStatus = status.toUpperCase();
   const POSITIVE_STATUSES = ['CREATION_SUCCESS', 'RECONNECTED', 'OK', 'SYNC_SUCCESS'];
-  const NEGATIVE_STATUSES = ['DISCONNECTED', 'DELETED', 'REMOVED', 'ERROR', 'CREATION_FAIL', 'CONNECTION_ERROR', 'ACCOUNT_DISCONNECTED'];
+  // Unipile uses `message: "CREDENTIALS" | "ERROR" | "STOPPED"` to indicate
+  // the account can no longer sync — treat all of these as disconnections.
+  const NEGATIVE_STATUSES = [
+    'DISCONNECTED', 'DELETED', 'REMOVED', 'ERROR', 'STOPPED',
+    'CREDENTIALS', 'CREATION_FAIL', 'CONNECTION_ERROR', 'ACCOUNT_DISCONNECTED',
+  ];
 
   if (NEGATIVE_STATUSES.includes(upperStatus)) {
     console.log('[unipile_notify] disconnection event:', upperStatus, 'accountId:', accountId);
@@ -219,7 +224,8 @@ async function handleUnipileNotify(
   }
 
   if (!POSITIVE_STATUSES.includes(upperStatus)) {
-    return jsonResponse({ status: 'ignored', reason: 'unsupported_status' });
+    console.log('[unipile_notify] unsupported status, ignoring:', upperStatus);
+    return jsonResponse({ status: 'ignored', reason: 'unsupported_status', received: upperStatus });
   }
 
   if (!userId) {
