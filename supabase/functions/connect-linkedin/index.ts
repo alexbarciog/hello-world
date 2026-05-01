@@ -88,6 +88,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'report_disconnection') {
+      // Service-role callable: any backend function that detects a Unipile
+      // disconnected_account error can ping us with the account_id so we
+      // run the standard disconnection flow (clear profile, pause, email).
+      const accountId = typeof body.account_id === 'string' ? body.account_id : undefined;
+      const reportedStatus = typeof body.status === 'string' ? body.status : 'DISCONNECTED';
+      // Require service-role bearer to avoid abuse from clients
+      const bearer = authHeader.replace('Bearer ', '');
+      if (bearer !== SUPABASE_SERVICE_ROLE_KEY) {
+        return jsonResponse({ error: 'Forbidden' }, 403);
+      }
+      if (!accountId) {
+        return jsonResponse({ error: 'account_id required' }, 400);
+      }
+      await handleAccountDisconnection(accountId, reportedStatus.toUpperCase(), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      return jsonResponse({ status: 'disconnection_handled', account_id: accountId });
+    }
+
     if (action === 'check_status') {
       const result = await resolveConnectedAccount({
         userId,
@@ -243,6 +261,27 @@ async function handleAccountDisconnection(
 
   const userId = profile.user_id;
   console.log('[disconnect] clearing account for user:', userId, 'status:', status);
+
+  // Idempotency guard: if we already notified within the last 24h, skip
+  // re-pausing & re-emailing so duplicate signals (webhook + cron detect)
+  // don't spam the user.
+  const { data: recentNotice } = await serviceClient
+    .from('notifications')
+    .select('id, created_at')
+    .eq('user_id', userId)
+    .eq('title', '⚠️ LinkedIn Disconnected')
+    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .limit(1);
+
+  if (recentNotice && recentNotice.length > 0) {
+    console.log('[disconnect] already notified within 24h, skipping for user:', userId);
+    // Still ensure the unipile_account_id is cleared
+    await serviceClient
+      .from('profiles')
+      .update({ unipile_account_id: null, linkedin_display_name: null })
+      .eq('user_id', userId);
+    return;
+  }
 
   // Clear the unipile_account_id
   await serviceClient
