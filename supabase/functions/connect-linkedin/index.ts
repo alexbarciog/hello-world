@@ -164,10 +164,24 @@ async function readPayload(req: Request, url: URL): Promise<RequestPayload> {
 }
 
 function isUnipileNotify(url: URL, authHeader: string | null, body: RequestPayload) {
-  return (
-    (!authHeader && url.searchParams.get('source') === 'unipile_notify') ||
-    (!authHeader && typeof body.status === 'string' && typeof body.account_id === 'string')
-  );
+  // Unipile Account Status webhook payload shape:
+  //   { "AccountStatus": { "account_id": "...", "account_type": "LINKEDIN", "message": "CREDENTIALS" } }
+  // Other Unipile webhooks (messages, relations, hosted auth notify_url) may
+  // send flatter payloads with `status` + `account_id` or our own `?source=unipile_notify`.
+  // None of these include an Authorization header from Unipile.
+  if (url.searchParams.get('source') === 'unipile_notify') return true;
+
+  const hasAccountStatusEnvelope =
+    body.AccountStatus && typeof body.AccountStatus === 'object' &&
+    typeof (body.AccountStatus as RequestPayload).account_id === 'string';
+
+  const hasFlatStatus =
+    typeof body.account_id === 'string' &&
+    (typeof body.status === 'string' || typeof body.message === 'string');
+
+  // Treat as Unipile webhook if shape matches, regardless of auth header
+  // (Unipile does not send our Supabase JWT). This prevents 401 rejections.
+  return hasAccountStatusEnvelope || hasFlatStatus;
 }
 
 async function handleUnipileNotify(
@@ -196,7 +210,12 @@ async function handleUnipileNotify(
 
   const upperStatus = status.toUpperCase();
   const POSITIVE_STATUSES = ['CREATION_SUCCESS', 'RECONNECTED', 'OK', 'SYNC_SUCCESS'];
-  const NEGATIVE_STATUSES = ['DISCONNECTED', 'DELETED', 'REMOVED', 'ERROR', 'CREATION_FAIL', 'CONNECTION_ERROR', 'ACCOUNT_DISCONNECTED'];
+  // Unipile uses `message: "CREDENTIALS" | "ERROR" | "STOPPED"` to indicate
+  // the account can no longer sync — treat all of these as disconnections.
+  const NEGATIVE_STATUSES = [
+    'DISCONNECTED', 'DELETED', 'REMOVED', 'ERROR', 'STOPPED',
+    'CREDENTIALS', 'CREATION_FAIL', 'CONNECTION_ERROR', 'ACCOUNT_DISCONNECTED',
+  ];
 
   if (NEGATIVE_STATUSES.includes(upperStatus)) {
     console.log('[unipile_notify] disconnection event:', upperStatus, 'accountId:', accountId);
@@ -205,7 +224,8 @@ async function handleUnipileNotify(
   }
 
   if (!POSITIVE_STATUSES.includes(upperStatus)) {
-    return jsonResponse({ status: 'ignored', reason: 'unsupported_status' });
+    console.log('[unipile_notify] unsupported status, ignoring:', upperStatus);
+    return jsonResponse({ status: 'ignored', reason: 'unsupported_status', received: upperStatus });
   }
 
   if (!userId) {
