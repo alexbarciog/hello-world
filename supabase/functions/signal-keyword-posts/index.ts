@@ -1105,6 +1105,23 @@ Deno.serve(async (req) => {
             const t = res ? await res.text() : 'no response';
             console.error(`keyword "${keyword}" p${page + 1}: HTTP ${res?.status ?? 'n/a'} - ${t.slice(0, 200)}`);
             pipelineStats.unipile_errors++;
+            // Detect Unipile disconnected_account → trigger user notification
+            if (res?.status === 401 && t.includes('disconnected_account')) {
+              try {
+                await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/connect-linkedin`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  },
+                  body: JSON.stringify({ action: 'report_disconnection', account_id, status: 'DISCONNECTED' }),
+                });
+                console.log('[DISCONNECT] reported disconnection for account', account_id);
+              } catch (e) {
+                console.error('[DISCONNECT] failed to report:', e);
+              }
+              break pageLoop;
+            }
             if (res?.status === 429) {
               consecutive429s++;
               if (consecutive429s >= 3 && hasTime()) {
