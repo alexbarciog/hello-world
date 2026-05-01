@@ -164,10 +164,24 @@ async function readPayload(req: Request, url: URL): Promise<RequestPayload> {
 }
 
 function isUnipileNotify(url: URL, authHeader: string | null, body: RequestPayload) {
-  return (
-    (!authHeader && url.searchParams.get('source') === 'unipile_notify') ||
-    (!authHeader && typeof body.status === 'string' && typeof body.account_id === 'string')
-  );
+  // Unipile Account Status webhook payload shape:
+  //   { "AccountStatus": { "account_id": "...", "account_type": "LINKEDIN", "message": "CREDENTIALS" } }
+  // Other Unipile webhooks (messages, relations, hosted auth notify_url) may
+  // send flatter payloads with `status` + `account_id` or our own `?source=unipile_notify`.
+  // None of these include an Authorization header from Unipile.
+  if (url.searchParams.get('source') === 'unipile_notify') return true;
+
+  const hasAccountStatusEnvelope =
+    body.AccountStatus && typeof body.AccountStatus === 'object' &&
+    typeof (body.AccountStatus as RequestPayload).account_id === 'string';
+
+  const hasFlatStatus =
+    typeof body.account_id === 'string' &&
+    (typeof body.status === 'string' || typeof body.message === 'string');
+
+  // Treat as Unipile webhook if shape matches, regardless of auth header
+  // (Unipile does not send our Supabase JWT). This prevents 401 rejections.
+  return hasAccountStatusEnvelope || hasFlatStatus;
 }
 
 async function handleUnipileNotify(
