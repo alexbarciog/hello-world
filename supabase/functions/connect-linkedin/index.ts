@@ -262,6 +262,27 @@ async function handleAccountDisconnection(
   const userId = profile.user_id;
   console.log('[disconnect] clearing account for user:', userId, 'status:', status);
 
+  // Idempotency guard: if we already notified within the last 24h, skip
+  // re-pausing & re-emailing so duplicate signals (webhook + cron detect)
+  // don't spam the user.
+  const { data: recentNotice } = await serviceClient
+    .from('notifications')
+    .select('id, created_at')
+    .eq('user_id', userId)
+    .eq('title', '⚠️ LinkedIn Disconnected')
+    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .limit(1);
+
+  if (recentNotice && recentNotice.length > 0) {
+    console.log('[disconnect] already notified within 24h, skipping for user:', userId);
+    // Still ensure the unipile_account_id is cleared
+    await serviceClient
+      .from('profiles')
+      .update({ unipile_account_id: null, linkedin_display_name: null })
+      .eq('user_id', userId);
+    return;
+  }
+
   // Clear the unipile_account_id
   await serviceClient
     .from('profiles')
