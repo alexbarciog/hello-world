@@ -48,8 +48,16 @@ Deno.serve(async (req) => {
     }
 
     const filters = spike.filters || {};
-    const recency = filters.recency || "past-24h"; // past-24h | past-week | past-month
-    const network: string[] = Array.isArray(filters.network) ? filters.network : ["F", "S"]; // F=1st, S=2nd
+    // Unipile post date_posted enum: past_day | past_week | past_month
+    const recencyMap: Record<string, string> = {
+      "past-24h": "past_day",
+      "past_day": "past_day",
+      "past-week": "past_week",
+      "past_week": "past_week",
+      "past-month": "past_month",
+      "past_month": "past_month",
+    };
+    const recency = recencyMap[filters.recency] || "past_day";
 
     // Aggregate posts across keywords
     const collected = new Map<string, any>();
@@ -61,7 +69,6 @@ Deno.serve(async (req) => {
         keywords: kw,
         date_posted: recency,
         sort_by: "date",
-        network_distance: network,
       };
       const { ok, payload } = await unipilePost("/api/v1/linkedin/search", accountId, body);
       if (!ok) { console.error("post search failed", payload); continue; }
