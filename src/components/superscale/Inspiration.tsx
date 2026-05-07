@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Heart, MessageCircle, Repeat2, Loader2, ExternalLink } from "lucide-react";
+import { Sparkles, Heart, MessageCircle, Repeat2, Loader2, ExternalLink, Wand2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -11,6 +11,27 @@ export default function Inspiration({ onRemixed }: Props) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [remixing, setRemixing] = useState<string | null>(null);
+  const [cloneUrl, setCloneUrl] = useState("");
+  const [cloning, setCloning] = useState(false);
+  const [cloneSummary, setCloneSummary] = useState<string | null>(null);
+
+  async function cloneCreator() {
+    if (!cloneUrl.trim()) return;
+    setCloning(true);
+    setCloneSummary(null);
+    const { data, error } = await supabase.functions.invoke("superscale-clone-creator", {
+      body: { profile_url: cloneUrl.trim() },
+    });
+    setCloning(false);
+    if (error || !data?.ok) {
+      toast.error((data as any)?.error || "Couldn't clone this creator");
+      return;
+    }
+    setCloneSummary(data.summary || `Cloned ${data.posts_analyzed} posts. Cadence saved.`);
+    toast.success("Strategy cloned — cadence saved to Calendar");
+    setCloneUrl("");
+    await load();
+  }
 
   async function load() {
     setLoading(true);
