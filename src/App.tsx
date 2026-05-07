@@ -48,6 +48,7 @@ import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import InviteAccept from "./pages/InviteAccept.tsx";
 import EngagementSpikes from "./pages/EngagementSpikes.tsx";
 import SpikeDetail from "./pages/SpikeDetail.tsx";
+import SuperScale from "./pages/SuperScale.tsx";
 import { OrganizationProvider } from "./contexts/OrganizationContext.tsx";
 import { RefCodeCapture } from "./components/RefCodeCapture.tsx";
 import { useEffect, useRef } from "react";
