@@ -234,6 +234,7 @@ const App = () => (
           <Route path="/shared/leads/:token" element={<SharedLeads />} />
           <Route path="/engagement-spikes" element={<AuthGuard><EngagementSpikes /></AuthGuard>} />
           <Route path="/engagement-spikes/:id" element={<AuthGuard><SpikeDetail /></AuthGuard>} />
+          <Route path="/superscale" element={<AuthGuard><DashboardLayout><SuperScale /></DashboardLayout></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </OrganizationProvider>
