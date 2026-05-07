@@ -32,6 +32,7 @@ import {
   Shield,
   Briefcase,
   Flame,
+  Rocket,
 } from "lucide-react";
 import { useAccountType } from "@/hooks/useAccountType";
 import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
