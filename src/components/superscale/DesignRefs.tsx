@@ -53,7 +53,7 @@ export default function DesignRefs() {
       const { data: pub } = supabase.storage.from("superscale").getPublicUrl(path);
       await supabase.from("superscale_design_refs").insert({
         user_id: userId,
-        organization_id: profile?.organization_id,
+        organization_id: member?.organization_id,
         image_url: pub.publicUrl,
         label: file.name,
         position: refs.length + i,
