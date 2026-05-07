@@ -31,6 +31,7 @@ import {
   X,
   Shield,
   Briefcase,
+  Flame,
 } from "lucide-react";
 import { useAccountType } from "@/hooks/useAccountType";
 import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
@@ -54,6 +55,7 @@ const baseNavItems = [
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
+  { label: "Engagement Spikes", icon: Flame,        path: "/engagement-spikes", badge: "New" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "AI Chat",        icon: MessageSquare,   path: "/ai-chat" },
   { label: "Integrations",   icon: Plug,            path: "/integrations" },
