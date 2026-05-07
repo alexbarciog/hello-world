@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         category: "posts",
         keywords: kw,
         date_posted: recency,
-        sort_by: "date",
+        limit: 25,
       };
       const { ok, payload } = await unipilePost("/api/v1/linkedin/search", accountId, body);
       if (!ok) { console.error("post search failed", payload); continue; }
