@@ -92,6 +92,39 @@ export default function Inspiration({ onRemixed }: Props) {
         </button>
       </div>
 
+      <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 border border-rose-100 p-5 mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Wand2 className="w-4 h-4 text-rose-600" />
+          <h3 className="text-sm font-bold">Clone a creator's strategy</h3>
+        </div>
+        <p className="text-xs text-foreground/60 mb-3">
+          Paste a LinkedIn profile URL — we'll analyze their last 30 posts and copy their cadence, post types, and timing into your Calendar.
+        </p>
+        <div className="flex gap-2">
+          <div className="flex-1 flex items-center gap-2 rounded-lg bg-white border border-black/[0.06] px-3">
+            <Link2 className="w-4 h-4 text-foreground/40 shrink-0" />
+            <input
+              value={cloneUrl}
+              onChange={(e) => setCloneUrl(e.target.value)}
+              placeholder="https://linkedin.com/in/their-handle"
+              className="flex-1 bg-transparent py-2 text-sm outline-none"
+              disabled={cloning}
+            />
+          </div>
+          <button
+            onClick={cloneCreator}
+            disabled={cloning || !cloneUrl.trim()}
+            className="rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 text-white text-sm font-semibold px-4 py-2 hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {cloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            Clone strategy
+          </button>
+        </div>
+        {cloneSummary && (
+          <p className="mt-3 text-xs text-foreground/70 bg-white/70 rounded-md px-3 py-2">{cloneSummary}</p>
+        )}
+      </div>
+
       {loading && items.length === 0 ? (
         <div className="text-sm text-foreground/50">Loading…</div>
       ) : items.length === 0 ? (
