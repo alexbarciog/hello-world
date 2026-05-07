@@ -57,6 +57,7 @@ const baseNavItems = [
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
   { label: "Engagement Spikes", icon: Flame,        path: "/engagement-spikes", badge: "New" },
+  { label: "SuperScale",     icon: Rocket,          path: "/superscale", badge: "New" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "AI Chat",        icon: MessageSquare,   path: "/ai-chat" },
   { label: "Integrations",   icon: Plug,            path: "/integrations" },
