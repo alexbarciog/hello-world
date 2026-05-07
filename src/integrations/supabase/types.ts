@@ -687,6 +687,137 @@ export type Database = {
         }
         Relationships: []
       }
+      engagement_spike_comments: {
+        Row: {
+          comment_text: string | null
+          created_at: string
+          edited_by_user: boolean
+          error: string | null
+          id: string
+          post_author_name: string | null
+          post_author_provider: string | null
+          post_id: string | null
+          post_published_at: string | null
+          post_snippet: string | null
+          post_url: string | null
+          scheduled_drop_at: string | null
+          sent_at: string | null
+          spike_id: string
+          status: string
+          unipile_comment_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment_text?: string | null
+          created_at?: string
+          edited_by_user?: boolean
+          error?: string | null
+          id?: string
+          post_author_name?: string | null
+          post_author_provider?: string | null
+          post_id?: string | null
+          post_published_at?: string | null
+          post_snippet?: string | null
+          post_url?: string | null
+          scheduled_drop_at?: string | null
+          sent_at?: string | null
+          spike_id: string
+          status?: string
+          unipile_comment_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment_text?: string | null
+          created_at?: string
+          edited_by_user?: boolean
+          error?: string | null
+          id?: string
+          post_author_name?: string | null
+          post_author_provider?: string | null
+          post_id?: string | null
+          post_published_at?: string | null
+          post_snippet?: string | null
+          post_url?: string | null
+          scheduled_drop_at?: string | null
+          sent_at?: string | null
+          spike_id?: string
+          status?: string
+          unipile_comment_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_spike_comments_spike_id_fkey"
+            columns: ["spike_id"]
+            isOneToOne: false
+            referencedRelation: "engagement_spikes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engagement_spikes: {
+        Row: {
+          created_at: string
+          custom_angle: string | null
+          drop_window_minutes: number
+          error: string | null
+          filters: Json
+          id: string
+          keywords: string[]
+          organization_id: string | null
+          require_approval: boolean
+          scheduled_for: string
+          spacing_max_seconds: number
+          spacing_min_seconds: number
+          status: string
+          target_count: number
+          tone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_angle?: string | null
+          drop_window_minutes?: number
+          error?: string | null
+          filters?: Json
+          id?: string
+          keywords?: string[]
+          organization_id?: string | null
+          require_approval?: boolean
+          scheduled_for: string
+          spacing_max_seconds?: number
+          spacing_min_seconds?: number
+          status?: string
+          target_count?: number
+          tone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_angle?: string | null
+          drop_window_minutes?: number
+          error?: string | null
+          filters?: Json
+          id?: string
+          keywords?: string[]
+          organization_id?: string | null
+          require_approval?: boolean
+          scheduled_for?: string
+          spacing_max_seconds?: number
+          spacing_min_seconds?: number
+          status?: string
+          target_count?: number
+          tone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
