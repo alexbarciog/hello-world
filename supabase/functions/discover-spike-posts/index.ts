@@ -81,10 +81,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Deduplicate: exclude posts this user has already targeted in any prior spike
+    const candidateIds = Array.from(collected.keys());
+    if (candidateIds.length > 0) {
+      const { data: prior } = await admin
+        .from("engagement_spike_comments")
+        .select("post_id")
+        .eq("user_id", spike.user_id)
+        .neq("spike_id", spike_id)
+        .in("post_id", candidateIds);
+      const seen = new Set((prior || []).map((r: any) => r.post_id).filter(Boolean));
+      for (const pid of candidateIds) {
+        if (seen.has(pid)) collected.delete(pid);
+      }
+    }
+
     const posts = Array.from(collected.values()).slice(0, spike.target_count);
     if (posts.length === 0) {
       await admin.from("engagement_spikes").update({
-        status: "failed", error: "No matching posts found for these keywords",
+        status: "failed", error: "No new posts found (all candidates already commented in previous spikes)",
       }).eq("id", spike_id);
       return json({ error: "no posts" });
     }
