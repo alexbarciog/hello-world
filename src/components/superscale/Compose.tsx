@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame } from "lucide-react";
+import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap } from "lucide-react";
 
 const MAX = 3000;
 const WARN = 1300;
@@ -14,6 +14,76 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [loading, setLoading] = useState(false);
   const [genImg, setGenImg] = useState(false);
   const [id, setId] = useState<string | null>(postId);
+  const [pickingSlot, setPickingSlot] = useState(false);
+  const [nextSlotLabel, setNextSlotLabel] = useState<string | null>(null);
+
+  function toLocalInput(d: Date) {
+    const tz = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tz).toISOString().slice(0, 16);
+  }
+
+  async function pickNextSlot() {
+    setPickingSlot(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: cadence } = await supabase
+        .from("superscale_cadence")
+        .select("*")
+        .eq("user_id", u.user.id)
+        .eq("enabled", true);
+      const { data: existing } = await supabase
+        .from("linkedin_posts")
+        .select("scheduled_for")
+        .eq("user_id", u.user.id)
+        .in("status", ["scheduled", "draft"])
+        .not("scheduled_for", "is", null);
+
+      const taken = new Set(
+        (existing || [])
+          .map((p: any) => (p.scheduled_for ? new Date(p.scheduled_for).getTime() : 0))
+          .filter(Boolean)
+      );
+
+      const enabledByDow: Record<number, any> = {};
+      (cadence || []).forEach((c: any) => (enabledByDow[c.day_of_week] = c));
+
+      if (!Object.keys(enabledByDow).length) {
+        toast.error("Set your cadence in Calendar first");
+        return;
+      }
+
+      const now = new Date();
+      for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+        const day = new Date(now);
+        day.setDate(now.getDate() + dayOffset);
+        const dow = (day.getDay() + 6) % 7; // Mon=0
+        const c = enabledByDow[dow];
+        if (!c) continue;
+        const [h, m] = (c.first_slot || "09:00").split(":").map(Number);
+        for (let i = 0; i < (c.post_count || 1); i++) {
+          const slot = new Date(day);
+          slot.setHours(h, m, 0, 0);
+          slot.setMinutes(slot.getMinutes() + i * (c.delay_minutes || 240));
+          if (slot.getTime() <= now.getTime() + 5 * 60000) continue;
+          // round to minute for collision check
+          let collision = false;
+          for (const t of taken) {
+            if (Math.abs(t - slot.getTime()) < 30 * 60000) { collision = true; break; }
+          }
+          if (collision) continue;
+          setScheduledFor(toLocalInput(slot));
+          if (c.comments_spike_enabled) setSpike(true);
+          setNextSlotLabel(slot.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }));
+          toast.success("Slot selected from your cadence");
+          return;
+        }
+      }
+      toast.error("No free slot found in the next 2 weeks");
+    } finally {
+      setPickingSlot(false);
+    }
+  }
 
   useEffect(() => {
     setId(postId);
@@ -116,6 +186,15 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         <div>
           <label className="text-xs font-semibold text-foreground/60 mb-1.5 flex items-center gap-1.5"><CalendarIcon className="w-3.5 h-3.5" /> Schedule</label>
           <input type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} className="w-full text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30" />
+          <button
+            type="button"
+            onClick={pickNextSlot}
+            disabled={pickingSlot}
+            className="mt-2 text-xs font-medium text-foreground/70 hover:text-foreground inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/[0.04] hover:bg-black/[0.07] disabled:opacity-50"
+          >
+            {pickingSlot ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-orange-500" />}
+            {nextSlotLabel ? `Next slot: ${nextSlotLabel}` : "Use next available slot"}
+          </button>
         </div>
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" checked={spike} onChange={(e) => setSpike(e.target.checked)} className="mt-0.5 w-4 h-4 accent-orange-500" />
