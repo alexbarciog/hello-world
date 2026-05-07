@@ -36,11 +36,11 @@ export default function DesignRefs() {
       setUploading(false);
       return;
     }
-    const { data: profile } = await supabase
-      .from("profiles")
+    const { data: member } = await supabase
+      .from("organization_members")
       .select("organization_id")
-      .eq("id", userId)
-      .single();
+      .eq("user_id", userId)
+      .maybeSingle();
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
