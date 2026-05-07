@@ -95,3 +95,18 @@ verify_jwt = false
 
 [functions.send-discount40-winback]
 verify_jwt = false
+
+[functions.schedule-engagement-spike]
+verify_jwt = false
+
+[functions.discover-spike-posts]
+verify_jwt = false
+
+[functions.generate-spike-comments]
+verify_jwt = false
+
+[functions.process-engagement-spikes]
+verify_jwt = false
+
+[functions.cancel-engagement-spike]
+verify_jwt = false
