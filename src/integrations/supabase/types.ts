@@ -1913,6 +1913,51 @@ export type Database = {
           },
         ]
       }
+      superscale_cadence: {
+        Row: {
+          comments_spike_enabled: boolean
+          created_at: string
+          day_of_week: number
+          delay_minutes: number
+          enabled: boolean
+          first_slot: string
+          id: string
+          organization_id: string | null
+          post_count: number
+          post_types: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_spike_enabled?: boolean
+          created_at?: string
+          day_of_week: number
+          delay_minutes?: number
+          enabled?: boolean
+          first_slot?: string
+          id?: string
+          organization_id?: string | null
+          post_count?: number
+          post_types?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_spike_enabled?: boolean
+          created_at?: string
+          day_of_week?: number
+          delay_minutes?: number
+          enabled?: boolean
+          first_slot?: string
+          id?: string
+          organization_id?: string | null
+          post_count?: number
+          post_types?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       superscale_design_refs: {
         Row: {
           created_at: string
