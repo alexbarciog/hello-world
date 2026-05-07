@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Heart, MessageCircle, Repeat2, Loader2, ExternalLink } from "lucide-react";
+import { Sparkles, Heart, MessageCircle, Repeat2, Loader2, ExternalLink, Wand2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -11,6 +11,27 @@ export default function Inspiration({ onRemixed }: Props) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [remixing, setRemixing] = useState<string | null>(null);
+  const [cloneUrl, setCloneUrl] = useState("");
+  const [cloning, setCloning] = useState(false);
+  const [cloneSummary, setCloneSummary] = useState<string | null>(null);
+
+  async function cloneCreator() {
+    if (!cloneUrl.trim()) return;
+    setCloning(true);
+    setCloneSummary(null);
+    const { data, error } = await supabase.functions.invoke("superscale-clone-creator", {
+      body: { profile_url: cloneUrl.trim() },
+    });
+    setCloning(false);
+    if (error || !data?.ok) {
+      toast.error((data as any)?.error || "Couldn't clone this creator");
+      return;
+    }
+    setCloneSummary(data.summary || `Cloned ${data.posts_analyzed} posts. Cadence saved.`);
+    toast.success("Strategy cloned — cadence saved to Calendar");
+    setCloneUrl("");
+    await load();
+  }
 
   async function load() {
     setLoading(true);
@@ -69,6 +90,39 @@ export default function Inspiration({ onRemixed }: Props) {
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           Discover new
         </button>
+      </div>
+
+      <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 border border-rose-100 p-5 mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Wand2 className="w-4 h-4 text-rose-600" />
+          <h3 className="text-sm font-bold">Clone a creator's strategy</h3>
+        </div>
+        <p className="text-xs text-foreground/60 mb-3">
+          Paste a LinkedIn profile URL — we'll analyze their last 30 posts and copy their cadence, post types, and timing into your Calendar.
+        </p>
+        <div className="flex gap-2">
+          <div className="flex-1 flex items-center gap-2 rounded-lg bg-white border border-black/[0.06] px-3">
+            <Link2 className="w-4 h-4 text-foreground/40 shrink-0" />
+            <input
+              value={cloneUrl}
+              onChange={(e) => setCloneUrl(e.target.value)}
+              placeholder="https://linkedin.com/in/their-handle"
+              className="flex-1 bg-transparent py-2 text-sm outline-none"
+              disabled={cloning}
+            />
+          </div>
+          <button
+            onClick={cloneCreator}
+            disabled={cloning || !cloneUrl.trim()}
+            className="rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 text-white text-sm font-semibold px-4 py-2 hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {cloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+            Clone strategy
+          </button>
+        </div>
+        {cloneSummary && (
+          <p className="mt-3 text-xs text-foreground/70 bg-white/70 rounded-md px-3 py-2">{cloneSummary}</p>
+        )}
       </div>
 
       {loading && items.length === 0 ? (
