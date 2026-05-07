@@ -916,6 +916,69 @@ export type Database = {
           },
         ]
       }
+      linkedin_posts: {
+        Row: {
+          comments_spike_enabled: boolean
+          content: string
+          created_at: string
+          error: string | null
+          generated_image_prompt: string | null
+          id: string
+          image_url: string | null
+          metrics: Json
+          organization_id: string | null
+          post_url: string | null
+          posted_at: string | null
+          scheduled_for: string | null
+          source_inspiration_id: string | null
+          spike_id: string | null
+          status: string
+          unipile_post_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_spike_enabled?: boolean
+          content?: string
+          created_at?: string
+          error?: string | null
+          generated_image_prompt?: string | null
+          id?: string
+          image_url?: string | null
+          metrics?: Json
+          organization_id?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          scheduled_for?: string | null
+          source_inspiration_id?: string | null
+          spike_id?: string | null
+          status?: string
+          unipile_post_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_spike_enabled?: boolean
+          content?: string
+          created_at?: string
+          error?: string | null
+          generated_image_prompt?: string | null
+          id?: string
+          image_url?: string | null
+          metrics?: Json
+          organization_id?: string | null
+          post_url?: string | null
+          posted_at?: string | null
+          scheduled_for?: string | null
+          source_inspiration_id?: string | null
+          spike_id?: string | null
+          status?: string
+          unipile_post_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lists: {
         Row: {
           created_at: string
@@ -1849,6 +1912,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      superscale_design_refs: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          label: string | null
+          organization_id: string | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          label?: string | null
+          organization_id?: string | null
+          position?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          label?: string | null
+          organization_id?: string | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      superscale_inspirations: {
+        Row: {
+          author_avatar_url: string | null
+          author_headline: string | null
+          author_name: string | null
+          comments: number
+          content: string | null
+          discovered_at: string
+          dismissed: boolean
+          format_tag: string | null
+          id: string
+          industry: string | null
+          likes: number
+          organization_id: string | null
+          posted_at: string | null
+          reposts: number
+          source_post_id: string | null
+          source_post_url: string | null
+          user_id: string
+        }
+        Insert: {
+          author_avatar_url?: string | null
+          author_headline?: string | null
+          author_name?: string | null
+          comments?: number
+          content?: string | null
+          discovered_at?: string
+          dismissed?: boolean
+          format_tag?: string | null
+          id?: string
+          industry?: string | null
+          likes?: number
+          organization_id?: string | null
+          posted_at?: string | null
+          reposts?: number
+          source_post_id?: string | null
+          source_post_url?: string | null
+          user_id: string
+        }
+        Update: {
+          author_avatar_url?: string | null
+          author_headline?: string | null
+          author_name?: string | null
+          comments?: number
+          content?: string | null
+          discovered_at?: string
+          dismissed?: boolean
+          format_tag?: string | null
+          id?: string
+          industry?: string | null
+          likes?: number
+          organization_id?: string | null
+          posted_at?: string | null
+          reposts?: number
+          source_post_id?: string | null
+          source_post_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      superscale_metrics_daily: {
+        Row: {
+          created_at: string
+          date: string
+          engagements: number
+          followers: number
+          id: string
+          impressions: number
+          organization_id: string | null
+          top_post_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          engagements?: number
+          followers?: number
+          id?: string
+          impressions?: number
+          organization_id?: string | null
+          top_post_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          engagements?: number
+          followers?: number
+          id?: string
+          impressions?: number
+          organization_id?: string | null
+          top_post_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

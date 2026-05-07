@@ -1,132 +1,82 @@
-## Comments Scheduling — Engagement Spikes
+## SuperScale — LinkedIn growth sub-app
 
-A new dashboard section where the user schedules an "engagement spike" at a target time. Intentsly finds relevant LinkedIn posts via Unipile, drafts human-sounding AI comments, lets the user review/edit, then drops them sequentially in a tight window before the spike time so the post receives a burst of comment activity.
+A complete, self-contained mini-app accessible from the main sidebar via a new "SuperScale" tab. SuperX-inspired layout (left mini-nav + main canvas), but every flow optimized for LinkedIn (1300-char limit, professional tone, single-image best practice, weekday business-hour optimal slots).
 
-### 1. Concept
+---
 
-A **Spike** = one scheduled burst of N comments on N different posts, all landing inside a short window ending at the user's chosen "spike time".
+### 1. Navigation & shell
 
-Defaults (editable per spike):
-- Window: comments start dropping `25 min` before spike time
-- Spacing: `2–3 min` between each comment (jittered, not fixed)
-- Posts per spike: 5–15 (user picks)
-- Posts must be recent (last 24–48h) and from the user's 1st/2nd network or matching keywords
+- New top-level item in `DashboardLayout` sidebar: **SuperScale** (Rocket icon, "New" badge), routes to `/superscale`.
+- Inside `/superscale`, render a dedicated `SuperScaleLayout` with its own internal mini-sidebar (SuperX-style):
+  - **Home** — overview metrics (followers, impressions, top post, engagement) + queue preview + ready-to-post drafts.
+  - **Queue / Calendar** — week-view content calendar with day columns × time slots, drag/click to schedule.
+  - **Compose** — post composer (text + image + advanced settings: Comments Spike toggle, schedule time).
+  - **Inspiration** — discovered viral LinkedIn posts in user's industry, with "Remix for me" button.
+  - **Design References** — upload/pin 5+ reference images that define the user's visual style.
+  - **Drafts / Scheduled / Sent** — tabbed list view.
 
-### 2. Left nav entry
+Style: white sidebar (SnowUI), black active state `bg-black/[0.04]`, lime accent for "Schedule" CTA matching brand.
 
-Add a new nav item to `DashboardLayout.tsx` sidebar:
-- Label: **Engagement Spikes**
-- Icon: `Flame` (lucide)
-- Route: `/dashboard/engagement-spikes`
-- Placed under "Unibox" / above "Signals" group (engagement-flavored)
+---
 
-### 3. Pages & UI
+### 2. Database (new tables)
 
-**`/dashboard/engagement-spikes` — list page (`EngagementSpikes.tsx`)**
-- Header with `+ Schedule a spike` CTA
-- Tabs: `Upcoming` · `Live` · `Completed`
-- Spike card: target time, countdown, keyword chips, status pill (`drafting` / `ready` / `running` / `done` / `failed`), progress `3/10 comments dropped`, quick actions (Pause, Cancel, View)
+- `linkedin_posts` — id, user_id, organization_id, content (text), image_url, status (draft|scheduled|posting|posted|failed), scheduled_for (timestamptz), posted_at, unipile_post_id, post_url, comments_spike_enabled (bool), spike_id (fk), source_inspiration_id (fk nullable), generated_image_prompt, metrics jsonb (likes/comments/views/reposts), error.
+- `superscale_design_refs` — id, user_id, organization_id, image_url, label, position, created_at. (Min 5 to enable AI image generation.)
+- `superscale_inspirations` — id, organization_id, source_post_url, author_name, author_headline, content, likes, comments, reposts, posted_at, industry, format_tag (listicle|story|hot-take|carousel-text|question), discovered_at, dismissed.
+- `superscale_metrics_daily` — user_id, date, followers, impressions, engagements, top_post_id (denormalized snapshot for the Home overview).
+- Storage bucket `superscale` (public read) for design refs + generated post images.
 
-**`ScheduleSpikeWizard.tsx` (dialog, 3 steps)**
-1. **When & how big** — Date+time picker, comments count (5/10/15), drop window (15/25/40 min), spacing (2–3 / 3–5 min)
-2. **What to engage with** — Keywords/topics textarea, optional filters: language, recency (24h/48h/7d), network (1st/2nd/anyone), min reactions, exclude my own posts
-3. **Tone & guardrails** — Tone preset (Curious peer / Hot take / Supportive / Playful), 1–2 sentences, max length, optional "personal angle" the AI should weave in (pulled from `organizations.company_description` by default), forbidden phrases (banned list inherited from AI SDR memory: no "leverage", "synergy", etc.). Toggle: `Require my approval before drop` (default ON for first spike, OFF after).
+All tables: RLS = owner write, org-member read, autofill `organization_id` trigger.
 
-**`SpikeDetail.tsx` (route `/dashboard/engagement-spikes/:id`)**
-- Timeline of scheduled comments with: post preview (author, snippet, link), drafted comment (editable until T-2min), planned drop time, status (`scheduled` / `sent` / `failed` / `skipped`)
-- Inline regenerate per comment, swap post button
-- Live progress bar to spike time
+---
 
-### 4. Data model (new tables)
+### 3. Edge functions
 
-```text
-engagement_spikes
-  id, user_id, organization_id
-  scheduled_for         timestamptz   -- the spike time
-  drop_window_minutes   int default 25
-  spacing_min_seconds   int default 120
-  spacing_max_seconds   int default 180
-  target_count          int default 10
-  keywords              text[]
-  filters               jsonb         -- recency, network, language, min_reactions, exclude_self
-  tone                  text
-  custom_angle          text
-  require_approval      boolean default true
-  status                text          -- draft | discovering | ready | running | completed | failed | cancelled
-  error                 text
-  created_at, updated_at
+- `superscale-discover-inspiration` — daily cron. Uses Unipile `/linkedin/search` with the user's industry keywords (pulled from their campaign/onboarding ICP) + `posts_with > 100 likes, past_week` filter. Stores top 30 in `superscale_inspirations`.
+- `superscale-remix-post` — input: `inspiration_id`. Uses Lovable AI (`google/gemini-3-flash-preview`) to rewrite the viral post in the user's voice, preserving format. Returns draft text.
+- `superscale-generate-image` — input: `post_id` or `(text, refs)`. Pulls user's `superscale_design_refs` (≥5 enforced), calls Lovable AI Gateway `google/gemini-2.5-flash-image` (Nano Banana) with reference images + text prompt → uploads PNG to `superscale` bucket → updates `linkedin_posts.image_url`.
+- `superscale-publish-post` — pg_cron every minute. Picks `linkedin_posts` where `status='scheduled' AND scheduled_for <= now()`. Posts to Unipile `POST /api/v1/users/me/posts` (text + optional image_url). On success: marks `posted`, stores `unipile_post_id` & `post_url`. If `comments_spike_enabled=true`: kicks `schedule-engagement-spike` with the post's URL/keywords, scheduled `now + 5min`.
+- `superscale-fetch-metrics` — daily cron. For each posted post in last 30d, calls Unipile post-stats endpoint and updates `metrics` + `superscale_metrics_daily` snapshot.
 
-engagement_spike_comments
-  id, spike_id, user_id
-  post_id               text          -- Unipile post id
-  post_url              text
-  post_author_name      text
-  post_author_provider  text
-  post_snippet          text
-  post_published_at     timestamptz
-  comment_text          text
-  edited_by_user        boolean
-  scheduled_drop_at     timestamptz
-  status                text          -- drafted | approved | sent | failed | skipped
-  unipile_comment_id    text
-  sent_at               timestamptz
-  error                 text
-  created_at, updated_at
-```
-RLS: org members can read; only owner can insert/update; service role full access. Triggers: `autofill_organization_id`, `handle_updated_at`.
+---
 
-### 5. Edge functions
+### 4. Front-end pages/components
 
-| Function | Role |
-|---|---|
-| `schedule-engagement-spike` (verify_jwt=false, JWT in code) | Creates the spike row, kicks off discovery |
-| `discover-spike-posts` | Calls Unipile `POST /api/v1/linkedin/search` with `category: 'posts'`, applies recency/network filters, returns top N candidate posts, stores them as `engagement_spike_comments` rows in `drafted` status |
-| `generate-spike-comments` | Batched Lovable AI Gateway call (`google/gemini-2.5-flash`) — prompt enforces: ≤2 sentences, lowercase-friendly, no banned words, weave in `custom_angle`, react to the post's specific point (not generic). Stores `comment_text`. Pre-computes `scheduled_drop_at = scheduled_for - random(120..(window*60)) seconds`, sequenced with `spacing_min/max` jitter so they land between `T-window` and `T-2min`, in random order |
-| `process-engagement-spikes` (cron, every minute) | Picks `engagement_spike_comments` where `status in ('approved','drafted-no-approval-required')` and `scheduled_drop_at <= now()`, posts via Unipile `POST /api/v1/posts/{post_id}/comments` with the user's `unipile_account_id`, marks `sent` / `failed`. Updates parent spike status when all done |
-| `cancel-engagement-spike` | Marks spike + pending comments cancelled |
+- `src/pages/SuperScale.tsx` — wrapper with internal route switch.
+- `src/components/superscale/SuperScaleSidebar.tsx` — mini-nav.
+- `src/components/superscale/SuperScaleHome.tsx` — followers chart + 4 KPI cards + queue preview + ready-to-post grid (mirrors uploaded SuperX home).
+- `src/components/superscale/CalendarWeek.tsx` — 7-col week grid, slot cards show time + post preview, click empty slot → opens Compose pre-filled.
+- `src/components/superscale/Compose.tsx` — textarea (1300-char counter), image upload OR "Generate image from my style" button, schedule date/time picker, **"Comments Spike"** toggle (expands to show: spike size 5-20, drop window). Tabs: Compose / Drafts / Scheduled / Sent.
+- `src/components/superscale/Inspiration.tsx` — grid of viral posts (search bar, time filter, industry tags). Each card: author, content snippet, like/comment counts, "Remix for me →" button creates draft and routes to Compose.
+- `src/components/superscale/DesignRefs.tsx` — drag-drop upload zone for 5+ reference images, grid of pinned refs, delete/reorder.
 
-Cron (pg_cron + pg_net): `process-engagement-spikes` every minute. Add `[functions.*]` entries with `verify_jwt = false` in `supabase/config.toml`.
+---
 
-### 6. AI prompt rules (human-as-fuck)
+### 5. Comments Spike integration
 
-System prompt highlights:
-- Read the post, react to ONE specific idea in it
-- 1–2 sentences, ≤180 chars, no greeting, no sign-off
-- Conversational, lowercase ok, contractions, mild imperfections allowed
-- Never use: "leverage", "synergy", "tech stack", "great post", "love this", "100%", "🔥", emoji unless tone=Playful
-- Never pitch, never link, never @mention
-- Inject `custom_angle` only when it fits naturally; otherwise omit
+When user toggles "Comments Spike" on a scheduled post:
+- Store `comments_spike_enabled=true` on the post.
+- At publish time, `superscale-publish-post` extracts 2-3 keywords from the post text via Lovable AI, then calls `schedule-engagement-spike` with `keywords`, `scheduled_for = posted_at + 30min`, `target_count = 8`, `tone = 'curious_peer'`, `require_approval = false`. The spike then runs through the existing pipeline (discover → generate → process).
 
-### 7. Safety / limits
+---
 
-- Hard cap: 2 active spikes per org at a time, max 20 comments per spike
-- Respects user's `daily_messages_limit` budget (counts comments toward it)
-- Refuses to schedule if `unipile_account_id` is missing or LinkedIn shows disconnected
-- Skips posts the user has already commented on (checked via Unipile post comments)
-- Requires Pay-on-Success billing same as other outbound features (reuse existing gating helper)
+### Technical notes
 
-### 8. Files to add / touch
+- LinkedIn posting via Unipile: `POST https://{DSN}/api/v1/posts` with body `{ account_id, text, attachments?: [{ type:'img', url }] }` (verify exact schema in code; current Unipile docs use `/users/me/posts` for some endpoints — function will probe both and log).
+- Image generation: Gemini 2.5 Flash Image accepts multiple input images (the design refs) + text instruction → returns base64 PNG. Upload to `superscale` bucket → public URL.
+- Calendar: simple 7-day week starting Monday, 4 time slots/day (8am, 12pm, 4pm, 8pm — LinkedIn-optimal). User can also pick custom time.
+- Char limit warning at 1300; hard block at 3000.
+- Memory file `mem://features/superscale/overview.md` will be created.
+- Limits: max 100 scheduled posts/org, design refs capped at 20.
 
-| File | Change |
-|---|---|
-| `src/components/DashboardLayout.tsx` | Add "Engagement Spikes" nav item |
-| `src/App.tsx` | Add 2 routes (`/dashboard/engagement-spikes`, `/dashboard/engagement-spikes/:id`) |
-| `src/pages/EngagementSpikes.tsx` | List page + tabs |
-| `src/pages/SpikeDetail.tsx` | Detail/timeline page |
-| `src/components/spikes/ScheduleSpikeWizard.tsx` | 3-step dialog |
-| `src/components/spikes/SpikeCommentRow.tsx` | Editable comment row component |
-| `supabase/functions/schedule-engagement-spike/index.ts` | Orchestrator entry |
-| `supabase/functions/discover-spike-posts/index.ts` | Unipile post search |
-| `supabase/functions/generate-spike-comments/index.ts` | AI drafting |
-| `supabase/functions/process-engagement-spikes/index.ts` | Cron worker |
-| `supabase/functions/cancel-engagement-spike/index.ts` | Cancellation |
-| `supabase/config.toml` | Register the 5 functions |
-| migration | `engagement_spikes`, `engagement_spike_comments`, RLS, triggers, indexes on `(status, scheduled_drop_at)` |
-| pg_cron insert | minute-level trigger for `process-engagement-spikes` |
-| `mem://features/engagement-spikes/overview` | New memory + index update |
+---
 
-### 9. Open questions before building
+### Out of scope (v1)
 
-1. Should the spike post comments **as the user's LinkedIn account** (via their existing Unipile connection) — confirming this is the intended posting identity?
-2. For the first version, restrict to **LinkedIn only**, or also schedule X/Reddit comment spikes later?
-3. Should we surface a **"feed" mode** (engage on posts from a curated list of profiles, e.g. dream prospects) in addition to keyword search? Useful for warming up specific accounts.
+- Carousel/PDF posts, video posts, polls.
+- Auto-DM, auto-plug, auto-retweet (those are X-specific in SuperX).
+- Multi-account posting.
+- Analytics deeper than the 4 KPI cards + followers sparkline.
+
+After approval I'll create the migration, add Unipile post endpoint logic, build all UI screens, wire the Comments Spike auto-creation, and update the memory index.
