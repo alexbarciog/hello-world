@@ -110,3 +110,16 @@ verify_jwt = false
 
 [functions.cancel-engagement-spike]
 verify_jwt = false
+
+[functions.superscale-publish-post]
+verify_jwt = false
+
+[functions.superscale-generate-image]
+verify_jwt = false
+
+[functions.superscale-remix-post]
+verify_jwt = false
+
+[functions.superscale-discover-inspiration]
+verify_jwt = false
+
