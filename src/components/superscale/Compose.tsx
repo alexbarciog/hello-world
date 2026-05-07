@@ -116,6 +116,15 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         <div>
           <label className="text-xs font-semibold text-foreground/60 mb-1.5 flex items-center gap-1.5"><CalendarIcon className="w-3.5 h-3.5" /> Schedule</label>
           <input type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} className="w-full text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30" />
+          <button
+            type="button"
+            onClick={pickNextSlot}
+            disabled={pickingSlot}
+            className="mt-2 text-xs font-medium text-foreground/70 hover:text-foreground inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/[0.04] hover:bg-black/[0.07] disabled:opacity-50"
+          >
+            {pickingSlot ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5 text-orange-500" />}
+            {nextSlotLabel ? `Next slot: ${nextSlotLabel}` : "Use next available slot"}
+          </button>
         </div>
         <label className="flex items-start gap-3 cursor-pointer">
           <input type="checkbox" checked={spike} onChange={(e) => setSpike(e.target.checked)} className="mt-0.5 w-4 h-4 accent-orange-500" />
