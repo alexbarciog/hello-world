@@ -46,6 +46,8 @@ import AuthImpersonate from "./pages/AuthImpersonate.tsx";
 import DashboardLayout from "./components/DashboardLayout.tsx";
 import AuthGuard, { AuthOnlyGuard } from "./components/AuthGuard.tsx";
 import InviteAccept from "./pages/InviteAccept.tsx";
+import EngagementSpikes from "./pages/EngagementSpikes.tsx";
+import SpikeDetail from "./pages/SpikeDetail.tsx";
 import { OrganizationProvider } from "./contexts/OrganizationContext.tsx";
 import { RefCodeCapture } from "./components/RefCodeCapture.tsx";
 import { useEffect, useRef } from "react";
@@ -229,6 +231,8 @@ const App = () => (
           <Route path="/auth/impersonate" element={<AuthImpersonate />} />
           <Route path="/invite/:token" element={<InviteAccept />} />
           <Route path="/shared/leads/:token" element={<SharedLeads />} />
+          <Route path="/engagement-spikes" element={<AuthGuard><EngagementSpikes /></AuthGuard>} />
+          <Route path="/engagement-spikes/:id" element={<AuthGuard><SpikeDetail /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </OrganizationProvider>
