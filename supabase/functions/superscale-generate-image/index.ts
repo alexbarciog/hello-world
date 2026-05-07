@@ -16,18 +16,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function fetchAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const r = await fetch(url);
-    if (!r.ok) return null;
-    const buf = new Uint8Array(await r.arrayBuffer());
-    const mime = r.headers.get("content-type") || "image/png";
-    let bin = "";
-    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-    return `data:${mime};base64,${btoa(bin)}`;
-  } catch { return null; }
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -52,20 +40,14 @@ Deno.serve(async (req) => {
     if (!textPrompt) return json({ error: "prompt required" }, 400);
 
     const { data: refs } = await admin.from("superscale_design_refs")
-      .select("image_url").eq("user_id", userId).order("position").limit(8);
-    if (!refs || refs.length < 5) {
-      return json({ error: "Add at least 5 design references first" }, 400);
-    }
-
-    const refDataUrls: string[] = [];
-    for (const r of refs.slice(0, 6)) {
-      const u = await fetchAsDataUrl(r.image_url);
-      if (u) refDataUrls.push(u);
+      .select("image_url").eq("user_id", userId).order("position").limit(4);
+    if (!refs || refs.length < 3) {
+      return json({ error: "Add at least 3 design references first" }, 400);
     }
 
     const userContent: any[] = [
       { type: "text", text: `Generate a single LinkedIn-style image (square 1:1) inspired by the visual style, color palette, typography and layout of the reference images. Topic of the post:\n\n"${textPrompt.slice(0, 500)}"\n\nMake it feel native to LinkedIn — clean, professional, scroll-stopping. No watermark.` },
-      ...refDataUrls.map((url) => ({ type: "image_url", image_url: { url } })),
+      ...refs.slice(0, 4).map((r: any) => ({ type: "image_url", image_url: { url: r.image_url } })),
     ];
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
