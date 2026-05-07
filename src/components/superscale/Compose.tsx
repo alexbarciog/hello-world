@@ -161,23 +161,33 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
           placeholder="What do you want to share with your network?"
           className="w-full min-h-[200px] resize-none outline-none text-[15px] leading-relaxed placeholder:text-foreground/30"
         />
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-black/[0.04]">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-foreground/60 cursor-pointer hover:text-foreground flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-black/[0.04]">
-              <ImageIcon className="w-4 h-4" /> Upload image
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
-            </label>
-            <button onClick={generateImage} disabled={genImg} className="text-xs font-medium text-foreground/60 hover:text-foreground flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-black/[0.04]">
-              {genImg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Generate from my style
-            </button>
-          </div>
+        <div className="flex items-center justify-end mt-3 pt-3 border-t border-black/[0.04]">
           <span className={`text-xs ${overMax ? "text-red-500 font-semibold" : overWarn ? "text-orange-500" : "text-foreground/40"}`}>{len}/{MAX}</span>
         </div>
-        {imageUrl && (
+
+        {imageUrl ? (
           <div className="mt-3 relative inline-block">
             <img src={imageUrl} alt="" className="rounded-lg max-h-64" />
             <button onClick={() => setImageUrl(null)} className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"><X className="w-3 h-3" /></button>
+          </div>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <label className="group cursor-pointer flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-black/10 hover:border-black/30 hover:bg-black/[0.02] transition">
+              <ImageIcon className="w-5 h-5 text-foreground/50 group-hover:text-foreground" />
+              <span className="text-xs font-medium text-foreground/70 group-hover:text-foreground">Upload image</span>
+              <span className="text-[10px] text-foreground/40">PNG, JPG up to 5MB</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+            </label>
+            <button
+              onClick={generateImage}
+              disabled={genImg}
+              type="button"
+              className="group flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-black/10 hover:border-orange-400/50 hover:bg-gradient-to-br hover:from-rose-50 hover:to-orange-50 transition disabled:opacity-50"
+            >
+              {genImg ? <Loader2 className="w-5 h-5 animate-spin text-orange-500" /> : <Sparkles className="w-5 h-5 text-orange-500" />}
+              <span className="text-xs font-medium text-foreground/70 group-hover:text-foreground">{genImg ? "Generating…" : "Generate from design refs"}</span>
+              <span className="text-[10px] text-foreground/40">AI matches your visual style</span>
+            </button>
           </div>
         )}
       </div>
