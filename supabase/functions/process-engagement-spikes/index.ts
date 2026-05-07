@@ -22,19 +22,21 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const nowIso = new Date().toISOString();
 
-    // Pick due comments (approved, or drafted when spike doesn't require approval)
+    // Pick due comments (approved, or drafted when spike doesn't require approval).
+    // Also retry the prior Unipile schema failure caused by sending account_id as a query param.
     const { data: due } = await admin.from("engagement_spike_comments")
       .select("*, engagement_spikes!inner(id, user_id, status, require_approval)")
       .lte("scheduled_drop_at", nowIso)
-      .in("status", ["approved", "drafted"])
+      .in("status", ["approved", "drafted", "failed"])
       .limit(50);
 
     let sent = 0, failed = 0;
     for (const row of due || []) {
       const spike = (row as any).engagement_spikes;
       if (!spike || spike.status === "cancelled" || spike.status === "failed") continue;
+      if (row.status === "failed" && !String(row.error || "").includes("/account_id")) continue;
       // If spike requires approval, only send approved
-      if (spike.require_approval && row.status !== "approved") continue;
+      if (spike.require_approval && row.status !== "approved" && row.status !== "failed") continue;
       if (!row.comment_text || !row.post_id) {
         await admin.from("engagement_spike_comments").update({ status: "skipped", error: "missing text or post_id" }).eq("id", row.id);
         continue;
@@ -55,7 +57,7 @@ Deno.serve(async (req) => {
       const r = await fetch(url, {
         method: "POST",
         headers: { "X-API-KEY": UNIPILE_API_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ text: row.comment_text }),
+        body: JSON.stringify({ account_id: accountId, text: row.comment_text }),
       });
       const text = await r.text();
       if (r.ok) {
