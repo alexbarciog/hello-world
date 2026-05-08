@@ -13,10 +13,10 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [scheduledFor, setScheduledFor] = useState("");
   const [spike, setSpike] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [genImg, setGenImg] = useState(false);
   const [id, setId] = useState<string | null>(postId);
   const [pickingSlot, setPickingSlot] = useState(false);
   const [nextSlotLabel, setNextSlotLabel] = useState<string | null>(null);
+  const [genOpen, setGenOpen] = useState(false);
 
   function toLocalInput(d: Date) {
     const tz = d.getTimezoneOffset() * 60000;
