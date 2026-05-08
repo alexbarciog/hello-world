@@ -135,16 +135,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     setImageUrl(data.publicUrl);
   }
 
-  async function generateImage() {
+  function openGenerate() {
     if (!content.trim()) { toast.error("Write the post first"); return; }
-    setGenImg(true);
-    const { data, error } = await supabase.functions.invoke("superscale-generate-image", {
-      body: { prompt: content, post_id: id },
-    });
-    setGenImg(false);
-    if (error || data?.error) { toast.error(data?.error || error?.message || "Failed"); return; }
-    setImageUrl(data.image_url);
-    toast.success("Image generated");
+    setGenOpen(true);
   }
 
   const len = content.length;
