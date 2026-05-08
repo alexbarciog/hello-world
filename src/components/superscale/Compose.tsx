@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap } from "lucide-react";
+import GenerateImageDialog from "./GenerateImageDialog";
 
 const MAX = 3000;
 const WARN = 1300;
