@@ -173,14 +173,13 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
               <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
             </label>
             <button
-              onClick={generateImage}
-              disabled={genImg}
+              onClick={openGenerate}
               type="button"
-              className="group flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-black/10 hover:border-orange-400/50 hover:bg-gradient-to-br hover:from-rose-50 hover:to-orange-50 transition disabled:opacity-50"
+              className="group flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-black/10 hover:border-orange-400/50 hover:bg-gradient-to-br hover:from-rose-50 hover:to-orange-50 transition"
             >
-              {genImg ? <Loader2 className="w-5 h-5 animate-spin text-orange-500" /> : <Sparkles className="w-5 h-5 text-orange-500" />}
-              <span className="text-xs font-medium text-foreground/70 group-hover:text-foreground">{genImg ? "Generating…" : "Generate from design refs"}</span>
-              <span className="text-[10px] text-foreground/40">AI matches your visual style</span>
+              <Sparkles className="w-5 h-5 text-orange-500" />
+              <span className="text-xs font-medium text-foreground/70 group-hover:text-foreground">Generate from design refs</span>
+              <span className="text-[10px] text-foreground/40">Pick from 3 AI variants</span>
             </button>
           </div>
         )}
