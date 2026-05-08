@@ -214,6 +214,14 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Schedule post"}
         </button>
       </div>
+
+      <GenerateImageDialog
+        open={genOpen}
+        onClose={() => setGenOpen(false)}
+        postId={id}
+        postContent={content}
+        onPick={(url) => { setImageUrl(url); toast.success("Image attached"); }}
+      />
     </div>
   );
 }
