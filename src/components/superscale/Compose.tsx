@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap } from "lucide-react";
+import GenerateImageDialog from "./GenerateImageDialog";
 
 const MAX = 3000;
 const WARN = 1300;
@@ -12,10 +13,10 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [scheduledFor, setScheduledFor] = useState("");
   const [spike, setSpike] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [genImg, setGenImg] = useState(false);
   const [id, setId] = useState<string | null>(postId);
   const [pickingSlot, setPickingSlot] = useState(false);
   const [nextSlotLabel, setNextSlotLabel] = useState<string | null>(null);
+  const [genOpen, setGenOpen] = useState(false);
 
   function toLocalInput(d: Date) {
     const tz = d.getTimezoneOffset() * 60000;
@@ -134,16 +135,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     setImageUrl(data.publicUrl);
   }
 
-  async function generateImage() {
+  function openGenerate() {
     if (!content.trim()) { toast.error("Write the post first"); return; }
-    setGenImg(true);
-    const { data, error } = await supabase.functions.invoke("superscale-generate-image", {
-      body: { prompt: content, post_id: id },
-    });
-    setGenImg(false);
-    if (error || data?.error) { toast.error(data?.error || error?.message || "Failed"); return; }
-    setImageUrl(data.image_url);
-    toast.success("Image generated");
+    setGenOpen(true);
   }
 
   const len = content.length;
@@ -179,14 +173,13 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
               <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
             </label>
             <button
-              onClick={generateImage}
-              disabled={genImg}
+              onClick={openGenerate}
               type="button"
-              className="group flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-black/10 hover:border-orange-400/50 hover:bg-gradient-to-br hover:from-rose-50 hover:to-orange-50 transition disabled:opacity-50"
+              className="group flex flex-col items-center justify-center gap-1.5 py-5 rounded-xl border border-dashed border-black/10 hover:border-orange-400/50 hover:bg-gradient-to-br hover:from-rose-50 hover:to-orange-50 transition"
             >
-              {genImg ? <Loader2 className="w-5 h-5 animate-spin text-orange-500" /> : <Sparkles className="w-5 h-5 text-orange-500" />}
-              <span className="text-xs font-medium text-foreground/70 group-hover:text-foreground">{genImg ? "Generating…" : "Generate from design refs"}</span>
-              <span className="text-[10px] text-foreground/40">AI matches your visual style</span>
+              <Sparkles className="w-5 h-5 text-orange-500" />
+              <span className="text-xs font-medium text-foreground/70 group-hover:text-foreground">Generate from design refs</span>
+              <span className="text-[10px] text-foreground/40">Pick from 3 AI variants</span>
             </button>
           </div>
         )}
@@ -221,6 +214,14 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Schedule post"}
         </button>
       </div>
+
+      <GenerateImageDialog
+        open={genOpen}
+        onClose={() => setGenOpen(false)}
+        postId={id}
+        postContent={content}
+        onPick={(url) => { setImageUrl(url); toast.success("Image attached"); }}
+      />
     </div>
   );
 }

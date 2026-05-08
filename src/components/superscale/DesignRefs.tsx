@@ -61,11 +61,14 @@ export default function DesignRefs() {
     }
     setUploading(false);
     await load();
+    // Fire-and-forget style re-analysis whenever refs change
+    supabase.functions.invoke("superscale-analyze-style", { body: { force: true } }).catch(() => {});
   }
 
   async function remove(id: string) {
     await supabase.from("superscale_design_refs").delete().eq("id", id);
     setRefs((prev) => prev.filter((r) => r.id !== id));
+    supabase.functions.invoke("superscale-analyze-style", { body: { force: true } }).catch(() => {});
   }
 
   return (
