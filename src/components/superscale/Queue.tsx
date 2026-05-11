@@ -62,11 +62,12 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   const [generating, setGenerating] = useState(false);
 
   async function generateFromBestTimes() {
-    if (hourCounts.every((c) => c === 0)) {
+    const totalScore = grid.flat().reduce((s, c) => s + c, 0);
+    if (totalScore === 0) {
       toast.error("No post history yet — add slots manually first.");
       return;
     }
-    if (slots.length > 0 && !confirm(`Replace your current ${slots.length} slot(s) with ${genCount} slots based on your best engagement hours?`)) {
+    if (slots.length > 0 && !confirm(`Replace your current ${slots.length} slot(s) with ${genCount} slots based on your best-performing day & time combos?`)) {
       return;
     }
     setGenerating(true);
@@ -80,14 +81,17 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
         .maybeSingle();
       const orgId = prof?.current_organization_id ?? null;
 
-      // Rank hours by engagement
-      const ranked = hourCounts
-        .map((c, h) => ({ h, c }))
-        .filter((x) => x.c > 0)
-        .sort((a, b) => b.c - a.c);
-
-      // Distribute genCount slots round-robin: best hour to all 7 days first, then 2nd best, etc.
-      const days = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
+      // Rank (day, hour) cells by engagement, take the top genCount
+      const cells: { dow: number; h: number; score: number }[] = [];
+      for (let d = 0; d < 7; d++) {
+        for (let h = 0; h < 24; h++) {
+          if (grid[d][h] > 0) cells.push({ dow: d, h, score: grid[d][h] });
+        }
+      }
+      cells.sort((a, b) => b.score - a.score);
+      const ranked = cells.slice(0, genCount);
+      // Dummy days var to keep rest of function signature unchanged
+      const days: number[] = [];
       const rows: { user_id: string; organization_id: string | null; day_of_week: number; time: string }[] = [];
       let i = 0;
       outer: for (const { h } of ranked) {
