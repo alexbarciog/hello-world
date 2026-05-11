@@ -117,6 +117,7 @@ export default function EditQueueDialog({
     await supabase.from("superscale_queue_prefs").upsert({
       user_id: u.user.id,
       natural_jitter_minutes: naturalJitter,
+      timezone,
       updated_at: new Date().toISOString(),
     });
 
