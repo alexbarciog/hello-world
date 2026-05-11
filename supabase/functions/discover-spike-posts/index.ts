@@ -93,6 +93,11 @@ Deno.serve(async (req) => {
         const pid = it?.social_id || it?.id || it?.share_url;
         if (!pid) continue;
         if (collected.has(pid)) continue;
+        // Skip own posts (by author identity)
+        const author = it?.author || it?.actor || {};
+        const authorIds = [author?.public_identifier, author?.provider_id, author?.id, author?.entity_urn]
+          .filter(Boolean).map((v: any) => String(v));
+        if (authorIds.some((a) => ownIdentifiers.has(a))) continue;
         collected.set(pid, { it, kw });
       }
     }
