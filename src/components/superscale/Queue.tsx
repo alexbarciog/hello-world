@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Pencil, Loader2, BarChart3, Sparkles, Clock } from "lucide-react";
+import { Pencil, Loader2, BarChart3, Sparkles, Clock, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 import EditQueueDialog from "./EditQueueDialog";
 
 type Slot = { day_of_week: number; time: string };
@@ -57,6 +58,59 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   const [posts, setPosts] = useState<Post[]>([]);
   const [jitter, setJitter] = useState(0);
   const [reloadTick, setReloadTick] = useState(0);
+  const [genCount, setGenCount] = useState(12);
+  const [generating, setGenerating] = useState(false);
+
+  async function generateFromBestTimes() {
+    if (hourCounts.every((c) => c === 0)) {
+      toast.error("No post history yet — add slots manually first.");
+      return;
+    }
+    if (slots.length > 0 && !confirm(`Replace your current ${slots.length} slot(s) with ${genCount} slots based on your best engagement hours?`)) {
+      return;
+    }
+    setGenerating(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("current_organization_id")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      const orgId = prof?.current_organization_id ?? null;
+
+      // Rank hours by engagement
+      const ranked = hourCounts
+        .map((c, h) => ({ h, c }))
+        .filter((x) => x.c > 0)
+        .sort((a, b) => b.c - a.c);
+
+      // Distribute genCount slots round-robin: best hour to all 7 days first, then 2nd best, etc.
+      const days = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
+      const rows: { user_id: string; organization_id: string | null; day_of_week: number; time: string }[] = [];
+      let i = 0;
+      outer: for (const { h } of ranked) {
+        const time = `${String(h).padStart(2, "0")}:00`;
+        for (const dow of days) {
+          if (i >= genCount) break outer;
+          rows.push({ user_id: u.user.id, organization_id: orgId, day_of_week: dow, time });
+          i++;
+        }
+      }
+
+      await supabase.from("superscale_queue_slots").delete().eq("user_id", u.user.id);
+      const { error } = await supabase.from("superscale_queue_slots").insert(rows);
+      if (error) {
+        toast.error("Couldn't save generated queue");
+        return;
+      }
+      toast.success(`Generated ${rows.length} slots from your best times`);
+      setReloadTick((t) => t + 1);
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -151,6 +205,26 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-black/10 bg-white pl-3 pr-1 py-1">
+            <Wand2 className="w-4 h-4 text-rose-500" />
+            <span className="text-sm font-medium">Generate</span>
+            <input
+              type="number"
+              min={3}
+              max={28}
+              value={genCount}
+              onChange={(e) => setGenCount(Math.max(3, Math.min(28, Number(e.target.value) || 12)))}
+              className="w-12 text-sm font-semibold tabular-nums text-center bg-transparent focus:outline-none"
+            />
+            <span className="text-sm text-foreground/55">slots</span>
+            <button
+              onClick={generateFromBestTimes}
+              disabled={generating}
+              className="ml-2 rounded-md bg-foreground text-background text-xs font-semibold px-2.5 py-1.5 hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+            >
+              {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Apply"}
+            </button>
+          </div>
           <button
             onClick={() => setShowHeatmap((v) => !v)}
             className="rounded-lg border border-black/10 bg-white text-sm font-medium px-3 py-2 hover:bg-black/[0.03] flex items-center gap-1.5"
