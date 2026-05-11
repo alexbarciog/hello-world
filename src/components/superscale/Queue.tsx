@@ -165,8 +165,9 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
     return out;
   }, [slots, posts, jitter]);
 
-  // Heatmap from sent posts (last 90d) — count by hour
-  const [hourCounts, setHourCounts] = useState<number[]>(Array(24).fill(0));
+  // Heatmap from sent posts (last 90d) — score by day-of-week × hour, weighted by views + likes
+  const [grid, setGrid] = useState<number[][]>(() => Array.from({ length: 7 }, () => Array(24).fill(0)));
+  const [postSampleCount, setPostSampleCount] = useState(0);
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -179,17 +180,33 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
         .eq("status", "posted")
         .gte("posted_at", since.toISOString())
         .limit(500);
-      const arr = Array(24).fill(0);
+      const g: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+      let sample = 0;
       (data || []).forEach((p: any) => {
         if (!p.posted_at) return;
-        const h = new Date(p.posted_at).getHours();
+        const dt = new Date(p.posted_at);
+        const dow = dt.getDay();
+        const h = dt.getHours();
         const m = p?.metrics ?? {};
-        const eng = (m.likes ?? 0) + (m.comments ?? 0) * 3 + (m.reposts ?? 0) * 2;
-        arr[h] += Math.max(1, eng);
+        // Views are the strongest signal of "people online at this time"
+        const views = Number(m.views ?? m.impressions ?? 0);
+        const likes = Number(m.likes ?? 0);
+        const comments = Number(m.comments ?? 0);
+        const reposts = Number(m.reposts ?? m.shares ?? 0);
+        const score = views + likes * 5 + comments * 10 + reposts * 8;
+        g[dow][h] += Math.max(1, score);
+        sample++;
       });
-      setHourCounts(arr);
+      setGrid(g);
+      setPostSampleCount(sample);
     })();
   }, [reloadTick]);
+
+  const hourCounts = useMemo(() => {
+    const arr = Array(24).fill(0);
+    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) arr[h] += grid[d][h];
+    return arr;
+  }, [grid]);
 
   const today = new Date();
 
