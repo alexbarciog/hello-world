@@ -260,11 +260,17 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
 
       {showHeatmap && (
         <div className="mt-4 rounded-2xl border border-black/[0.06] bg-white p-5">
-          <div className="text-sm font-semibold mb-1">Best times to post</div>
-          <div className="text-xs text-foreground/50 mb-4">
-            Based on engagement of your last 90 days of posts.
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <div className="text-sm font-semibold">Best times to post</div>
+              <div className="text-xs text-foreground/50 mt-0.5">
+                {postSampleCount > 0
+                  ? `Based on views, likes, comments & reposts of your last ${postSampleCount} LinkedIn post${postSampleCount === 1 ? "" : "s"} (90 days).`
+                  : "No posted LinkedIn data yet — post a few times so we can learn your audience."}
+              </div>
+            </div>
           </div>
-          <Heatmap counts={hourCounts} />
+          <DayHourHeatmap grid={grid} />
         </div>
       )}
 
