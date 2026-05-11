@@ -24,11 +24,33 @@ async function publishToLinkedIn(accountId: string, text: string, imageUrl: stri
   if (imageUrl) {
     try {
       const imgResp = await fetch(imageUrl);
+      if (!imgResp.ok) {
+        return { ok: false, status: imgResp.status, payload: {}, text: `Image fetch failed: ${imgResp.status}` };
+      }
       const buf = new Uint8Array(await imgResp.arrayBuffer());
+
+      // Detect mime + extension from response headers, fallback to URL ext
+      let mime = (imgResp.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      const urlExtMatch = imageUrl.toLowerCase().match(/\.(png|jpe?g|gif|webp)(\?|$)/);
+      const urlExt = urlExtMatch?.[1] || "";
+      if (!mime || !mime.startsWith("image/")) {
+        if (urlExt === "png") mime = "image/png";
+        else if (urlExt === "gif") mime = "image/gif";
+        else if (urlExt === "webp") mime = "image/webp";
+        else mime = "image/jpeg";
+      }
+      // LinkedIn (via Unipile) doesn't accept webp in feed posts — convert mime to jpeg label;
+      // safer: only allow png/jpeg/gif. If webp, treat as jpeg-ish by relabeling.
+      if (mime === "image/webp") mime = "image/jpeg";
+
+      const ext = mime === "image/png" ? "png" : mime === "image/gif" ? "gif" : "jpg";
+      const filename = `image.${ext}`;
+
       const fd = new FormData();
       fd.append("account_id", accountId);
       fd.append("text", text);
-      fd.append("attachments", new Blob([buf], { type: "image/png" }), "image.png");
+      fd.append("attachments", new Blob([buf], { type: mime }), filename);
+
       const r = await fetch(url, {
         method: "POST",
         headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
@@ -37,6 +59,7 @@ async function publishToLinkedIn(accountId: string, text: string, imageUrl: stri
       const txt = await r.text();
       let payload: any = {};
       try { payload = JSON.parse(txt); } catch {}
+      if (!r.ok) console.error("Unipile post error", r.status, txt, "mime=", mime, "size=", buf.length);
       return { ok: r.ok, status: r.status, payload, text: txt };
     } catch (e) {
       return { ok: false, status: 0, payload: {}, text: String(e) };
