@@ -346,23 +346,64 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   );
 }
 
-function Heatmap({ counts }: { counts: number[] }) {
-  const max = Math.max(1, ...counts);
+const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function DayHourHeatmap({ grid }: { grid: number[][] }) {
+  const max = Math.max(1, ...grid.flat());
+  // Find the top 5 cells to highlight
+  const cells: { d: number; h: number; v: number }[] = [];
+  for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) cells.push({ d, h, v: grid[d][h] });
+  const topKeys = new Set(
+    cells
+      .filter((c) => c.v > 0)
+      .sort((a, b) => b.v - a.v)
+      .slice(0, 5)
+      .map((c) => `${c.d}-${c.h}`)
+  );
+
   return (
-    <div>
-      <div className="flex items-end gap-1 h-32">
-        {counts.map((c, h) => (
-          <div key={h} className="flex-1 flex flex-col justify-end">
-            <div
-              className="w-full rounded-t-sm bg-rose-500"
-              style={{ height: `${(c / max) * 100}%`, minHeight: c ? 2 : 0, opacity: c ? 0.5 + (c / max) * 0.5 : 0.08 }}
-              title={`${h}:00 — ${c} engagement`}
-            />
+    <div className="overflow-x-auto">
+      <div className="inline-block min-w-full">
+        <div className="grid" style={{ gridTemplateColumns: "36px repeat(24, minmax(18px,1fr))" }}>
+          <div />
+          {Array.from({ length: 24 }, (_, h) => (
+            <div key={h} className="text-[9px] text-foreground/40 text-center pb-1">
+              {h % 6 === 0 ? (h === 0 ? "12a" : h === 12 ? "12p" : h < 12 ? `${h}a` : `${h - 12}p`) : ""}
+            </div>
+          ))}
+          {DOW_SHORT.map((label, d) => (
+            <>
+              <div key={`l-${d}`} className="text-[10px] font-medium text-foreground/55 pr-2 flex items-center justify-end h-6">
+                {label}
+              </div>
+              {Array.from({ length: 24 }, (_, h) => {
+                const v = grid[d][h];
+                const intensity = v > 0 ? 0.15 + (v / max) * 0.85 : 0;
+                const isTop = topKeys.has(`${d}-${h}`);
+                return (
+                  <div key={`c-${d}-${h}`} className="px-[1px] py-[1px]">
+                    <div
+                      className={`h-5 rounded-[3px] transition-colors ${isTop ? "ring-[1.5px] ring-rose-500" : ""}`}
+                      style={{
+                        backgroundColor: v > 0 ? `rgba(244, 63, 94, ${intensity})` : "rgba(0,0,0,0.04)",
+                      }}
+                      title={`${DOW_SHORT[d]} ${h}:00 — ${v ? v.toFixed(0) : 0} engagement`}
+                    />
+                  </div>
+                );
+              })}
+            </>
+          ))}
+        </div>
+        <div className="flex items-center justify-between mt-3 text-[10px] text-foreground/40">
+          <span>Less</span>
+          <div className="flex items-center gap-1">
+            {[0.1, 0.3, 0.5, 0.75, 1].map((a) => (
+              <div key={a} className="w-4 h-2.5 rounded-sm" style={{ backgroundColor: `rgba(244, 63, 94, ${a})` }} />
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="flex justify-between text-[10px] text-foreground/40 mt-1.5">
-        <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+          <span>More</span>
+        </div>
       </div>
     </div>
   );
