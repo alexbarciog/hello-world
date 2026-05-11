@@ -160,6 +160,17 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   }
 
   useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: prefs } = await supabase
+        .from("superscale_queue_prefs")
+        .select("timezone").eq("user_id", u.user.id).maybeSingle();
+      if (prefs?.timezone) setQueueTz(prefs.timezone);
+    })();
+  }, []);
+
+  useEffect(() => {
     setId(postId);
     if (!postId) {
       setContent(""); setImageUrl(null); setScheduledFor(""); setSpike(false);
@@ -171,7 +182,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
       if (data) {
         setContent(data.content || "");
         setImageUrl(data.image_url);
-        setScheduledFor(data.scheduled_for ? new Date(data.scheduled_for).toISOString().slice(0, 16) : "");
+        setScheduledFor(data.scheduled_for ? utcToWallClockInTz(new Date(data.scheduled_for), queueTz) : "");
         setSpike(!!data.comments_spike_enabled);
         setAutoCommentEnabled(!!(data as any).auto_comment_enabled);
         setAutoCommentText((data as any).auto_comment_text || "");
@@ -179,7 +190,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         setAutoCommentThreshold((data as any).auto_comment_threshold ?? 10);
       }
     })();
-  }, [postId]);
+  }, [postId, queueTz]);
 
   async function save(status: "draft" | "scheduled") {
     setLoading(true);
@@ -190,7 +201,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     const payload: any = {
       user_id: u.user.id,
       content, image_url: imageUrl,
-      scheduled_for: status === "scheduled" ? new Date(scheduledFor).toISOString() : null,
+      scheduled_for: status === "scheduled" ? wallClockInTzToUTC(scheduledFor, queueTz).toISOString() : null,
       comments_spike_enabled: spike, status,
       auto_comment_enabled: autoCommentEnabled,
       auto_comment_text: autoCommentEnabled ? autoCommentText : null,
