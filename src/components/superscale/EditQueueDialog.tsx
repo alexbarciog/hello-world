@@ -51,6 +51,7 @@ export default function EditQueueDialog({
       });
       setGrid(g);
       setNaturalJitter(prefs?.natural_jitter_minutes ?? 0);
+      if (prefs?.timezone) setTimezone(prefs.timezone);
       setLoading(false);
     })();
   }, [open]);
