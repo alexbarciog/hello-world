@@ -129,7 +129,11 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
 
   useEffect(() => {
     setId(postId);
-    if (!postId) { setContent(""); setImageUrl(null); setScheduledFor(""); setSpike(false); return; }
+    if (!postId) {
+      setContent(""); setImageUrl(null); setScheduledFor(""); setSpike(false);
+      setAutoCommentEnabled(false); setAutoCommentText(""); setAutoCommentTrigger("likes"); setAutoCommentThreshold(10);
+      return;
+    }
     (async () => {
       const { data } = await supabase.from("linkedin_posts").select("*").eq("id", postId).maybeSingle();
       if (data) {
@@ -137,6 +141,10 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         setImageUrl(data.image_url);
         setScheduledFor(data.scheduled_for ? new Date(data.scheduled_for).toISOString().slice(0, 16) : "");
         setSpike(!!data.comments_spike_enabled);
+        setAutoCommentEnabled(!!(data as any).auto_comment_enabled);
+        setAutoCommentText((data as any).auto_comment_text || "");
+        setAutoCommentTrigger(((data as any).auto_comment_trigger as any) || "likes");
+        setAutoCommentThreshold((data as any).auto_comment_threshold ?? 10);
       }
     })();
   }, [postId]);
