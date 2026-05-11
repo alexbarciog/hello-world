@@ -62,11 +62,12 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   const [generating, setGenerating] = useState(false);
 
   async function generateFromBestTimes() {
-    if (hourCounts.every((c) => c === 0)) {
+    const totalScore = grid.flat().reduce((s, c) => s + c, 0);
+    if (totalScore === 0) {
       toast.error("No post history yet — add slots manually first.");
       return;
     }
-    if (slots.length > 0 && !confirm(`Replace your current ${slots.length} slot(s) with ${genCount} slots based on your best engagement hours?`)) {
+    if (slots.length > 0 && !confirm(`Replace your current ${slots.length} slot(s) with ${genCount} slots based on your best-performing day & time combos?`)) {
       return;
     }
     setGenerating(true);
@@ -80,23 +81,23 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
         .maybeSingle();
       const orgId = prof?.current_organization_id ?? null;
 
-      // Rank hours by engagement
-      const ranked = hourCounts
-        .map((c, h) => ({ h, c }))
-        .filter((x) => x.c > 0)
-        .sort((a, b) => b.c - a.c);
-
-      // Distribute genCount slots round-robin: best hour to all 7 days first, then 2nd best, etc.
-      const days = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
-      const rows: { user_id: string; organization_id: string | null; day_of_week: number; time: string }[] = [];
-      let i = 0;
-      outer: for (const { h } of ranked) {
-        const time = `${String(h).padStart(2, "0")}:00`;
-        for (const dow of days) {
-          if (i >= genCount) break outer;
-          rows.push({ user_id: u.user.id, organization_id: orgId, day_of_week: dow, time });
-          i++;
+      // Rank (day, hour) cells by engagement, take the top genCount
+      const cells: { dow: number; h: number; score: number }[] = [];
+      for (let d = 0; d < 7; d++) {
+        for (let h = 0; h < 24; h++) {
+          if (grid[d][h] > 0) cells.push({ dow: d, h, score: grid[d][h] });
         }
+      }
+      cells.sort((a, b) => b.score - a.score);
+      const ranked = cells.slice(0, genCount);
+      const rows: { user_id: string; organization_id: string | null; day_of_week: number; time: string }[] = [];
+      for (const cell of ranked) {
+        rows.push({
+          user_id: u.user.id,
+          organization_id: orgId,
+          day_of_week: cell.dow,
+          time: `${String(cell.h).padStart(2, "0")}:00`,
+        });
       }
 
       await supabase.from("superscale_queue_slots").delete().eq("user_id", u.user.id);
@@ -164,8 +165,9 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
     return out;
   }, [slots, posts, jitter]);
 
-  // Heatmap from sent posts (last 90d) — count by hour
-  const [hourCounts, setHourCounts] = useState<number[]>(Array(24).fill(0));
+  // Heatmap from sent posts (last 90d) — score by day-of-week × hour, weighted by views + likes
+  const [grid, setGrid] = useState<number[][]>(() => Array.from({ length: 7 }, () => Array(24).fill(0)));
+  const [postSampleCount, setPostSampleCount] = useState(0);
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
@@ -178,17 +180,29 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
         .eq("status", "posted")
         .gte("posted_at", since.toISOString())
         .limit(500);
-      const arr = Array(24).fill(0);
+      const g: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+      let sample = 0;
       (data || []).forEach((p: any) => {
         if (!p.posted_at) return;
-        const h = new Date(p.posted_at).getHours();
+        const dt = new Date(p.posted_at);
+        const dow = dt.getDay();
+        const h = dt.getHours();
         const m = p?.metrics ?? {};
-        const eng = (m.likes ?? 0) + (m.comments ?? 0) * 3 + (m.reposts ?? 0) * 2;
-        arr[h] += Math.max(1, eng);
+        // Views are the strongest signal of "people online at this time"
+        const views = Number(m.views ?? m.impressions ?? 0);
+        const likes = Number(m.likes ?? 0);
+        const comments = Number(m.comments ?? 0);
+        const reposts = Number(m.reposts ?? m.shares ?? 0);
+        const score = views + likes * 5 + comments * 10 + reposts * 8;
+        g[dow][h] += Math.max(1, score);
+        sample++;
       });
-      setHourCounts(arr);
+      setGrid(g);
+      setPostSampleCount(sample);
     })();
   }, [reloadTick]);
+
+
 
   const today = new Date();
 
@@ -242,11 +256,17 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
 
       {showHeatmap && (
         <div className="mt-4 rounded-2xl border border-black/[0.06] bg-white p-5">
-          <div className="text-sm font-semibold mb-1">Best times to post</div>
-          <div className="text-xs text-foreground/50 mb-4">
-            Based on engagement of your last 90 days of posts.
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <div className="text-sm font-semibold">Best times to post</div>
+              <div className="text-xs text-foreground/50 mt-0.5">
+                {postSampleCount > 0
+                  ? `Based on views, likes, comments & reposts of your last ${postSampleCount} LinkedIn post${postSampleCount === 1 ? "" : "s"} (90 days).`
+                  : "No posted LinkedIn data yet — post a few times so we can learn your audience."}
+              </div>
+            </div>
           </div>
-          <Heatmap counts={hourCounts} />
+          <DayHourHeatmap grid={grid} />
         </div>
       )}
 
@@ -322,23 +342,64 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   );
 }
 
-function Heatmap({ counts }: { counts: number[] }) {
-  const max = Math.max(1, ...counts);
+const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function DayHourHeatmap({ grid }: { grid: number[][] }) {
+  const max = Math.max(1, ...grid.flat());
+  // Find the top 5 cells to highlight
+  const cells: { d: number; h: number; v: number }[] = [];
+  for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) cells.push({ d, h, v: grid[d][h] });
+  const topKeys = new Set(
+    cells
+      .filter((c) => c.v > 0)
+      .sort((a, b) => b.v - a.v)
+      .slice(0, 5)
+      .map((c) => `${c.d}-${c.h}`)
+  );
+
   return (
-    <div>
-      <div className="flex items-end gap-1 h-32">
-        {counts.map((c, h) => (
-          <div key={h} className="flex-1 flex flex-col justify-end">
-            <div
-              className="w-full rounded-t-sm bg-rose-500"
-              style={{ height: `${(c / max) * 100}%`, minHeight: c ? 2 : 0, opacity: c ? 0.5 + (c / max) * 0.5 : 0.08 }}
-              title={`${h}:00 — ${c} engagement`}
-            />
+    <div className="overflow-x-auto">
+      <div className="inline-block min-w-full">
+        <div className="grid" style={{ gridTemplateColumns: "36px repeat(24, minmax(18px,1fr))" }}>
+          <div />
+          {Array.from({ length: 24 }, (_, h) => (
+            <div key={h} className="text-[9px] text-foreground/40 text-center pb-1">
+              {h % 6 === 0 ? (h === 0 ? "12a" : h === 12 ? "12p" : h < 12 ? `${h}a` : `${h - 12}p`) : ""}
+            </div>
+          ))}
+          {DOW_SHORT.map((label, d) => (
+            <>
+              <div key={`l-${d}`} className="text-[10px] font-medium text-foreground/55 pr-2 flex items-center justify-end h-6">
+                {label}
+              </div>
+              {Array.from({ length: 24 }, (_, h) => {
+                const v = grid[d][h];
+                const intensity = v > 0 ? 0.15 + (v / max) * 0.85 : 0;
+                const isTop = topKeys.has(`${d}-${h}`);
+                return (
+                  <div key={`c-${d}-${h}`} className="px-[1px] py-[1px]">
+                    <div
+                      className={`h-5 rounded-[3px] transition-colors ${isTop ? "ring-[1.5px] ring-rose-500" : ""}`}
+                      style={{
+                        backgroundColor: v > 0 ? `rgba(244, 63, 94, ${intensity})` : "rgba(0,0,0,0.04)",
+                      }}
+                      title={`${DOW_SHORT[d]} ${h}:00 — ${v ? v.toFixed(0) : 0} engagement`}
+                    />
+                  </div>
+                );
+              })}
+            </>
+          ))}
+        </div>
+        <div className="flex items-center justify-between mt-3 text-[10px] text-foreground/40">
+          <span>Less</span>
+          <div className="flex items-center gap-1">
+            {[0.1, 0.3, 0.5, 0.75, 1].map((a) => (
+              <div key={a} className="w-4 h-2.5 rounded-sm" style={{ backgroundColor: `rgba(244, 63, 94, ${a})` }} />
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="flex justify-between text-[10px] text-foreground/40 mt-1.5">
-        <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+          <span>More</span>
+        </div>
       </div>
     </div>
   );
