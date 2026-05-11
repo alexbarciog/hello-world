@@ -71,7 +71,8 @@ export default function EditQueueDialog({
 
   function addRow() {
     if (!newTime || grid[newTime]) return;
-    setGrid((prev) => ({ ...prev, [newTime]: new Set() }));
+    // Default to all 7 days selected so saving without extra clicks still persists slots
+    setGrid((prev) => ({ ...prev, [newTime]: new Set([0, 1, 2, 3, 4, 5, 6]) }));
   }
 
   function removeRow(time: string) {
@@ -104,11 +105,26 @@ export default function EditQueueDialog({
       );
     });
 
-    await supabase.from("superscale_queue_slots").delete().eq("user_id", u.user.id);
+    const hasAnyTimes = Object.keys(grid).length > 0;
+    if (hasAnyTimes && rows.length === 0) {
+      toast.error("Pick at least one day for each time, or remove the empty rows.");
+      setSaving(false);
+      return;
+    }
+
+    const { error: delErr } = await supabase
+      .from("superscale_queue_slots")
+      .delete()
+      .eq("user_id", u.user.id);
+    if (delErr) {
+      toast.error("Couldn't update queue: " + delErr.message);
+      setSaving(false);
+      return;
+    }
     if (rows.length) {
       const { error } = await supabase.from("superscale_queue_slots").insert(rows);
       if (error) {
-        toast.error("Couldn't save queue");
+        toast.error("Couldn't save queue: " + error.message);
         setSaving(false);
         return;
       }
