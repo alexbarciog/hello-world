@@ -321,6 +321,64 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
             <div className="text-xs text-foreground/50">~30 min after publish, 8 AI-drafted human-sounding comments will land on similar posts in your space — driving discovery to yours.</div>
           </div>
         </label>
+
+        <div className="pt-4 border-t border-black/[0.04]">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={autoCommentEnabled} onChange={(e) => setAutoCommentEnabled(e.target.checked)} className="mt-0.5 w-4 h-4 accent-orange-500" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5 text-orange-500" /> Auto-comment on this post</div>
+              <div className="text-xs text-foreground/50">Drop your own comment automatically — perfect for a CTA, a link, or extra context that boosts reach.</div>
+            </div>
+          </label>
+
+          {autoCommentEnabled && (
+            <div className="mt-3 ml-7 space-y-3">
+              <textarea
+                value={autoCommentText}
+                onChange={(e) => setAutoCommentText(e.target.value.slice(0, 1250))}
+                placeholder="e.g. PS — full breakdown + free template here: yourlink.com"
+                className="w-full min-h-[80px] resize-none text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30 placeholder:text-foreground/30"
+              />
+
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-black/[0.04] rounded-lg">
+                {([
+                  { id: "likes", label: "Likes", icon: Heart },
+                  { id: "comments", label: "Comments", icon: MessageCircle },
+                  { id: "minutes", label: "Minutes", icon: Clock },
+                ] as const).map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setAutoCommentTrigger(id)}
+                    className={`text-xs font-semibold py-1.5 rounded-md transition flex items-center justify-center gap-1 ${
+                      autoCommentTrigger === id ? "bg-white text-foreground shadow-sm" : "text-foreground/60 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" /> {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-foreground/60">
+                  {autoCommentTrigger === "minutes" ? "Post the comment after" : "Post the comment when it reaches"}
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  value={autoCommentThreshold}
+                  onChange={(e) => setAutoCommentThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-20 text-sm border border-black/10 rounded-lg px-2 py-1.5 outline-none focus:border-black/30"
+                />
+                <span className="text-foreground/60">
+                  {autoCommentTrigger === "likes" && "likes"}
+                  {autoCommentTrigger === "comments" && "comments"}
+                  {autoCommentTrigger === "minutes" && "minutes after publish"}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3 justify-end">
