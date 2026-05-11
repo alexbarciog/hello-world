@@ -22,6 +22,17 @@ export default function EditQueueDialog({
   const [grid, setGrid] = useState<Record<string, Set<number>>>({});
   const [newTime, setNewTime] = useState("08:00");
   const [naturalJitter, setNaturalJitter] = useState(0);
+  const [timezone, setTimezone] = useState<string>(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+  );
+  const timezones: string[] = (() => {
+    try {
+      // @ts-ignore
+      return (Intl as any).supportedValuesOf?.("timeZone") ?? [];
+    } catch {
+      return [];
+    }
+  })();
 
   useEffect(() => {
     if (!open) return;
@@ -40,6 +51,7 @@ export default function EditQueueDialog({
       });
       setGrid(g);
       setNaturalJitter(prefs?.natural_jitter_minutes ?? 0);
+      if (prefs?.timezone) setTimezone(prefs.timezone);
       setLoading(false);
     })();
   }, [open]);
@@ -105,6 +117,7 @@ export default function EditQueueDialog({
     await supabase.from("superscale_queue_prefs").upsert({
       user_id: u.user.id,
       natural_jitter_minutes: naturalJitter,
+      timezone,
       updated_at: new Date().toISOString(),
     });
 
@@ -234,6 +247,24 @@ export default function EditQueueDialog({
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-3 rounded-xl bg-[#f9f9fa] p-4 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold">Timezone</div>
+                  <div className="text-xs text-foreground/55 mt-0.5">
+                    Posts are scheduled in this timezone.
+                  </div>
+                </div>
+                <select
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="text-sm font-medium bg-white border border-black/10 rounded-md px-2 py-1.5 max-w-[260px]"
+                >
+                  {(timezones.length ? timezones : [timezone]).map((tz) => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </select>
               </div>
             </>
           )}
