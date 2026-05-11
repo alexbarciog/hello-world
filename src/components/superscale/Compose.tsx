@@ -17,6 +17,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [pickingSlot, setPickingSlot] = useState(false);
   const [nextSlotLabel, setNextSlotLabel] = useState<string | null>(null);
   const [genOpen, setGenOpen] = useState(false);
+  const [scheduleMode, setScheduleMode] = useState<"queue" | "custom">("queue");
 
   function toLocalInput(d: Date) {
     const tz = d.getTimezoneOffset() * 60000;
