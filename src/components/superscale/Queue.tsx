@@ -148,7 +148,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
       if (!u.user) return;
       const [{ data: s }, { data: pf }, { data: p }] = await Promise.all([
         supabase.from("superscale_queue_slots").select("day_of_week,time").eq("user_id", u.user.id),
-        supabase.from("superscale_queue_prefs").select("natural_jitter_minutes").eq("user_id", u.user.id).maybeSingle(),
+        supabase.from("superscale_queue_prefs").select("natural_jitter_minutes,timezone").eq("user_id", u.user.id).maybeSingle(),
         supabase.from("linkedin_posts")
           .select("id,content,image_url,scheduled_for,status")
           .eq("user_id", u.user.id)
@@ -160,38 +160,37 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
       ]);
       setSlots(s || []);
       setJitter(pf?.natural_jitter_minutes ?? 0);
+      if ((pf as any)?.timezone) setQueueTz((pf as any).timezone);
       setPosts(p || []);
       setLoading(false);
     })();
   }, [reloadTick]);
 
-  // Build the next ~14 days view, listing slots per day
+  // Build the next ~14 days view, listing slots per day — interpreted in queue timezone
   const days = useMemo(() => {
-    const today = new Date();
-    today.setSeconds(0, 0);
-    const out: { date: Date; entries: { time: string; jitter: number; post: Post | null }[] }[] = [];
+    const now = new Date();
+    const todayInfo = partsInTz(now, queueTz);
+    const out: { info: { y: number; mo: number; d: number; dow: number }; entries: { time: string; jitter: number; post: Post | null }[] }[] = [];
     for (let i = 0; i < 14; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const dow = d.getDay();
-      const daySlots = slots.filter((s) => s.day_of_week === dow).sort((a, b) => a.time.localeCompare(b.time));
-      const dateKey = d.toISOString().slice(0, 10);
+      // Compute a UTC instant inside this day in tz, then read parts back to handle month rollover
+      const noonUtc = wallClockInTzToUTC(todayInfo.y, todayInfo.mo, todayInfo.d + i, 12, 0, queueTz);
+      const info = partsInTz(noonUtc, queueTz);
+      const daySlots = slots.filter((s) => s.day_of_week === info.dow).sort((a, b) => a.time.localeCompare(b.time));
+      const dateKey = `${info.y}-${String(info.mo).padStart(2, "0")}-${String(info.d).padStart(2, "0")}`;
       const entries = daySlots.map((s) => {
         const j = jitterFor(dateKey, s.time, jitter);
-        // try to match an existing post within ±60min of this slot
-        const slotDt = new Date(d);
         const [hh, mm] = s.time.split(":").map(Number);
-        slotDt.setHours(hh, mm + j, 0, 0);
+        const slotDt = wallClockInTzToUTC(info.y, info.mo, info.d, hh, mm + j, queueTz);
         const matched = posts.find((p) => {
           if (!p.scheduled_for) return false;
           return Math.abs(new Date(p.scheduled_for).getTime() - slotDt.getTime()) < 60 * 60000;
         });
         return { time: s.time, jitter: j, post: matched ?? null };
       });
-      out.push({ date: d, entries });
+      out.push({ info, entries });
     }
     return out;
-  }, [slots, posts, jitter]);
+  }, [slots, posts, jitter, queueTz]);
 
   // Heatmap from sent posts (last 90d) — score by day-of-week × hour, weighted by views + likes
   const [grid, setGrid] = useState<number[][]>(() => Array.from({ length: 7 }, () => Array(24).fill(0)));
