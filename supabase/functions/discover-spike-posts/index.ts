@@ -42,6 +42,22 @@ Deno.serve(async (req) => {
     const { data: profile } = await admin.from("profiles")
       .select("unipile_account_id").eq("user_id", spike.user_id).maybeSingle();
     const accountId = profile?.unipile_account_id;
+
+    // Resolve own LinkedIn identity to skip user's own posts
+    const ownIdentifiers = new Set<string>();
+    if (accountId) {
+      try {
+        const r = await fetch(`https://${UNIPILE_DSN}/api/v1/users/me?account_id=${encodeURIComponent(accountId)}`, {
+          headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
+        });
+        if (r.ok) {
+          const me = await r.json();
+          for (const v of [me?.public_identifier, me?.provider_id, me?.id, me?.profile_id, me?.entity_urn]) {
+            if (v) ownIdentifiers.add(String(v));
+          }
+        }
+      } catch (e) { console.error("me fetch failed", e); }
+    }
     if (!accountId) {
       await admin.from("engagement_spikes").update({ status: "failed", error: "LinkedIn not connected" }).eq("id", spike_id);
       return json({ error: "no account" }, 400);
@@ -77,6 +93,11 @@ Deno.serve(async (req) => {
         const pid = it?.social_id || it?.id || it?.share_url;
         if (!pid) continue;
         if (collected.has(pid)) continue;
+        // Skip own posts (by author identity)
+        const author = it?.author || it?.actor || {};
+        const authorIds = [author?.public_identifier, author?.provider_id, author?.id, author?.entity_urn]
+          .filter(Boolean).map((v: any) => String(v));
+        if (authorIds.some((a) => ownIdentifiers.has(a))) continue;
         collected.set(pid, { it, kw });
       }
     }
@@ -91,6 +112,15 @@ Deno.serve(async (req) => {
         .neq("spike_id", spike_id)
         .in("post_id", candidateIds);
       const seen = new Set((prior || []).map((r: any) => r.post_id).filter(Boolean));
+      // Also exclude user's own published posts (Superscale)
+      const { data: ownPosts } = await admin
+        .from("linkedin_posts")
+        .select("unipile_post_id")
+        .eq("user_id", spike.user_id)
+        .not("unipile_post_id", "is", null);
+      for (const r of ownPosts || []) {
+        if (r.unipile_post_id) seen.add(r.unipile_post_id);
+      }
       for (const pid of candidateIds) {
         if (seen.has(pid)) collected.delete(pid);
       }
