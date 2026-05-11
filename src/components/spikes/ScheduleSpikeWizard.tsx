@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,11 +43,30 @@ export default function ScheduleSpikeWizard({ open, onOpenChange, onCreated }: P
   const [tone, setTone] = useState("curious_peer");
   const [angle, setAngle] = useState("");
   const [requireApproval, setRequireApproval] = useState(true);
+  const [defaultKeywords, setDefaultKeywords] = useState<string[]>([]);
+
+  // Load account-level default keywords once when wizard opens (only pre-fill if user hasn't typed yet)
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("default_spike_keywords")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      const defs = (((data as any)?.default_spike_keywords) || []) as string[];
+      setDefaultKeywords(defs);
+      setKeywords(prev => prev.trim() ? prev : defs.join("\n"));
+    })();
+  }, [open]);
 
   const reset = () => { setStep(1); };
 
   const submit = async () => {
-    const kws = keywords.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    const typed = keywords.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    const kws = Array.from(new Set([...defaultKeywords, ...typed]));
     if (kws.length === 0) { toast.error("Add at least one keyword"); return; }
     setSubmitting(true);
     const { data, error } = await supabase.functions.invoke("schedule-engagement-spike", {
@@ -147,7 +166,10 @@ export default function ScheduleSpikeWizard({ open, onOpenChange, onCreated }: P
                 value={keywords}
                 onChange={e => setKeywords(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">We'll search LinkedIn posts for these.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                We'll search LinkedIn posts for these.
+                {defaultKeywords.length > 0 && ` Your ${defaultKeywords.length} account default${defaultKeywords.length === 1 ? "" : "s"} will be merged in.`}
+              </p>
             </div>
             <div>
               <Label>Recency</Label>

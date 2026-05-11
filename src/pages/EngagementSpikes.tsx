@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Flame, Plus, Clock, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
 import ScheduleSpikeWizard from "@/components/spikes/ScheduleSpikeWizard";
+import DefaultKeywordsPanel from "@/components/spikes/DefaultKeywordsPanel";
 import { toast } from "sonner";
 
 function timeUntil(iso: string) {
@@ -113,6 +114,8 @@ export default function EngagementSpikes() {
             <Plus className="w-4 h-4 mr-1.5" /> Schedule a spike
           </Button>
         </div>
+
+        <DefaultKeywordsPanel />
 
         <Tabs defaultValue="upcoming">
           <TabsList>
