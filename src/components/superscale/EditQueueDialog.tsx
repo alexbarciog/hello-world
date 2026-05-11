@@ -266,6 +266,8 @@ export default function EditQueueDialog({
                   ))}
                 </select>
               </div>
+            </>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-black/[0.06] px-7 py-4 bg-white">
