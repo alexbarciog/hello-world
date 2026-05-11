@@ -115,6 +115,8 @@ export default function EngagementSpikes() {
           </Button>
         </div>
 
+        <DefaultKeywordsPanel />
+
         <Tabs defaultValue="upcoming">
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming ({groups.upcoming.length})</TabsTrigger>
