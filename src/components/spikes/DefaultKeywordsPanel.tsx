@@ -77,7 +77,7 @@ export default function DefaultKeywordsPanel() {
 
       <div className="flex gap-2">
         <Input
-          placeholder="Add keyword and press Enter…"
+          placeholder="Add one or many — separate with commas, e.g. saas, founders, ai sales"
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
