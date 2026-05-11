@@ -313,10 +313,10 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
           {days.map((d) => {
             if (d.entries.length === 0) return null;
             return (
-              <div key={d.date.toISOString()}>
+              <div key={`${d.info.y}-${d.info.mo}-${d.info.d}`}>
                 <div className="flex items-baseline gap-2 mb-2">
-                  <h2 className="text-base font-bold">{dayLabel(d.date, today)}</h2>
-                  <span className="text-sm text-foreground/40">{shortDate(d.date)}</span>
+                  <h2 className="text-base font-bold">{dayLabel(d.info, todayInfo)}</h2>
+                  <span className="text-sm text-foreground/40">{shortDate(d.info)}</span>
                 </div>
                 <div className="space-y-2">
                   {d.entries.map((entry, idx) => (
