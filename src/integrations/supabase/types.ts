@@ -1374,6 +1374,7 @@ export type Database = {
           referral_balance: number
           referral_code: string | null
           referred_by_code: string | null
+          superscale_about_me: string | null
           unipile_account_id: string | null
           updated_at: string
           user_id: string
@@ -1396,6 +1397,7 @@ export type Database = {
           referral_balance?: number
           referral_code?: string | null
           referred_by_code?: string | null
+          superscale_about_me?: string | null
           unipile_account_id?: string | null
           updated_at?: string
           user_id: string
@@ -1418,6 +1420,7 @@ export type Database = {
           referral_balance?: number
           referral_code?: string | null
           referred_by_code?: string | null
+          superscale_about_me?: string | null
           unipile_account_id?: string | null
           updated_at?: string
           user_id?: string
