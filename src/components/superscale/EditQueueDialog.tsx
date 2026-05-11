@@ -22,6 +22,17 @@ export default function EditQueueDialog({
   const [grid, setGrid] = useState<Record<string, Set<number>>>({});
   const [newTime, setNewTime] = useState("08:00");
   const [naturalJitter, setNaturalJitter] = useState(0);
+  const [timezone, setTimezone] = useState<string>(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+  );
+  const timezones: string[] = (() => {
+    try {
+      // @ts-ignore
+      return (Intl as any).supportedValuesOf?.("timeZone") ?? [];
+    } catch {
+      return [];
+    }
+  })();
 
   useEffect(() => {
     if (!open) return;
