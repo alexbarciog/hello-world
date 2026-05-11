@@ -354,12 +354,17 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
               <span className="text-[11px] text-foreground/40">Tap to refresh</span>
             </button>
           ) : (
-            <input
-              type="datetime-local"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30"
-            />
+            <div>
+              <input
+                type="datetime-local"
+                value={scheduledFor}
+                onChange={(e) => setScheduledFor(e.target.value)}
+                className="w-full text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30"
+              />
+              <div className="text-[11px] text-foreground/50 mt-1.5">
+                Time is interpreted in your queue timezone: <span className="font-medium text-foreground/70">{queueTz}</span>
+              </div>
+            </div>
           )}
         </div>
         <label className="flex items-start gap-3 cursor-pointer">
