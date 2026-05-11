@@ -1,0 +1,1 @@
+update public.linkedin_posts set post_url = 'https://www.linkedin.com/feed/update/urn:li:activity:' || unipile_post_id || '/' where status = 'posted' and post_url is null and unipile_post_id ~ '^\d+$';
