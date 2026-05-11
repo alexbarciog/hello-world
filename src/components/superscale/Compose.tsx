@@ -20,6 +20,10 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [scheduleMode, setScheduleMode] = useState<"queue" | "custom">("queue");
   const [enhancing, setEnhancing] = useState<string | null>(null);
   const [previousContent, setPreviousContent] = useState<string | null>(null);
+  const [autoCommentEnabled, setAutoCommentEnabled] = useState(false);
+  const [autoCommentText, setAutoCommentText] = useState("");
+  const [autoCommentTrigger, setAutoCommentTrigger] = useState<"likes" | "comments" | "minutes">("likes");
+  const [autoCommentThreshold, setAutoCommentThreshold] = useState<number>(10);
 
   async function enhance(action: "hook" | "funny" | "undetectable" | "grammar") {
     if (!content.trim()) { toast.error("Write something first"); return; }
