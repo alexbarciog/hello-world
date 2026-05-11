@@ -18,6 +18,32 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [nextSlotLabel, setNextSlotLabel] = useState<string | null>(null);
   const [genOpen, setGenOpen] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<"queue" | "custom">("queue");
+  const [enhancing, setEnhancing] = useState<string | null>(null);
+  const [previousContent, setPreviousContent] = useState<string | null>(null);
+
+  async function enhance(action: "hook" | "funny" | "undetectable" | "grammar") {
+    if (!content.trim()) { toast.error("Write something first"); return; }
+    setEnhancing(action);
+    const prev = content;
+    try {
+      const { data, error } = await supabase.functions.invoke("superscale-enhance-post", {
+        body: { content, action },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.content) {
+        setPreviousContent(prev);
+        setContent(data.content.slice(0, MAX));
+        toast.success("Updated — tap Undo to revert", {
+          action: { label: "Undo", onClick: () => { setContent(prev); setPreviousContent(null); } },
+        });
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance");
+    } finally {
+      setEnhancing(null);
+    }
+  }
 
   function toLocalInput(d: Date) {
     const tz = d.getTimezoneOffset() * 60000;
