@@ -84,6 +84,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   const [slots, setSlots] = useState<Slot[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [jitter, setJitter] = useState(0);
+  const [queueTz, setQueueTz] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
   const [reloadTick, setReloadTick] = useState(0);
   const [genCount, setGenCount] = useState(12);
   const [generating, setGenerating] = useState(false);
