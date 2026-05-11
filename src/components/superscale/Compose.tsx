@@ -28,17 +28,21 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
-      const { data: cadence } = await supabase
-        .from("superscale_cadence")
-        .select("*")
-        .eq("user_id", u.user.id)
-        .eq("enabled", true);
-      const { data: existing } = await supabase
-        .from("linkedin_posts")
-        .select("scheduled_for")
-        .eq("user_id", u.user.id)
-        .in("status", ["scheduled", "draft"])
-        .not("scheduled_for", "is", null);
+      const [{ data: queueSlots }, { data: prefs }, { data: existing }] = await Promise.all([
+        supabase.from("superscale_queue_slots").select("day_of_week,time").eq("user_id", u.user.id),
+        supabase.from("superscale_queue_prefs").select("natural_jitter_minutes,comments_spike_default").eq("user_id", u.user.id).maybeSingle(),
+        supabase
+          .from("linkedin_posts")
+          .select("scheduled_for")
+          .eq("user_id", u.user.id)
+          .in("status", ["scheduled", "draft"])
+          .not("scheduled_for", "is", null),
+      ]);
+
+      if (!queueSlots || queueSlots.length === 0) {
+        toast.error("Set up your queue first (Queue → Edit Queue)");
+        return;
+      }
 
       const taken = new Set(
         (existing || [])
@@ -46,41 +50,47 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
           .filter(Boolean)
       );
 
-      const enabledByDow: Record<number, any> = {};
-      (cadence || []).forEach((c: any) => (enabledByDow[c.day_of_week] = c));
+      const jitterMin = prefs?.natural_jitter_minutes ?? 0;
+      const jitterFor = (key: string) => {
+        if (!jitterMin) return 0;
+        let h = 0;
+        for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+        return (Math.abs(h) % (jitterMin * 2 + 1)) - jitterMin;
+      };
 
-      if (!Object.keys(enabledByDow).length) {
-        toast.error("Set your cadence in Calendar first");
-        return;
-      }
+      // Group slots by day-of-week (0=Sun..6=Sat)
+      const byDow: Record<number, string[]> = {};
+      queueSlots.forEach((s: any) => {
+        (byDow[s.day_of_week] ||= []).push(s.time);
+      });
+      Object.values(byDow).forEach((arr) => arr.sort());
 
       const now = new Date();
-      for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+      for (let dayOffset = 0; dayOffset < 21; dayOffset++) {
         const day = new Date(now);
         day.setDate(now.getDate() + dayOffset);
-        const dow = (day.getDay() + 6) % 7; // Mon=0
-        const c = enabledByDow[dow];
-        if (!c) continue;
-        const [h, m] = (c.first_slot || "09:00").split(":").map(Number);
-        for (let i = 0; i < (c.post_count || 1); i++) {
+        const dow = day.getDay();
+        const times = byDow[dow] || [];
+        const dateKey = day.toISOString().slice(0, 10);
+        for (const t of times) {
+          const [h, m] = t.split(":").map(Number);
           const slot = new Date(day);
-          slot.setHours(h, m, 0, 0);
-          slot.setMinutes(slot.getMinutes() + i * (c.delay_minutes || 240));
+          const j = jitterFor(`${dateKey}${t}`);
+          slot.setHours(h, m + j, 0, 0);
           if (slot.getTime() <= now.getTime() + 5 * 60000) continue;
-          // round to minute for collision check
           let collision = false;
-          for (const t of taken) {
-            if (Math.abs(t - slot.getTime()) < 30 * 60000) { collision = true; break; }
+          for (const tk of taken) {
+            if (Math.abs(tk - slot.getTime()) < 30 * 60000) { collision = true; break; }
           }
           if (collision) continue;
           setScheduledFor(toLocalInput(slot));
-          if (c.comments_spike_enabled) setSpike(true);
+          if (prefs?.comments_spike_default) setSpike(true);
           setNextSlotLabel(slot.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }));
-          toast.success("Slot selected from your cadence");
+          toast.success("Slot picked from your queue");
           return;
         }
       }
-      toast.error("No free slot found in the next 2 weeks");
+      toast.error("No free slot found in the next 3 weeks");
     } finally {
       setPickingSlot(false);
     }
