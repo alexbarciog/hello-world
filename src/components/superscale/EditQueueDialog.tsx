@@ -248,8 +248,24 @@ export default function EditQueueDialog({
                   </div>
                 </div>
               </div>
-            </>
-          )}
+
+              <div className="mt-3 rounded-xl bg-[#f9f9fa] p-4 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold">Timezone</div>
+                  <div className="text-xs text-foreground/55 mt-0.5">
+                    Posts are scheduled in this timezone.
+                  </div>
+                </div>
+                <select
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="text-sm font-medium bg-white border border-black/10 rounded-md px-2 py-1.5 max-w-[260px]"
+                >
+                  {(timezones.length ? timezones : [timezone]).map((tz) => (
+                    <option key={tz} value={tz}>{tz}</option>
+                  ))}
+                </select>
+              </div>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-black/[0.06] px-7 py-4 bg-white">
