@@ -34,17 +34,28 @@ Deno.serve(async (req) => {
       .eq("user_id", userId).maybeSingle();
     if (!profile?.unipile_account_id) return json({ error: "LinkedIn not connected" }, 400);
 
-    const { data: campaign } = await admin.from("campaigns")
-      .select("industry, icp_industries, discovery_keywords")
-      .eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    let body: any = {};
+    try { body = await req.json(); } catch { /* noop */ }
+    const customKeyword: string | undefined = typeof body?.keyword === "string" ? body.keyword.trim() : undefined;
+    const minLikes: number = Number.isFinite(body?.min_likes) ? Math.max(0, Number(body.min_likes)) : 80;
+    const datePosted: string = ["past_24h", "past_week", "past_month"].includes(body?.date_posted) ? body.date_posted : "past_week";
 
-    const keywordPool = [
-      ...(campaign?.discovery_keywords || []),
-      campaign?.industry,
-      ...(campaign?.icp_industries || []),
-    ].filter(Boolean) as string[];
-    const seeds = Array.from(new Set(keywordPool)).slice(0, 4);
-    if (seeds.length === 0) seeds.push("startup growth");
+    let seeds: string[] = [];
+    if (customKeyword) {
+      seeds = [customKeyword];
+    } else {
+      const { data: campaign } = await admin.from("campaigns")
+        .select("industry, icp_industries, discovery_keywords")
+        .eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+
+      const keywordPool = [
+        ...(campaign?.discovery_keywords || []),
+        campaign?.industry,
+        ...(campaign?.icp_industries || []),
+      ].filter(Boolean) as string[];
+      seeds = Array.from(new Set(keywordPool)).slice(0, 4);
+      if (seeds.length === 0) seeds.push("startup growth");
+    }
 
     const collected = new Map<string, any>();
     for (const kw of seeds) {
