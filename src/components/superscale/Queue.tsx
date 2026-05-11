@@ -90,17 +90,14 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
       }
       cells.sort((a, b) => b.score - a.score);
       const ranked = cells.slice(0, genCount);
-      // Dummy days var to keep rest of function signature unchanged
-      const days: number[] = [];
       const rows: { user_id: string; organization_id: string | null; day_of_week: number; time: string }[] = [];
-      let i = 0;
-      outer: for (const { h } of ranked) {
-        const time = `${String(h).padStart(2, "0")}:00`;
-        for (const dow of days) {
-          if (i >= genCount) break outer;
-          rows.push({ user_id: u.user.id, organization_id: orgId, day_of_week: dow, time });
-          i++;
-        }
+      for (const cell of ranked) {
+        rows.push({
+          user_id: u.user.id,
+          organization_id: orgId,
+          day_of_week: cell.dow,
+          time: `${String(cell.h).padStart(2, "0")}:00`,
+        });
       }
 
       await supabase.from("superscale_queue_slots").delete().eq("user_id", u.user.id);
