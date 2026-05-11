@@ -918,6 +918,11 @@ export type Database = {
       }
       linkedin_posts: {
         Row: {
+          auto_comment_enabled: boolean
+          auto_comment_posted_at: string | null
+          auto_comment_text: string | null
+          auto_comment_threshold: number | null
+          auto_comment_trigger: string | null
           comments_spike_enabled: boolean
           content: string
           created_at: string
@@ -938,6 +943,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          auto_comment_enabled?: boolean
+          auto_comment_posted_at?: string | null
+          auto_comment_text?: string | null
+          auto_comment_threshold?: number | null
+          auto_comment_trigger?: string | null
           comments_spike_enabled?: boolean
           content?: string
           created_at?: string
@@ -958,6 +968,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          auto_comment_enabled?: boolean
+          auto_comment_posted_at?: string | null
+          auto_comment_text?: string | null
+          auto_comment_threshold?: number | null
+          auto_comment_trigger?: string | null
           comments_spike_enabled?: boolean
           content?: string
           created_at?: string
