@@ -231,7 +231,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
 
 
 
-  const today = new Date();
+  const todayInfo = partsInTz(new Date(), queueTz);
 
   return (
     <div>
