@@ -35,19 +35,46 @@ function fmtSlot(time: string, jitter: number) {
   return `${String(h12).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${ampm}`;
 }
 
-function dayLabel(date: Date, today: Date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const t = new Date(today);
-  t.setHours(0, 0, 0, 0);
-  const diff = Math.round((d.getTime() - t.getTime()) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  return DOW_NAMES[d.getDay()];
+// Get y/m/d/dow for a given UTC instant interpreted in tz
+function partsInTz(d: Date, tz: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+  }).formatToParts(d);
+  const m: any = {};
+  parts.forEach((p) => { if (p.type !== "literal") m[p.type] = p.value; });
+  const dowMap: any = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { y: +m.year, mo: +m.month, d: +m.day, dow: dowMap[m.weekday] };
 }
 
-function shortDate(date: Date) {
-  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit" }).replace(" ", "-");
+// Convert a wall-clock (y, mo, d, h, mi) in tz to a real UTC Date
+function wallClockInTzToUTC(y: number, mo: number, d: number, h: number, mi: number, tz: string): Date {
+  const utcGuess = Date.UTC(y, mo - 1, d, h, mi);
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(new Date(utcGuess));
+  const m: any = {};
+  parts.forEach((p) => { if (p.type !== "literal") m[p.type] = parseInt(p.value); });
+  const projected = Date.UTC(m.year, m.month - 1, m.day, m.hour === 24 ? 0 : m.hour, m.minute, m.second);
+  const offset = projected - utcGuess;
+  return new Date(utcGuess - offset);
+}
+
+function dayLabel(dateInfo: { y: number; mo: number; d: number; dow: number }, todayInfo: { y: number; mo: number; d: number }) {
+  const d = Date.UTC(dateInfo.y, dateInfo.mo - 1, dateInfo.d);
+  const t = Date.UTC(todayInfo.y, todayInfo.mo - 1, todayInfo.d);
+  const diff = Math.round((d - t) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return DOW_NAMES[dateInfo.dow];
+}
+
+function shortDate(dateInfo: { y: number; mo: number; d: number }) {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[dateInfo.mo - 1]}-${String(dateInfo.d).padStart(2, "0")}`;
 }
 
 export default function Queue({ onCompose }: { onCompose: (postId: string | null) => void }) {
