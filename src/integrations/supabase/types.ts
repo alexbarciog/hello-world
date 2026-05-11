@@ -2084,6 +2084,57 @@ export type Database = {
         }
         Relationships: []
       }
+      superscale_queue_prefs: {
+        Row: {
+          comments_spike_default: boolean
+          natural_jitter_minutes: number
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_spike_default?: boolean
+          natural_jitter_minutes?: number
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_spike_default?: boolean
+          natural_jitter_minutes?: number
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      superscale_queue_slots: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          organization_id: string | null
+          time: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          organization_id?: string | null
+          time: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          organization_id?: string | null
+          time?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       superscale_style_profile: {
         Row: {
           created_at: string

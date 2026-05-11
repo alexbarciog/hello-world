@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Home, Calendar, PenSquare, Sparkles, Image as ImageIcon, Inbox } from "lucide-react";
+import { Home, ListChecks, PenSquare, Sparkles, Image as ImageIcon, Inbox } from "lucide-react";
 import SuperScaleHome from "@/components/superscale/SuperScaleHome";
-import CalendarWeek from "@/components/superscale/CalendarWeek";
+import Queue from "@/components/superscale/Queue";
 import Compose from "@/components/superscale/Compose";
 import Inspiration from "@/components/superscale/Inspiration";
 import DesignRefs from "@/components/superscale/DesignRefs";
@@ -12,7 +12,7 @@ type View = "home" | "calendar" | "compose" | "inspiration" | "design" | "drafts
 
 const items: { id: View; label: string; icon: any }[] = [
   { id: "home", label: "Home", icon: Home },
-  { id: "calendar", label: "Calendar", icon: Calendar },
+  { id: "calendar", label: "Queue", icon: ListChecks },
   { id: "compose", label: "Compose", icon: PenSquare },
   { id: "inspiration", label: "Inspiration", icon: Sparkles },
   { id: "design", label: "Design Refs", icon: ImageIcon },
@@ -81,7 +81,7 @@ export default function SuperScale() {
       <main className="flex-1 overflow-y-auto bg-[#f9f9fa]">
         <div className="max-w-6xl mx-auto px-6 md:px-10 py-8">
           {view === "home" && <SuperScaleHome onNavigate={go} />}
-          {view === "calendar" && <CalendarWeek onCompose={(d) => go("compose", null)} />}
+          {view === "calendar" && <Queue onCompose={(postId) => go("compose", postId)} />}
           {view === "compose" && <Compose postId={composePostId} onSaved={() => go("drafts")} />}
           {view === "inspiration" && <Inspiration onRemixed={(postId) => go("compose", postId)} />}
           {view === "design" && <DesignRefs />}
