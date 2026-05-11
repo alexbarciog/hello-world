@@ -42,6 +42,22 @@ Deno.serve(async (req) => {
     const { data: profile } = await admin.from("profiles")
       .select("unipile_account_id").eq("user_id", spike.user_id).maybeSingle();
     const accountId = profile?.unipile_account_id;
+
+    // Resolve own LinkedIn identity to skip user's own posts
+    const ownIdentifiers = new Set<string>();
+    if (accountId) {
+      try {
+        const r = await fetch(`https://${UNIPILE_DSN}/api/v1/users/me?account_id=${encodeURIComponent(accountId)}`, {
+          headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
+        });
+        if (r.ok) {
+          const me = await r.json();
+          for (const v of [me?.public_identifier, me?.provider_id, me?.id, me?.profile_id, me?.entity_urn]) {
+            if (v) ownIdentifiers.add(String(v));
+          }
+        }
+      } catch (e) { console.error("me fetch failed", e); }
+    }
     if (!accountId) {
       await admin.from("engagement_spikes").update({ status: "failed", error: "LinkedIn not connected" }).eq("id", spike_id);
       return json({ error: "no account" }, 400);
