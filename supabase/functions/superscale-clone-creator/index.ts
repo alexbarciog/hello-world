@@ -50,14 +50,22 @@ Deno.serve(async (req) => {
       return json({ error: `Couldn't load profile (${pr.status})`, detail: t.slice(0, 300) }, 400);
     }
     const profileData = await pr.json();
+    // Unipile profile responses vary; try every known LinkedIn ID field, but NEVER fall back to public_identifier (=slug, which 422'd above).
     const providerId =
       profileData?.provider_id ||
-      profileData?.id ||
       profileData?.member_id ||
-      profileData?.public_identifier;
+      profileData?.member_urn ||
+      profileData?.entity_urn ||
+      profileData?.urn ||
+      (typeof profileData?.id === "string" && profileData.id !== slug ? profileData.id : null);
     if (!providerId) {
-      return json({ error: "Profile found but no provider_id returned by Unipile" }, 400);
+      console.error("clone-creator: no provider_id in profile response", Object.keys(profileData || {}), profileData);
+      return json({
+        error: "Couldn't resolve LinkedIn member ID for this profile",
+        detail: `Unipile returned keys: ${Object.keys(profileData || {}).join(", ")}`,
+      }, 400);
     }
+    console.log("clone-creator: resolved", slug, "→", providerId);
 
     // Fetch up to ~30 posts using the resolved provider_id
     const postsUrl = `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(providerId)}/posts?account_id=${encodeURIComponent(profile.unipile_account_id)}&limit=30`;
