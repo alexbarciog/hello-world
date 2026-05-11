@@ -58,6 +58,59 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   const [posts, setPosts] = useState<Post[]>([]);
   const [jitter, setJitter] = useState(0);
   const [reloadTick, setReloadTick] = useState(0);
+  const [genCount, setGenCount] = useState(12);
+  const [generating, setGenerating] = useState(false);
+
+  async function generateFromBestTimes() {
+    if (hourCounts.every((c) => c === 0)) {
+      toast.error("No post history yet — add slots manually first.");
+      return;
+    }
+    if (slots.length > 0 && !confirm(`Replace your current ${slots.length} slot(s) with ${genCount} slots based on your best engagement hours?`)) {
+      return;
+    }
+    setGenerating(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("current_organization_id")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      const orgId = prof?.current_organization_id ?? null;
+
+      // Rank hours by engagement
+      const ranked = hourCounts
+        .map((c, h) => ({ h, c }))
+        .filter((x) => x.c > 0)
+        .sort((a, b) => b.c - a.c);
+
+      // Distribute genCount slots round-robin: best hour to all 7 days first, then 2nd best, etc.
+      const days = [0, 1, 2, 3, 4, 5, 6]; // Sun..Sat
+      const rows: { user_id: string; organization_id: string | null; day_of_week: number; time: string }[] = [];
+      let i = 0;
+      outer: for (const { h } of ranked) {
+        const time = `${String(h).padStart(2, "0")}:00`;
+        for (const dow of days) {
+          if (i >= genCount) break outer;
+          rows.push({ user_id: u.user.id, organization_id: orgId, day_of_week: dow, time });
+          i++;
+        }
+      }
+
+      await supabase.from("superscale_queue_slots").delete().eq("user_id", u.user.id);
+      const { error } = await supabase.from("superscale_queue_slots").insert(rows);
+      if (error) {
+        toast.error("Couldn't save generated queue");
+        return;
+      }
+      toast.success(`Generated ${rows.length} slots from your best times`);
+      setReloadTick((t) => t + 1);
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   useEffect(() => {
     (async () => {
