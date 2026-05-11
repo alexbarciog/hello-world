@@ -24,6 +24,38 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [autoCommentText, setAutoCommentText] = useState("");
   const [autoCommentTrigger, setAutoCommentTrigger] = useState<"likes" | "comments" | "minutes">("likes");
   const [autoCommentThreshold, setAutoCommentThreshold] = useState<number>(10);
+  const [queueTz, setQueueTz] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+
+  // Convert a wall-clock "YYYY-MM-DDTHH:mm" string to a UTC Date as if entered in `tz`.
+  function wallClockInTzToUTC(local: string, tz: string): Date {
+    const [datePart, timePart] = local.split("T");
+    const [y, mo, d] = datePart.split("-").map(Number);
+    const [h, mi] = (timePart || "00:00").split(":").map(Number);
+    const utcGuess = Date.UTC(y, mo - 1, d, h, mi);
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+    const parts = dtf.formatToParts(new Date(utcGuess));
+    const m: any = {};
+    parts.forEach((p) => { if (p.type !== "literal") m[p.type] = parseInt(p.value); });
+    const projected = Date.UTC(m.year, m.month - 1, m.day, m.hour === 24 ? 0 : m.hour, m.minute, m.second);
+    const offset = projected - utcGuess;
+    return new Date(utcGuess - offset);
+  }
+
+  // Format a UTC Date back to a "YYYY-MM-DDTHH:mm" string in `tz` for the datetime-local input.
+  function utcToWallClockInTz(d: Date, tz: string): string {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23",
+      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    }).formatToParts(d);
+    const m: any = {};
+    parts.forEach((p) => { if (p.type !== "literal") m[p.type] = p.value; });
+    const hh = m.hour === "24" ? "00" : m.hour;
+    return `${m.year}-${m.month}-${m.day}T${hh}:${m.minute}`;
+  }
 
   async function enhance(action: "hook" | "funny" | "undetectable" | "grammar") {
     if (!content.trim()) { toast.error("Write something first"); return; }
@@ -97,26 +129,31 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
       Object.values(byDow).forEach((arr) => arr.sort());
 
       const now = new Date();
+      // Compute "today" in queue tz to anchor day iteration.
+      const todayInTz = utcToWallClockInTz(now, queueTz).slice(0, 10); // YYYY-MM-DD
+      const [ty, tm, td] = todayInTz.split("-").map(Number);
       for (let dayOffset = 0; dayOffset < 21; dayOffset++) {
-        const day = new Date(now);
-        day.setDate(now.getDate() + dayOffset);
-        const dow = day.getDay();
+        const cursor = new Date(Date.UTC(ty, tm - 1, td + dayOffset, 12, 0, 0));
+        // Day-of-week as observed in the queue tz
+        const dowStr = new Intl.DateTimeFormat("en-US", { timeZone: queueTz, weekday: "short" }).format(cursor);
+        const dowMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+        const dow = dowMap[dowStr] ?? 0;
         const times = byDow[dow] || [];
-        const dateKey = day.toISOString().slice(0, 10);
+        const wallDate = utcToWallClockInTz(cursor, queueTz).slice(0, 10);
         for (const t of times) {
           const [h, m] = t.split(":").map(Number);
-          const slot = new Date(day);
-          const j = jitterFor(`${dateKey}${t}`);
-          slot.setHours(h, m + j, 0, 0);
+          const j = jitterFor(`${wallDate}${t}`);
+          const wallClock = `${wallDate}T${String(h).padStart(2, "0")}:${String(m + j).padStart(2, "0")}`;
+          const slot = wallClockInTzToUTC(wallClock, queueTz);
           if (slot.getTime() <= now.getTime() + 5 * 60000) continue;
           let collision = false;
           for (const tk of taken) {
             if (Math.abs(tk - slot.getTime()) < 30 * 60000) { collision = true; break; }
           }
           if (collision) continue;
-          setScheduledFor(toLocalInput(slot));
+          setScheduledFor(utcToWallClockInTz(slot, queueTz));
           if (prefs?.comments_spike_default) setSpike(true);
-          setNextSlotLabel(slot.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }));
+          setNextSlotLabel(slot.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: queueTz }) + ` (${queueTz})`);
           toast.success("Slot picked from your queue");
           return;
         }
@@ -126,6 +163,17 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
       setPickingSlot(false);
     }
   }
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: prefs } = await supabase
+        .from("superscale_queue_prefs")
+        .select("timezone").eq("user_id", u.user.id).maybeSingle();
+      if (prefs?.timezone) setQueueTz(prefs.timezone);
+    })();
+  }, []);
 
   useEffect(() => {
     setId(postId);
@@ -139,7 +187,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
       if (data) {
         setContent(data.content || "");
         setImageUrl(data.image_url);
-        setScheduledFor(data.scheduled_for ? new Date(data.scheduled_for).toISOString().slice(0, 16) : "");
+        setScheduledFor(data.scheduled_for ? utcToWallClockInTz(new Date(data.scheduled_for), queueTz) : "");
         setSpike(!!data.comments_spike_enabled);
         setAutoCommentEnabled(!!(data as any).auto_comment_enabled);
         setAutoCommentText((data as any).auto_comment_text || "");
@@ -147,7 +195,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         setAutoCommentThreshold((data as any).auto_comment_threshold ?? 10);
       }
     })();
-  }, [postId]);
+  }, [postId, queueTz]);
 
   async function save(status: "draft" | "scheduled") {
     setLoading(true);
@@ -158,7 +206,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     const payload: any = {
       user_id: u.user.id,
       content, image_url: imageUrl,
-      scheduled_for: status === "scheduled" ? new Date(scheduledFor).toISOString() : null,
+      scheduled_for: status === "scheduled" ? wallClockInTzToUTC(scheduledFor, queueTz).toISOString() : null,
       comments_spike_enabled: spike, status,
       auto_comment_enabled: autoCommentEnabled,
       auto_comment_text: autoCommentEnabled ? autoCommentText : null,
@@ -306,12 +354,17 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
               <span className="text-[11px] text-foreground/40">Tap to refresh</span>
             </button>
           ) : (
-            <input
-              type="datetime-local"
-              value={scheduledFor}
-              onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30"
-            />
+            <div>
+              <input
+                type="datetime-local"
+                value={scheduledFor}
+                onChange={(e) => setScheduledFor(e.target.value)}
+                className="w-full text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30"
+              />
+              <div className="text-[11px] text-foreground/50 mt-1.5">
+                Time is interpreted in your queue timezone: <span className="font-medium text-foreground/70">{queueTz}</span>
+              </div>
+            </div>
           )}
         </div>
         <label className="flex items-start gap-3 cursor-pointer">
