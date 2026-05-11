@@ -1380,6 +1380,7 @@ export type Database = {
           current_organization_id: string | null
           daily_connections_limit: number
           daily_messages_limit: number
+          default_spike_keywords: string[]
           free_trial_enabled: boolean
           free_trial_limit: number
           id: string
@@ -1403,6 +1404,7 @@ export type Database = {
           current_organization_id?: string | null
           daily_connections_limit?: number
           daily_messages_limit?: number
+          default_spike_keywords?: string[]
           free_trial_enabled?: boolean
           free_trial_limit?: number
           id?: string
@@ -1426,6 +1428,7 @@ export type Database = {
           current_organization_id?: string | null
           daily_connections_limit?: number
           daily_messages_limit?: number
+          default_spike_keywords?: string[]
           free_trial_enabled?: boolean
           free_trial_limit?: number
           id?: string
