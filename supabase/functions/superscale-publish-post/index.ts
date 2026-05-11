@@ -18,9 +18,21 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function detectImageMime(buf: Uint8Array, fallback = "image/jpeg") {
+  if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return "image/png";
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (buf.length >= 6 && buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) return "image/gif";
+  if (buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 && buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50) return "image/webp";
+  return fallback;
+}
+
 async function publishToLinkedIn(accountId: string, text: string, imageUrl: string | null) {
-  // Unipile post creation. If image, fetch and send as multipart; else JSON.
+  // Unipile post creation expects multipart/form-data even for text-only posts.
   const url = `https://${UNIPILE_DSN}/api/v1/posts`;
+  const fd = new FormData();
+  fd.append("account_id", accountId);
+  fd.append("text", text);
+
   if (imageUrl) {
     try {
       const imgResp = await fetch(imageUrl);
@@ -29,54 +41,30 @@ async function publishToLinkedIn(accountId: string, text: string, imageUrl: stri
       }
       const buf = new Uint8Array(await imgResp.arrayBuffer());
 
-      // Detect mime + extension from response headers, fallback to URL ext
-      let mime = (imgResp.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+      // Detect mime from file bytes first, then response headers / URL extension.
+      const headerMime = (imgResp.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
       const urlExtMatch = imageUrl.toLowerCase().match(/\.(png|jpe?g|gif|webp)(\?|$)/);
       const urlExt = urlExtMatch?.[1] || "";
-      if (!mime || !mime.startsWith("image/")) {
-        if (urlExt === "png") mime = "image/png";
-        else if (urlExt === "gif") mime = "image/gif";
-        else if (urlExt === "webp") mime = "image/webp";
-        else mime = "image/jpeg";
-      }
-      // LinkedIn (via Unipile) doesn't accept webp in feed posts — convert mime to jpeg label;
-      // safer: only allow png/jpeg/gif. If webp, treat as jpeg-ish by relabeling.
-      if (mime === "image/webp") mime = "image/jpeg";
+      const fallbackMime = headerMime.startsWith("image/") ? headerMime : urlExt === "png" ? "image/png" : urlExt === "gif" ? "image/gif" : urlExt === "webp" ? "image/webp" : "image/jpeg";
+      const mime = detectImageMime(buf, fallbackMime);
 
-      const ext = mime === "image/png" ? "png" : mime === "image/gif" ? "gif" : "jpg";
+      const ext = mime === "image/png" ? "png" : mime === "image/gif" ? "gif" : mime === "image/webp" ? "webp" : "jpg";
       const filename = `image.${ext}`;
-
-      const fd = new FormData();
-      fd.append("account_id", accountId);
-      fd.append("text", text);
       fd.append("attachments", new Blob([buf], { type: mime }), filename);
-
-      const r = await fetch(url, {
-        method: "POST",
-        headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
-        body: fd,
-      });
-      const txt = await r.text();
-      let payload: any = {};
-      try { payload = JSON.parse(txt); } catch {}
-      if (!r.ok) console.error("Unipile post error", r.status, txt, "mime=", mime, "size=", buf.length);
-      return { ok: r.ok, status: r.status, payload, text: txt };
     } catch (e) {
       return { ok: false, status: 0, payload: {}, text: String(e) };
     }
   }
+
   const r = await fetch(url, {
     method: "POST",
-    headers: {
-      "X-API-KEY": UNIPILE_API_KEY,
-      "Content-Type": "application/json",
-      accept: "application/json",
-    },
-    body: JSON.stringify({ account_id: accountId, text }),
+    headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
+    body: fd,
   });
   const txt = await r.text();
   let payload: any = {};
   try { payload = JSON.parse(txt); } catch {}
+  if (!r.ok) console.error("Unipile post error", r.status, txt, "has_image=", Boolean(imageUrl));
   return { ok: r.ok, status: r.status, payload, text: txt };
 }
 
