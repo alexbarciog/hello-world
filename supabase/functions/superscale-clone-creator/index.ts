@@ -42,8 +42,25 @@ Deno.serve(async (req) => {
       .eq("user_id", userId).maybeSingle();
     if (!profile?.unipile_account_id) return json({ error: "LinkedIn not connected" }, 400);
 
-    // Fetch up to ~30 posts
-    const postsUrl = `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(slug)}/posts?account_id=${encodeURIComponent(profile.unipile_account_id)}&limit=30`;
+    // Resolve public slug → provider_id (Unipile posts endpoint requires the numeric LinkedIn member ID)
+    const profileUrl = `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(slug)}?account_id=${encodeURIComponent(profile.unipile_account_id)}`;
+    const pr = await fetch(profileUrl, { headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" } });
+    if (!pr.ok) {
+      const t = await pr.text();
+      return json({ error: `Couldn't load profile (${pr.status})`, detail: t.slice(0, 300) }, 400);
+    }
+    const profileData = await pr.json();
+    const providerId =
+      profileData?.provider_id ||
+      profileData?.id ||
+      profileData?.member_id ||
+      profileData?.public_identifier;
+    if (!providerId) {
+      return json({ error: "Profile found but no provider_id returned by Unipile" }, 400);
+    }
+
+    // Fetch up to ~30 posts using the resolved provider_id
+    const postsUrl = `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(providerId)}/posts?account_id=${encodeURIComponent(profile.unipile_account_id)}&limit=30`;
     const r = await fetch(postsUrl, { headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" } });
     if (!r.ok) {
       const t = await r.text();
