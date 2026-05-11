@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap } from "lucide-react";
+import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap, Wand2, Laugh, ShieldCheck, SpellCheck } from "lucide-react";
 import GenerateImageDialog from "./GenerateImageDialog";
 
 const MAX = 3000;
@@ -18,6 +18,32 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [nextSlotLabel, setNextSlotLabel] = useState<string | null>(null);
   const [genOpen, setGenOpen] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<"queue" | "custom">("queue");
+  const [enhancing, setEnhancing] = useState<string | null>(null);
+  const [previousContent, setPreviousContent] = useState<string | null>(null);
+
+  async function enhance(action: "hook" | "funny" | "undetectable" | "grammar") {
+    if (!content.trim()) { toast.error("Write something first"); return; }
+    setEnhancing(action);
+    const prev = content;
+    try {
+      const { data, error } = await supabase.functions.invoke("superscale-enhance-post", {
+        body: { content, action },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.content) {
+        setPreviousContent(prev);
+        setContent(data.content.slice(0, MAX));
+        toast.success("Updated — tap Undo to revert", {
+          action: { label: "Undo", onClick: () => { setContent(prev); setPreviousContent(null); } },
+        });
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to enhance");
+    } finally {
+      setEnhancing(null);
+    }
+  }
 
   function toLocalInput(d: Date) {
     const tz = d.getTimezoneOffset() * 60000;
@@ -166,8 +192,36 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
           placeholder="What do you want to share with your network?"
           className="w-full min-h-[200px] resize-none outline-none text-[15px] leading-relaxed placeholder:text-foreground/30"
         />
-        <div className="flex items-center justify-end mt-3 pt-3 border-t border-black/[0.04]">
-          <span className={`text-xs ${overMax ? "text-red-500 font-semibold" : overWarn ? "text-orange-500" : "text-foreground/40"}`}>{len}/{MAX}</span>
+        <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-black/[0.04]">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {([
+              { id: "hook", label: "Engaging hook", icon: Wand2 },
+              { id: "funny", label: "Make it funny", icon: Laugh },
+              { id: "undetectable", label: "AI undetectable", icon: ShieldCheck },
+              { id: "grammar", label: "Fix grammar", icon: SpellCheck },
+            ] as const).map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => enhance(id)}
+                disabled={!!enhancing || !content.trim()}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1.5 rounded-full bg-gradient-to-br from-rose-50 to-orange-50 text-foreground/80 hover:from-rose-100 hover:to-orange-100 border border-orange-200/60 disabled:opacity-40 transition"
+              >
+                {enhancing === id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Icon className="w-3 h-3 text-orange-500" />}
+                {label}
+              </button>
+            ))}
+            {previousContent && (
+              <button
+                type="button"
+                onClick={() => { setContent(previousContent); setPreviousContent(null); }}
+                className="text-[11px] font-medium px-2.5 py-1.5 rounded-full text-foreground/60 hover:text-foreground hover:bg-black/5"
+              >
+                Undo
+              </button>
+            )}
+          </div>
+          <span className={`text-xs whitespace-nowrap ${overMax ? "text-red-500 font-semibold" : overWarn ? "text-orange-500" : "text-foreground/40"}`}>{len}/{MAX}</span>
         </div>
 
         {imageUrl ? (
