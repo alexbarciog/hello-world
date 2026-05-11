@@ -126,7 +126,10 @@ Deno.serve(async (req) => {
       }
 
       const postId = result.payload?.id || result.payload?.post_id || result.payload?.social_id;
-      const postUrl = result.payload?.share_url || result.payload?.url || null;
+      // Build a fallback LinkedIn URL from the activity URN if Unipile didn't return one.
+      const numericId = postId && /^\d+$/.test(String(postId)) ? String(postId) : null;
+      const postUrl = result.payload?.share_url || result.payload?.url
+        || (numericId ? `https://www.linkedin.com/feed/update/urn:li:activity:${numericId}/` : null);
       await admin.from("linkedin_posts").update({
         status: "posted",
         posted_at: new Date().toISOString(),
