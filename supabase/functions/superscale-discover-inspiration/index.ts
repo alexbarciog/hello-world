@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
         const r = await fetch(url, {
           method: "POST",
           headers: { "X-API-KEY": UNIPILE_API_KEY, "Content-Type": "application/json", accept: "application/json" },
-          body: JSON.stringify({ api: "classic", category: "posts", keywords: kw, date_posted: "past_week", limit: 25 }),
+          body: JSON.stringify({ api: "classic", category: "posts", keywords: kw, date_posted: datePosted, limit: 25 }),
         });
         if (!r.ok) { console.error("search fail", r.status, await r.text().catch(() => "")); continue; }
         const d = await r.json();
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
           const pid = it?.social_id || it?.id || it?.share_url;
           if (!pid || collected.has(pid)) continue;
           const reactions = Number(it?.reaction_counter ?? it?.reactions ?? it?.likes ?? 0);
-          if (reactions < 80) continue;
+          if (reactions < minLikes) continue;
           collected.set(pid, { it, kw, reactions });
         }
       } catch (e) { console.error("kw err", e); }
