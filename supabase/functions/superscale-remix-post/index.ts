@@ -44,13 +44,17 @@ Deno.serve(async (req) => {
     const { data: insp } = await admin.from("superscale_inspirations").select("*").eq("id", inspiration_id).maybeSingle();
     if (!insp) return json({ error: "Not found" }, 404);
 
-    const { data: profile } = await admin.from("profiles").select("current_organization_id").eq("user_id", userId).maybeSingle();
+    const { data: profile } = await admin.from("profiles").select("current_organization_id, superscale_about_me").eq("user_id", userId).maybeSingle();
     const { data: campaign } = await admin.from("campaigns")
       .select("company_name, industry, value_proposition, services")
       .eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
 
-    const userCtx = campaign
-      ? `\nWriter context — Company: ${campaign.company_name || ""}. Industry: ${campaign.industry || ""}. What they do: ${(campaign.services || []).join(", ")}. Value prop: ${campaign.value_proposition || ""}.`
+    const aboutMe = (profile?.superscale_about_me || "").trim();
+    const campaignCtx = campaign
+      ? `\nCompany: ${campaign.company_name || ""}. Industry: ${campaign.industry || ""}. What they do: ${(campaign.services || []).join(", ")}. Value prop: ${campaign.value_proposition || ""}.`
+      : "";
+    const userCtx = (aboutMe || campaignCtx)
+      ? `\n\n=== WRITER CONTEXT (write AS this person, in their voice) ===${aboutMe ? `\n${aboutMe}` : ""}${campaignCtx}`
       : "";
 
     const userMsg = `Original viral post by ${insp.author_name || "someone"} (${insp.likes} likes, ${insp.comments} comments):

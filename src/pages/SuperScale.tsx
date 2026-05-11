@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Home, ListChecks, PenSquare, Sparkles, Image as ImageIcon, Inbox } from "lucide-react";
+import { Home, ListChecks, PenSquare, Sparkles, Image as ImageIcon, Inbox, User } from "lucide-react";
 import SuperScaleHome from "@/components/superscale/SuperScaleHome";
 import Queue from "@/components/superscale/Queue";
 import Compose from "@/components/superscale/Compose";
 import Inspiration from "@/components/superscale/Inspiration";
 import DesignRefs from "@/components/superscale/DesignRefs";
 import Drafts from "@/components/superscale/Drafts";
+import AboutMe from "@/components/superscale/AboutMe";
 
-type View = "home" | "calendar" | "compose" | "inspiration" | "design" | "drafts";
+type View = "home" | "calendar" | "compose" | "inspiration" | "design" | "drafts" | "about";
 
 const items: { id: View; label: string; icon: any }[] = [
   { id: "home", label: "Home", icon: Home },
@@ -17,6 +18,7 @@ const items: { id: View; label: string; icon: any }[] = [
   { id: "inspiration", label: "Inspiration", icon: Sparkles },
   { id: "design", label: "Design Refs", icon: ImageIcon },
   { id: "drafts", label: "Drafts & Sent", icon: Inbox },
+  { id: "about", label: "About me", icon: User },
 ];
 
 export default function SuperScale() {
@@ -86,6 +88,7 @@ export default function SuperScale() {
           {view === "inspiration" && <Inspiration onRemixed={(postId) => go("compose", postId)} />}
           {view === "design" && <DesignRefs />}
           {view === "drafts" && <Drafts onEdit={(id) => go("compose", id)} />}
+          {view === "about" && <AboutMe />}
         </div>
       </main>
     </div>
