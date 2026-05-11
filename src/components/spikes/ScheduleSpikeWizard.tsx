@@ -65,7 +65,8 @@ export default function ScheduleSpikeWizard({ open, onOpenChange, onCreated }: P
   const reset = () => { setStep(1); };
 
   const submit = async () => {
-    const kws = keywords.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    const typed = keywords.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    const kws = Array.from(new Set([...defaultKeywords, ...typed]));
     if (kws.length === 0) { toast.error("Add at least one keyword"); return; }
     setSubmitting(true);
     const { data, error } = await supabase.functions.invoke("schedule-engagement-spike", {
