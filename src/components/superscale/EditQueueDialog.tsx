@@ -71,7 +71,8 @@ export default function EditQueueDialog({
 
   function addRow() {
     if (!newTime || grid[newTime]) return;
-    setGrid((prev) => ({ ...prev, [newTime]: new Set() }));
+    // Default to all 7 days selected so saving without extra clicks still persists slots
+    setGrid((prev) => ({ ...prev, [newTime]: new Set([0, 1, 2, 3, 4, 5, 6]) }));
   }
 
   function removeRow(time: string) {
