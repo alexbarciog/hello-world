@@ -202,11 +202,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
     })();
   }, [reloadTick]);
 
-  const hourCounts = useMemo(() => {
-    const arr = Array(24).fill(0);
-    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) arr[h] += grid[d][h];
-    return arr;
-  }, [grid]);
+
 
   const today = new Date();
 
