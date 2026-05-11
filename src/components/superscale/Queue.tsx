@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Pencil, Loader2, BarChart3, Sparkles, Clock } from "lucide-react";
+import { Pencil, Loader2, BarChart3, Sparkles, Clock, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 import EditQueueDialog from "./EditQueueDialog";
 
 type Slot = { day_of_week: number; time: string };
