@@ -43,6 +43,24 @@ export default function ScheduleSpikeWizard({ open, onOpenChange, onCreated }: P
   const [tone, setTone] = useState("curious_peer");
   const [angle, setAngle] = useState("");
   const [requireApproval, setRequireApproval] = useState(true);
+  const [defaultKeywords, setDefaultKeywords] = useState<string[]>([]);
+
+  // Load account-level default keywords once when wizard opens (only pre-fill if user hasn't typed yet)
+  useEffect(() => {
+    if (!open) return;
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("default_spike_keywords")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      const defs = (((data as any)?.default_spike_keywords) || []) as string[];
+      setDefaultKeywords(defs);
+      setKeywords(prev => prev.trim() ? prev : defs.join("\n"));
+    })();
+  }, [open]);
 
   const reset = () => { setStep(1); };
 
