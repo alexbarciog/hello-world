@@ -112,6 +112,15 @@ Deno.serve(async (req) => {
         .neq("spike_id", spike_id)
         .in("post_id", candidateIds);
       const seen = new Set((prior || []).map((r: any) => r.post_id).filter(Boolean));
+      // Also exclude user's own published posts (Superscale)
+      const { data: ownPosts } = await admin
+        .from("linkedin_posts")
+        .select("unipile_post_id")
+        .eq("user_id", spike.user_id)
+        .not("unipile_post_id", "is", null);
+      for (const r of ownPosts || []) {
+        if (r.unipile_post_id) seen.add(r.unipile_post_id);
+      }
       for (const pid of candidateIds) {
         if (seen.has(pid)) collected.delete(pid);
       }
