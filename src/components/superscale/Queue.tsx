@@ -152,6 +152,26 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-lg border border-black/10 bg-white pl-3 pr-1 py-1">
+            <Wand2 className="w-4 h-4 text-rose-500" />
+            <span className="text-sm font-medium">Generate</span>
+            <input
+              type="number"
+              min={3}
+              max={28}
+              value={genCount}
+              onChange={(e) => setGenCount(Math.max(3, Math.min(28, Number(e.target.value) || 12)))}
+              className="w-12 text-sm font-semibold tabular-nums text-center bg-transparent focus:outline-none"
+            />
+            <span className="text-sm text-foreground/55">slots</span>
+            <button
+              onClick={generateFromBestTimes}
+              disabled={generating}
+              className="ml-2 rounded-md bg-foreground text-background text-xs font-semibold px-2.5 py-1.5 hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+            >
+              {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Apply"}
+            </button>
+          </div>
           <button
             onClick={() => setShowHeatmap((v) => !v)}
             className="rounded-lg border border-black/10 bg-white text-sm font-medium px-3 py-2 hover:bg-black/[0.03] flex items-center gap-1.5"
