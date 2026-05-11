@@ -166,7 +166,10 @@ export default function ScheduleSpikeWizard({ open, onOpenChange, onCreated }: P
                 value={keywords}
                 onChange={e => setKeywords(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">We'll search LinkedIn posts for these.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                We'll search LinkedIn posts for these.
+                {defaultKeywords.length > 0 && ` Your ${defaultKeywords.length} account default${defaultKeywords.length === 1 ? "" : "s"} will be merged in.`}
+              </p>
             </div>
             <div>
               <Label>Recency</Label>
