@@ -24,6 +24,38 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [autoCommentText, setAutoCommentText] = useState("");
   const [autoCommentTrigger, setAutoCommentTrigger] = useState<"likes" | "comments" | "minutes">("likes");
   const [autoCommentThreshold, setAutoCommentThreshold] = useState<number>(10);
+  const [queueTz, setQueueTz] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+
+  // Convert a wall-clock "YYYY-MM-DDTHH:mm" string to a UTC Date as if entered in `tz`.
+  function wallClockInTzToUTC(local: string, tz: string): Date {
+    const [datePart, timePart] = local.split("T");
+    const [y, mo, d] = datePart.split("-").map(Number);
+    const [h, mi] = (timePart || "00:00").split(":").map(Number);
+    const utcGuess = Date.UTC(y, mo - 1, d, h, mi);
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+    const parts = dtf.formatToParts(new Date(utcGuess));
+    const m: any = {};
+    parts.forEach((p) => { if (p.type !== "literal") m[p.type] = parseInt(p.value); });
+    const projected = Date.UTC(m.year, m.month - 1, m.day, m.hour === 24 ? 0 : m.hour, m.minute, m.second);
+    const offset = projected - utcGuess;
+    return new Date(utcGuess - offset);
+  }
+
+  // Format a UTC Date back to a "YYYY-MM-DDTHH:mm" string in `tz` for the datetime-local input.
+  function utcToWallClockInTz(d: Date, tz: string): string {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23",
+      year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+    }).formatToParts(d);
+    const m: any = {};
+    parts.forEach((p) => { if (p.type !== "literal") m[p.type] = p.value; });
+    const hh = m.hour === "24" ? "00" : m.hour;
+    return `${m.year}-${m.month}-${m.day}T${hh}:${m.minute}`;
+  }
 
   async function enhance(action: "hook" | "funny" | "undetectable" | "grammar") {
     if (!content.trim()) { toast.error("Write something first"); return; }
