@@ -154,11 +154,16 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setLoading(false); return; }
     if (status === "scheduled" && !scheduledFor) { toast.error("Pick a schedule time"); setLoading(false); return; }
+    if (autoCommentEnabled && !autoCommentText.trim()) { toast.error("Write your auto-comment or disable it"); setLoading(false); return; }
     const payload: any = {
       user_id: u.user.id,
       content, image_url: imageUrl,
       scheduled_for: status === "scheduled" ? new Date(scheduledFor).toISOString() : null,
       comments_spike_enabled: spike, status,
+      auto_comment_enabled: autoCommentEnabled,
+      auto_comment_text: autoCommentEnabled ? autoCommentText : null,
+      auto_comment_trigger: autoCommentEnabled ? autoCommentTrigger : null,
+      auto_comment_threshold: autoCommentEnabled ? autoCommentThreshold : null,
     };
     let savedId = id;
     if (id) {
