@@ -35,19 +35,46 @@ function fmtSlot(time: string, jitter: number) {
   return `${String(h12).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${ampm}`;
 }
 
-function dayLabel(date: Date, today: Date) {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  const t = new Date(today);
-  t.setHours(0, 0, 0, 0);
-  const diff = Math.round((d.getTime() - t.getTime()) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Tomorrow";
-  return DOW_NAMES[d.getDay()];
+// Get y/m/d/dow for a given UTC instant interpreted in tz
+function partsInTz(d: Date, tz: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", weekday: "short",
+  }).formatToParts(d);
+  const m: any = {};
+  parts.forEach((p) => { if (p.type !== "literal") m[p.type] = p.value; });
+  const dowMap: any = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { y: +m.year, mo: +m.month, d: +m.day, dow: dowMap[m.weekday] };
 }
 
-function shortDate(date: Date) {
-  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit" }).replace(" ", "-");
+// Convert a wall-clock (y, mo, d, h, mi) in tz to a real UTC Date
+function wallClockInTzToUTC(y: number, mo: number, d: number, h: number, mi: number, tz: string): Date {
+  const utcGuess = Date.UTC(y, mo - 1, d, h, mi);
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(new Date(utcGuess));
+  const m: any = {};
+  parts.forEach((p) => { if (p.type !== "literal") m[p.type] = parseInt(p.value); });
+  const projected = Date.UTC(m.year, m.month - 1, m.day, m.hour === 24 ? 0 : m.hour, m.minute, m.second);
+  const offset = projected - utcGuess;
+  return new Date(utcGuess - offset);
+}
+
+function dayLabel(dateInfo: { y: number; mo: number; d: number; dow: number }, todayInfo: { y: number; mo: number; d: number }) {
+  const d = Date.UTC(dateInfo.y, dateInfo.mo - 1, dateInfo.d);
+  const t = Date.UTC(todayInfo.y, todayInfo.mo - 1, todayInfo.d);
+  const diff = Math.round((d - t) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return DOW_NAMES[dateInfo.dow];
+}
+
+function shortDate(dateInfo: { y: number; mo: number; d: number }) {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[dateInfo.mo - 1]}-${String(dateInfo.d).padStart(2, "0")}`;
 }
 
 export default function Queue({ onCompose }: { onCompose: (postId: string | null) => void }) {
@@ -57,6 +84,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
   const [slots, setSlots] = useState<Slot[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [jitter, setJitter] = useState(0);
+  const [queueTz, setQueueTz] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
   const [reloadTick, setReloadTick] = useState(0);
   const [genCount, setGenCount] = useState(12);
   const [generating, setGenerating] = useState(false);
@@ -120,7 +148,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
       if (!u.user) return;
       const [{ data: s }, { data: pf }, { data: p }] = await Promise.all([
         supabase.from("superscale_queue_slots").select("day_of_week,time").eq("user_id", u.user.id),
-        supabase.from("superscale_queue_prefs").select("natural_jitter_minutes").eq("user_id", u.user.id).maybeSingle(),
+        supabase.from("superscale_queue_prefs").select("natural_jitter_minutes,timezone").eq("user_id", u.user.id).maybeSingle(),
         supabase.from("linkedin_posts")
           .select("id,content,image_url,scheduled_for,status")
           .eq("user_id", u.user.id)
@@ -132,38 +160,37 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
       ]);
       setSlots(s || []);
       setJitter(pf?.natural_jitter_minutes ?? 0);
+      if ((pf as any)?.timezone) setQueueTz((pf as any).timezone);
       setPosts(p || []);
       setLoading(false);
     })();
   }, [reloadTick]);
 
-  // Build the next ~14 days view, listing slots per day
+  // Build the next ~14 days view, listing slots per day — interpreted in queue timezone
   const days = useMemo(() => {
-    const today = new Date();
-    today.setSeconds(0, 0);
-    const out: { date: Date; entries: { time: string; jitter: number; post: Post | null }[] }[] = [];
+    const now = new Date();
+    const todayInfo = partsInTz(now, queueTz);
+    const out: { info: { y: number; mo: number; d: number; dow: number }; entries: { time: string; jitter: number; post: Post | null }[] }[] = [];
     for (let i = 0; i < 14; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const dow = d.getDay();
-      const daySlots = slots.filter((s) => s.day_of_week === dow).sort((a, b) => a.time.localeCompare(b.time));
-      const dateKey = d.toISOString().slice(0, 10);
+      // Compute a UTC instant inside this day in tz, then read parts back to handle month rollover
+      const noonUtc = wallClockInTzToUTC(todayInfo.y, todayInfo.mo, todayInfo.d + i, 12, 0, queueTz);
+      const info = partsInTz(noonUtc, queueTz);
+      const daySlots = slots.filter((s) => s.day_of_week === info.dow).sort((a, b) => a.time.localeCompare(b.time));
+      const dateKey = `${info.y}-${String(info.mo).padStart(2, "0")}-${String(info.d).padStart(2, "0")}`;
       const entries = daySlots.map((s) => {
         const j = jitterFor(dateKey, s.time, jitter);
-        // try to match an existing post within ±60min of this slot
-        const slotDt = new Date(d);
         const [hh, mm] = s.time.split(":").map(Number);
-        slotDt.setHours(hh, mm + j, 0, 0);
+        const slotDt = wallClockInTzToUTC(info.y, info.mo, info.d, hh, mm + j, queueTz);
         const matched = posts.find((p) => {
           if (!p.scheduled_for) return false;
           return Math.abs(new Date(p.scheduled_for).getTime() - slotDt.getTime()) < 60 * 60000;
         });
         return { time: s.time, jitter: j, post: matched ?? null };
       });
-      out.push({ date: d, entries });
+      out.push({ info, entries });
     }
     return out;
-  }, [slots, posts, jitter]);
+  }, [slots, posts, jitter, queueTz]);
 
   // Heatmap from sent posts (last 90d) — score by day-of-week × hour, weighted by views + likes
   const [grid, setGrid] = useState<number[][]>(() => Array.from({ length: 7 }, () => Array(24).fill(0)));
@@ -204,7 +231,7 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
 
 
 
-  const today = new Date();
+  const todayInfo = partsInTz(new Date(), queueTz);
 
   return (
     <div>
@@ -286,10 +313,10 @@ export default function Queue({ onCompose }: { onCompose: (postId: string | null
           {days.map((d) => {
             if (d.entries.length === 0) return null;
             return (
-              <div key={d.date.toISOString()}>
+              <div key={`${d.info.y}-${d.info.mo}-${d.info.d}`}>
                 <div className="flex items-baseline gap-2 mb-2">
-                  <h2 className="text-base font-bold">{dayLabel(d.date, today)}</h2>
-                  <span className="text-sm text-foreground/40">{shortDate(d.date)}</span>
+                  <h2 className="text-base font-bold">{dayLabel(d.info, todayInfo)}</h2>
+                  <span className="text-sm text-foreground/40">{shortDate(d.info)}</span>
                 </div>
                 <div className="space-y-2">
                   {d.entries.map((entry, idx) => (
