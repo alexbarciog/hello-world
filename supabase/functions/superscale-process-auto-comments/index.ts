@@ -34,16 +34,35 @@ async function fetchPostStats(accountId: string, postId: string) {
   }
 }
 
+async function resolveSocialPostId(accountId: string, postId: string) {
+  if (postId.startsWith("urn:li:")) return postId;
+  try {
+    const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}?account_id=${encodeURIComponent(accountId)}`, {
+      headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
+    });
+    if (!r.ok) {
+      console.error("[auto-comment] post resolve failed", r.status, await r.text());
+      return postId;
+    }
+    const d = await r.json();
+    return d?.social_id || d?.id || postId;
+  } catch (e) {
+    console.error("[auto-comment] post resolve error", e);
+    return postId;
+  }
+}
+
 async function postComment(accountId: string, postId: string, text: string) {
-  const url = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments?account_id=${encodeURIComponent(accountId)}`;
+  const socialPostId = await resolveSocialPostId(accountId, postId);
+  const url = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(socialPostId)}/comments`;
   const r = await fetch(url, {
     method: "POST",
     headers: { "X-API-KEY": UNIPILE_API_KEY, "Content-Type": "application/json", accept: "application/json" },
     body: JSON.stringify({ account_id: accountId, text }),
   });
   const t = await r.text();
-  console.log("[auto-comment] unipile response", r.status, t.slice(0, 400));
-  return { ok: r.ok, status: r.status, text: t };
+  console.log("[auto-comment] unipile response", r.status, socialPostId, t.slice(0, 400));
+  return { ok: r.ok, status: r.status, text: t, socialPostId };
 }
 
 Deno.serve(async (req) => {
@@ -87,7 +106,7 @@ Deno.serve(async (req) => {
 
       const r = await postComment(accountId, p.unipile_post_id, p.auto_comment_text);
       if (r.ok) {
-        await admin.from("linkedin_posts").update({ auto_comment_posted_at: new Date().toISOString() }).eq("id", p.id);
+        await admin.from("linkedin_posts").update({ auto_comment_posted_at: new Date().toISOString(), unipile_post_id: r.socialPostId }).eq("id", p.id);
         results.push({ id: p.id, ok: true });
       } else {
         results.push({ id: p.id, ok: false, error: r.text.slice(0, 200) });

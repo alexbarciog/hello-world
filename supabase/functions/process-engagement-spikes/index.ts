@@ -16,6 +16,20 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function resolveSocialPostId(accountId: string, postId: string) {
+  if (postId.startsWith("urn:li:")) return postId;
+  try {
+    const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}?account_id=${encodeURIComponent(accountId)}`, {
+      headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
+    });
+    if (!r.ok) return postId;
+    const d = await r.json();
+    return d?.social_id || d?.id || postId;
+  } catch {
+    return postId;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -53,10 +67,11 @@ Deno.serve(async (req) => {
       if (spike.status !== "running") {
         await admin.from("engagement_spikes").update({ status: "running" }).eq("id", spike.id);
       }
-      const url = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(row.post_id)}/comments?account_id=${encodeURIComponent(accountId)}`;
+      const socialPostId = await resolveSocialPostId(accountId, row.post_id);
+      const url = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(socialPostId)}/comments`;
       const r = await fetch(url, {
         method: "POST",
-        headers: { "X-API-KEY": UNIPILE_API_KEY, "Content-Type": "application/json" },
+        headers: { "X-API-KEY": UNIPILE_API_KEY, "Content-Type": "application/json", accept: "application/json" },
         body: JSON.stringify({ account_id: accountId, text: row.comment_text }),
       });
       const text = await r.text();
