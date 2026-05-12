@@ -35,17 +35,14 @@ async function fetchPostStats(accountId: string, postId: string) {
 }
 
 async function postComment(accountId: string, postId: string, text: string) {
-  const url = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments`;
-  const fd = new FormData();
-  fd.append("account_id", accountId);
-  fd.append("text", text);
+  const url = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments?account_id=${encodeURIComponent(accountId)}`;
   const r = await fetch(url, {
     method: "POST",
-    headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" },
-    body: fd,
+    headers: { "X-API-KEY": UNIPILE_API_KEY, "Content-Type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ account_id: accountId, text }),
   });
   const t = await r.text();
-  if (!r.ok) console.error("[auto-comment] post comment failed", r.status, t);
+  console.log("[auto-comment] unipile response", r.status, t.slice(0, 400));
   return { ok: r.ok, status: r.status, text: t };
 }
 
