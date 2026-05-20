@@ -56,13 +56,14 @@ const baseNavItems = [
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
-  { label: "Engagement Spikes", icon: Flame,        path: "/engagement-spikes", badge: "New" },
-  { label: "SuperScale",     icon: Rocket,          path: "/superscale", badge: "New" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "AI Chat",        icon: MessageSquare,   path: "/ai-chat" },
   { label: "Integrations",   icon: Plug,            path: "/integrations" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
+
+const engagementSpikesItem = { label: "Engagement Spikes", icon: Flame,  path: "/engagement-spikes", badge: "New" };
+const superscaleItem       = { label: "SuperScale",        icon: Rocket, path: "/superscale",        badge: "New" };
 
 const adminOnlyNavItems = [
   { label: "Reddit Signals", icon: RedditIcon,      path: "/reddit-signals", badge: "Beta" },
