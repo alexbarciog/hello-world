@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     }
 
     // Only allow specific fields to be updated
-    const allowedFields = ["free_trial_enabled", "free_trial_limit", "credits", "daily_messages_limit", "daily_connections_limit"];
+    const allowedFields = ["free_trial_enabled", "free_trial_limit", "credits", "daily_messages_limit", "daily_connections_limit", "engagement_spikes_enabled", "superscale_enabled"];
     const safeUpdates: Record<string, any> = {};
     for (const key of Object.keys(updates)) {
       if (allowedFields.includes(key)) {
