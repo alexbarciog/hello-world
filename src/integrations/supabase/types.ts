@@ -1381,6 +1381,7 @@ export type Database = {
           daily_connections_limit: number
           daily_messages_limit: number
           default_spike_keywords: string[]
+          engagement_spikes_enabled: boolean
           free_trial_enabled: boolean
           free_trial_limit: number
           id: string
@@ -1391,6 +1392,7 @@ export type Database = {
           referral_code: string | null
           referred_by_code: string | null
           superscale_about_me: string | null
+          superscale_enabled: boolean
           unipile_account_id: string | null
           updated_at: string
           user_id: string
@@ -1405,6 +1407,7 @@ export type Database = {
           daily_connections_limit?: number
           daily_messages_limit?: number
           default_spike_keywords?: string[]
+          engagement_spikes_enabled?: boolean
           free_trial_enabled?: boolean
           free_trial_limit?: number
           id?: string
@@ -1415,6 +1418,7 @@ export type Database = {
           referral_code?: string | null
           referred_by_code?: string | null
           superscale_about_me?: string | null
+          superscale_enabled?: boolean
           unipile_account_id?: string | null
           updated_at?: string
           user_id: string
@@ -1429,6 +1433,7 @@ export type Database = {
           daily_connections_limit?: number
           daily_messages_limit?: number
           default_spike_keywords?: string[]
+          engagement_spikes_enabled?: boolean
           free_trial_enabled?: boolean
           free_trial_limit?: number
           id?: string
@@ -1439,6 +1444,7 @@ export type Database = {
           referral_code?: string | null
           referred_by_code?: string | null
           superscale_about_me?: string | null
+          superscale_enabled?: boolean
           unipile_account_id?: string | null
           updated_at?: string
           user_id?: string

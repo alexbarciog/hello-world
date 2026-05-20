@@ -563,6 +563,24 @@ function UsersTable({ data, expandedRow, setExpandedRow }: { data: any[]; expand
                           ))}
                         </select>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-md-on-surface-variant/60">Engagement Spikes:</span>
+                        <Switch
+                          checked={u.engagement_spikes_enabled ?? false}
+                          onCheckedChange={(checked) => updateTrial(id, "engagement_spikes_enabled", checked)}
+                          disabled={updatingUser === id}
+                          className="scale-75"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-md-on-surface-variant/60">SuperScale:</span>
+                        <Switch
+                          checked={u.superscale_enabled ?? false}
+                          onCheckedChange={(checked) => updateTrial(id, "superscale_enabled", checked)}
+                          disabled={updatingUser === id}
+                          className="scale-75"
+                        />
+                      </div>
                     </div>
                   </td>
                 </tr>

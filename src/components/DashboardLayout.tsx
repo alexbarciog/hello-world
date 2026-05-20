@@ -56,13 +56,14 @@ const baseNavItems = [
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
-  { label: "Engagement Spikes", icon: Flame,        path: "/engagement-spikes", badge: "New" },
-  { label: "SuperScale",     icon: Rocket,          path: "/superscale", badge: "New" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "AI Chat",        icon: MessageSquare,   path: "/ai-chat" },
   { label: "Integrations",   icon: Plug,            path: "/integrations" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
+
+const engagementSpikesItem = { label: "Engagement Spikes", icon: Flame,  path: "/engagement-spikes", badge: "New" };
+const superscaleItem       = { label: "SuperScale",        icon: Rocket, path: "/superscale",        badge: "New" };
 
 const adminOnlyNavItems = [
   { label: "Reddit Signals", icon: RedditIcon,      path: "/reddit-signals", badge: "Beta" },
@@ -91,16 +92,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: isAdmin } = useAdminCheck();
   const { data: accountType } = useAccountType();
   const [showAgentTooltip, setShowAgentTooltip] = useState(false);
+  const [featureFlags, setFeatureFlags] = useState<{ spikes: boolean; superscale: boolean }>({ spikes: false, superscale: false });
   const isImpersonating = !!readImpersonation();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("engagement_spikes_enabled, superscale_enabled")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      setFeatureFlags({
+        spikes: Boolean(data?.engagement_spikes_enabled),
+        superscale: Boolean(data?.superscale_enabled),
+      });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Build base nav with conditional feature items inserted after Signals Agents (index 3)
+  const navWithFeatures = (() => {
+    const items = [...baseNavItems];
+    const insertions: any[] = [];
+    if (isAdmin || featureFlags.spikes) insertions.push(engagementSpikesItem);
+    if (isAdmin || featureFlags.superscale) insertions.push(superscaleItem);
+    if (insertions.length) items.splice(4, 0, ...insertions);
+    return items;
+  })();
 
   // Insert Client Accounts above Settings for agency partners (hidden while impersonating)
   const baseWithAgency = (accountType === "agency" && !isImpersonating)
     ? [
-        ...baseNavItems.slice(0, baseNavItems.length - 1),
+        ...navWithFeatures.slice(0, navWithFeatures.length - 1),
         { label: "Client Accounts", icon: Briefcase, path: "/dashboard/client-accounts" },
-        baseNavItems[baseNavItems.length - 1],
+        navWithFeatures[navWithFeatures.length - 1],
       ]
-    : baseNavItems;
+    : navWithFeatures;
 
   const navItems = isAdmin
     ? [...baseWithAgency, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
