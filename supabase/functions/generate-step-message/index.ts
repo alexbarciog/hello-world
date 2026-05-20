@@ -269,125 +269,119 @@ function getRoleFraming(roleCategory: string): string {
 }
 
 function buildOutreachPrompts(req: any, lead: LeadContext) {
-  const isFirstMessage = req.stepNumber === 2;
-  const isLastStep = req.stepNumber >= 4;
-  const signalIsJobChange = isJobChangeSignal(lead.signal);
-  const signalRichness = classifySignal(lead.signal);
-  const roleCategory = inferRoleCategory(lead.title);
-  const roleFraming = getRoleFraming(roleCategory);
-
-  const toneLabel = req.messageTone === 'direct' ? 'Direct and brief.' :
-    req.messageTone === 'conversational' ? 'Casual, like texting a friend.' : 'Warm but professional.';
-
-  const systemPrompt = `You write LinkedIn DMs for a founder. Write like a real human texting a peer from their phone. Short. Casual. Specific.
-
-===== THE LEAD'S SIGNAL (the ONLY context you can reference about them) =====
-Signal: "${lead.signal || 'none'}"
-Signal richness: ${signalRichness}
-Signal type: ${signalIsJobChange ? 'job_change' : 'engagement'}
-
-CRITICAL CONTEXT RULES:
-- The signal above is the ONLY thing you know about what this lead has done or engaged with.
-- If the signal mentions a company or person (e.g. "follows X", "liked Y's post"), you may reference THAT name, but you MUST NOT invent or guess what that company does. If you don't know what they do for sure, just say "their post" or "what they shared" — never describe the company's services.
-- If the signal is just "follows [Company]" with no topic, do NOT claim the company is "great at [anything]". Reference the FACT that the lead follows them, not what they do.
-- If the signal mentions a topic (post about X), use THAT exact topic. Don't add adjacent topics.
-- NEVER fabricate scenarios, problems, or behaviors the lead didn't actually show in the signal.
-
-===== LEAD INTELLIGENCE =====
-Name: ${lead.firstName}${lead.lastName ? ' ' + lead.lastName : ''}
-Title: ${lead.title || 'unknown'}
-Company: ${lead.company || 'unknown'}
-Industry: ${lead.industry || 'unknown'}
-Role category: ${roleCategory}
-
-${roleFraming}
-${formatPersonalityBlock(req.personality)}
-
-===== SENDER =====
-Company: ${req.companyName || 'our company'}
-What we do: ${req.valueProposition || 'not specified'}
-Pain points we solve: ${(req.painPoints || []).join(', ') || 'not specified'}
-Industry: ${req.industry || 'not specified'}
-
-===== STRUCTURE (exactly 3 short sentences, 2 paragraphs) =====
-S1 — HOOK from the signal: ${signalRichness === 'rich'
-    ? `Reference what they actually engaged with using the exact topic from the signal. Example: "saw you liked that post about tech staffing".`
-    : signalRichness === 'medium'
-    ? `Reference the action and the company/person from the signal — but DO NOT describe what that company does unless the signal itself says so. Example: "saw you've been following Pangea lately" (NOT "Pangea, they're great at staffing" unless that's in the signal).`
-    : `Reference something concrete about their role or company. No fake scenarios.`}
-
-S2 — RELEVANT HELP: Connect the signal to a problem REAL ${lead.title || 'people in this role'} at ${lead.industry || 'this kind of'} companies actually face, then offer help that's SPECIFIC to that industry's demand. Don't pitch a generic service. If they're in logistics, talk about logistics buyers. If they're in fintech, talk about fintech buyers. Name the industry or use industry-specific words.
-
-S3 — SPARK INTEREST: End with a short, curious question that creates a small open loop. Not "want to chat?". Something like "ever tried [specific thing]?", "open to a quick idea?", "curious how?". Make them want to reply just to know more.
-
-===== HUMAN-WRITING RULES (non-negotiable) =====
-- Sound like a tired founder texting at 9pm. Not a marketer. Not a chatbot.
-- Use lowercase casually if it fits. Use contractions always (we're, you're, didn't, that's).
-- Short words only. 6th-grade reading level.
-- BANNED words (any of these = rewrite): leverage, utilize, synergy, pipeline, seamless, cutting-edge, game-changer, robust, ecosystem, bandwidth, scouting, grind, holistic, actionable, spearhead, deep-dive, circle back, delighted, thrilled, excited, empower, unlock, elevate, drive, foster, navigate, journey, space, realm, world, landscape, intricacies, nuances, dynamics, paradigm, end-to-end, best-in-class, tailored, bespoke, world-class, value-add, ROI, KPIs, stakeholders, alignment.
-- BANNED phrases: "I noticed", "I saw that you", "I came across", "in your space", "in your world", "in the [industry] space", "hope this finds you well", "quick question", "just reaching out".
-- NEVER say "your space" or "your world" — name the actual industry (e.g. "in logistics", "in B2B SaaS", "for fintech teams"). If industry is unknown, name the company instead.
-- Use simple verbs: "find" not "scout", "help" not "empower", "make" not "drive", "fast" not "seamless".
-- Under 50 words total. 2 short paragraphs max.
-- No em-dashes (—), no semicolons.
-- No placeholders like {{first_name}}.
-${signalIsJobChange ? '- This is a job change signal. Reference the new role naturally.' : '- NOT a job change. Do NOT mention new role, promotion, or joining.'}
-- Tone: ${toneLabel}
-${req.language && req.language !== 'English (US)' ? `- Write in ${req.language}` : ''}
-${req.customTraining ? `- Extra instructions from sender: ${req.customTraining}` : ''}
-
-===== GOOD EXAMPLES =====
-GOOD (rich signal, sales leader at logistics co): "saw you liked that post about tech staffing. running sales for a logistics team is brutal when half the day goes to cold lists instead of buyers actually shopping. we surface logistics decision-makers already comparing tools — open to a quick peek?"
-
-GOOD (medium signal "follows Pangea", CEO at SaaS): "noticed you've been following Pangea. running a SaaS company, you probably already know how much warm intent matters versus blasting cold. we pull SaaS buyers actively researching — worth 2 minutes?"
-
-GOOD (thin signal, marketing lead at fintech): "running demand gen at a fintech means every dollar burned on cold lists hurts. we surface fintech buyers already poking around competitors. ever tried sourcing leads that way?"
-
-===== BAD EXAMPLES (do NOT do this) =====
-BAD: "saw you follow Pangea, they're great at hiring. we do hiring too." → invented Pangea's services. Banned.
-BAD: "in your space, alignment with stakeholders is key" → "your space", "alignment", "stakeholders" all banned.
-BAD: "we help companies find leads through intent signals" → too generic, not industry-specific.
-BAD: "I noticed you liked a post — I'd love to explore synergies" → "I noticed", "synergies" banned.
-
-===== SELF-CHECK BEFORE OUTPUT =====
-1. Did I claim ANYTHING about a competitor/company that wasn't literally in the signal? If yes → rewrite without that claim.
-2. Did I say "your space" or any vague filler instead of naming the industry? If yes → rewrite with the actual industry name.
-3. Is S2's offer specific to ${lead.industry || 'their industry'} or could it apply to any random business? If generic → rewrite.
-4. Does S3 spark curiosity, or is it a flat "want to chat?"? If flat → rewrite.
-5. Any banned word? Rewrite.`;
+  const stepNumber: number = req.stepNumber;
+  const signalPostText: string = (req.signalPostText || lead.signal || '').toString().trim();
+  const headline: string = (req.leadHeadline || lead.title || '').toString().trim();
+  const productDescription: string = (req.valueProposition || req.productDescription || '').toString().trim();
+  const painPoints: string[] = Array.isArray(req.painPoints) ? req.painPoints : [];
+  const suggestedAngle: string =
+    (req.suggestedAngle || '').toString().trim() ||
+    (painPoints.length ? `connect to: ${painPoints.slice(0, 2).join('; ')}` : '');
+  const langLine = req.language && req.language !== 'English (US)' ? `\nWrite in ${req.language}.` : '';
+  const customLine = req.customTraining ? `\nExtra sender instructions: ${req.customTraining}` : '';
+  const personalityBlock = formatPersonalityBlock(req.personality);
 
   const prevMsgsArray: string[] = Array.isArray(req.previousMessages) ? req.previousMessages : [];
-  const historyBlock = prevMsgsArray.length > 0
-    ? `\nPrevious messages already sent (do not repeat):\n${prevMsgsArray.map((m: string, i: number) => `Step ${i + 2}: "${m}"`).join('\n')}`
-    : '';
+  const message1Text: string =
+    (req.previousStepMessage || prevMsgsArray[0] || '').toString().trim();
 
-  let userPrompt = '';
-  if (isFirstMessage) {
-    userPrompt = `Write the first message (Step 2, after connection accepted).${historyBlock}
+  // ── Message 1 (Step 2): cold opener ──
+  if (stepNumber <= 2) {
+    const systemPrompt = `You are writing a LinkedIn outreach message for a B2B sales conversation.
 
-Follow the 3-sentence structure exactly. Return ONLY the message text.`;
-  } else if (isLastStep) {
-    userPrompt = `Write Step ${req.stepNumber} (FINAL follow-up).${historyBlock}
+CONTEXT YOU HAVE:
+- The exact post or activity that triggered this signal: ${signalPostText || '(none)'}
+- The person's name: ${lead.firstName || '(unknown)'}
+- Their headline: ${headline || '(unknown)'}
+- What our product does: ${productDescription || '(unspecified)'}
+- The suggested angle: ${suggestedAngle || '(none)'}
 
-${req.previousStepMessage ? `Last message you sent:\n"${req.previousStepMessage}"` : ''}
+YOUR ONLY JOB FOR MESSAGE 1:
+Write a message that makes ${lead.firstName || 'them'} feel like a real person
+read their actual post and had a genuine reaction to it.
 
-CRITICAL: The lead has NOT replied to ANY previous messages. Do NOT assume engagement.
+STRUCTURE — follow this exactly:
+Line 1: Reference something specific from their post.
+        Not the hashtag. Not their industry. The actual content.
+        Start with what caught your attention.
+Line 2: One honest observation or shared experience related
+        to what they said. From your perspective, not a stat.
+Line 3: One question about their situation.
+        Not "would you be open to a call."
+        A question a curious person would actually ask.
 
-Last shot. 2 sentences max. Use loss aversion or curiosity gap. No guilt-tripping.
+LENGTH: 2-4 sentences maximum. Never more.
 
-Return ONLY the message text.`;
-  } else {
-    userPrompt = `Write Step ${req.stepNumber} follow-up.${historyBlock}
+NEVER include in message 1:
+- Any mention of the product name
+- Any statistic or percentage
+- "we built" / "our solution" / "our platform"
+- "I'd love to" / "would you be open to"
+- Hashtag references like "engaging with #X"
+- "as someone in [industry]"
+- Any CTA or calendar link
+- More than one question
 
-${req.previousStepMessage ? `Last message you sent:\n"${req.previousStepMessage}"` : ''}
+The message should sound like it was typed by a founder
+who genuinely read their post and found it interesting.
+Not a salesperson. Not a bot.
 
-CRITICAL: The lead has NOT replied. Do NOT assume engagement or say things like "appreciate the positive vibes".
+GOOD example output:
+"your comment about the manual ACH reconciliation every morning
+caught my attention — we heard that exact frustration from
+three funders last week. is that the compliance side of it
+or more the operational overhead?"
 
-Deepen the same angle from your last message. Add one layer: a stat, competitor reference, or social proof. 2 sentences. Different question than before.
+BAD example output:
+"noticed you've been engaging with #lending. we built a
+solution that automates merchant payments and handles
+compliance automatically. we're seeing 40% reduction
+in admin work."
 
-Return ONLY the message text.`;
+Write only the message. No explanation. No subject line.
+No greeting like "Hi [name]". Start directly with the content.${langLine}${customLine}
+${personalityBlock}`;
+
+    const userPrompt = `Write message 1 now. Return ONLY the message text.`;
+    return { systemPrompt, userPrompt };
   }
 
+  // ── Message 2 (Step 3): soft follow-up, max 10 words ──
+  if (stepNumber === 3) {
+    const systemPrompt = `You are writing a short follow up LinkedIn message.
+${lead.firstName || 'They'} did not reply to the first message.
+
+The first message was: ${message1Text || '(unknown)'}
+
+Write a follow up that is maximum 10 words.
+It should be a soft check-in that gives them an easy out.
+Do not repeat the pitch. Do not add new information.
+Do not ask for a call.
+
+Examples of the right tone:
+"still relevant or not the right time?"
+"worth a quick chat or not your priority right now?"
+"any of this relevant to what you're working on?"
+
+Write only the message. Nothing else.${langLine}`;
+    const userPrompt = `Write the follow-up now. Return ONLY the message text.`;
+    return { systemPrompt, userPrompt };
+  }
+
+  // ── Message 3+ (Step 4+): final polite exit, max 8 words ──
+  const systemPrompt = `Write a final closing message for a LinkedIn conversation
+where ${lead.firstName || 'they'} has not replied to two previous messages.
+
+Maximum 8 words.
+Polite exit. No ask. No pitch. No guilt.
+
+Examples:
+"no worries — happy to leave it here."
+"totally understand — feel free to reach out anytime."
+"no pressure at all — good luck with everything."
+
+Write only the message. Nothing else.${langLine}`;
+  const userPrompt = `Write the final message now. Return ONLY the message text.`;
   return { systemPrompt, userPrompt };
 }
 
