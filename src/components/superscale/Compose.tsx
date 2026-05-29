@@ -197,6 +197,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         setAutoCommentText((data as any).auto_comment_text || "");
         setAutoCommentTrigger(((data as any).auto_comment_trigger as any) || "likes");
         setAutoCommentThreshold((data as any).auto_comment_threshold ?? 10);
+        setAutoDmEnabled(!!(data as any).auto_dm_commenters_enabled);
+        setAutoDmMessage((data as any).auto_dm_message || "");
+        setAutoReplyEnabled(!!(data as any).auto_reply_comments_enabled);
       }
     })();
   }, [postId, queueTz]);
