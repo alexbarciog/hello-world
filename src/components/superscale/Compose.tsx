@@ -210,6 +210,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     if (!u.user) { setLoading(false); return; }
     if (status === "scheduled" && !scheduledFor) { toast.error("Pick a schedule time"); setLoading(false); return; }
     if (autoCommentEnabled && !autoCommentText.trim()) { toast.error("Write your auto-comment or disable it"); setLoading(false); return; }
+    if (autoDmEnabled && !autoDmMessage.trim()) { toast.error("Write your auto-DM message or disable it"); setLoading(false); return; }
     const payload: any = {
       user_id: u.user.id,
       content, image_url: imageUrl,
@@ -219,6 +220,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
       auto_comment_text: autoCommentEnabled ? autoCommentText : null,
       auto_comment_trigger: autoCommentEnabled ? autoCommentTrigger : null,
       auto_comment_threshold: autoCommentEnabled ? autoCommentThreshold : null,
+      auto_dm_commenters_enabled: autoDmEnabled,
+      auto_dm_message: autoDmEnabled ? autoDmMessage : null,
+      auto_reply_comments_enabled: autoReplyEnabled,
     };
     let savedId = id;
     if (id) {
