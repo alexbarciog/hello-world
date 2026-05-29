@@ -183,6 +183,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     if (!postId) {
       setContent(""); setImageUrl(null); setScheduledFor(""); setSpike(false);
       setAutoCommentEnabled(false); setAutoCommentText(""); setAutoCommentTrigger("likes"); setAutoCommentThreshold(10);
+      setAutoDmEnabled(false); setAutoDmMessage(""); setAutoReplyEnabled(false);
       return;
     }
     (async () => {
