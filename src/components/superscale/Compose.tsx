@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap, Wand2, Laugh, ShieldCheck, SpellCheck, MessageCircle, Heart, Clock } from "lucide-react";
+import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap, Wand2, Laugh, ShieldCheck, SpellCheck, MessageCircle, Heart, Clock, Send, Bot } from "lucide-react";
 import GenerateImageDialog from "./GenerateImageDialog";
 
 const MAX = 3000;
