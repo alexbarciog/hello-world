@@ -24,6 +24,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [autoCommentText, setAutoCommentText] = useState("");
   const [autoCommentTrigger, setAutoCommentTrigger] = useState<"likes" | "comments" | "minutes">("likes");
   const [autoCommentThreshold, setAutoCommentThreshold] = useState<number>(10);
+  const [autoDmEnabled, setAutoDmEnabled] = useState(false);
+  const [autoDmMessage, setAutoDmMessage] = useState("");
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(false);
   const [queueTz, setQueueTz] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
 
   // Convert a wall-clock "YYYY-MM-DDTHH:mm" string to a UTC Date as if entered in `tz`.
