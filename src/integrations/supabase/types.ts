@@ -923,6 +923,9 @@ export type Database = {
           auto_comment_text: string | null
           auto_comment_threshold: number | null
           auto_comment_trigger: string | null
+          auto_dm_commenters_enabled: boolean
+          auto_dm_message: string | null
+          auto_reply_comments_enabled: boolean
           comments_spike_enabled: boolean
           content: string
           created_at: string
@@ -948,6 +951,9 @@ export type Database = {
           auto_comment_text?: string | null
           auto_comment_threshold?: number | null
           auto_comment_trigger?: string | null
+          auto_dm_commenters_enabled?: boolean
+          auto_dm_message?: string | null
+          auto_reply_comments_enabled?: boolean
           comments_spike_enabled?: boolean
           content?: string
           created_at?: string
@@ -973,6 +979,9 @@ export type Database = {
           auto_comment_text?: string | null
           auto_comment_threshold?: number | null
           auto_comment_trigger?: string | null
+          auto_dm_commenters_enabled?: boolean
+          auto_dm_message?: string | null
+          auto_reply_comments_enabled?: boolean
           comments_spike_enabled?: boolean
           content?: string
           created_at?: string
