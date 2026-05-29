@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap, Wand2, Laugh, ShieldCheck, SpellCheck, MessageCircle, Heart, Clock } from "lucide-react";
+import { Sparkles, Image as ImageIcon, Loader2, X, Calendar as CalendarIcon, Flame, Zap, Wand2, Laugh, ShieldCheck, SpellCheck, MessageCircle, Heart, Clock, Send, Bot } from "lucide-react";
 import GenerateImageDialog from "./GenerateImageDialog";
 
 const MAX = 3000;
@@ -24,6 +24,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
   const [autoCommentText, setAutoCommentText] = useState("");
   const [autoCommentTrigger, setAutoCommentTrigger] = useState<"likes" | "comments" | "minutes">("likes");
   const [autoCommentThreshold, setAutoCommentThreshold] = useState<number>(10);
+  const [autoDmEnabled, setAutoDmEnabled] = useState(false);
+  const [autoDmMessage, setAutoDmMessage] = useState("");
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(false);
   const [queueTz, setQueueTz] = useState<string>(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
 
   // Convert a wall-clock "YYYY-MM-DDTHH:mm" string to a UTC Date as if entered in `tz`.
@@ -180,6 +183,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     if (!postId) {
       setContent(""); setImageUrl(null); setScheduledFor(""); setSpike(false);
       setAutoCommentEnabled(false); setAutoCommentText(""); setAutoCommentTrigger("likes"); setAutoCommentThreshold(10);
+      setAutoDmEnabled(false); setAutoDmMessage(""); setAutoReplyEnabled(false);
       return;
     }
     (async () => {
@@ -193,6 +197,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
         setAutoCommentText((data as any).auto_comment_text || "");
         setAutoCommentTrigger(((data as any).auto_comment_trigger as any) || "likes");
         setAutoCommentThreshold((data as any).auto_comment_threshold ?? 10);
+        setAutoDmEnabled(!!(data as any).auto_dm_commenters_enabled);
+        setAutoDmMessage((data as any).auto_dm_message || "");
+        setAutoReplyEnabled(!!(data as any).auto_reply_comments_enabled);
       }
     })();
   }, [postId, queueTz]);
@@ -203,6 +210,7 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
     if (!u.user) { setLoading(false); return; }
     if (status === "scheduled" && !scheduledFor) { toast.error("Pick a schedule time"); setLoading(false); return; }
     if (autoCommentEnabled && !autoCommentText.trim()) { toast.error("Write your auto-comment or disable it"); setLoading(false); return; }
+    if (autoDmEnabled && !autoDmMessage.trim()) { toast.error("Write your auto-DM message or disable it"); setLoading(false); return; }
     const payload: any = {
       user_id: u.user.id,
       content, image_url: imageUrl,
@@ -212,6 +220,9 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
       auto_comment_text: autoCommentEnabled ? autoCommentText : null,
       auto_comment_trigger: autoCommentEnabled ? autoCommentTrigger : null,
       auto_comment_threshold: autoCommentEnabled ? autoCommentThreshold : null,
+      auto_dm_commenters_enabled: autoDmEnabled,
+      auto_dm_message: autoDmEnabled ? autoDmMessage : null,
+      auto_reply_comments_enabled: autoReplyEnabled,
     };
     let savedId = id;
     if (id) {
@@ -431,6 +442,37 @@ export default function Compose({ postId, onSaved }: { postId: string | null; on
               </div>
             </div>
           )}
+        </div>
+
+        <div className="pt-4 border-t border-black/[0.04]">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={autoDmEnabled} onChange={(e) => setAutoDmEnabled(e.target.checked)} className="mt-0.5 w-4 h-4 accent-orange-500" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold flex items-center gap-1.5"><Send className="w-3.5 h-3.5 text-orange-500" /> Auto-DM people who comment</div>
+              <div className="text-xs text-foreground/50">Send a personal LinkedIn DM to anyone who comments on this post — great for delivering a lead magnet or starting a 1:1 thread.</div>
+            </div>
+          </label>
+          {autoDmEnabled && (
+            <div className="mt-3 ml-7">
+              <textarea
+                value={autoDmMessage}
+                onChange={(e) => setAutoDmMessage(e.target.value.slice(0, 1000))}
+                placeholder="e.g. Hey {first_name} — thanks for the comment! Here's the template I mentioned: yourlink.com"
+                className="w-full min-h-[80px] resize-none text-sm border border-black/10 rounded-lg px-3 py-2 outline-none focus:border-black/30 placeholder:text-foreground/30"
+              />
+              <div className="text-[11px] text-foreground/40 mt-1">Use {"{first_name}"} to personalize.</div>
+            </div>
+          )}
+        </div>
+
+        <div className="pt-4 border-t border-black/[0.04]">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" checked={autoReplyEnabled} onChange={(e) => setAutoReplyEnabled(e.target.checked)} className="mt-0.5 w-4 h-4 accent-orange-500" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold flex items-center gap-1.5"><Bot className="w-3.5 h-3.5 text-orange-500" /> Auto-reply to comments with AI</div>
+              <div className="text-xs text-foreground/50">AI replies to every comment on this post in your voice — keeps the thread alive and boosts reach. Your own comments are skipped.</div>
+            </div>
+          </label>
         </div>
       </div>
 
