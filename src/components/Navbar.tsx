@@ -34,7 +34,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   return (
     <>
       {/* Desktop navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 pt-4 hidden md:block">
+      <nav className="fixed top-[42px] left-0 right-0 z-50 px-6 pt-4 hidden md:block">
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -81,7 +81,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
 
       {/* Mobile burger */}
       <motion.button
-        className="fixed top-4 right-5 z-50 md:hidden w-11 h-11 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30"
+        className="fixed top-[54px] right-5 z-50 md:hidden w-11 h-11 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30"
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.1 }}

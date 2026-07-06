@@ -53,7 +53,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
    1. TOP ANNOUNCEMENT BAR
    ═══════════════════════════════════════════════════════════════ */
 export const AnnouncementBar = () => (
-  <div className="w-full bg-black text-white text-center text-[13px] py-2.5 px-4 font-medium">
+  <div className="fixed top-0 inset-x-0 z-[60] w-full bg-black text-white text-center text-[13px] py-2.5 px-4 font-medium">
     🔥 🚀 127 buyers showed intent on LinkedIn in the last hour — spot them first
   </div>
 );
