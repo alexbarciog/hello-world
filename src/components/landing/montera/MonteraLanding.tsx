@@ -121,7 +121,7 @@ export const MonteraHero = () => (
         </motion.div>
       </div>
 
-      {/* RIGHT: gradient panel with floating product cards */}
+      {/* RIGHT: gradient panel with floating LinkedIn intent cards */}
       <div className="relative h-[540px] lg:h-[620px]">
         <div
           className="absolute inset-0 rounded-[32px] overflow-hidden"
@@ -130,7 +130,6 @@ export const MonteraHero = () => (
               "linear-gradient(115deg, #E5FF7A 0%, #7FE8A8 35%, #2ED0C5 65%, #2A7BF0 100%)",
           }}
         >
-          {/* grid overlay */}
           <div
             className="absolute inset-0 opacity-30"
             style={{
@@ -141,84 +140,110 @@ export const MonteraHero = () => (
           />
         </div>
 
-        {/* floating card: top small */}
+        {/* TOP: Live intent signal captured from a LinkedIn post */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4, ease: EASE }}
-          className="absolute top-10 right-6 md:right-10 bg-white rounded-2xl px-4 py-3 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] flex items-center gap-3 w-[240px]"
+          className="absolute top-8 right-4 md:right-8 bg-white rounded-2xl p-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] w-[290px]"
         >
-          <div className="w-9 h-9 rounded-lg bg-[#3B7BFF] flex items-center justify-center text-white">
-            <Linkedin className="w-4 h-4" />
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-[#0A66C2] flex items-center justify-center">
+              <Linkedin className="w-3.5 h-3.5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-[#0a0a0a] leading-tight">Intent captured · LinkedIn post</p>
+              <p className="text-[10px] text-[#9ca3af]">2 min ago</p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse" />
+              <span className="text-[10px] font-semibold text-[#B91C1C]">HOT</span>
+            </span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-[#9ca3af] font-medium">LinkedIn Signals</p>
-            <p className="text-[15px] font-semibold text-[#0a0a0a] tracking-tight">08,134</p>
+          <p className="text-[12px] text-[#374151] leading-snug italic">
+            "Anyone know a solid outbound agency? Our SDR just quit and pipeline is drying up…"
+          </p>
+          <div className="mt-3 flex items-center justify-between pt-3 border-t border-black/[0.06]">
+            <p className="text-[10px] text-[#6b7280]">Intent score</p>
+            <p className="text-[13px] font-semibold text-[#0a0a0a]">96 / 100</p>
           </div>
-          <span className="text-[#9ca3af]">⋮</span>
         </motion.div>
 
-        {/* main dashboard card */}
+        {/* MAIN: Buyer profile card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: EASE }}
-          className="absolute top-32 md:top-40 left-4 md:left-16 bg-white rounded-[28px] p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.25)] w-[calc(100%-3rem)] md:w-[400px]"
+          className="absolute top-[240px] md:top-[260px] left-4 md:left-12 bg-white rounded-[28px] p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.25)] w-[calc(100%-3rem)] md:w-[340px]"
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="inline-flex items-center gap-2 bg-black/5 rounded-full px-3 py-1.5">
-              <span className="text-lg">🇺🇸</span>
-              <span className="text-[13px] font-medium text-[#0a0a0a]">USA</span>
-              <ArrowRight className="w-3 h-3 rotate-90 text-[#6b7280]" />
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#3B7BFF] to-[#7C3AED] flex items-center justify-center text-white font-semibold text-[15px]">
+              SM
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#1E3A8A] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[14px] font-semibold text-[#0a0a0a] truncate">Sarah Mitchell</p>
+                <span className="inline-flex items-center gap-0.5 rounded-md bg-[#0A66C2]/10 px-1.5 py-0.5">
+                  <Linkedin className="w-2.5 h-2.5 text-[#0A66C2]" />
+                </span>
+              </div>
+              <p className="text-[11px] text-[#6b7280] leading-tight">Head of Growth · Northwind SaaS</p>
+              <p className="text-[10px] text-[#9ca3af] mt-0.5">Series B · 120 employees</p>
             </div>
           </div>
-          <p className="text-[11px] text-[#9ca3af] font-medium">Hot Leads Detected</p>
-          <p className="text-[42px] font-medium text-[#0a0a0a] tracking-[-0.02em] leading-none mt-1">24,456</p>
 
-          <div className="mt-6 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] text-[#9ca3af] font-medium">Campaign</p>
-              <p className="text-[15px] font-semibold text-[#0a0a0a] tracking-wider">SDR-001-Q4</p>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-[10px] font-medium text-[#6b7280]">Buying signal</span>
+            <div className="flex-1 h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
+              <div className="h-full w-[92%] rounded-full bg-gradient-to-r from-[#22C55E] to-[#3B7BFF]" />
             </div>
-            <p className="text-[13px] font-semibold text-[#0a0a0a]">Intent Pay</p>
+            <span className="text-[11px] font-semibold text-[#0a0a0a]">92%</span>
           </div>
+
+          <div className="mt-4 rounded-xl bg-[#F5F7FB] p-3 flex items-start gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-[#3B7BFF] mt-0.5 shrink-0" />
+            <p className="text-[11px] text-[#374151] leading-snug">
+              AI drafted a peer-to-peer LinkedIn invite based on her last 3 posts.
+            </p>
+          </div>
+
+          <button className="mt-4 w-full rounded-full bg-[#0a0a0a] text-white text-[12px] font-medium py-2.5 inline-flex items-center justify-center gap-1.5">
+            Send connection <ArrowRight className="w-3 h-3" />
+          </button>
         </motion.div>
 
-        {/* accent lime badge */}
+        {/* Lime accent: live counter */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
-          className="absolute top-56 right-4 md:right-6 rounded-2xl px-4 py-3 flex items-center gap-3 w-[180px] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.25)]"
+          className="absolute top-[270px] right-4 md:right-4 rounded-2xl px-4 py-3 flex items-center gap-3 w-[190px] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.25)]"
           style={{ background: "#C8FF3B" }}
         >
-          <div className="w-8 h-8 rounded-md bg-black flex items-center justify-center">
-            <Zap className="w-4 h-4 text-[#C8FF3B]" />
+          <div className="w-9 h-9 rounded-lg bg-black flex items-center justify-center">
+            <Radar className="w-4 h-4 text-[#C8FF3B]" />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] text-black/60 font-medium">Signals</p>
-            <p className="text-[15px] font-semibold text-black tracking-tight">08,134</p>
+            <p className="text-[10px] text-black/60 font-medium">Buyers spotted today</p>
+            <p className="text-[17px] font-semibold text-black tracking-tight leading-none mt-0.5">1,284</p>
           </div>
         </motion.div>
 
-        {/* Reddit/X card bottom */}
+        {/* BOTTOM: Reply-received card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.55, ease: EASE }}
-          className="absolute bottom-8 left-8 md:left-24 bg-white rounded-2xl px-4 py-3 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] flex items-center gap-3 w-[260px]"
+          className="absolute bottom-6 right-4 md:right-6 bg-white rounded-2xl px-4 py-3 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.2)] flex items-center gap-3 w-[260px]"
         >
-          <div className="w-9 h-9 rounded-lg bg-[#FF4500] flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-[#22C55E] flex items-center justify-center">
             <MessageSquare className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] text-[#9ca3af] font-medium">Reddit + X Intent</p>
-            <p className="text-[15px] font-semibold text-[#0a0a0a] tracking-tight">13,256</p>
+            <p className="text-[11px] font-semibold text-[#0a0a0a] leading-tight">Reply received</p>
+            <p className="text-[10px] text-[#6b7280] truncate">"Yes — free Thursday for a quick call?"</p>
           </div>
-          <span className="text-[#9ca3af]">⋮</span>
+          <span className="text-[10px] font-semibold text-[#22C55E]">+1</span>
         </motion.div>
       </div>
     </div>
