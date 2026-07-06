@@ -83,8 +83,8 @@ export const MonteraHero = () => (
           className="text-[44px] sm:text-[56px] lg:text-[76px] leading-[1.02] tracking-[-0.03em] font-medium text-[#0a0a0a]"
           style={{ fontFamily: "'Space Grotesk', 'Inter', sans-serif" }}
         >
-          Modern signal platform for{" "}
-          <span className="text-[#3B7BFF]">smart founders</span>
+          Find people looking to buy your services.{" "}
+          <span className="text-[#3B7BFF]">RIGHT NOW!</span>
         </motion.h1>
 
         <motion.p
