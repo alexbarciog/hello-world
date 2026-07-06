@@ -82,6 +82,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   // Nav links fade + collapse away as user scrolls
   const linksOpacity = useTransform(scrollY, [40, 180], [1, 0]);
   const linksScale = useTransform(scrollY, [40, 180], [1, 0.9]);
+  const linksMaxWidth = useTransform(scrollY, [40, 180], [800, 0]);
+  const linksMarginX = useTransform(scrollY, [40, 180], [0, -12]);
   const linksPointer = useTransform(linksOpacity, (v) => (v < 0.05 ? "none" : "auto"));
 
   return (
