@@ -1,53 +1,52 @@
-# Limitless Access — Conversion Rewrite + Motion Pass
+# Animated Desktop Navbar
 
-Target: the section at `src/components/landing/montera/MonteraLanding.tsx` (`LimitlessAccess`, ~lines 270–354). Scope is copy + animation only; layout, colors, and structure stay identical.
+Four layered animations on `src/components/Navbar.tsx` (desktop pill only — mobile burger untouched).
 
-## 1. Copywriting rewrite (conversion-first)
+## 1. Staggered entrance (first load)
 
-Rewrite around a single promise: **"Every buyer raising their hand on LinkedIn, in your inbox before your competitors see them."** Every line reinforces speed, specificity, or proof.
+Replace the single `motion.div` fade-in with a Framer Motion parent `variants` container and child variants so each element pops in sequentially:
 
-**Eyebrow**: `LIVE BUYER INTENT` (replaces "Limitless Access" — signals urgency, not features).
+- Container: fades + slides down over 0.5s
+- Children stagger: logo → each nav link → login → CTA button, `staggerChildren: 0.06`, each child `y: -8 → 0`, opacity `0 → 1`, ease `[0.22, 1, 0.36, 1]`
+- Runs once on mount (no re-trigger on scroll state change)
 
-**H2** (benefit + outcome, not adjectives):
-> Buyers are posting about their pain right now. We put them in front of you first.
+## 2. Shrink & morph on scroll
 
-**Subhead** (one line, quantified):
-> Scanning 12M+ LinkedIn posts, comments, and job changes every day — surfacing only the people ready to buy what you sell.
+Extend the existing `scrolled` boolean (already toggles at `scrollY > 20`) to also drive size:
 
-**Four feature cells** — rewrite each as `Metric/Proof headline` + `outcome-focused body` (not feature description). Icons stay the same, order stays the same:
+- Pill max-width: `max-w-5xl` → `max-w-3xl` when scrolled
+- Vertical padding: `py-3` → `py-2`
+- Logo image height: `h-10` → `h-8`
+- Nav link gap: `gap-8` → `gap-6`
+- CTA padding shrinks one step
+- All transitioned via `transition-all duration-300 ease-out` (framer `layout` prop on the pill for smooth width morph)
+- Shadow deepens slightly when scrolled (`shadow-md` instead of `shadow-sm`) for lift
 
-| Cell | New headline | New body |
-|---|---|---|
-| 1 (Globe2) | `Signals in 80+ countries` | Track buying intent wherever your ICP posts — no geo blind spots, no missed pipeline. |
-| 2 (LayoutGrid) | `12M posts scanned daily` | Our engine reads every relevant LinkedIn post, comment, and Reddit thread so you don't have to scroll. |
-| 3 (ShieldCheck) | `93% noise filtered out` | AI scores each signal for buying intent — only leads with real budget and timing reach your dashboard. |
-| 4 (Timer) | `Under 4 min from post to alert` | The moment a buyer raises their hand, you get their profile, the trigger, and an AI-drafted opener. |
+## 3. Animated link underline + magnetic hover
 
-**Globe card** — add a small overlay label so the visual sells the promise, not just decorates: `"Live signals · updated every 60s"` pill at top-center of the globe card, and rename the "Global" pill to `"+76 more"` to imply scale.
+Rewrite each nav link as a `<a>` wrapping the label with an absolutely-positioned underline span:
 
-## 2. Animation pass
+- Underline: `absolute left-0 -bottom-1 h-[1.5px] w-full bg-current origin-left scale-x-0 transition-transform duration-300 ease-out`
+- On `group-hover`: `scale-x-100`
+- Also add a subtle `whileHover={{ y: -1 }}` micro-lift on the link via `motion.a`
+- Login button gets the same underline treatment
 
-Add scroll-triggered and ambient motion using the existing `framer-motion` import already in the file. Nothing new to install.
+## 4. CTA glow + arrow motion
 
-**Section entrance** — wrap header block in `motion.div` with `whileInView`, fade-up 16px, 0.6s ease-out, `viewport={{ once: true, margin: "-80px" }}`.
+`Start for $97` button (desktop + mobile menu variant):
 
-**Feature cells** — convert `FeatureCell` into a `motion.div` with staggered `whileInView`: fade + rise 20px, delay = index × 0.08s. On hover: icon square scales to 1.08 and rotates 3°, card border shifts from `black/[0.06]` → `black/[0.12]`, subtle `y: -2` lift with `transition-transform` (200ms). Keep it snappy — no shadow bloom (site is minimal).
+- Wrap in `motion.button`, add `whileHover={{ scale: 1.03 }}` and `whileTap={{ scale: 0.97 }}`
+- Add a persistent soft lime glow via a pseudo layer: `after:absolute after:inset-0 after:rounded-full after:bg-[#C8FF3B] after:blur-xl after:opacity-40 after:-z-10 after:animate-pulse` (2.5s pulse)
+- Arrow icon: wrap in a span with `transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5` so on hover the `ArrowUpRight` slides up-right
+- Add `group` class to the button so children respond
 
-**Metric numbers in headlines** — the numeric prefixes (`80+`, `12M`, `93%`, `4 min`) get a `CountUp`-style animation on first view. Implement inline with framer-motion's `useMotionValue` + `useTransform` + `useInView` (no new dep). 1.2s duration, ease-out.
+## Technical notes
 
-**Globe card** — three additive motions:
-- Concentric rings: slow continuous rotation (rings 1 & 2 rotate at 60s/40s, opposite directions) via `animate={{ rotate: 360 }}` infinite linear.
-- Country pills: gentle floating loop — each pill animates `y: [0, -4, 0]` on a 3–4s loop, staggered phases so they don't move in sync.
-- Center dot: pulsing glow — `boxShadow` animates between `0 0 20px` and `0 0 32px` on 2s loop; add a second expanding ring (scale 1→2, opacity 1→0, 2s infinite) to visually broadcast "live."
+- All animations use Framer Motion (already imported) + Tailwind utilities; no new deps.
+- `prefers-reduced-motion` respected by using Framer's built-in `useReducedMotion` to disable stagger + hover lift when set.
+- Mobile burger and mobile overlay menu are unchanged except the mobile CTA gets the same arrow-slide + scale hover.
+- No changes to routing, link targets, or the `forceDark` / `showCampaigns` props.
 
-**Prefers-reduced-motion**: gate the continuous loops (rings, pulse, floating pills) behind `useReducedMotion()` — one-shot entrance animations still play.
+## Files touched
 
-## 3. Files touched
-
-- `src/components/landing/montera/MonteraLanding.tsx` — only the `LimitlessAccess`, `FeatureCell`, and `Eyebrow` usage in this section. No other sections modified. No new files, no new deps.
-
-## Out of scope
-
-- No layout, grid, spacing, or color changes.
-- No changes to hero, bento, or other sections.
-- No new icons or images.
+- `src/components/Navbar.tsx` (only file edited)
