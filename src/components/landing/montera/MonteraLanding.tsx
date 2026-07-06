@@ -853,6 +853,174 @@ export const AllInOne = () => {
 /* ═══════════════════════════════════════════════════════════════
    7. DARK SPACE — Powering next-gen (with sphere)
    ═══════════════════════════════════════════════════════════════ */
+
+/* Animated dotted 3D globe with pulsing intent pings */
+const IntentGlobe = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const reduce = useReducedMotion();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * DPR;
+      canvas.height = rect.height * DPR;
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    // Build dot grid on sphere (uniform-ish distribution)
+    const dots: { lat: number; lon: number }[] = [];
+    for (let lat = -80; lat <= 80; lat += 5) {
+      const circumference = Math.cos((lat * Math.PI) / 180);
+      const count = Math.max(6, Math.round(90 * circumference));
+      for (let i = 0; i < count; i++) {
+        const lon = (i / count) * 360 - 180;
+        dots.push({ lat, lon });
+      }
+    }
+
+    // Fixed intent pings (real-ish city coords)
+    const pings = [
+      { lat: 40.71, lon: -74.0, delay: 0.0, label: "NYC" },     // New York
+      { lat: 37.77, lon: -122.4, delay: 0.6, label: "SF" },     // San Francisco
+      { lat: 51.5, lon: -0.12, delay: 1.1, label: "LDN" },      // London
+      { lat: 48.85, lon: 2.35, delay: 1.6, label: "PAR" },      // Paris
+      { lat: 52.52, lon: 13.4, delay: 2.1, label: "BER" },      // Berlin
+      { lat: 1.35, lon: 103.8, delay: 2.6, label: "SGP" },      // Singapore
+      { lat: 35.68, lon: 139.69, delay: 3.1, label: "TYO" },    // Tokyo
+      { lat: -33.86, lon: 151.2, delay: 3.6, label: "SYD" },    // Sydney
+      { lat: -23.55, lon: -46.63, delay: 4.1, label: "SAO" },   // Sao Paulo
+      { lat: 19.43, lon: -99.13, delay: 4.6, label: "MEX" },    // Mexico City
+      { lat: 28.61, lon: 77.2, delay: 5.1, label: "DEL" },      // Delhi
+      { lat: 25.2, lon: 55.27, delay: 5.6, label: "DXB" },      // Dubai
+    ];
+
+    let raf = 0;
+    const start = performance.now();
+
+    const project = (lat: number, lon: number, rot: number, R: number) => {
+      const la = (lat * Math.PI) / 180;
+      const lo = (lon * Math.PI) / 180 + rot;
+      const x = Math.cos(la) * Math.sin(lo);
+      const y = Math.sin(la);
+      const z = Math.cos(la) * Math.cos(lo);
+      // slight tilt
+      const tilt = -0.35;
+      const y2 = y * Math.cos(tilt) - z * Math.sin(tilt);
+      const z2 = y * Math.sin(tilt) + z * Math.cos(tilt);
+      return { x: x * R, y: y2 * R, z: z2 };
+    };
+
+    const draw = (t: number) => {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const R = Math.min(w, h) * 0.36;
+      const elapsed = (t - start) / 1000;
+      const rot = reduce ? 0 : elapsed * 0.15;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // outer atmospheric glow
+      const glow = ctx.createRadialGradient(cx, cy, R * 0.85, cx, cy, R * 1.35);
+      glow.addColorStop(0, "rgba(200,255,59,0.10)");
+      glow.addColorStop(1, "rgba(200,255,59,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 1.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      // sphere base fill (very subtle)
+      const base = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.1, cx, cy, R);
+      base.addColorStop(0, "rgba(255,255,255,0.05)");
+      base.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = base;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      // dots
+      for (const d of dots) {
+        const p = project(d.lat, d.lon, rot, R);
+        if (p.z < -0.05) continue;
+        const alpha = Math.max(0, Math.min(1, (p.z + 0.2) / 1.2)) * 0.55;
+        const size = 1.2 * DPR + p.z * 0.8 * DPR;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(cx + p.x, cy + p.y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // intent pings
+      for (const ping of pings) {
+        const p = project(ping.lat, ping.lon, rot, R);
+        if (p.z < 0) continue;
+        const phase = ((elapsed - ping.delay) % 3.2) / 3.2;
+        const cycle = phase < 0 ? phase + 1 : phase;
+        const px = cx + p.x;
+        const py = cy + p.y;
+
+        // expanding ring
+        const ringR = 4 * DPR + cycle * 22 * DPR;
+        const ringA = (1 - cycle) * 0.7;
+        ctx.strokeStyle = `rgba(200,255,59,${ringA})`;
+        ctx.lineWidth = 1.5 * DPR;
+        ctx.beginPath();
+        ctx.arc(px, py, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // second ring
+        const r2 = 2 * DPR + ((cycle + 0.4) % 1) * 18 * DPR;
+        const a2 = (1 - ((cycle + 0.4) % 1)) * 0.35;
+        ctx.strokeStyle = `rgba(200,255,59,${a2})`;
+        ctx.lineWidth = 1 * DPR;
+        ctx.beginPath();
+        ctx.arc(px, py, r2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // glow dot
+        const dotGlow = ctx.createRadialGradient(px, py, 0, px, py, 8 * DPR);
+        dotGlow.addColorStop(0, "rgba(200,255,59,0.9)");
+        dotGlow.addColorStop(1, "rgba(200,255,59,0)");
+        ctx.fillStyle = dotGlow;
+        ctx.beginPath();
+        ctx.arc(px, py, 8 * DPR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // solid core
+        ctx.fillStyle = "#C8FF3B";
+        ctx.beginPath();
+        ctx.arc(px, py, 2.2 * DPR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [reduce]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      aria-hidden
+    />
+  );
+};
+
 export const DarkSpace = () => (
   <section className="relative bg-black text-white py-24 md:py-32 px-6 md:px-10 overflow-hidden">
     <div
@@ -899,72 +1067,12 @@ export const DarkSpace = () => (
         Get Started <ArrowRight className="w-4 h-4" />
       </a>
 
-      {/* Sphere with tooltips */}
+      {/* 3D Globe with intent pings */}
       <div
         className="relative mt-20 mx-auto max-w-3xl aspect-square"
         style={{ animation: "globe-float 6s ease-in-out infinite" }}
       >
-        {/* wireframe sphere */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
-        >
-          <div
-            className="w-full h-full"
-            style={{
-              animation: "globe-rotate 30s linear infinite",
-              transformOrigin: "center center",
-            }}
-          >
-            <svg viewBox="0 0 400 400" className="w-full h-full opacity-70">
-              <defs>
-                <radialGradient id="sph" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#fff" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <circle
-                cx="200"
-                cy="200"
-                r="150"
-                fill="url(#sph)"
-                style={{ animation: "globe-glow-pulse 4s ease-in-out infinite" }}
-              />
-              {Array.from({ length: 12 }).map((_, i) => (
-                <ellipse
-                  key={i}
-                  cx="200"
-                  cy="200"
-                  rx={150}
-                  ry={150 - i * 12}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.12)"
-                  strokeWidth="0.5"
-                  style={{
-                    animation: "globe-line-pulse 3s ease-in-out infinite",
-                    animationDelay: `${i * 0.18}s`,
-                  }}
-                />
-              ))}
-              {Array.from({ length: 12 }).map((_, i) => (
-                <ellipse
-                  key={`v${i}`}
-                  cx="200"
-                  cy="200"
-                  rx={150 - i * 12}
-                  ry={150}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.12)"
-                  strokeWidth="0.5"
-                  style={{
-                    animation: "globe-line-pulse 3s ease-in-out infinite",
-                    animationDelay: `${(i + 6) * 0.18}s`,
-                  }}
-                />
-              ))}
-            </svg>
-          </div>
-        </div>
+        <IntentGlobe />
 
         {/* tooltip left */}
         <div className="absolute left-0 top-8 md:left-10 md:top-16 max-w-[240px] text-left bg-white/[0.08] backdrop-blur-md rounded-xl p-4 border border-white/10 z-10">
