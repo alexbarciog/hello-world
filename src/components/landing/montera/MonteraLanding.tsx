@@ -377,32 +377,43 @@ export const LimitlessAccess = () => {
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-2 gap-5">
-            <FeatureCell
-              index={0}
-              Icon={Radar}
-              title="Catch buyers first"
-              body="See who's asking for what you sell — minutes after they post it on LinkedIn."
+          <div className="relative md:col-span-2">
+            {/* Soft gradient bleed behind the 4 cards */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -m-8 z-0"
+              style={{
+                background:
+                  "radial-gradient(60% 55% at 50% 50%, rgba(200,255,0,0.35) 0%, rgba(200,255,0,0.15) 25%, rgba(26,143,227,0.18) 55%, rgba(26,143,227,0) 80%)",
+                filter: "blur(28px)",
+              }}
             />
-            <FeatureCell
-              index={1}
-              Icon={Target}
-              title="Only real buyers"
-              body="We read every post so you don't. You only see leads with real budget and intent."
-            />
-            <FeatureCell
-              index={2}
-              Icon={MessageSquare}
-              title="Message ready to send"
-              body="Each lead comes with an AI-drafted opener based on what they just said."
-            />
-            <FeatureCell
-              index={3}
-              Icon={Globe2}
-              title="Anywhere your buyers are"
-              body="Works across 80+ countries and every industry — wherever your ICP is posting."
-            />
-
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <FeatureCell
+                index={0}
+                Icon={Radar}
+                title="Catch buyers first"
+                body="See who's asking for what you sell — minutes after they post it on LinkedIn."
+              />
+              <FeatureCell
+                index={1}
+                Icon={Target}
+                title="Only real buyers"
+                body="We read every post so you don't. You only see leads with real budget and intent."
+              />
+              <FeatureCell
+                index={2}
+                Icon={MessageSquare}
+                title="Message ready to send"
+                body="Each lead comes with an AI-drafted opener based on what they just said."
+              />
+              <FeatureCell
+                index={3}
+                Icon={Globe2}
+                title="Anywhere your buyers are"
+                body="Works across 80+ countries and every industry — wherever your ICP is posting."
+              />
+            </div>
           </div>
 
           {/* Globe/tracker column */}
