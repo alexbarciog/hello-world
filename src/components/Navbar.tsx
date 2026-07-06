@@ -118,8 +118,13 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
           </motion.a>
 
           <motion.div
-            style={{ gap: reduce ? undefined : gap }}
-            className="flex items-center"
+            style={{
+              gap: reduce ? undefined : gap,
+              opacity: reduce ? undefined : linksOpacity,
+              scale: reduce ? undefined : linksScale,
+              pointerEvents: reduce ? undefined : (linksPointer as unknown as "auto" | "none"),
+            }}
+            className="flex items-center origin-center"
           >
             {navLinks.map((link) => (
               <motion.a
