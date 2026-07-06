@@ -58,7 +58,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   // Smooth scroll-driven motion values
   const { scrollY } = useScroll();
   const range = [0, 220];
-  const maxWidth = useTransform(scrollY, range, [1200, 780]);
+  const maxWidth = useTransform(scrollY, range, [1200, 460]);
   const padY = useTransform(scrollY, range, [14, 8]);
   const padX = useTransform(scrollY, range, [28, 20]);
   const gap = useTransform(scrollY, range, [28, 18]);
@@ -82,6 +82,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   // Nav links fade + collapse away as user scrolls
   const linksOpacity = useTransform(scrollY, [40, 180], [1, 0]);
   const linksScale = useTransform(scrollY, [40, 180], [1, 0.9]);
+  const linksMaxWidth = useTransform(scrollY, [40, 180], [800, 0]);
+  const linksMarginX = useTransform(scrollY, [40, 180], [0, -12]);
   const linksPointer = useTransform(linksOpacity, (v) => (v < 0.05 ? "none" : "auto"));
 
   return (
@@ -122,9 +124,12 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
               gap: reduce ? undefined : gap,
               opacity: reduce ? undefined : linksOpacity,
               scale: reduce ? undefined : linksScale,
+              maxWidth: reduce ? undefined : linksMaxWidth,
+              marginLeft: reduce ? undefined : linksMarginX,
+              marginRight: reduce ? undefined : linksMarginX,
               pointerEvents: reduce ? undefined : (linksPointer as unknown as "auto" | "none"),
             }}
-            className="flex items-center origin-center"
+            className="flex items-center overflow-hidden origin-center"
           >
             {navLinks.map((link) => (
               <motion.a
