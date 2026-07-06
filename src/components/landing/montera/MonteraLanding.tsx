@@ -905,7 +905,6 @@ export const DarkSpace = () => (
         style={{ animation: "globe-float 6s ease-in-out infinite" }}
       >
         <IntentGlobe />
-      </div>
 
         {/* tooltip left */}
         <div className="absolute left-0 top-8 md:left-10 md:top-16 max-w-[240px] text-left bg-white/[0.08] backdrop-blur-md rounded-xl p-4 border border-white/10 z-10">
