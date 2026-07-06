@@ -380,28 +380,29 @@ export const LimitlessAccess = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-2 gap-5">
             <FeatureCell
               index={0}
-              Icon={Globe2}
-              title={<><CountUpNumber to={80} />+ countries covered</>}
-              body="Track buying intent wherever your ICP posts — no geo blind spots, no missed pipeline."
+              Icon={Radar}
+              title="Catch buyers first"
+              body="See who's asking for what you sell — minutes after they post it on LinkedIn."
             />
             <FeatureCell
               index={1}
-              Icon={LayoutGrid}
-              title={<><CountUpNumber to={12} />M posts scanned daily</>}
-              body="Our engine reads every relevant LinkedIn post, comment, and Reddit thread so you don't have to scroll."
+              Icon={Target}
+              title="Only real buyers"
+              body="We read every post so you don't. You only see leads with real budget and intent."
             />
             <FeatureCell
               index={2}
-              Icon={ShieldCheck}
-              title={<><CountUpNumber to={93} />% noise filtered out</>}
-              body="AI scores each signal for buying intent — only leads with real budget and timing reach your dashboard."
+              Icon={MessageSquare}
+              title="Message ready to send"
+              body="Each lead comes with an AI-drafted opener based on what they just said."
             />
             <FeatureCell
               index={3}
-              Icon={Timer}
-              title={<>Under <CountUpNumber to={4} /> min from post to alert</>}
-              body="The moment a buyer raises their hand, you get their profile, the trigger, and an AI-drafted opener."
+              Icon={Globe2}
+              title="Anywhere your buyers are"
+              body="Works across 80+ countries and every industry — wherever your ICP is posting."
             />
+
           </div>
 
           {/* Globe/tracker column */}
