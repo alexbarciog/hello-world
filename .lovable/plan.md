@@ -1,83 +1,53 @@
-## Why the current generation feels disconnected
+# Limitless Access — Conversion Rewrite + Motion Pass
 
-Looking at `superscale-generate-image`:
-- It sends raw post content (truncated to 500 chars) + up to 4 ref image URLs to `google/gemini-2.5-flash-image` in a single shot.
-- Flash image is the cheapest/fastest tier and is weak at *style transfer* from references — it tends to generate generic LinkedIn-looking visuals and largely ignores the refs.
-- The prompt never describes WHAT visual style the refs actually have (palette, type, layout, mood), so the model has nothing structured to imitate.
-- Only one image is produced, no way to regenerate or compare, so a single bad result = "the worst I've seen".
+Target: the section at `src/components/landing/montera/MonteraLanding.tsx` (`LimitlessAccess`, ~lines 270–354). Scope is copy + animation only; layout, colors, and structure stay identical.
 
-## New system
+## 1. Copywriting rewrite (conversion-first)
 
-### 1. One-time "Style DNA" extraction from design refs
+Rewrite around a single promise: **"Every buyer raising their hand on LinkedIn, in your inbox before your competitors see them."** Every line reinforces speed, specificity, or proof.
 
-New edge function `superscale-analyze-style`:
-- Triggered automatically when refs change (debounced from `DesignRefs.tsx` after upload/delete) and on-demand via a "Re-analyze style" button.
-- Sends up to 8 ref image URLs to a vision model (`google/gemini-2.5-flash`) with a structured-output prompt that returns JSON:
-  ```
-  { palette: [...hex], accent_colors: [...], typography: {style, weight, casing},
-    layout_patterns: [...], composition: "...", mood: "...", recurring_motifs: [...],
-    text_treatment: "...", background_style: "...", do: [...], dont: [...] }
-  ```
-- Stored in a new table `superscale_style_profile` (one row per user/org), with `updated_at` and `refs_hash` so we know when to re-run.
+**Eyebrow**: `LIVE BUYER INTENT` (replaces "Limitless Access" — signals urgency, not features).
 
-### 2. Two-stage generation
+**H2** (benefit + outcome, not adjectives):
+> Buyers are posting about their pain right now. We put them in front of you first.
 
-New flow inside `superscale-generate-image`:
+**Subhead** (one line, quantified):
+> Scanning 12M+ LinkedIn posts, comments, and job changes every day — surfacing only the people ready to buy what you sell.
 
-**Stage A — Visual brief (cheap text call):**
-Given the post content + the cached Style DNA, ask `google/gemini-2.5-flash` to return a tight visual brief:
-- Single sentence "what to depict"
-- Headline text overlay (≤6 words, only if the user's refs typically have text)
-- Color palette to use (pulled from Style DNA)
-- Layout reference (e.g. "centered bold type on solid color block, like ref #2")
+**Four feature cells** — rewrite each as `Metric/Proof headline` + `outcome-focused body` (not feature description). Icons stay the same, order stays the same:
 
-**Stage B — Image generation:**
-Call `google/gemini-3-pro-image-preview` (Nano Banana Pro — much higher fidelity than 2.5 flash image) with:
-- The structured brief as text
-- 3 most-relevant ref images (selected by similarity tag, fall back to first 3)
-- Explicit instruction: "Match the visual style, palette, and typography of the reference images exactly. Do not invent unrelated styles."
+| Cell | New headline | New body |
+|---|---|---|
+| 1 (Globe2) | `Signals in 80+ countries` | Track buying intent wherever your ICP posts — no geo blind spots, no missed pipeline. |
+| 2 (LayoutGrid) | `12M posts scanned daily` | Our engine reads every relevant LinkedIn post, comment, and Reddit thread so you don't have to scroll. |
+| 3 (ShieldCheck) | `93% noise filtered out` | AI scores each signal for buying intent — only leads with real budget and timing reach your dashboard. |
+| 4 (Timer) | `Under 4 min from post to alert` | The moment a buyer raises their hand, you get their profile, the trigger, and an AI-drafted opener. |
 
-Allow the user to choose model tier later via a setting; default to Nano Banana Pro for quality.
+**Globe card** — add a small overlay label so the visual sells the promise, not just decorates: `"Live signals · updated every 60s"` pill at top-center of the globe card, and rename the "Global" pill to `"+76 more"` to imply scale.
 
-### 3. Pick from variants
+## 2. Animation pass
 
-Update `Compose.tsx` "Generate from design refs" to open a modal:
-- Generates **3 variants in parallel** (3 stage-B calls, same brief).
-- Shows them in a grid with a one-click "Use this" + "Regenerate all" + a small editable text field to tweak the brief and regenerate.
-- Only the chosen variant is uploaded to storage and attached to the post (others are discarded — no extra storage cost).
-- Loading skeletons + per-variant error handling so one failure doesn't kill the set.
+Add scroll-triggered and ambient motion using the existing `framer-motion` import already in the file. Nothing new to install.
 
-### 4. UX polish in Compose
+**Section entrance** — wrap header block in `motion.div` with `whileInView`, fade-up 16px, 0.6s ease-out, `viewport={{ once: true, margin: "-80px" }}`.
 
-- Show a small "Style: 12 refs analyzed · updated 2d ago" chip under the Generate button so users trust the system is using their refs.
-- If `superscale_style_profile` is missing, the button surfaces "Analyze your design refs first" and offers a one-click trigger.
-- If <5 refs, keep the existing nudge.
+**Feature cells** — convert `FeatureCell` into a `motion.div` with staggered `whileInView`: fade + rise 20px, delay = index × 0.08s. On hover: icon square scales to 1.08 and rotates 3°, card border shifts from `black/[0.06]` → `black/[0.12]`, subtle `y: -2` lift with `transition-transform` (200ms). Keep it snappy — no shadow bloom (site is minimal).
 
-### 5. Keep edge function within compute limits
+**Metric numbers in headlines** — the numeric prefixes (`80+`, `12M`, `93%`, `4 min`) get a `CountUp`-style animation on first view. Implement inline with framer-motion's `useMotionValue` + `useTransform` + `useInView` (no new dep). 1.2s duration, ease-out.
 
-- Stage A is a tiny text call (cheap).
-- Stage B uses URL-based image inputs (already done) — no base64 fetching.
-- Run the 3 variant calls in parallel via `Promise.allSettled`, and use `EdgeRuntime.waitUntil` only if we move to a job-queue pattern later. For now 3 parallel Pro calls fit well under wall-clock limits and avoid CPU work in the function itself.
+**Globe card** — three additive motions:
+- Concentric rings: slow continuous rotation (rings 1 & 2 rotate at 60s/40s, opposite directions) via `animate={{ rotate: 360 }}` infinite linear.
+- Country pills: gentle floating loop — each pill animates `y: [0, -4, 0]` on a 3–4s loop, staggered phases so they don't move in sync.
+- Center dot: pulsing glow — `boxShadow` animates between `0 0 20px` and `0 0 32px` on 2s loop; add a second expanding ring (scale 1→2, opacity 1→0, 2s infinite) to visually broadcast "live."
 
-## Technical changes
+**Prefers-reduced-motion**: gate the continuous loops (rings, pulse, floating pills) behind `useReducedMotion()` — one-shot entrance animations still play.
 
-**DB migration:**
-- `superscale_style_profile` (user_id pk, organization_id, style_json jsonb, refs_hash text, updated_at). RLS: owner-only select/insert/update.
+## 3. Files touched
 
-**Edge functions:**
-- New: `supabase/functions/superscale-analyze-style/index.ts`
-- Rewrite: `supabase/functions/superscale-generate-image/index.ts` to do Stage A + B and accept `?n=3` for variants. Returns `{ variants: [{image_url}, ...] }` instead of a single `image_url` (also keeps backward-compat single field).
+- `src/components/landing/montera/MonteraLanding.tsx` — only the `LimitlessAccess`, `FeatureCell`, and `Eyebrow` usage in this section. No other sections modified. No new files, no new deps.
 
-**Frontend:**
-- `src/components/superscale/Compose.tsx`: replace inline generate with a `GenerateImageDialog` showing 3 variants, brief editor, regenerate.
-- `src/components/superscale/DesignRefs.tsx`: after upload/delete, fire-and-forget call to `superscale-analyze-style`; show a "Style analyzed" badge.
-- New: `src/components/superscale/GenerateImageDialog.tsx`.
+## Out of scope
 
-**Models used:**
-- `google/gemini-2.5-flash` for Style DNA + brief
-- `google/gemini-3-pro-image-preview` for final image (Nano Banana Pro)
-
-## Out of scope (future)
-- Per-post fine-tuning loop ("more like this" feedback).
-- Storing rejected variants for later A/B.
-- Brand kit (logo overlay) — would slot in cleanly as Stage C.
+- No layout, grid, spacing, or color changes.
+- No changes to hero, bento, or other sections.
+- No new icons or images.

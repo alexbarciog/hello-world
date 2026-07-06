@@ -265,118 +265,232 @@ export const MonteraHero = () => (
 /* ═══════════════════════════════════════════════════════════════
    3. LIMITLESS ACCESS — feature grid + globe
    ═══════════════════════════════════════════════════════════════ */
+import { useEffect, useRef, useState } from "react";
+import { useInView, useReducedMotion } from "framer-motion";
+
+const CountUpNumber = ({
+  to,
+  suffix = "",
+  prefix = "",
+  duration = 1.2,
+  format = (n: number) => Math.round(n).toString(),
+}: {
+  to: number;
+  suffix?: string;
+  prefix?: string;
+  duration?: number;
+  format?: (n: number) => string;
+}) => {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const reduce = useReducedMotion();
+  const [val, setVal] = useState(reduce ? to : 0);
+
+  useEffect(() => {
+    if (!inView || reduce) {
+      if (reduce) setVal(to);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / (duration * 1000), 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setVal(eased * to);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, to, duration, reduce]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {format(val)}
+      {suffix}
+    </span>
+  );
+};
+
 const FeatureCell = ({
   Icon,
   title,
   body,
+  index = 0,
 }: {
   Icon: React.ComponentType<{ className?: string }>;
-  title: string;
+  title: React.ReactNode;
   body: string;
+  index?: number;
 }) => (
-  <div
-    className="rounded-[24px] p-6 md:p-8 border border-black/[0.06] bg-white relative overflow-hidden min-h-[220px] flex flex-col justify-between"
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-60px" }}
+    transition={{ duration: 0.55, delay: index * 0.08, ease: EASE }}
+    whileHover={{ y: -3 }}
+    className="group rounded-[24px] p-6 md:p-8 border border-black/[0.06] hover:border-black/[0.12] bg-white relative overflow-hidden min-h-[220px] flex flex-col justify-between transition-colors"
     style={{
       backgroundImage:
         "linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)",
       backgroundSize: "40px 40px",
     }}
   >
-    <div className="w-11 h-11 rounded-xl bg-[#0a0a0a] flex items-center justify-center relative z-10">
+    <motion.div
+      whileHover={{ scale: 1.08, rotate: 3 }}
+      transition={{ type: "spring", stiffness: 300, damping: 18 }}
+      className="w-11 h-11 rounded-xl bg-[#0a0a0a] flex items-center justify-center relative z-10 group-hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.35)]"
+    >
       <Icon className="w-5 h-5 text-white" />
-    </div>
+    </motion.div>
     <div className="relative z-10">
       <h3 className="text-[19px] font-semibold text-[#0a0a0a] tracking-tight mb-2">{title}</h3>
       <p className="text-[13px] text-[#6b7280] leading-relaxed">{body}</p>
     </div>
-  </div>
+  </motion.div>
 );
 
-export const LimitlessAccess = () => (
-  <section className="bg-white py-24 md:py-32 px-6 md:px-10">
-    <div className="max-w-[1240px] mx-auto">
-      <div className="text-center max-w-3xl mx-auto mb-14">
-        <Eyebrow>Limitless Access</Eyebrow>
-        <h2
-          className="text-[36px] md:text-[54px] leading-[1.05] tracking-[-0.02em] font-medium text-[#0a0a0a]"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-        >
-          Next-gen signals, global intent,<br />outbound freedom
-        </h2>
-        <p className="mt-5 text-[15px] md:text-[16px] text-[#6b7280]">
-          Experience a new era of prospecting where buyer intent surfaces instantly
-        </p>
-      </div>
+export const LimitlessAccess = () => {
+  const reduce = useReducedMotion();
+  const loopProps = reduce ? {} : undefined;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-2 gap-5">
-          <FeatureCell
-            Icon={Globe2}
-            title="80+ Countries"
-            body="Find buyers across every geography — no location limits"
-          />
-          <FeatureCell
-            Icon={LayoutGrid}
-            title="Signal Volume"
-            body="Our engine processes millions of posts and comments daily"
-          />
-          <FeatureCell
-            Icon={ShieldCheck}
-            title="Spam Prevented"
-            body="AI-powered filters block low-intent noise before it hits your inbox"
-          />
-          <FeatureCell
-            Icon={Timer}
-            title="Instant Detection"
-            body="Real-time monitoring across LinkedIn, Reddit and X, 24/7"
-          />
-        </div>
-
-        {/* Globe/tracker column */}
-        <div
-          className="rounded-[24px] border border-black/[0.06] bg-white p-8 relative overflow-hidden min-h-[460px] md:min-h-full flex items-center justify-center"
+  return (
+    <section className="bg-white py-24 md:py-32 px-6 md:px-10">
+      <div className="max-w-[1240px] mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="text-center max-w-3xl mx-auto mb-14"
         >
-          <div className="relative w-full h-full flex items-center justify-center">
-            {/* Concentric rings */}
-            {[300, 220, 140].map((size, i) => (
-              <div
-                key={size}
-                className="absolute rounded-full border border-black/[0.06]"
-                style={{
-                  width: size,
-                  height: size,
-                  background:
-                    i === 0
-                      ? "repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 6px)"
-                      : "transparent",
-                }}
-              />
-            ))}
-            {/* Country pills */}
-            <div className="absolute top-6 right-8 bg-white rounded-full px-3 py-1.5 shadow-md border border-black/5 flex items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-[#0a0a0a]">USA</span>
-              <span>🇺🇸</span>
-            </div>
-            <div className="absolute top-1/2 left-4 -translate-y-4 bg-white rounded-full px-3 py-1.5 shadow-md border border-black/5 flex items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-[#0a0a0a]">Germany</span>
-              <span>🇩🇪</span>
-            </div>
-            <div className="absolute bottom-16 left-8 bg-white rounded-full px-3 py-1.5 shadow-md border border-black/5 flex items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-[#0a0a0a]">UK</span>
-              <span>🇬🇧</span>
-            </div>
-            <div className="absolute bottom-8 right-4 bg-white rounded-full px-3 py-1.5 shadow-md border border-black/5 flex items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-[#0a0a0a]">Global</span>
-              <span className="w-2 h-2 rounded-full bg-[#3B7BFF]" />
-            </div>
-            {/* Center dot */}
-            <div className="w-3 h-3 rounded-full bg-[#3B7BFF] shadow-[0_0_20px_rgba(59,123,255,0.5)] relative z-10" />
+          <Eyebrow>Live Buyer Intent</Eyebrow>
+          <h2
+            className="text-[36px] md:text-[54px] leading-[1.05] tracking-[-0.02em] font-medium text-[#0a0a0a]"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            Buyers are posting about their pain right now.<br />We put them in front of you first.
+          </h2>
+          <p className="mt-5 text-[15px] md:text-[16px] text-[#6b7280]">
+            Scanning 12M+ LinkedIn posts, comments, and job changes every day — surfacing only the people ready to buy what you sell.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-2 gap-5">
+            <FeatureCell
+              index={0}
+              Icon={Globe2}
+              title={<><CountUpNumber to={80} />+ countries covered</>}
+              body="Track buying intent wherever your ICP posts — no geo blind spots, no missed pipeline."
+            />
+            <FeatureCell
+              index={1}
+              Icon={LayoutGrid}
+              title={<><CountUpNumber to={12} />M posts scanned daily</>}
+              body="Our engine reads every relevant LinkedIn post, comment, and Reddit thread so you don't have to scroll."
+            />
+            <FeatureCell
+              index={2}
+              Icon={ShieldCheck}
+              title={<><CountUpNumber to={93} />% noise filtered out</>}
+              body="AI scores each signal for buying intent — only leads with real budget and timing reach your dashboard."
+            />
+            <FeatureCell
+              index={3}
+              Icon={Timer}
+              title={<>Under <CountUpNumber to={4} /> min from post to alert</>}
+              body="The moment a buyer raises their hand, you get their profile, the trigger, and an AI-drafted opener."
+            />
           </div>
+
+          {/* Globe/tracker column */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
+            className="rounded-[24px] border border-black/[0.06] bg-white p-8 relative overflow-hidden min-h-[460px] md:min-h-full flex items-center justify-center"
+          >
+            {/* Live pill */}
+            <div className="absolute top-5 left-1/2 -translate-x-1/2 z-20 inline-flex items-center gap-1.5 rounded-full bg-black text-white px-3 py-1.5 shadow-md">
+              <span className="relative flex w-1.5 h-1.5">
+                {!reduce && (
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75 animate-ping" />
+                )}
+                <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-[#22C55E]" />
+              </span>
+              <span className="text-[10px] font-semibold tracking-wide">Live signals · updated every 60s</span>
+            </div>
+
+            <div className="relative w-full h-full flex items-center justify-center">
+              {/* Concentric rings */}
+              {[300, 220, 140].map((size, i) => (
+                <motion.div
+                  key={size}
+                  className="absolute rounded-full border border-black/[0.06]"
+                  style={{
+                    width: size,
+                    height: size,
+                    background:
+                      i === 0
+                        ? "repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 6px)"
+                        : "transparent",
+                  }}
+                  animate={reduce ? {} : { rotate: i === 1 ? -360 : 360 }}
+                  transition={{ duration: i === 0 ? 60 : i === 1 ? 40 : 80, repeat: Infinity, ease: "linear" }}
+                />
+              ))}
+
+              {/* Country pills — gently floating */}
+              {[
+                { cls: "top-6 right-8", label: "USA", flag: "🇺🇸", delay: 0 },
+                { cls: "top-1/2 left-4 -translate-y-4", label: "Germany", flag: "🇩🇪", delay: 0.8 },
+                { cls: "bottom-16 left-8", label: "UK", flag: "🇬🇧", delay: 1.4 },
+              ].map((p) => (
+                <motion.div
+                  key={p.label}
+                  className={`absolute ${p.cls} bg-white rounded-full px-3 py-1.5 shadow-md border border-black/5 flex items-center gap-1.5`}
+                  animate={reduce ? {} : { y: [0, -5, 0] }}
+                  transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
+                >
+                  <span className="text-[11px] font-semibold text-[#0a0a0a]">{p.label}</span>
+                  <span>{p.flag}</span>
+                </motion.div>
+              ))}
+              <motion.div
+                className="absolute bottom-8 right-4 bg-white rounded-full px-3 py-1.5 shadow-md border border-black/5 flex items-center gap-1.5"
+                animate={reduce ? {} : { y: [0, -5, 0] }}
+                transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              >
+                <span className="text-[11px] font-semibold text-[#0a0a0a]">+76 more</span>
+                <span className="w-2 h-2 rounded-full bg-[#3B7BFF]" />
+              </motion.div>
+
+              {/* Center dot with broadcast ring */}
+              <div className="relative z-10 flex items-center justify-center">
+                {!reduce && (
+                  <motion.span
+                    className="absolute w-3 h-3 rounded-full bg-[#3B7BFF]"
+                    animate={{ scale: [1, 2.6], opacity: [0.55, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                  />
+                )}
+                <motion.div
+                  className="w-3 h-3 rounded-full bg-[#3B7BFF] relative z-10"
+                  animate={reduce ? {} : { boxShadow: ["0 0 18px rgba(59,123,255,0.45)", "0 0 34px rgba(59,123,255,0.75)", "0 0 18px rgba(59,123,255,0.45)"] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
+
+
 
 /* ═══════════════════════════════════════════════════════════════
    4. FUTURE — bento grid (light gray bg)
