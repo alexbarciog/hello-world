@@ -852,7 +852,7 @@ export const DarkSpace = () => (
       }}
     />
     {/* stars */}
-    <div className="absolute inset-0 opacity-40">
+    <div className="absolute inset-0">
       {Array.from({ length: 60 }).map((_, i) => (
         <div
           key={i}
@@ -863,6 +863,8 @@ export const DarkSpace = () => (
             top: `${Math.random() * 100}%`,
             left: `${Math.random() * 100}%`,
             opacity: Math.random() * 0.8 + 0.2,
+            animation: `star-twinkle ${Math.random() * 2 + 2}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 3}s`,
           }}
         />
       ))}
