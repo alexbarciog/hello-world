@@ -79,6 +79,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   const textG = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
   const textB = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
   const textColor = useMotionTemplate`rgb(${textR}, ${textG}, ${textB})`;
+  // Nav links fade + collapse away as user scrolls
+  const linksOpacity = useTransform(scrollY, [40, 180], [1, 0]);
+  const linksScale = useTransform(scrollY, [40, 180], [1, 0.9]);
+  const linksPointer = useTransform(linksOpacity, (v) => (v < 0.05 ? "none" : "auto"));
 
   return (
     <>
@@ -114,8 +118,13 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
           </motion.a>
 
           <motion.div
-            style={{ gap: reduce ? undefined : gap }}
-            className="flex items-center"
+            style={{
+              gap: reduce ? undefined : gap,
+              opacity: reduce ? undefined : linksOpacity,
+              scale: reduce ? undefined : linksScale,
+              pointerEvents: reduce ? undefined : (linksPointer as unknown as "auto" | "none"),
+            }}
+            className="flex items-center origin-center"
           >
             {navLinks.map((link) => (
               <motion.a
