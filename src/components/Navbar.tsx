@@ -65,10 +65,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
           animate="show"
           layout
           transition={{ layout: { duration: 0.35, ease: EASE } }}
-          className={`mx-auto flex items-center justify-between rounded-full transition-all duration-300 ease-out ${
+          className={`mx-auto flex items-center justify-between gap-6 rounded-full transition-all duration-300 ease-out ${
             scrolled
-              ? "max-w-3xl px-5 py-2 bg-white/90 backdrop-blur-md border border-border/40 shadow-md"
-              : "max-w-5xl px-6 py-3 bg-white/20 backdrop-blur-md border border-white/20 shadow-sm"
+              ? "max-w-5xl px-5 py-2 bg-white/90 backdrop-blur-md border border-border/40 shadow-md"
+              : "max-w-6xl px-6 py-3 bg-white/20 backdrop-blur-md border border-white/20 shadow-sm"
           }`}
         >
           <motion.a variants={child} href="/" className="flex items-center gap-2 shrink-0">
@@ -82,7 +82,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
             </span>
           </motion.a>
 
-          <div className={`flex items-center transition-all duration-300 ${scrolled ? "gap-6" : "gap-8"}`}>
+          <div className={`flex items-center transition-all duration-300 ${scrolled ? "gap-5" : "gap-7"}`}>
             {navLinks.map((link) => (
               <motion.a
                 key={link.href}
@@ -90,7 +90,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
                 href={link.href}
                 whileHover={reduce ? undefined : { y: -1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                className={`group relative text-xs font-medium uppercase tracking-wider ${linkColor}`}
+                className={`group relative whitespace-nowrap text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-80 ${linkColor}`}
               >
                 {link.label}
                 <span
@@ -104,7 +104,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
               onClick={() => navigate("/login")}
               whileHover={reduce ? undefined : { y: -1 }}
               transition={{ type: "spring", stiffness: 400, damping: 22 }}
-              className={`group relative text-xs font-medium uppercase tracking-wider ${linkColor}`}
+              className={`group relative whitespace-nowrap text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-80 ${linkColor}`}
             >
               Login
               <span
@@ -113,6 +113,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
               />
             </motion.button>
           </div>
+
 
           <motion.div variants={child} className="flex items-center gap-3 shrink-0">
             <motion.button
