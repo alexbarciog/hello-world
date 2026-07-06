@@ -24,16 +24,10 @@ const navLinks = [
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: boolean; forceDark?: boolean }) => {
-  const [scrolled, setScrolled] = useState(forceDark);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const reduce = useReducedMotion();
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(forceDark || window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [forceDark]);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
