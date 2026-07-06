@@ -116,20 +116,24 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
 
 
           <motion.div variants={child} className="flex items-center gap-3 shrink-0">
-            <motion.button
-              onClick={() => navigate("/register")}
-              whileHover={reduce ? undefined : { scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 380, damping: 22 }}
-              className={`group btn-cta relative text-xs !py-2 ${scrolled ? "!px-4" : "!px-5"}
-                after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-[#C8FF3B] after:blur-xl after:opacity-40 after:-z-10
-                ${reduce ? "" : "after:animate-pulse"}`}
-            >
-              Start for $97
-              <span className="inline-flex transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </span>
-            </motion.button>
+            <div className="relative">
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute -inset-1 rounded-full bg-[#C8FF3B] blur-lg opacity-60 ${reduce ? "" : "animate-pulse"}`}
+              />
+              <motion.button
+                onClick={() => navigate("/register")}
+                whileHover={reduce ? undefined : { scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 380, damping: 22 }}
+                className={`group btn-cta relative text-xs whitespace-nowrap !py-2 ${scrolled ? "!px-4" : "!px-5"}`}
+              >
+                Start for $97
+                <span className="inline-flex transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </span>
+              </motion.button>
+            </div>
           </motion.div>
         </motion.div>
       </nav>
