@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 
@@ -13,10 +13,13 @@ const navLinks = [
   { label: "FAQ", href: "#faq" },
 ];
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: boolean; forceDark?: boolean }) => {
   const [scrolled, setScrolled] = useState(forceDark);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(forceDark || window.scrollY > 20);
@@ -31,51 +34,102 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
 
   const close = () => setMenuOpen(false);
 
+  const container: Variants = {
+    hidden: { opacity: 0, y: -12 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: EASE,
+        staggerChildren: reduce ? 0 : 0.06,
+        delayChildren: 0.05,
+      },
+    },
+  };
+
+  const child: Variants = {
+    hidden: { opacity: 0, y: reduce ? 0 : -8 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE } },
+  };
+
+  const linkColor = scrolled ? "text-foreground" : "text-white";
+
   return (
     <>
       {/* Desktop navbar */}
       <nav className="fixed top-[42px] left-0 right-0 z-50 px-6 pt-4 hidden md:block">
         <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`max-w-5xl mx-auto px-6 py-3 flex items-center justify-between rounded-full transition-all duration-300 ${
+          variants={container}
+          initial="hidden"
+          animate="show"
+          layout
+          transition={{ layout: { duration: 0.35, ease: EASE } }}
+          className={`mx-auto flex items-center justify-between rounded-full transition-all duration-300 ease-out ${
             scrolled
-              ? "bg-white/90 backdrop-blur-md border border-border/40 shadow-sm"
-              : "bg-white/20 backdrop-blur-md border border-white/20"
+              ? "max-w-3xl px-5 py-2 bg-white/90 backdrop-blur-md border border-border/40 shadow-md"
+              : "max-w-5xl px-6 py-3 bg-white/20 backdrop-blur-md border border-white/20 shadow-sm"
           }`}
         >
-          <a href="/" className="flex items-center gap-2">
-            <img alt="Intentsly" className="h-10 object-contain" src={intentslyIcon} />
-            <span className={`text-sm font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
+          <motion.a variants={child} href="/" className="flex items-center gap-2 shrink-0">
+            <img
+              alt="Intentsly"
+              src={intentslyIcon}
+              className={`object-contain transition-all duration-300 ${scrolled ? "h-8" : "h-10"}`}
+            />
+            <span className={`text-sm font-semibold tracking-tight ${linkColor}`}>
               Intentsly
             </span>
-          </a>
+          </motion.a>
 
-          <div className="flex items-center gap-8">
+          <div className={`flex items-center transition-all duration-300 ${scrolled ? "gap-6" : "gap-8"}`}>
             {navLinks.map((link) => (
-              <a
+              <motion.a
                 key={link.href}
+                variants={child}
                 href={link.href}
-                className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
+                whileHover={reduce ? undefined : { y: -1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                className={`group relative text-xs font-medium uppercase tracking-wider ${linkColor}`}
               >
                 {link.label}
-              </a>
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-0 -bottom-1 h-[1.5px] w-full bg-current origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
+                />
+              </motion.a>
             ))}
-            <button
+            <motion.button
+              variants={child}
               onClick={() => navigate("/login")}
-              className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
+              whileHover={reduce ? undefined : { y: -1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+              className={`group relative text-xs font-medium uppercase tracking-wider ${linkColor}`}
             >
               Login
-            </button>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute left-0 -bottom-1 h-[1.5px] w-full bg-current origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
+              />
+            </motion.button>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/register")} className="btn-cta text-xs !py-2 !px-5">
+          <motion.div variants={child} className="flex items-center gap-3 shrink-0">
+            <motion.button
+              onClick={() => navigate("/register")}
+              whileHover={reduce ? undefined : { scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 380, damping: 22 }}
+              className={`group btn-cta relative text-xs !py-2 ${scrolled ? "!px-4" : "!px-5"}
+                after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-[#C8FF3B] after:blur-xl after:opacity-40 after:-z-10
+                ${reduce ? "" : "after:animate-pulse"}`}
+            >
               Start for $97
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+              <span className="inline-flex transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </span>
+            </motion.button>
+          </motion.div>
         </motion.div>
       </nav>
 
@@ -129,9 +183,17 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
 
               <div className="px-4 pt-3 pb-5 flex flex-col gap-2">
                 <button onClick={() => { close(); navigate("/login"); }} className="w-full text-sm font-medium rounded-2xl py-3 bg-muted transition-colors" style={{ color: "hsl(var(--aeline-dark))" }}>Login</button>
-                <button onClick={() => { close(); navigate("/register"); }} className="btn-cta w-full justify-center text-sm !py-3">
-                  Start for $97 <ArrowUpRight className="w-4 h-4" />
-                </button>
+                <motion.button
+                  onClick={() => { close(); navigate("/register"); }}
+                  whileHover={reduce ? undefined : { scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="group btn-cta w-full justify-center text-sm !py-3"
+                >
+                  Start for $97
+                  <span className="inline-flex transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                    <ArrowUpRight className="w-4 h-4" />
+                  </span>
+                </motion.button>
               </div>
             </motion.div>
           </>
