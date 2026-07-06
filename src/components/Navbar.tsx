@@ -124,9 +124,12 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
               gap: reduce ? undefined : gap,
               opacity: reduce ? undefined : linksOpacity,
               scale: reduce ? undefined : linksScale,
+              maxWidth: reduce ? undefined : linksMaxWidth,
+              marginLeft: reduce ? undefined : linksMarginX,
+              marginRight: reduce ? undefined : linksMarginX,
               pointerEvents: reduce ? undefined : (linksPointer as unknown as "auto" | "none"),
             }}
-            className="flex items-center origin-center"
+            className="flex items-center overflow-hidden origin-center"
           >
             {navLinks.map((link) => (
               <motion.a
