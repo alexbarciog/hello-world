@@ -58,7 +58,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   // Smooth scroll-driven motion values
   const { scrollY } = useScroll();
   const range = [0, 220];
-  const maxWidth = useTransform(scrollY, range, [1200, 780]);
+  const maxWidth = useTransform(scrollY, range, [1200, 460]);
   const padY = useTransform(scrollY, range, [14, 8]);
   const padX = useTransform(scrollY, range, [28, 20]);
   const gap = useTransform(scrollY, range, [28, 18]);
