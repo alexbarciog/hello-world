@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  useMotionTemplate,
+  type Variants,
+} from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 
@@ -16,16 +24,10 @@ const navLinks = [
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: boolean; forceDark?: boolean }) => {
-  const [scrolled, setScrolled] = useState(forceDark);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const reduce = useReducedMotion();
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(forceDark || window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [forceDark]);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -53,7 +55,30 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
     show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: EASE } },
   };
 
-  const linkColor = scrolled ? "text-foreground" : "text-white";
+  // Smooth scroll-driven motion values
+  const { scrollY } = useScroll();
+  const range = [0, 220];
+  const maxWidth = useTransform(scrollY, range, [1200, 780]);
+  const padY = useTransform(scrollY, range, [14, 8]);
+  const padX = useTransform(scrollY, range, [28, 20]);
+  const gap = useTransform(scrollY, range, [28, 18]);
+  const logoH = useTransform(scrollY, range, [40, 30]);
+  const bgAlpha = useTransform(scrollY, range, [0.15, 0.92]);
+  const bgR = useTransform(scrollY, range, [255, 10]);
+  const bgG = useTransform(scrollY, range, [255, 10]);
+  const bgB = useTransform(scrollY, range, [255, 10]);
+  const background = useMotionTemplate`rgba(${bgR}, ${bgG}, ${bgB}, ${bgAlpha})`;
+  const borderAlpha = useTransform(scrollY, range, [0.25, 0.12]);
+  const borderColor = useMotionTemplate`rgba(255, 255, 255, ${borderAlpha})`;
+  const shadowOpacity = useTransform(scrollY, range, [0.05, 0.35]);
+  const shadowBlur = useTransform(scrollY, range, [10, 30]);
+  const shadowSpread = useTransform(shadowBlur, (v) => v / 2);
+  const boxShadow = useMotionTemplate`0 ${shadowBlur}px ${shadowBlur}px -${shadowSpread}px rgba(0, 0, 0, ${shadowOpacity})`;
+  // Text color: dark (forceDark) or white → white as we scroll darker pill
+  const textR = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
+  const textG = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
+  const textB = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
+  const textColor = useMotionTemplate`rgb(${textR}, ${textG}, ${textB})`;
 
   return (
     <>
@@ -63,26 +88,35 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
           variants={container}
           initial="hidden"
           animate="show"
-          layout
-          transition={{ layout: { duration: 0.35, ease: EASE } }}
-          className={`mx-auto flex items-center justify-between gap-6 rounded-full transition-all duration-300 ease-out ${
-            scrolled
-              ? "max-w-5xl px-5 py-2 bg-white/90 backdrop-blur-md border border-border/40 shadow-md"
-              : "max-w-6xl px-6 py-3 bg-white/20 backdrop-blur-md border border-white/20 shadow-sm"
-          }`}
+          style={{
+            maxWidth: reduce ? undefined : maxWidth,
+            paddingTop: reduce ? undefined : padY,
+            paddingBottom: reduce ? undefined : padY,
+            paddingLeft: reduce ? undefined : padX,
+            paddingRight: reduce ? undefined : padX,
+            background: reduce ? undefined : background,
+            borderColor: reduce ? undefined : borderColor,
+            boxShadow: reduce ? undefined : boxShadow,
+            color: reduce ? undefined : textColor,
+          }}
+          className="mx-auto flex items-center justify-between gap-6 rounded-full border backdrop-blur-md"
         >
           <motion.a variants={child} href="/" className="flex items-center gap-2 shrink-0">
-            <img
+            <motion.img
               alt="Intentsly"
               src={intentslyIcon}
-              className={`object-contain transition-all duration-300 ${scrolled ? "h-8" : "h-10"}`}
+              style={{ height: reduce ? undefined : logoH }}
+              className="object-contain"
             />
-            <span className={`text-sm font-semibold tracking-tight ${linkColor}`}>
+            <span className="text-sm font-semibold tracking-tight" style={{ color: "inherit" }}>
               Intentsly
             </span>
           </motion.a>
 
-          <div className={`flex items-center transition-all duration-300 ${scrolled ? "gap-5" : "gap-7"}`}>
+          <motion.div
+            style={{ gap: reduce ? undefined : gap }}
+            className="flex items-center"
+          >
             {navLinks.map((link) => (
               <motion.a
                 key={link.href}
@@ -90,7 +124,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
                 href={link.href}
                 whileHover={reduce ? undefined : { y: -1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                className={`group relative whitespace-nowrap text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-80 ${linkColor}`}
+                style={{ color: "inherit" }}
+                className="group relative whitespace-nowrap text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-80"
               >
                 {link.label}
                 <span
@@ -104,7 +139,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
               onClick={() => navigate("/login")}
               whileHover={reduce ? undefined : { y: -1 }}
               transition={{ type: "spring", stiffness: 400, damping: 22 }}
-              className={`group relative whitespace-nowrap text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-80 ${linkColor}`}
+              style={{ color: "inherit" }}
+              className="group relative whitespace-nowrap text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-80"
             >
               Login
               <span
@@ -112,8 +148,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
                 className="pointer-events-none absolute left-0 -bottom-1 h-[1.5px] w-full bg-current origin-left scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100"
               />
             </motion.button>
-          </div>
-
+          </motion.div>
 
           <motion.div variants={child} className="flex items-center gap-3 shrink-0">
             <div className="relative">
@@ -126,7 +161,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
                 whileHover={reduce ? undefined : { scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                className={`group btn-cta relative text-xs whitespace-nowrap !py-2 ${scrolled ? "!px-4" : "!px-5"}`}
+                className="group btn-cta relative text-xs whitespace-nowrap !py-2 !px-4"
               >
                 Start for $97
                 <span className="inline-flex transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
