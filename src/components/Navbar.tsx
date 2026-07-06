@@ -34,7 +34,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   return (
     <>
       {/* Desktop navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 pt-4 hidden md:block">
+      <nav className="fixed top-[42px] left-0 right-0 z-50 px-6 pt-4 hidden md:block">
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
