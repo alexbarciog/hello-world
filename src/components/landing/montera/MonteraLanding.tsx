@@ -899,72 +899,13 @@ export const DarkSpace = () => (
         Get Started <ArrowRight className="w-4 h-4" />
       </a>
 
-      {/* Sphere with tooltips */}
+      {/* 3D Globe with intent pings */}
       <div
         className="relative mt-20 mx-auto max-w-3xl aspect-square"
         style={{ animation: "globe-float 6s ease-in-out infinite" }}
       >
-        {/* wireframe sphere */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
-        >
-          <div
-            className="w-full h-full"
-            style={{
-              animation: "globe-rotate 30s linear infinite",
-              transformOrigin: "center center",
-            }}
-          >
-            <svg viewBox="0 0 400 400" className="w-full h-full opacity-70">
-              <defs>
-                <radialGradient id="sph" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#fff" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              <circle
-                cx="200"
-                cy="200"
-                r="150"
-                fill="url(#sph)"
-                style={{ animation: "globe-glow-pulse 4s ease-in-out infinite" }}
-              />
-              {Array.from({ length: 12 }).map((_, i) => (
-                <ellipse
-                  key={i}
-                  cx="200"
-                  cy="200"
-                  rx={150}
-                  ry={150 - i * 12}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.12)"
-                  strokeWidth="0.5"
-                  style={{
-                    animation: "globe-line-pulse 3s ease-in-out infinite",
-                    animationDelay: `${i * 0.18}s`,
-                  }}
-                />
-              ))}
-              {Array.from({ length: 12 }).map((_, i) => (
-                <ellipse
-                  key={`v${i}`}
-                  cx="200"
-                  cy="200"
-                  rx={150 - i * 12}
-                  ry={150}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.12)"
-                  strokeWidth="0.5"
-                  style={{
-                    animation: "globe-line-pulse 3s ease-in-out infinite",
-                    animationDelay: `${(i + 6) * 0.18}s`,
-                  }}
-                />
-              ))}
-            </svg>
-          </div>
-        </div>
+        <IntentGlobe />
+      </div>
 
         {/* tooltip left */}
         <div className="absolute left-0 top-8 md:left-10 md:top-16 max-w-[240px] text-left bg-white/[0.08] backdrop-blur-md rounded-xl p-4 border border-white/10 z-10">
