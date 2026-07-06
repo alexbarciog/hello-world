@@ -72,7 +72,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false }: { showCampaigns?: 
   const borderColor = useMotionTemplate`rgba(255, 255, 255, ${borderAlpha})`;
   const shadowOpacity = useTransform(scrollY, range, [0.05, 0.35]);
   const shadowBlur = useTransform(scrollY, range, [10, 30]);
-  const boxShadow = useMotionTemplate`0 ${shadowBlur}px ${shadowBlur}px -${useTransform(shadowBlur, (v) => v / 2)}px rgba(0, 0, 0, ${shadowOpacity})`;
+  const shadowSpread = useTransform(shadowBlur, (v) => v / 2);
+  const boxShadow = useMotionTemplate`0 ${shadowBlur}px ${shadowBlur}px -${shadowSpread}px rgba(0, 0, 0, ${shadowOpacity})`;
   // Text color: dark (forceDark) or white → white as we scroll darker pill
   const textR = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
   const textG = useTransform(scrollY, range, [forceDark ? 10 : 255, 255]);
