@@ -591,13 +591,60 @@ export const FutureBento = () => (
       {/* Row 2: 3 cards */}
       <div className="grid md:grid-cols-3 gap-5">
         <BentoCard
-          title="Powerful Integrations"
-          body="Connect LinkedIn, HubSpot, Slack and your CRM in one click. Signals flow where your team works."
+          title="Calendar Connected"
+          body="Book meetings straight from signals. One-click scheduling through Calendly, Cal.com, Google Calendar and Teams."
         >
-          <div className="grid grid-cols-3 gap-3">
-            {["#3B7BFF", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4"].map((c, i) => (
-              <div key={i} className="aspect-square rounded-xl bg-white border border-black/5 shadow-sm flex items-center justify-center">
-                <div className="w-5 h-5 rounded" style={{ background: c }} />
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                name: "Calendly",
+                svg: (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6">
+                    <rect width="32" height="32" rx="8" fill="#006BFF" />
+                    <path d="M8 10c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2h-3l-3 3-3-3H10c-1.1 0-2-.9-2-2V10z" fill="white" />
+                    <circle cx="16" cy="15" r="3.5" fill="#006BFF" />
+                  </svg>
+                ),
+              },
+              {
+                name: "Cal.com",
+                svg: (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6">
+                    <rect width="32" height="32" rx="8" fill="#111827" />
+                    <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="11" fontWeight="700" fontFamily="sans-serif">cal</text>
+                  </svg>
+                ),
+              },
+              {
+                name: "Google Calendar",
+                svg: (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6">
+                    <rect width="32" height="32" rx="8" fill="white" />
+                    <rect x="6" y="6" width="9" height="9" rx="2" fill="#4285F4" />
+                    <rect x="17" y="6" width="9" height="9" rx="2" fill="#34A853" />
+                    <rect x="6" y="17" width="9" height="9" rx="2" fill="#EA4335" />
+                    <rect x="17" y="17" width="9" height="9" rx="2" fill="#FBBC05" />
+                  </svg>
+                ),
+              },
+              {
+                name: "Microsoft Teams",
+                svg: (
+                  <svg viewBox="0 0 32 32" className="w-6 h-6">
+                    <rect width="32" height="32" rx="8" fill="#6264A7" />
+                    <circle cx="18" cy="12" r="4.5" fill="white" />
+                    <path d="M12 16c2.5 0 4.5 2 4.5 4.5V22h-9v-1.5c0-2.5 2-4.5 4.5-4.5z" fill="white" />
+                    <circle cx="22" cy="22" r="3" fill="white" />
+                  </svg>
+                ),
+              },
+            ].map((item) => (
+              <div
+                key={item.name}
+                className="aspect-square rounded-xl bg-white border border-black/5 shadow-sm flex flex-col items-center justify-center gap-1.5"
+              >
+                {item.svg}
+                <span className="text-[10px] font-medium text-[#0a0a0a]">{item.name}</span>
               </div>
             ))}
           </div>
