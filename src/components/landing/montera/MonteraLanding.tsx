@@ -594,57 +594,62 @@ export const FutureBento = () => (
           title="Calendar Connected"
           body="Book meetings straight from signals. One-click scheduling through Calendly, Cal.com, Google Calendar and Teams."
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-wrap gap-2">
             {[
               {
                 name: "Calendly",
+                bg: "#006BFF",
                 svg: (
-                  <svg viewBox="0 0 32 32" className="w-6 h-6">
-                    <rect width="32" height="32" rx="8" fill="#006BFF" />
-                    <path d="M8 10c0-1.1.9-2 2-2h12c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2h-3l-3 3-3-3H10c-1.1 0-2-.9-2-2V10z" fill="white" />
-                    <circle cx="16" cy="15" r="3.5" fill="#006BFF" />
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5">
+                    <path d="M2 5c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2v5c0 1.1-.9 2-2 2H9.5l-1.5 1.5-1.5-1.5H4c-1.1 0-2-.9-2-2V5z" fill="white" />
+                    <circle cx="8" cy="7.5" r="2" fill="#006BFF" />
                   </svg>
                 ),
               },
               {
                 name: "Cal.com",
+                bg: "#111827",
                 svg: (
-                  <svg viewBox="0 0 32 32" className="w-6 h-6">
-                    <rect width="32" height="32" rx="8" fill="#111827" />
-                    <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="11" fontWeight="700" fontFamily="sans-serif">cal</text>
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5">
+                    <text x="50%" y="55%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="6" fontWeight="700" fontFamily="sans-serif">cal</text>
                   </svg>
                 ),
               },
               {
                 name: "Google Calendar",
+                bg: "#fff",
                 svg: (
-                  <svg viewBox="0 0 32 32" className="w-6 h-6">
-                    <rect width="32" height="32" rx="8" fill="white" />
-                    <rect x="6" y="6" width="9" height="9" rx="2" fill="#4285F4" />
-                    <rect x="17" y="6" width="9" height="9" rx="2" fill="#34A853" />
-                    <rect x="6" y="17" width="9" height="9" rx="2" fill="#EA4335" />
-                    <rect x="17" y="17" width="9" height="9" rx="2" fill="#FBBC05" />
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5">
+                    <rect x="1" y="1" width="6.5" height="6.5" rx="1.5" fill="#4285F4" />
+                    <rect x="8.5" y="1" width="6.5" height="6.5" rx="1.5" fill="#34A853" />
+                    <rect x="1" y="8.5" width="6.5" height="6.5" rx="1.5" fill="#EA4335" />
+                    <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1.5" fill="#FBBC05" />
                   </svg>
                 ),
               },
               {
                 name: "Microsoft Teams",
+                bg: "#6264A7",
                 svg: (
-                  <svg viewBox="0 0 32 32" className="w-6 h-6">
-                    <rect width="32" height="32" rx="8" fill="#6264A7" />
-                    <circle cx="18" cy="12" r="4.5" fill="white" />
-                    <path d="M12 16c2.5 0 4.5 2 4.5 4.5V22h-9v-1.5c0-2.5 2-4.5 4.5-4.5z" fill="white" />
-                    <circle cx="22" cy="22" r="3" fill="white" />
+                  <svg viewBox="0 0 16 16" className="w-3.5 h-3.5">
+                    <circle cx="10" cy="6" r="2.5" fill="white" />
+                    <path d="M6 9c1.5 0 2.5 1 2.5 2.5V13h-5v-1.5c0-1.5 1-2.5 2.5-2.5z" fill="white" />
+                    <circle cx="12" cy="12" r="2" fill="white" />
                   </svg>
                 ),
               },
             ].map((item) => (
               <div
                 key={item.name}
-                className="aspect-square rounded-xl bg-white border border-black/5 shadow-sm flex flex-col items-center justify-center gap-1.5"
+                className="flex items-center gap-1.5 rounded-lg bg-white border border-black/5 shadow-sm px-2.5 py-1.5"
               >
-                {item.svg}
-                <span className="text-[10px] font-medium text-[#0a0a0a]">{item.name}</span>
+                <div
+                  className="w-5 h-5 rounded-md flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: item.bg, border: item.bg === "#fff" ? "1px solid #e5e7eb" : "none" }}
+                >
+                  {item.svg}
+                </div>
+                <span className="text-[10px] font-medium text-[#0a0a0a] whitespace-nowrap">{item.name}</span>
               </div>
             ))}
           </div>
