@@ -1307,7 +1307,7 @@ export const FinalMonteraCTA = () => (
 
     {/* Right: AI-drafted reply card */}
     <div
-      className="absolute right-4 md:right-16 top-1/2 hidden md:block"
+      className="absolute right-4 md:right-12 lg:right-24 top-1/2 hidden md:block z-10"
       style={{ transform: "translateY(-50%) rotate(6deg)" }}
     >
       <motion.div
