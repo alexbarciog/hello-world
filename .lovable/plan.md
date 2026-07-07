@@ -1,52 +1,83 @@
-# Animated Desktop Navbar
+## Why the current generation feels disconnected
 
-Four layered animations on `src/components/Navbar.tsx` (desktop pill only — mobile burger untouched).
+Looking at `superscale-generate-image`:
+- It sends raw post content (truncated to 500 chars) + up to 4 ref image URLs to `google/gemini-2.5-flash-image` in a single shot.
+- Flash image is the cheapest/fastest tier and is weak at *style transfer* from references — it tends to generate generic LinkedIn-looking visuals and largely ignores the refs.
+- The prompt never describes WHAT visual style the refs actually have (palette, type, layout, mood), so the model has nothing structured to imitate.
+- Only one image is produced, no way to regenerate or compare, so a single bad result = "the worst I've seen".
 
-## 1. Staggered entrance (first load)
+## New system
 
-Replace the single `motion.div` fade-in with a Framer Motion parent `variants` container and child variants so each element pops in sequentially:
+### 1. One-time "Style DNA" extraction from design refs
 
-- Container: fades + slides down over 0.5s
-- Children stagger: logo → each nav link → login → CTA button, `staggerChildren: 0.06`, each child `y: -8 → 0`, opacity `0 → 1`, ease `[0.22, 1, 0.36, 1]`
-- Runs once on mount (no re-trigger on scroll state change)
+New edge function `superscale-analyze-style`:
+- Triggered automatically when refs change (debounced from `DesignRefs.tsx` after upload/delete) and on-demand via a "Re-analyze style" button.
+- Sends up to 8 ref image URLs to a vision model (`google/gemini-2.5-flash`) with a structured-output prompt that returns JSON:
+  ```
+  { palette: [...hex], accent_colors: [...], typography: {style, weight, casing},
+    layout_patterns: [...], composition: "...", mood: "...", recurring_motifs: [...],
+    text_treatment: "...", background_style: "...", do: [...], dont: [...] }
+  ```
+- Stored in a new table `superscale_style_profile` (one row per user/org), with `updated_at` and `refs_hash` so we know when to re-run.
 
-## 2. Shrink & morph on scroll
+### 2. Two-stage generation
 
-Extend the existing `scrolled` boolean (already toggles at `scrollY > 20`) to also drive size:
+New flow inside `superscale-generate-image`:
 
-- Pill max-width: `max-w-5xl` → `max-w-3xl` when scrolled
-- Vertical padding: `py-3` → `py-2`
-- Logo image height: `h-10` → `h-8`
-- Nav link gap: `gap-8` → `gap-6`
-- CTA padding shrinks one step
-- All transitioned via `transition-all duration-300 ease-out` (framer `layout` prop on the pill for smooth width morph)
-- Shadow deepens slightly when scrolled (`shadow-md` instead of `shadow-sm`) for lift
+**Stage A — Visual brief (cheap text call):**
+Given the post content + the cached Style DNA, ask `google/gemini-2.5-flash` to return a tight visual brief:
+- Single sentence "what to depict"
+- Headline text overlay (≤6 words, only if the user's refs typically have text)
+- Color palette to use (pulled from Style DNA)
+- Layout reference (e.g. "centered bold type on solid color block, like ref #2")
 
-## 3. Animated link underline + magnetic hover
+**Stage B — Image generation:**
+Call `google/gemini-3-pro-image-preview` (Nano Banana Pro — much higher fidelity than 2.5 flash image) with:
+- The structured brief as text
+- 3 most-relevant ref images (selected by similarity tag, fall back to first 3)
+- Explicit instruction: "Match the visual style, palette, and typography of the reference images exactly. Do not invent unrelated styles."
 
-Rewrite each nav link as a `<a>` wrapping the label with an absolutely-positioned underline span:
+Allow the user to choose model tier later via a setting; default to Nano Banana Pro for quality.
 
-- Underline: `absolute left-0 -bottom-1 h-[1.5px] w-full bg-current origin-left scale-x-0 transition-transform duration-300 ease-out`
-- On `group-hover`: `scale-x-100`
-- Also add a subtle `whileHover={{ y: -1 }}` micro-lift on the link via `motion.a`
-- Login button gets the same underline treatment
+### 3. Pick from variants
 
-## 4. CTA glow + arrow motion
+Update `Compose.tsx` "Generate from design refs" to open a modal:
+- Generates **3 variants in parallel** (3 stage-B calls, same brief).
+- Shows them in a grid with a one-click "Use this" + "Regenerate all" + a small editable text field to tweak the brief and regenerate.
+- Only the chosen variant is uploaded to storage and attached to the post (others are discarded — no extra storage cost).
+- Loading skeletons + per-variant error handling so one failure doesn't kill the set.
 
-`Start for $97` button (desktop + mobile menu variant):
+### 4. UX polish in Compose
 
-- Wrap in `motion.button`, add `whileHover={{ scale: 1.03 }}` and `whileTap={{ scale: 0.97 }}`
-- Add a persistent soft lime glow via a pseudo layer: `after:absolute after:inset-0 after:rounded-full after:bg-[#C8FF3B] after:blur-xl after:opacity-40 after:-z-10 after:animate-pulse` (2.5s pulse)
-- Arrow icon: wrap in a span with `transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5` so on hover the `ArrowUpRight` slides up-right
-- Add `group` class to the button so children respond
+- Show a small "Style: 12 refs analyzed · updated 2d ago" chip under the Generate button so users trust the system is using their refs.
+- If `superscale_style_profile` is missing, the button surfaces "Analyze your design refs first" and offers a one-click trigger.
+- If <5 refs, keep the existing nudge.
 
-## Technical notes
+### 5. Keep edge function within compute limits
 
-- All animations use Framer Motion (already imported) + Tailwind utilities; no new deps.
-- `prefers-reduced-motion` respected by using Framer's built-in `useReducedMotion` to disable stagger + hover lift when set.
-- Mobile burger and mobile overlay menu are unchanged except the mobile CTA gets the same arrow-slide + scale hover.
-- No changes to routing, link targets, or the `forceDark` / `showCampaigns` props.
+- Stage A is a tiny text call (cheap).
+- Stage B uses URL-based image inputs (already done) — no base64 fetching.
+- Run the 3 variant calls in parallel via `Promise.allSettled`, and use `EdgeRuntime.waitUntil` only if we move to a job-queue pattern later. For now 3 parallel Pro calls fit well under wall-clock limits and avoid CPU work in the function itself.
 
-## Files touched
+## Technical changes
 
-- `src/components/Navbar.tsx` (only file edited)
+**DB migration:**
+- `superscale_style_profile` (user_id pk, organization_id, style_json jsonb, refs_hash text, updated_at). RLS: owner-only select/insert/update.
+
+**Edge functions:**
+- New: `supabase/functions/superscale-analyze-style/index.ts`
+- Rewrite: `supabase/functions/superscale-generate-image/index.ts` to do Stage A + B and accept `?n=3` for variants. Returns `{ variants: [{image_url}, ...] }` instead of a single `image_url` (also keeps backward-compat single field).
+
+**Frontend:**
+- `src/components/superscale/Compose.tsx`: replace inline generate with a `GenerateImageDialog` showing 3 variants, brief editor, regenerate.
+- `src/components/superscale/DesignRefs.tsx`: after upload/delete, fire-and-forget call to `superscale-analyze-style`; show a "Style analyzed" badge.
+- New: `src/components/superscale/GenerateImageDialog.tsx`.
+
+**Models used:**
+- `google/gemini-2.5-flash` for Style DNA + brief
+- `google/gemini-3-pro-image-preview` for final image (Nano Banana Pro)
+
+## Out of scope (future)
+- Per-post fine-tuning loop ("more like this" feedback).
+- Storing rejected variants for later A/B.
+- Brand kit (logo overlay) — would slot in cleanly as Stage C.
