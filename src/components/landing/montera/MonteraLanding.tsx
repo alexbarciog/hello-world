@@ -798,60 +798,7 @@ export const AdReady = () => (
 );
 
 /* ═══════════════════════════════════════════════════════════════
-   6. ALL-IN-ONE — integration icon grid
-   ═══════════════════════════════════════════════════════════════ */
-export const AllInOne = () => {
-  const icons = [
-    { c: "#22C55E", label: "L" }, { c: "#C8FF3B", label: "R" }, { c: "#1E3A8A", label: "X" },
-    { c: "#EAB308", label: "H" }, { c: "#EF4444", label: "S" }, { c: "#3B7BFF", label: "N" },
-    { c: "#8B5CF6", label: "G" }, { c: "#06B6D4", label: "C" },
-  ];
-  return (
-    <section className="bg-white py-24 md:py-32 px-6 md:px-10">
-      <div className="max-w-[1240px] mx-auto">
-        <h2
-          className="text-center text-[36px] md:text-[64px] leading-[1.02] tracking-[-0.02em] font-medium mb-16"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-        >
-          <span className="text-black/25">All-in-One Outbound</span><br />
-          <span className="text-[#3B7BFF]">and Simplified</span>
-        </h2>
-
-        <div className="relative max-w-4xl mx-auto">
-          <div
-            className="grid grid-cols-7 md:grid-cols-13 gap-3"
-            style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))" }}
-          >
-            {Array.from({ length: 91 }).map((_, i) => {
-              const iconIdx = [16, 32, 44, 58, 62, 74, 82].indexOf(i);
-              if (iconIdx >= 0 && icons[iconIdx]) {
-                const ic = icons[iconIdx];
-                return (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg"
-                    style={{ background: ic.c }}
-                  >
-                    {ic.label}
-                  </div>
-                );
-              }
-              return (
-                <div
-                  key={i}
-                  className="aspect-square rounded-xl bg-black/[0.02] border border-black/[0.03]"
-                />
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-/* ═══════════════════════════════════════════════════════════════
-   7. DARK SPACE — Powering next-gen (with sphere)
+   6. DARK SPACE — Powering next-gen (with sphere)
    ═══════════════════════════════════════════════════════════════ */
 
 /* Animated dotted 3D globe with pulsing intent pings */
