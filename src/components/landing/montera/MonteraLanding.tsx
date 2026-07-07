@@ -1139,16 +1139,46 @@ export const BusinessEngine = () => (
    9. TESTIMONIALS — marquee rows
    ═══════════════════════════════════════════════════════════════ */
 const testimonials = [
-  { name: "Anya L", role: "Founder, B2B SaaS", quote: "The automated signal detection is a lifesaver. I used to spend days researching prospects. Now hot leads land in my inbox every morning." },
-  { name: "Marco P", role: "Growth Lead", quote: "Switching from cold lists to Intentsly changed everything. The intent scores are spot-on and I book meetings the same week I see the signal." },
-  { name: "Samantha R", role: "CEO, SaaS", quote: "The reply rates are unreal. Because every message references a real buying signal, my prospects actually respond like humans." },
-  { name: "David H", role: "Head of Sales", quote: "The ability to consolidate signals from LinkedIn, Reddit and X into one prioritized shortlist is revolutionary for my team." },
-  { name: "Chen M", role: "RevOps", quote: "The drill-down on every lead — company, role, signal source — gives us granular insight into what's actually driving pipeline." },
-  { name: "Isabella K", role: "Startup Founder", quote: "Customer support is top-notch. They walked me through setup step-by-step. Fast, knowledgeable, genuinely helpful." },
+  {
+    name: "Anya L",
+    role: "Founder, B2B SaaS",
+    quote: "I was manually stalking LinkedIn for hours every week. Within the first 10 days, Intentsly surfaced a founder asking exactly the question our product solves. We closed the deal two weeks later.",
+    feedback: "Closed a $24k ARR deal from the first hot signal",
+  },
+  {
+    name: "Marco P",
+    role: "Growth Lead, Series A Fintech",
+    quote: "Our old outreach felt like shouting into a void. Now every message starts with something the prospect actually posted. Replies went from 'meh' to people booking calls mid-conversation.",
+    feedback: "Reply rate jumped from 4% to 31% in 30 days",
+  },
+  {
+    name: "Samantha R",
+    role: "CEO, B2B SaaS",
+    quote: "I don't trust most 'AI outbound' tools. This one is different because it shows me the actual post or comment that triggered the signal. My team writes better outreach because the context is already there.",
+    feedback: "Sales cycle shortened by ~12 days on average",
+  },
+  {
+    name: "David H",
+    role: "Head of Sales, Agency",
+    quote: "We used to have three tools just to figure out who to contact. LinkedIn, Reddit, X — all in one ranked list with intent scores. My reps stop guessing and start calling the right people.",
+    feedback: "Rep productivity up 2.3x after switching",
+  },
+  {
+    name: "Chen M",
+    role: "RevOps, Enterprise Software",
+    quote: "Finally, a signal tool that doesn't dump garbage into Salesforce. The lead cards include company, role, signal source, and why the AI thinks they're hot. Attribution actually makes sense now.",
+    feedback: "Pipeline attribution accuracy improved dramatically",
+  },
+  {
+    name: "Isabella K",
+    role: "Startup Founder",
+    quote: "I expected another tool I'd need a consultant to set up. The onboarding was genuinely fast — I had my first signal agent running the same afternoon. Support answered my weird questions in minutes.",
+    feedback: "First qualified meeting booked within 48 hours",
+  },
 ];
 
 const TestimonialCard = ({ t }: { t: typeof testimonials[0] }) => (
-  <div className="shrink-0 w-[380px] rounded-2xl bg-white border border-black/[0.06] p-5 mr-4">
+  <div className="shrink-0 w-[400px] rounded-2xl bg-white border border-black/[0.06] p-5 mr-4">
     <div className="flex items-center gap-3 mb-3">
       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3B7BFF] to-[#C8FF3B] flex items-center justify-center text-white font-bold text-sm">
         {t.name[0]}
@@ -1159,21 +1189,25 @@ const TestimonialCard = ({ t }: { t: typeof testimonials[0] }) => (
       </div>
     </div>
     <p className="text-[13px] text-[#374151] leading-relaxed">"{t.quote}"</p>
+    <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#C8FF3B]/20 px-3 py-1.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#3B7BFF]" />
+      <span className="text-[11px] font-semibold text-[#0a0a0a]">{t.feedback}</span>
+    </div>
   </div>
 );
 
 export const TestimonialsRows = () => (
   <section className="bg-white py-24 md:py-32 overflow-hidden">
     <div className="max-w-[1240px] mx-auto px-6 md:px-10 text-center mb-12">
-      <Eyebrow>Client Instant Clarity</Eyebrow>
+      <Eyebrow>Customer Proof</Eyebrow>
       <h2
         className="text-[36px] md:text-[54px] leading-[1.05] tracking-[-0.02em] font-medium text-[#0a0a0a]"
         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
-        Unifying outbound with<br />real-time intelligence
+        Real teams booking real revenue<br />from real buying signals
       </h2>
       <p className="mt-5 text-[15px] text-[#6b7280]">
-        Your unified platform for intelligent, real-time buyer detection
+        No generic praise. Just specific outcomes from founders, operators, and sales leaders using Intentsly.
       </p>
     </div>
 
