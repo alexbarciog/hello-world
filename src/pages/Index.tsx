@@ -7,7 +7,6 @@ import {
   LimitlessAccess,
   FutureBento,
   AdReady,
-  AllInOne,
   DarkSpace,
   BusinessEngine,
   TestimonialsRows,
@@ -28,7 +27,6 @@ const Index = () => {
       <LimitlessAccess />
       <FutureBento />
       <AdReady />
-      <AllInOne />
       <DarkSpace />
       <BusinessEngine />
       <TestimonialsRows />
