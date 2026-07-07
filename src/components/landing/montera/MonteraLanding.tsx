@@ -1272,7 +1272,7 @@ export const FinalMonteraCTA = () => (
 
     {/* Left: live buyer-intent signal card */}
     <div
-      className="absolute left-4 md:left-16 top-1/2 hidden md:block"
+      className="absolute left-4 md:left-12 lg:left-24 top-1/2 hidden md:block z-10"
       style={{ transform: "translateY(-50%) rotate(-6deg)" }}
     >
       <motion.div
