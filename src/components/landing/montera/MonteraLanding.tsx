@@ -1222,7 +1222,7 @@ export const TestimonialsRows = () => (
 );
 
 /* ═══════════════════════════════════════════════════════════════
-   10. FINAL CTA — floating cards + big heading
+   10. FINAL CTA — intent-driven conversion block
    ═══════════════════════════════════════════════════════════════ */
 export const FinalMonteraCTA = () => (
   <section className="relative overflow-hidden py-24 md:py-32 px-6"
@@ -1232,50 +1232,98 @@ export const FinalMonteraCTA = () => (
     }}
   >
     <div className="max-w-4xl mx-auto text-center relative z-10">
+      <Eyebrow color="#0a0a0a">Start finding buyers today</Eyebrow>
       <h2
         className="text-[36px] md:text-[64px] leading-[1.02] tracking-[-0.02em] font-medium text-[#0a0a0a]"
         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
-        Next-Gen Signal Platform<br />for Modern Founders
+        Stop guessing.<br />Start with intent.
       </h2>
-      <p className="mt-6 text-[16px] text-[#0a0a0a]/70 max-w-xl mx-auto">
-        Fuel your outbound with real-time buyer intent, AI SDR outreach and total pipeline visibility.
+      <p className="mt-6 text-[16px] md:text-[18px] text-[#0a0a0a]/70 max-w-xl mx-auto">
+        Create your account in 60 seconds. See the buyers already looking for what you sell — then let AI reach out for you.
       </p>
-      <a
-        href="/register"
-        className="mt-8 inline-flex items-center gap-2 bg-[#0a0a0a] text-white rounded-full px-7 py-4 text-[14px] font-medium hover:bg-[#1a1a1a] transition-colors group"
-      >
-        Request Demo <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-      </a>
-    </div>
 
-    {/* Floating credit-card style tiles (Intentsly cards) */}
-    <div
-      className="absolute left-4 md:left-16 top-1/2 -translate-y-1/2 w-[260px] md:w-[340px] aspect-[1.6/1] rounded-2xl shadow-2xl p-5 flex flex-col justify-between hidden md:flex"
-      style={{
-        background: "linear-gradient(135deg, #7A7570 0%, #4A4540 100%)",
-        transform: "rotate(-12deg)",
-      }}
-    >
-      <div className="flex items-center gap-2 text-white/90">
-        <img src={intentslyIcon} alt="" className="w-6 h-6" />
-        <span className="text-[13px] font-semibold">Intentsly</span>
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a
+          href="/register"
+          className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white rounded-full px-8 py-4 text-[15px] font-medium hover:bg-[#1a1a1a] transition-colors group"
+        >
+          Create Free Account
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        </a>
+        <span className="text-[13px] text-[#0a0a0a]/60">No credit card required</span>
       </div>
-      <p className="text-[11px] uppercase tracking-widest text-white/60">Signal Card</p>
-    </div>
 
-    <div
-      className="absolute right-4 md:right-16 top-1/2 -translate-y-1/2 w-[260px] md:w-[340px] aspect-[1.6/1] rounded-2xl shadow-2xl p-5 flex flex-col justify-between hidden md:flex"
-      style={{
-        background: "linear-gradient(135deg, #8FA6C7 0%, #5678A8 100%)",
-        transform: "rotate(12deg)",
-      }}
-    >
-      <div className="flex items-center gap-2 text-white/90">
-        <img src={intentslyIcon} alt="" className="w-6 h-6" />
-        <span className="text-[13px] font-semibold">Intentsly</span>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[13px] text-[#0a0a0a]/70">
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="w-4 h-4 text-[#0a0a0a]" />
+          2-minute setup
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="w-4 h-4 text-[#0a0a0a]" />
+          Cancel anytime
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="w-4 h-4 text-[#0a0a0a]" />
+          Real buyer signals in minutes
+        </span>
       </div>
-      <p className="text-[11px] uppercase tracking-widest text-white/60">AI SDR</p>
+
+      {/* Product preview cards — centered below the CTA */}
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
+          className="rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)] p-5 flex flex-col gap-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center">
+              <Linkedin className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-[#0a0a0a]">LinkedIn signal</p>
+              <p className="text-[10px] text-[#9ca3af]">2 min ago</p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse" />
+              <span className="text-[10px] font-semibold text-[#B91C1C]">HOT</span>
+            </span>
+          </div>
+          <p className="text-[12px] text-[#374151] leading-snug italic">
+            "Our current agency isn't delivering. Looking for a new outbound partner ASAP."
+          </p>
+          <div className="flex items-center justify-between pt-2 border-t border-black/[0.06]">
+            <p className="text-[11px] text-[#6b7280]">Intent score</p>
+            <p className="text-[14px] font-semibold text-[#0a0a0a]">94 / 100</p>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.3, ease: EASE }}
+          className="rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)] p-5 flex flex-col gap-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0a0a0a] flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#C8FF3B]" />
+            </div>
+            <p className="text-[12px] font-semibold text-[#0a0a0a]">AI SDR drafted</p>
+          </div>
+          <p className="text-[12px] text-[#374151] leading-snug">
+            "Saw your post about switching agencies. We help SaaS teams book meetings from LinkedIn signals — happy to share how it works."
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#3B7BFF] to-[#7C3AED] flex items-center justify-center text-white text-[10px] font-semibold">
+              AI
+            </div>
+            <p className="text-[11px] text-[#6b7280]">Ready to send</p>
+          </div>
+        </motion.div>
+      </div>
     </div>
   </section>
 );
