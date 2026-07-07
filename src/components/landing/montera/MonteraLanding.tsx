@@ -1204,10 +1204,10 @@ export const TestimonialsRows = () => (
         className="text-[36px] md:text-[54px] leading-[1.05] tracking-[-0.02em] font-medium text-[#0a0a0a]"
         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
-        Real teams booking real revenue<br />from real buying signals
+        Revenue teams finding deals<br />in places they'd never look
       </h2>
       <p className="mt-5 text-[15px] text-[#6b7280]">
-        No generic praise. Just specific outcomes from founders, operators, and sales leaders using Intentsly.
+        No generic praise. Just specific wins from founders and sales leaders who stopped cold outreach and started with intent.
       </p>
     </div>
 
