@@ -997,21 +997,21 @@ export const DarkSpace = () => (
     </div>
 
     <div className="max-w-[1240px] mx-auto relative text-center">
-      <Eyebrow color="#C8FF3B">Future We're Building</Eyebrow>
+      <Eyebrow color="#C8FF3B">Built for Revenue Teams</Eyebrow>
       <h2
         className="text-[36px] md:text-[54px] leading-[1.05] tracking-[-0.02em] font-medium"
         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
       >
-        Powering the next generation<br />of revenue teams
+        Turn buyer intent into booked meetings<br />before your competitors move
       </h2>
       <p className="mt-5 text-[15px] text-white/60">
-        Empowering operators with the tools, speed, and precision to win
+        Find people already looking for what you sell. Then let AI reach out, follow up, and stop the moment they reply.
       </p>
       <a
         href="/register"
         className="mt-8 inline-flex items-center gap-2 bg-[#C8FF3B] text-black rounded-full px-6 py-3.5 text-[14px] font-medium hover:bg-[#d4ff5c] transition-colors"
       >
-        Get Started <ArrowRight className="w-4 h-4" />
+        Start Capturing Intent <ArrowRight className="w-4 h-4" />
       </a>
 
       {/* 3D Globe with intent pings */}
@@ -1025,7 +1025,7 @@ export const DarkSpace = () => (
         <div className="absolute left-0 top-8 md:left-10 md:top-16 max-w-[240px] text-left bg-white/[0.08] backdrop-blur-md rounded-xl p-4 border border-white/10 z-10">
           <h4 className="text-[14px] font-semibold mb-1">Go Global, Grow Faster</h4>
           <p className="text-[12px] text-white/60 leading-relaxed">
-            Scale outreach across every geography — we help you turn local wins into global pipeline.
+            Spot ready-to-buy buyers in any market and turn one local win into a worldwide pipeline.
           </p>
         </div>
 
@@ -1033,7 +1033,7 @@ export const DarkSpace = () => (
         <div className="absolute right-0 top-1/2 md:right-8 max-w-[260px] text-left bg-white/[0.08] backdrop-blur-md rounded-xl p-4 border border-white/10 z-10">
           <h4 className="text-[14px] font-semibold mb-1">Scale Without Limits</h4>
           <p className="text-[12px] text-white/60 leading-relaxed">
-            Whether you're expanding markets or building a stronger outbound engine, Intentsly grows with you.
+            One operator can run outreach like a full team. AI handles research, writing, and follow-ups — you handle the replies.
           </p>
         </div>
       </div>
