@@ -1231,7 +1231,7 @@ export const FinalMonteraCTA = () => (
         "linear-gradient(180deg, #fff 0%, #E5FF7A 45%, #C8FF3B 100%)",
     }}
   >
-    <div className="max-w-4xl mx-auto text-center relative z-10">
+    <div className="max-w-4xl mx-auto text-center relative z-20">
       <Eyebrow color="#0a0a0a">Start finding buyers today</Eyebrow>
       <h2
         className="text-[36px] md:text-[64px] leading-[1.02] tracking-[-0.02em] font-medium text-[#0a0a0a]"
