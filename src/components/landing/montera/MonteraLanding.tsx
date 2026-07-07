@@ -1231,7 +1231,7 @@ export const FinalMonteraCTA = () => (
         "linear-gradient(180deg, #fff 0%, #E5FF7A 45%, #C8FF3B 100%)",
     }}
   >
-    <div className="max-w-4xl mx-auto text-center relative z-20">
+    <div className="max-w-4xl mx-auto text-center relative z-10">
       <Eyebrow color="#0a0a0a">Start finding buyers today</Eyebrow>
       <h2
         className="text-[36px] md:text-[64px] leading-[1.02] tracking-[-0.02em] font-medium text-[#0a0a0a]"
@@ -1268,71 +1268,62 @@ export const FinalMonteraCTA = () => (
           Real buyer signals in minutes
         </span>
       </div>
-    </div>
 
-    {/* Left: live buyer-intent signal card */}
-    <div
-      className="absolute left-4 md:left-12 lg:left-24 top-1/2 hidden md:block z-10"
-      style={{ transform: "translateY(-50%) rotate(-6deg)" }}
-    >
-      <motion.div
-        initial={{ opacity: 0, x: -40 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
-        className="w-[280px] md:w-[340px] rounded-2xl bg-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3"
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center">
-            <Linkedin className="w-4 h-4 text-white" />
+      {/* Product preview cards — centered below the CTA */}
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
+          className="rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)] p-5 flex flex-col gap-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center">
+              <Linkedin className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-[#0a0a0a]">LinkedIn signal</p>
+              <p className="text-[10px] text-[#9ca3af]">2 min ago</p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse" />
+              <span className="text-[10px] font-semibold text-[#B91C1C]">HOT</span>
+            </span>
           </div>
-          <div className="flex-1 min-w-0 text-left">
-            <p className="text-[12px] font-semibold text-[#0a0a0a]">LinkedIn signal</p>
-            <p className="text-[10px] text-[#9ca3af]">2 min ago</p>
+          <p className="text-[12px] text-[#374151] leading-snug italic">
+            "Our current agency isn't delivering. Looking for a new outbound partner ASAP."
+          </p>
+          <div className="flex items-center justify-between pt-2 border-t border-black/[0.06]">
+            <p className="text-[11px] text-[#6b7280]">Intent score</p>
+            <p className="text-[14px] font-semibold text-[#0a0a0a]">94 / 100</p>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2 py-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse" />
-            <span className="text-[10px] font-semibold text-[#B91C1C]">HOT</span>
-          </span>
-        </div>
-        <p className="text-[12px] text-[#374151] leading-snug italic text-left">
-          "Our current agency isn't delivering. Looking for a new outbound partner ASAP."
-        </p>
-        <div className="flex items-center justify-between pt-2 border-t border-black/[0.06]">
-          <p className="text-[11px] text-[#6b7280]">Intent score</p>
-          <p className="text-[14px] font-semibold text-[#0a0a0a]">94 / 100</p>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
 
-    {/* Right: AI-drafted reply card */}
-    <div
-      className="absolute right-4 md:right-12 lg:right-24 top-1/2 hidden md:block z-10"
-      style={{ transform: "translateY(-50%) rotate(6deg)" }}
-    >
-      <motion.div
-        initial={{ opacity: 0, x: 40 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.7, delay: 0.35, ease: EASE }}
-        className="w-[280px] md:w-[340px] rounded-2xl bg-white shadow-[0_30px_70px_-20px_rgba(0,0,0,0.25)] p-5 flex flex-col gap-3"
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#0a0a0a] flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-[#C8FF3B]" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.3, ease: EASE }}
+          className="rounded-2xl bg-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)] p-5 flex flex-col gap-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0a0a0a] flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-[#C8FF3B]" />
+            </div>
+            <p className="text-[12px] font-semibold text-[#0a0a0a]">AI SDR drafted</p>
           </div>
-          <p className="text-[12px] font-semibold text-[#0a0a0a]">AI SDR drafted</p>
-        </div>
-        <p className="text-[12px] text-[#374151] leading-snug text-left">
-          "Saw your post about switching agencies. We help SaaS teams book meetings from LinkedIn signals — happy to share how it works if it's useful."
-        </p>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#3B7BFF] to-[#7C3AED] flex items-center justify-center text-white text-[10px] font-semibold">
-            AI
+          <p className="text-[12px] text-[#374151] leading-snug">
+            "Saw your post about switching agencies. We help SaaS teams book meetings from LinkedIn signals — happy to share how it works."
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#3B7BFF] to-[#7C3AED] flex items-center justify-center text-white text-[10px] font-semibold">
+              AI
+            </div>
+            <p className="text-[11px] text-[#6b7280]">Ready to send</p>
           </div>
-          <p className="text-[11px] text-[#6b7280]">Ready to send</p>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   </section>
 );
