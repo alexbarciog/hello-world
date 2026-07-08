@@ -405,12 +405,12 @@ const HowItWorks = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
-              className="rounded-[32px] md:rounded-[40px] border border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)] overflow-hidden"
+              className="overflow-hidden"
             >
-              <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[480px]">
-                {/* Copy zone */}
+              <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[480px] gap-8 md:gap-12">
+                {/* Copy zone — sits outside the visual container */}
                 <div
-                  className={`md:col-span-5 p-8 md:p-14 flex flex-col justify-center ${
+                  className={`md:col-span-5 py-8 md:py-14 flex flex-col justify-center ${
                     b.visualLeft ? "md:order-2" : ""
                   }`}
                 >
@@ -453,9 +453,9 @@ const HowItWorks = () => {
                   </div>
                 </div>
 
-                {/* Visual zone — off-white outer frame with side gradient bleed */}
+                {/* Visual zone — the only rounded container */}
                 <div
-                  className={`md:col-span-7 relative min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] overflow-hidden ${
+                  className={`md:col-span-7 relative min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] overflow-hidden rounded-[32px] md:rounded-[40px] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)] ${
                     b.visualLeft ? "md:order-1" : ""
                   }`}
                 >
