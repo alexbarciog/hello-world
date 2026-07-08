@@ -19,7 +19,7 @@ const Hero = () => {
             </div>
 
             <h1
-              className="font-bold tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] animate-fade-in-up"
+              className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] animate-fade-in-up"
               style={{ animationDelay: "80ms", fontSize: "clamp(2.75rem, 6.2vw, 5.25rem)" }}
             >
               Find people already looking for what you offer on{" "}
