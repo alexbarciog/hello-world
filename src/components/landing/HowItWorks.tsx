@@ -369,7 +369,7 @@ const HowItWorks = () => {
                   {/* Big stat */}
                   <div className="mt-auto pt-4">
                     <p
-                      className="text-5xl md:text-6xl font-bold tracking-[-0.035em] leading-none mb-2"
+                      className="text-5xl md:text-6xl font-semibold tracking-[-0.035em] leading-none mb-2"
                       style={{ color: "hsl(var(--aeline-dark))" }}
                     >
                       {b.stat}
