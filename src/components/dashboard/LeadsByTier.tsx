@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import { CountUp } from "@/lib/motion";
+import { MoreHorizontal } from "lucide-react";
 
 interface TierData {
   name: string;
@@ -15,78 +16,94 @@ interface LeadsByTierProps {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// Reference-inspired palette: purple, blue, emerald
+const PALETTE = ["#0a0a0a", "#3B82F6", "#34D399"];
+
 const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
-  const total = data.reduce((s, d) => s + d.value, 0);
+  const themed = data.map((d, i) => ({ ...d, color: PALETTE[i] ?? d.color }));
+  const total = themed.reduce((s, d) => s + d.value, 0);
+  const hot = themed.find((d) => d.name.toLowerCase() === "hot")?.value ?? 0;
+  const pctHot = total > 0 ? Math.round((hot / total) * 100) : 0;
   const hasData = total > 0;
 
   return (
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-[20px] p-5 bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_10px_30px_-12px_rgba(10,10,10,0.15)] transition-shadow"
+      className="rounded-[22px] p-6 bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_12px_32px_-14px_rgba(10,10,10,0.15)] transition-shadow flex flex-col"
     >
-      <h3 className="text-[11px] uppercase tracking-[0.14em] font-medium text-neutral-500 mb-3">Leads by Tier</h3>
+      <div className="flex items-start justify-between">
+        <div>
+          <h3 className="text-[15px] font-semibold text-neutral-900 tracking-tight">Leads by Tier</h3>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-[34px] leading-none font-semibold tracking-[-0.03em] text-neutral-900">
+              <CountUp to={total} duration={1.4} />
+            </span>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+              ↑ {pctHot}% hot
+            </span>
+          </div>
+        </div>
+        <button className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
+
       {loading ? (
-        <div className="h-[160px] flex items-center justify-center">
-          <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
+        <div className="h-[180px] flex items-center justify-center">
+          <div className="h-6 w-32 bg-neutral-100 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
-        <div className="h-[160px] flex items-center justify-center">
+        <div className="h-[180px] flex items-center justify-center">
           <p className="text-sm text-neutral-400">No leads yet</p>
         </div>
       ) : (
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <ResponsiveContainer width={160} height={160}>
+        <>
+          <div className="relative mx-auto mt-4">
+            <ResponsiveContainer width={180} height={180}>
               <PieChart>
                 <Pie
-                  data={data}
+                  data={themed}
                   cx="50%"
                   cy="50%"
-                  innerRadius={45}
-                  outerRadius={70}
+                  innerRadius={58}
+                  outerRadius={82}
+                  paddingAngle={2}
                   dataKey="value"
                   stroke="none"
                   isAnimationActive
                   animationDuration={1100}
                   animationEasing="ease-out"
                 >
-                  {data.map((entry, i) => (
+                  {themed.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <CountUp to={total} duration={1.4} className="text-xl font-bold text-neutral-900" />
-              <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Total</span>
+              <span className="text-[26px] font-semibold text-neutral-900 tracking-tight">{pctHot}%</span>
+              <span className="text-[10px] text-neutral-500 uppercase tracking-wider mt-0.5">Hot rate</span>
             </div>
           </div>
-          <div className="flex flex-col gap-2 flex-1">
-            {data.map((entry, i) => {
-              const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;
-              return (
-                <motion.div
-                  key={entry.name}
-                  initial={{ opacity: 0, x: 8 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.2 + i * 0.08, ease: EASE }}
-                  className="flex items-center gap-2.5"
-                >
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-sm text-neutral-500 whitespace-nowrap">{entry.name}</span>
-                  <span className="text-sm font-semibold text-neutral-900 ml-auto">
-                    {pct}%
-                  </span>
-                </motion.div>
-              );
-            })}
+
+          <div className="flex items-center justify-center flex-wrap gap-x-5 gap-y-2 mt-5">
+            {themed.map((entry, i) => (
+              <motion.div
+                key={entry.name}
+                initial={{ opacity: 0, y: 6 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.15 + i * 0.06, ease: EASE }}
+                className="flex items-center gap-1.5"
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span className="text-[12px] text-neutral-500">{entry.name}</span>
+                <span className="text-[12px] text-neutral-900 font-semibold ml-1">{entry.value}</span>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </>
       )}
     </motion.div>
   );

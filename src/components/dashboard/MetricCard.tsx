@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { CountUp } from "@/lib/motion";
 import type { LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
@@ -10,18 +11,19 @@ interface MetricCardProps {
   accent?: "blue" | "indigo" | "lime" | "black";
   icon?: LucideIcon;
   trend?: { value: number; label?: string };
+  onDetails?: () => void;
 }
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const ACCENTS: Record<
   NonNullable<MetricCardProps["accent"]>,
-  { chip: string; chipText: string; dot: string; underline: string }
+  { chipBg: string; chipText: string; ring: string }
 > = {
-  lime: { chip: "bg-[#C8FF00]", chipText: "text-[#0a0a0a]", dot: "bg-[#0a0a0a]", underline: "bg-[#C8FF00]" },
-  blue: { chip: "bg-[#3B82F6]", chipText: "text-white", dot: "bg-[#3B82F6]", underline: "bg-[#3B82F6]" },
-  indigo: { chip: "bg-[#4647d3]", chipText: "text-white", dot: "bg-[#4647d3]", underline: "bg-[#4647d3]" },
-  black: { chip: "bg-[#0a0a0a]", chipText: "text-white", dot: "bg-[#0a0a0a]", underline: "bg-[#0a0a0a]" },
+  blue:   { chipBg: "bg-blue-50",    chipText: "text-[#3B82F6]", ring: "ring-blue-100" },
+  indigo: { chipBg: "bg-indigo-50",  chipText: "text-indigo-600", ring: "ring-indigo-100" },
+  lime:   { chipBg: "bg-[#F4FFC7]",  chipText: "text-[#0a0a0a]", ring: "ring-lime-100" },
+  black:  { chipBg: "bg-neutral-900", chipText: "text-white",     ring: "ring-neutral-200" },
 };
 
 export function MetricCard({
@@ -31,73 +33,60 @@ export function MetricCard({
   accent = "blue",
   icon: Icon,
   trend,
+  onDetails,
 }: MetricCardProps) {
-  const isEmpty = !loading && (value === 0 || value === "0");
   const numeric = typeof value === "number" ? value : Number.isFinite(Number(value)) ? Number(value) : null;
   const a = ACCENTS[accent];
+  const trendPositive = (trend?.value ?? 0) >= 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.96 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.6, ease: EASE }}
-      whileHover={{ y: -4 }}
-      className="group relative overflow-hidden rounded-[24px] bg-white border border-neutral-200/80 px-6 py-6 flex flex-col gap-6 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_20px_40px_-16px_rgba(10,10,10,0.18)] transition-shadow"
+      transition={{ duration: 0.55, ease: EASE }}
+      whileHover={{ y: -3 }}
+      className="group relative rounded-[22px] bg-white border border-neutral-200/70 px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow"
     >
-      {/* top row: chip icon + label */}
-      <div className="relative flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {Icon && (
-            <span className={`w-8 h-8 rounded-full ${a.chip} ${a.chipText} flex items-center justify-center shrink-0`}>
-              <Icon className="w-4 h-4" strokeWidth={2.2} />
+            <span className={`w-11 h-11 rounded-2xl ${a.chipBg} ${a.chipText} flex items-center justify-center shrink-0 ring-1 ${a.ring}`}>
+              <Icon className="w-5 h-5" strokeWidth={2.1} />
             </span>
           )}
-          <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-neutral-500 truncate">
-            {title}
-          </span>
+          <div className="min-w-0 flex flex-col">
+            {loading ? (
+              <div className="h-8 w-24 bg-neutral-100 rounded animate-pulse" />
+            ) : numeric !== null ? (
+              <div className="flex items-baseline gap-2">
+                <CountUp
+                  to={numeric}
+                  duration={1.4}
+                  className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-neutral-900"
+                />
+                {trend && (
+                  <span className={`text-[11px] font-semibold ${trendPositive ? "text-emerald-600" : "text-rose-500"}`}>
+                    {trendPositive ? "+" : ""}{trend.value}%
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-neutral-900">{value}</span>
+            )}
+            <span className="text-[12.5px] text-neutral-500 mt-1.5 truncate">{title}</span>
+          </div>
         </div>
-        <motion.span
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className={`w-1.5 h-1.5 rounded-full ${a.dot}`}
-        />
       </div>
 
-      {/* big number */}
-      {loading ? (
-        <div className="h-12 w-24 bg-neutral-100 rounded-lg animate-pulse" />
-      ) : isEmpty ? (
-        <div className="flex flex-col">
-          <span className="text-[52px] leading-[0.95] font-medium tracking-[-0.04em] text-neutral-900">0</span>
-          <span className="text-[11px] text-neutral-400 mt-2 uppercase tracking-wider">No data yet</span>
-        </div>
-      ) : numeric !== null ? (
-        <div className="flex items-baseline gap-2 relative">
-          <span className="relative inline-block">
-            <motion.span
-              aria-hidden
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.4, ease: EASE }}
-              className={`absolute left-0 right-0 bottom-[0.06em] h-[0.22em] ${a.underline} opacity-90 origin-left -z-0`}
-            />
-            <CountUp
-              to={numeric}
-              duration={1.6}
-              className="relative z-10 text-[52px] leading-[0.95] font-medium tracking-[-0.04em] text-[#0a0a0a]"
-            />
-          </span>
-          {trend && (
-            <span className={`text-xs font-semibold ${trend.value >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
-              {trend.value >= 0 ? "+" : ""}{trend.value}%
-            </span>
-          )}
-        </div>
-      ) : (
-        <span className="text-[52px] leading-[0.95] font-medium tracking-[-0.04em] text-[#0a0a0a]">{value}</span>
-      )}
+      <button
+        type="button"
+        onClick={onDetails}
+        className="mt-auto -mb-1 flex items-center justify-between text-[12px] text-neutral-500 hover:text-neutral-900 transition-colors border-t border-neutral-100 pt-3"
+      >
+        <span>View details</span>
+        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+      </button>
     </motion.div>
   );
 }
