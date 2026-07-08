@@ -102,7 +102,7 @@ const FAQ = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="mt-10 rounded-2xl bg-gradient-to-br from-[#1A8FE3]/[0.06] via-white to-[#C8FF00]/[0.10] border border-black/5 p-7 md:p-9 text-center"
+          className="mt-10 rounded-2xl p-7 md:p-9 text-center"
         >
           <p className="text-lg md:text-xl font-medium mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>
             Still have questions?
