@@ -145,6 +145,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const allNavItems = navItems;
 
+  // Split nav into two groups for the sidebar
+  const SETTINGS_PATHS = new Set<string>(["/integrations", "/settings", "/admin", "/dashboard/client-accounts"]);
+  const menuGroup = allNavItems.filter((i) => !SETTINGS_PATHS.has(i.path));
+  const settingsGroup = allNavItems.filter((i) => SETTINGS_PATHS.has(i.path));
+
+  // Breadcrumb label from active route
+  const activeItem = allNavItems.find((i) => i.path === location.pathname) ?? allNavItems[0];
+  const crumbLabel = activeItem?.label ?? "Dashboard";
+
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
     if (!sub.loading && !sub.hasAccess) {
