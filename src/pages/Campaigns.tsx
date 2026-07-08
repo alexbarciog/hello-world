@@ -95,24 +95,24 @@ function CampaignCard({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="glass-card rounded-2xl p-5 ghost-border hover:shadow-xl hover:shadow-md-primary/5 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 cursor-pointer"
+      className="group relative rounded-[22px] bg-gradient-to-b from-[#F2F4FE] to-[#FDFDFD] border border-white/55 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow p-5 flex flex-col md:flex-row md:items-center gap-4 md:gap-8 cursor-pointer"
       onClick={() => navigate(`/campaigns/${c.id}`)}>
-      
+
       {/* Icon */}
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-md-primary/10 to-md-secondary/10 flex items-center justify-center shrink-0">
+      <div className="w-11 h-11 rounded-xl bg-white ring-1 ring-[#EBECF0] flex items-center justify-center shrink-0">
         <img alt="" className="w-6 h-6 object-contain" src="/lovable-uploads/84a6842d-39a2-4615-a12e-aab711fa1c8d.webp" />
       </div>
 
       {/* Title & status */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 mb-1">
-          <h3 className="font-headline text-md-on-surface truncate font-semibold">
+        <div className="flex items-center gap-3 mb-1.5">
+          <h3 className="text-[15px] font-medium tracking-[-0.01em] text-[#050E2A] truncate">
             {c.company_name || "My Campaign"}
           </h3>
           <StatusBadge status={c.status} />
         </div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-400">
-          <p className="text-xs text-emerald-500 font-semibold">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white border border-emerald-200">
+          <p className="text-[11.5px] text-emerald-600 font-medium">
             {c.campaign_goal === "demos" ? "Booking demos" : "Starting conversations"}
           </p>
           {c.status === "active" && (
@@ -126,36 +126,36 @@ function CampaignCard({
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-8 md:gap-12 text-center items-center md:px-8">
+      <div className="grid grid-cols-4 gap-8 md:gap-10 text-center items-center md:px-6">
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Leads</p>
-          <p className="text-lg text-md-on-surface font-semibold">{c.leadsCount}</p>
+          <p className="text-[10.5px] text-neutral-500 mb-1 uppercase tracking-[0.14em] font-medium">Leads</p>
+          <p className="text-[18px] leading-none text-[#050E2A] font-medium tracking-[-0.02em]">{c.leadsCount}</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Sent</p>
-          <p className="text-lg text-md-on-surface font-semibold">{c.invitations_sent || 0}</p>
+          <p className="text-[10.5px] text-neutral-500 mb-1 uppercase tracking-[0.14em] font-medium">Sent</p>
+          <p className="text-[18px] leading-none text-[#050E2A] font-medium tracking-[-0.02em]">{c.invitations_sent || 0}</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Connect</p>
-          <p className="text-lg text-md-primary font-semibold">{acceptRate}%</p>
+          <p className="text-[10.5px] text-neutral-500 mb-1 uppercase tracking-[0.14em] font-medium">Connect</p>
+          <p className="text-[18px] leading-none text-[#3B82F6] font-medium tracking-[-0.02em]">{acceptRate}%</p>
         </div>
         <div>
-          <p className="text-[10px] text-md-outline mb-1 uppercase tracking-widest font-bold">Reply</p>
-          <p className="text-lg text-md-secondary font-semibold">{replyRate}%</p>
+          <p className="text-[10.5px] text-neutral-500 mb-1 uppercase tracking-[0.14em] font-medium">Reply</p>
+          <p className="text-[18px] leading-none text-emerald-600 font-medium tracking-[-0.02em]">{replyRate}%</p>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={() => navigate(`/campaigns/${c.id}`)}
-          className="px-5 py-2 rounded-full bg-white/80 ghost-border text-xs font-medium hover:bg-white transition-colors">
-          
-          View Leads
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white border border-[#EBECF0] rounded-full px-4 py-2 hover:bg-neutral-50 transition-colors">
+          View leads
+          <ArrowRight className="w-3.5 h-3.5" />
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="p-2 text-md-outline hover:text-md-on-surface transition-colors">
+            <button className="p-2 text-neutral-400 hover:text-neutral-700 transition-colors">
               <MoreVertical className="w-4 h-4" />
             </button>
           </DropdownMenuTrigger>
