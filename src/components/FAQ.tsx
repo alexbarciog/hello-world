@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Plus, Minus, Calendar } from "lucide-react";
-import { motion } from "framer-motion";
+import { Plus, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 const staggerContainer = {
   hidden: {},
@@ -74,26 +76,53 @@ const FAQ = () => {
           viewport={{ once: true, amount: 0.2 }}
           className="space-y-4"
         >
-          {faqs.map((faq, i) => (
-            <motion.div
-              key={i}
-              variants={staggerItem}
-              className="rounded-2xl bg-secondary/50 overflow-hidden"
-            >
-              <button
-                className="w-full flex items-center justify-between p-4 md:p-7 text-left gap-3"
-                onClick={() => setOpenIndex(openIndex === i ? null : i)}
+          {faqs.map((faq, i) => {
+            const open = openIndex === i;
+            return (
+              <motion.div
+                key={i}
+                variants={staggerItem}
+                whileHover={{ y: -3, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+                className={`rounded-2xl overflow-hidden transition-colors duration-300 ${open ? "bg-secondary shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)]" : "bg-secondary/50 hover:bg-secondary/70"}`}
               >
-                <span className="font-medium text-[15px] md:text-xl text-foreground">{faq.q}</span>
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
-                  {openIndex === i ? <Minus className="w-4 h-4 md:w-5 md:h-5" /> : <Plus className="w-4 h-4 md:w-5 md:h-5" />}
-                </div>
-              </button>
-              <div className={`overflow-hidden transition-all duration-300 ${openIndex === i ? "max-h-96 pb-5 md:pb-6 px-4 md:px-7" : "max-h-0"}`}>
-                <p className="text-[14px] md:text-base text-muted-foreground leading-relaxed">{faq.a}</p>
-              </div>
-            </motion.div>
-          ))}
+                <button
+                  className="w-full flex items-center justify-between p-4 md:p-7 text-left gap-3"
+                  onClick={() => setOpenIndex(open ? null : i)}
+                >
+                  <span className="font-medium text-[15px] md:text-xl text-foreground">{faq.q}</span>
+                  <motion.div
+                    animate={{ rotate: open ? 45 : 0, backgroundColor: open ? "#C8FF00" : "#ffffff" }}
+                    transition={{ duration: 0.35, ease: EASE }}
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  >
+                    <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {open && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.35, ease: EASE }}
+                      className="overflow-hidden"
+                    >
+                      <motion.p
+                        initial={{ y: -8 }}
+                        animate={{ y: 0 }}
+                        exit={{ y: -8 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-[14px] md:text-base text-muted-foreground leading-relaxed pb-5 md:pb-6 px-4 md:px-7"
+                      >
+                        {faq.a}
+                      </motion.p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
         </motion.div>
 
         {/* Closing two-CTA card */}
