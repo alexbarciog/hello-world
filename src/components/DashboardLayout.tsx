@@ -215,11 +215,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [sub.loading, sub.hasAccess]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{
+        backgroundImage: `url(${platformBg.url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "top center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+        backgroundColor: "#ffffff",
+      }}
+    >
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white ${collapsed ? "w-[72px]" : "w-[260px]"}`}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white/40 backdrop-blur-xl ${collapsed ? "w-[72px]" : "w-[260px]"}`}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-5 py-5">
