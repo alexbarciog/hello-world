@@ -106,7 +106,7 @@ const UseCases = () => {
         {/* Two-column bento: 4 cards left, orbit right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-5">
             {benefits.map((b, i) => {
               const Icon = b.icon;
               return (
