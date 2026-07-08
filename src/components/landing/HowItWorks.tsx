@@ -348,7 +348,7 @@ const HowItWorks = () => {
                     b.visualLeft ? "md:order-1" : ""
                   } ${
                     b.isImage
-                      ? "h-auto"
+                      ? "h-auto p-5 md:p-8"
                       : "h-full min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)]"
                   }`}
                 >
