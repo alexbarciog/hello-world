@@ -393,12 +393,12 @@ const HowItWorks = () => {
 
                 {/* Visual zone — the only rounded container */}
                 <div
-                  className={`md:col-span-7 relative h-full overflow-hidden rounded-[32px] md:rounded-[40px] ${
+                  className={`md:col-span-7 relative overflow-hidden rounded-[24px] md:rounded-[32px] ${
                     b.visualLeft ? "md:order-1" : ""
                   } ${
                     b.isImage
-                      ? "min-h-[260px] md:min-h-[360px]"
-                      : "min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)]"
+                      ? "h-auto"
+                      : "h-full min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)]"
                   }`}
                 >
                   {!b.isImage && (
