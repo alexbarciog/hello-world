@@ -93,7 +93,7 @@ const UseCases = () => {
           <div
             className="relative isolate rounded-[32px] p-8 sm:p-10 overflow-hidden bg-muted/20"
             style={{
-              backgroundImage: `url(${salesAgentsGradientBg.url})`,
+              backgroundImage: `url(${salesAgentsGradientBg})`,
               backgroundSize: "cover",
               backgroundPosition: "left center",
             }}
