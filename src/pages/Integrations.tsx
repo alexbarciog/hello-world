@@ -16,7 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Calendar, Check, ExternalLink, Key, Loader2, Plug, Unplug } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Calendar, Check, ExternalLink, Key, Loader2, Plug, RefreshCw, Unplug } from "lucide-react";
 
 interface CalendarIntegration {
   id: string;
@@ -24,6 +26,16 @@ interface CalendarIntegration {
   calendar_email: string | null;
   is_active: boolean;
   created_at: string;
+}
+
+interface CrmIntegration {
+  id: string;
+  provider: string;
+  sync_mode: "all" | "interested";
+  is_active: boolean;
+  hubspot_portal_id: string | null;
+  last_sync_at: string | null;
+  last_sync_count: number | null;
 }
 
 const providers = [
@@ -59,21 +71,32 @@ const providers = [
 
 const Integrations = () => {
   const [integrations, setIntegrations] = useState<CalendarIntegration[]>([]);
+  const [hubspot, setHubspot] = useState<CrmIntegration | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [apiKeyDialog, setApiKeyDialog] = useState(false);
   const [apiKeyValue, setApiKeyValue] = useState("");
   const [savingApiKey, setSavingApiKey] = useState(false);
 
+  // HubSpot state
+  const [hubspotDialog, setHubspotDialog] = useState(false);
+  const [hsKey, setHsKey] = useState("");
+  const [hsMode, setHsMode] = useState<"all" | "interested">("interested");
+  const [hsSaving, setHsSaving] = useState(false);
+  const [hsSyncing, setHsSyncing] = useState(false);
+
   useEffect(() => {
     fetchIntegrations();
   }, []);
 
   const fetchIntegrations = async () => {
-    const { data } = await supabase
-      .from("calendar_integrations")
-      .select("id, provider, calendar_email, is_active, created_at");
-    setIntegrations(data || []);
+    const [{ data: cal }, { data: crm }] = await Promise.all([
+      supabase.from("calendar_integrations").select("id, provider, calendar_email, is_active, created_at"),
+      supabase.from("crm_integrations").select("id, provider, sync_mode, is_active, hubspot_portal_id, last_sync_at, last_sync_count").eq("provider", "hubspot").maybeSingle(),
+    ]);
+    setIntegrations(cal || []);
+    setHubspot((crm as any) || null);
+    if (crm) setHsMode((crm as any).sync_mode);
     setLoading(false);
   };
 
@@ -151,6 +174,73 @@ const Integrations = () => {
   const getIntegration = (providerId: string) =>
     integrations.find((i) => i.provider === providerId);
 
+  // ============== HubSpot handlers ==============
+  const openHubspot = () => {
+    setHsKey("");
+    setHsMode(hubspot?.sync_mode || "interested");
+    setHubspotDialog(true);
+  };
+
+  const handleSaveHubspot = async () => {
+    if (!hubspot && !hsKey.trim()) {
+      toast({ title: "API key required", description: "Paste your HubSpot Private App token.", variant: "destructive" });
+      return;
+    }
+    setHsSaving(true);
+    try {
+      if (!hubspot) {
+        const { data, error } = await supabase.functions.invoke("connect-hubspot", {
+          body: { api_key: hsKey.trim(), sync_mode: hsMode },
+        });
+        if (error) throw new Error((data as any)?.error || error.message);
+        toast({ title: "HubSpot connected", description: "You can now sync your leads." });
+      } else {
+        const { error } = await supabase.functions.invoke("connect-hubspot", {
+          body: { action: "update_mode", sync_mode: hsMode },
+        });
+        if (error) throw error;
+        toast({ title: "Preferences saved" });
+      }
+      setHubspotDialog(false);
+      fetchIntegrations();
+    } catch (err: any) {
+      toast({ title: "Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setHsSaving(false);
+    }
+  };
+
+  const handleDisconnectHubspot = async () => {
+    try {
+      const { error } = await supabase.functions.invoke("connect-hubspot", {
+        body: { action: "disconnect" },
+      });
+      if (error) throw error;
+      toast({ title: "HubSpot disconnected" });
+      fetchIntegrations();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleSyncHubspot = async () => {
+    setHsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-hubspot-contacts", { body: {} });
+      if (error) throw new Error((data as any)?.error || error.message);
+      const d = data as any;
+      toast({
+        title: "Sync complete",
+        description: `${d.synced} sent to HubSpot, ${d.failed} skipped (of ${d.total}).`,
+      });
+      fetchIntegrations();
+    } catch (err: any) {
+      toast({ title: "Sync failed", description: err.message, variant: "destructive" });
+    } finally {
+      setHsSyncing(false);
+    }
+  };
+
   return (
     <div className="flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
       <div className="flex-1 min-w-0 flex flex-col gap-5 rounded-[20px] p-6 border border-gray-200/60 shadow-sm bg-white">
@@ -162,14 +252,101 @@ const Integrations = () => {
           <div>
             <h1 className="text-2xl text-foreground font-medium">Integrations</h1>
             <p className="text-sm text-muted-foreground">
-              Connect your calendars so the AI can detect booked meetings and send pre-meeting follow-ups.
+              Connect your calendars and CRM so the AI can detect booked meetings and push leads where you work.
             </p>
           </div>
         </div>
 
+        {/* CRM section */}
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">CRM</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              className={`rounded-[12px] p-5 transition-all duration-200 ${
+                hubspot
+                  ? "border border-green-200 bg-green-50/30"
+                  : "border-border border-0 shadow-none bg-[#f6f7f9]"
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-11 h-11 rounded-[10px] p-2 flex items-center justify-center flex-shrink-0 bg-white">
+                  <img
+                    src="https://framerusercontent.com/images/8bd5ugDirBL7uvSlNwwiAypSGs.png"
+                    alt="HubSpot"
+                    className="w-7 h-7 object-contain"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-semibold text-foreground">HubSpot</h3>
+                    {hubspot && (
+                      <Badge variant="outline" className="bg-green-50 border-green-200/60 text-green-700 text-[10px] px-1.5 py-0">
+                        <Check className="w-3 h-3 mr-0.5" /> Connected
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Push your leads to HubSpot Contacts. Choose to sync everything or only interested leads.
+                  </p>
 
-        {/* Provider cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {hubspot && (
+                    <div className="mt-2 space-y-0.5">
+                      <p className="text-xs text-muted-foreground">
+                        Mode: <span className="font-medium text-foreground">{hubspot.sync_mode === "all" ? "All leads" : "Interested only"}</span>
+                      </p>
+                      {hubspot.last_sync_at && (
+                        <p className="text-xs text-muted-foreground">
+                          Last sync: {new Date(hubspot.last_sync_at).toLocaleString()} ({hubspot.last_sync_count} contacts)
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    {hubspot ? (
+                      <>
+                        <button
+                          className="inline-flex items-center justify-center h-8 px-3 text-xs font-medium text-white rounded-[10px] shadow-md hover:opacity-90 disabled:opacity-50"
+                          style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
+                          onClick={handleSyncHubspot}
+                          disabled={hsSyncing}
+                        >
+                          {hsSyncing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                          Sync now
+                        </button>
+                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={openHubspot}>
+                          Settings
+                        </Button>
+                        <Button
+                          variant="ghost" size="sm"
+                          className="text-xs text-destructive hover:text-destructive h-7 px-2"
+                          onClick={handleDisconnectHubspot}
+                        >
+                          <Unplug className="w-3.5 h-3.5 mr-1" />
+                          Disconnect
+                        </Button>
+                      </>
+                    ) : (
+                      <button
+                        className="inline-flex items-center justify-center h-8 px-4 text-xs font-medium text-white rounded-[12px] hover:opacity-90 shadow-md"
+                        style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
+                        onClick={openHubspot}
+                      >
+                        <Key className="w-3.5 h-3.5 mr-1.5" />
+                        Connect
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendars section */}
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Calendars</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {providers.map((provider) => {
             const integration = getIntegration(provider.id);
             const isConnected = !!integration;
@@ -266,6 +443,7 @@ const Integrations = () => {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Cal.com API Key Dialog */}
@@ -306,6 +484,80 @@ const Integrations = () => {
               >
                 {savingApiKey && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
                 Connect
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* HubSpot Dialog */}
+        <Dialog open={hubspotDialog} onOpenChange={setHubspotDialog}>
+          <DialogContent className="rounded-[12px]">
+            <DialogHeader>
+              <DialogTitle>{hubspot ? "HubSpot settings" : "Connect HubSpot"}</DialogTitle>
+              <DialogDescription>
+                {hubspot
+                  ? "Change which leads get pushed to your HubSpot account."
+                  : (
+                    <>
+                      Paste a HubSpot Private App access token. Create one in{" "}
+                      <a
+                        href="https://app.hubspot.com/private-apps"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        HubSpot → Settings → Integrations → Private Apps
+                      </a>
+                      {" "}with scopes <code className="text-xs">crm.objects.contacts.read</code> and <code className="text-xs">crm.objects.contacts.write</code>.
+                    </>
+                  )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-2 space-y-4">
+              {!hubspot && (
+                <div>
+                  <Label className="text-xs mb-1.5 block">Access token</Label>
+                  <Input
+                    type="password"
+                    placeholder="pat-na1-..."
+                    value={hsKey}
+                    onChange={(e) => setHsKey(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div>
+                <Label className="text-xs mb-2 block">Which leads should we send to HubSpot?</Label>
+                <RadioGroup value={hsMode} onValueChange={(v) => setHsMode(v as "all" | "interested")} className="gap-2">
+                  <label className="flex items-start gap-3 p-3 rounded-[10px] border border-border cursor-pointer hover:bg-muted/40">
+                    <RadioGroupItem value="interested" className="mt-0.5" />
+                    <div>
+                      <div className="text-sm font-medium">Only interested leads</div>
+                      <div className="text-xs text-muted-foreground">Hot & warm leads, replies, positive intent, meetings booked.</div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 p-3 rounded-[10px] border border-border cursor-pointer hover:bg-muted/40">
+                    <RadioGroupItem value="all" className="mt-0.5" />
+                    <div>
+                      <div className="text-sm font-medium">All leads</div>
+                      <div className="text-xs text-muted-foreground">Every contact Intentsly discovers gets pushed to HubSpot.</div>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setHubspotDialog(false)}>Cancel</Button>
+              <button
+                className="inline-flex items-center justify-center h-10 px-5 text-sm font-medium text-white rounded-[12px] hover:opacity-90 disabled:opacity-50 shadow-md"
+                style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}
+                onClick={handleSaveHubspot}
+                disabled={hsSaving}
+              >
+                {hsSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+                {hubspot ? "Save" : "Connect"}
               </button>
             </DialogFooter>
           </DialogContent>

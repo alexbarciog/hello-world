@@ -627,6 +627,51 @@ export type Database = {
           },
         ]
       }
+      crm_integrations: {
+        Row: {
+          api_key: string
+          created_at: string
+          hubspot_portal_id: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          last_sync_count: number | null
+          organization_id: string | null
+          provider: string
+          sync_mode: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          hubspot_portal_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          last_sync_count?: number | null
+          organization_id?: string | null
+          provider: string
+          sync_mode?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          hubspot_portal_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          last_sync_count?: number | null
+          organization_id?: string | null
+          provider?: string
+          sync_mode?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_scheduled_leads: {
         Row: {
           action_type: string
