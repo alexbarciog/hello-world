@@ -10,6 +10,7 @@ interface Lead {
   relevance_tier?: string;
   linkedin_url?: string | null;
   signal?: string | null;
+  signal_post_url?: string | null;
 }
 
 const tierChip: Record<string, string> = {
@@ -153,7 +154,20 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                     </td>
                     <td className="px-4 py-3.5 text-neutral-600 truncate max-w-[180px]">{l.title ?? "—"}</td>
                     <td className="px-4 py-3.5 text-neutral-600 truncate max-w-[160px]">{l.company ?? "—"}</td>
-                    <td className="px-4 py-3.5 text-neutral-500 truncate max-w-[160px]">{l.signal ?? "—"}</td>
+                    <td className="px-4 py-3.5 truncate max-w-[160px]">
+                      {l.signal_post_url ? (
+                        <a
+                          href={l.signal_post_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sky-600 underline hover:text-sky-700 truncate"
+                        >
+                          {l.signal ?? "View signal"}
+                        </a>
+                      ) : (
+                        <span className="text-neutral-500 truncate">{l.signal ?? "—"}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-0.5">
                         {(() => {
