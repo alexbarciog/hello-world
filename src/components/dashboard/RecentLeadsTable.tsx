@@ -10,6 +10,7 @@ interface Lead {
   relevance_tier?: string;
   linkedin_url?: string | null;
   signal?: string | null;
+  signal_post_url?: string | null;
 }
 
 const tierChip: Record<string, string> = {
