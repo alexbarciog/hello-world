@@ -21,78 +21,17 @@ import {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 /* ─────────────── 1/4  Finds & scores best leads ─────────────── */
-const FindsVisual = () => {
-  const avatars = [
-    { top: "8%", left: "12%", size: 44, delay: 0.15, label: "Follows your company" },
-    { top: "4%", left: "38%", size: 52, delay: 0.25 },
-    { top: "18%", left: "62%", size: 48, delay: 0.35, label: "Active in your space" },
-    { top: "2%", left: "82%", size: 42, delay: 0.45 },
-    { top: "34%", left: "6%", size: 40, delay: 0.55 },
-    { top: "42%", left: "28%", size: 56, delay: 0.2, highlight: true },
-    { top: "38%", left: "74%", size: 46, delay: 0.4, label: "Competitor engagement" },
-    { top: "58%", left: "50%", size: 44, delay: 0.6 },
-  ];
-  return (
-    <div className="relative w-full h-full min-h-[320px]">
-      {avatars.map((a, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, scale: 0.6, y: 12 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.55, delay: a.delay, ease: EASE }}
-          style={{ top: a.top, left: a.left, width: a.size, height: a.size }}
-          className={`absolute rounded-2xl bg-white shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] border ${
-            a.highlight ? "border-[#1A8FE3]/40 ring-2 ring-[#1A8FE3]/20" : "border-black/5"
-          } overflow-hidden`}
-        >
-          <div
-            className="w-full h-full"
-            style={{
-              background: `linear-gradient(135deg, hsl(${(i * 47) % 360} 60% 78%), hsl(${
-                (i * 47 + 40) % 360
-              } 55% 65%))`,
-            }}
-          />
-        </motion.div>
-      ))}
+import findsImage from "@/assets/how-it-works-finds.png.asset.json";
+const FindsVisual = () => (
+  <div className="relative w-full h-full min-h-[320px] flex items-center justify-center">
+    <img
+      src={findsImage.url}
+      alt="Leads scored by intent"
+      className="w-full h-full object-cover rounded-2xl md:rounded-3xl"
+    />
+  </div>
+);
 
-      {/* Signal chips */}
-      {[
-        { top: "14%", left: "20%", text: "Follows your company", delay: 0.7 },
-        { top: "10%", left: "58%", text: "Active in your space", delay: 0.85 },
-        { top: "48%", left: "62%", text: "Competitor engagement", delay: 1.0 },
-      ].map((c, i) => (
-        <motion.div
-          key={`c${i}`}
-          initial={{ opacity: 0, y: 6 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: c.delay, ease: EASE }}
-          style={{ top: c.top, left: c.left }}
-          className="absolute bg-[#1A8FE3]/10 border border-[#1A8FE3]/25 rounded-full px-2.5 py-1 flex items-center gap-1.5 backdrop-blur-sm"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#1A8FE3]" />
-          <span className="text-[10px] font-semibold text-[#1A8FE3] whitespace-nowrap">
-            {c.text}
-          </span>
-        </motion.div>
-      ))}
-
-      {/* Score chip on highlighted lead */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 1.15, ease: EASE }}
-        className="absolute top-[70%] left-[30%] bg-[hsl(var(--aeline-dark))] text-[#C8FF00] rounded-xl px-3 py-1.5 shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] flex items-center gap-1.5"
-      >
-        <Sparkles className="w-3 h-3" />
-        <span className="text-[11px] font-bold tracking-tight">Score 94 · Hot</span>
-      </motion.div>
-    </div>
-  );
-};
 
 /* ─────────────── 2/4  Only best prospects ─────────────── */
 const PreFilteredVisual = () => {
