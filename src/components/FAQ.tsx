@@ -120,13 +120,6 @@ const FAQ = () => {
               <Calendar className="w-3.5 h-3.5" />
               Book a 10-min walkthrough
             </a>
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] w-full sm:w-auto"
-            >
-              Start for $97
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
         </motion.div>
       </div>
