@@ -179,7 +179,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                       </div>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize ${tierChip[tier] ?? tierChip.warm}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize ${tierChip[tier] ?? tierChip.warm}`}>
                         {tier === "hot" && "🔥"}
                         {tier}
                       </span>
