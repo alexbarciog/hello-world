@@ -561,7 +561,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-transparent">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-white/40 backdrop-blur-xl">
 
           {!sub.loading && !sub.hasAccess && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
