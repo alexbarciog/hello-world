@@ -13,7 +13,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Users,
-  
+
   Radio,
   Mail,
   MessageSquare,
@@ -33,6 +33,12 @@ import {
   Briefcase,
   Flame,
   Rocket,
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  Crown,
+  ArrowRight,
 } from "lucide-react";
 import { useAccountType } from "@/hooks/useAccountType";
 import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
