@@ -90,12 +90,12 @@ const UseCases = () => {
         {/* Two-column bento: 4 cards left, orbit right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
-          <div className="relative rounded-[32px] p-6 overflow-hidden">
+          <div className="relative rounded-[32px] p-8 overflow-hidden">
             {/* Gradient background */}
             <img
               src={salesAgentsGradientBg.url}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover -z-10"
+              className="absolute inset-0 w-full h-full object-cover object-left -z-10"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 relative z-10">
               {benefits.map((b, i) => {
