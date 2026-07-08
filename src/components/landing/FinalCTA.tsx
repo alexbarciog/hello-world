@@ -1,10 +1,23 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { CountUp } from "@/lib/motion";
 
 const FinalCTA = () => {
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [website, setWebsite] = useState("");
+
+  const handleFindBuyers = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = website.trim();
+    if (url) {
+      navigate(`/register?website=${encodeURIComponent(url)}`);
+    } else {
+      navigate("/register");
+    }
+  };
 
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
@@ -43,15 +56,20 @@ const FinalCTA = () => {
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
             Stop relying on broad prospect lists and start focusing on the people already showing movement.
           </p>
-          <div className="flex flex-col items-start sm:flex-row sm:flex-wrap sm:items-center gap-4">
-            <a href="/register" className="btn-cta btn-shimmer group w-full sm:w-auto justify-center">
-              Start for $97
+          <form onSubmit={handleFindBuyers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md">
+            <input
+              type="url"
+              placeholder="yourcompany.com"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              className="flex-1 min-w-0 rounded-full px-5 py-3 text-sm bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-lime-400/60 focus:ring-1 focus:ring-lime-400/60 transition-colors"
+              required
+            />
+            <button type="submit" className="btn-cta btn-shimmer group whitespace-nowrap justify-center">
+              Find buyers
               <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
-            </a>
-            <a href="#how-it-works" className="text-sm font-medium text-white/80 hover:text-white transition-colors underline-offset-4 hover:underline">
-              See how it works
-            </a>
-          </div>
+            </button>
+          </form>
 
           {/* Microtrust */}
           <p className="mt-4 text-[11px] uppercase tracking-[0.18em] text-white/70">
