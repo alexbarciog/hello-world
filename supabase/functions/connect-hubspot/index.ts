@@ -63,7 +63,19 @@ Deno.serve(async (req) => {
       const body = await verifyRes.text();
       console.error("HubSpot verify failed:", verifyRes.status, body);
       return new Response(JSON.stringify({
-        error: "Invalid HubSpot key. Ensure it has crm.objects.contacts.read & write scopes.",
+        error: "Invalid HubSpot key. Ensure it has crm.objects.contacts.read and crm.objects.contacts.write scopes.",
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const schemaRes = await fetch("https://api.hubapi.com/crm/v3/properties/contacts?archived=false", {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+
+    if (!schemaRes.ok) {
+      const body = await schemaRes.text();
+      console.error("HubSpot schema verify failed:", schemaRes.status, body);
+      return new Response(JSON.stringify({
+        error: "HubSpot key needs contact property permissions too. Add crm.schemas.contacts.read and crm.schemas.contacts.write to the Private App token.",
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

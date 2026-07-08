@@ -11,94 +11,190 @@ const INTERESTED_STATUSES = ["replied", "positive_reply", "meeting_booked", "int
 const BATCH_SIZE = 100;
 const MAX_CONTACTS = 500;
 
-// Custom Intentsly properties we create in the user's HubSpot portal so we have
-// real, dedicated fields for LinkedIn URL, signal, and post text (instead of
-// abusing "website", which triggers HubSpot's domain->company autofill and
-// makes every contact appear to work at LinkedIn).
 const CUSTOM_PROPS = [
   {
+    name: "intentsly_lead_id",
+    label: "Intentsly Lead ID",
+    type: "string",
+    fieldType: "text",
+    hasUniqueValue: true,
+    description: "Unique Intentsly lead identifier used to update synced contacts.",
+  },
+  {
     name: "intentsly_linkedin_url",
-    label: "LinkedIn URL (Intentsly)",
+    label: "LinkedIn URL",
     type: "string",
     fieldType: "text",
     description: "LinkedIn profile URL captured by Intentsly.",
   },
   {
     name: "intentsly_signal",
-    label: "Buying Signal (Intentsly)",
+    label: "Signal",
     type: "string",
-    fieldType: "text",
+    fieldType: "textarea",
     description: "Why Intentsly surfaced this lead.",
   },
   {
     name: "intentsly_signal_post",
-    label: "Signal Post (Intentsly)",
+    label: "Signal Post",
     type: "string",
     fieldType: "textarea",
-    description: "Excerpt of the post that triggered the signal.",
+    description: "Post excerpt or signal context that triggered the lead.",
   },
   {
     name: "intentsly_signal_post_url",
-    label: "Signal Post URL (Intentsly)",
+    label: "Signal Post URL",
     type: "string",
     fieldType: "text",
     description: "Link to the post that triggered the signal.",
   },
   {
     name: "intentsly_tier",
-    label: "Relevance Tier (Intentsly)",
+    label: "Relevance Tier",
     type: "string",
     fieldType: "text",
     description: "Hot / warm / cold relevance from Intentsly.",
   },
 ];
 
-async function ensureCustomProperties(apiKey: string) {
-  // Group under a single custom group so it looks tidy in HubSpot's UI.
-  const groupName = "intentsly";
-  try {
-    await fetch("https://api.hubapi.com/crm/v3/properties/contacts/groups", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: groupName,
-        label: "Intentsly",
-        displayOrder: -1,
-      }),
-    }).then((r) => r.text()); // ignore result — 409 if already exists
-  } catch (_) { /* ignore */ }
+type HubSpotProperty = {
+  name: string;
+  label?: string;
+  type?: string;
+  fieldType?: string;
+};
+
+type HubSpotPropertyTargets = {
+  leadId: string[];
+  linkedinUrl: string[];
+  signal: string[];
+  signalPost: string[];
+  signalPostUrl: string[];
+  tier: string[];
+};
+
+function normalizePropertyName(value?: string) {
+  return (value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+async function hubspotFetch(apiKey: string, path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers || {});
+  headers.set("Authorization", `Bearer ${apiKey}`);
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+
+  return fetch(`https://api.hubapi.com${path}`, { ...init, headers });
+}
+
+async function fetchHubSpotContactProperties(apiKey: string): Promise<HubSpotProperty[]> {
+  const res = await hubspotFetch(apiKey, "/crm/v3/properties/contacts?archived=false");
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("HubSpot properties read failed", res.status, text.slice(0, 500));
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        "HubSpot token is missing property permissions. Reconnect it with crm.objects.contacts.read, crm.objects.contacts.write, crm.schemas.contacts.read, and crm.schemas.contacts.write."
+      );
+    }
+    throw new Error(`HubSpot properties read failed (${res.status}).`);
+  }
+
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed?.results) ? parsed.results : [];
+}
+
+function resolveTargets(properties: HubSpotProperty[]): HubSpotPropertyTargets {
+  const byName = new Map(properties.map((p) => [p.name, p]));
+
+  const collect = (internalNames: string[], labels: string[]) => {
+    const normalizedLabels = new Set(labels.map(normalizePropertyName));
+    const names = new Set<string>();
+
+    for (const name of internalNames) {
+      if (byName.has(name)) names.add(name);
+    }
+
+    for (const property of properties) {
+      if (normalizedLabels.has(normalizePropertyName(property.label))) names.add(property.name);
+    }
+
+    return Array.from(names);
+  };
+
+  return {
+    leadId: collect(["intentsly_lead_id"], ["Intentsly Lead ID"]),
+    linkedinUrl: collect(
+      ["intentsly_linkedin_url", "linkedin_url", "linkedin_profile_url", "linkedinbio", "linkedin"],
+      ["LinkedIn URL", "LinkedIn Profile URL", "LinkedIn", "Intentsly LinkedIn URL"]
+    ),
+    signal: collect(
+      ["intentsly_signal", "signal", "buying_signal"],
+      ["Signal", "Buying Signal", "Intentsly Signal"]
+    ),
+    signalPost: collect(
+      ["intentsly_signal_post", "signal_post"],
+      ["Signal Post", "Intentsly Signal Post"]
+    ),
+    signalPostUrl: collect(
+      ["intentsly_signal_post_url", "signal_post_url"],
+      ["Signal Post URL", "Intentsly Signal Post URL"]
+    ),
+    tier: collect(
+      ["intentsly_tier", "intentsly_relevance_tier", "relevance_tier"],
+      ["Intentsly Tier", "Relevance Tier", "Tier"]
+    ),
+  };
+}
+
+async function ensureCustomProperties(apiKey: string): Promise<HubSpotPropertyTargets> {
+  let properties = await fetchHubSpotContactProperties(apiKey);
 
   for (const p of CUSTOM_PROPS) {
-    try {
-      const res = await fetch("https://api.hubapi.com/crm/v3/properties/contacts", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: p.name,
-          label: p.label,
-          type: p.type,
-          fieldType: p.fieldType,
-          groupName,
-          description: p.description,
-        }),
-      });
-      // 409 = already exists, that's fine
-      if (!res.ok && res.status !== 409) {
-        const body = await res.text();
-        console.error(`ensureCustomProperties ${p.name} failed`, res.status, body.slice(0, 200));
-      } else {
-        await res.text();
+    const exists = properties.some((prop) => prop.name === p.name);
+    const path = exists ? `/crm/v3/properties/contacts/${p.name}` : "/crm/v3/properties/contacts";
+    const body = exists
+      ? { label: p.label, description: p.description }
+      : { ...p, groupName: "contactinformation" };
+
+    const res = await hubspotFetch(apiKey, path, {
+      method: exists ? "PATCH" : "POST",
+      body: JSON.stringify(body),
+    });
+
+    const text = await res.text();
+    if (!res.ok && res.status !== 409) {
+      console.error(`ensureCustomProperties ${p.name} failed`, res.status, text.slice(0, 500));
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(
+          "HubSpot token is missing property permissions. Reconnect it with crm.objects.contacts.read, crm.objects.contacts.write, crm.schemas.contacts.read, and crm.schemas.contacts.write."
+        );
       }
-    } catch (e) {
-      console.error(`ensureCustomProperties ${p.name} threw`, e);
+      throw new Error(`HubSpot could not create the ${p.label} field (${res.status}).`);
     }
   }
+
+  properties = await fetchHubSpotContactProperties(apiKey);
+  const targets = resolveTargets(properties);
+
+  if (!targets.leadId.length || !targets.linkedinUrl.length || !targets.signal.length || !targets.signalPostUrl.length) {
+    throw new Error(
+      "HubSpot fields could not be prepared. Reconnect your token with crm.schemas.contacts.read and crm.schemas.contacts.write."
+    );
+  }
+
+  return targets;
+}
+
+function assignToTargets(properties: Record<string, string>, targets: string[], value: unknown, maxLength = 65000) {
+  if (value === null || value === undefined || value === "") return;
+  const text = String(value).slice(0, maxLength);
+  for (const target of targets) properties[target] = text;
+}
+
+function parseCompanyFromHeadline(headline?: string | null) {
+  if (!headline) return null;
+  const match = headline.match(/(?:\b(?:at|@)\s+)([^|,;·•–—-]{2,80})/i);
+  return match?.[1]?.trim() || null;
 }
 
 Deno.serve(async (req) => {
@@ -114,7 +210,8 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
     if (authErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -129,12 +226,12 @@ Deno.serve(async (req) => {
     if (integErr) throw integErr;
     if (!integ) {
       return new Response(JSON.stringify({ error: "HubSpot not connected" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Make sure Intentsly custom properties exist in the portal
-    await ensureCustomProperties(integ.api_key);
+    const propertyTargets = await ensureCustomProperties(integ.api_key);
 
     let query = supabase
       .from("contacts")
@@ -155,18 +252,22 @@ Deno.serve(async (req) => {
     const inputs = (contacts || [])
       .map((c: any) => {
         const properties: Record<string, string> = {};
+        const company = c.company || parseCompanyFromHeadline(c.title);
+
         if (c.first_name) properties.firstname = String(c.first_name);
         if (c.last_name) properties.lastname = String(c.last_name);
         if (c.title) properties.jobtitle = String(c.title);
-        if (c.company) properties.company = String(c.company);
+        if (company) properties.company = String(company);
         if (c.industry) properties.industry = String(c.industry);
-        // Intentsly custom props
-        if (c.linkedin_url) properties.intentsly_linkedin_url = String(c.linkedin_url);
-        if (c.signal) properties.intentsly_signal = String(c.signal).slice(0, 65000);
-        if (c.signal_post_excerpt) properties.intentsly_signal_post = String(c.signal_post_excerpt).slice(0, 65000);
-        if (c.signal_post_url) properties.intentsly_signal_post_url = String(c.signal_post_url);
-        if (c.relevance_tier) properties.intentsly_tier = String(c.relevance_tier);
-        return { properties };
+
+        assignToTargets(properties, propertyTargets.leadId, c.id, 255);
+        assignToTargets(properties, propertyTargets.linkedinUrl, c.linkedin_url, 1000);
+        assignToTargets(properties, propertyTargets.signal, c.signal);
+        assignToTargets(properties, propertyTargets.signalPost, c.signal_post_excerpt || c.signal);
+        assignToTargets(properties, propertyTargets.signalPostUrl, c.signal_post_url, 1000);
+        assignToTargets(properties, propertyTargets.tier, c.relevance_tier, 255);
+
+        return { id: String(c.id), properties };
       })
       .filter((row) => Object.keys(row.properties).length > 0);
 
@@ -177,46 +278,28 @@ Deno.serve(async (req) => {
     for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
       const batch = inputs.slice(i, i + BATCH_SIZE);
       try {
-        const res = await fetch("https://api.hubapi.com/crm/v3/objects/contacts/batch/create", {
+        const res = await hubspotFetch(integ.api_key, "/crm/v3/objects/contacts/batch/upsert", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${integ.api_key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ inputs: batch }),
+          body: JSON.stringify({ idProperty: "intentsly_lead_id", inputs: batch }),
         });
 
         const bodyText = await res.text();
 
-        if (res.ok) {
+        if (res.ok || res.status === 207) {
           try {
             const parsed = JSON.parse(bodyText);
-            synced += Array.isArray(parsed?.results) ? parsed.results.length : batch.length;
-          } catch {
-            synced += batch.length;
-          }
-        } else if (res.status === 207 || res.status === 409) {
-          try {
-            const parsed = JSON.parse(bodyText);
-            const created = Array.isArray(parsed?.results) ? parsed.results.length : 0;
-            const dupes = Array.isArray(parsed?.errors)
-              ? parsed.errors.filter((e: any) => e?.category === "CONFLICT").length
-              : 0;
-            synced += created + dupes;
-            const other = batch.length - created - dupes;
-            if (other > 0) {
-              failed += other;
-              if (errors.length < 3 && parsed?.errors?.[0]) {
-                errors.push(JSON.stringify(parsed.errors[0]).slice(0, 300));
-              }
-            }
+            const results = Array.isArray(parsed?.results) ? parsed.results.length : batch.length;
+            const errorCount = Array.isArray(parsed?.errors) ? parsed.errors.length : 0;
+            synced += results;
+            failed += errorCount;
+            if (errorCount && errors.length < 3) errors.push(JSON.stringify(parsed.errors[0]).slice(0, 300));
           } catch {
             synced += batch.length;
           }
         } else {
           failed += batch.length;
           if (errors.length < 3) errors.push(`${res.status}: ${bodyText.slice(0, 300)}`);
-          console.error("HubSpot batch failed", res.status, bodyText.slice(0, 500));
+          console.error("HubSpot batch upsert failed", res.status, bodyText.slice(0, 500));
         }
       } catch (e: any) {
         failed += batch.length;
@@ -230,12 +313,17 @@ Deno.serve(async (req) => {
       .eq("id", integ.id);
 
     return new Response(JSON.stringify({
-      success: true, synced, failed, total: inputs.length, errors,
+      success: true,
+      synced,
+      failed,
+      total: inputs.length,
+      errors,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err: any) {
     console.error("sync-hubspot-contacts error:", err);
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

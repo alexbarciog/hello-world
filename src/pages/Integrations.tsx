@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import calendlyLogo from "@/assets/calendly-logo.png";
 import googleCalendarLogo from "@/assets/google-calendar-logo.png";
 import outlookCalendarLogo from "@/assets/outlook-calendar-logo.png";
@@ -68,6 +69,23 @@ const providers = [
     authType: "api_key" as const,
   },
 ];
+
+const getFunctionErrorMessage = async (error: unknown) => {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const details = await error.context.json();
+      return details?.error || error.message;
+    } catch {
+      try {
+        return await error.context.text();
+      } catch {
+        return error.message;
+      }
+    }
+  }
+
+  return error instanceof Error ? error.message : "Something went wrong.";
+};
 
 const Integrations = () => {
   const [integrations, setIntegrations] = useState<CalendarIntegration[]>([]);
@@ -192,13 +210,13 @@ const Integrations = () => {
         const { data, error } = await supabase.functions.invoke("connect-hubspot", {
           body: { api_key: hsKey.trim(), sync_mode: hsMode },
         });
-        if (error) throw new Error((data as any)?.error || error.message);
+        if (error) throw new Error((data as any)?.error || await getFunctionErrorMessage(error));
         toast({ title: "HubSpot connected", description: "You can now sync your leads." });
       } else {
         const { error } = await supabase.functions.invoke("connect-hubspot", {
           body: { action: "update_mode", sync_mode: hsMode },
         });
-        if (error) throw error;
+        if (error) throw new Error(await getFunctionErrorMessage(error));
         toast({ title: "Preferences saved" });
       }
       setHubspotDialog(false);
@@ -215,7 +233,7 @@ const Integrations = () => {
       const { error } = await supabase.functions.invoke("connect-hubspot", {
         body: { action: "disconnect" },
       });
-      if (error) throw error;
+      if (error) throw new Error(await getFunctionErrorMessage(error));
       toast({ title: "HubSpot disconnected" });
       fetchIntegrations();
     } catch (err: any) {
@@ -227,11 +245,13 @@ const Integrations = () => {
     setHsSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke("sync-hubspot-contacts", { body: {} });
-      if (error) throw new Error((data as any)?.error || error.message);
+      if (error) throw new Error((data as any)?.error || await getFunctionErrorMessage(error));
       const d = data as any;
       toast({
         title: "Sync complete",
-        description: `${d.synced} sent to HubSpot, ${d.failed} skipped (of ${d.total}).`,
+        description: d.errors?.length
+          ? `${d.synced} sent, ${d.failed} skipped. ${d.errors[0]}`
+          : `${d.synced} sent to HubSpot, ${d.failed} skipped (of ${d.total}).`,
       });
       fetchIntegrations();
     } catch (err: any) {
@@ -508,7 +528,7 @@ const Integrations = () => {
                       >
                         HubSpot → Settings → Integrations → Private Apps
                       </a>
-                      {" "}with scopes <code className="text-xs">crm.objects.contacts.read</code> and <code className="text-xs">crm.objects.contacts.write</code>.
+                      {" "}with scopes <code className="text-xs">crm.objects.contacts.read</code>, <code className="text-xs">crm.objects.contacts.write</code>, <code className="text-xs">crm.schemas.contacts.read</code>, and <code className="text-xs">crm.schemas.contacts.write</code>.
                     </>
                   )}
               </DialogDescription>
