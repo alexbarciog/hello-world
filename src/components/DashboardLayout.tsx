@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import premiumBg from "@/assets/premium-gradient-bg.png";
+import platformBg from "@/assets/platform-bg.png.asset.json";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -551,7 +552,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-white">
+        <main
+          className="flex-1 overflow-y-auto pb-20 md:pb-0"
+          style={{
+            backgroundImage: `url(${platformBg.url})`,
+            backgroundSize: "cover",
+            backgroundPosition: "top center",
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "local",
+            backgroundColor: "#ffffff",
+          }}
+        >
 
           {!sub.loading && !sub.hasAccess && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
