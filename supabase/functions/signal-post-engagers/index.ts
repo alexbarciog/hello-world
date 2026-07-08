@@ -888,7 +888,7 @@ Deno.serve(async (req) => {
                 else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
                 enrichedCo2 = gate.company;
               }
-              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval, enrichedCo2);
+              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval, enrichedCo2, postText2);
               if (result === 'exists') { diag.already_in_contacts++; continue; }
               if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }
