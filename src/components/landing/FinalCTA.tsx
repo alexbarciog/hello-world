@@ -54,7 +54,7 @@ const FinalCTA = () => {
             Your next 10 customers are already out there
           </h2>
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
-            Stop relying on broad prospect lists and start focusing on the people already showing movement.
+            Let your agent find them
           </p>
           <form onSubmit={handleFindBuyers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md">
             <input
