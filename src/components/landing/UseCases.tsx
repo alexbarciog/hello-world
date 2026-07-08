@@ -77,14 +77,11 @@ const UseCases = () => {
     <section id="use-cases" className="py-20 md:py-32 px-6 bg-background">
       <div className="max-w-6xl mx-auto">
         {/* Header (centered) */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center max-w-3xl mx-auto mb-16 md:mb-20"
-        >
-          <div className="inline-flex items-center gap-2 text-[13px] font-semibold tracking-[0.02em] text-[#1A8FE3] mb-6">
+        <div className="text-center max-w-3xl mx-auto mb-16 md:mb-20">
+          <div
+            className="inline-flex items-center gap-2 text-[13px] font-semibold tracking-[0.02em] text-[#1A8FE3] mb-6 animate-fade-in-up"
+            style={{ animationDelay: "40ms" }}
+          >
             <img
               src={whyIntentslyIcon.url}
               alt=""
@@ -93,15 +90,18 @@ const UseCases = () => {
             WHY INTENTSLY
           </div>
           <h2
-            className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] mb-5"
-            style={{ fontSize: "clamp(2.5rem, 5.6vw, 4.75rem)" }}
+            className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] mb-5 animate-fade-in-up"
+            style={{ animationDelay: "80ms", fontSize: "clamp(2.5rem, 5.6vw, 4.75rem)" }}
           >
             Sales agents that book meetings, on autopilot
           </h2>
-          <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+          <p
+            className="text-base md:text-lg text-muted-foreground leading-relaxed animate-fade-in-up"
+            style={{ animationDelay: "180ms" }}
+          >
             Experience a new era of sales where meetings land in your calendar while you focus on what matters.
           </p>
-        </motion.div>
+        </div>
 
         {/* Two-column bento: 4 cards left, orbit right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
