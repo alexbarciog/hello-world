@@ -3,7 +3,7 @@ import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
 import { useLottie } from "lottie-react";
 import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 import useCasesAnimation from "@/assets/use-cases-animation.json";
-import salesAgentsGradientBg from "@/assets/sales-agents-gradient-bg.png.asset.json";
+import salesAgentsGradientBg from "@/assets/sales-agents-gradient-bg-local.png.asset.json";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
@@ -90,13 +90,14 @@ const UseCases = () => {
         {/* Two-column bento: 4 cards left, orbit right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
-          <div className="relative isolate rounded-[32px] p-8 sm:p-10 overflow-hidden bg-muted/20">
-            {/* Gradient background */}
-            <img
-              src={salesAgentsGradientBg.url}
-              alt=""
-              className="absolute inset-0 z-0 w-full h-full object-cover object-left"
-            />
+          <div
+            className="relative isolate rounded-[32px] p-8 sm:p-10 overflow-hidden bg-muted/20"
+            style={{
+              backgroundImage: `url(${salesAgentsGradientBg.url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "left center",
+            }}
+          >
             <div className="absolute inset-0 z-[1] bg-background/10" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 relative z-10">
               {benefits.map((b, i) => {
