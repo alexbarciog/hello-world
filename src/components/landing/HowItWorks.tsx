@@ -31,6 +31,14 @@ const FindsVisual = () => (
 
 
 /* ─────────────── 2/4  Only best prospects ─────────────── */
+import filterImage from "@/assets/how-it-works-filter.png.asset.json";
+const PreFilteredImage = () => (
+  <img
+    src={filterImage.url}
+    alt="Only best prospects filtered"
+    className="w-full h-auto object-contain rounded-[24px] md:rounded-[32px]"
+  />
+);
 const PreFilteredVisual = () => {
   const leads = [
     { name: "Emma Thompson", role: "Marketing Director", intent: null, score: null, dim: true },
@@ -264,7 +272,8 @@ const blocks = [
     title: "Only your best prospects. Nothing else.",
     body:
       "Every lead is pre-filtered to match your ideal buyer profile. Your agent never wastes a message on someone who was never going to buy.",
-    Visual: PreFilteredVisual,
+    Visual: PreFilteredImage,
+    isImage: true,
     visualLeft: true,
     stat: "93%",
     statLabel: "Match precision",
