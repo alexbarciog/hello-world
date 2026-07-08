@@ -51,7 +51,7 @@ const FinalCTA = () => {
           </motion.div>
 
           <h2 className="text-[28px] md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl mx-auto">
-            Your next 10 customers are already out there
+            Your next <span className="font-bold text-[#C8FF00]">10 customers</span> are already out there
           </h2>
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80 mx-auto">
             Let your agent find them
