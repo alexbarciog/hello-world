@@ -178,7 +178,7 @@ const Comparison = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="md:hidden relative rounded-2xl bg-[#f5f5f5] p-2.5"
+          className="md:hidden relative rounded-2xl bg-[#f5f5f5] p-2.5 overflow-hidden"
         >
           <table className="w-full" style={{ tableLayout: "fixed" }}>
             <colgroup>
