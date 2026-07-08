@@ -113,7 +113,7 @@ const UseCases = () => {
                     {/* Icon */}
                     <div
                       className="relative w-11 h-11 rounded-xl flex items-center justify-center mb-auto"
-                      style={{ background: "radial-gradient(circle, #535353 0%, #000000 100%)" }}
+                      style={{ background: "radial-gradient(circle, #000000 0%, #535353 100%)" }}
                     >
                       <Icon className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
