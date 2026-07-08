@@ -20,7 +20,7 @@ const Hero = () => {
 
             <h1
               className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] animate-fade-in-up"
-              style={{ animationDelay: "80ms", fontSize: "clamp(2.75rem, 6.2vw, 5.25rem)" }}
+              style={{ animationDelay: "80ms", fontSize: "clamp(2.5rem, 5.6vw, 4.75rem)" }}
             >
               Find people already looking for what you offer on{" "}
               <span className="text-[#3B82F6]">LinkedIn</span>
