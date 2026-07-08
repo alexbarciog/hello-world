@@ -51,7 +51,7 @@ export function MetricCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {Icon && (
-            <span className="w-11 h-11 bg-white text-[#050E2A] flex items-center justify-center shrink-0 ring-1 ring-[#EBECF0]">
+            <span className="w-11 h-11 rounded-lg bg-white text-[#050E2A] flex items-center justify-center shrink-0 ring-1 ring-[#EBECF0]">
               <Icon className="w-5 h-5" strokeWidth={2.1} />
             </span>
           )}
