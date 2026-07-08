@@ -46,7 +46,7 @@ export function MetricCard({
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.55, ease: EASE }}
       whileHover={{ y: -3 }}
-      className="group relative rounded-[22px] bg-white border border-neutral-200/70 px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow"
+      className="group relative rounded-[22px] bg-white/25 backdrop-blur-xl border border-white/55 px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -57,7 +57,7 @@ export function MetricCard({
           )}
           <div className="min-w-0 flex flex-col">
             {loading ? (
-              <div className="h-8 w-24 bg-neutral-100 rounded animate-pulse" />
+              <div className="h-8 w-24 bg-white/45 rounded animate-pulse" />
             ) : numeric !== null ? (
               <div className="flex items-baseline gap-2">
                 <CountUp
@@ -82,7 +82,7 @@ export function MetricCard({
       <button
         type="button"
         onClick={onDetails}
-        className="mt-auto -mb-1 flex items-center justify-between text-[12px] text-neutral-500 hover:text-neutral-900 transition-colors border-t border-neutral-100 pt-3"
+        className="mt-auto -mb-1 flex items-center justify-between text-[12px] text-neutral-500 hover:text-neutral-900 transition-colors border-t border-white/45 pt-3"
       >
         <span>View details</span>
         <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
