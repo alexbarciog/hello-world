@@ -100,7 +100,7 @@ const WhyIntentsly = () => {
                   <span className="text-[13px] font-semibold text-white/40 tabular-nums">
                     0{i + 1}
                   </span>
-                  <h3 className="text-2xl md:text-[28px] font-semibold tracking-[-0.02em] text-white">
+                  <h3 className="text-2xl md:text-[28px] font-medium tracking-[-0.02em] text-white">
                     {s.title}
                   </h3>
                 </div>
