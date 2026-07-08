@@ -106,7 +106,7 @@ const UseCases = () => {
         {/* Two-column bento: 4 cards left, orbit right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-5">
             {benefits.map((b, i) => {
               const Icon = b.icon;
               return (
@@ -116,7 +116,7 @@ const UseCases = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative bg-white rounded-[24px] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03),0_10px_28px_-16px_rgba(0,0,0,0.10)] p-6 min-h-[260px] flex flex-col overflow-hidden"
+                  className="relative bg-white rounded-[24px] shadow-[0_1px_2px_rgba(0,0,0,0.03),0_10px_28px_-16px_rgba(0,0,0,0.10)] p-6 min-h-[260px] flex flex-col overflow-hidden"
                 >
                   {/* Faint grid backdrop in the icon zone */}
                   <div
