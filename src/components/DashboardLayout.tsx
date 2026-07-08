@@ -268,7 +268,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav — grouped */}
         <nav className="flex-1 px-3 py-1 overflow-y-auto relative">
           {!collapsed && (
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-neutral-400 px-2.5 pt-2 pb-1.5">
+            <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-neutral-600 px-2.5 pt-2 pb-1.5">
               Menu
             </p>
           )}
