@@ -5,7 +5,6 @@ import {
   Target,
   Building2,
   Briefcase,
-  Check,
   ArrowRight,
   Zap,
   Heart,
