@@ -368,7 +368,7 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full px-4 py-2.5 hover:bg-neutral-50 transition-colors">
+              <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white/35 border border-white/60 rounded-full px-4 py-2.5 hover:bg-white/60 transition-colors">
                 Month
                 <ChevronDown className="w-4 h-4 text-neutral-400" />
               </button>
