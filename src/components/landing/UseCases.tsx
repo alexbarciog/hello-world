@@ -39,14 +39,13 @@ const benefits: Benefit[] = [
 
 const OrbitVisual = () => (
   <div className="relative w-full aspect-square max-w-[520px] mx-auto">
-    {/* Outer circle with vertical line pattern */}
+    {/* Lottie animation background */}
     <div className="absolute inset-0 rounded-full overflow-hidden bg-[#F4F5F7]">
-      <div
-        className="absolute inset-0 opacity-60"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(15,23,42,0.06) 0 1px, transparent 1px 6px)",
-        }}
+      <Lottie
+        animationData={useCasesAnimation}
+        loop={true}
+        autoplay={true}
+        className="absolute inset-0 w-full h-full"
       />
     </div>
 
