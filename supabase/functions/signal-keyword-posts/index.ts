@@ -1580,7 +1580,7 @@ Deno.serve(async (req) => {
         const result = await insertContact(
           supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp,
           intentData?.intent_score, intentData?.reason, manual_approval,
-          enrichedCompany,
+          enrichedCompany, (post.text || '').toString(),
         );
 
         if (result === 'inserted') {
