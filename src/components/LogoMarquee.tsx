@@ -40,19 +40,19 @@ const LogoMarquee = () => {
         <div className="grid grid-cols-3 gap-3 sm:hidden text-center">
           <div className="flex flex-col items-center gap-1">
             <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={50} />+
+              <CountUp to={10} />x
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">teams</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">reply rates</span>
           </div>
           <div className="flex flex-col items-center gap-1">
             <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={127} />
+              <CountUp to={2} prefix="$" suffix=".4M" />
             </span>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">signals/day</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">pipeline</span>
           </div>
           <div className="flex flex-col items-center gap-1">
             <span className="text-xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={8} />
+              <CountUp to={3} />
             </span>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-tight">min to outreach</span>
           </div>
@@ -62,21 +62,21 @@ const LogoMarquee = () => {
         <div className="hidden sm:flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-center">
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={50} />+
+              <CountUp to={10} />x
             </span>
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">teams</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">reply rates</span>
           </div>
           <span className="text-muted-foreground/40">·</span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={127} />
+              <CountUp to={2} prefix="$" suffix=".4M" />
             </span>
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">avg signals/day</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">pipeline generated</span>
           </div>
           <span className="text-muted-foreground/40">·</span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={8} />
+              <CountUp to={3} />
             </span>
             <span className="text-xs uppercase tracking-wider text-muted-foreground">min to first outreach</span>
           </div>
