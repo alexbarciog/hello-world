@@ -345,7 +345,7 @@ const HowItWorks = () => {
               transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
               className="overflow-hidden"
             >
-              <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[480px] gap-8 md:gap-12">
+              <div className={`grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 ${b.isImage ? '' : 'min-h-0 md:min-h-[480px]'}`}>
                 {/* Copy zone — sits outside the visual container */}
                 <div
                   className={`md:col-span-5 py-8 md:py-14 flex flex-col justify-center ${
