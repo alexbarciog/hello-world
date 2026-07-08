@@ -63,7 +63,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
-              className="w-[180px] rounded-full bg-white/35 border border-white/60 pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white/60 focus:border-white/80 transition-colors"
+              className="w-[180px] rounded-full bg-white/35 border border-neutral-200/80 pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white/60 focus:border-neutral-300/90 transition-colors"
             />
           </div>
           <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
