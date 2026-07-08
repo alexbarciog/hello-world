@@ -952,10 +952,10 @@ export default function Signals() {
       </div>
       <button
         onClick={() => { setShowPreviousLaunches(!showPreviousLaunches); if (!showPreviousLaunches) fetchRuns(); }}
-        className="flex items-center gap-1.5 mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="mx-auto mt-2 flex items-center gap-1.5 text-[12.5px] font-medium text-neutral-600 bg-white border border-neutral-200 rounded-full px-3.5 py-2 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
       >
-        <Activity className="w-3.5 h-3.5" />
-        Run History
+        <Activity className="w-3.5 h-3.5 text-neutral-500" />
+        Run history
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showPreviousLaunches ? "rotate-180" : ""}`} />
       </button>
 
