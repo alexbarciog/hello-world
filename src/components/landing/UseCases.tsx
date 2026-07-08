@@ -75,7 +75,7 @@ const UseCases = () => {
           </div>
           <h2
             className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] mb-5 animate-fade-in-up"
-            style={{ animationDelay: "80ms", fontSize: "clamp(2.5rem, 5.6vw, 4.75rem)" }}
+            style={{ animationDelay: "80ms", fontSize: "clamp(2.25rem, 5vw, 4rem)" }}
           >
             Sales agents that book meetings, on autopilot
           </h2>
