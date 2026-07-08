@@ -718,32 +718,31 @@ export default function Signals() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-green-500" />
-            <h1 className="text-xl font-bold text-gray-900">Signals Agents</h1>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              {activeCount}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+        <div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-[26px] md:text-[30px] leading-[1.1] font-medium tracking-[-0.01em] text-neutral-900">
+              Signals Agents
+            </h1>
+            <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 rounded-full px-2.5 py-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {activeCount} active
+              <span className="text-emerald-500/70">/ {maxAgents}</span>
             </span>
-            <span className="text-gray-400">|</span>
-            <span>{maxAgents} max</span>
-            
           </div>
+          <p className="mt-1.5 text-[13.5px] text-neutral-500">
+            Manage your automated lead generation agents & signals
+          </p>
         </div>
         <button
           onClick={() => setShowHowItWorks(!showHowItWorks)}
-          className="self-start sm:self-auto flex items-center gap-1.5 text-xs font-semibold text-white rounded-full px-3.5 py-1.5 transition-opacity hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #5F93FF, #9CBCFB)" }}
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 text-[12px] font-semibold text-neutral-700 bg-white border border-neutral-200 rounded-full px-3.5 py-2 hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
         >
-          <HelpCircle className="w-3.5 h-3.5" />
-          HOW IT WORKS?
+          <HelpCircle className="w-3.5 h-3.5 text-neutral-500" />
+          How it works
         </button>
       </div>
-      <p className="text-sm text-gray-500 mb-5">Manage your automated lead generation agents & signals</p>
+
 
       <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
       <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} freeTrialMode={sub.freeTrialEnabled} freeTrialLimit={sub.freeTrialLimit} />
