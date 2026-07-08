@@ -21,13 +21,13 @@ const LogoMarquee = () => {
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
         <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-l from-background to-transparent" />
 
-        <div className="animate-marquee flex items-center pl-8">
+        <div className="animate-marquee flex items-center">
           {doubled.map((logo, i) => (
             <img
               key={i}
               src={logo.url}
               alt={logo.alt}
-              className="h-8 object-contain opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 mr-10 md:mr-16"
+              className="h-8 object-contain opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 mx-5 md:mx-8"
               style={{ width: logo.w }}
             />
           ))}
