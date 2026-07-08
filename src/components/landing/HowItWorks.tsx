@@ -31,6 +31,14 @@ const FindsVisual = () => (
 
 
 /* ─────────────── 2/4  Only best prospects ─────────────── */
+import filterImage from "@/assets/how-it-works-filter.png.asset.json";
+const PreFilteredImage = () => (
+  <img
+    src={filterImage.url}
+    alt="Only best prospects filtered"
+    className="w-full h-auto object-contain rounded-[24px] md:rounded-[32px]"
+  />
+);
 const PreFilteredVisual = () => {
   const leads = [
     { name: "Emma Thompson", role: "Marketing Director", intent: null, score: null, dim: true },
