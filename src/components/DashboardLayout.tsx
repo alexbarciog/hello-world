@@ -396,7 +396,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </p>
               <button
                 onClick={() => navigate("/billing")}
-                className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-white border border-neutral-200 px-3.5 py-2 text-[12.5px] font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors shadow-sm"
+                className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-white/80 border border-neutral-200 px-3.5 py-2 text-[12.5px] font-semibold text-neutral-900 hover:bg-white transition-colors shadow-sm"
               >
                 {sub.subscribed ? "Manage Plan" : "Upgrade Pro Account"}
                 <ArrowRight className="w-3.5 h-3.5" />
