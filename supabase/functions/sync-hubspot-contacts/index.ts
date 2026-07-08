@@ -281,7 +281,13 @@ Deno.serve(async (req) => {
       try {
         const res = await hubspotFetch(integ.api_key, "/crm/v3/objects/contacts/batch/upsert", {
           method: "POST",
-          body: JSON.stringify({ idProperty: "intentsly_lead_id", inputs: batch }),
+          body: JSON.stringify({
+            inputs: batch.map((row) => ({
+              idProperty: "intentsly_lead_id",
+              id: row.id,
+              properties: row.properties,
+            })),
+          }),
         });
 
         const bodyText = await res.text();
