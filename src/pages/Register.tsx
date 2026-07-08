@@ -466,19 +466,31 @@ export default function Register() {
       <div
         className="hidden md:flex flex-1 m-5 rounded-[30px] flex-col items-center justify-center relative overflow-hidden bg-cover bg-center"
         style={{
-          backgroundImage: `url(${registerBg})`
+          backgroundImage: `url(${registerBg.url})`
         }}>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-start px-12 max-w-md w-full">
-          <h2 className="text-4xl font-medium text-white tracking-tight mb-2">
-            Find buyers before your competitors do
+          {/* Urgency badge — matches landing hero */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1.5 mb-6 shadow-sm">
+            <span className="text-sm leading-none">🔥</span>
+            <span className="text-[12px] font-semibold text-neutral-900">
+              127 buyers showed intent in the last hour
+            </span>
+          </div>
+
+          <h2
+            className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a] mb-5"
+            style={{ fontSize: "clamp(1.75rem, 3.2vw, 2.75rem)" }}
+          >
+            Find buyers before your{" "}
+            <span className="text-[#3B82F6]">competitors</span> do
           </h2>
-          <p className="text-sm text-white/60 mb-10">
+          <p className="text-base text-neutral-500 leading-relaxed mb-10 max-w-sm">
             Intent-driven prospecting that fills your pipeline on autopilot.
           </p>
 
-          <div className="space-y-6 w-full">
+          <div className="space-y-3 w-full">
             {[
               {
                 icon: Radar,
@@ -496,19 +508,19 @@ export default function Register() {
                 desc: "Start relevant conversations on LinkedIn automatically and book more demos on autopilot."
               }
             ].map((item) => (
-              <div key={item.title} className="flex gap-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-4">
-                <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+              <div key={item.title} className="flex gap-4 rounded-2xl bg-white/70 backdrop-blur-md border border-white/60 p-4 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-[#0a0a0a] flex items-center justify-center shrink-0">
                   <item.icon className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-1">{item.title}</h3>
-                  <p className="text-sm text-white/60 leading-relaxed">{item.desc}</p>
+                  <h3 className="text-sm font-semibold text-[#0a0a0a] mb-1 tracking-tight">{item.title}</h3>
+                  <p className="text-[13px] text-neutral-600 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <p className="text-xs text-white/40 mt-12">
+          <p className="text-xs uppercase tracking-[0.14em] text-neutral-500 mt-10">
             Trusted by 500+ B2B founders and sales teams
           </p>
         </div>
