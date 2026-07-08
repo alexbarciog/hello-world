@@ -8,9 +8,10 @@ import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
-import { ChevronDown, Flame, Users, MessageCircle, Radio, Plus } from "lucide-react";
+import { ChevronDown, Flame, Users, MessageCircle, Radio, Plus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
+import { useState, useRef, useEffect } from "react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
