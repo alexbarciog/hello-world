@@ -91,11 +91,11 @@ const UseCases = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
           <div className="relative isolate rounded-[32px] p-8 sm:p-10 overflow-hidden bg-muted/20">
-            {/* Smaller gradient image, anchored left behind the cards */}
+            {/* Gradient image, anchored left behind the cards */}
             <img
               src={salesAgentsGradientBg}
               alt=""
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-[55%] h-auto object-contain object-left -z-10 pointer-events-none select-none"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-[82%] h-auto object-contain object-left -z-10 pointer-events-none select-none"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 relative z-10">
               {benefits.map((b, i) => {
