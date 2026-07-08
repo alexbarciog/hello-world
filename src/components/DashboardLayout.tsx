@@ -227,7 +227,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white/40 backdrop-blur-xl ${collapsed ? "w-[72px]" : "w-[260px]"}`}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 bg-white/40 backdrop-blur-xl ${collapsed ? "w-[72px]" : "w-[260px]"}`}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-5 py-5">
