@@ -78,6 +78,12 @@ export default function Dashboard() {
     staleTime: 30_000,
   });
 
+  const periodStartISO = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - periodDays[period]);
+    return d.toISOString();
+  })();
+
   const { data: signalData } = useQuery({
     queryKey: ["dashboard-signals"],
     queryFn: async () => {
@@ -91,17 +97,20 @@ export default function Dashboard() {
     staleTime: 30_000,
   });
 
-  // Real metrics from campaign_connection_requests
+  // Real metrics from campaign_connection_requests — scoped to selected period
   const { data: engagementData, isLoading: engagementLoading } = useQuery({
-    queryKey: ["dashboard-engagement"],
+    queryKey: ["dashboard-engagement", period],
     queryFn: async () => {
       const { data: requests, error } = await supabase
         .from("campaign_connection_requests")
-        .select("id, sent_at, last_incoming_message_at");
+        .select("id, sent_at, last_incoming_message_at")
+        .gte("sent_at", periodStartISO);
       if (error) throw error;
       const all = requests ?? [];
       const leadsEngaged = all.length;
-      const conversations = all.filter((r) => r.last_incoming_message_at !== null).length;
+      const conversations = all.filter(
+        (r) => r.last_incoming_message_at !== null && new Date(r.last_incoming_message_at) >= new Date(periodStartISO)
+      ).length;
       return { leadsEngaged, conversations };
     },
     staleTime: 30_000,
@@ -126,12 +135,13 @@ export default function Dashboard() {
   });
 
   const { data: hotOppsData, isLoading: hotOppsLoading } = useQuery({
-    queryKey: ["dashboard-hot-opps"],
+    queryKey: ["dashboard-hot-opps", period],
     queryFn: async () => {
       const { count, error } = await supabase
         .from("contacts")
         .select("id", { count: "exact", head: true })
-        .eq("relevance_tier", "hot");
+        .eq("relevance_tier", "hot")
+        .gte("imported_at", periodStartISO);
       if (error) throw error;
       return { count: count ?? 0 };
     },
