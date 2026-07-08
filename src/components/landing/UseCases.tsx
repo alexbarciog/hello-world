@@ -97,7 +97,7 @@ const UseCases = () => {
               alt=""
               className="absolute inset-0 w-full h-full object-cover object-left -z-10"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
               {benefits.map((b, i) => {
                 const Icon = b.icon;
                 return (
