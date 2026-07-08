@@ -51,36 +51,36 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
             >
               <defs>
                 <linearGradient id="leadsFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#000000" stopOpacity={0.06} />
-                  <stop offset="100%" stopColor="#000000" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#3B82F6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "#999999" }}
+                tick={{ fontSize: 11, fill: "#a3a3a3" }}
                 tickLine={false}
                 axisLine={false}
                 interval={4}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#999999" }}
+                tick={{ fontSize: 11, fill: "#a3a3a3" }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
                 tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : v)}
               />
               <Tooltip
-                cursor={{ stroke: "#CCCCCC", strokeWidth: 1 }}
+                cursor={{ stroke: "#e5e5e5", strokeWidth: 1 }}
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   return (
-                    <div className="bg-white rounded-lg border border-snow-black-10 shadow-lg px-3 py-2 text-xs">
-                      <p className="text-snow-black-40 mb-1">{label}</p>
-                      <p className="text-snow-black-100 font-semibold">
+                    <div className="bg-white rounded-xl border border-neutral-200 shadow-lg px-3 py-2 text-xs">
+                      <p className="text-neutral-400 mb-1">{label}</p>
+                      <p className="text-neutral-900 font-semibold">
                         {payload[0]?.value} leads found
                       </p>
                       {payload[1] && (
-                        <p className="text-snow-black-40">
+                        <p className="text-[#3B82F6]">
                           {payload[1]?.value} contacted
                         </p>
                       )}
@@ -91,16 +91,16 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
               <Area
                 type="monotone"
                 dataKey="leadsFound"
-                stroke="#000000"
-                strokeWidth={1.5}
+                stroke="#0a0a0a"
+                strokeWidth={2}
                 fill="url(#leadsFill)"
                 dot={false}
                 isAnimationActive
                 animationDuration={1400}
                 animationEasing="ease-out"
                 activeDot={{
-                  r: 3,
-                  fill: "#000000",
+                  r: 4,
+                  fill: "#0a0a0a",
                   stroke: "#fff",
                   strokeWidth: 2,
                 }}
@@ -108,11 +108,11 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
               <Line
                 type="monotone"
                 dataKey="contacted"
-                stroke="#CCCCCC"
-                strokeWidth={1.5}
-                strokeDasharray="6 4"
+                stroke="#3B82F6"
+                strokeWidth={2}
+                strokeDasharray="5 4"
                 dot={false}
-                activeDot={false}
+                activeDot={{ r: 3, fill: "#3B82F6", stroke: "#fff", strokeWidth: 2 }}
                 isAnimationActive
                 animationDuration={1200}
                 animationBegin={200}
