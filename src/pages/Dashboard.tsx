@@ -16,6 +16,35 @@ import { useState, useRef, useEffect } from "react";
 export default function Dashboard() {
   const navigate = useNavigate();
 
+  type Period = "week" | "month" | "quarter" | "year";
+  const [period, setPeriod] = useState<Period>("month");
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const periodRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (periodRef.current && !periodRef.current.contains(e.target as Node)) {
+        setPeriodOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const periodLabel: Record<Period, string> = {
+    week: "Last 7 days",
+    month: "This month",
+    quarter: "This quarter",
+    year: "This year",
+  };
+
+  const periodDays: Record<Period, number> = {
+    week: 7,
+    month: 30,
+    quarter: 90,
+    year: 365,
+  };
+
   const { data: userData } = useQuery({
     queryKey: ["dashboard-user"],
     queryFn: async () => {
