@@ -22,7 +22,7 @@ const FinalCTA = () => {
 
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
-      <div ref={ref} className="relative overflow-hidden rounded-[40px] py-20 px-6 md:py-28 md:px-12 bg-white">
+      <div ref={ref} className="relative overflow-hidden rounded-[28px] md:rounded-[40px] py-14 px-5 md:py-28 md:px-12 bg-white">
         {/* Background image */}
         <div
           className="pointer-events-none absolute inset-0"

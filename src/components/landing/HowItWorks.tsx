@@ -263,7 +263,7 @@ const blocks = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-20 md:py-32 px-6 bg-background">
+    <section id="how-it-works" className="py-14 md:py-32 px-5 md:px-6 bg-background">
       <div className="max-w-6xl mx-auto">
         {/* Section header — mirrors the Gojiberry hero copy */}
         <motion.div
@@ -271,30 +271,30 @@ const HowItWorks = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: EASE }}
-          className="mb-16 md:mb-20 max-w-4xl"
+          className="mb-10 md:mb-20 max-w-4xl"
         >
           <h2
-            className="font-medium tracking-[-0.03em] leading-[1.02] mb-6"
-            style={{ color: "hsl(var(--aeline-dark))", fontSize: "clamp(2.5rem, 5.6vw, 4.75rem)" }}
+            className="font-medium tracking-[-0.03em] leading-[1.05] md:leading-[1.02] mb-4 md:mb-6"
+            style={{ color: "hsl(var(--aeline-dark))", fontSize: "clamp(2rem, 5.6vw, 4.75rem)" }}
           >
             Your sales agent runs{" "}
             <span className="text-[#1A8FE3]">24/7.</span> And gets{" "}
             <span className="relative inline-block">
               <span className="relative z-10">better every week.</span>
               <span
-                className="absolute left-0 right-0 bottom-1 md:bottom-2 h-3 md:h-4 bg-[#C8FF00] -z-0 rounded-sm"
+                className="absolute left-0 right-0 bottom-0.5 md:bottom-2 h-2 md:h-4 bg-[#C8FF00] -z-0 rounded-sm"
                 aria-hidden
               />
             </span>
           </h2>
-          <p className="mt-7 text-lg md:text-xl text-neutral-500 leading-relaxed max-w-xl">
+          <p className="mt-4 md:mt-7 text-base md:text-xl text-neutral-500 leading-relaxed max-w-xl">
             From finding the right leads to sending the right message, your agent handles it all,
             automatically.
           </p>
         </motion.div>
 
         {/* Blocks */}
-        <div className="space-y-8 md:space-y-10">
+        <div className="space-y-6 md:space-y-10">
           {blocks.map((b, i) => (
             <motion.article
               key={i}
@@ -304,34 +304,45 @@ const HowItWorks = () => {
               transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
               className="overflow-hidden"
             >
-              <div className={`grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-center ${b.isImage ? '' : 'min-h-0 md:min-h-[480px]'}`}>
+              <div className={`grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-12 items-center ${b.isImage ? '' : 'min-h-0 md:min-h-[480px]'}`}>
                 {/* Copy zone — sits outside the visual container */}
                 <div
-                  className={`md:col-span-5 py-8 md:py-14 flex flex-col justify-center ${
+                  className={`md:col-span-5 py-2 md:py-14 flex flex-col justify-center ${
                     b.visualLeft ? "md:order-2" : ""
                   }`}
                 >
+                  {/* Big stat FIRST on mobile so users scan quickly */}
+                  <div className="mb-4 md:hidden">
+                    <p
+                      className="text-4xl font-semibold tracking-[-0.035em] leading-none mb-1"
+                      style={{ color: "hsl(var(--aeline-dark))" }}
+                    >
+                      {b.stat}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{b.statLabel}</p>
+                  </div>
+
                   <h3
-                    className="text-4xl md:text-5xl font-medium tracking-[-0.035em] leading-[1.02] mb-6"
+                    className="text-[26px] md:text-5xl font-medium tracking-[-0.035em] leading-[1.1] md:leading-[1.02] mb-3 md:mb-6"
                     style={{ color: "hsl(var(--aeline-dark))" }}
                   >
                     {b.title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
+                  <p className="text-[15px] md:text-lg text-muted-foreground leading-relaxed mb-5 md:mb-8">
                     {b.body}
                   </p>
 
                   {/* Lime CTA pill */}
                   <Link
                     to="/register"
-                    className="group inline-flex items-center gap-2 self-start bg-[#C8FF00] text-[hsl(var(--aeline-dark))] px-5 py-3 rounded-full text-sm font-bold hover:bg-[#d4ff33] transition-all shadow-[0_10px_24px_-10px_rgba(200,255,0,0.7)] mb-8"
+                    className="group inline-flex items-center gap-2 self-start bg-[#C8FF00] text-[hsl(var(--aeline-dark))] px-5 py-2.5 md:py-3 rounded-full text-sm font-bold hover:bg-[#d4ff33] transition-all shadow-[0_10px_24px_-10px_rgba(200,255,0,0.7)] mb-0 md:mb-8"
                   >
                     Start for free
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
 
-                  {/* Big stat */}
-                  <div className="mt-auto pt-4">
+                  {/* Big stat (desktop only, below CTA) */}
+                  <div className="hidden md:block mt-auto pt-4">
                     <p
                       className="text-5xl md:text-6xl font-semibold tracking-[-0.035em] leading-none mb-2"
                       style={{ color: "hsl(var(--aeline-dark))" }}
@@ -391,17 +402,17 @@ const HowItWorks = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: EASE }}
-          className="mt-20 md:mt-28 text-center"
+          className="mt-14 md:mt-28 text-center"
         >
           <p
-            className="text-3xl md:text-5xl font-bold tracking-[-0.03em] mb-8"
+            className="text-[26px] md:text-5xl font-bold tracking-[-0.03em] mb-6 md:mb-8 leading-tight"
             style={{ color: "hsl(var(--aeline-dark))" }}
           >
             Stop hunting. Start replying.
           </p>
           <Link
             to="/register"
-            className="group inline-flex items-center gap-2 bg-[#C8FF00] text-[hsl(var(--aeline-dark))] px-7 py-4 rounded-full text-base font-bold hover:bg-[#d4ff33] transition-all shadow-[0_16px_36px_-12px_rgba(200,255,0,0.6)]"
+            className="group inline-flex items-center gap-2 bg-[#C8FF00] text-[hsl(var(--aeline-dark))] px-6 md:px-7 py-3.5 md:py-4 rounded-full text-sm md:text-base font-bold hover:bg-[#d4ff33] transition-all shadow-[0_16px_36px_-12px_rgba(200,255,0,0.6)]"
           >
             Start for free
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />

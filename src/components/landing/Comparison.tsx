@@ -55,20 +55,20 @@ const Cell = ({
 
 const Comparison = () => {
   return (
-    <section id="comparison" className="py-20 md:py-32 px-6 bg-background">
+    <section id="comparison" className="py-14 md:py-32 px-5 md:px-6 bg-background">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="max-w-2xl mb-14"
+          className="max-w-2xl mb-8 md:mb-14"
         >
-          <span className="section-label mb-6 block">Comparison</span>
-          <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] mb-4" style={{ color: "hsl(var(--aeline-dark))" }}>
+          <span className="section-label mb-4 md:mb-6 block">Comparison</span>
+          <h2 className="text-[28px] md:text-5xl font-medium tracking-tight leading-[1.1] mb-3 md:mb-4" style={{ color: "hsl(var(--aeline-dark))" }}>
             Why Intentsly wins on intent
           </h2>
-          <p className="text-base text-muted-foreground leading-relaxed">
+          <p className="text-[15px] md:text-base text-muted-foreground leading-relaxed">
             Other tools give you data. Intentsly gives you timing.
           </p>
         </motion.div>

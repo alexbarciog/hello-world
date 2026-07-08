@@ -47,7 +47,7 @@ const FAQ = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="py-20 md:py-32 px-6 md:px-10 bg-background">
+    <section id="faq" className="py-14 md:py-32 px-5 md:px-10 bg-background">
       <div className="max-w-4xl mx-auto">
         {/* Header - centered */}
         <motion.div
@@ -55,13 +55,13 @@ const FAQ = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="text-center mb-14"
+          className="text-center mb-8 md:mb-14"
         >
           <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium">■ FAQ</span>
-          <h2 className="text-4xl md:text-5xl font-medium mt-4 text-foreground tracking-tight">
+          <h2 className="text-[28px] md:text-5xl font-medium mt-3 md:mt-4 text-foreground tracking-tight leading-tight">
             Frequently asked questions
           </h2>
-          <p className="text-base text-muted-foreground mt-4 max-w-xl mx-auto leading-relaxed">
+          <p className="text-[15px] md:text-base text-muted-foreground mt-3 md:mt-4 max-w-xl mx-auto leading-relaxed">
             Everything you need to know about finding intent-driven buyers on LinkedIn.
           </p>
         </motion.div>
@@ -81,16 +81,16 @@ const FAQ = () => {
               className="rounded-2xl bg-secondary/50 overflow-hidden"
             >
               <button
-                className="w-full flex items-center justify-between p-5 md:p-7 text-left"
+                className="w-full flex items-center justify-between p-4 md:p-7 text-left gap-3"
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
               >
-                <span className="font-medium text-base md:text-xl pr-6 md:pr-8 text-foreground">{faq.q}</span>
-                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
-                  {openIndex === i ? <Minus className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                <span className="font-medium text-[15px] md:text-xl text-foreground">{faq.q}</span>
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-background flex items-center justify-center flex-shrink-0">
+                  {openIndex === i ? <Minus className="w-4 h-4 md:w-5 md:h-5" /> : <Plus className="w-4 h-4 md:w-5 md:h-5" />}
                 </div>
               </button>
-              <div className={`overflow-hidden transition-all duration-300 ${openIndex === i ? "max-h-60 pb-6 px-5 md:px-7" : "max-h-0"}`}>
-                <p className="text-base text-muted-foreground leading-relaxed">{faq.a}</p>
+              <div className={`overflow-hidden transition-all duration-300 ${openIndex === i ? "max-h-96 pb-5 md:pb-6 px-4 md:px-7" : "max-h-0"}`}>
+                <p className="text-[14px] md:text-base text-muted-foreground leading-relaxed">{faq.a}</p>
               </div>
             </motion.div>
           ))}
