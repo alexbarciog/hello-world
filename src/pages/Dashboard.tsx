@@ -10,9 +10,9 @@ import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
 import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Flame, Users, MessageCircle, Radio, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-import { Reveal, fadeStagger, fadeStaggerItem } from "@/lib/motion";
+import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -347,68 +347,93 @@ export default function Dashboard() {
   void userData;
 
   return (
-    <div className="relative flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
+    <div className="relative w-full min-h-screen bg-[#fafbfc]">
       {/* Ambient animated blobs */}
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -top-24 -left-24 w-[520px] h-[520px] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(closest-side, #EDEEFC, transparent 70%)" }}
+        className="pointer-events-none fixed -top-32 -left-32 w-[520px] h-[520px] rounded-full blur-3xl opacity-70"
+        style={{ background: "radial-gradient(closest-side, #E6F1FD, transparent 70%)" }}
         animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0], scale: [1, 1.1, 0.95, 1] }}
         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute top-40 -right-32 w-[560px] h-[560px] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(closest-side, #E6F1FD, transparent 70%)" }}
+        className="pointer-events-none fixed top-1/3 -right-40 w-[560px] h-[560px] rounded-full blur-3xl opacity-60"
+        style={{ background: "radial-gradient(closest-side, #EDEEFC, transparent 70%)" }}
         animate={{ x: [0, -30, 20, 0], y: [0, 40, -20, 0], scale: [1, 1.08, 0.96, 1] }}
         transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <motion.div
-        variants={fadeStagger}
-        initial="hidden"
-        animate="visible"
-        className="relative flex-1 min-w-0 flex flex-col gap-4 bg-white/80 backdrop-blur-sm rounded-[20px] p-4 border border-gray-200/60 shadow-sm"
-      >
-        <motion.header variants={fadeStaggerItem} className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Overview</h1>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
-          >
-            Today
-            <ChevronDown className="w-4 h-4" />
-          </motion.button>
-        </motion.header>
+      <div className="relative w-full max-w-[1400px] mx-auto px-6 py-8">
+        <motion.div
+          variants={fadeStagger}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col gap-5"
+        >
+          {/* Refined header — landing style */}
+          <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 pb-2">
+            <div>
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 mb-3 shadow-sm"
+              >
+                <motion.span
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                />
+                <span className="text-[11px] font-semibold text-neutral-700 tracking-wide">
+                  <CountUp to={hotOpps} /> hot opportunities today
+                </span>
+              </motion.div>
+              <h1 className="text-[38px] md:text-[44px] leading-[1.02] tracking-[-0.03em] font-medium text-[#0a0a0a]">
+                Overview
+              </h1>
+              <p className="mt-1.5 text-sm text-neutral-500">
+                Your AI SDR is running. Here's what's happening right now.
+              </p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              className="inline-flex items-center gap-1.5 text-sm text-neutral-700 bg-white border border-neutral-200 rounded-xl px-4 py-2 hover:bg-neutral-50 transition-colors shadow-sm"
+            >
+              Today
+              <ChevronDown className="w-4 h-4 text-neutral-400" />
+            </motion.button>
+          </motion.header>
 
-        <motion.div variants={fadeStaggerItem}><AgencyWelcomeBanner /></motion.div>
-        <motion.div variants={fadeStaggerItem}><SetupWizardBanner /></motion.div>
-        <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
+          <motion.div variants={fadeStaggerItem}><AgencyWelcomeBanner /></motion.div>
+          <motion.div variants={fadeStaggerItem}><SetupWizardBanner /></motion.div>
+          <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
 
-        <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#EDEEFC]" />
-          <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} />
-          <MetricCard title="Conversations" value={conversations} loading={engagementLoading} />
-          <MetricCard title="Active Signals" value={activeSignals} />
+          <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="black" icon={Flame} />
+            <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="blue" icon={Users} />
+            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="indigo" icon={MessageCircle} />
+            <MetricCard title="Active Signals" value={activeSignals} accent="emerald" icon={Radio} />
+          </motion.div>
+
+          <Reveal y={24} className="grid grid-cols-1 gap-4">
+            <PerformanceChart chartData={chartData} />
+          </Reveal>
+
+          <Reveal y={24} delay={0.05} className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <DailyActivityChart data={weeklyActivityData ?? []} loading={weeklyActivityLoading} />
+            <LeadsByTier data={tierData ?? []} loading={tierLoading} />
+          </Reveal>
+
+          <Reveal y={24} delay={0.1} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
+            <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
+          </Reveal>
         </motion.div>
-
-        <Reveal y={24} className="grid grid-cols-1 gap-4">
-          <PerformanceChart chartData={chartData} />
-        </Reveal>
-
-        <Reveal y={24} delay={0.05} className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <DailyActivityChart data={weeklyActivityData ?? []} loading={weeklyActivityLoading} />
-          <LeadsByTier data={tierData ?? []} loading={tierLoading} />
-        </Reveal>
-
-        <Reveal y={24} delay={0.1} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
-          <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
-        </Reveal>
-      </motion.div>
+      </div>
+      {/* silence unused */}
+      <span className="hidden">{Sparkles.name}</span>
     </div>
   );
 }
