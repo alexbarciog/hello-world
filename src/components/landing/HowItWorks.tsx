@@ -128,7 +128,16 @@ const OutreachVisual = () => (
 
 
 /* ─────────────── 4/4  Gets better every week ─────────────── */
-const LearnsVisual = () => {
+import learnsImage from "@/assets/how-it-works-learns.png.asset.json";
+const LearnsVisual = () => (
+  <img
+    src={learnsImage.url}
+    alt="Agent gets better every week"
+    className="w-full h-auto object-contain rounded-[24px] md:rounded-[32px]"
+  />
+);
+const LearnsVisualOld = () => {
+
   const bars = [32, 44, 40, 58, 52, 68, 74, 82, 78, 90];
   return (
     <div className="relative w-full h-full min-h-[320px] flex items-center justify-center p-6">
