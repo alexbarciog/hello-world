@@ -1,285 +1,353 @@
-import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
+  Sparkles,
   Target,
-  Radar,
-  ListChecks,
-  Zap,
-  Search,
-  Heart,
   Building2,
   Briefcase,
   Check,
   ArrowRight,
-  Calendar,
+  Zap,
+  Heart,
   TrendingUp,
-  Sparkles,
+  Search,
+  Mail,
+  Linkedin,
+  Calendar,
+  BarChart3,
+  ArrowUpRight,
 } from "lucide-react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-/* ─────────────── Step 1: ICP mock (large, floating) ─────────────── */
-const ICPVisual = () => (
-  <div className="relative w-full h-full flex items-center justify-center px-6 py-8">
-    {/* Background floating chip — implies scale */}
-    <motion.div
-      initial={{ opacity: 0, x: 20, y: -10 }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
-      className="absolute top-8 right-8 bg-white/95 backdrop-blur rounded-xl px-3 py-2 shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] border border-black/5 z-0"
-    >
-      <div className="flex items-center gap-1.5">
-        <Sparkles className="w-3 h-3 text-[#1A8FE3]" />
-        <span className="text-[10px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
-          12,400 matches
-        </span>
-      </div>
-    </motion.div>
-
-    {/* Main card */}
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.3, ease: EASE }}
-      className="relative w-full max-w-[340px] rounded-2xl bg-white shadow-[0_20px_40px_-16px_rgba(15,23,42,0.25)] p-5 border border-black/5 z-10"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
-          Define your ICP
-        </p>
+/* ─────────────── 1/4  Finds & scores best leads ─────────────── */
+const FindsVisual = () => {
+  const avatars = [
+    { top: "8%", left: "12%", size: 44, delay: 0.15, label: "Follows your company" },
+    { top: "4%", left: "38%", size: 52, delay: 0.25 },
+    { top: "18%", left: "62%", size: 48, delay: 0.35, label: "Active in your space" },
+    { top: "2%", left: "82%", size: 42, delay: 0.45 },
+    { top: "34%", left: "6%", size: 40, delay: 0.55 },
+    { top: "42%", left: "28%", size: 56, delay: 0.2, highlight: true },
+    { top: "38%", left: "74%", size: 46, delay: 0.4, label: "Competitor engagement" },
+    { top: "58%", left: "50%", size: 44, delay: 0.6 },
+  ];
+  return (
+    <div className="relative w-full h-full min-h-[320px]">
+      {avatars.map((a, i) => (
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          key={i}
+          initial={{ opacity: 0, scale: 0.6, y: 12 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: 0.9, ease: EASE }}
-          className="flex items-center gap-1 bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5"
+          transition={{ duration: 0.55, delay: a.delay, ease: EASE }}
+          style={{ top: a.top, left: a.left, width: a.size, height: a.size }}
+          className={`absolute rounded-2xl bg-white shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] border ${
+            a.highlight ? "border-[#1A8FE3]/40 ring-2 ring-[#1A8FE3]/20" : "border-black/5"
+          } overflow-hidden`}
         >
-          <Check className="w-3 h-3" strokeWidth={3} />
-          <span className="text-[10px] font-semibold">Saved</span>
+          <div
+            className="w-full h-full"
+            style={{
+              background: `linear-gradient(135deg, hsl(${(i * 47) % 360} 60% 78%), hsl(${
+                (i * 47 + 40) % 360
+              } 55% 65%))`,
+            }}
+          />
         </motion.div>
-      </div>
-      <div className="space-y-2">
-        {[
-          { label: "Industry", value: "B2B SaaS", icon: Building2 },
-          { label: "Role", value: "Head of Sales", icon: Briefcase },
-          { label: "Company size", value: "11–200", icon: Target },
-        ].map((f, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.4 + i * 0.08, ease: EASE }}
-            className="flex items-center gap-2.5 bg-[#f5f5f5] rounded-lg px-3 py-2.5"
-          >
-            <f.icon className="w-3.5 h-3.5 shrink-0 text-[#1A8FE3]" />
-            <span className="text-[11px] text-muted-foreground flex-1">{f.label}</span>
-            <span className="text-[11px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
-              {f.value}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  </div>
-);
+      ))}
 
-/* ─────────────── Step 2: Signals mock with animated counter ─────────────── */
-const AnimatedCounter = ({ from, to }: { from: number; to: number }) => {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.5 });
-  const count = useMotionValue(from);
-  const rounded = useTransform(count, (v) => Math.round(v).toString());
+      {/* Signal chips */}
+      {[
+        { top: "14%", left: "20%", text: "Follows your company", delay: 0.7 },
+        { top: "10%", left: "58%", text: "Active in your space", delay: 0.85 },
+        { top: "48%", left: "62%", text: "Competitor engagement", delay: 1.0 },
+      ].map((c, i) => (
+        <motion.div
+          key={`c${i}`}
+          initial={{ opacity: 0, y: 6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: c.delay, ease: EASE }}
+          style={{ top: c.top, left: c.left }}
+          className="absolute bg-[#1A8FE3]/10 border border-[#1A8FE3]/25 rounded-full px-2.5 py-1 flex items-center gap-1.5 backdrop-blur-sm"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-[#1A8FE3]" />
+          <span className="text-[10px] font-semibold text-[#1A8FE3] whitespace-nowrap">
+            {c.text}
+          </span>
+        </motion.div>
+      ))}
 
-  useEffect(() => {
-    if (!inView) return;
-    const controls = animate(count, to, { duration: 1.6, ease: "easeOut" });
-    return () => controls.stop();
-  }, [inView, count, to]);
-
-  return <motion.span ref={ref}>{rounded}</motion.span>;
+      {/* Score chip on highlighted lead */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 1.15, ease: EASE }}
+        className="absolute top-[70%] left-[30%] bg-[hsl(var(--aeline-dark))] text-[#C8FF00] rounded-xl px-3 py-1.5 shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] flex items-center gap-1.5"
+      >
+        <Sparkles className="w-3 h-3" />
+        <span className="text-[11px] font-bold tracking-tight">Score 94 · Hot</span>
+      </motion.div>
+    </div>
+  );
 };
 
-const SignalsVisual = () => (
-  <div className="relative w-full h-full flex items-center justify-center px-6 py-8">
-    {/* Main dark counter card */}
-    <motion.div
-      initial={{ opacity: 0, y: 16, rotate: -3 }}
-      whileInView={{ opacity: 1, y: 0, rotate: -2 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.3, ease: EASE }}
-      className="relative w-[55%] max-w-[220px] rounded-2xl bg-[#1a1a2e] text-white p-5 shadow-[0_20px_40px_-16px_rgba(15,23,42,0.45)] z-10"
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-          </span>
-          <span className="text-[10px] font-medium opacity-80">Live signals</span>
-        </div>
-        <Zap className="w-3.5 h-3.5 text-[#C8FF00]" />
-      </div>
-      <div className="text-5xl font-bold tracking-tight">
-        <AnimatedCounter from={100} to={127} />
-      </div>
-      <p className="text-[10px] opacity-50 mt-1">Detected today</p>
-    </motion.div>
-
-    {/* LinkedIn signals card */}
-    <motion.div
-      initial={{ opacity: 0, x: 20, y: 10 }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
-      className="absolute right-6 top-1/2 -translate-y-1/2 w-[52%] max-w-[210px] rounded-2xl bg-white shadow-[0_20px_40px_-16px_rgba(15,23,42,0.25)] p-3.5 rotate-1 z-20 border border-black/5"
-    >
-      <p className="text-[10px] font-semibold mb-2" style={{ color: "hsl(var(--aeline-dark))" }}>
-        On LinkedIn
-      </p>
-      <div className="space-y-1.5">
-        {[
-          { icon: Search, name: "Posted about CRM", color: "#1A8FE3" },
-          { icon: Heart, name: "Liked competitor post", color: "#ef4444" },
-          { icon: Radar, name: "New hiring activity", color: "#22c55e" },
-          { icon: TrendingUp, name: "Funding round", color: "#8b5cf6" },
-        ].map((s, i) => (
+/* ─────────────── 2/4  Only best prospects ─────────────── */
+const PreFilteredVisual = () => {
+  const leads = [
+    { name: "Emma Thompson", role: "Marketing Director", intent: null, score: null, dim: true },
+    { name: "Noah Patel", role: "Product Manager", intent: null, score: null, dim: true },
+    { name: "Olivia Garcia", role: "Customer Success Manager", intent: "low intent", score: 42, dim: true },
+    { name: "Ava Martinez", role: "UX Designer", intent: "high intent", score: 93, dim: false },
+    { name: "Liam Chen", role: "Head of Sales", intent: "high intent", score: 82, dim: false },
+  ];
+  return (
+    <div className="relative w-full h-full min-h-[340px] flex items-center justify-center px-4 py-6">
+      <div className="w-full max-w-[380px] space-y-2.5">
+        {leads.map((l, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: 8 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: 12 }}
+            whileInView={{ opacity: l.dim ? 0.45 : 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.7 + i * 0.1, ease: EASE }}
-            className="flex items-center gap-1.5"
-          >
-            <s.icon className="w-3 h-3 shrink-0" style={{ color: s.color }} />
-            <span className="text-[10px] font-medium flex-1 truncate" style={{ color: "hsl(var(--aeline-dark))" }}>
-              {s.name}
-            </span>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  </div>
-);
-
-/* ─────────────── Step 3: Prioritized leads mock ─────────────── */
-const PrioritizedVisual = () => (
-  <div className="relative w-full h-full flex items-center justify-center px-6 py-8">
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6, delay: 0.3, ease: EASE }}
-      className="relative w-full max-w-[360px] rounded-2xl bg-white shadow-[0_20px_40px_-16px_rgba(15,23,42,0.25)] p-5 border border-black/5 z-10"
-    >
-      <div className="flex items-center justify-between mb-3.5">
-        <p className="text-xs font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
-          Today's shortlist
-        </p>
-        <span className="text-[10px] text-muted-foreground bg-[#f5f5f5] rounded-full px-2 py-0.5 font-medium">
-          12 hot
-        </span>
-      </div>
-      <div className="space-y-2">
-        {[
-          { name: "Sarah K.", co: "Loop AI", role: "VP Sales", tier: "Hot", score: 92, gradient: "from-red-500 to-orange-500", featured: true },
-          { name: "Mark D.", co: "Northwind", role: "Head of Growth", tier: "Hot", score: 88, gradient: "from-red-500 to-orange-500", featured: false },
-          { name: "Priya S.", co: "Plexa", role: "RevOps Lead", tier: "Warm", score: 71, gradient: "from-amber-400 to-yellow-500", featured: false },
-        ].map((l, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.5 + i * 0.1, ease: EASE }}
-            className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ${
-              l.featured ? "bg-gradient-to-r from-[#1A8FE3]/[0.04] to-transparent ring-1 ring-[#1A8FE3]/15" : "bg-[#f5f5f5]"
+            transition={{ duration: 0.5, delay: 0.15 + i * 0.08, ease: EASE }}
+            className={`flex items-center gap-3 bg-white rounded-2xl px-3.5 py-2.5 border ${
+              l.dim ? "border-black/5" : "border-[#1A8FE3]/25 shadow-[0_10px_28px_-14px_rgba(26,143,227,0.4)]"
             }`}
           >
-            <div className="w-7 h-7 rounded-full bg-[#1A8FE3]/15 flex items-center justify-center text-[10px] font-bold text-[#1A8FE3]">
-              {l.name.charAt(0)}
-            </div>
+            <div
+              className="w-9 h-9 rounded-full shrink-0"
+              style={{
+                background: `linear-gradient(135deg, hsl(${(i * 63) % 360} 55% 75%), hsl(${
+                  (i * 63 + 30) % 360
+                } 50% 60%))`,
+              }}
+            />
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold truncate" style={{ color: "hsl(var(--aeline-dark))" }}>
+              <p className="text-[12px] font-semibold truncate" style={{ color: "hsl(var(--aeline-dark))" }}>
                 {l.name}
               </p>
-              <p className="text-[9px] text-muted-foreground truncate">
-                {l.role} · {l.co}
-              </p>
+              <p className="text-[10px] text-muted-foreground truncate">{l.role}</p>
             </div>
-            {l.featured ? (
-              <button className="text-[9px] font-semibold bg-[#1A8FE3] text-white px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
-                <Calendar className="w-2.5 h-2.5" />
-                Book
-              </button>
-            ) : (
+            {l.intent && (
               <span
-                className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full text-white bg-gradient-to-r ${l.gradient} shadow-sm`}
+                className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                  l.intent === "high intent"
+                    ? "bg-[#C8FF00] text-[hsl(var(--aeline-dark))]"
+                    : "bg-black/[0.06] text-muted-foreground"
+                }`}
               >
-                {l.tier} · {l.score}
+                {l.intent}
+              </span>
+            )}
+            {l.score != null && (
+              <span
+                className={`text-[11px] font-bold ${
+                  l.dim ? "text-muted-foreground" : "text-[#1A8FE3]"
+                }`}
+              >
+                {l.score}%
               </span>
             )}
           </motion.div>
         ))}
       </div>
-      <motion.p
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.4, delay: 0.9, ease: EASE }}
-        className="text-[10px] text-muted-foreground text-center mt-3"
-      >
-        + 9 more in your queue
-      </motion.p>
-    </motion.div>
-  </div>
-);
 
-/* ─────────────── Step config ─────────────── */
-const steps = [
+      {/* Filter beam */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
+        className="absolute top-1/2 -translate-y-1/2 right-4 bg-white/90 backdrop-blur border border-[#1A8FE3]/20 rounded-full px-3 py-1.5 shadow-[0_10px_24px_-8px_rgba(15,23,42,0.15)] flex items-center gap-1.5"
+      >
+        <Search className="w-3 h-3 text-[#1A8FE3]" />
+        <span className="text-[10px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>
+          Filtered · 2 kept
+        </span>
+      </motion.div>
+    </div>
+  );
+};
+
+/* ─────────────── 3/4  Multichannel outreach ─────────────── */
+const OutreachVisual = () => {
+  const events = [
+    { day: "MON", time: "9:00", label: "LinkedIn invite → Emma", color: "bg-[#1A8FE3]/15 text-[#1A8FE3] border-[#1A8FE3]/25", icon: Linkedin },
+    { day: "TUE", time: "11:00", label: "Email · Liam", color: "bg-[#C8FF00]/40 text-[hsl(var(--aeline-dark))] border-[#C8FF00]/60", icon: Mail },
+    { day: "WED", time: "10:30", label: "Follow-up · Ava", color: "bg-[#1A8FE3]/15 text-[#1A8FE3] border-[#1A8FE3]/25", icon: Linkedin },
+    { day: "THU", time: "14:00", label: "Demo booked", color: "bg-emerald-100 text-emerald-700 border-emerald-300", icon: Calendar },
+    { day: "FRI", time: "9:30", label: "Reply → Noah", color: "bg-[#C8FF00]/40 text-[hsl(var(--aeline-dark))] border-[#C8FF00]/60", icon: Mail },
+  ];
+  return (
+    <div className="relative w-full h-full min-h-[340px] flex items-center justify-center p-5">
+      <div className="w-full max-w-[420px] rounded-2xl bg-white border border-black/5 shadow-[0_20px_40px_-16px_rgba(15,23,42,0.2)] overflow-hidden">
+        {/* Header row */}
+        <div className="grid grid-cols-5 border-b border-black/5 bg-[#f9f9fa]">
+          {["MON", "TUE", "WED", "THU", "FRI"].map((d) => (
+            <div key={d} className="px-2 py-2 text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {d}
+            </div>
+          ))}
+        </div>
+        {/* Grid rows */}
+        <div className="relative grid grid-cols-5 min-h-[240px]">
+          {[0, 1, 2, 3, 4].map((c) => (
+            <div key={c} className="border-r last:border-r-0 border-black/5">
+              {[0, 1, 2].map((r) => (
+                <div key={r} className="h-[80px] border-b last:border-b-0 border-black/5" />
+              ))}
+            </div>
+          ))}
+          {/* Events overlaid */}
+          {events.map((e, i) => {
+            const col = ["MON", "TUE", "WED", "THU", "FRI"].indexOf(e.day);
+            const top = 8 + i * 18;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: 0.2 + i * 0.12, ease: EASE }}
+                style={{ left: `${col * 20 + 1}%`, width: "18%", top: `${top}%` }}
+                className={`absolute rounded-lg px-2 py-1.5 border ${e.color} shadow-sm`}
+              >
+                <div className="flex items-center gap-1 mb-0.5">
+                  <e.icon className="w-2.5 h-2.5" />
+                  <span className="text-[8px] font-bold opacity-70">{e.time}</span>
+                </div>
+                <p className="text-[9px] font-semibold leading-tight truncate">{e.label}</p>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Floating "coordinated" badge */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 1.0, ease: EASE }}
+        className="absolute bottom-4 right-4 bg-[hsl(var(--aeline-dark))] text-white rounded-full px-3 py-1.5 shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] flex items-center gap-1.5"
+      >
+        <Zap className="w-3 h-3 text-[#C8FF00]" fill="#C8FF00" />
+        <span className="text-[10px] font-bold">Coordinated automatically</span>
+      </motion.div>
+    </div>
+  );
+};
+
+/* ─────────────── 4/4  Gets better every week ─────────────── */
+const LearnsVisual = () => {
+  const bars = [32, 44, 40, 58, 52, 68, 74, 82, 78, 90];
+  return (
+    <div className="relative w-full h-full min-h-[320px] flex items-center justify-center p-6">
+      <div className="w-full max-w-[400px] rounded-2xl bg-white border border-black/5 shadow-[0_20px_40px_-16px_rgba(15,23,42,0.2)] p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Reply rate · last 10 weeks
+            </p>
+            <p className="text-2xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>
+              +38% <span className="text-[11px] text-emerald-600 font-semibold">▲ vs start</span>
+            </p>
+          </div>
+          <div className="bg-[#C8FF00] rounded-full px-2.5 py-1 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" style={{ color: "hsl(var(--aeline-dark))" }} />
+            <span className="text-[10px] font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>
+              Learning
+            </span>
+          </div>
+        </div>
+
+        {/* Bars */}
+        <div className="flex items-end justify-between gap-1.5 h-28 mb-3">
+          {bars.map((h, i) => (
+            <motion.div
+              key={i}
+              initial={{ height: 0 }}
+              whileInView={{ height: `${h}%` }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 + i * 0.06, ease: EASE }}
+              className={`flex-1 rounded-t-md ${
+                i >= bars.length - 3
+                  ? "bg-gradient-to-t from-[#1A8FE3] to-[#C8FF00]"
+                  : "bg-[#1A8FE3]/25"
+              }`}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between text-[9px] text-muted-foreground font-medium">
+          <span>W1</span>
+          <span>W10</span>
+        </div>
+
+        {/* Benchmark row */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.9, ease: EASE }}
+          className="mt-4 pt-4 border-t border-black/5 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-3.5 h-3.5 text-[#1A8FE3]" />
+            <span className="text-[11px] font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
+              vs. top performers in SaaS
+            </span>
+          </div>
+          <span className="text-[11px] font-bold text-emerald-600">Top 12%</span>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────── Blocks ─────────────── */
+const blocks = [
   {
-    num: "01",
-    title: "You define who matters.",
-    subtitle: "Industry, role, company shape — in 60 seconds. We do the rest.",
-    proofs: [
-      { icon: Check, text: "No CSV uploads" },
-      { icon: Check, text: "Edit anytime" },
-    ],
-    Visual: ICPVisual,
-    bgClass: "bg-gradient-to-br from-sky-50 via-sky-50/40 to-white",
-    radialClass: "bg-[radial-gradient(circle_at_30%_20%,rgba(26,143,227,0.18),transparent_60%)]",
+    n: "1/4",
+    title: "Finds & scores your best leads first",
+    body:
+      "Your agent detects buying & social signals, scores every prospect against your ideal customer, and prioritizes the ones most likely to convert, before reaching out.",
+    Visual: FindsVisual,
     visualLeft: false,
+    bg: "bg-gradient-to-br from-[#1A8FE3]/[0.06] via-white to-[#C8FF00]/[0.08]",
+    radial: "bg-[radial-gradient(circle_at_70%_30%,rgba(26,143,227,0.18),transparent_60%)]",
   },
   {
-    num: "02",
-    title: "We catch people asking for what you sell.",
-    subtitle: "Every day, your buyers post and comment looking for your exact services. We surface them the moment it happens — before your competitors do.",
-    proofs: [
-      { icon: Search, text: "Posts & comments scanned in real-time" },
-      { icon: Zap, text: "Buying-intent language flagged instantly" },
-      { icon: Radar, text: "Updated every hour, 24/7" },
-    ],
-    Visual: SignalsVisual,
-    bgClass: "bg-gradient-to-br from-indigo-50 via-indigo-50/40 to-white",
-    radialClass: "bg-[radial-gradient(circle_at_70%_30%,rgba(99,102,241,0.18),transparent_60%)]",
+    n: "2/4",
+    title: "Only your best prospects. Nothing else.",
+    body:
+      "Every lead is pre-filtered to match your ideal buyer profile. Your agent never wastes a message on someone who was never going to buy.",
+    Visual: PreFilteredVisual,
     visualLeft: true,
+    bg: "bg-gradient-to-br from-[#C8FF00]/[0.12] via-white to-[#1A8FE3]/[0.06]",
+    radial: "bg-[radial-gradient(circle_at_30%_60%,rgba(200,255,0,0.20),transparent_60%)]",
   },
   {
-    num: "03",
-    title: "You get a daily shortlist.",
-    subtitle: "People showing intent right now — ranked, scored, ready to reach out.",
-    proofs: [
-      { icon: ArrowRight, text: "12 hot leads/day" },
-      { icon: ArrowRight, text: "~8 min to first outreach" },
-    ],
-    Visual: PrioritizedVisual,
-    bgClass: "bg-gradient-to-br from-lime-50 via-lime-50/40 to-white",
-    radialClass: "bg-[radial-gradient(circle_at_30%_70%,rgba(200,255,0,0.22),transparent_60%)]",
+    n: "3/4",
+    title: "Multichannel outreach that books demos",
+    body:
+      "Your agent reaches out via email and socials with AI personalized messages, coordinated automatically, no sequences to build.",
+    Visual: OutreachVisual,
     visualLeft: false,
+    bg: "bg-gradient-to-br from-[#1A8FE3]/[0.08] via-white to-[#C8FF00]/[0.06]",
+    radial: "bg-[radial-gradient(circle_at_70%_60%,rgba(26,143,227,0.16),transparent_60%)]",
+  },
+  {
+    n: "4/4",
+    title: "Gets better every week",
+    body:
+      "Your agent tracks what converts, adjusts automatically, and benchmarks your campaigns against top performers in your industry.",
+    Visual: LearnsVisual,
+    visualLeft: true,
+    bg: "bg-gradient-to-br from-[#C8FF00]/[0.14] via-white to-[#1A8FE3]/[0.08]",
+    radial: "bg-[radial-gradient(circle_at_30%_30%,rgba(200,255,0,0.22),transparent_60%)]",
   },
 ];
 
@@ -287,124 +355,96 @@ const HowItWorks = () => {
   return (
     <section id="how-it-works" className="py-20 md:py-32 px-6 bg-background">
       <div className="max-w-6xl mx-auto">
-        {/* Section header */}
-        <div className="flex items-end justify-between gap-8 mb-14">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.6, ease: EASE }}
-            className="max-w-2xl"
+        {/* Section header — mirrors the Gojiberry hero copy */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.6, ease: EASE }}
+          className="mb-16 md:mb-20 max-w-4xl"
+        >
+          <div className="flex items-center gap-2 mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#1A8FE3]" />
+            <span className="section-label">How it works</span>
+          </div>
+          <h2
+            className="text-4xl md:text-6xl font-medium tracking-[-0.025em] leading-[1.02] mb-5"
+            style={{ color: "hsl(var(--aeline-dark))" }}
           >
-            <span className="section-label mb-6 block">How it works</span>
-            <h2
-              className="text-4xl md:text-5xl font-medium tracking-[-0.02em] leading-[1.05] mb-4"
-              style={{ color: "hsl(var(--aeline-dark))" }}
+            Your sales agent runs{" "}
+            <span className="text-[#1A8FE3]">24/7.</span> And gets{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10">better every week.</span>
+              <span
+                className="absolute left-0 right-0 bottom-1 h-3 bg-[#C8FF00] -z-0 rounded-sm"
+                aria-hidden
+              />
+            </span>
+          </h2>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+            From finding the right leads to sending the right message, your agent handles it all,
+            automatically.
+          </p>
+        </motion.div>
+
+        {/* Blocks */}
+        <div className="space-y-6 md:space-y-8">
+          {blocks.map((b, i) => (
+            <motion.article
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
+              className="rounded-[28px] md:rounded-[36px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.14)] overflow-hidden"
             >
-              From cold list to qualified pipeline — in 3 moves.
-            </h2>
-          </motion.div>
-          <motion.span
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
-            className="hidden md:block text-[11px] uppercase tracking-[0.18em] text-muted-foreground pb-2 shrink-0"
-          >
-            3 steps · ~5 min setup
-          </motion.span>
-        </div>
-
-        {/* Stacked steps */}
-        <div className="space-y-6">
-          {steps.map((s, i) => (
-            <div key={i}>
-              <motion.article
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-                className="rounded-[24px] md:rounded-[32px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_24px_48px_-24px_rgba(0,0,0,0.10)] overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[420px]">
-                  {/* Copy zone */}
-                  <div
-                    className={`md:col-span-5 p-6 md:p-12 flex flex-col justify-center relative ${
-                      s.visualLeft ? "md:order-2" : ""
-                    }`}
-                  >
-                    <span
-                      className="absolute top-4 right-5 md:top-10 md:right-12 text-[64px] md:text-[88px] font-light leading-none text-[#1A8FE3]/[0.10] select-none pointer-events-none"
-                      aria-hidden
-                    >
-                      {s.num}
+              <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[440px]">
+                {/* Copy zone */}
+                <div
+                  className={`md:col-span-5 p-7 md:p-12 flex flex-col justify-center ${
+                    b.visualLeft ? "md:order-2" : ""
+                  }`}
+                >
+                  <div className="inline-flex items-center gap-1.5 bg-[#1A8FE3]/10 border border-[#1A8FE3]/20 rounded-lg px-2.5 py-1 self-start mb-6">
+                    <span className="w-3.5 h-3.5 rounded-[3px] bg-[#1A8FE3] flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                     </span>
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-[#1A8FE3] font-semibold mb-4 relative">
-                      Step {s.num}
+                    <span className="text-[11px] font-bold text-[#1A8FE3] tabular-nums">
+                      {b.n}
                     </span>
-                    <h3
-                      className="text-3xl md:text-4xl font-medium tracking-[-0.02em] leading-[1.1] mb-3 relative"
-                      style={{ color: "hsl(var(--aeline-dark))" }}
-                    >
-                      {s.title}
-                    </h3>
-                    <p className="text-base text-muted-foreground leading-relaxed mb-6 relative">{s.subtitle}</p>
-                    <ul className="space-y-2 relative">
-                      {s.proofs.map((p, pi) => (
-                        <li key={pi} className="flex items-center gap-2.5 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
-                          <span className="w-5 h-5 rounded-full bg-[#1A8FE3]/10 flex items-center justify-center shrink-0">
-                            <p.icon className="w-3 h-3 text-[#1A8FE3]" strokeWidth={2.5} />
-                          </span>
-                          <span className="font-medium">{p.text}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
-
-                  {/* Visual zone */}
-                  <div
-                    className={`md:col-span-7 relative min-h-[260px] md:min-h-[420px] ${s.bgClass} ${
-                      s.visualLeft ? "md:order-1" : ""
-                    }`}
+                  <h3
+                    className="text-3xl md:text-[40px] font-medium tracking-[-0.025em] leading-[1.05] mb-5"
+                    style={{ color: "hsl(var(--aeline-dark))" }}
                   >
-                    <div className={`absolute inset-0 ${s.radialClass}`} />
-                    <div
-                      className="absolute inset-0 opacity-[0.25]"
-                      style={{
-                        backgroundImage:
-                          "radial-gradient(circle, rgba(15,23,42,0.18) 1px, transparent 1px)",
-                        backgroundSize: "18px 18px",
-                      }}
-                    />
-                    <div className="relative h-full">
-                      <s.Visual />
-                    </div>
+                    {b.title}
+                  </h3>
+                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                    {b.body}
+                  </p>
+                </div>
+
+                {/* Visual zone */}
+                <div
+                  className={`md:col-span-7 relative min-h-[300px] md:min-h-[440px] ${b.bg} ${
+                    b.visualLeft ? "md:order-1" : ""
+                  }`}
+                >
+                  <div className={`absolute inset-0 ${b.radial}`} />
+                  <div
+                    className="absolute inset-0 opacity-[0.22]"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle, rgba(15,23,42,0.18) 1px, transparent 1px)",
+                      backgroundSize: "18px 18px",
+                    }}
+                  />
+                  <div className="relative h-full">
+                    <b.Visual />
                   </div>
                 </div>
-              </motion.article>
-
-              {/* Mid-section conversion nudge between Step 02 and Step 03 */}
-              {i === 1 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.5 }}
-                  transition={{ duration: 0.5, ease: EASE }}
-                  className="my-6 mx-2 md:mx-8 rounded-2xl bg-gradient-to-r from-[#1A8FE3]/[0.06] via-[#C8FF00]/[0.10] to-[#1A8FE3]/[0.06] border border-[#1A8FE3]/15 px-5 py-4 flex flex-col items-start md:flex-row md:flex-wrap md:items-center md:justify-between gap-3"
-                >
-                  <p className="text-sm font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
-                    This is what your competitors don't have yet.
-                  </p>
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1A8FE3] hover:gap-2.5 transition-all"
-                  >
-                    Start free
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </motion.div>
-              )}
-            </div>
+              </div>
+            </motion.article>
           ))}
         </div>
 
@@ -414,7 +454,7 @@ const HowItWorks = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: EASE }}
-          className="mt-16 md:mt-20 text-center"
+          className="mt-16 md:mt-24 text-center"
         >
           <p
             className="text-2xl md:text-3xl font-medium tracking-[-0.01em] mb-6"
@@ -427,9 +467,11 @@ const HowItWorks = () => {
             className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-7 py-3.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
           >
             Start for $97
-            <ArrowRight className="w-4 h-4" />
+            <ArrowUpRight className="w-4 h-4" />
           </Link>
-          <p className="text-xs text-muted-foreground mt-4">No contract · Cancel anytime · Setup in 5 min</p>
+          <p className="text-xs text-muted-foreground mt-4">
+            No contract · Cancel anytime · Setup in 5 min
+          </p>
         </motion.div>
       </div>
     </section>
