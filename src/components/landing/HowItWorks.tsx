@@ -26,7 +26,7 @@ const FindsVisual = () => (
   <img
     src={findsImage.url}
     alt="Leads scored by intent"
-    className="w-full h-full object-cover"
+    className="w-full h-full object-contain p-4 md:p-6"
   />
 );
 
