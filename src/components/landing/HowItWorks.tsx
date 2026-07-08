@@ -316,8 +316,11 @@ const blocks = [
       "Your agent detects buying & social signals, scores every prospect against your ideal customer, and prioritizes the ones most likely to convert, before reaching out.",
     Visual: FindsVisual,
     visualLeft: false,
-    bg: "bg-gradient-to-br from-[#1A8FE3]/[0.06] via-white to-[#C8FF00]/[0.08]",
-    radial: "bg-[radial-gradient(circle_at_70%_30%,rgba(26,143,227,0.18),transparent_60%)]",
+    stat: "12,400+",
+    statLabel: "Buyers detected weekly",
+    // Vertical gradient bleeds on left/right sides of the visual card (like reference)
+    sideGradient:
+      "linear-gradient(180deg, rgba(200,255,0,0.55) 0%, rgba(200,255,0,0.15) 40%, rgba(26,143,227,0.35) 100%)",
   },
   {
     n: "2/4",
@@ -326,8 +329,10 @@ const blocks = [
       "Every lead is pre-filtered to match your ideal buyer profile. Your agent never wastes a message on someone who was never going to buy.",
     Visual: PreFilteredVisual,
     visualLeft: true,
-    bg: "bg-gradient-to-br from-[#C8FF00]/[0.12] via-white to-[#1A8FE3]/[0.06]",
-    radial: "bg-[radial-gradient(circle_at_30%_60%,rgba(200,255,0,0.20),transparent_60%)]",
+    stat: "93%",
+    statLabel: "Match precision",
+    sideGradient:
+      "linear-gradient(180deg, rgba(26,143,227,0.45) 0%, rgba(200,255,0,0.25) 60%, rgba(200,255,0,0.55) 100%)",
   },
   {
     n: "3/4",
@@ -336,8 +341,10 @@ const blocks = [
       "Your agent reaches out via email and socials with AI personalized messages, coordinated automatically, no sequences to build.",
     Visual: OutreachVisual,
     visualLeft: false,
-    bg: "bg-gradient-to-br from-[#1A8FE3]/[0.08] via-white to-[#C8FF00]/[0.06]",
-    radial: "bg-[radial-gradient(circle_at_70%_60%,rgba(26,143,227,0.16),transparent_60%)]",
+    stat: "5×",
+    statLabel: "More demos booked",
+    sideGradient:
+      "linear-gradient(180deg, rgba(200,255,0,0.45) 0%, rgba(26,143,227,0.30) 50%, rgba(26,143,227,0.55) 100%)",
   },
   {
     n: "4/4",
@@ -346,8 +353,10 @@ const blocks = [
       "Your agent tracks what converts, adjusts automatically, and benchmarks your campaigns against top performers in your industry.",
     Visual: LearnsVisual,
     visualLeft: true,
-    bg: "bg-gradient-to-br from-[#C8FF00]/[0.14] via-white to-[#1A8FE3]/[0.08]",
-    radial: "bg-[radial-gradient(circle_at_30%_30%,rgba(200,255,0,0.22),transparent_60%)]",
+    stat: "+38%",
+    statLabel: "Reply rate lift in 10 weeks",
+    sideGradient:
+      "linear-gradient(180deg, rgba(26,143,227,0.35) 0%, rgba(200,255,0,0.45) 55%, rgba(200,255,0,0.60) 100%)",
   },
 ];
 
@@ -368,7 +377,7 @@ const HowItWorks = () => {
             <span className="section-label">How it works</span>
           </div>
           <h2
-            className="text-4xl md:text-6xl font-medium tracking-[-0.025em] leading-[1.02] mb-5"
+            className="text-5xl md:text-7xl font-bold tracking-[-0.035em] leading-[0.98] mb-6"
             style={{ color: "hsl(var(--aeline-dark))" }}
           >
             Your sales agent runs{" "}
@@ -376,7 +385,7 @@ const HowItWorks = () => {
             <span className="relative inline-block">
               <span className="relative z-10">better every week.</span>
               <span
-                className="absolute left-0 right-0 bottom-1 h-3 bg-[#C8FF00] -z-0 rounded-sm"
+                className="absolute left-0 right-0 bottom-1 md:bottom-2 h-3 md:h-4 bg-[#C8FF00] -z-0 rounded-sm"
                 aria-hidden
               />
             </span>
@@ -388,7 +397,7 @@ const HowItWorks = () => {
         </motion.div>
 
         {/* Blocks */}
-        <div className="space-y-6 md:space-y-8">
+        <div className="space-y-8 md:space-y-10">
           {blocks.map((b, i) => (
             <motion.article
               key={i}
@@ -396,16 +405,16 @@ const HowItWorks = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
-              className="rounded-[28px] md:rounded-[36px] border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.14)] overflow-hidden"
+              className="rounded-[32px] md:rounded-[40px] border border-black/[0.06] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)] overflow-hidden"
             >
-              <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[440px]">
+              <div className="grid grid-cols-1 md:grid-cols-12 min-h-0 md:min-h-[480px]">
                 {/* Copy zone */}
                 <div
-                  className={`md:col-span-5 p-7 md:p-12 flex flex-col justify-center ${
+                  className={`md:col-span-5 p-8 md:p-14 flex flex-col justify-center ${
                     b.visualLeft ? "md:order-2" : ""
                   }`}
                 >
-                  <div className="inline-flex items-center gap-1.5 bg-[#1A8FE3]/10 border border-[#1A8FE3]/20 rounded-lg px-2.5 py-1 self-start mb-6">
+                  <div className="inline-flex items-center gap-1.5 bg-[#1A8FE3]/10 border border-[#1A8FE3]/20 rounded-lg px-2.5 py-1 self-start mb-8">
                     <span className="w-3.5 h-3.5 rounded-[3px] bg-[#1A8FE3] flex items-center justify-center">
                       <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                     </span>
@@ -414,33 +423,59 @@ const HowItWorks = () => {
                     </span>
                   </div>
                   <h3
-                    className="text-3xl md:text-[40px] font-medium tracking-[-0.025em] leading-[1.05] mb-5"
+                    className="text-4xl md:text-5xl font-bold tracking-[-0.035em] leading-[1.02] mb-6"
                     style={{ color: "hsl(var(--aeline-dark))" }}
                   >
                     {b.title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
                     {b.body}
                   </p>
+
+                  {/* Lime CTA pill */}
+                  <Link
+                    to="/register"
+                    className="group inline-flex items-center gap-2 self-start bg-[#C8FF00] text-[hsl(var(--aeline-dark))] px-5 py-3 rounded-full text-sm font-bold hover:bg-[#d4ff33] transition-all shadow-[0_10px_24px_-10px_rgba(200,255,0,0.7)] mb-8"
+                  >
+                    Start for free
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                  </Link>
+
+                  {/* Big stat */}
+                  <div className="mt-auto pt-4">
+                    <p
+                      className="text-5xl md:text-6xl font-bold tracking-[-0.035em] leading-none mb-2"
+                      style={{ color: "hsl(var(--aeline-dark))" }}
+                    >
+                      {b.stat}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{b.statLabel}</p>
+                  </div>
                 </div>
 
-                {/* Visual zone */}
+                {/* Visual zone — off-white outer frame with side gradient bleed */}
                 <div
-                  className={`md:col-span-7 relative min-h-[300px] md:min-h-[440px] ${b.bg} ${
+                  className={`md:col-span-7 relative min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] overflow-hidden ${
                     b.visualLeft ? "md:order-1" : ""
                   }`}
                 >
-                  <div className={`absolute inset-0 ${b.radial}`} />
+                  {/* Left gradient bleed */}
                   <div
-                    className="absolute inset-0 opacity-[0.22]"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle, rgba(15,23,42,0.18) 1px, transparent 1px)",
-                      backgroundSize: "18px 18px",
-                    }}
+                    className="absolute inset-y-0 left-0 w-[14%] blur-2xl opacity-90"
+                    style={{ background: b.sideGradient }}
+                    aria-hidden
                   />
-                  <div className="relative h-full">
-                    <b.Visual />
+                  {/* Right gradient bleed */}
+                  <div
+                    className="absolute inset-y-0 right-0 w-[14%] blur-2xl opacity-90"
+                    style={{ background: b.sideGradient }}
+                    aria-hidden
+                  />
+                  {/* Inner white card holding the mock */}
+                  <div className="relative h-full flex items-center justify-center p-6 md:p-10">
+                    <div className="relative w-full h-full rounded-2xl md:rounded-3xl bg-white border border-black/[0.05] shadow-[0_20px_50px_-24px_rgba(15,23,42,0.18)] overflow-hidden">
+                      <b.Visual />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -454,20 +489,20 @@ const HowItWorks = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: EASE }}
-          className="mt-16 md:mt-24 text-center"
+          className="mt-20 md:mt-28 text-center"
         >
           <p
-            className="text-2xl md:text-3xl font-medium tracking-[-0.01em] mb-6"
+            className="text-3xl md:text-5xl font-bold tracking-[-0.03em] mb-8"
             style={{ color: "hsl(var(--aeline-dark))" }}
           >
             Stop hunting. Start replying.
           </p>
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-7 py-3.5 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
+            className="group inline-flex items-center gap-2 bg-[#C8FF00] text-[hsl(var(--aeline-dark))] px-7 py-4 rounded-full text-base font-bold hover:bg-[#d4ff33] transition-all shadow-[0_16px_36px_-12px_rgba(200,255,0,0.6)]"
           >
-            Start for $97
-            <ArrowUpRight className="w-4 h-4" />
+            Start for free
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
           <p className="text-xs text-muted-foreground mt-4">
             No contract · Cancel anytime · Setup in 5 min
