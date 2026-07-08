@@ -29,16 +29,16 @@ const DailyActivityChart = ({ data, loading }: WeeklyActivityChartProps) => {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="bg-snow-bg-2 rounded-[20px] p-4"
+      className="rounded-[20px] p-5 bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_10px_30px_-12px_rgba(10,10,10,0.15)] transition-shadow"
     >
-      <h3 className="text-sm font-bold text-snow-black-100 mb-3">Daily Activity per Week</h3>
+      <h3 className="text-[11px] uppercase tracking-[0.14em] font-medium text-neutral-500 mb-3">Daily Activity per Week</h3>
       {loading ? (
         <div className="h-[180px] flex items-center justify-center">
           <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
         <div className="h-[180px] flex items-center justify-center">
-          <p className="text-sm text-snow-black-20">No activity data yet</p>
+          <p className="text-sm text-neutral-400">No activity data yet</p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={180}>

@@ -45,7 +45,7 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="bg-snow-bg-2 rounded-[20px] p-4"
+      className="rounded-[20px] p-5 bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_10px_30px_-12px_rgba(10,10,10,0.15)] transition-shadow"
     >
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-gray-900">Hot Leads</h2>

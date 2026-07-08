@@ -23,16 +23,16 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="bg-snow-bg-2 rounded-[20px] p-4"
+      className="rounded-[20px] p-5 bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_10px_30px_-12px_rgba(10,10,10,0.15)] transition-shadow"
     >
-      <h3 className="text-sm font-bold text-snow-black-100 mb-3">Leads by Tier</h3>
+      <h3 className="text-[11px] uppercase tracking-[0.14em] font-medium text-neutral-500 mb-3">Leads by Tier</h3>
       {loading ? (
         <div className="h-[160px] flex items-center justify-center">
           <div className="h-6 w-32 bg-white/60 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
         <div className="h-[160px] flex items-center justify-center">
-          <p className="text-sm text-snow-black-20">No leads yet</p>
+          <p className="text-sm text-neutral-400">No leads yet</p>
         </div>
       ) : (
         <div className="flex items-center gap-4">
@@ -58,8 +58,8 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <CountUp to={total} duration={1.4} className="text-xl font-bold text-snow-black" />
-              <span className="text-[10px] text-snow-black-40 uppercase tracking-wider">Total</span>
+              <CountUp to={total} duration={1.4} className="text-xl font-bold text-neutral-900" />
+              <span className="text-[10px] text-neutral-500 uppercase tracking-wider">Total</span>
             </div>
           </div>
           <div className="flex flex-col gap-2 flex-1">
@@ -78,8 +78,8 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-sm text-snow-black-40 whitespace-nowrap">{entry.name}</span>
-                  <span className="text-sm font-semibold text-snow-black-100 ml-auto">
+                  <span className="text-sm text-neutral-500 whitespace-nowrap">{entry.name}</span>
+                  <span className="text-sm font-semibold text-neutral-900 ml-auto">
                     {pct}%
                   </span>
                 </motion.div>
