@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Plus, Minus, ArrowRight, Calendar } from "lucide-react";
+import { Plus, Minus, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
 const staggerContainer = {
