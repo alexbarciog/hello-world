@@ -12,6 +12,8 @@ import meshGradientBg from "@/assets/mesh-gradient.png";
 import { toast } from "sonner";
 import { Info, Trash2, Pencil, Play, Pause, MoreVertical, Plus, Users, Zap, TrendingUp, ArrowRight, Bot, Sparkles, Rocket, Mail, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { fadeStagger, fadeStaggerItem, Reveal } from "@/lib/motion";
 
 const MAX_CAMPAIGNS = 2;
 
