@@ -148,16 +148,16 @@ async function ensureCustomProperties(apiKey: string): Promise<HubSpotPropertyTa
     });
 
     const text = await res.text();
-    const isDuplicateLabel = res.status === 400 && /NON_UNIQUE_PROPERTY_LABEL|same label/i.test(text);
-    if (!res.ok && res.status !== 409 && !isDuplicateLabel) {
-      console.error(`ensureCustomProperties ${p.name} failed`, res.status, text.slice(0, 500));
+    if (!res.ok) {
+      console.error(`ensureCustomProperties ${p.name} ${exists ? "PATCH" : "POST"} failed`, res.status, text.slice(0, 500));
       if (res.status === 401 || res.status === 403) {
         throw new Error(
           "HubSpot token is missing property permissions. Reconnect it with crm.objects.contacts.read, crm.objects.contacts.write, crm.schemas.contacts.read, and crm.schemas.contacts.write."
         );
       }
-      throw new Error(`HubSpot could not create the ${p.label} field (${res.status}).`);
+      // Tolerate 400/409 (already exists, label collision, etc.) — post-check will validate.
     }
+
   }
 
   properties = await fetchHubSpotContactProperties(apiKey);
