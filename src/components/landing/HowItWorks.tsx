@@ -316,8 +316,11 @@ const blocks = [
       "Your agent detects buying & social signals, scores every prospect against your ideal customer, and prioritizes the ones most likely to convert, before reaching out.",
     Visual: FindsVisual,
     visualLeft: false,
-    bg: "bg-gradient-to-br from-[#1A8FE3]/[0.06] via-white to-[#C8FF00]/[0.08]",
-    radial: "bg-[radial-gradient(circle_at_70%_30%,rgba(26,143,227,0.18),transparent_60%)]",
+    stat: "12,400+",
+    statLabel: "Buyers detected weekly",
+    // Vertical gradient bleeds on left/right sides of the visual card (like reference)
+    sideGradient:
+      "linear-gradient(180deg, rgba(200,255,0,0.55) 0%, rgba(200,255,0,0.15) 40%, rgba(26,143,227,0.35) 100%)",
   },
   {
     n: "2/4",
@@ -326,8 +329,10 @@ const blocks = [
       "Every lead is pre-filtered to match your ideal buyer profile. Your agent never wastes a message on someone who was never going to buy.",
     Visual: PreFilteredVisual,
     visualLeft: true,
-    bg: "bg-gradient-to-br from-[#C8FF00]/[0.12] via-white to-[#1A8FE3]/[0.06]",
-    radial: "bg-[radial-gradient(circle_at_30%_60%,rgba(200,255,0,0.20),transparent_60%)]",
+    stat: "93%",
+    statLabel: "Match precision",
+    sideGradient:
+      "linear-gradient(180deg, rgba(26,143,227,0.45) 0%, rgba(200,255,0,0.25) 60%, rgba(200,255,0,0.55) 100%)",
   },
   {
     n: "3/4",
@@ -336,8 +341,10 @@ const blocks = [
       "Your agent reaches out via email and socials with AI personalized messages, coordinated automatically, no sequences to build.",
     Visual: OutreachVisual,
     visualLeft: false,
-    bg: "bg-gradient-to-br from-[#1A8FE3]/[0.08] via-white to-[#C8FF00]/[0.06]",
-    radial: "bg-[radial-gradient(circle_at_70%_60%,rgba(26,143,227,0.16),transparent_60%)]",
+    stat: "5×",
+    statLabel: "More demos booked",
+    sideGradient:
+      "linear-gradient(180deg, rgba(200,255,0,0.45) 0%, rgba(26,143,227,0.30) 50%, rgba(26,143,227,0.55) 100%)",
   },
   {
     n: "4/4",
@@ -346,8 +353,10 @@ const blocks = [
       "Your agent tracks what converts, adjusts automatically, and benchmarks your campaigns against top performers in your industry.",
     Visual: LearnsVisual,
     visualLeft: true,
-    bg: "bg-gradient-to-br from-[#C8FF00]/[0.14] via-white to-[#1A8FE3]/[0.08]",
-    radial: "bg-[radial-gradient(circle_at_30%_30%,rgba(200,255,0,0.22),transparent_60%)]",
+    stat: "+38%",
+    statLabel: "Reply rate lift in 10 weeks",
+    sideGradient:
+      "linear-gradient(180deg, rgba(26,143,227,0.35) 0%, rgba(200,255,0,0.45) 55%, rgba(200,255,0,0.60) 100%)",
   },
 ];
 
