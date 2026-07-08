@@ -680,7 +680,7 @@ Deno.serve(async (req) => {
           }
 
           const signal = `Engaged with ${post._hashtag}`;
-          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCompanyForInsert);
+          const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCompanyForInsert, postText);
           if (result === 'exists') { diag.already_in_contacts++; continue; }
           if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
         }
