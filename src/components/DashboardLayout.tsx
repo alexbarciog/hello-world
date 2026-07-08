@@ -335,8 +335,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       title={collapsed ? item.label : undefined}
                       className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors ${
                         active
-                          ? "bg-blue-50 text-[#3B82F6]"
-                          : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                          ? "bg-blue-50/80 text-[#3B82F6]"
+                          : "text-neutral-600 hover:bg-white/60 hover:text-neutral-900"
                       }`}
                     >
                       <span className="w-5 h-5 flex items-center justify-center shrink-0">
