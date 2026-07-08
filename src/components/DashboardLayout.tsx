@@ -317,7 +317,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {settingsGroup.length > 0 && (
             <>
               {!collapsed && (
-                <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-neutral-400 px-2.5 pt-6 pb-1.5">
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-neutral-600 px-2.5 pt-2 pb-1.5">
                   Settings
                 </p>
               )}
