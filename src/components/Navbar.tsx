@@ -65,13 +65,13 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             <div className="flex items-center gap-6">
               <button
                 onClick={() => navigate("/login")}
-                className="text-[15px] font-medium text-neutral-700 hover:text-[#0a0a0a] transition-colors"
+                className="text-[15px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
               >
                 Sign in
               </button>
               <button
                 onClick={() => navigate("/register")}
-                className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white text-[15px] font-semibold rounded-xl px-5 py-3 hover:bg-neutral-800 transition-colors"
+                className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white text-[14px] font-semibold tracking-tight rounded-xl px-4 py-2.5 hover:bg-neutral-800 transition-colors"
               >
                 Sign up
                 <ArrowRight className="w-4 h-4" />
