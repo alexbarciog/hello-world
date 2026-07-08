@@ -282,9 +282,9 @@ const blocks = [
   },
   {
     n: "3/4",
-    title: "Outreach that reads the room",
+    title: "Sales Agent that books meetings on AUTOPILOT",
     body:
-      "Our AI studies how each lead writes, what they engage with, and when they're active — then crafts hyper-personalized messages that match their tone, psychology, and buying signals. The right words, on the right channel, at the right moment.",
+      "Your AI sales agent runs outreach end-to-end without you lifting a finger. It researches every lead, writes hyper-personalized messages that match their tone and psychology, chooses the best channel and moment, follows up automatically, and books meetings straight into your calendar — while you focus on closing.",
     Visual: OutreachVisual,
     visualLeft: false,
     stat: "5×",
