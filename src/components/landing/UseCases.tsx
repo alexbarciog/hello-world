@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
+import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
