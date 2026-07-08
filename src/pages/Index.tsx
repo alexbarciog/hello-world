@@ -10,7 +10,6 @@ import HowItWorks from "@/components/landing/HowItWorks";
 import UseCases from "@/components/landing/UseCases";
 import WhyIntentsly from "@/components/landing/WhyIntentsly";
 import Comparison from "@/components/landing/Comparison";
-import Pricing from "@/components/Pricing";
 import FAQ from "@/components/FAQ";
 import FinalCTA from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/CTAFooter";
@@ -32,7 +31,6 @@ const Index = () => {
       <UseCases />
       <WhyIntentsly />
       <Comparison />
-      <Pricing />
       <FAQ />
       <FinalCTA />
       {/* Mobile spacer so sticky CTA doesn't cover footer content */}
