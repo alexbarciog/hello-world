@@ -1,5 +1,5 @@
 import { ArrowRight, Play } from "lucide-react";
-import HeroCards from "./HeroCards";
+import HeroFloatingCards from "./HeroFloatingCards";
 import heroGradient from "@/assets/hero-gradient-right.png";
 import { CountUp } from "@/lib/motion";
 
@@ -74,10 +74,8 @@ const Hero = () => {
                 className="absolute inset-0 w-full h-full object-cover"
               />
               {/* Cards overlay */}
-              <div className="absolute inset-0 flex items-center justify-center p-4 lg:p-6">
-                <div className="w-full max-w-[560px] scale-[0.72] sm:scale-90 lg:scale-100 origin-center">
-                  <HeroCards />
-                </div>
+              <div className="absolute inset-0 p-4 lg:p-6">
+                <HeroFloatingCards />
               </div>
             </div>
           </div>
