@@ -70,8 +70,6 @@ export function SetupWizardBanner() {
     () => typeof window !== "undefined" && localStorage.getItem(DISMISS_KEY) === "true"
   );
 
-  const STEPS: Step[] = [sub.hasAccess ? LINKEDIN_STEP : UPGRADE_STEP, ...REST_STEPS];
-
   const { data, isLoading } = useQuery({
     queryKey: ["setup-wizard-status", sub.hasAccess],
     queryFn: async () => {
@@ -96,8 +94,9 @@ export function SetupWizardBanner() {
   if (isLoading || !data || sub.loading) return null;
 
   const status: Record<StepKey, boolean> = {
-    linkedin: sub.hasAccess ? data.linkedinConnected : false,
+    linkedin: data.linkedinConnected,
     agent: data.agentCreated,
+    pay: sub.hasAccess,
     campaign: data.campaignActive,
   };
 
