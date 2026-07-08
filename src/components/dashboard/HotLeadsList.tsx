@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Users, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 function LeadAvatar({ initials, color }: { initials: string; color: string }) {
   return (
@@ -39,17 +42,23 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className="bg-snow-bg-2 rounded-[20px] p-4"
+    >
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-gray-900">Hot Leads</h2>
-        <button
+        <motion.button
+          whileHover={{ x: 2 }}
           onClick={() => navigate("/contacts")}
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
           View all
           <ArrowRight className="w-3 h-3" />
-        </button>
+        </motion.button>
       </div>
+
 
       {loading ? (
         <div className="space-y-3">
@@ -83,26 +92,31 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
           {leads.map((lead, i) => {
             const initials = lead.name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
             return (
-              <div
+              <motion.div
                 key={i}
-                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.05, ease: EASE }}
+                whileHover={{ x: 2 }}
+                className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
                 onClick={() => lead.linkedin_url && window.open(lead.linkedin_url, "_blank")}
               >
-                <div className="relative">
+                <motion.div className="relative" whileHover={{ scale: 1.08 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
                   <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />
                   <TierDot tier={lead.relevance_tier} />
-                </div>
+                </motion.div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-gray-900 truncate">{lead.name}</p>
+                  <p className="text-[13px] font-medium text-gray-900 truncate group-hover:text-black transition-colors">{lead.name}</p>
                   <p className="text-[11px] text-gray-400 truncate">
                     {[lead.title, lead.company].filter(Boolean).join(" · ") || "No details"}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
