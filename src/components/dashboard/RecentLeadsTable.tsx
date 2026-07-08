@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame, Linkedin } from "lucide-react";
 import { useState } from "react";
 
 interface Lead {
@@ -127,6 +127,17 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                           {initials(l.name)}
                         </span>
                         <span className="font-medium text-neutral-900 truncate">{l.name}</span>
+                        {l.linkedin_url && (
+                          <a
+                            href={l.linkedin_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="Open LinkedIn profile"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors shrink-0"
+                          >
+                            <Linkedin className="w-3.5 h-3.5" fill="currentColor" />
+                          </a>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-neutral-600 truncate max-w-[180px]">{l.title ?? "—"}</td>
