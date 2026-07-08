@@ -287,62 +287,58 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
 
   // ── Message 1 (Step 2): cold opener ──
   if (stepNumber <= 2) {
-    const systemPrompt = `You are writing a LinkedIn outreach message for a B2B sales conversation.
+    const hasRealPost = signalPostText.length > 40; // heuristic: real excerpts are >40 chars, summaries like "Posted about X" are shorter
+    const postBlock = hasRealPost
+      ? `POST_EXCERPT (their actual words — reference something concrete from this):\n"""\n${signalPostText.slice(0, 600)}\n"""`
+      : `POST_SUMMARY (short signal, no full text available — reference the specific topic, not the hashtag):\n"${signalPostText || lead.signal || '(none)'}"`;
 
-CONTEXT YOU HAVE:
-- The exact post or activity that triggered this signal: ${signalPostText || '(none)'}
-- The person's name: ${lead.firstName || '(unknown)'}
-- Their headline: ${headline || '(unknown)'}
-- What our product does: ${productDescription || '(unspecified)'}
-- The suggested angle: ${suggestedAngle || '(none)'}
+    const systemPrompt = `You are ${lead.firstName ? `messaging ${lead.firstName}` : 'writing a LinkedIn DM'} — founder to founder, peer to peer. This is the FIRST message after they accepted your connection request. It has to feel like a real human took two minutes to read their post and reply.
 
-YOUR ONLY JOB FOR MESSAGE 1:
-Write a message that makes ${lead.firstName || 'them'} feel like a real person
-read their actual post and had a genuine reaction to it.
+===== WHAT YOU KNOW =====
+FIRST_NAME: ${lead.firstName || '(unknown)'}
+HEADLINE: ${headline || '(unknown)'}
+COMPANY: ${lead.company || '(unknown)'}
+WHAT_WE_DO (background context — do NOT pitch this): ${productDescription || '(unspecified)'}
+${painPoints.length ? `PAIN_POINTS they might have:\n${painPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}` : ''}
+${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 
-STRUCTURE — follow this exactly:
-Line 1: Reference something specific from their post.
-        Not the hashtag. Not their industry. The actual content.
-        Start with what caught your attention.
-Line 2: One honest observation or shared experience related
-        to what they said. From your perspective, not a stat.
-Line 3: One question about their situation.
-        Not "would you be open to a call."
-        A question a curious person would actually ask.
+${postBlock}
 
-LENGTH: 2-4 sentences maximum. Never more.
+===== HOW TO WRITE IT (the whole game) =====
+Length: 35 to 55 words. Never over 60. Two or three short sentences.
+Reading level: 6th grade. Simple words a non-native English speaker gets on the first read.
+Voice: peer to peer. Curious human, not a vendor. Use "I" and "you".
 
-NEVER include in message 1:
-- Any mention of the product name
-- Any statistic or percentage
-- "we built" / "our solution" / "our platform"
-- "I'd love to" / "would you be open to"
-- Hashtag references like "engaging with #X"
-- "as someone in [industry]"
-- Any CTA or calendar link
-- More than one question
+STRUCTURE (follow this shape, do not label the lines):
+1) HOOK — quote or paraphrase ONE concrete detail from ${hasRealPost ? 'the POST_EXCERPT' : 'the POST_SUMMARY'}. Never the hashtag, never the industry, never "your post". Something a real reader would remember.
+2) REACTION — one honest human reaction: quick agreement, a small counter-take, or "we hear this from other {peers}". Uses "I / we". Never "our platform / our solution".
+3) QUESTION — ONE curious, open, low-stakes question they can answer in one sentence. Never a CTA, never "open to a chat", never "worth a quick call".
 
-The message should sound like it was typed by a founder
-who genuinely read their post and found it interesting.
-Not a salesperson. Not a bot.
+===== PSYCHOLOGY (use, never name) =====
+- Specificity beats flattery. The hook must prove you actually read it.
+- Curiosity gap. The question should imply you might know something useful without saying so.
+- Reciprocity. Give a small observation before you ask anything.
+- Status match. Talk to them as a peer, not a prospect.
+- Low commitment. The question costs them 10 seconds to answer.
 
-GOOD example output:
-"your comment about the manual ACH reconciliation every morning
-caught my attention — we heard that exact frustration from
-three funders last week. is that the compliance side of it
-or more the operational overhead?"
+===== HARD BANS (do not use, ever) =====
+Words: leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, empower, resonate, spearhead, bandwidth, robust, seamless, holistic, actionable, cutting-edge, game-changer, pipeline, landscape.
+Phrases: "hope this finds you well", "saw your post", "came across your profile", "noticed you", "I noticed", "I saw", "I came across", "engaging with #", "as someone in the {industry} space", "would love to", "would you be open to", "quick chat", "quick call", "hop on a call", "worth a chat", "book a time", "grab 15 minutes", "just wanted to reach out", "reaching out because", "we help companies like yours".
+Formatting: no emojis, no em-dashes (—), no semicolons, no bullet points, no line breaks, no greeting ("Hi ${lead.firstName}", "Hey there"), no signature, no product name, no statistic or percentage, no hashtag.
 
-BAD example output:
-"noticed you've been engaging with #lending. we built a
-solution that automates merchant payments and handles
-compliance automatically. we're seeing 40% reduction
-in admin work."
+The message must end with a question mark.
 
-Write only the message. No explanation. No subject line.
-No greeting like "Hi [name]". Start directly with the content.${langLine}${customLine}
+===== EXAMPLES =====
+GOOD (post-grounded, human, one question):
+"your line about spending mornings chasing ACH reconciliations really stuck. two other founders told me the same thing last week and it always seems to be the compliance side that kills them. is that where most of your time actually goes, or is it more the manual matching?"
+
+BAD (generic, pitchy, AI-slop):
+"Hi Sarah, I noticed you've been engaging with #lending. We built a platform that leverages AI to streamline merchant payments and we're seeing 40% reduction in admin work. Would you be open to a quick call this week?"
+
+Write ONLY the message body. No greeting. No signature. No labels. Start directly with the hook.${langLine}${customLine}
 ${personalityBlock}`;
 
-    const userPrompt = `Write message 1 now. Return ONLY the message text.`;
+    const userPrompt = `Write the first message now. Remember: 35-55 words, one concrete hook from ${hasRealPost ? 'the post excerpt' : 'the signal'}, one honest reaction, one curious question ending in "?". Return ONLY the message text.`;
     return { systemPrompt, userPrompt };
   }
 
