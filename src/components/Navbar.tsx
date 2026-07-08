@@ -22,12 +22,28 @@ type NavbarProps = {
 
 const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" }: NavbarProps) => {
   const [scrolled, setScrolled] = useState(forceDark);
+  const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(forceDark || window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    let lastY = window.scrollY;
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+        setScrolled(forceDark || y > 20);
+        const delta = y - lastY;
+        // Hide when scrolling down past threshold, show when scrolling up
+        if (y > 120 && delta > 6) setHidden(true);
+        else if (delta < -6 || y < 80) setHidden(false);
+        lastY = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [forceDark]);
 
