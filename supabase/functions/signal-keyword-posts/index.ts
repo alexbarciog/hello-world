@@ -403,7 +403,7 @@ async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
   intentScore?: number, intentReason?: string, manualApproval?: boolean,
-  enrichedCompany?: EnrichedCompany | null,
+  enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null,
 ): Promise<'inserted' | 'duplicate' | 'rejected'> {
   const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
   if (!linkedinProfileId) return 'rejected';
