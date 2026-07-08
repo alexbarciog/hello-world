@@ -199,12 +199,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [sub.loading, sub.hasAccess]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[hsl(195_14%_95%)]">
+    <div className="flex h-screen overflow-hidden bg-white">
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[64px]" : "w-[230px]"}`}
-        style={{ background: "hsl(195 14% 95%)" }}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white ${collapsed ? "w-[64px]" : "w-[240px]"}`}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-3 py-4">
@@ -239,8 +238,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   onClick={() => navigate(item.path)}
                   title={collapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
-                    active ? "bg-white text-foreground shadow-sm" : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
+                  className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors group ${
+                    active ? "bg-blue-50 text-[#3B82F6]" : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
                   }`}
                 >
                   <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">

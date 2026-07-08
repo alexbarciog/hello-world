@@ -1,79 +1,37 @@
+# Dashboard Redesign — Match reference layout
 
-# Dashboard Design Enhancement Plan
+Adopt the reference screenshot's structure and visual language for the dashboard, left navigation, and top bar — while keeping all existing Intentsly data (hot leads, campaigns, LinkedIn replies, signals).
 
-Bring the "alive" landing-page feel into `/dashboard` without changing any queries, data shape, or business logic. Purely visual + motion polish, using the same `framer-motion` vocabulary already used across `src/components/landing/*` (EASE `[0.22, 1, 0.36, 1]`, `SectionReveal`, `Reveal`, `CountUp`, `Float` from `src/lib/motion.tsx`).
+## Reference takeaways
 
-## Design Language (borrowed from landing)
+- **Left nav (persistent, ~260px)**: Logo top, search input, `Menu` group (Dashboard, Leads, Signals, Campaigns, Unibox, Meetings), `Settings` group (Integrations, Billing, Settings). Bottom "Current Plan" card with upgrade CTA. Pure white surface, subtle gray dividers, active item = light gray pill with blue text + blue icon.
+- **Top bar (sticky, ~64px)**: Back/forward chevrons, breadcrumb (Intentsly › Dashboard), right side: theme toggles, notifications bell, avatar.
+- **Main canvas**: Soft blue-tinted gradient background top-left. Page title + subtitle on the left, period selector + primary CTA on the right.
+- **KPI row**: 4 rounded cards (radius ~20px) with icon chip on the left, big number + delta chip, "View details →" footer link. Subtle inner border, ultra-light shadow.
+- **Charts row**: Wide "Performance Overview" line chart card (title + big value + delta) with hover tooltip pill; right-side donut card with legend.
+- **Bottom card**: Payments-style table (search, filter, period, then table rows) — reuse for a "Latest activity" table.
+- Typography: display sizes bumped up, tracking-tight, ample white space, thin dividers.
 
-- Motion easing: `[0.22, 1, 0.36, 1]`, durations 0.5–0.9s.
-- Scroll-in staggered reveal for every section (`Reveal` / `SectionReveal`).
-- Hover: `y: -4`, subtle `scale: 1.01`, spring `stiffness: 260, damping: 20`.
-- Soft animated color blobs (like `FinalCTA`) as ambient background — very low opacity, non-distracting.
-- Rounded 20–24px cards, `border-gray-200/60`, add a hairline animated gradient sheen on hover.
-- Keep SnowUI palette + `#EDEEFC` / `#E6F1FD` pastel metric cards.
+## Files to change
 
-## Sections & Changes
+- `src/pages/Dashboard.tsx` — reshape layout: header (title + subtitle + period + CTA), 4-card KPI row using the new visual, chart row (2/3 + 1/3), latest-activity table card. Remove the dark "Your pipeline, live." hero.
+- `src/components/dashboard/DashboardSidebar.tsx` — replace the right-side "notifications/activities/contacts" panel with the new **left** nav: logo, search, menu groups, plan card. Move to left of content.
+- `src/components/dashboard/MetricCard.tsx` — new variant: soft white card, icon chip left, number + delta chip right, "View details →" footer.
+- `src/components/dashboard/PerformanceChart.tsx` — restyle: title top-left, big total + delta below, period pill top-right, custom tooltip pill matching reference.
+- `src/components/dashboard/LeadsByTier.tsx` — restyle donut card: title, big value + delta, donut center label, colored legend dots below.
+- New `src/components/dashboard/DashboardTopBar.tsx` — breadcrumb + back/forward, theme toggle, bell, avatar.
+- New `src/components/dashboard/DashboardShell.tsx` (or inline in `Dashboard.tsx`) — flex layout with sidebar + main column + top bar.
+- Reuse `LatestReplies` styled as a table for the bottom card (or a new `RecentActivityTable`).
 
-### 1. Page shell (`src/pages/Dashboard.tsx`)
-- Wrap main container with an ambient background: two low-opacity radial blobs (indigo `#EDEEFC`, sky `#E6F1FD`) animated slowly (`x/y/scale` loop, 18–22s), absolutely positioned behind content.
-- Animate header: `Reveal` on H1, fade-in on "Today" button with subtle hover scale.
-- Stagger children with `motion` container using `fadeStagger` variants so metric row → chart → activity → leads cascade in.
+## Technical notes
 
-### 2. Metric cards (`src/components/dashboard/MetricCard.tsx`)
-- Wrap in `motion.div` with `whileHover={{ y: -4 }}` spring.
-- Replace static number with `CountUp` (from `src/lib/motion.tsx`) when numeric.
-- Add hover sheen: radial-gradient overlay fading in on hover.
-- Entrance: `initial opacity 0, y 20, scale 0.96` → `whileInView` visible, staggered 60ms.
+- Keep all Supabase queries and animations (`fadeStagger`, `Reveal`, `CountUp`, `framer-motion` hover-lift) intact — this is presentation only.
+- No changes to routes, business logic, or edge functions.
+- Colors: white surfaces `bg-white`, borders `border-neutral-200/70`, background gradient `from-sky-50/40 via-white to-white`, primary CTA blue `bg-[#3B82F6]`, active nav `bg-blue-50 text-[#3B82F6]`.
+- Sidebar is dashboard-only (does not affect other app pages).
 
-### 3. Performance chart (`src/components/dashboard/PerformanceChart.tsx`)
-- Wrap card in `Reveal`, add hover lift.
-- Recharts `<Line>` / `<Area>` uses `isAnimationActive` + `animationDuration={1200}` `animationEasing="ease-out"` so lines draw in on mount and when data changes.
-- Add subtle gradient fill under line via `<defs><linearGradient>` in indigo → transparent.
+## Out of scope
 
-### 4. Daily Activity (`src/components/dashboard/DailyActivityChart.tsx`)
-- Same reveal + hover lift.
-- Bars: `animationDuration={900}`, staggered per series via `animationBegin`.
-- Legend chips get hover scale.
-
-### 5. Leads by Tier (`src/components/dashboard/LeadsByTier.tsx`)
-- Donut `animationDuration={1100}` sweep-in, center number using `CountUp`.
-- Legend rows fade-in with 80ms stagger.
-
-### 6. Hot Leads + Latest Replies (`HotLeadsList`, `LatestReplies`)
-- Card reveal with hover lift.
-- Each row: staggered fade/slide-in (`y: 8`, 50ms stagger).
-- Avatar hover scale 1.06, name gets subtle `story-link` underline animation on hover.
-- "Open Inbox" / "View all" buttons: magnetic hover (shadow + slight y-shift).
-
-### 7. Banners (`SetupWizardBanner`, `SubscriptionBanner`, `AgencyWelcomeBanner`)
-- Slide-down entrance (`y: -12` → 0).
-- Progress ring/segments in Setup Wizard get animated stroke-dashoffset draw-in.
-
-### 8. Shared micro-interactions
-- Add a reusable `DashCard` wrapper (or apply inline) that composes `Reveal` + hover lift + optional sheen — keeps code DRY across all six card components.
-
-## Technical Notes
-
-- No changes to `useQuery` calls, edge functions, or Supabase schema.
-- Reuse existing helpers from `src/lib/motion.tsx` (`Reveal`, `CountUp`, `fadeStagger`, `fadeStaggerItem`).
-- Respect `prefers-reduced-motion`: framer-motion honors it by default; keep transitions short and avoid infinite spinners near text.
-- Keep bundle impact zero — `framer-motion` already used across landing.
-- No color tokens hardcoded outside existing SnowUI + pastels already in use.
-
-## Files to Touch
-
-- `src/pages/Dashboard.tsx` — shell, ambient blobs, staggered container.
-- `src/components/dashboard/MetricCard.tsx` — CountUp, hover, sheen.
-- `src/components/dashboard/PerformanceChart.tsx` — reveal, animated line, gradient fill.
-- `src/components/dashboard/DailyActivityChart.tsx` — reveal, animated bars.
-- `src/components/dashboard/LeadsByTier.tsx` — reveal, animated donut, CountUp center.
-- `src/components/dashboard/HotLeadsList.tsx` — reveal, row stagger, hover.
-- `src/components/dashboard/LatestReplies.tsx` — reveal, row stagger, hover.
-- `src/components/dashboard/SetupWizardBanner.tsx` — entrance + progress draw-in.
-- `src/components/dashboard/SubscriptionBanner.tsx` — entrance slide.
-- `src/components/dashboard/AgencyWelcomeBanner.tsx` — entrance slide.
-
-## Out of Scope
-
-- Sidebar (`DashboardSidebar`) — not visible in current view; can be a follow-up.
-- Data model, routing, permissions, copy changes.
+- Renaming Intentsly to the reference brand.
+- Reworking other pages (Leads, Campaigns, etc.).
+- Backend/data changes.
