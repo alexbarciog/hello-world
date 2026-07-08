@@ -156,6 +156,7 @@ const Comparison = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
                   transition={{ duration: 0.4, delay: i * 0.06, ease: EASE }}
+                  whileHover={{ backgroundColor: "rgba(200,255,0,0.06)", transition: { duration: 0.25 } }}
                   className={i < rows.length - 1 ? "border-b border-border/40" : ""}
                 >
                   <td className="px-4 py-4 text-sm font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
@@ -304,13 +305,16 @@ const Comparison = () => {
           <p className="text-lg md:text-xl font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
             Save thousands. Get better leads.
           </p>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]"
-          >
-            Start for $97
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.96 }} transition={{ type: "spring", stiffness: 400, damping: 18 }}>
+            <Link
+              to="/register"
+              className="relative inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] overflow-hidden group"
+            >
+              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
+              <span className="relative">Start for $97</span>
+              <ArrowRight className="w-4 h-4 relative transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </section>
