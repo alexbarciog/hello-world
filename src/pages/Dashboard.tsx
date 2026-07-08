@@ -308,23 +308,19 @@ export default function Dashboard() {
     return result;
   })();
 
-  // Leads by tier data
+  // Leads by tier data — use head counts per tier to avoid the 1000-row default cap
   const { data: tierData, isLoading: tierLoading } = useQuery({
     queryKey: ["dashboard-leads-by-tier"],
     queryFn: async () => {
-      const { data: contacts, error } = await supabase
-        .from("contacts")
-        .select("relevance_tier");
-      if (error) throw error;
-      const counts: Record<string, number> = { hot: 0, warm: 0, cold: 0 };
-      (contacts ?? []).forEach((c) => {
-        const tier = c.relevance_tier || "warm";
-        counts[tier] = (counts[tier] || 0) + 1;
-      });
+      const [hotRes, warmRes, coldRes] = await Promise.all([
+        supabase.from("contacts").select("id", { count: "exact", head: true }).eq("relevance_tier", "hot"),
+        supabase.from("contacts").select("id", { count: "exact", head: true }).eq("relevance_tier", "warm"),
+        supabase.from("contacts").select("id", { count: "exact", head: true }).eq("relevance_tier", "cold"),
+      ]);
       return [
-        { name: "Hot", value: counts.hot, color: "#333333" },
-        { name: "Warm", value: counts.warm, color: "#3B82F6" },
-        { name: "Cold", value: counts.cold, color: "#34D399" },
+        { name: "Hot", value: hotRes.count ?? 0, color: "#333333" },
+        { name: "Warm", value: warmRes.count ?? 0, color: "#3B82F6" },
+        { name: "Cold", value: coldRes.count ?? 0, color: "#34D399" },
       ];
     },
     staleTime: 30_000,
