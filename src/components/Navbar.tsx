@@ -165,15 +165,20 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
   return (
     <>
       {/* Desktop navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 pt-4 hidden md:block">
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-50 px-6 pt-4 hidden md:block"
+        initial={false}
+        animate={{ y: hidden ? -120 : 0, opacity: hidden ? 0 : 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`max-w-5xl mx-auto px-6 py-3 flex items-center justify-between rounded-full transition-all duration-300 ${
+          className={`mx-auto px-6 py-3 flex items-center justify-between rounded-full transition-all duration-300 ${
             scrolled
-              ? "bg-white/90 backdrop-blur-md border border-border/40 shadow-sm"
-              : "bg-white/20 backdrop-blur-md border border-white/20"
+              ? "max-w-4xl bg-white/90 backdrop-blur-md border border-border/40 shadow-lg shadow-black/5"
+              : "max-w-5xl bg-white/20 backdrop-blur-md border border-white/20"
           }`}
         >
           <a href="/" className="flex items-center gap-2">
@@ -208,21 +213,49 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             </button>
           </div>
         </motion.div>
-      </nav>
+      </motion.nav>
 
-      {/* Mobile burger */}
-      <motion.button
-        className="fixed top-4 right-5 z-50 md:hidden w-11 h-11 rounded-full flex items-center justify-center bg-white/20 backdrop-blur-md border border-white/30"
-        initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        onClick={() => setMenuOpen(true)}
-        whileTap={{ scale: 0.88 }}
+      {/* Mobile floating pill navbar — always accessible */}
+      <motion.div
+        className="fixed top-3 left-3 right-3 z-50 md:hidden"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: hidden ? 0 : 1, y: hidden ? -80 : 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       >
-        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </motion.button>
+        <div
+          className={`flex items-center justify-between rounded-full pl-3 pr-1.5 py-1.5 transition-all duration-300 ${
+            scrolled
+              ? "bg-white/95 backdrop-blur-xl border border-border/40 shadow-lg shadow-black/10"
+              : "bg-white/15 backdrop-blur-xl border border-white/25"
+          }`}
+        >
+          <a href="/" className="flex items-center gap-1.5">
+            <img alt="Intentsly" className="h-7 object-contain" src={intentslyIcon} />
+            <span className={`text-sm font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
+              Intentsly
+            </span>
+          </a>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate("/register")}
+              className="text-[12px] font-semibold rounded-full px-3.5 py-2 bg-[#0a0a0a] text-white inline-flex items-center gap-1"
+            >
+              Start <ArrowUpRight className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => setMenuOpen(true)}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                scrolled ? "bg-black/5" : "bg-white/20"
+              }`}
+              aria-label="Menu"
+            >
+              <svg className={`w-4 h-4 ${scrolled ? "text-foreground" : "text-white"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Mobile overlay */}
       <AnimatePresence>
