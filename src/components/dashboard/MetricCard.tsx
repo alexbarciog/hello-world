@@ -63,7 +63,7 @@ export function MetricCard({
                 <CountUp
                   to={numeric}
                   duration={1.4}
-                  className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-neutral-900"
+                  className="text-[30px] leading-none font-medium tracking-[-0.03em] text-[#050E2A]"
                 />
                 {trend && (
                   <span className={`text-[11px] font-semibold ${trendPositive ? "text-emerald-600" : "text-rose-500"}`}>
