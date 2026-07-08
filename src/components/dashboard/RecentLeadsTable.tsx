@@ -13,7 +13,7 @@ interface Lead {
 }
 
 const tierChip: Record<string, string> = {
-  hot: "bg-rose-50 text-rose-600",
+  hot: "bg-orange-50 text-orange-600",
   warm: "bg-amber-50 text-amber-700",
   cold: "bg-sky-50 text-sky-600",
 };
