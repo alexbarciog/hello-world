@@ -216,14 +216,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
+      className="flex h-screen overflow-hidden bg-transparent"
       style={{
         backgroundImage: `url(${platformBg.url})`,
         backgroundSize: "cover",
         backgroundPosition: "top center",
         backgroundRepeat: "no-repeat",
         backgroundAttachment: "fixed",
-        backgroundColor: "#ffffff",
       }}
     >
 
