@@ -54,6 +54,37 @@ function isGreeting(text: string): boolean {
   return greetings.some(g => cleaned === g || cleaned.startsWith(g + ' '));
 }
 
+// ── Banned patterns for Step 2 (case-insensitive). Any match triggers a rewrite.
+const STEP2_BANNED_PATTERNS: RegExp[] = [
+  /\bleverag(e|ing|ed)\b/i, /\butiliz(e|ing|ed)\b/i, /\bsynerg(y|ies)\b/i,
+  /\bstreamlin(e|ing|ed)\b/i, /\becosystem\b/i, /\bdelighted\b/i, /\bthrilled\b/i,
+  /\bempower(s|ing|ed)?\b/i, /\bresonate(s|d)?\b/i, /\bspearhead(s|ing|ed)?\b/i,
+  /\bbandwidth\b/i, /\brobust\b/i, /\bseamless(ly)?\b/i, /\bholistic\b/i,
+  /\bactionable\b/i, /\bcutting[- ]edge\b/i, /\bgame[- ]changer\b/i,
+  /hope this (email |message |)finds you well/i,
+  /\bsaw your post\b/i, /\bcame across (your|you|this)\b/i,
+  /\bi noticed\b/i, /\bi saw\b/i, /\bnoticed you(r|'re| are|)\b/i,
+  /engaging with #/i, /as someone in the .{1,30} space/i,
+  /would love to\b/i, /would you be open to\b/i,
+  /\bquick (chat|call)\b/i, /\bhop on a call\b/i, /\bworth a chat\b/i,
+  /\bbook (a time|a call|15|30)\b/i, /\bgrab 15 minutes\b/i,
+  /just wanted to reach out/i, /reaching out because/i,
+  /we help companies like yours/i,
+];
+
+function findBannedHits(text: string): string[] {
+  const hits: string[] = [];
+  for (const re of STEP2_BANNED_PATTERNS) {
+    const m = text.match(re);
+    if (m) hits.push(m[0]);
+  }
+  return hits;
+}
+
+function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 function sanitizeMessage(raw: string, lead: LeadContext, isConversational = false): string {
   let msg = raw
     .replace(/[—–]/g, ', ')
