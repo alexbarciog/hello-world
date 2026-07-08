@@ -1,26 +1,22 @@
 import { useRef } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import ctaBg from "@/assets/cta-bg.avif";
+import { motion } from "framer-motion";
 import { CountUp } from "@/lib/motion";
 
 const FinalCTA = () => {
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const bgY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
 
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
-      <div ref={ref} className="relative overflow-hidden rounded-[40px] py-20 px-6 md:py-28 md:px-12">
-        <motion.img
-          src={ctaBg}
-          alt=""
-          aria-hidden="true"
-          style={{ y: bgY }}
-          className="absolute inset-0 w-full h-[120%] object-cover"
+      <div ref={ref} className="relative overflow-hidden rounded-[40px] py-20 px-6 md:py-28 md:px-12 bg-[#050505]">
+        {/* Small lime green gradient glow */}
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[280px]"
+          style={{
+            background:
+              "radial-gradient(50% 100% at 50% 0%, rgba(200,255,0,0.16) 0%, rgba(200,255,0,0.04) 45%, transparent 80%)",
+          }}
+          aria-hidden
         />
 
         <div className="relative max-w-4xl mx-auto z-10 pl-2 md:pl-8">
