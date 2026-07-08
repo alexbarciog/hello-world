@@ -505,9 +505,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    hsl(var(--aeline-sky-start) / 0.12) 25%,
-    hsl(var(--aeline-sky-end) / 0.24) 50%,
-    hsl(var(--aeline-sky-start) / 0.12) 75%,
+    hsl(0 0% 100% / 0.10) 25%,
+    hsl(72 100% 50% / 0.18) 50%,
+    hsl(0 0% 100% / 0.10) 75%,
     transparent 100%
   );
   background-size: 200% 100%;
@@ -522,8 +522,8 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, hsl(var(--aeline-sky-end)), transparent);
-  opacity: 0.7;
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.6), transparent);
+  opacity: 0.8;
 }
 
 @keyframes announcement-shimmer {
