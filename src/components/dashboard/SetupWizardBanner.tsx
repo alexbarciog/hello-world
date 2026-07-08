@@ -10,7 +10,7 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 const BRAND_GRADIENT = "linear-gradient(135deg, #0057bd 0%, #4647d3 100%)";
 
-type StepKey = "linkedin" | "agent" | "campaign";
+type StepKey = "linkedin" | "agent" | "pay" | "campaign";
 
 type Step = {
   key: StepKey;
@@ -22,27 +22,16 @@ type Step = {
   href: string;
 };
 
-const LINKEDIN_STEP: Step = {
-  key: "linkedin",
-  index: 1,
-  icon: Linkedin,
-  title: "Connect LinkedIn",
-  desc: "Required to send invites",
-  cta: "Connect LinkedIn",
-  href: "/settings?tab=linkedin",
-};
-
-const UPGRADE_STEP: Step = {
-  key: "linkedin",
-  index: 1,
-  icon: Sparkles,
-  title: "Upgrade your plan",
-  desc: "Unlock LinkedIn outreach & AI SDR",
-  cta: "Upgrade plan",
-  href: "/billing",
-};
-
-const REST_STEPS: Step[] = [
+const STEPS: Step[] = [
+  {
+    key: "linkedin",
+    index: 1,
+    icon: Linkedin,
+    title: "Connect LinkedIn",
+    desc: "Required to send invites",
+    cta: "Connect LinkedIn",
+    href: "/settings?tab=linkedin",
+  },
   {
     key: "agent",
     index: 2,
@@ -53,8 +42,17 @@ const REST_STEPS: Step[] = [
     href: "/signals?create=1",
   },
   {
-    key: "campaign",
+    key: "pay",
     index: 3,
+    icon: Sparkles,
+    title: "Add payment method",
+    desc: "Pay only when meetings are booked",
+    cta: "Add payment",
+    href: "/billing",
+  },
+  {
+    key: "campaign",
+    index: 4,
     icon: Rocket,
     title: "Launch campaign",
     desc: "Turn signals into outreach",
@@ -71,8 +69,6 @@ export function SetupWizardBanner() {
   const [dismissed, setDismissed] = useState<boolean>(
     () => typeof window !== "undefined" && localStorage.getItem(DISMISS_KEY) === "true"
   );
-
-  const STEPS: Step[] = [sub.hasAccess ? LINKEDIN_STEP : UPGRADE_STEP, ...REST_STEPS];
 
   const { data, isLoading } = useQuery({
     queryKey: ["setup-wizard-status", sub.hasAccess],
@@ -98,8 +94,9 @@ export function SetupWizardBanner() {
   if (isLoading || !data || sub.loading) return null;
 
   const status: Record<StepKey, boolean> = {
-    linkedin: sub.hasAccess ? data.linkedinConnected : false,
+    linkedin: data.linkedinConnected,
     agent: data.agentCreated,
+    pay: sub.hasAccess,
     campaign: data.campaignActive,
   };
 
@@ -178,7 +175,7 @@ export function SetupWizardBanner() {
 
       {/* Steps */}
       <div className="px-5 pb-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {STEPS.map((step, i) => {
             const done = status[step.key];
             const locked = !done && i > firstUndoneIndex;
