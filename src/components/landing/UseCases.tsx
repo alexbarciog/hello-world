@@ -70,7 +70,8 @@ const OrbitVisual = () => {
       X / Twitter <span className="text-base leading-none">🐦</span>
     </div>
   </div>
-);
+  );
+};
 
 /* ── Component ────────────────────────────────────────────────────────── */
 
