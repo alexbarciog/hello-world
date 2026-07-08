@@ -28,7 +28,6 @@ const Index = () => {
       <Navbar showCampaigns={showCampaigns} variant="light" />
       <Hero />
       <LogoMarquee />
-      <ProblemSection />
       <HowItWorks />
       <UseCases />
       <WhyIntentsly />
