@@ -94,6 +94,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [userDisplay, setUserDisplay] = useState({ name: "", email: "", initials: "" });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const sub = useSubscription();
   const { data: isAdmin } = useAdminCheck();
   const { data: accountType } = useAccountType();
@@ -147,8 +149,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Split nav into two groups for the sidebar
   const SETTINGS_PATHS = new Set<string>(["/integrations", "/settings", "/admin", "/dashboard/client-accounts"]);
-  const menuGroup = allNavItems.filter((i) => !SETTINGS_PATHS.has(i.path));
-  const settingsGroup = allNavItems.filter((i) => SETTINGS_PATHS.has(i.path));
+  const filteredNavItems = allNavItems.filter((i) =>
+    i.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const menuGroup = filteredNavItems.filter((i) => !SETTINGS_PATHS.has(i.path));
+  const settingsGroup = filteredNavItems.filter((i) => SETTINGS_PATHS.has(i.path));
 
   // Breadcrumb label from active route
   const activeItem = allNavItems.find((i) => i.path === location.pathname) ?? allNavItems[0];
@@ -171,6 +176,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ⌘K shortcut to focus search
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === "Escape") {
+        searchInputRef.current?.blur();
+        setSearchQuery("");
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -250,8 +271,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search"
-                className="w-full rounded-xl bg-white border border-neutral-200/70 pl-9 pr-8 py-2.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-300 transition-colors"
+                className="w-full rounded-xl bg-white pl-9 pr-8 py-2.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none transition-colors"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-neutral-400 font-medium bg-white/80 border border-neutral-200 rounded-md px-1.5 py-0.5">
                 ⌘K
