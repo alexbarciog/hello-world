@@ -36,8 +36,7 @@ import {
   Rocket,
   Search,
   Bell,
-  Sun,
-  Moon,
+
   Crown,
   ArrowRight,
 } from "lucide-react";
@@ -502,19 +501,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
-              title="Dark mode"
-            >
-              <Moon className="w-4 h-4" />
-            </button>
-            <button
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-900 hover:bg-white/90 transition-colors"
-              title="Light mode"
-            >
-              <Sun className="w-4 h-4" />
-            </button>
             <div className="relative">
+
               <NotificationsPanel />
             </div>
             <div className="relative" ref={userMenuRef}>
