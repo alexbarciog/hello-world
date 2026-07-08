@@ -56,7 +56,7 @@ const FinalCTA = () => {
           <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80 mx-auto">
             Let your agent find them
           </p>
-          <form onSubmit={handleFindBuyers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md">
+          <form onSubmit={handleFindBuyers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md mx-auto">
             <input
               type="url"
               placeholder="yourcompany.com"
