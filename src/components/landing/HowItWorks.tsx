@@ -23,13 +23,11 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 /* ─────────────── 1/4  Finds & scores best leads ─────────────── */
 import findsImage from "@/assets/how-it-works-finds.png.asset.json";
 const FindsVisual = () => (
-  <div className="relative w-full h-full min-h-[320px] flex items-center justify-center">
-    <img
-      src={findsImage.url}
-      alt="Leads scored by intent"
-      className="w-full h-full object-cover rounded-2xl md:rounded-3xl"
-    />
-  </div>
+  <img
+    src={findsImage.url}
+    alt="Leads scored by intent"
+    className="w-full h-full object-cover"
+  />
 );
 
 
@@ -257,6 +255,7 @@ const blocks = [
     visualLeft: false,
     stat: "12,400+",
     statLabel: "Buyers detected weekly",
+    isImage: true,
     // Vertical gradient bleeds on left/right sides of the visual card (like reference)
     sideGradient:
       "linear-gradient(180deg, rgba(200,255,0,0.55) 0%, rgba(200,255,0,0.15) 40%, rgba(26,143,227,0.35) 100%)",
@@ -394,28 +393,41 @@ const HowItWorks = () => {
 
                 {/* Visual zone — the only rounded container */}
                 <div
-                  className={`md:col-span-7 relative min-h-[340px] md:min-h-[480px] bg-[#f5f5f7] overflow-hidden rounded-[32px] md:rounded-[40px] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)] ${
+                  className={`md:col-span-7 relative h-full min-h-[340px] md:min-h-[480px] overflow-hidden rounded-[32px] md:rounded-[40px] ${
                     b.visualLeft ? "md:order-1" : ""
+                  } ${
+                    b.isImage
+                      ? ""
+                      : "bg-[#f5f5f7] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_28px_56px_-28px_rgba(15,23,42,0.12)]"
                   }`}
                 >
-                  {/* Left gradient bleed */}
-                  <div
-                    className="absolute inset-y-0 left-0 w-[14%] blur-2xl opacity-90"
-                    style={{ background: b.sideGradient }}
-                    aria-hidden
-                  />
-                  {/* Right gradient bleed */}
-                  <div
-                    className="absolute inset-y-0 right-0 w-[14%] blur-2xl opacity-90"
-                    style={{ background: b.sideGradient }}
-                    aria-hidden
-                  />
-                  {/* Inner white card holding the mock */}
-                  <div className="relative h-full flex items-center justify-center p-6 md:p-10">
-                    <div className="relative w-full h-full rounded-2xl md:rounded-3xl bg-white border border-black/[0.05] shadow-[0_20px_50px_-24px_rgba(15,23,42,0.18)] overflow-hidden">
-                      <b.Visual />
+                  {!b.isImage && (
+                    <>
+                      {/* Left gradient bleed */}
+                      <div
+                        className="absolute inset-y-0 left-0 w-[14%] blur-2xl opacity-90"
+                        style={{ background: b.sideGradient }}
+                        aria-hidden
+                      />
+                      {/* Right gradient bleed */}
+                      <div
+                        className="absolute inset-y-0 right-0 w-[14%] blur-2xl opacity-90"
+                        style={{ background: b.sideGradient }}
+                        aria-hidden
+                      />
+                    </>
+                  )}
+
+                  {b.isImage ? (
+                    <b.Visual />
+                  ) : (
+                    /* Inner white card holding the mock */
+                    <div className="relative h-full flex items-center justify-center p-6 md:p-10">
+                      <div className="relative w-full h-full rounded-2xl md:rounded-3xl bg-white border border-black/[0.05] shadow-[0_20px_50px_-24px_rgba(15,23,42,0.18)] overflow-hidden">
+                        <b.Visual />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </motion.article>
