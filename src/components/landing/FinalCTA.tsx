@@ -3,6 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { CountUp } from "@/lib/motion";
+import finalCtaBg from "@/assets/finalcta-bg.png.asset.json";
 
 const FinalCTA = () => {
   const ref = useRef<HTMLDivElement>(null);
