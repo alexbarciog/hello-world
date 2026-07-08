@@ -309,10 +309,6 @@ const HowItWorks = () => {
           transition={{ duration: 0.6, ease: EASE }}
           className="mb-16 md:mb-20 max-w-4xl"
         >
-          <div className="flex items-center gap-2 mb-6">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#1A8FE3]" />
-            <span className="section-label">How it works</span>
-          </div>
           <h2
             className="text-5xl md:text-7xl font-bold tracking-[-0.035em] leading-[0.98] mb-6"
             style={{ color: "hsl(var(--aeline-dark))" }}
