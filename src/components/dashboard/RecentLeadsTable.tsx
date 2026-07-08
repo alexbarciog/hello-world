@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame, Linkedin } from "lucide-react";
 import { useState } from "react";
 
 interface Lead {
