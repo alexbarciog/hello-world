@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
-import Lottie from "lottie-react";
+import { useLottie } from "lottie-react";
 import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 import useCasesAnimation from "@/assets/use-cases-animation.json";
 
