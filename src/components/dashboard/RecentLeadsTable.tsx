@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame, Linkedin } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame, Linkedin, Check } from "lucide-react";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Lead {
   name: string;
