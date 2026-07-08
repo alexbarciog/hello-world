@@ -14,6 +14,7 @@ import FAQ from "@/components/FAQ";
 import FinalCTA from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/CTAFooter";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
+import SectionReveal from "@/components/landing/SectionReveal";
 import { isOnboardingComplete } from "@/components/OnboardingGuard";
 
 const Index = () => {
@@ -26,13 +27,13 @@ const Index = () => {
       <AnnouncementBar />
       <Navbar showCampaigns={showCampaigns} variant="light" />
       <Hero />
-      <LogoMarquee />
-      <HowItWorks />
-      <UseCases />
-      <WhyIntentsly />
-      <Comparison />
-      <FAQ />
-      <FinalCTA />
+      <SectionReveal><LogoMarquee /></SectionReveal>
+      <SectionReveal><HowItWorks /></SectionReveal>
+      <SectionReveal><UseCases /></SectionReveal>
+      <SectionReveal><WhyIntentsly /></SectionReveal>
+      <SectionReveal><Comparison /></SectionReveal>
+      <SectionReveal><FAQ /></SectionReveal>
+      <SectionReveal><FinalCTA /></SectionReveal>
       {/* Mobile spacer so sticky CTA doesn't cover footer content */}
       <div className="md:hidden h-16" aria-hidden />
       <Footer />
