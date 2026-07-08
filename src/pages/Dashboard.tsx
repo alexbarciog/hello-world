@@ -10,7 +10,7 @@ import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
 import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
-import { ChevronDown, Flame, Users, MessageCircle, Radio, Sparkles } from "lucide-react";
+import { ChevronDown, Flame, Users, MessageCircle, Radio } from "lucide-react";
 import { motion } from "framer-motion";
 import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
 
@@ -371,35 +371,45 @@ export default function Dashboard() {
           animate="visible"
           className="flex flex-col gap-5"
         >
-          {/* Refined header — landing style */}
-          <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 pb-2">
-            <div>
+          {/* Landing-style header — big display headline + lime highlight + black live chip */}
+          <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 pt-2 pb-4">
+            <div className="max-w-3xl">
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 mb-3 shadow-sm"
+                className="inline-flex items-center gap-2 rounded-full bg-[#0a0a0a] px-3 py-1.5 mb-5 shadow-sm"
               >
                 <motion.span
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  className="w-1.5 h-1.5 rounded-full bg-[#C8FF00]"
                 />
-                <span className="text-[11px] font-semibold text-neutral-700 tracking-wide">
-                  <CountUp to={hotOpps} /> hot opportunities today
+                <span className="text-[11px] font-semibold text-white tracking-[0.14em] uppercase">
+                  Live · <CountUp to={hotOpps} /> hot right now
                 </span>
               </motion.div>
-              <h1 className="text-[38px] md:text-[44px] leading-[1.02] tracking-[-0.03em] font-medium text-[#0a0a0a]">
-                Overview
+              <h1 className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a]" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}>
+                Your pipeline,{" "}
+                <span className="relative inline-block">
+                  <motion.span
+                    aria-hidden
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.9, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute left-0 right-0 bottom-[0.08em] h-[0.35em] bg-[#C8FF00] origin-left -z-0"
+                  />
+                  <span className="relative z-10">live.</span>
+                </span>
               </h1>
-              <p className="mt-1.5 text-sm text-neutral-500">
-                Your AI SDR is running. Here's what's happening right now.
+              <p className="mt-4 text-base md:text-lg text-neutral-500 leading-relaxed max-w-xl">
+                AI is scanning intent signals right now. Here's what's happening in your pipeline today.
               </p>
             </div>
             <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
+              whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-1.5 text-sm text-neutral-700 bg-white border border-neutral-200 rounded-xl px-4 py-2 hover:bg-neutral-50 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#0a0a0a] bg-white border border-neutral-200 rounded-full px-5 py-2.5 hover:bg-neutral-50 transition-colors shadow-sm"
             >
               Today
               <ChevronDown className="w-4 h-4 text-neutral-400" />
@@ -411,10 +421,10 @@ export default function Dashboard() {
           <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
 
           <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="black" icon={Flame} />
+            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="lime" icon={Flame} />
             <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="blue" icon={Users} />
-            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="indigo" icon={MessageCircle} />
-            <MetricCard title="Active Signals" value={activeSignals} accent="emerald" icon={Radio} />
+            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="black" icon={MessageCircle} />
+            <MetricCard title="Active Signals" value={activeSignals} accent="indigo" icon={Radio} />
           </motion.div>
 
           <Reveal y={24} className="grid grid-cols-1 gap-4">
@@ -432,8 +442,6 @@ export default function Dashboard() {
           </Reveal>
         </motion.div>
       </div>
-      {/* silence unused */}
-      <span className="hidden">{Sparkles.name}</span>
     </div>
   );
 }

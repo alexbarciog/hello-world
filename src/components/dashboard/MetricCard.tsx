@@ -6,9 +6,8 @@ interface MetricCardProps {
   title: string;
   value: number | string;
   loading?: boolean;
-  /** Legacy prop, ignored — kept for backward compat */
   bgColor?: string;
-  accent?: "blue" | "indigo" | "emerald" | "black";
+  accent?: "blue" | "indigo" | "lime" | "black";
   icon?: LucideIcon;
   trend?: { value: number; label?: string };
 }
@@ -17,12 +16,12 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 const ACCENTS: Record<
   NonNullable<MetricCardProps["accent"]>,
-  { blob: string; dot: string; ring: string; text: string }
+  { chip: string; chipText: string; dot: string; underline: string }
 > = {
-  blue: { blob: "#3B82F6", dot: "bg-[#3B82F6]", ring: "ring-[#3B82F6]/10", text: "text-[#3B82F6]" },
-  indigo: { blob: "#4647d3", dot: "bg-[#4647d3]", ring: "ring-[#4647d3]/10", text: "text-[#4647d3]" },
-  emerald: { blob: "#10b981", dot: "bg-emerald-500", ring: "ring-emerald-500/10", text: "text-emerald-600" },
-  black: { blob: "#0a0a0a", dot: "bg-neutral-900", ring: "ring-neutral-900/10", text: "text-neutral-900" },
+  lime: { chip: "bg-[#C8FF00]", chipText: "text-[#0a0a0a]", dot: "bg-[#0a0a0a]", underline: "bg-[#C8FF00]" },
+  blue: { chip: "bg-[#3B82F6]", chipText: "text-white", dot: "bg-[#3B82F6]", underline: "bg-[#3B82F6]" },
+  indigo: { chip: "bg-[#4647d3]", chipText: "text-white", dot: "bg-[#4647d3]", underline: "bg-[#4647d3]" },
+  black: { chip: "bg-[#0a0a0a]", chipText: "text-white", dot: "bg-[#0a0a0a]", underline: "bg-[#0a0a0a]" },
 };
 
 export function MetricCard({
@@ -39,55 +38,65 @@ export function MetricCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      initial={{ opacity: 0, y: 24, scale: 0.96 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.55, ease: EASE }}
+      transition={{ duration: 0.6, ease: EASE }}
       whileHover={{ y: -4 }}
-      className="group relative overflow-hidden rounded-[20px] bg-white border border-neutral-200/70 px-5 py-5 flex flex-col gap-3 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_10px_30px_-12px_rgba(10,10,10,0.15)] transition-shadow"
+      className="group relative overflow-hidden rounded-[24px] bg-white border border-neutral-200/80 px-6 py-6 flex flex-col gap-6 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_20px_40px_-16px_rgba(10,10,10,0.18)] transition-shadow"
     >
-      {/* soft color blob */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition-opacity duration-500"
-        style={{ background: `radial-gradient(closest-side, ${a.blob}, transparent 70%)` }}
-      />
-
+      {/* top row: chip icon + label */}
       <div className="relative flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-[0.14em] font-medium text-neutral-500">
-          {title}
-        </span>
-        {Icon ? (
-          <span className={`w-7 h-7 rounded-full bg-neutral-50 ring-1 ${a.ring} flex items-center justify-center`}>
-            <Icon className={`w-3.5 h-3.5 ${a.text}`} />
+        <div className="flex items-center gap-2.5 min-w-0">
+          {Icon && (
+            <span className={`w-8 h-8 rounded-full ${a.chip} ${a.chipText} flex items-center justify-center shrink-0`}>
+              <Icon className="w-4 h-4" strokeWidth={2.2} />
+            </span>
+          )}
+          <span className="text-[11px] uppercase tracking-[0.14em] font-semibold text-neutral-500 truncate">
+            {title}
           </span>
-        ) : (
-          <span className={`w-1.5 h-1.5 rounded-full ${a.dot}`} />
-        )}
+        </div>
+        <motion.span
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className={`w-1.5 h-1.5 rounded-full ${a.dot}`}
+        />
       </div>
 
+      {/* big number */}
       {loading ? (
-        <div className="relative h-9 w-24 bg-neutral-100 rounded-lg animate-pulse" />
+        <div className="h-12 w-24 bg-neutral-100 rounded-lg animate-pulse" />
       ) : isEmpty ? (
-        <div className="relative flex flex-col">
-          <span className="text-[34px] leading-none font-medium tracking-[-0.03em] text-neutral-900">0</span>
-          <span className="text-[11px] text-neutral-400 mt-1.5">No data yet</span>
+        <div className="flex flex-col">
+          <span className="text-[52px] leading-[0.95] font-medium tracking-[-0.04em] text-neutral-900">0</span>
+          <span className="text-[11px] text-neutral-400 mt-2 uppercase tracking-wider">No data yet</span>
         </div>
       ) : numeric !== null ? (
-        <div className="relative flex items-baseline gap-2">
-          <CountUp
-            to={numeric}
-            duration={1.4}
-            className="text-[34px] leading-none font-medium tracking-[-0.03em] text-neutral-900"
-          />
+        <div className="flex items-baseline gap-2 relative">
+          <span className="relative inline-block">
+            <motion.span
+              aria-hidden
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4, ease: EASE }}
+              className={`absolute left-0 right-0 bottom-[0.06em] h-[0.22em] ${a.underline} opacity-90 origin-left -z-0`}
+            />
+            <CountUp
+              to={numeric}
+              duration={1.6}
+              className="relative z-10 text-[52px] leading-[0.95] font-medium tracking-[-0.04em] text-[#0a0a0a]"
+            />
+          </span>
           {trend && (
-            <span className={`text-[11px] font-semibold ${trend.value >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+            <span className={`text-xs font-semibold ${trend.value >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
               {trend.value >= 0 ? "+" : ""}{trend.value}%
             </span>
           )}
         </div>
       ) : (
-        <span className="relative text-[34px] leading-none font-medium tracking-[-0.03em] text-neutral-900">{value}</span>
+        <span className="text-[52px] leading-[0.95] font-medium tracking-[-0.04em] text-[#0a0a0a]">{value}</span>
       )}
     </motion.div>
   );
