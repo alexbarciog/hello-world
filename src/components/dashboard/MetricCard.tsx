@@ -46,7 +46,7 @@ export function MetricCard({
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.55, ease: EASE }}
       whileHover={{ y: -3 }}
-      className="group relative rounded-[22px] bg-white/25 backdrop-blur-xl border border-white/55 px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow"
+      className="group relative rounded-[22px] bg-gradient-to-b from-[#F2F4FE] to-[#FDFDFD] border border-white/55 px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
