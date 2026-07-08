@@ -172,73 +172,126 @@ const Comparison = () => {
           </table>
         </motion.div>
 
-        {/* Mobile: stacked card per row */}
-        <div className="md:hidden space-y-3">
-          {rows.map((row, i) => {
-            const competitors = [
-              { name: "Apollo", domain: "apollo.io", value: row.apollo },
-              { name: "Clay", domain: "clay.com", value: row.clay },
-              { name: "Sales Nav", domain: "linkedin.com", value: row.salesnav },
-              { name: "Agencies", domain: null, value: row.agency },
-            ];
-            const renderValue = (v: boolean | string) => {
-              if (v === true) return <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />;
-              if (v === false) return <X className="w-3.5 h-3.5 text-muted-foreground/60" />;
-              return <span className="text-[11px] font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>{v}</span>;
-            };
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.4, delay: i * 0.05, ease: EASE }}
-                className="rounded-2xl bg-[#f5f5f5] p-4"
-              >
-                <p className="text-sm font-semibold mb-3" style={{ color: "hsl(var(--aeline-dark))" }}>
-                  {row.feature}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Intentsly pill — highlighted */}
-                  <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white ring-1.5 ring-[#C8FF00] shadow-[0_0_0_2px_rgba(200,255,0,0.25)]" style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,255,0,0.7), 0 4px 12px -4px rgba(200,255,0,0.4)" }}>
-                    <span className="text-[11px] font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
-                    <span className="flex items-center justify-center min-w-[20px]">
-                      {row.intentsly === true ? (
-                        <span className="w-5 h-5 rounded-full bg-[#C8FF00] flex items-center justify-center">
-                          <Check className="w-3 h-3" style={{ color: "hsl(var(--aeline-dark))" }} strokeWidth={3} />
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>{String(row.intentsly)}</span>
-                      )}
-                    </span>
-                  </div>
-                  {competitors.map((c) => (
-                    <div key={c.name} className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-white border border-border/40">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {c.domain ? (
-                          <img
-                            src={`https://www.google.com/s2/favicons?domain=${c.domain}&sz=64`}
-                            alt=""
-                            loading="lazy"
-                            className="w-3.5 h-3.5 rounded object-contain shrink-0"
-                          />
-                        ) : (
-                          <div className="w-3.5 h-3.5 rounded bg-muted-foreground/15 flex items-center justify-center shrink-0">
-                            <span className="text-[7px] font-bold text-muted-foreground">A</span>
-                          </div>
-                        )}
-                        <span className="text-[11px] font-medium text-muted-foreground truncate">{c.name}</span>
-                      </div>
-                      <span className="flex items-center justify-center min-w-[20px] shrink-0">
-                        {renderValue(c.value)}
-                      </span>
+        {/* Mobile: compact table (mirrors desktop structure, sized for 375px+) */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="md:hidden relative rounded-2xl bg-[#f5f5f5] p-2.5"
+        >
+          <table className="w-full" style={{ tableLayout: "fixed" }}>
+            <colgroup>
+              <col style={{ width: "36%" }} />
+              <col style={{ width: "17%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "11%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "12%" }} />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border/60">
+                <th className="text-left px-1.5 py-2.5"> </th>
+                {/* Intentsly — highlighted */}
+                <th className="px-1 py-2.5 relative align-bottom">
+                  <div
+                    className="pointer-events-none absolute inset-x-0 top-1 bottom-[-9999px] rounded-t-xl"
+                    style={{
+                      boxShadow: "inset 0 0 0 1.5px rgba(200,255,0,0.55)",
+                      background: "linear-gradient(180deg, rgba(200,255,0,0.10) 0%, rgba(200,255,0,0) 100%)",
+                      clipPath: "inset(0 0 0 0)",
+                    }}
+                    aria-hidden
+                  />
+                  <div className="relative z-10 flex justify-center">
+                    <div className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#C8FF00]">
+                      <span className="text-[10px] font-bold leading-none" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</span>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                  </div>
+                </th>
+                {[
+                  { name: "Apollo", domain: "apollo.io" },
+                  { name: "Clay", domain: "clay.com" },
+                  { name: "Sales Nav", domain: "linkedin.com" },
+                  { name: "Agencies", domain: null },
+                ].map((c) => (
+                  <th key={c.name} className="px-1 py-2.5">
+                    <div className="flex justify-center" title={c.name}>
+                      {c.domain ? (
+                        <img
+                          src={`https://www.google.com/s2/favicons?domain=${c.domain}&sz=64`}
+                          alt={c.name}
+                          loading="lazy"
+                          className="w-4 h-4 rounded object-contain"
+                        />
+                      ) : (
+                        <div className="w-4 h-4 rounded bg-muted-foreground/15 flex items-center justify-center">
+                          <span className="text-[8px] font-bold text-muted-foreground">A</span>
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => {
+                const renderCompact = (v: boolean | string, highlight = false) => {
+                  if (v === true) {
+                    return (
+                      <div className="flex justify-center">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${highlight ? "bg-[#C8FF00]" : "bg-muted"}`}>
+                          <Check className="w-3 h-3" style={{ color: "hsl(var(--aeline-dark))" }} strokeWidth={3} />
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (v === false) {
+                    return (
+                      <div className="flex justify-center">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center bg-muted/60">
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="text-center text-[10px] font-semibold leading-tight" style={{ color: highlight ? "hsl(var(--aeline-dark))" : "hsl(var(--muted-foreground))" }}>
+                      {v}
+                    </div>
+                  );
+                };
+                return (
+                  <motion.tr
+                    key={i}
+                    initial={{ opacity: 0, y: 4 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ duration: 0.35, delay: i * 0.04, ease: EASE }}
+                    className={i < rows.length - 1 ? "border-b border-border/40" : ""}
+                  >
+                    <td className="px-1.5 py-3 text-[11px] font-medium leading-snug" style={{ color: "hsl(var(--aeline-dark))" }}>
+                      {row.feature}
+                    </td>
+                    <td className="px-1 py-3 relative">
+                      <div
+                        className="pointer-events-none absolute inset-x-0 top-0 bottom-0"
+                        style={{ boxShadow: "inset 1.5px 0 0 rgba(200,255,0,0.55), inset -1.5px 0 0 rgba(200,255,0,0.55)" }}
+                        aria-hidden
+                      />
+                      <div className="relative z-10">{renderCompact(row.intentsly, true)}</div>
+                    </td>
+                    <td className="px-1 py-3">{renderCompact(row.apollo)}</td>
+                    <td className="px-1 py-3">{renderCompact(row.clay)}</td>
+                    <td className="px-1 py-3">{renderCompact(row.salesnav)}</td>
+                    <td className="px-1 py-3">{renderCompact(row.agency)}</td>
+                  </motion.tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </motion.div>
+
 
         {/* CTA below table */}
         <motion.div
