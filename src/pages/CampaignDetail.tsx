@@ -597,6 +597,7 @@ export default function CampaignDetail() {
           contactCompanyIconColor: contact?.company_icon_color || null,
           contactSignal: contact?.signal || null,
           contactSignalPostUrl: contact?.signal_post_url || null,
+          contactSignalPostExcerpt: contact?.signal_post_excerpt || null,
           actionType: q.action_type,
           stepIndex: q.step_index,
           status: q.status,
