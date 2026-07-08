@@ -281,8 +281,12 @@ const HowItWorks = () => {
             <span className="text-[#1A8FE3]">24/7.</span> And gets{" "}
             <span className="relative inline-block">
               <span className="relative z-10">better every week.</span>
-              <span
-                className="absolute left-0 right-0 bottom-0.5 md:bottom-2 h-2 md:h-4 bg-[#C8FF00] -z-0 rounded-sm"
+              <motion.span
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.9, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute left-0 right-0 bottom-0.5 md:bottom-2 h-2 md:h-4 bg-[#C8FF00] -z-0 rounded-sm origin-left"
                 aria-hidden
               />
             </span>
