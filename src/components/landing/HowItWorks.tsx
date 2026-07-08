@@ -272,7 +272,8 @@ const blocks = [
     title: "Only your best prospects. Nothing else.",
     body:
       "Every lead is pre-filtered to match your ideal buyer profile. Your agent never wastes a message on someone who was never going to buy.",
-    Visual: PreFilteredVisual,
+    Visual: PreFilteredImage,
+    isImage: true,
     visualLeft: true,
     stat: "93%",
     statLabel: "Match precision",
