@@ -356,14 +356,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="space-y-0.5">
                 <button
                   onClick={() => navigate("/help")}
-                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-600 hover:bg-white/60 hover:text-neutral-900 transition-colors"
                 >
                   <HelpCircle className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate">Help Center</span>
                 </button>
                 <button
                   onClick={() => navigate("/support")}
-                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-600 hover:bg-white/60 hover:text-neutral-900 transition-colors"
                 >
                   <LifeBuoy className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate">Support</span>
