@@ -95,7 +95,7 @@ const UseCases = () => {
             <img
               src={salesAgentsGradientBg}
               alt=""
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-[82%] h-auto object-contain object-left -z-10 pointer-events-none select-none"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-[115%] h-auto object-contain object-left -z-10 pointer-events-none select-none"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 relative z-10">
               {benefits.map((b, i) => {
