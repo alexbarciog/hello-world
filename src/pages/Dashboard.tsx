@@ -398,17 +398,41 @@ export default function Dashboard() {
           <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 mb-1">
             <div>
               <h1 className="text-[28px] md:text-[32px] leading-[1.1] font-medium tracking-[-0.01em] text-neutral-900">
-                Pipeline Activity<span className="text-black"> — This month</span>
+                Pipeline Activity<span className="text-black"> — {periodLabel[period]}</span>
               </h1>
               <p className="mt-2 text-[14.5px] text-neutral-500">
                 Stay updated with your latest signals, conversations and hot opportunities.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white/35 border border-white/60 rounded-full px-4 py-2.5 hover:bg-white/60 transition-colors">
-                Month
-                <ChevronDown className="w-4 h-4 text-neutral-400" />
-              </button>
+              <div className="relative" ref={periodRef}>
+                <button
+                  onClick={() => setPeriodOpen((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white/35 border border-white/60 rounded-full px-4 py-2.5 hover:bg-white/60 transition-colors"
+                >
+                  {periodLabel[period]}
+                  <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${periodOpen ? "rotate-180" : ""}`} />
+                </button>
+                {periodOpen && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-1.5 z-50">
+                    {(Object.keys(periodLabel) as Period[]).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          setPeriod(p);
+                          setPeriodOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-[13px] rounded-xl transition-colors ${
+                          period === p ? "bg-black/[0.04] text-neutral-900 font-medium" : "text-neutral-600 hover:bg-black/[0.03]"
+                        }`}
+                      >
+                        {periodLabel[p]}
+                        {period === p && <Check className="w-3.5 h-3.5 text-neutral-700" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.97 }}
