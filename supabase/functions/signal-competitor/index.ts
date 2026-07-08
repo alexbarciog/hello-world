@@ -1118,7 +1118,7 @@ Deno.serve(async (req) => {
         const signal = engager.signalType === 'comment'
           ? `Commented on ${companyName}'s post`
           : `Reacted to ${companyName}'s post`;
-        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval, enrichedCompanyForInsert);
+        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval, enrichedCompanyForInsert, engager.postText || '');
 
         if (result === 'inserted') {
           const tier = classifyCompetitorContact(match, icp, hl) || 'warm';
