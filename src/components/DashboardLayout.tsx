@@ -508,7 +508,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen((o) => !o)}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-2 ring-white shadow-sm hover:opacity-90 transition-opacity"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 shadow-sm hover:opacity-90 transition-opacity"
                 style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
               >
                 {userDisplay.initials || "?"}
