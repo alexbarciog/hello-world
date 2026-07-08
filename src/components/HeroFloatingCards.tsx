@@ -4,7 +4,7 @@ const HeroFloatingCards = () => {
   return (
     <div className="relative w-full h-full min-h-[560px]">
       {/* Main lead card */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[340px] bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] p-5 z-10">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[340px] bg-white rounded-none shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] p-5 z-10">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center text-sm font-bold text-white ring-2 ring-white">
