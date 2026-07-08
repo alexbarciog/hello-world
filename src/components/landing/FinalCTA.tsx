@@ -32,7 +32,7 @@ const FinalCTA = () => {
           aria-hidden
         />
 
-        <div className="relative max-w-4xl mx-auto z-10 pl-2 md:pl-8">
+        <div className="relative max-w-4xl mx-auto z-10 text-center">
           {/* Live counter chip */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
