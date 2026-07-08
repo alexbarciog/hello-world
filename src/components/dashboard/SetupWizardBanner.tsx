@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Linkedin, Radio, Rocket, Check, Lock, X, ArrowRight, Pencil, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/useSubscription";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 type StepKey = "linkedin" | "agent" | "campaign";
 
@@ -133,7 +136,12 @@ export function SetupWizardBanner() {
   const firstUndoneIndex = STEPS.findIndex((s) => !status[s.key]);
 
   return (
-    <div className="rounded-2xl bg-white border border-gray-200/60 shadow-sm overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: EASE }}
+      className="rounded-2xl bg-white border border-gray-200/60 shadow-sm overflow-hidden"
+    >
       {/* Header */}
       <div className="px-5 pt-4 pb-3 border-b border-gray-100">
         <div className="flex items-center justify-between mb-2.5">
@@ -144,10 +152,12 @@ export function SetupWizardBanner() {
           <span className="text-xs font-medium text-gray-500">{progress}%</span>
         </div>
         <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-          <div
-            className="h-full transition-all duration-500 ease-out"
+          <motion.div
+            className="h-full origin-left"
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1.1, ease: EASE, delay: 0.2 }}
             style={{
-              width: `${progress}%`,
               background: "linear-gradient(90deg, #0057bd 0%, #4647d3 100%)",
             }}
           />
@@ -247,6 +257,6 @@ export function SetupWizardBanner() {
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }

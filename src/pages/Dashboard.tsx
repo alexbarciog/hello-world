@@ -11,6 +11,8 @@ import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner"
 import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
 import { ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
+import { Reveal, fadeStagger, fadeStaggerItem } from "@/lib/motion";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -345,45 +347,68 @@ export default function Dashboard() {
   void userData;
 
   return (
-    <div className="flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
-      <div className="flex-1 min-w-0 flex flex-col gap-4 bg-white rounded-[20px] p-4 border border-gray-200/60 shadow-sm">
-        <header className="flex items-center justify-between">
+    <div className="relative flex gap-8 w-full max-w-[1400px] mx-auto px-6 py-6">
+      {/* Ambient animated blobs */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -left-24 w-[520px] h-[520px] rounded-full blur-3xl"
+        style={{ background: "radial-gradient(closest-side, #EDEEFC, transparent 70%)" }}
+        animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0], scale: [1, 1.1, 0.95, 1] }}
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute top-40 -right-32 w-[560px] h-[560px] rounded-full blur-3xl"
+        style={{ background: "radial-gradient(closest-side, #E6F1FD, transparent 70%)" }}
+        animate={{ x: [0, -30, 20, 0], y: [0, 40, -20, 0], scale: [1, 1.08, 0.96, 1] }}
+        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.div
+        variants={fadeStagger}
+        initial="hidden"
+        animate="visible"
+        className="relative flex-1 min-w-0 flex flex-col gap-4 bg-white/80 backdrop-blur-sm rounded-[20px] p-4 border border-gray-200/60 shadow-sm"
+      >
+        <motion.header variants={fadeStaggerItem} className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Overview</h1>
           </div>
-          <button className="flex items-center gap-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors">
+          <motion.button
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-1.5 text-sm text-gray-500 bg-white border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+          >
             Today
             <ChevronDown className="w-4 h-4" />
-          </button>
-        </header>
+          </motion.button>
+        </motion.header>
 
-        <AgencyWelcomeBanner />
+        <motion.div variants={fadeStaggerItem}><AgencyWelcomeBanner /></motion.div>
+        <motion.div variants={fadeStaggerItem}><SetupWizardBanner /></motion.div>
+        <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
 
-        <SetupWizardBanner />
-
-        <SubscriptionBanner />
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} bgColor="bg-[#EDEEFC]" />
           <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} />
           <MetricCard title="Conversations" value={conversations} loading={engagementLoading} />
           <MetricCard title="Active Signals" value={activeSignals} />
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <Reveal y={24} className="grid grid-cols-1 gap-4">
           <PerformanceChart chartData={chartData} />
-        </div>
+        </Reveal>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <Reveal y={24} delay={0.05} className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <DailyActivityChart data={weeklyActivityData ?? []} loading={weeklyActivityLoading} />
           <LeadsByTier data={tierData ?? []} loading={tierLoading} />
-        </div>
+        </Reveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Reveal y={24} delay={0.1} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
           <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
-        </div>
-      </div>
+        </Reveal>
+      </motion.div>
     </div>
   );
 }

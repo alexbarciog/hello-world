@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { motion } from "framer-motion";
 
 interface WeeklyActivityData {
   date: string;
@@ -25,7 +26,11 @@ const DailyActivityChart = ({ data, loading }: WeeklyActivityChartProps) => {
   const hasData = data.some((d) => d.contacts > 0 || d.responses > 0 || d.meetings > 0);
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className="bg-snow-bg-2 rounded-[20px] p-4"
+    >
       <h3 className="text-sm font-bold text-snow-black-100 mb-3">Daily Activity per Week</h3>
       {loading ? (
         <div className="h-[180px] flex items-center justify-center">
@@ -64,13 +69,13 @@ const DailyActivityChart = ({ data, loading }: WeeklyActivityChartProps) => {
               iconSize={8}
               wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
             />
-            <Bar dataKey="contacts" name="Contacts" fill="#C4C6F7" radius={[6, 6, 0, 0]} maxBarSize={32} />
-            <Bar dataKey="responses" name="Responses" fill="#34D399" radius={[6, 6, 0, 0]} maxBarSize={32} />
-            <Bar dataKey="meetings" name="Meetings" fill="#000000" radius={[6, 6, 0, 0]} maxBarSize={32} />
+            <Bar dataKey="contacts" name="Contacts" fill="#C4C6F7" radius={[6, 6, 0, 0]} maxBarSize={32} isAnimationActive animationDuration={900} animationBegin={0} animationEasing="ease-out" />
+            <Bar dataKey="responses" name="Responses" fill="#34D399" radius={[6, 6, 0, 0]} maxBarSize={32} isAnimationActive animationDuration={900} animationBegin={150} animationEasing="ease-out" />
+            <Bar dataKey="meetings" name="Meetings" fill="#000000" radius={[6, 6, 0, 0]} maxBarSize={32} isAnimationActive animationDuration={900} animationBegin={300} animationEasing="ease-out" />
           </BarChart>
         </ResponsiveContainer>
       )}
-    </div>
+    </motion.div>
   );
 };
 

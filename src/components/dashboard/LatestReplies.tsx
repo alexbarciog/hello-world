@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { MessageSquare, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 function ReplyAvatar({ name, url, color }: { name: string; url: string | null; color: string }) {
   const initials = name
@@ -51,17 +54,23 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
   };
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-4 flex flex-col gap-2">
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className="bg-snow-bg-2 rounded-[20px] p-4 flex flex-col gap-2"
+    >
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-900">Latest Replies</h3>
-        <button
+        <motion.button
+          whileHover={{ x: 2 }}
           onClick={() => navigate("/unibox")}
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
         >
           Open Inbox
           <ArrowRight className="w-3 h-3" />
-        </button>
+        </motion.button>
       </div>
+
 
       {loading ? (
         <div className="flex flex-col gap-3">
@@ -78,15 +87,26 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
       ) : replies.length > 0 ? (
         <div className="flex flex-col divide-y divide-gray-100">
           {replies.map((reply, i) => (
-            <div key={reply.chat_id} onClick={() => navigate("/unibox")}
+            <motion.div
+              key={reply.chat_id}
+              initial={{ opacity: 0, y: 8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.05, ease: EASE }}
+              whileHover={{ x: 2 }}
+              onClick={() => navigate("/unibox")}
               className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
             >
-              <div className="relative">
+              <motion.div className="relative" whileHover={{ scale: 1.08 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
                 <ReplyAvatar name={reply.name} url={reply.avatar_url} color={avatarColors[i % avatarColors.length]} />
                 {reply.is_unread && (
-                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white" />
+                  <motion.div
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white"
+                    animate={{ scale: [1, 1.25, 1] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  />
                 )}
-              </div>
+              </motion.div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <p className={`text-sm truncate ${reply.is_unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-900'}`}>{reply.name}</p>
@@ -94,7 +114,7 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
                 </div>
                 <p className={`text-xs truncate ${reply.is_unread ? 'font-semibold text-gray-700' : 'text-gray-400'}`}>{reply.text || "No message"}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       ) : (
@@ -111,6 +131,6 @@ export function LatestReplies({ replies, loading }: LatestRepliesProps) {
           </button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

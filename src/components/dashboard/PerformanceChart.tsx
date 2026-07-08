@@ -7,6 +7,7 @@ import {
   Line,
   ComposedChart,
 } from "recharts";
+import { motion } from "framer-motion";
 
 interface PerformanceChartProps {
   chartData: Array<{ date: string; leadsFound: number; contacted: number }>;
@@ -16,7 +17,11 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
   const hasData = chartData.some((d) => d.leadsFound > 0 || d.contacted > 0);
 
   return (
-    <div className="bg-snow-bg-2 rounded-[20px] p-4">
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      className="bg-snow-bg-2 rounded-[20px] p-4"
+    >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-3">
         <h2 className="text-sm font-bold text-snow-black-100">Lead Velocity</h2>
         <div className="w-px h-4 bg-snow-black-10" />
@@ -89,6 +94,9 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
                 strokeWidth={1.5}
                 fill="url(#leadsFill)"
                 dot={false}
+                isAnimationActive
+                animationDuration={1400}
+                animationEasing="ease-out"
                 activeDot={{
                   r: 3,
                   fill: "#000000",
@@ -104,11 +112,15 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
                 strokeDasharray="6 4"
                 dot={false}
                 activeDot={false}
+                isAnimationActive
+                animationDuration={1200}
+                animationBegin={200}
+                animationEasing="ease-out"
               />
             </ComposedChart>
           </ResponsiveContainer>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
