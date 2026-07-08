@@ -118,15 +118,6 @@ const UseCases = () => {
                   transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
                   className="relative bg-white rounded-[24px] border border-black/[0.06] shadow-[0_1px_2px_rgba(0,0,0,0.03),0_10px_28px_-16px_rgba(0,0,0,0.10)] p-6 min-h-[260px] flex flex-col overflow-hidden"
                 >
-                  {/* Faint grid backdrop in the icon zone */}
-                  <div
-                    className="absolute top-0 left-0 right-0 h-[120px] opacity-[0.05] pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)",
-                      backgroundSize: "22px 22px",
-                    }}
-                  />
 
                   {/* Icon */}
                   <div className="relative w-11 h-11 rounded-xl bg-[hsl(var(--aeline-dark))] flex items-center justify-center mb-auto">
