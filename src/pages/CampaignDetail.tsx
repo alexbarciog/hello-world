@@ -879,6 +879,7 @@ export default function CampaignDetail() {
         contactSignal: contact.signal || "",
         contactLinkedinUrl: contact.linkedin_url || "",
         contactSignalUrl: contact.signal_post_url || "",
+        contactSignalPostExcerpt: contact.signal_post_excerpt || "",
         currentStep,
         nextStepNum: currentStep + 1,
         message: msgPreview,
