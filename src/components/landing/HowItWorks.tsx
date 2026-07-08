@@ -310,8 +310,8 @@ const HowItWorks = () => {
           className="mb-16 md:mb-20 max-w-4xl"
         >
           <h2
-            className="text-5xl md:text-7xl font-bold tracking-[-0.035em] leading-[0.98] mb-6"
-            style={{ color: "hsl(var(--aeline-dark))" }}
+            className="font-medium tracking-[-0.03em] leading-[1.02] mb-6"
+            style={{ color: "hsl(var(--aeline-dark))", fontSize: "clamp(2.5rem, 5.6vw, 4.75rem)" }}
           >
             Your sales agent runs{" "}
             <span className="text-[#1A8FE3]">24/7.</span> And gets{" "}
@@ -323,7 +323,7 @@ const HowItWorks = () => {
               />
             </span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="mt-7 text-lg md:text-xl text-neutral-500 leading-relaxed max-w-xl">
             From finding the right leads to sending the right message, your agent handles it all,
             automatically.
           </p>
