@@ -8,7 +8,7 @@ import { ttqCompleteRegistration } from "@/lib/tiktok-pixel";
 import { PENDING_SHARE_TOKEN_KEY } from "@/components/shared/AuthPromptDialog";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
-import registerBg from "@/assets/hero-bg-2.avif";
+import registerBg from "@/assets/register-bg-gradient.png.asset.json";
 
 interface InviteData {
   email: string;
