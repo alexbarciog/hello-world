@@ -36,8 +36,7 @@ import {
   Rocket,
   Search,
   Bell,
-  Sun,
-  Moon,
+
   Crown,
   ArrowRight,
 } from "lucide-react";
