@@ -62,7 +62,6 @@ const baseNavItems = [
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
-  { label: "AI Chat",        icon: MessageSquare,   path: "/ai-chat" },
   { label: "Integrations",   icon: Plug,            path: "/integrations" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
