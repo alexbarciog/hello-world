@@ -479,13 +479,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             <button
               onClick={() => window.history.back()}
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-lg items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => window.history.forward()}
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-lg items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
