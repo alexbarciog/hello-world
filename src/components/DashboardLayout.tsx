@@ -238,8 +238,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <button
                   onClick={() => navigate(item.path)}
                   title={collapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors group ${
-                    active ? "bg-white text-foreground shadow-sm" : "text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80"
+                  className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors group ${
+                    active ? "bg-blue-50 text-[#3B82F6]" : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
                   }`}
                 >
                   <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
