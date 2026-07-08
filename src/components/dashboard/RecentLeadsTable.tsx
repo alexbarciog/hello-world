@@ -132,9 +132,19 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                     <td className="px-4 py-3.5 text-neutral-600 truncate max-w-[180px]">{l.title ?? "—"}</td>
                     <td className="px-4 py-3.5 text-neutral-600 truncate max-w-[160px]">{l.company ?? "—"}</td>
                     <td className="px-4 py-3.5 text-neutral-500 truncate max-w-[160px]">{l.signal ?? "—"}</td>
-                    <td className="px-4 py-3.5 text-neutral-900 font-semibold">{l.score ?? 0}</td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize ${tierChip[tier] ?? tierChip.warm}`}>
+                      <div className="flex items-center gap-0.5">
+                        {(() => {
+                          const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                          return [0, 1, 2].map((i) => (
+                            <Flame key={i} className={`w-4 h-4 ${i < count ? "text-orange-500" : "text-neutral-300/60"}`} fill={i < count ? "currentColor" : "none"} />
+                          ));
+                        })()}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize ${tierChip[tier] ?? tierChip.warm}`}>
+                        {tier === "hot" && "🔥"}
                         {tier}
                       </span>
                     </td>
