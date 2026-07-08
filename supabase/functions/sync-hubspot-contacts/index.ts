@@ -123,27 +123,13 @@ function resolveTargets(properties: HubSpotProperty[]): HubSpotPropertyTargets {
 
   return {
     leadId: collect(["intentsly_lead_id"], ["Intentsly Lead ID"]),
-    linkedinUrl: collect(
-      ["intentsly_linkedin_url", "linkedin_url", "linkedin_profile_url", "linkedinbio", "linkedin"],
-      ["LinkedIn URL", "LinkedIn Profile URL", "LinkedIn", "Intentsly LinkedIn URL"]
-    ),
-    signal: collect(
-      ["intentsly_signal", "signal", "buying_signal"],
-      ["Signal", "Buying Signal", "Intentsly Signal"]
-    ),
-    signalPost: collect(
-      ["intentsly_signal_post", "signal_post"],
-      ["Signal Post", "Intentsly Signal Post"]
-    ),
-    signalPostUrl: collect(
-      ["intentsly_signal_post_url", "signal_post_url"],
-      ["Signal Post URL", "Intentsly Signal Post URL"]
-    ),
-    tier: collect(
-      ["intentsly_tier", "intentsly_relevance_tier", "relevance_tier"],
-      ["Intentsly Tier", "Relevance Tier", "Tier"]
-    ),
+    linkedinUrl: collect(["intentsly_linkedin_url"], ["Intentsly LinkedIn URL"]),
+    signal: collect(["intentsly_signal"], ["Intentsly Signal"]),
+    signalPost: collect(["intentsly_signal_post"], ["Intentsly Signal Post"]),
+    signalPostUrl: collect(["intentsly_signal_post_url"], ["Intentsly Signal Post URL"]),
+    tier: collect(["intentsly_tier"], ["Intentsly Relevance Tier"]),
   };
+
 }
 
 async function ensureCustomProperties(apiKey: string): Promise<HubSpotPropertyTargets> {
