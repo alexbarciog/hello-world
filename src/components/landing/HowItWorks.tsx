@@ -251,7 +251,9 @@ const blocks = [
     body:
       "Your agent tracks what converts, adjusts automatically, and benchmarks your campaigns against top performers in your industry.",
     Visual: LearnsVisual,
+    isImage: true,
     visualLeft: true,
+
     stat: "+38%",
     statLabel: "Reply rate lift in 10 weeks",
     sideGradient:
