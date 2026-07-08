@@ -162,7 +162,8 @@ async function ensureCustomProperties(apiKey: string): Promise<HubSpotPropertyTa
     });
 
     const text = await res.text();
-    if (!res.ok && res.status !== 409) {
+    const isDuplicateLabel = res.status === 400 && /NON_UNIQUE_PROPERTY_LABEL|same label/i.test(text);
+    if (!res.ok && res.status !== 409 && !isDuplicateLabel) {
       console.error(`ensureCustomProperties ${p.name} failed`, res.status, text.slice(0, 500));
       if (res.status === 401 || res.status === 403) {
         throw new Error(
