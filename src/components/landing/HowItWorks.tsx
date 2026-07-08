@@ -359,11 +359,11 @@ const HowItWorks = () => {
 
                 {/* Visual zone — the only rounded container */}
                 <motion.div
-                  whileHover={{ y: -8, rotate: b.visualLeft ? -0.6 : 0.6 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  animate={{ y: [0, -6, 0] }}
-                  // @ts-expect-error framer allows nested transitions
-                  transition-y={{ duration: 7 + i, repeat: Infinity, ease: "easeInOut" }}
+                  initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ y: -8, rotate: b.visualLeft ? -0.6 : 0.6, transition: { type: "spring", stiffness: 200, damping: 20 } }}
                   className={`md:col-span-7 relative overflow-hidden rounded-[24px] md:rounded-[32px] ${
                     b.visualLeft ? "md:order-1" : ""
                   } ${
