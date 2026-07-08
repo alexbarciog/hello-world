@@ -117,73 +117,15 @@ const PreFilteredVisual = () => {
 };
 
 /* ─────────────── 3/4  Multichannel outreach ─────────────── */
-const OutreachVisual = () => {
-  const events = [
-    { day: "MON", time: "9:00", label: "LinkedIn invite → Emma", color: "bg-[#1A8FE3]/15 text-[#1A8FE3] border-[#1A8FE3]/25", icon: Linkedin },
-    { day: "TUE", time: "11:00", label: "Email · Liam", color: "bg-[#C8FF00]/40 text-[hsl(var(--aeline-dark))] border-[#C8FF00]/60", icon: Mail },
-    { day: "WED", time: "10:30", label: "Follow-up · Ava", color: "bg-[#1A8FE3]/15 text-[#1A8FE3] border-[#1A8FE3]/25", icon: Linkedin },
-    { day: "THU", time: "14:00", label: "Demo booked", color: "bg-emerald-100 text-emerald-700 border-emerald-300", icon: Calendar },
-    { day: "FRI", time: "9:30", label: "Reply → Noah", color: "bg-[#C8FF00]/40 text-[hsl(var(--aeline-dark))] border-[#C8FF00]/60", icon: Mail },
-  ];
-  return (
-    <div className="relative w-full h-full min-h-[340px] flex items-center justify-center p-5">
-      <div className="w-full max-w-[420px] rounded-2xl bg-white border border-black/5 shadow-[0_20px_40px_-16px_rgba(15,23,42,0.2)] overflow-hidden">
-        {/* Header row */}
-        <div className="grid grid-cols-5 border-b border-black/5 bg-[#f9f9fa]">
-          {["MON", "TUE", "WED", "THU", "FRI"].map((d) => (
-            <div key={d} className="px-2 py-2 text-center text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {d}
-            </div>
-          ))}
-        </div>
-        {/* Grid rows */}
-        <div className="relative grid grid-cols-5 min-h-[240px]">
-          {[0, 1, 2, 3, 4].map((c) => (
-            <div key={c} className="border-r last:border-r-0 border-black/5">
-              {[0, 1, 2].map((r) => (
-                <div key={r} className="h-[80px] border-b last:border-b-0 border-black/5" />
-              ))}
-            </div>
-          ))}
-          {/* Events overlaid */}
-          {events.map((e, i) => {
-            const col = ["MON", "TUE", "WED", "THU", "FRI"].indexOf(e.day);
-            const top = 8 + i * 18;
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: 0.2 + i * 0.12, ease: EASE }}
-                style={{ left: `${col * 20 + 1}%`, width: "18%", top: `${top}%` }}
-                className={`absolute rounded-lg px-2 py-1.5 border ${e.color} shadow-sm`}
-              >
-                <div className="flex items-center gap-1 mb-0.5">
-                  <e.icon className="w-2.5 h-2.5" />
-                  <span className="text-[8px] font-bold opacity-70">{e.time}</span>
-                </div>
-                <p className="text-[9px] font-semibold leading-tight truncate">{e.label}</p>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+import autopilotImage from "@/assets/how-it-works-autopilot.png.asset.json";
+const OutreachVisual = () => (
+  <img
+    src={autopilotImage.url}
+    alt="Sales agent books meetings on autopilot"
+    className="w-full h-auto object-contain rounded-[24px] md:rounded-[32px]"
+  />
+);
 
-      {/* Floating "coordinated" badge */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 1.0, ease: EASE }}
-        className="absolute bottom-4 right-4 bg-[hsl(var(--aeline-dark))] text-white rounded-full px-3 py-1.5 shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] flex items-center gap-1.5"
-      >
-        <Zap className="w-3 h-3 text-[#C8FF00]" fill="#C8FF00" />
-        <span className="text-[10px] font-bold">Coordinated automatically</span>
-      </motion.div>
-    </div>
-  );
-};
 
 /* ─────────────── 4/4  Gets better every week ─────────────── */
 const LearnsVisual = () => {
