@@ -10,7 +10,7 @@ const logos = [
 ];
 
 const LogoMarquee = () => {
-  const doubled = [...logos, ...logos];
+  const marqueeLogos = Array.from({ length: 6 }, () => logos).flat();
 
   return (
     <section className="py-10 overflow-hidden bg-background">
@@ -21,8 +21,8 @@ const LogoMarquee = () => {
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
         <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-l from-background to-transparent" />
 
-        <div className="animate-marquee flex items-center">
-          {doubled.map((logo, i) => (
+        <div className="animate-logo-marquee flex items-center">
+          {marqueeLogos.map((logo, i) => (
             <img
               key={i}
               src={logo.url}
