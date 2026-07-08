@@ -8,6 +8,11 @@ const corsHeaders = {
 const INTERESTED_TIERS = ["hot", "warm"];
 const INTERESTED_STATUSES = ["replied", "positive_reply", "meeting_booked", "interested"];
 
+// HubSpot batch create limit is 100
+const BATCH_SIZE = 100;
+// Cap total contacts synced per invocation to fit inside edge function CPU budget
+const MAX_CONTACTS = 500;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -40,12 +45,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build contacts query
     let query = supabase
       .from("contacts")
       .select("id, first_name, last_name, title, company, linkedin_url, industry, relevance_tier, lead_status, signal")
       .eq("user_id", user.id)
-      .limit(500);
+      .order("imported_at", { ascending: false })
+      .limit(MAX_CONTACTS);
 
     if (integ.sync_mode === "interested") {
       query = query.or(
@@ -56,51 +61,78 @@ Deno.serve(async (req) => {
     const { data: contacts, error: cErr } = await query;
     if (cErr) throw cErr;
 
+    // Build HubSpot inputs — only use standard properties HubSpot always accepts.
+    // Custom props like `intentsly_signal` require a schema definition and cause
+    // 400s if they don't exist, so we skip them and put context into `hs_content_membership_notes`... no — safer to just omit.
+    const inputs = (contacts || [])
+      .map((c) => {
+        const properties: Record<string, string> = {};
+        if (c.first_name) properties.firstname = String(c.first_name);
+        if (c.last_name) properties.lastname = String(c.last_name);
+        if (c.title) properties.jobtitle = String(c.title);
+        if (c.company) properties.company = String(c.company);
+        if (c.industry) properties.industry = String(c.industry);
+        if (c.linkedin_url) properties.website = String(c.linkedin_url);
+        return { properties };
+      })
+      // HubSpot rejects rows with zero properties
+      .filter((row) => Object.keys(row.properties).length > 0);
+
     let synced = 0;
     let failed = 0;
     const errors: string[] = [];
 
-    for (const c of contacts || []) {
-      const props: Record<string, any> = {
-        firstname: c.first_name || "",
-        lastname: c.last_name || "",
-        jobtitle: c.title || "",
-        company: c.company || "",
-        industry: c.industry || "",
-        website: c.linkedin_url || "",
-        hs_lead_status: c.lead_status || "NEW",
-        intentsly_signal: c.signal || "",
-        intentsly_tier: c.relevance_tier || "",
-      };
-
-      // Skip if no identifying info
-      if (!props.firstname && !props.lastname && !props.company) {
-        failed++; continue;
-      }
-
+    for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
+      const batch = inputs.slice(i, i + BATCH_SIZE);
       try {
-        const res = await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
+        const res = await fetch("https://api.hubapi.com/crm/v3/objects/contacts/batch/create", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${integ.api_key}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ properties: props }),
+          body: JSON.stringify({ inputs: batch }),
         });
 
+        const bodyText = await res.text();
+
         if (res.ok) {
-          synced++;
-        } else if (res.status === 409) {
-          // Contact exists — HubSpot returns 409 with existing id, treat as success
-          synced++;
+          // 200/201 — everything created
+          try {
+            const parsed = JSON.parse(bodyText);
+            synced += Array.isArray(parsed?.results) ? parsed.results.length : batch.length;
+          } catch {
+            synced += batch.length;
+          }
+        } else if (res.status === 207 || res.status === 409) {
+          // Multi-status / conflicts: some created, some already existed.
+          // HubSpot returns { results: [...], numErrors, errors: [...] }
+          try {
+            const parsed = JSON.parse(bodyText);
+            const created = Array.isArray(parsed?.results) ? parsed.results.length : 0;
+            const dupes = Array.isArray(parsed?.errors)
+              ? parsed.errors.filter((e: any) => e?.category === "CONFLICT").length
+              : 0;
+            synced += created + dupes;
+            const other = (batch.length - created - dupes);
+            if (other > 0) {
+              failed += other;
+              if (errors.length < 3 && parsed?.errors?.[0]) {
+                errors.push(JSON.stringify(parsed.errors[0]).slice(0, 300));
+              }
+            }
+          } catch {
+            synced += batch.length; // best-effort
+          }
         } else {
-          failed++;
-          const body = await res.text();
-          if (errors.length < 3) errors.push(`${res.status}: ${body.slice(0, 200)}`);
+          failed += batch.length;
+          if (errors.length < 3) errors.push(`${res.status}: ${bodyText.slice(0, 300)}`);
+          console.error("HubSpot batch failed", res.status, bodyText.slice(0, 500));
         }
       } catch (e: any) {
-        failed++;
+        failed += batch.length;
         if (errors.length < 3) errors.push(e.message);
+        console.error("HubSpot batch exception", e);
       }
     }
 
@@ -109,7 +141,7 @@ Deno.serve(async (req) => {
       .eq("id", integ.id);
 
     return new Response(JSON.stringify({
-      success: true, synced, failed, total: contacts?.length || 0, errors,
+      success: true, synced, failed, total: inputs.length, errors,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err: any) {
     console.error("sync-hubspot-contacts error:", err);
