@@ -224,6 +224,7 @@ export default function CampaignDetail() {
           leadCompany: sm.contactCompany || "",
           leadTitle: sm.contactTitle || "",
           buyingSignal: sm.contactSignal || "",
+          signalPostText: (sm as any).contactSignalPostExcerpt || sm.contactSignal || "",
           leadIndustry: (sm as any).contactIndustry || "",
         },
       });
