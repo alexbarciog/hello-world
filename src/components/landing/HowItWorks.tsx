@@ -5,7 +5,6 @@ import {
   Target,
   Building2,
   Briefcase,
-  Check,
   ArrowRight,
   Zap,
   Heart,
@@ -352,14 +351,6 @@ const HowItWorks = () => {
                     b.visualLeft ? "md:order-2" : ""
                   }`}
                 >
-                  <div className="inline-flex items-center gap-1.5 bg-[#1A8FE3]/10 border border-[#1A8FE3]/20 rounded-lg px-2.5 py-1 self-start mb-8">
-                    <span className="w-3.5 h-3.5 rounded-[3px] bg-[#1A8FE3] flex items-center justify-center">
-                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                    </span>
-                    <span className="text-[11px] font-bold text-[#1A8FE3] tabular-nums">
-                      {b.n}
-                    </span>
-                  </div>
                   <h3
                     className="text-4xl md:text-5xl font-bold tracking-[-0.035em] leading-[1.02] mb-6"
                     style={{ color: "hsl(var(--aeline-dark))" }}
