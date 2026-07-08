@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
+import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
@@ -84,7 +85,11 @@ const UseCases = () => {
           className="text-center max-w-3xl mx-auto mb-16 md:mb-20"
         >
           <div className="inline-flex items-center gap-2 text-[13px] font-semibold tracking-[0.02em] text-[#1A8FE3] mb-6">
-            <span className="text-[#C8FF00] text-lg leading-none">✱</span>
+            <img
+              src={whyIntentslyIcon.url}
+              alt=""
+              className="w-5 h-5 object-contain"
+            />
             WHY INTENTSLY
           </div>
           <h2
