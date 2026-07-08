@@ -40,14 +40,46 @@ function initials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("") || "?";
 }
 
+type TierFilter = "all" | "hot" | "warm" | "cold";
+type ExtraFilter = "all" | "linkedin" | "signal" | "high_score";
+
+const TIER_OPTIONS: { value: TierFilter; label: string }[] = [
+  { value: "all", label: "All tiers" },
+  { value: "hot", label: "Hot" },
+  { value: "warm", label: "Warm" },
+  { value: "cold", label: "Cold" },
+];
+
+const EXTRA_OPTIONS: { value: ExtraFilter; label: string }[] = [
+  { value: "all", label: "All leads" },
+  { value: "linkedin", label: "Has LinkedIn" },
+  { value: "signal", label: "Has signal" },
+  { value: "high_score", label: "Score ≥ 70" },
+];
+
 export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: boolean }) {
   const [q, setQ] = useState("");
-  const filtered = leads.filter((l) =>
-    !q ||
-    l.name.toLowerCase().includes(q.toLowerCase()) ||
-    (l.company ?? "").toLowerCase().includes(q.toLowerCase()) ||
-    (l.title ?? "").toLowerCase().includes(q.toLowerCase())
-  );
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [extraFilter, setExtraFilter] = useState<ExtraFilter>("all");
+
+  const filtered = leads.filter((l) => {
+    const matchesQuery =
+      !q ||
+      l.name.toLowerCase().includes(q.toLowerCase()) ||
+      (l.company ?? "").toLowerCase().includes(q.toLowerCase()) ||
+      (l.title ?? "").toLowerCase().includes(q.toLowerCase());
+    const tier = (l.relevance_tier ?? "warm").toLowerCase();
+    const matchesTier = tierFilter === "all" || tier === tierFilter;
+    const matchesExtra =
+      extraFilter === "all" ||
+      (extraFilter === "linkedin" && !!l.linkedin_url) ||
+      (extraFilter === "signal" && !!l.signal) ||
+      (extraFilter === "high_score" && (l.score ?? 0) >= 70);
+    return matchesQuery && matchesTier && matchesExtra;
+  });
+
+  const currentTierLabel = TIER_OPTIONS.find((o) => o.value === tierFilter)?.label ?? "All tiers";
+  const currentExtraLabel = EXTRA_OPTIONS.find((o) => o.value === extraFilter)?.label ?? "Filter";
 
   return (
     <motion.div
@@ -74,14 +106,50 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
               className="w-[180px] rounded-full bg-white/35 border border-neutral-200/80 pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white/60 focus:border-neutral-300/90 transition-colors"
             />
           </div>
-          <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
-            Filter
-            <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />
-          </button>
-          <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
-            All tiers
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
+                {extraFilter === "all" ? "Filter" : currentExtraLabel}
+                <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[170px]">
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-neutral-400 font-medium">
+                Refine
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {EXTRA_OPTIONS.map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onSelect={() => setExtraFilter(opt.value)}
+                  className="text-[12px] flex items-center justify-between"
+                >
+                  {opt.label}
+                  {opt.value === extraFilter && <Check className="w-3.5 h-3.5 text-neutral-500" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
+                {currentTierLabel}
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[150px]">
+              {TIER_OPTIONS.map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onSelect={() => setTierFilter(opt.value)}
+                  className="text-[12px] flex items-center justify-between capitalize"
+                >
+                  {opt.label}
+                  {opt.value === tierFilter && <Check className="w-3.5 h-3.5 text-neutral-500" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
