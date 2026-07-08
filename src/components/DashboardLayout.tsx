@@ -471,28 +471,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AgencyImpersonationBanner />
         {/* Top navbar: breadcrumb + right utilities */}
-        <header className="flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white border-b border-neutral-200/70">
+        <header className="flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white/40 backdrop-blur-xl border-b border-white/60">
           <div className="flex items-center gap-2 min-w-0">
             <button
-              className="md:hidden p-1.5 rounded-md hover:bg-neutral-100 transition-colors text-neutral-500 mr-1"
+              className="md:hidden p-1.5 rounded-md hover:bg-white/60 transition-colors text-neutral-600 mr-1"
               onClick={() => setMobileMenuOpen(true)}
             >
               <Menu className="w-5 h-5" />
             </button>
             <button
               onClick={() => window.history.back()}
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => window.history.forward()}
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
             <div className="hidden md:flex items-center gap-2 ml-3 text-[13.5px] min-w-0">
-              <span className="text-neutral-400">Intentsly</span>
+              <span className="text-neutral-500">Intentsly</span>
               <span className="text-neutral-300">›</span>
               <span className="text-neutral-900 font-medium truncate">{crumbLabel}</span>
             </div>
@@ -504,13 +504,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex items-center gap-2">
             <button
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
               title="Dark mode"
             >
               <Moon className="w-4 h-4" />
             </button>
             <button
-              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-900 hover:bg-white/90 transition-colors"
               title="Light mode"
             >
               <Sun className="w-4 h-4" />
