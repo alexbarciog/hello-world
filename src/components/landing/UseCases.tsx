@@ -58,29 +58,29 @@ const OrbitVisual = () => {
 
 const UseCases = () => {
   return (
-    <section id="use-cases" className="py-20 md:py-32 px-6 bg-background">
+    <section id="use-cases" className="py-14 md:py-32 px-5 md:px-6 bg-background">
       <div className="max-w-6xl mx-auto">
         {/* Header (centered) */}
-        <div className="text-center max-w-3xl mx-auto mb-16 md:mb-20">
+        <div className="text-center max-w-3xl mx-auto mb-10 md:mb-20">
           <div
-            className="inline-flex items-center gap-2 text-[13px] font-semibold tracking-[0.02em] text-[#1A8FE3] mb-6 animate-fade-in-up"
+            className="inline-flex items-center gap-2 text-[12px] md:text-[13px] font-semibold tracking-[0.02em] text-[#1A8FE3] mb-4 md:mb-6 animate-fade-in-up"
             style={{ animationDelay: "40ms" }}
           >
             <img
               src={whyIntentslyIcon.url}
               alt=""
-              className="w-5 h-5 object-contain"
+              className="w-4 h-4 md:w-5 md:h-5 object-contain"
             />
             WHY INTENTSLY
           </div>
           <h2
-            className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a] mb-5 animate-fade-in-up"
-            style={{ animationDelay: "80ms", fontSize: "clamp(2.25rem, 5vw, 4rem)" }}
+            className="font-medium tracking-[-0.03em] leading-[1.08] md:leading-[1.02] text-[#0a0a0a] mb-4 md:mb-5 animate-fade-in-up"
+            style={{ animationDelay: "80ms", fontSize: "clamp(1.9rem, 5vw, 4rem)" }}
           >
             Sales agents that book meetings, on autopilot
           </h2>
           <p
-            className="text-base md:text-lg text-muted-foreground leading-relaxed animate-fade-in-up"
+            className="text-[15px] md:text-lg text-muted-foreground leading-relaxed animate-fade-in-up"
             style={{ animationDelay: "180ms" }}
           >
             Experience a new era of sales where meetings land in your calendar while you focus on what matters.
@@ -88,16 +88,16 @@ const UseCases = () => {
         </div>
 
         {/* Two-column bento: 4 cards left, orbit right */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-5 md:gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
-          <div className="relative isolate rounded-[32px] p-8 sm:p-10 overflow-hidden bg-muted/20">
+          <div className="relative isolate rounded-[24px] md:rounded-[32px] p-5 sm:p-10 overflow-hidden bg-muted/20">
             {/* Gradient image, anchored left behind the cards */}
             <img
               src={salesAgentsGradientBg}
               alt=""
               className="absolute left-0 top-1/2 -translate-y-1/2 w-[115%] h-auto object-contain object-left -z-10 pointer-events-none select-none"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
+            <div className="grid grid-cols-2 gap-3 md:gap-6 relative z-10">
               {benefits.map((b, i) => {
                 const Icon = b.icon;
                 return (
@@ -107,26 +107,26 @@ const UseCases = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
                     transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative bg-background rounded-[24px] p-5 min-h-[220px] lg:aspect-square flex flex-col overflow-hidden"
+                    className="relative bg-background rounded-[18px] md:rounded-[24px] p-4 md:p-5 min-h-[170px] md:min-h-[220px] lg:aspect-square flex flex-col overflow-hidden"
                   >
 
                     {/* Icon */}
                     <div
-                      className="relative w-11 h-11 rounded-xl flex items-center justify-center mb-auto"
+                      className="relative w-9 h-9 md:w-11 md:h-11 rounded-lg md:rounded-xl flex items-center justify-center mb-auto"
                       style={{ background: "radial-gradient(circle, #000000 0%, #535353 100%)" }}
                     >
-                      <Icon className="w-5 h-5 text-white" strokeWidth={2} />
+                      <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2} />
                     </div>
 
                     {/* Text */}
-                    <div className="relative mt-8">
+                    <div className="relative mt-4 md:mt-8">
                       <h3
-                        className="text-lg font-semibold tracking-tight mb-2"
+                        className="text-sm md:text-lg font-semibold tracking-tight mb-1.5 md:mb-2"
                         style={{ color: "hsl(var(--aeline-dark))" }}
                       >
                         {b.title}
                       </h3>
-                      <p className="text-[13.5px] text-muted-foreground leading-relaxed">{b.desc}</p>
+                      <p className="text-[12px] md:text-[13.5px] text-muted-foreground leading-relaxed">{b.desc}</p>
                     </div>
                   </motion.div>
                 );
