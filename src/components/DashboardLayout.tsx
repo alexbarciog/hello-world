@@ -199,12 +199,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [sub.loading, sub.hasAccess]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[hsl(195_14%_95%)]">
+    <div className="flex h-screen overflow-hidden bg-white">
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 ${collapsed ? "w-[64px]" : "w-[230px]"}`}
-        style={{ background: "hsl(195 14% 95%)" }}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white ${collapsed ? "w-[64px]" : "w-[240px]"}`}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-3 py-4">
