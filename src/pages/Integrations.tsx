@@ -508,7 +508,7 @@ const Integrations = () => {
                       >
                         HubSpot → Settings → Integrations → Private Apps
                       </a>
-                      {" "}with scopes <code className="text-xs">crm.objects.contacts.read</code> and <code className="text-xs">crm.objects.contacts.write</code>.
+                      {" "}with scopes <code className="text-xs">crm.objects.contacts.read</code>, <code className="text-xs">crm.objects.contacts.write</code>, <code className="text-xs">crm.schemas.contacts.read</code>, and <code className="text-xs">crm.schemas.contacts.write</code>.
                     </>
                   )}
               </DialogDescription>
