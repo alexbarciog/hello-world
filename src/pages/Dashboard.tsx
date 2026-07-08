@@ -345,10 +345,10 @@ export default function Dashboard() {
   void userData;
 
   return (
-    <div className="relative w-full min-h-screen">
+    <div className="relative w-full min-h-screen bg-transparent">
 
 
-      <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-6 pb-10">
+      <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-6 pb-10 bg-transparent">
 
 
         <motion.div
