@@ -348,7 +348,7 @@ const HowItWorks = () => {
                   }`}
                 >
                   <h3
-                    className="text-4xl md:text-5xl font-bold tracking-[-0.035em] leading-[1.02] mb-6"
+                    className="text-4xl md:text-5xl font-medium tracking-[-0.035em] leading-[1.02] mb-6"
                     style={{ color: "hsl(var(--aeline-dark))" }}
                   >
                     {b.title}
