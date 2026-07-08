@@ -1,4 +1,5 @@
 import { CountUp, Reveal } from "@/lib/motion";
+import { motion } from "framer-motion";
 
 const logos = [
   { url: "https://framerusercontent.com/images/bEG9VzNL7xd61r4GEyImRx2WA.png", alt: "Company 1", w: 120 },
@@ -14,25 +15,33 @@ const LogoMarquee = () => {
 
   return (
     <section className="py-10 overflow-hidden bg-background">
-      <p className="text-center text-xs font-medium uppercase tracking-widest text-muted-foreground mb-8">
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.6 }}
+        className="text-center text-xs font-medium uppercase tracking-widest text-muted-foreground mb-8"
+      >
         Trusted by 50+ Small Sales Teams and B2B Founders
-      </p>
+      </motion.p>
       <div className="relative">
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-r from-background to-transparent" />
         <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none bg-gradient-to-l from-background to-transparent" />
 
         <div className="animate-logo-marquee flex items-center">
           {marqueeLogos.map((logo, i) => (
-            <img
+            <motion.img
               key={i}
               src={logo.url}
               alt={logo.alt}
-              className="h-8 object-contain opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 mx-5 md:mx-8"
+              whileHover={{ scale: 1.18, y: -3, transition: { type: "spring", stiffness: 400, damping: 15 } }}
+              className="h-8 object-contain opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300 shrink-0 mx-5 md:mx-8 cursor-pointer"
               style={{ width: logo.w }}
             />
           ))}
         </div>
       </div>
+
 
       {/* Stat bar */}
       <Reveal as="div" className="max-w-4xl mx-auto mt-10 px-6">

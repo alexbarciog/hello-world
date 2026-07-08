@@ -87,15 +87,26 @@ const WhyIntentsly = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-                className="relative pl-6 md:pl-8"
+                whileHover={{ x: 4, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+                className="relative pl-6 md:pl-8 group"
               >
-                {/* Vertical gradient bar */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full"
+                {/* Vertical gradient bar — draws in on scroll */}
+                <motion.div
+                  initial={{ scaleY: 0 }}
+                  whileInView={{ scaleY: 1 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.9, delay: i * 0.1 + 0.2, ease: EASE }}
+                  className="absolute left-0 top-0 bottom-0 w-[3px] rounded-full origin-top"
                   style={{ background: s.gradient }}
                   aria-hidden
                 />
-                <Icon className="w-5 h-5 md:w-6 md:h-6 text-white/90 mb-5 md:mb-14" strokeWidth={1.5} />
+                <motion.div
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 4 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+                  className="mb-5 md:mb-14"
+                >
+                  <Icon className="w-5 h-5 md:w-6 md:h-6 text-white/90 group-hover:text-[#C8FF00] transition-colors" strokeWidth={1.5} />
+                </motion.div>
                 <div className="flex items-baseline gap-3 mb-3 md:mb-4">
                   <span className="text-[12px] md:text-[13px] font-semibold text-white/40 tabular-nums">
                     0{i + 1}
