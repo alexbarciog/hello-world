@@ -491,7 +491,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AgencyImpersonationBanner />
         {/* Top navbar: breadcrumb + right utilities */}
-        <header className="flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white/40 backdrop-blur-xl">
+        <header className="relative z-40 flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white/40 backdrop-blur-xl">
           <div className="flex items-center gap-2 min-w-0">
             <button
               className="md:hidden p-1.5 rounded-md hover:bg-white/60 transition-colors text-neutral-600 mr-1"
