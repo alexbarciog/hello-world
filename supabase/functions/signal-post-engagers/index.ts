@@ -441,7 +441,7 @@ async function companyIcpGate(
 }
 
 // Rule 3 (Hard Skip): returns 'exists' if profile already in contacts, 'inserted' on success, 'failed' otherwise
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null): Promise<'inserted'|'exists'|'failed'>{
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null): Promise<'inserted'|'exists'|'failed'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'failed';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'exists';
@@ -455,7 +455,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     company:enrichedCompany?.name||p.company||p.current_company?.name||null,
     industry:enrichedCompany?.industry||p.industry||p.current_company?.industry||null,
     linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
-    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,ai_score:as,
+    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,signal_post_excerpt:(postExcerpt||'').slice(0,500)||null,ai_score:as,
     signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],relevance_tier:rt,
     approval_status: manualApproval ? 'pending' : 'auto_approved',
@@ -752,7 +752,7 @@ Deno.serve(async (req) => {
               enrichedCo = gate.company;
             }
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
-            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCo);
+            const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCo, postText);
             if (result === 'exists') { diag.already_in_contacts++; continue; }
             if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
           }
@@ -888,7 +888,7 @@ Deno.serve(async (req) => {
                 else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
                 enrichedCo2 = gate.company;
               }
-              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval, enrichedCo2);
+              const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval, enrichedCo2, postText2);
               if (result === 'exists') { diag.already_in_contacts++; continue; }
               if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }
             }

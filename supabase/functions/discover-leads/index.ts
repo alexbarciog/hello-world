@@ -216,6 +216,7 @@ Deno.serve(async (req) => {
             source_campaign_id: campaign.id,
             signal,
             signal_post_url: postUrl || null,
+            signal_post_excerpt: ((post?.text || post?.commentary || post?.content || '') as string).slice(0, 500) || null,
             ai_score: aiScore,
             signal_a_hit: signalAHit,
             signal_b_hit: signalBHit,

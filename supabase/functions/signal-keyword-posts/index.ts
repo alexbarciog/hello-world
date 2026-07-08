@@ -403,7 +403,7 @@ async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
   intentScore?: number, intentReason?: string, manualApproval?: boolean,
-  enrichedCompany?: EnrichedCompany | null,
+  enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null,
 ): Promise<'inserted' | 'duplicate' | 'rejected'> {
   const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
   if (!linkedinProfileId) return 'rejected';
@@ -429,7 +429,7 @@ async function insertContact(
     industry: enrichedCompany?.industry || profile.industry || profile.current_company?.industry || null,
     linkedin_url: profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId, source_campaign_id: null,
-    signal: fullSignal, signal_post_url: signalPostUrl, ai_score: aiScore,
+    signal: fullSignal, signal_post_url: signalPostUrl, signal_post_excerpt: (postExcerpt || '').slice(0, 500) || null, ai_score: aiScore,
     signal_a_hit: signalAHit, signal_b_hit: signalBHit, signal_c_hit: signalCHit,
     email_enriched: false, list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
@@ -1580,7 +1580,7 @@ Deno.serve(async (req) => {
         const result = await insertContact(
           supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp,
           intentData?.intent_score, intentData?.reason, manual_approval,
-          enrichedCompany,
+          enrichedCompany, (post.text || '').toString(),
         );
 
         if (result === 'inserted') {

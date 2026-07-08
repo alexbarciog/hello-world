@@ -54,6 +54,37 @@ function isGreeting(text: string): boolean {
   return greetings.some(g => cleaned === g || cleaned.startsWith(g + ' '));
 }
 
+// ── Banned patterns for Step 2 (case-insensitive). Any match triggers a rewrite.
+const STEP2_BANNED_PATTERNS: RegExp[] = [
+  /\bleverag(e|ing|ed)\b/i, /\butiliz(e|ing|ed)\b/i, /\bsynerg(y|ies)\b/i,
+  /\bstreamlin(e|ing|ed)\b/i, /\becosystem\b/i, /\bdelighted\b/i, /\bthrilled\b/i,
+  /\bempower(s|ing|ed)?\b/i, /\bresonate(s|d)?\b/i, /\bspearhead(s|ing|ed)?\b/i,
+  /\bbandwidth\b/i, /\brobust\b/i, /\bseamless(ly)?\b/i, /\bholistic\b/i,
+  /\bactionable\b/i, /\bcutting[- ]edge\b/i, /\bgame[- ]changer\b/i,
+  /hope this (email |message |)finds you well/i,
+  /\bsaw your post\b/i, /\bcame across (your|you|this)\b/i,
+  /\bi noticed\b/i, /\bi saw\b/i, /\bnoticed you(r|'re| are|)\b/i,
+  /engaging with #/i, /as someone in the .{1,30} space/i,
+  /would love to\b/i, /would you be open to\b/i,
+  /\bquick (chat|call)\b/i, /\bhop on a call\b/i, /\bworth a chat\b/i,
+  /\bbook (a time|a call|15|30)\b/i, /\bgrab 15 minutes\b/i,
+  /just wanted to reach out/i, /reaching out because/i,
+  /we help companies like yours/i,
+];
+
+function findBannedHits(text: string): string[] {
+  const hits: string[] = [];
+  for (const re of STEP2_BANNED_PATTERNS) {
+    const m = text.match(re);
+    if (m) hits.push(m[0]);
+  }
+  return hits;
+}
+
+function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 function sanitizeMessage(raw: string, lead: LeadContext, isConversational = false): string {
   let msg = raw
     .replace(/[—–]/g, ', ')
@@ -287,62 +318,58 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
 
   // ── Message 1 (Step 2): cold opener ──
   if (stepNumber <= 2) {
-    const systemPrompt = `You are writing a LinkedIn outreach message for a B2B sales conversation.
+    const hasRealPost = signalPostText.length > 40; // heuristic: real excerpts are >40 chars, summaries like "Posted about X" are shorter
+    const postBlock = hasRealPost
+      ? `POST_EXCERPT (their actual words — reference something concrete from this):\n"""\n${signalPostText.slice(0, 600)}\n"""`
+      : `POST_SUMMARY (short signal, no full text available — reference the specific topic, not the hashtag):\n"${signalPostText || lead.signal || '(none)'}"`;
 
-CONTEXT YOU HAVE:
-- The exact post or activity that triggered this signal: ${signalPostText || '(none)'}
-- The person's name: ${lead.firstName || '(unknown)'}
-- Their headline: ${headline || '(unknown)'}
-- What our product does: ${productDescription || '(unspecified)'}
-- The suggested angle: ${suggestedAngle || '(none)'}
+    const systemPrompt = `You are ${lead.firstName ? `messaging ${lead.firstName}` : 'writing a LinkedIn DM'} — founder to founder, peer to peer. This is the FIRST message after they accepted your connection request. It has to feel like a real human took two minutes to read their post and reply.
 
-YOUR ONLY JOB FOR MESSAGE 1:
-Write a message that makes ${lead.firstName || 'them'} feel like a real person
-read their actual post and had a genuine reaction to it.
+===== WHAT YOU KNOW =====
+FIRST_NAME: ${lead.firstName || '(unknown)'}
+HEADLINE: ${headline || '(unknown)'}
+COMPANY: ${lead.company || '(unknown)'}
+WHAT_WE_DO (background context — do NOT pitch this): ${productDescription || '(unspecified)'}
+${painPoints.length ? `PAIN_POINTS they might have:\n${painPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}` : ''}
+${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 
-STRUCTURE — follow this exactly:
-Line 1: Reference something specific from their post.
-        Not the hashtag. Not their industry. The actual content.
-        Start with what caught your attention.
-Line 2: One honest observation or shared experience related
-        to what they said. From your perspective, not a stat.
-Line 3: One question about their situation.
-        Not "would you be open to a call."
-        A question a curious person would actually ask.
+${postBlock}
 
-LENGTH: 2-4 sentences maximum. Never more.
+===== HOW TO WRITE IT (the whole game) =====
+Length: 35 to 55 words. Never over 60. Two or three short sentences.
+Reading level: 6th grade. Simple words a non-native English speaker gets on the first read.
+Voice: peer to peer. Curious human, not a vendor. Use "I" and "you".
 
-NEVER include in message 1:
-- Any mention of the product name
-- Any statistic or percentage
-- "we built" / "our solution" / "our platform"
-- "I'd love to" / "would you be open to"
-- Hashtag references like "engaging with #X"
-- "as someone in [industry]"
-- Any CTA or calendar link
-- More than one question
+STRUCTURE (follow this shape, do not label the lines):
+1) HOOK — quote or paraphrase ONE concrete detail from ${hasRealPost ? 'the POST_EXCERPT' : 'the POST_SUMMARY'}. Never the hashtag, never the industry, never "your post". Something a real reader would remember.
+2) REACTION — one honest human reaction: quick agreement, a small counter-take, or "we hear this from other {peers}". Uses "I / we". Never "our platform / our solution".
+3) QUESTION — ONE curious, open, low-stakes question they can answer in one sentence. Never a CTA, never "open to a chat", never "worth a quick call".
 
-The message should sound like it was typed by a founder
-who genuinely read their post and found it interesting.
-Not a salesperson. Not a bot.
+===== PSYCHOLOGY (use, never name) =====
+- Specificity beats flattery. The hook must prove you actually read it.
+- Curiosity gap. The question should imply you might know something useful without saying so.
+- Reciprocity. Give a small observation before you ask anything.
+- Status match. Talk to them as a peer, not a prospect.
+- Low commitment. The question costs them 10 seconds to answer.
 
-GOOD example output:
-"your comment about the manual ACH reconciliation every morning
-caught my attention — we heard that exact frustration from
-three funders last week. is that the compliance side of it
-or more the operational overhead?"
+===== HARD BANS (do not use, ever) =====
+Words: leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, empower, resonate, spearhead, bandwidth, robust, seamless, holistic, actionable, cutting-edge, game-changer, pipeline, landscape.
+Phrases: "hope this finds you well", "saw your post", "came across your profile", "noticed you", "I noticed", "I saw", "I came across", "engaging with #", "as someone in the {industry} space", "would love to", "would you be open to", "quick chat", "quick call", "hop on a call", "worth a chat", "book a time", "grab 15 minutes", "just wanted to reach out", "reaching out because", "we help companies like yours".
+Formatting: no emojis, no em-dashes (—), no semicolons, no bullet points, no line breaks, no greeting ("Hi ${lead.firstName}", "Hey there"), no signature, no product name, no statistic or percentage, no hashtag.
 
-BAD example output:
-"noticed you've been engaging with #lending. we built a
-solution that automates merchant payments and handles
-compliance automatically. we're seeing 40% reduction
-in admin work."
+The message must end with a question mark.
 
-Write only the message. No explanation. No subject line.
-No greeting like "Hi [name]". Start directly with the content.${langLine}${customLine}
+===== EXAMPLES =====
+GOOD (post-grounded, human, one question):
+"your line about spending mornings chasing ACH reconciliations really stuck. two other founders told me the same thing last week and it always seems to be the compliance side that kills them. is that where most of your time actually goes, or is it more the manual matching?"
+
+BAD (generic, pitchy, AI-slop):
+"Hi Sarah, I noticed you've been engaging with #lending. We built a platform that leverages AI to streamline merchant payments and we're seeing 40% reduction in admin work. Would you be open to a quick call this week?"
+
+Write ONLY the message body. No greeting. No signature. No labels. Start directly with the hook.${langLine}${customLine}
 ${personalityBlock}`;
 
-    const userPrompt = `Write message 1 now. Return ONLY the message text.`;
+    const userPrompt = `Write the first message now. Remember: 35-55 words, one concrete hook from ${hasRealPost ? 'the post excerpt' : 'the signal'}, one honest reaction, one curious question ending in "?". Return ONLY the message text.`;
     return { systemPrompt, userPrompt };
   }
 
@@ -423,43 +450,73 @@ Deno.serve(async (req) => {
     };
 
     const { systemPrompt, userPrompt } = buildOutreachPrompts(body, lead);
+    const isStep2 = stepNumber === 2;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
+    async function callModel(sys: string, usr: string): Promise<string> {
+      const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: sys },
+            { role: 'user', content: usr },
+          ],
+        }),
+      });
+      if (!r.ok) {
+        const text = await r.text();
+        console.error('AI gateway error:', r.status, text);
+        if (r.status === 429) throw Object.assign(new Error('Rate limit exceeded.'), { status: 429 });
+        if (r.status === 402) throw Object.assign(new Error('AI credits exhausted. Please add credits.'), { status: 402 });
+        throw new Error(`AI gateway error: ${r.status}`);
+      }
+      const j = await r.json();
+      const out = j.choices?.[0]?.message?.content?.trim();
+      if (!out) throw new Error('No message generated');
+      return out;
+    }
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('AI gateway error:', response.status, text);
+    let rawMessage: string;
+    try {
+      rawMessage = await callModel(systemPrompt, userPrompt);
 
-      if (response.status === 429) {
+      // Step 2 quality guard: banned phrases, missing question, over 60 words → one rewrite.
+      if (isStep2) {
+        const initialClean = sanitizeMessage(rawMessage, lead, false);
+        const bans = findBannedHits(initialClean);
+        const wc = wordCount(initialClean);
+        const missingQ = !/\?/.test(initialClean);
+        if (bans.length || wc > 60 || missingQ) {
+          const issues: string[] = [];
+          if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
+          if (wc > 60) issues.push(`Too long (${wc} words). Rewrite in 35 to 55 words.`);
+          if (missingQ) issues.push(`You must end with ONE curious question ending in "?".`);
+          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. Return ONLY the new message.`;
+          console.log('[step2] rewriting due to:', issues.join(' | '));
+          try {
+            rawMessage = await callModel(systemPrompt, rewritePrompt);
+          } catch (e) {
+            console.warn('[step2] rewrite failed, keeping first draft:', e);
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e?.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }), {
           status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
+      if (e?.status === 402) {
         return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add credits.' }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw e;
     }
-
-    const aiData = await response.json();
-    const rawMessage = aiData.choices?.[0]?.message?.content?.trim();
-    if (!rawMessage) throw new Error('No message generated');
 
     const message = sanitizeMessage(rawMessage, lead, false);
 

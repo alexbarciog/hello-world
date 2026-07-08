@@ -195,6 +195,7 @@ export default function CampaignDetail() {
     editedByUser?: boolean;
     contactLinkedinUrl?: string;
     contactSignalUrl?: string;
+    contactSignalPostExcerpt?: string;
   };
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
@@ -224,6 +225,7 @@ export default function CampaignDetail() {
           leadCompany: sm.contactCompany || "",
           leadTitle: sm.contactTitle || "",
           buyingSignal: sm.contactSignal || "",
+          signalPostText: (sm as any).contactSignalPostExcerpt || sm.contactSignal || "",
           leadIndustry: (sm as any).contactIndustry || "",
         },
       });
@@ -549,7 +551,7 @@ export default function CampaignDetail() {
       const contactIds = (queueData as any[]).map((q: any) => q.contact_id);
       const { data: contactsData } = await supabase
         .from("contacts")
-        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, company_icon_color, signal, signal_post_url")
+        .select("id, first_name, last_name, company, title, linkedin_url, relevance_tier, company_icon_color, signal, signal_post_url, signal_post_excerpt")
         .in("id", contactIds);
 
       const contactMap: Record<string, any> = {};
@@ -596,6 +598,7 @@ export default function CampaignDetail() {
           contactCompanyIconColor: contact?.company_icon_color || null,
           contactSignal: contact?.signal || null,
           contactSignalPostUrl: contact?.signal_post_url || null,
+          contactSignalPostExcerpt: contact?.signal_post_excerpt || null,
           actionType: q.action_type,
           stepIndex: q.step_index,
           status: q.status,
@@ -729,6 +732,7 @@ export default function CampaignDetail() {
           leadCompany: item.contactCompany || "",
           leadTitle: item.contactTitle || "",
           buyingSignal: item.contactSignal || "",
+          signalPostText: (item as any).contactSignalPostExcerpt || item.contactSignal || "",
         },
       });
       if (error) throw error;
@@ -799,7 +803,7 @@ export default function CampaignDetail() {
     const contactIds = (connReqs as any[]).map((cr: any) => cr.contact_id);
     const { data: contactsData } = await supabase
       .from("contacts")
-      .select("id, first_name, last_name, title, company, signal, linkedin_url, signal_post_url")
+      .select("id, first_name, last_name, title, company, signal, linkedin_url, signal_post_url, signal_post_excerpt")
       .in("id", contactIds);
     const contactMap: Record<string, any> = {};
     (contactsData || []).forEach((c: any) => { contactMap[c.id] = c; });
@@ -876,6 +880,7 @@ export default function CampaignDetail() {
         contactSignal: contact.signal || "",
         contactLinkedinUrl: contact.linkedin_url || "",
         contactSignalUrl: contact.signal_post_url || "",
+        contactSignalPostExcerpt: contact.signal_post_excerpt || "",
         currentStep,
         nextStepNum: currentStep + 1,
         message: msgPreview,

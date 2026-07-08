@@ -80,6 +80,8 @@ export function SaveLeadDialog({ open, onOpenChange, lead, onSaved }: Props) {
           relevance_tier: tier,
           ai_score: lead.match_score,
           signal: lead.reasons?.[0] ?? null,
+          signal_post_url: lead.signal_post_url ?? null,
+          signal_post_excerpt: lead.signal_post_excerpt ?? null,
         })
         .select("id")
         .single();

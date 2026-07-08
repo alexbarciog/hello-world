@@ -373,7 +373,7 @@ async function companyIcpGate(profile: any, accountId: string, apiKey: string, d
   return { verdict: 'reject', company, reason: ai.reason };
 }
 
-async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null): Promise<'inserted' | 'duplicate' | 'rejected'>{
+async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m: MatchResult,signal: string,spu: string|null,icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null): Promise<'inserted' | 'duplicate' | 'rejected'>{
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'duplicate';
@@ -387,7 +387,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     company: enrichedCompany?.name || p.company || p.current_company?.name || null,
     industry: enrichedCompany?.industry || p.industry || null,
     linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
-    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,
+    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,signal_post_excerpt:(postExcerpt||'').slice(0,500)||null,
     ai_score:as,signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],
     relevance_tier:rt,
@@ -1118,7 +1118,7 @@ Deno.serve(async (req) => {
         const signal = engager.signalType === 'comment'
           ? `Commented on ${companyName}'s post`
           : `Reacted to ${companyName}'s post`;
-        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval, enrichedCompanyForInsert);
+        const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, signal, engager.postUrl, icp, manual_approval, enrichedCompanyForInsert, engager.postText || '');
 
         if (result === 'inserted') {
           const tier = classifyCompetitorContact(match, icp, hl) || 'warm';
