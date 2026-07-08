@@ -20,20 +20,21 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="bg-snow-bg-2 rounded-[20px] p-4"
+      className="rounded-[20px] p-5 bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_10px_30px_-12px_rgba(10,10,10,0.15)] transition-shadow"
     >
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-3">
-        <h2 className="text-sm font-bold text-snow-black-100">Lead Velocity</h2>
-        <div className="w-px h-4 bg-snow-black-10" />
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4">
+        <h2 className="text-[11px] uppercase tracking-[0.14em] font-medium text-neutral-500">Lead Velocity</h2>
+        <div className="w-px h-3 bg-neutral-200" />
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-snow-black-100" />
-          <span className="text-xs text-snow-black-40">Leads Found</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
+          <span className="text-[11px] text-neutral-500">Leads Found</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-snow-black-20" />
-          <span className="text-xs text-snow-black-40">Contacted</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6]" />
+          <span className="text-[11px] text-neutral-500">Contacted</span>
         </div>
       </div>
+
 
       <div style={{ height: 200 }}>
         {!hasData ? (
