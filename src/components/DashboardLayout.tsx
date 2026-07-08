@@ -13,7 +13,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Users,
-  
+
   Radio,
   Mail,
   MessageSquare,
@@ -33,6 +33,12 @@ import {
   Briefcase,
   Flame,
   Rocket,
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  Crown,
+  ArrowRight,
 } from "lucide-react";
 import { useAccountType } from "@/hooks/useAccountType";
 import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
@@ -139,6 +145,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const allNavItems = navItems;
 
+  // Split nav into two groups for the sidebar
+  const SETTINGS_PATHS = new Set<string>(["/integrations", "/settings", "/admin", "/dashboard/client-accounts"]);
+  const menuGroup = allNavItems.filter((i) => !SETTINGS_PATHS.has(i.path));
+  const settingsGroup = allNavItems.filter((i) => SETTINGS_PATHS.has(i.path));
+
+  // Breadcrumb label from active route
+  const activeItem = allNavItems.find((i) => i.path === location.pathname) ?? allNavItems[0];
+  const crumbLabel = activeItem?.label ?? "Dashboard";
+
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
     if (!sub.loading && !sub.hasAccess) {
@@ -203,170 +218,180 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white ${collapsed ? "w-[64px]" : "w-[240px]"}`}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-neutral-200/70 bg-white ${collapsed ? "w-[72px]" : "w-[260px]"}`}
       >
         {/* Logo row */}
-        <div className="flex items-center justify-between px-3 py-4">
+        <div className="flex items-center justify-between px-5 py-5">
           <div className="flex items-center gap-2 min-w-0">
             <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain shrink-0" />
-            {!collapsed && <span className="font-bold text-base tracking-tight text-foreground truncate">Intentsly</span>}
+            {!collapsed && <span className="font-semibold text-[17px] tracking-tight text-neutral-900 truncate">Intentsly</span>}
           </div>
-          {!collapsed && (
-            <button onClick={() => setCollapsed(true)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground shrink-0">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          )}
-          {collapsed && (
-            <button onClick={() => setCollapsed(false)} className="p-1 rounded hover:bg-foreground/10 transition-colors text-foreground/50 hover:text-foreground mx-auto">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-400 hover:text-neutral-700 shrink-0"
+            title={collapsed ? "Expand" : "Collapse"}
+          >
+            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
 
+        {/* Search input */}
+        {!collapsed && (
+          <div className="px-4 pb-3">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                placeholder="Search"
+                className="w-full rounded-xl bg-neutral-50 border border-neutral-200/70 pl-9 pr-8 py-2.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-neutral-300 transition-colors"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-neutral-400 font-medium bg-white border border-neutral-200 rounded-md px-1.5 py-0.5">
+                ⌘K
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Org Switcher */}
-        <div className="px-2 pb-1">
+        <div className="px-3 pb-2">
           <OrgSwitcher collapsed={collapsed} />
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto relative">
-          {allNavItems.map((item) => {
-            const active = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <div key={item.path} className="relative">
-                <button
-                  onClick={() => navigate(item.path)}
-                  title={collapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors group ${
-                    active ? "bg-blue-50 text-[#3B82F6]" : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
-                  }`}
-                >
-                  <span className="w-7 h-7 flex items-center justify-center rounded-md shrink-0">
-                    <Icon className="w-4 h-4" />
-                  </span>
-                  {!collapsed && (
-                    <span className="flex-1 text-left truncate flex items-center gap-1.5">
-                      {item.label}
-                      {(item as any).badge && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider bg-md-secondary/15 text-md-secondary px-1.5 py-0.5 rounded-full leading-none">
-                          {(item as any).badge}
-                        </span>
-                      )}
+        {/* Nav — grouped */}
+        <nav className="flex-1 px-3 py-1 overflow-y-auto relative">
+          {!collapsed && (
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-neutral-400 px-2.5 pt-2 pb-1.5">
+              Menu
+            </p>
+          )}
+          <div className="space-y-0.5">
+            {menuGroup.map((item) => {
+              const active = location.pathname === item.path;
+              const Icon = item.icon;
+              return (
+                <div key={item.path} className="relative">
+                  <button
+                    onClick={() => navigate(item.path)}
+                    title={collapsed ? item.label : undefined}
+                    className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors ${
+                      active
+                        ? "bg-blue-50 text-[#3B82F6]"
+                        : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                    }`}
+                  >
+                    <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                      <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.2 : 1.9} />
                     </span>
-                  )}
-                </button>
-                {/* Free plan tooltip for Signals Agents */}
-                {item.path === "/signals" && !collapsed && showAgentTooltip && (
-                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 animate-in fade-in slide-in-from-left-2 duration-300">
-                    <div className="bg-foreground text-primary-foreground text-[11px] font-medium px-3 py-2 rounded-lg shadow-lg whitespace-nowrap flex items-center gap-1.5">
-                      <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-                      AI agents are currently not running
+                    {!collapsed && (
+                      <span className="flex-1 text-left truncate flex items-center gap-1.5">
+                        {item.label}
+                        {(item as any).badge && (
+                          <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#3B82F6]/10 text-[#3B82F6] px-1.5 py-0.5 rounded-full leading-none">
+                            {(item as any).badge}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </button>
+                  {item.path === "/signals" && !collapsed && showAgentTooltip && (
+                    <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 animate-in fade-in slide-in-from-left-2 duration-300">
+                      <div className="bg-neutral-900 text-white text-[11px] font-medium px-3 py-2 rounded-lg shadow-lg whitespace-nowrap flex items-center gap-1.5">
+                        <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                        AI agents are currently not running
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {settingsGroup.length > 0 && (
+            <>
+              {!collapsed && (
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-neutral-400 px-2.5 pt-6 pb-1.5">
+                  Settings
+                </p>
+              )}
+              {collapsed && <div className="h-px bg-neutral-200/70 my-3 mx-2" />}
+              <div className="space-y-0.5">
+                {settingsGroup.map((item) => {
+                  const active = location.pathname === item.path;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      title={collapsed ? item.label : undefined}
+                      className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors ${
+                        active
+                          ? "bg-blue-50 text-[#3B82F6]"
+                          : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                      }`}
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                        <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.2 : 1.9} />
+                      </span>
+                      {!collapsed && <span className="flex-1 text-left truncate">{item.label}</span>}
+                    </button>
+                  );
+                })}
               </div>
-            );
-          })}
+            </>
+          )}
+
+          {!collapsed && (
+            <>
+              <div className="h-px bg-neutral-200/70 my-3 mx-2" />
+              <div className="space-y-0.5">
+                <button
+                  onClick={() => navigate("/help")}
+                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                >
+                  <HelpCircle className="w-[18px] h-[18px] shrink-0" />
+                  <span className="truncate">Help Center</span>
+                </button>
+                <button
+                  onClick={() => navigate("/support")}
+                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
+                >
+                  <LifeBuoy className="w-[18px] h-[18px] shrink-0" />
+                  <span className="truncate">Support</span>
+                </button>
+              </div>
+            </>
+          )}
         </nav>
 
-        {/* Bottom section */}
-        <div className="px-2 pb-3 space-y-1">
-          {!collapsed && (
-            sub.subscribed ? (
-              <div className="rounded-xl p-3 mb-2 border border-green-200 bg-green-50/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <p className="text-xs font-bold text-foreground">Intentsly Plus</p>
-                </div>
-                <div className="mb-2">
-                  <div className="flex items-center justify-between text-[10px] text-foreground/60 mb-1">
-                    <span>{sub.credits} credits left</span>
-                    <span>100</span>
-                  </div>
-                  <Progress value={sub.credits} className="h-1.5" />
-                </div>
-                {sub.subscriptionEnd && (
-                  <p className="text-[10px] text-foreground/50">
-                    Renews {new Date(sub.subscriptionEnd).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div
-                className="rounded-xl p-3 mb-2 overflow-hidden relative"
-                style={{ backgroundImage: `url(${premiumBg})`, backgroundSize: "cover", backgroundPosition: "center" }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Go Premium</p>
-                    <p className="text-[10px] text-foreground/60">Unlock all features</p>
-                  </div>
-                  <button onClick={() => navigate("/billing")} className="bg-foreground/10 hover:bg-foreground/15 rounded-full p-1 transition-colors">
-                    <ChevronRight className="w-3 h-3 text-foreground" />
-                  </button>
-                </div>
-                <button onClick={() => navigate("/billing")} className="w-full text-[11px] font-bold text-primary-foreground bg-foreground hover:bg-foreground/90 rounded-md py-1.5 transition-colors">
-                  Upgrade Now ✦
-                </button>
-              </div>
-            )
-          )}
-
-          <button onClick={() => navigate("/help")} className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
-            <HelpCircle className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="truncate">Help Center</span>}
-          </button>
-
-          <button onClick={() => navigate("/support")} className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium text-foreground/50 hover:bg-foreground/5 hover:text-foreground/80 transition-colors">
-            <LifeBuoy className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="truncate">Support</span>}
-          </button>
-
-          {!collapsed && (
-            <p className="text-xs text-foreground/50 px-2.5 py-1 font-medium">{sub.credits} Credits left &nbsp;·&nbsp; ∞ Leads / Mo</p>
-          )}
-
-          <div className="relative" ref={userMenuRef}>
-            <button onClick={() => setUserMenuOpen((o) => !o)} className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-foreground/5 transition-colors">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}>
-                {userDisplay.initials || "?"}
-              </div>
-              {!collapsed && (
-                <>
-                  <div className="min-w-0 text-left flex-1">
-                    <p className="text-xs font-semibold text-foreground/80 truncate">{userDisplay.name || userDisplay.email}</p>
-                    <p className="text-[10px] text-foreground/40 truncate">{userDisplay.email}</p>
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-foreground/40 shrink-0" />
-                </>
-              )}
+        {/* Bottom "Current Plan" card */}
+        <div className="p-3">
+          {collapsed ? (
+            <button
+              onClick={() => navigate("/billing")}
+              className="w-full flex items-center justify-center rounded-xl bg-neutral-50 border border-neutral-200/70 p-2.5 hover:bg-neutral-100 transition-colors"
+              title="Billing"
+            >
+              <Crown className="w-4 h-4 text-[#3B82F6]" />
             </button>
-
-            {userMenuOpen && (
-              <div className="absolute bottom-full left-0 mb-2 w-64 rounded-xl bg-white shadow-xl border border-gray-100 overflow-hidden z-50">
-                <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: "hsl(var(--goji-coral))" }}>
-                    {userDisplay.initials || "?"}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{userDisplay.name || userDisplay.email}</p>
-                    <p className="text-xs text-gray-500 truncate">{userDisplay.email}</p>
-                  </div>
-                </div>
-                <div className="py-1.5">
-                  <button onClick={() => { setUserMenuOpen(false); navigate("/billing"); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <CreditCard className="w-4 h-4 text-yellow-500" />
-                    Billing &amp; Plans
-                  </button>
-                  <button onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-red-50" style={{ color: "hsl(var(--goji-coral))" }}>
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                  </button>
-                </div>
+          ) : (
+            <div className="rounded-2xl bg-gradient-to-b from-neutral-50 to-white border border-neutral-200/70 p-4 flex flex-col items-center text-center shadow-[0_1px_2px_rgba(10,10,10,0.03)]">
+              <div className="w-9 h-9 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm mb-2">
+                <Crown className="w-4 h-4 text-[#3B82F6]" />
               </div>
-            )}
-          </div>
+              <p className="text-[13.5px] font-semibold text-neutral-900">
+                Current Plan: <span className="text-[#3B82F6]">{sub.subscribed ? "Plus" : "Basic"}</span>
+              </p>
+              <p className="text-[11.5px] text-neutral-500 mt-0.5">
+                {sub.credits ?? 0} Credits Remaining
+              </p>
+              <button
+                onClick={() => navigate("/billing")}
+                className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-white border border-neutral-200 px-3.5 py-2 text-[12.5px] font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors shadow-sm"
+              >
+                {sub.subscribed ? "Manage Plan" : "Upgrade Pro Account"}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -434,25 +459,100 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AgencyImpersonationBanner />
-        {/* Top navbar */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-3 shrink-0" style={{ background: "hsl(195 14% 95%)" }}>
-          {/* Hamburger — mobile only */}
-          <button
-            className="md:hidden p-1.5 rounded-md hover:bg-foreground/10 transition-colors text-foreground/60"
-            onClick={() => setMobileMenuOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          {/* Logo centred on mobile */}
-          <div className="md:hidden flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
-            <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
-            <span className="font-bold text-sm text-foreground">Intentsly</span>
+        {/* Top navbar: breadcrumb + right utilities */}
+        <header className="flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white border-b border-neutral-200/70">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              className="md:hidden p-1.5 rounded-md hover:bg-neutral-100 transition-colors text-neutral-500 mr-1"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => window.history.forward()}
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="hidden md:flex items-center gap-2 ml-3 text-[13.5px] min-w-0">
+              <span className="text-neutral-400">Intentsly</span>
+              <span className="text-neutral-300">›</span>
+              <span className="text-neutral-900 font-medium truncate">{crumbLabel}</span>
+            </div>
+            <div className="md:hidden flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
+              <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
+              <span className="font-bold text-sm text-neutral-900">Intentsly</span>
+            </div>
           </div>
-          <div className="hidden md:block" />
-          <NotificationsPanel />
+
+          <div className="flex items-center gap-2">
+            <button
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+              title="Dark mode"
+            >
+              <Moon className="w-4 h-4" />
+            </button>
+            <button
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 transition-colors"
+              title="Light mode"
+            >
+              <Sun className="w-4 h-4" />
+            </button>
+            <div className="relative">
+              <NotificationsPanel />
+            </div>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen((o) => !o)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-2 ring-white shadow-sm hover:opacity-90 transition-opacity"
+                style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
+              >
+                {userDisplay.initials || "?"}
+              </button>
+              {userMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 rounded-xl bg-white shadow-xl border border-neutral-200 overflow-hidden z-50">
+                  <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-100">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                      style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
+                    >
+                      {userDisplay.initials || "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-neutral-900 truncate">{userDisplay.name || userDisplay.email}</p>
+                      <p className="text-xs text-neutral-500 truncate">{userDisplay.email}</p>
+                    </div>
+                  </div>
+                  <div className="py-1.5">
+                    <button
+                      onClick={() => { setUserMenuOpen(false); navigate("/billing"); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#3B82F6]" />
+                      Billing &amp; Plans
+                    </button>
+                    <button
+                      onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0" style={{ background: "hsl(195 14% 95%)" }}>
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-white">
+
           {!sub.loading && !sub.hasAccess && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
               <div className="flex items-start gap-2.5">

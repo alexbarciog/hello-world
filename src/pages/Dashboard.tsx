@@ -8,7 +8,7 @@ import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
-import { ChevronDown, Flame, Users, MessageCircle, Radio, ChevronLeft, ChevronRight, Bell, Sun, Moon, Plus } from "lucide-react";
+import { ChevronDown, Flame, Users, MessageCircle, Radio, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
 
@@ -356,43 +356,8 @@ export default function Dashboard() {
         }}
       />
 
-      <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-4 pb-10">
-        {/* ── Top bar: breadcrumb + right utilities ── */}
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center gap-2 text-[13px]">
-            <button className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <span className="ml-3 text-neutral-400">Intentsly</span>
-            <span className="text-neutral-300">›</span>
-            <span className="text-neutral-900 font-medium">Dashboard</span>
-          </div>
+      <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-6 pb-10">
 
-          <div className="flex items-center gap-2">
-            <button className="w-9 h-9 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
-              <Moon className="w-4 h-4" />
-            </button>
-            <button className="w-9 h-9 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 transition-colors">
-              <Sun className="w-4 h-4" />
-            </button>
-            <button className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
-              <Bell className="w-4 h-4" />
-              <motion.span
-                animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
-                transition={{ duration: 1.8, repeat: Infinity }}
-                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#3B82F6] ring-2 ring-white"
-              />
-            </button>
-          </div>
-        </motion.div>
 
         <motion.div
           variants={fadeStagger}
