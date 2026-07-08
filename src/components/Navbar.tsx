@@ -7,6 +7,7 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 const navLinks = [
   { label: "How it Works", href: "#how-it-works" },
   { label: "Use Cases", href: "#use-cases" },
+  { label: "Case Studies", href: "/case-studies" },
   { label: "Compare", href: "#comparison" },
   { label: "Pricing", href: "#pricing" },
   { label: "Partners", href: "/partners" },
@@ -49,12 +50,12 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               <span className="text-lg font-bold tracking-tight text-[#0a0a0a]">Intentsly<span className="text-[#0a0a0a]">.</span></span>
             </a>
 
-            <div className="flex items-center gap-9">
+            <div className="flex items-center gap-7">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-[15px] font-medium text-neutral-700 hover:text-[#0a0a0a] transition-colors"
+                  className="text-[15px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
                 >
                   {link.label}
                 </a>
