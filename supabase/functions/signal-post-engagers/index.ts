@@ -455,7 +455,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
     company:enrichedCompany?.name||p.company||p.current_company?.name||null,
     industry:enrichedCompany?.industry||p.industry||p.current_company?.industry||null,
     linkedin_url:p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
-    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,ai_score:as,
+    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu,signal_post_excerpt:(postExcerpt||'').slice(0,500)||null,ai_score:as,
     signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],relevance_tier:rt,
     approval_status: manualApproval ? 'pending' : 'auto_approved',
