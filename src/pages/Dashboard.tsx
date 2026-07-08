@@ -3,14 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
-import { HotLeadsList } from "@/components/dashboard/HotLeadsList";
-import { LatestReplies } from "@/components/dashboard/LatestReplies";
+import { RecentLeadsTable } from "@/components/dashboard/RecentLeadsTable";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
-import DailyActivityChart from "@/components/dashboard/DailyActivityChart";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
-import { ChevronDown, Flame, Users, MessageCircle, Radio } from "lucide-react";
+import { ChevronDown, Flame, Users, MessageCircle, Radio, ChevronLeft, ChevronRight, Bell, Sun, Moon, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
 
