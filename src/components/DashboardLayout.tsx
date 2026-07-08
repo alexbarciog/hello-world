@@ -17,7 +17,6 @@ import {
 
   Radio,
   Mail,
-  MessageSquare,
   Plug,
   Settings,
   HelpCircle,
