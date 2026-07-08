@@ -6,6 +6,18 @@ import { CountUp } from "@/lib/motion";
 
 const FinalCTA = () => {
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const [website, setWebsite] = useState("");
+
+  const handleFindBuyers = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = website.trim();
+    if (url) {
+      navigate(`/register?website=${encodeURIComponent(url)}`);
+    } else {
+      navigate("/register");
+    }
+  };
 
   return (
     <section className="px-2 md:px-4 pt-4 md:pt-8">
