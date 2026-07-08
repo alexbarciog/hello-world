@@ -45,31 +45,11 @@ const OrbitVisual = () => {
 
   return (
     <div className="relative w-full aspect-square max-w-[520px] mx-auto">
-      {/* Lottie animation background */}
+      {/* Lottie animation */}
       <div className="absolute inset-0 rounded-full overflow-hidden bg-[#F4F5F7]">
         {View}
       </div>
-
-      {/* Inner white circle */}
-    <div className="absolute inset-[18%] rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" />
-
-    {/* Innermost accent ring */}
-    <div className="absolute inset-[38%] rounded-full border border-[#1A8FE3]/10" />
-
-    {/* Floating pills */}
-    <div className="absolute top-[22%] right-[8%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      LinkedIn <span className="text-base leading-none">💼</span>
     </div>
-    <div className="absolute top-[42%] left-[6%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      Reddit <span className="text-base leading-none">👽</span>
-    </div>
-    <div className="absolute top-[58%] right-[2%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      Global Signals <span className="w-2 h-2 rounded-full bg-[#1A8FE3]" />
-    </div>
-    <div className="absolute bottom-[14%] left-[28%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      X / Twitter <span className="text-base leading-none">🐦</span>
-    </div>
-  </div>
   );
 };
 
