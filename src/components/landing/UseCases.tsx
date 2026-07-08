@@ -116,7 +116,7 @@ const UseCases = () => {
                     </div>
 
                     {/* Text */}
-                    <div className="relative mt-16">
+                    <div className="relative mt-8">
                       <h3
                         className="text-lg font-semibold tracking-tight mb-2"
                         style={{ color: "hsl(var(--aeline-dark))" }}
