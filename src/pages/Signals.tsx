@@ -846,57 +846,61 @@ export default function Signals() {
       </div>
 
       {/* Desktop: table */}
-      <div className="hidden md:block border border-gray-200 rounded-xl overflow-hidden mb-4">
+      <div className="hidden md:block rounded-2xl bg-white ring-1 ring-neutral-100 shadow-[0_1px_2px_rgba(10,10,10,0.03)] overflow-hidden mb-4">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Agent Name</th>
-              <th className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Type</th>
-              <th className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-4 py-3">Results</th>
-              <th className="text-right text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-5 py-3">Actions</th>
+            <tr className="bg-neutral-50/60 border-b border-neutral-100">
+              <th className="text-left text-[10.5px] font-medium text-neutral-500 uppercase tracking-[0.14em] px-5 py-3">Agent</th>
+              <th className="text-center text-[10.5px] font-medium text-neutral-500 uppercase tracking-[0.14em] px-4 py-3">Type</th>
+              <th className="text-center text-[10.5px] font-medium text-neutral-500 uppercase tracking-[0.14em] px-4 py-3">Results</th>
+              <th className="text-right text-[10.5px] font-medium text-neutral-500 uppercase tracking-[0.14em] px-5 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="text-center py-10 text-sm text-gray-400">Loading agents...</td></tr>
+              <tr><td colSpan={4} className="text-center py-10 text-sm text-neutral-400">Loading agents…</td></tr>
             ) : agents.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-10 text-sm text-gray-400">No agents yet. Create your first one below.</td></tr>
+              <tr><td colSpan={4} className="text-center py-10 text-sm text-neutral-400">No agents yet. Create your first one below.</td></tr>
             ) : (
               agents.map((agent) => (
-                <tr key={agent.id} className={`border-b border-gray-50 ${agent.status === "active" ? "bg-green-50/40" : ""}`}>
-                  <td className="px-5 py-3.5">
+                <tr key={agent.id} className="group border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50/60 transition-colors">
+                  <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Radio className="w-3.5 h-3.5 text-gray-400" />
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ring-1 ${agent.status === "active" ? "bg-emerald-50 ring-emerald-100" : "bg-neutral-50 ring-neutral-100"}`}>
+                        <Radio className={`w-4 h-4 ${agent.status === "active" ? "text-emerald-600" : "text-neutral-400"}`} />
                       </div>
-                      <span className="font-medium text-sm text-gray-900">{agent.name}</span>
-                      <span className={`text-[11px] font-semibold rounded px-1.5 py-0.5 ${agent.status === "active" ? "text-green-600 bg-green-50 border border-green-200" : "text-gray-500 bg-gray-100 border border-gray-200"}`}>
-                        {agent.status === "active" ? "Active" : "Paused"}
-                      </span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[13.5px] font-medium text-neutral-900 truncate">{agent.name}</span>
+                        <span className={`inline-flex items-center gap-1 text-[10.5px] font-medium rounded-full px-2 py-0.5 border ${agent.status === "active" ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-neutral-500 bg-neutral-100 border-neutral-200"}`}>
+                          {agent.status === "active" && <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />}
+                          {agent.status === "active" ? "Active" : "Paused"}
+                        </span>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-full px-2.5 py-1">
-                      <Radio className="w-3 h-3" />
+                  <td className="px-4 py-4 text-center">
+                    <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full px-2.5 py-1">
+                      <Radio className="w-3 h-3 text-neutral-500" />
                       {AGENT_TYPE_LABELS[agent.agent_type] || "Signals"}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-center">
-                    <span className="text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-full px-2.5 py-1">
-                      {agent.results_count} results
+                  <td className="px-4 py-4 text-center">
+                    <span className="inline-flex items-baseline gap-1 text-[12px] font-medium text-neutral-900">
+                      <span className="tabular-nums">{agent.results_count}</span>
+                      <span className="text-neutral-500 font-normal">results</span>
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
                       {runningAgentIds.includes(agent.id) && (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 animate-pulse">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 animate-pulse">
                           <Zap className="w-3 h-3" />Running
                         </span>
                       )}
                       <NextLaunchesPopover />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                          <button className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors">
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </DropdownMenuTrigger>
@@ -923,16 +927,17 @@ export default function Signals() {
             )}
           </tbody>
         </table>
-        <div className="bg-blue-50/50 border-t border-dashed border-blue-200">
+        <div className="border-t border-dashed border-neutral-200 bg-neutral-50/40">
           <button
             onClick={() => { setEditAgentId(null); setShowCreate(true); }}
             disabled={agents.length >= maxAgents}
-            className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3.5 text-[13px] font-medium text-[#3B82F6] hover:bg-blue-50/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="w-4 h-4" />Create Agent<ChevronDown className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />Create agent
           </button>
         </div>
       </div>
+
 
       {/* Desktop: Agent suggestion panels (one per agent) */}
       <div className="hidden md:block space-y-3 mb-4">
