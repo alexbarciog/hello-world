@@ -90,37 +90,45 @@ const UseCases = () => {
         {/* Two-column bento: 4 cards left, orbit right */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 lg:gap-8 items-stretch">
           {/* Left: 2x2 grid of benefit cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {benefits.map((b, i) => {
-              const Icon = b.icon;
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative bg-white rounded-[24px] p-6 min-h-[260px] flex flex-col overflow-hidden"
-                >
+          <div className="relative rounded-[32px] p-6 overflow-hidden">
+            {/* Gradient background */}
+            <img
+              src={gradientBg.url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover -z-10"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 relative z-10">
+              {benefits.map((b, i) => {
+                const Icon = b.icon;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                    className="relative bg-white rounded-[24px] p-6 min-h-[260px] flex flex-col overflow-hidden"
+                  >
 
-                  {/* Icon */}
-                  <div className="relative w-11 h-11 rounded-xl bg-[hsl(var(--aeline-dark))] flex items-center justify-center mb-auto">
-                    <Icon className="w-5 h-5 text-white" strokeWidth={2} />
-                  </div>
+                    {/* Icon */}
+                    <div className="relative w-11 h-11 rounded-xl bg-[hsl(var(--aeline-dark))] flex items-center justify-center mb-auto">
+                      <Icon className="w-5 h-5 text-white" strokeWidth={2} />
+                    </div>
 
-                  {/* Text */}
-                  <div className="relative mt-16">
-                    <h3
-                      className="text-lg font-semibold tracking-tight mb-2"
-                      style={{ color: "hsl(var(--aeline-dark))" }}
-                    >
-                      {b.title}
-                    </h3>
-                    <p className="text-[13.5px] text-muted-foreground leading-relaxed">{b.desc}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
+                    {/* Text */}
+                    <div className="relative mt-16">
+                      <h3
+                        className="text-lg font-semibold tracking-tight mb-2"
+                        style={{ color: "hsl(var(--aeline-dark))" }}
+                      >
+                        {b.title}
+                      </h3>
+                      <p className="text-[13.5px] text-muted-foreground leading-relaxed">{b.desc}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Right: orbit visual */}
