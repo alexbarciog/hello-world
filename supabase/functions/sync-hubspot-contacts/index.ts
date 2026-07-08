@@ -8,10 +8,98 @@ const corsHeaders = {
 const INTERESTED_TIERS = ["hot", "warm"];
 const INTERESTED_STATUSES = ["replied", "positive_reply", "meeting_booked", "interested"];
 
-// HubSpot batch create limit is 100
 const BATCH_SIZE = 100;
-// Cap total contacts synced per invocation to fit inside edge function CPU budget
 const MAX_CONTACTS = 500;
+
+// Custom Intentsly properties we create in the user's HubSpot portal so we have
+// real, dedicated fields for LinkedIn URL, signal, and post text (instead of
+// abusing "website", which triggers HubSpot's domain->company autofill and
+// makes every contact appear to work at LinkedIn).
+const CUSTOM_PROPS = [
+  {
+    name: "intentsly_linkedin_url",
+    label: "LinkedIn URL (Intentsly)",
+    type: "string",
+    fieldType: "text",
+    description: "LinkedIn profile URL captured by Intentsly.",
+  },
+  {
+    name: "intentsly_signal",
+    label: "Buying Signal (Intentsly)",
+    type: "string",
+    fieldType: "text",
+    description: "Why Intentsly surfaced this lead.",
+  },
+  {
+    name: "intentsly_signal_post",
+    label: "Signal Post (Intentsly)",
+    type: "string",
+    fieldType: "textarea",
+    description: "Excerpt of the post that triggered the signal.",
+  },
+  {
+    name: "intentsly_signal_post_url",
+    label: "Signal Post URL (Intentsly)",
+    type: "string",
+    fieldType: "text",
+    description: "Link to the post that triggered the signal.",
+  },
+  {
+    name: "intentsly_tier",
+    label: "Relevance Tier (Intentsly)",
+    type: "string",
+    fieldType: "text",
+    description: "Hot / warm / cold relevance from Intentsly.",
+  },
+];
+
+async function ensureCustomProperties(apiKey: string) {
+  // Group under a single custom group so it looks tidy in HubSpot's UI.
+  const groupName = "intentsly";
+  try {
+    await fetch("https://api.hubapi.com/crm/v3/properties/contacts/groups", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: groupName,
+        label: "Intentsly",
+        displayOrder: -1,
+      }),
+    }).then((r) => r.text()); // ignore result — 409 if already exists
+  } catch (_) { /* ignore */ }
+
+  for (const p of CUSTOM_PROPS) {
+    try {
+      const res = await fetch("https://api.hubapi.com/crm/v3/properties/contacts", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: p.name,
+          label: p.label,
+          type: p.type,
+          fieldType: p.fieldType,
+          groupName,
+          description: p.description,
+        }),
+      });
+      // 409 = already exists, that's fine
+      if (!res.ok && res.status !== 409) {
+        const body = await res.text();
+        console.error(`ensureCustomProperties ${p.name} failed`, res.status, body.slice(0, 200));
+      } else {
+        await res.text();
+      }
+    } catch (e) {
+      console.error(`ensureCustomProperties ${p.name} threw`, e);
+    }
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -45,9 +133,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Make sure Intentsly custom properties exist in the portal
+    await ensureCustomProperties(integ.api_key);
+
     let query = supabase
       .from("contacts")
-      .select("id, first_name, last_name, title, company, linkedin_url, industry, relevance_tier, lead_status, signal")
+      .select("id, first_name, last_name, title, company, linkedin_url, industry, relevance_tier, lead_status, signal, signal_post_excerpt, signal_post_url")
       .eq("user_id", user.id)
       .order("imported_at", { ascending: false })
       .limit(MAX_CONTACTS);
@@ -61,21 +152,22 @@ Deno.serve(async (req) => {
     const { data: contacts, error: cErr } = await query;
     if (cErr) throw cErr;
 
-    // Build HubSpot inputs — only use standard properties HubSpot always accepts.
-    // Custom props like `intentsly_signal` require a schema definition and cause
-    // 400s if they don't exist, so we skip them and put context into `hs_content_membership_notes`... no — safer to just omit.
     const inputs = (contacts || [])
-      .map((c) => {
+      .map((c: any) => {
         const properties: Record<string, string> = {};
         if (c.first_name) properties.firstname = String(c.first_name);
         if (c.last_name) properties.lastname = String(c.last_name);
         if (c.title) properties.jobtitle = String(c.title);
         if (c.company) properties.company = String(c.company);
         if (c.industry) properties.industry = String(c.industry);
-        if (c.linkedin_url) properties.website = String(c.linkedin_url);
+        // Intentsly custom props
+        if (c.linkedin_url) properties.intentsly_linkedin_url = String(c.linkedin_url);
+        if (c.signal) properties.intentsly_signal = String(c.signal).slice(0, 65000);
+        if (c.signal_post_excerpt) properties.intentsly_signal_post = String(c.signal_post_excerpt).slice(0, 65000);
+        if (c.signal_post_url) properties.intentsly_signal_post_url = String(c.signal_post_url);
+        if (c.relevance_tier) properties.intentsly_tier = String(c.relevance_tier);
         return { properties };
       })
-      // HubSpot rejects rows with zero properties
       .filter((row) => Object.keys(row.properties).length > 0);
 
     let synced = 0;
@@ -97,7 +189,6 @@ Deno.serve(async (req) => {
         const bodyText = await res.text();
 
         if (res.ok) {
-          // 200/201 — everything created
           try {
             const parsed = JSON.parse(bodyText);
             synced += Array.isArray(parsed?.results) ? parsed.results.length : batch.length;
@@ -105,8 +196,6 @@ Deno.serve(async (req) => {
             synced += batch.length;
           }
         } else if (res.status === 207 || res.status === 409) {
-          // Multi-status / conflicts: some created, some already existed.
-          // HubSpot returns { results: [...], numErrors, errors: [...] }
           try {
             const parsed = JSON.parse(bodyText);
             const created = Array.isArray(parsed?.results) ? parsed.results.length : 0;
@@ -114,7 +203,7 @@ Deno.serve(async (req) => {
               ? parsed.errors.filter((e: any) => e?.category === "CONFLICT").length
               : 0;
             synced += created + dupes;
-            const other = (batch.length - created - dupes);
+            const other = batch.length - created - dupes;
             if (other > 0) {
               failed += other;
               if (errors.length < 3 && parsed?.errors?.[0]) {
@@ -122,7 +211,7 @@ Deno.serve(async (req) => {
               }
             }
           } catch {
-            synced += batch.length; // best-effort
+            synced += batch.length;
           }
         } else {
           failed += batch.length;
