@@ -32,7 +32,7 @@ const FinalCTA = () => {
           aria-hidden
         />
 
-        <div className="relative max-w-4xl mx-auto z-10 pl-2 md:pl-8">
+        <div className="relative max-w-4xl mx-auto z-10 text-center">
           {/* Live counter chip */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -50,13 +50,13 @@ const FinalCTA = () => {
             </span>
           </motion.div>
 
-          <h2 className="text-[28px] md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl">
+          <h2 className="text-[28px] md:text-5xl lg:text-6xl font-medium tracking-tight leading-[1.08] mb-6 text-white max-w-2xl mx-auto">
             Your next 10 customers are already out there
           </h2>
-          <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80">
+          <p className="text-base md:text-lg mb-10 max-w-xl leading-relaxed text-white/80 mx-auto">
             Let your agent find them
           </p>
-          <form onSubmit={handleFindBuyers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md">
+          <form onSubmit={handleFindBuyers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full max-w-md mx-auto">
             <input
               type="url"
               placeholder="yourcompany.com"
