@@ -7,19 +7,40 @@ import {
   ComposedChart,
 } from "recharts";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { CountUp } from "@/lib/motion";
+import { useState, useMemo } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PerformanceChartProps {
   chartData: Array<{ date: string; leadsFound: number; contacted: number }>;
 }
 
+const RANGE_OPTIONS = [
+  { label: "Last 7 days", days: 7 },
+  { label: "Last 30 days", days: 30 },
+  { label: "Last 90 days", days: 90 },
+  { label: "All time", days: 0 },
+] as const;
+
 export function PerformanceChart({ chartData }: PerformanceChartProps) {
-  const hasData = chartData.some((d) => d.leadsFound > 0 || d.contacted > 0);
-  const total = chartData.reduce((s, d) => s + d.leadsFound, 0);
-  const half = Math.floor(chartData.length / 2);
-  const firstHalf = chartData.slice(0, half).reduce((s, d) => s + d.leadsFound, 0);
-  const secondHalf = chartData.slice(half).reduce((s, d) => s + d.leadsFound, 0);
+  const [range, setRange] = useState<(typeof RANGE_OPTIONS)[number]>(RANGE_OPTIONS[1]);
+
+  const visibleData = useMemo(() => {
+    if (!range.days || chartData.length <= range.days) return chartData;
+    return chartData.slice(-range.days);
+  }, [chartData, range]);
+
+  const hasData = visibleData.some((d) => d.leadsFound > 0 || d.contacted > 0);
+  const total = visibleData.reduce((s, d) => s + d.leadsFound, 0);
+  const half = Math.floor(visibleData.length / 2);
+  const firstHalf = visibleData.slice(0, half).reduce((s, d) => s + d.leadsFound, 0);
+  const secondHalf = visibleData.slice(half).reduce((s, d) => s + d.leadsFound, 0);
   const delta = firstHalf > 0 ? Math.round(((secondHalf - firstHalf) / firstHalf) * 100) : 0;
   const deltaPositive = delta >= 0;
 
@@ -42,10 +63,26 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
             </span>
           </div>
         </div>
-        <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3.5 py-2 hover:bg-white/60 transition-colors">
-          Last 30 days
-          <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3.5 py-2 hover:bg-white/60 transition-colors">
+              {range.label}
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[160px]">
+            {RANGE_OPTIONS.map((opt) => (
+              <DropdownMenuItem
+                key={opt.label}
+                onSelect={() => setRange(opt)}
+                className="text-[12px] flex items-center justify-between"
+              >
+                {opt.label}
+                {opt.label === range.label && <Check className="w-3.5 h-3.5 text-neutral-500" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex items-center gap-4 mb-3">
@@ -66,7 +103,7 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <ComposedChart data={visibleData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="leadsFillBlue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.22} />
