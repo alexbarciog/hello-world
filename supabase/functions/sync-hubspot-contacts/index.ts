@@ -22,35 +22,35 @@ const CUSTOM_PROPS = [
   },
   {
     name: "intentsly_linkedin_url",
-    label: "LinkedIn URL",
+    label: "Intentsly LinkedIn URL",
     type: "string",
     fieldType: "text",
     description: "LinkedIn profile URL captured by Intentsly.",
   },
   {
     name: "intentsly_signal",
-    label: "Signal",
+    label: "Intentsly Signal",
     type: "string",
     fieldType: "textarea",
     description: "Why Intentsly surfaced this lead.",
   },
   {
     name: "intentsly_signal_post",
-    label: "Signal Post",
+    label: "Intentsly Signal Post",
     type: "string",
     fieldType: "textarea",
     description: "Post excerpt or signal context that triggered the lead.",
   },
   {
     name: "intentsly_signal_post_url",
-    label: "Signal Post URL",
+    label: "Intentsly Signal Post URL",
     type: "string",
     fieldType: "text",
     description: "Link to the post that triggered the signal.",
   },
   {
     name: "intentsly_tier",
-    label: "Relevance Tier",
+    label: "Intentsly Relevance Tier",
     type: "string",
     fieldType: "text",
     description: "Hot / warm / cold relevance from Intentsly.",
@@ -162,7 +162,8 @@ async function ensureCustomProperties(apiKey: string): Promise<HubSpotPropertyTa
     });
 
     const text = await res.text();
-    if (!res.ok && res.status !== 409) {
+    const isDuplicateLabel = res.status === 400 && /NON_UNIQUE_PROPERTY_LABEL|same label/i.test(text);
+    if (!res.ok && res.status !== 409 && !isDuplicateLabel) {
       console.error(`ensureCustomProperties ${p.name} failed`, res.status, text.slice(0, 500));
       if (res.status === 401 || res.status === 403) {
         throw new Error(
