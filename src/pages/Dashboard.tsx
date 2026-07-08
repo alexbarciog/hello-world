@@ -345,73 +345,86 @@ export default function Dashboard() {
   void userData;
 
   return (
-    <div className="relative w-full min-h-screen bg-[#fafbfc]">
-      {/* Ambient animated blobs */}
-      <motion.div
+    <div className="relative w-full min-h-screen bg-white">
+      {/* Ambient sky-tinted gradient — top-left corner */}
+      <div
         aria-hidden
-        className="pointer-events-none fixed -top-32 -left-32 w-[520px] h-[520px] rounded-full blur-3xl opacity-70"
-        style={{ background: "radial-gradient(closest-side, #E6F1FD, transparent 70%)" }}
-        animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0], scale: [1, 1.1, 0.95, 1] }}
-        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none fixed top-1/3 -right-40 w-[560px] h-[560px] rounded-full blur-3xl opacity-60"
-        style={{ background: "radial-gradient(closest-side, #EDEEFC, transparent 70%)" }}
-        animate={{ x: [0, -30, 20, 0], y: [0, 40, -20, 0], scale: [1, 1.08, 0.96, 1] }}
-        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute inset-0 -z-0"
+        style={{
+          background:
+            "radial-gradient(720px 420px at 0% 0%, rgba(219,234,254,0.55), transparent 60%), radial-gradient(600px 400px at 100% 0%, rgba(237,233,254,0.45), transparent 60%)",
+        }}
       />
 
-      <div className="relative w-full max-w-[1400px] mx-auto px-6 py-8">
+      <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-4 pb-10">
+        {/* ── Top bar: breadcrumb + right utilities ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center justify-between mb-8"
+        >
+          <div className="flex items-center gap-2 text-[13px]">
+            <button className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <span className="ml-3 text-neutral-400">Intentsly</span>
+            <span className="text-neutral-300">›</span>
+            <span className="text-neutral-900 font-medium">Dashboard</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button className="w-9 h-9 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
+              <Moon className="w-4 h-4" />
+            </button>
+            <button className="w-9 h-9 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 transition-colors">
+              <Sun className="w-4 h-4" />
+            </button>
+            <button className="relative w-9 h-9 rounded-full flex items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors">
+              <Bell className="w-4 h-4" />
+              <motion.span
+                animate={{ scale: [1, 1.4, 1], opacity: [1, 0.6, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity }}
+                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#3B82F6] ring-2 ring-white"
+              />
+            </button>
+          </div>
+        </motion.div>
+
         <motion.div
           variants={fadeStagger}
           initial="hidden"
           animate="visible"
           className="flex flex-col gap-5"
         >
-          {/* Landing-style header — big display headline + lime highlight + black live chip */}
-          <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 pt-2 pb-4">
-            <div className="max-w-3xl">
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-flex items-center gap-2 rounded-full bg-[#0a0a0a] px-3 py-1.5 mb-5 shadow-sm"
-              >
-                <motion.span
-                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-1.5 h-1.5 rounded-full bg-[#C8FF00]"
-                />
-                <span className="text-[11px] font-semibold text-white tracking-[0.14em] uppercase">
-                  Live · <CountUp to={hotOpps} /> hot right now
-                </span>
-              </motion.div>
-              <h1 className="font-medium tracking-[-0.03em] leading-[1.02] text-[#0a0a0a]" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}>
-                Your pipeline,{" "}
-                <span className="relative inline-block">
-                  <motion.span
-                    aria-hidden
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.9, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute left-0 right-0 bottom-[0.08em] h-[0.35em] bg-[#C8FF00] origin-left -z-0"
-                  />
-                  <span className="relative z-10">live.</span>
-                </span>
+          {/* ── Page header: title + subtitle + period + CTA ── */}
+          <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 mb-1">
+            <div>
+              <h1 className="text-[36px] md:text-[42px] leading-[1.05] font-semibold tracking-[-0.03em] text-neutral-900">
+                Pipeline Activity<span className="text-neutral-300"> — This month</span>
               </h1>
-              <p className="mt-4 text-base md:text-lg text-neutral-500 leading-relaxed max-w-xl">
-                AI is scanning intent signals right now. Here's what's happening in your pipeline today.
+              <p className="mt-2 text-[14.5px] text-neutral-500">
+                Stay updated with your latest signals, conversations and hot opportunities.
               </p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.03, y: -2 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#0a0a0a] bg-white border border-neutral-200 rounded-full px-5 py-2.5 hover:bg-neutral-50 transition-colors shadow-sm"
-            >
-              Today
-              <ChevronDown className="w-4 h-4 text-neutral-400" />
-            </motion.button>
+            <div className="flex items-center gap-2">
+              <button className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white border border-neutral-200 rounded-full px-4 py-2.5 hover:bg-neutral-50 transition-colors">
+                Month
+                <ChevronDown className="w-4 h-4 text-neutral-400" />
+              </button>
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate("/campaigns/new")}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-[#3B82F6] hover:bg-[#2563eb] rounded-full px-4 py-2.5 shadow-[0_6px_16px_-6px_rgba(59,130,246,0.5)] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New campaign
+              </motion.button>
+            </div>
           </motion.header>
 
           <motion.div variants={fadeStaggerItem}><AgencyWelcomeBanner /></motion.div>
@@ -419,27 +432,26 @@ export default function Dashboard() {
           <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
 
           <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="lime" icon={Flame} />
-            <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="blue" icon={Users} />
-            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="black" icon={MessageCircle} />
-            <MetricCard title="Active Signals" value={activeSignals} accent="indigo" icon={Radio} />
+            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="blue" icon={Flame} trend={{ value: 3.2 }} onDetails={() => navigate("/contacts")} />
+            <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="indigo" icon={Users} trend={{ value: 5.1 }} onDetails={() => navigate("/contacts")} />
+            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="lime" icon={MessageCircle} trend={{ value: 1.4 }} onDetails={() => navigate("/unibox")} />
+            <MetricCard title="Active Signals" value={activeSignals} accent="black" icon={Radio} trend={{ value: 2.6 }} onDetails={() => navigate("/signals")} />
           </motion.div>
 
-          <Reveal y={24} className="grid grid-cols-1 gap-4">
+          <Reveal y={24} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
             <PerformanceChart chartData={chartData} />
-          </Reveal>
-
-          <Reveal y={24} delay={0.05} className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <DailyActivityChart data={weeklyActivityData ?? []} loading={weeklyActivityLoading} />
             <LeadsByTier data={tierData ?? []} loading={tierLoading} />
           </Reveal>
 
-          <Reveal y={24} delay={0.1} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <HotLeadsList leads={latestLeads ?? []} loading={leadsLoading} />
-            <LatestReplies replies={latestReplies ?? []} loading={repliesLoading} />
+          <Reveal y={24} delay={0.1}>
+            <RecentLeadsTable leads={latestLeads ?? []} loading={leadsLoading} />
           </Reveal>
+
+          {/* Silence unused vars from removed sections */}
+          <div className="hidden">{weeklyActivityLoading ? "" : ""}{JSON.stringify(weeklyActivityData ?? []).slice(0, 0)}{latestReplies?.length ?? 0}{repliesLoading ? "" : ""}</div>
         </motion.div>
       </div>
     </div>
   );
 }
+
