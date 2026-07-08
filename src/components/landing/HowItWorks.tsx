@@ -282,9 +282,9 @@ const blocks = [
   },
   {
     n: "3/4",
-    title: "Multichannel outreach that books demos",
+    title: "Outreach that reads the room",
     body:
-      "Your agent reaches out via email and socials with AI personalized messages, coordinated automatically, no sequences to build.",
+      "Our AI studies how each lead writes, what they engage with, and when they're active — then crafts hyper-personalized messages that match their tone, psychology, and buying signals. The right words, on the right channel, at the right moment.",
     Visual: OutreachVisual,
     visualLeft: false,
     stat: "5×",
