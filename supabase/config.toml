@@ -123,3 +123,9 @@ verify_jwt = false
 [functions.superscale-discover-inspiration]
 verify_jwt = false
 
+[functions.get-organization-context]
+verify_jwt = false
+
+[functions.switch-organization]
+verify_jwt = false
+
