@@ -3,7 +3,7 @@ import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
 import { useLottie } from "lottie-react";
 import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 import useCasesAnimation from "@/assets/use-cases-animation.json";
-import gradientBg from "@/assets/use-cases-gradient-bg.png.asset.json";
+import salesAgentsGradientBg from "@/assets/sales-agents-gradient-bg.png.asset.json";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
@@ -93,7 +93,7 @@ const UseCases = () => {
           <div className="relative rounded-[32px] p-6 overflow-hidden">
             {/* Gradient background */}
             <img
-              src={gradientBg.url}
+              src={salesAgentsGradientBg.url}
               alt=""
               className="absolute inset-0 w-full h-full object-cover -z-10"
             />
