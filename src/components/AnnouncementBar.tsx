@@ -18,6 +18,15 @@ const AnnouncementBar = () => {
           </span>
           only 14 spots left
         </span>
+        <a
+          href="/pricing"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--aeline-dark))] px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider text-[hsl(var(--aeline-lime))] shadow-[0_0_18px_hsl(var(--aeline-dark)/0.4)] transition-transform hover:scale-105 hover:shadow-[0_0_24px_hsl(var(--aeline-dark)/0.55)] active:scale-95 sm:text-xs"
+        >
+          Claim
+          <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.158-3.158a.75.75 0 111.06-1.06l4.5 4.5a.75.75 0 010 1.06l-4.5 4.5a.75.75 0 11-1.06-1.06l3.158-3.158H3.75A.75.75 0 013 10z" clipRule="evenodd" />
+          </svg>
+        </a>
       </span>
     </div>
   );
