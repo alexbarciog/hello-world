@@ -429,7 +429,7 @@ async function insertContact(
     industry: enrichedCompany?.industry || profile.industry || profile.current_company?.industry || null,
     linkedin_url: profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId, source_campaign_id: null,
-    signal: fullSignal, signal_post_url: signalPostUrl, ai_score: aiScore,
+    signal: fullSignal, signal_post_url: signalPostUrl, signal_post_excerpt: (postExcerpt || '').slice(0, 500) || null, ai_score: aiScore,
     signal_a_hit: signalAHit, signal_b_hit: signalBHit, signal_c_hit: signalCHit,
     email_enriched: false, list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
