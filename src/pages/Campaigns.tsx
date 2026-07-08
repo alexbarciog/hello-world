@@ -507,5 +507,3 @@ export default function CampaignsPage() {
 function conversationsLabel(n: number) {
   return `${n.toLocaleString()} conversation${n === 1 ? "" : "s"} started`;
 }
-
-}
