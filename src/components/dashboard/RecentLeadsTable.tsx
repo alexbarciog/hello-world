@@ -133,7 +133,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                             target="_blank"
                             rel="noreferrer"
                             aria-label="Open LinkedIn profile"
-                            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#0A66C2]/10 text-[#0A66C2] hover:bg-[#0A66C2]/20 transition-colors shrink-0"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors shrink-0"
                           >
                             <Linkedin className="w-3.5 h-3.5" fill="currentColor" />
                           </a>
