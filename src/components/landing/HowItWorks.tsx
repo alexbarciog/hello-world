@@ -281,8 +281,12 @@ const HowItWorks = () => {
             <span className="text-[#1A8FE3]">24/7.</span> And gets{" "}
             <span className="relative inline-block">
               <span className="relative z-10">better every week.</span>
-              <span
-                className="absolute left-0 right-0 bottom-0.5 md:bottom-2 h-2 md:h-4 bg-[#C8FF00] -z-0 rounded-sm"
+              <motion.span
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.9, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute left-0 right-0 bottom-0.5 md:bottom-2 h-2 md:h-4 bg-[#C8FF00] -z-0 rounded-sm origin-left"
                 aria-hidden
               />
             </span>
@@ -354,7 +358,12 @@ const HowItWorks = () => {
                 </div>
 
                 {/* Visual zone — the only rounded container */}
-                <div
+                <motion.div
+                  initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ y: -8, rotate: b.visualLeft ? -0.6 : 0.6, transition: { type: "spring", stiffness: 200, damping: 20 } }}
                   className={`md:col-span-7 relative overflow-hidden rounded-[24px] md:rounded-[32px] ${
                     b.visualLeft ? "md:order-1" : ""
                   } ${
@@ -366,14 +375,18 @@ const HowItWorks = () => {
                   {!b.isImage && (
                     <>
                       {/* Left gradient bleed */}
-                      <div
-                        className="absolute inset-y-0 left-0 w-[14%] blur-2xl opacity-90"
+                      <motion.div
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-y-0 left-0 w-[14%] blur-2xl"
                         style={{ background: b.sideGradient }}
                         aria-hidden
                       />
                       {/* Right gradient bleed */}
-                      <div
-                        className="absolute inset-y-0 right-0 w-[14%] blur-2xl opacity-90"
+                      <motion.div
+                        animate={{ opacity: [1, 0.7, 1] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-y-0 right-0 w-[14%] blur-2xl"
                         style={{ background: b.sideGradient }}
                         aria-hidden
                       />
@@ -390,7 +403,7 @@ const HowItWorks = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               </div>
             </motion.article>
           ))}

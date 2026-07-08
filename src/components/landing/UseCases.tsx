@@ -103,25 +103,37 @@ const UseCases = () => {
                 return (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
                     viewport={{ once: true, amount: 0.2 }}
-                    transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative bg-background rounded-[18px] md:rounded-[24px] p-4 md:p-5 min-h-[170px] md:min-h-[220px] lg:aspect-square flex flex-col overflow-hidden"
+                    transition={{ duration: 0.6, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ y: -6, transition: { type: "spring", stiffness: 300, damping: 18 } }}
+                    className="group relative bg-background rounded-[18px] md:rounded-[24px] p-4 md:p-5 min-h-[170px] md:min-h-[220px] lg:aspect-square flex flex-col overflow-hidden cursor-default"
                   >
+                    {/* Animated gradient sheen on hover */}
+                    <div
+                      className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                      style={{
+                        background:
+                          "radial-gradient(120% 80% at 0% 0%, rgba(200,255,0,0.18) 0%, transparent 50%), radial-gradient(120% 80% at 100% 100%, rgba(26,143,227,0.15) 0%, transparent 55%)",
+                      }}
+                      aria-hidden
+                    />
 
                     {/* Icon */}
-                    <div
+                    <motion.div
+                      whileHover={{ rotate: [0, -8, 8, 0], scale: 1.08 }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
                       className="relative w-9 h-9 md:w-11 md:h-11 rounded-lg md:rounded-xl flex items-center justify-center mb-auto"
                       style={{ background: "radial-gradient(circle, #000000 0%, #535353 100%)" }}
                     >
                       <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2} />
-                    </div>
+                    </motion.div>
 
                     {/* Text */}
                     <div className="relative mt-4 md:mt-8">
                       <h3
-                        className="text-sm md:text-lg font-semibold tracking-tight mb-1.5 md:mb-2"
+                        className="text-sm md:text-lg font-semibold tracking-tight mb-1.5 md:mb-2 transition-colors group-hover:text-[#1A8FE3]"
                         style={{ color: "hsl(var(--aeline-dark))" }}
                       >
                         {b.title}
@@ -136,13 +148,19 @@ const UseCases = () => {
 
           {/* Right: orbit visual */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9, rotate: -8 }}
+            whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
             viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center justify-center"
           >
-            <OrbitVisual />
+            <motion.div
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="w-full flex items-center justify-center"
+            >
+              <OrbitVisual />
+            </motion.div>
           </motion.div>
         </div>
       </div>
