@@ -3,7 +3,7 @@ import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
 import { useLottie } from "lottie-react";
 import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 import useCasesAnimation from "@/assets/use-cases-animation.json";
-import salesAgentsGradientBg from "@/assets/sales-agents-gradient-bg-local.png.asset.json";
+import salesAgentsGradientBg from "@/assets/sales-agents-gradient-bg.png";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
@@ -98,7 +98,6 @@ const UseCases = () => {
               backgroundPosition: "left center",
             }}
           >
-            <div className="absolute inset-0 z-[1] bg-background/10" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 relative z-10">
               {benefits.map((b, i) => {
                 const Icon = b.icon;
@@ -109,7 +108,7 @@ const UseCases = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
                     transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative bg-background/72 backdrop-blur-[2px] rounded-[24px] p-6 min-h-[260px] flex flex-col overflow-hidden"
+                    className="relative bg-background/64 backdrop-blur-[2px] rounded-[24px] p-6 min-h-[260px] flex flex-col overflow-hidden"
                   >
 
                     {/* Icon */}
