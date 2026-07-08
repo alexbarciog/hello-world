@@ -391,142 +391,121 @@ export default function CampaignsPage() {
 
 
   return (
-    <div
-      className="min-h-full rounded-2xl m-3 md:m-4 p-6 md:p-10 font-body bg-white">
-      
-      {/* Header */}
-      <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-headline tracking-tight text-md-on-surface mb-2 font-medium">
-            Outreach Campaigns
-          </h1>
-          <p className="text-md-on-surface-variant font-light">
-            {loading ? "Loading..." : `${campaigns.length} / ${MAX_CAMPAIGNS} campaigns · `}
-            Create and manage your outreach campaigns
-          </p>
-        </div>
-        <div className="flex gap-3">
-          {atLimit &&
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
-              <Info className="w-3.5 h-3.5 shrink-0" />
-              Limit reached
+    <div className="relative w-full min-h-screen bg-transparent">
+      <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-6 pb-10 bg-transparent">
+        <motion.div
+          variants={fadeStagger}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col gap-5"
+        >
+          {/* Header */}
+          <motion.header
+            variants={fadeStaggerItem}
+            className="flex items-end justify-between flex-wrap gap-4 mb-1"
+          >
+            <div>
+              <h1 className="text-[28px] md:text-[32px] leading-[1.1] font-medium tracking-[-0.01em] text-neutral-900">
+                Outreach Campaigns
+              </h1>
+              <p className="mt-2 text-[14.5px] text-neutral-500">
+                {loading ? "Loading…" : `${campaigns.length} / ${MAX_CAMPAIGNS} campaigns · `}
+                Create and manage your outreach campaigns.
+              </p>
             </div>
-          }
-          <button
-            onClick={handleNewCampaign}
-            disabled={atLimit}
-            className="px-6 py-2.5 rounded-[12px] text-white text-sm font-medium shadow-md hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-            style={{ background: 'linear-gradient(to top, #212121, #444A4A)' }}>
-            Start a campaign
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
+            <div className="flex items-center gap-2">
+              {atLimit && (
+                <div className="inline-flex items-center gap-1.5 text-[12.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3.5 py-2">
+                  <Info className="w-3.5 h-3.5 shrink-0" />
+                  Limit reached
+                </div>
+              )}
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={handleNewCampaign}
+                disabled={atLimit}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-[#3B82F6] hover:bg-[#2563eb] disabled:opacity-40 disabled:cursor-not-allowed rounded-full px-4 py-2.5 shadow-[0_6px_16px_-6px_rgba(59,130,246,0.5)] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New campaign
+              </motion.button>
+            </div>
+          </motion.header>
 
-      {/* Summary Stats */}
-      {!loading && campaigns.length > 0 &&
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
-        
-          {[
-        { label: "Total Leads", value: totalLeads, icon: Users, accent: "primary" as const },
-        { label: "Active Campaigns", value: activeCampaigns, icon: Rocket, accent: "emerald" as const },
-        { label: "Invitations Sent", value: totalSent.toLocaleString(), icon: Mail, accent: "secondary" as const },
-        { label: "Conversations Started", value: totalAccepted.toLocaleString(), icon: Bot, accent: "secondary" as const },
-        { label: "Opportunities", value: meetingsCount.toLocaleString(), icon: Sparkles, accent: "emerald" as const },
-        { label: "Avg Accept Rate", value: `${avgAcceptRate}%`, icon: BarChart3, accent: "tertiary" as const }].
-        map((stat, index) => {
-          const isFeatured = stat.label === "Total Leads";
-          return (
+          {/* Summary Stats */}
+          {!loading && campaigns.length > 0 && (
             <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
-              className={`group relative rounded-2xl overflow-hidden transition-all duration-300 ${
-                isFeatured
-                  ? "ring-[3px] ring-inset ring-white/30"
-                  : "bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-md-outline-variant/20 hover:border-md-primary/30 hover:shadow-lg hover:shadow-md-primary/5"
-              }`}
-              style={isFeatured ? { background: 'linear-gradient(to top, #6A9BFE, #D0E0FF)' } : undefined}
+              variants={fadeStaggerItem}
+              className="grid grid-cols-2 lg:grid-cols-4 gap-4"
             >
-              <div className="relative z-10 p-5 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <p className={`text-xs font-semibold uppercase tracking-widest ${
-                    isFeatured ? "text-white/80" : "text-md-on-surface-variant"
-                  }`}>{stat.label}</p>
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
-                    isFeatured
-                      ? "bg-white/20 backdrop-blur-sm"
-                      : "bg-md-surface-container"
-                  }`}>
-                    <stat.icon className={`w-4 h-4 ${isFeatured ? "text-white" : "text-md-primary"}`} />
+              <MetricCard title="Total Leads" value={totalLeads} accent="blue" icon={Users} onDetails={() => navigate("/contacts")} />
+              <MetricCard title="Active Campaigns" value={activeCampaigns} accent="indigo" icon={Rocket} />
+              <MetricCard title="Invitations Sent" value={totalSent} accent="lime" icon={Mail} />
+              <MetricCard title="Avg Accept Rate" value={`${avgAcceptRate}%`} accent="black" icon={BarChart3} />
+            </motion.div>
+          )}
+
+          {/* Active Outreach Streams */}
+          {!loading && campaigns.length > 0 && (
+            <Reveal y={24} className="flex items-end justify-between mt-2">
+              <div>
+                <h2 className="text-[20px] font-medium tracking-[-0.01em] text-neutral-900">
+                  Active outreach streams
+                </h2>
+                <p className="mt-1 text-[13px] text-neutral-500">
+                  {conversationsLabel(totalAccepted)} · {meetingsCount} opportunities booked
+                </p>
+              </div>
+              <span className="text-[13px] text-neutral-500">
+                Sort by: <span className="text-[#3B82F6] font-medium cursor-pointer">Efficiency ↓</span>
+              </span>
+            </Reveal>
+          )}
+
+          {/* Campaign Cards */}
+          <div className="space-y-3">
+            {loading ? (
+              Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="rounded-[22px] bg-gradient-to-b from-[#F2F4FE] to-[#FDFDFD] border border-white/55 p-5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-11 w-11 rounded-xl" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-4 gap-8">
+                    {Array.from({ length: 4 }).map((_, j) => <Skeleton key={j} className="h-10 rounded-lg" />)}
                   </div>
                 </div>
-                <p className={`font-headline tracking-tight font-bold text-3xl ${
-                  isFeatured ? "text-white" : "text-md-on-surface"
-                }`}>{stat.value}</p>
-              </div>
-            </motion.div>
-          );
-        })}
-        </motion.div>
-      }
-
-      {/* Active Outreach Streams */}
-      {!loading && campaigns.length > 0 &&
-      <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-headline font-light tracking-tight text-md-on-surface">Active Outreach Streams</h2>
-            <div className="flex items-center gap-4 text-sm text-md-on-surface-variant">
-              <span>Sort by: <span className="text-md-primary font-medium cursor-pointer">Efficiency ↓</span></span>
-            </div>
+              ))
+            ) : campaigns.length === 0 ? (
+              emptyState
+            ) : (
+              <AnimatePresence>
+                {campaigns.map((c, i) => (
+                  <CampaignCard
+                    key={c.id}
+                    c={c}
+                    index={i}
+                    onToggle={() => handleToggleStatus(c.id, c.status)}
+                    onEdit={() => handleEditCampaign(c.id)}
+                    onDelete={() => handleDeleteCampaign(c.id)}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
           </div>
-        </section>
-      }
-
-      {/* Campaign Cards */}
-      <div className="space-y-4">
-        {loading ?
-        Array.from({ length: 2 }).map((_, i) =>
-        <div key={i} className="glass-card ghost-border rounded-2xl p-5 space-y-4">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-12 w-12 rounded-xl" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-                <Skeleton className="h-6 w-16 rounded-full" />
-              </div>
-              <div className="grid grid-cols-4 gap-8">
-                {Array.from({ length: 4 }).map((_, j) => <Skeleton key={j} className="h-10 rounded-lg" />)}
-              </div>
-            </div>
-        ) :
-        campaigns.length === 0 ?
-        emptyState :
-
-        <AnimatePresence>
-            {campaigns.map((c, i) =>
-          <CampaignCard
-            key={c.id}
-            c={c}
-            index={i}
-            onToggle={() => handleToggleStatus(c.id, c.status)}
-            onEdit={() => handleEditCampaign(c.id)}
-            onDelete={() => handleDeleteCampaign(c.id)} />
-
-          )}
-          </AnimatePresence>
-        }
+        </motion.div>
       </div>
+    </div>
+  );
+}
 
-
-
-      
-    </div>);
+function conversationsLabel(n: number) {
+  return `${n.toLocaleString()} conversation${n === 1 ? "" : "s"} started`;
+}
 
 }
