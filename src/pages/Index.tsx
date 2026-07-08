@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ttqViewContent } from "@/lib/tiktok-pixel";
 import Navbar from "@/components/Navbar";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
 import ProblemSection from "@/components/landing/ProblemSection";
@@ -23,7 +24,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <Navbar showCampaigns={showCampaigns} />
+      <AnnouncementBar />
+      <Navbar showCampaigns={showCampaigns} variant="light" />
       <Hero />
       <LogoMarquee />
       <ProblemSection />
