@@ -126,7 +126,18 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                         <span className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0 ${av}`}>
                           {initials(l.name)}
                         </span>
-                        <span className="font-medium text-neutral-900 truncate">{l.name}</span>
+                        {l.linkedin_url ? (
+                          <a
+                            href={l.linkedin_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium text-sky-600 underline hover:text-sky-700 truncate"
+                          >
+                            {l.name}
+                          </a>
+                        ) : (
+                          <span className="font-medium text-neutral-900 truncate">{l.name}</span>
+                        )}
                         {l.linkedin_url && (
                           <a
                             href={l.linkedin_url}
