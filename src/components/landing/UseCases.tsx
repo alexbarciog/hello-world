@@ -3,6 +3,7 @@ import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
 import { useLottie } from "lottie-react";
 import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
 import useCasesAnimation from "@/assets/use-cases-animation.json";
+import gradientBg from "@/assets/use-cases-gradient-bg.png.asset.json";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
