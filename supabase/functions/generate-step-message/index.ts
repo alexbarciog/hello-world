@@ -450,43 +450,73 @@ Deno.serve(async (req) => {
     };
 
     const { systemPrompt, userPrompt } = buildOutreachPrompts(body, lead);
+    const isStep2 = stepNumber === 2;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
+    async function callModel(sys: string, usr: string): Promise<string> {
+      const r = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: sys },
+            { role: 'user', content: usr },
+          ],
+        }),
+      });
+      if (!r.ok) {
+        const text = await r.text();
+        console.error('AI gateway error:', r.status, text);
+        if (r.status === 429) throw Object.assign(new Error('Rate limit exceeded.'), { status: 429 });
+        if (r.status === 402) throw Object.assign(new Error('AI credits exhausted. Please add credits.'), { status: 402 });
+        throw new Error(`AI gateway error: ${r.status}`);
+      }
+      const j = await r.json();
+      const out = j.choices?.[0]?.message?.content?.trim();
+      if (!out) throw new Error('No message generated');
+      return out;
+    }
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('AI gateway error:', response.status, text);
+    let rawMessage: string;
+    try {
+      rawMessage = await callModel(systemPrompt, userPrompt);
 
-      if (response.status === 429) {
+      // Step 2 quality guard: banned phrases, missing question, over 60 words → one rewrite.
+      if (isStep2) {
+        const initialClean = sanitizeMessage(rawMessage, lead, false);
+        const bans = findBannedHits(initialClean);
+        const wc = wordCount(initialClean);
+        const missingQ = !/\?/.test(initialClean);
+        if (bans.length || wc > 60 || missingQ) {
+          const issues: string[] = [];
+          if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
+          if (wc > 60) issues.push(`Too long (${wc} words). Rewrite in 35 to 55 words.`);
+          if (missingQ) issues.push(`You must end with ONE curious question ending in "?".`);
+          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. Return ONLY the new message.`;
+          console.log('[step2] rewriting due to:', issues.join(' | '));
+          try {
+            rawMessage = await callModel(systemPrompt, rewritePrompt);
+          } catch (e) {
+            console.warn('[step2] rewrite failed, keeping first draft:', e);
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e?.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }), {
           status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
+      if (e?.status === 402) {
         return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add credits.' }), {
           status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw e;
     }
-
-    const aiData = await response.json();
-    const rawMessage = aiData.choices?.[0]?.message?.content?.trim();
-    if (!rawMessage) throw new Error('No message generated');
 
     const message = sanitizeMessage(rawMessage, lead, false);
 
