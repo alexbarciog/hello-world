@@ -378,14 +378,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {collapsed ? (
             <button
               onClick={() => navigate("/billing")}
-              className="w-full flex items-center justify-center rounded-xl bg-neutral-50 border border-neutral-200/70 p-2.5 hover:bg-neutral-100 transition-colors"
+              className="w-full flex items-center justify-center rounded-xl bg-white/60 border border-neutral-200/70 p-2.5 hover:bg-white/90 transition-colors"
               title="Billing"
             >
               <Crown className="w-4 h-4 text-[#3B82F6]" />
             </button>
           ) : (
-            <div className="rounded-2xl bg-gradient-to-b from-neutral-50 to-white border border-neutral-200/70 p-4 flex flex-col items-center text-center shadow-[0_1px_2px_rgba(10,10,10,0.03)]">
-              <div className="w-9 h-9 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm mb-2">
+            <div className="rounded-2xl bg-gradient-to-b from-white/70 to-white/40 border border-white/60 p-4 flex flex-col items-center text-center shadow-[0_1px_2px_rgba(10,10,10,0.03)] backdrop-blur-md">
+              <div className="w-9 h-9 rounded-full bg-white/80 border border-neutral-200 flex items-center justify-center shadow-sm mb-2">
                 <Crown className="w-4 h-4 text-[#3B82F6]" />
               </div>
               <p className="text-[13.5px] font-semibold text-neutral-900">
