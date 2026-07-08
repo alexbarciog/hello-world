@@ -97,7 +97,7 @@ const UseCases = () => {
               alt=""
               className="absolute left-0 top-1/2 -translate-y-1/2 w-[115%] h-auto object-contain object-left -z-10 pointer-events-none select-none"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
               {benefits.map((b, i) => {
                 const Icon = b.icon;
                 return (
@@ -107,7 +107,7 @@ const UseCases = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, amount: 0.2 }}
                     transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                    className="relative bg-background rounded-[24px] p-6 min-h-[260px] flex flex-col overflow-hidden"
+                    className="relative bg-background rounded-[24px] p-5 min-h-[220px] lg:aspect-square flex flex-col overflow-hidden"
                   >
 
                     {/* Icon */}
@@ -116,7 +116,7 @@ const UseCases = () => {
                     </div>
 
                     {/* Text */}
-                    <div className="relative mt-16">
+                    <div className="relative mt-8">
                       <h3
                         className="text-lg font-semibold tracking-tight mb-2"
                         style={{ color: "hsl(var(--aeline-dark))" }}
