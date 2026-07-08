@@ -302,7 +302,7 @@ async function companyIcpGate(profile: any, accountId: string, apiKey: string, d
 }
 
 // Rule 3 (Hard Skip): returns 'exists' if profile already in contacts
-async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null): Promise<'inserted'|'exists'|'failed'> {
+async function insertContact(supabase: any, profile: any, userId: string, agentId: string, listName: string, match: MatchResult, signal: string, signalPostUrl: string|null, icp?: ICPFilters, manualApproval?: boolean, enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null): Promise<'inserted'|'exists'|'failed'> {
   const linkedinProfileId = profile.public_id||profile.public_identifier||profile.provider_id||profile.id;
   if (!linkedinProfileId) return 'failed';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
