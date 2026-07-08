@@ -20,7 +20,7 @@ const AnnouncementBar = () => {
         </span>
         <a
           href="/pricing"
-          className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--aeline-dark))] px-3.5 py-1.5 text-[11px] font-black uppercase tracking-wider text-[hsl(var(--aeline-lime))] shadow-[0_0_18px_hsl(var(--aeline-dark)/0.4)] transition-transform hover:scale-105 hover:shadow-[0_0_24px_hsl(var(--aeline-dark)/0.55)] active:scale-95 sm:text-xs"
+          className="inline-flex items-center gap-1 font-black text-[hsl(var(--aeline-dark))] underline underline-offset-2 transition-opacity hover:opacity-70"
         >
           Claim
           <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
