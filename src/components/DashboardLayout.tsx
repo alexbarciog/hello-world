@@ -250,8 +250,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search"
-                className="w-full rounded-xl bg-white border border-neutral-200/70 pl-9 pr-8 py-2.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-300 transition-colors"
+                className="w-full rounded-xl bg-white pl-9 pr-8 py-2.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none transition-colors"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-neutral-400 font-medium bg-white/80 border border-neutral-200 rounded-md px-1.5 py-0.5">
                 ⌘K
