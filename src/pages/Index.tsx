@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Hero from "@/components/Hero";
 import LogoMarquee from "@/components/LogoMarquee";
-import ProblemSection from "@/components/landing/ProblemSection";
+
 import HowItWorks from "@/components/landing/HowItWorks";
 import UseCases from "@/components/landing/UseCases";
 import WhyIntentsly from "@/components/landing/WhyIntentsly";
@@ -28,7 +28,6 @@ const Index = () => {
       <Navbar showCampaigns={showCampaigns} variant="light" />
       <Hero />
       <LogoMarquee />
-      <ProblemSection />
       <HowItWorks />
       <UseCases />
       <WhyIntentsly />
