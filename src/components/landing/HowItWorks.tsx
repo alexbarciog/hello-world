@@ -358,7 +358,12 @@ const HowItWorks = () => {
                 </div>
 
                 {/* Visual zone — the only rounded container */}
-                <div
+                <motion.div
+                  whileHover={{ y: -8, rotate: b.visualLeft ? -0.6 : 0.6 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  animate={{ y: [0, -6, 0] }}
+                  // @ts-expect-error framer allows nested transitions
+                  transition-y={{ duration: 7 + i, repeat: Infinity, ease: "easeInOut" }}
                   className={`md:col-span-7 relative overflow-hidden rounded-[24px] md:rounded-[32px] ${
                     b.visualLeft ? "md:order-1" : ""
                   } ${
@@ -370,14 +375,18 @@ const HowItWorks = () => {
                   {!b.isImage && (
                     <>
                       {/* Left gradient bleed */}
-                      <div
-                        className="absolute inset-y-0 left-0 w-[14%] blur-2xl opacity-90"
+                      <motion.div
+                        animate={{ opacity: [0.7, 1, 0.7] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-y-0 left-0 w-[14%] blur-2xl"
                         style={{ background: b.sideGradient }}
                         aria-hidden
                       />
                       {/* Right gradient bleed */}
-                      <div
-                        className="absolute inset-y-0 right-0 w-[14%] blur-2xl opacity-90"
+                      <motion.div
+                        animate={{ opacity: [1, 0.7, 1] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-y-0 right-0 w-[14%] blur-2xl"
                         style={{ background: b.sideGradient }}
                         aria-hidden
                       />
@@ -394,7 +403,7 @@ const HowItWorks = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               </div>
             </motion.article>
           ))}
