@@ -146,9 +146,9 @@ export default function NotificationsPanel() {
       {/* Bell button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative p-1.5 rounded-md hover:bg-foreground/10 transition-colors text-foreground/60 hover:text-foreground"
+        className="relative p-1.5 rounded-md bg-white hover:bg-foreground/10 transition-colors text-foreground/60 hover:text-foreground"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
           <span
             className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
