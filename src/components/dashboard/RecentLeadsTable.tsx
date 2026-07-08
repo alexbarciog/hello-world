@@ -46,7 +46,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-[22px] bg-white border border-neutral-200/70 shadow-[0_1px_2px_rgba(10,10,10,0.03)]"
+      className="rounded-[22px] bg-white/25 backdrop-blur-xl border border-white/55 shadow-[0_1px_2px_rgba(10,10,10,0.03)]"
     >
       <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4 flex-wrap">
         <div>
@@ -62,14 +62,14 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
-              className="w-[180px] rounded-full bg-neutral-50 border border-neutral-200 pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-neutral-300 transition-colors"
+              className="w-[180px] rounded-full bg-white/35 border border-white/60 pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white/60 focus:border-white/80 transition-colors"
             />
           </div>
-          <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full px-3 py-2 hover:bg-neutral-50 transition-colors">
+          <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
             Filter
             <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />
           </button>
-          <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full px-3 py-2 hover:bg-neutral-50 transition-colors">
+          <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3 py-2 hover:bg-white/60 transition-colors">
             All tiers
             <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
           </button>
@@ -79,7 +79,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-[11px] uppercase tracking-[0.12em] text-neutral-400 border-t border-neutral-100">
+            <tr className="text-left text-[11px] uppercase tracking-[0.12em] text-neutral-400 border-t border-white/50">
               <th className="font-medium px-6 py-3">Lead</th>
               <th className="font-medium px-4 py-3">Title</th>
               <th className="font-medium px-4 py-3">Company</th>
@@ -92,13 +92,13 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
           <tbody>
             {loading ? (
               [...Array(5)].map((_, i) => (
-                <tr key={i} className="border-t border-neutral-100">
-                  <td className="px-6 py-4"><div className="h-4 w-40 bg-neutral-100 rounded animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-24 bg-neutral-100 rounded animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-28 bg-neutral-100 rounded animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-20 bg-neutral-100 rounded animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-10 bg-neutral-100 rounded animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-12 bg-neutral-100 rounded animate-pulse" /></td>
+                <tr key={i} className="border-t border-white/50">
+                  <td className="px-6 py-4"><div className="h-4 w-40 bg-white/45 rounded animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-24 bg-white/45 rounded animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-28 bg-white/45 rounded animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-20 bg-white/45 rounded animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-10 bg-white/45 rounded animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-12 bg-white/45 rounded animate-pulse" /></td>
                   <td className="px-6 py-4" />
                 </tr>
               ))
@@ -119,7 +119,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.35, delay: i * 0.04 }}
-                    className="border-t border-neutral-100 hover:bg-neutral-50/60 transition-colors"
+                    className="border-t border-white/50 hover:bg-white/25 transition-colors"
                   >
                     <td className="px-6 py-3.5">
                       <div className="flex items-center gap-3 min-w-0">
