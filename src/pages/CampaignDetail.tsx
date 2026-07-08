@@ -730,6 +730,7 @@ export default function CampaignDetail() {
           leadCompany: item.contactCompany || "",
           leadTitle: item.contactTitle || "",
           buyingSignal: item.contactSignal || "",
+          signalPostText: (item as any).contactSignalPostExcerpt || item.contactSignal || "",
         },
       });
       if (error) throw error;
