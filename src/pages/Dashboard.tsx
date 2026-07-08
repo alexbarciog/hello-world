@@ -345,16 +345,8 @@ export default function Dashboard() {
   void userData;
 
   return (
-    <div className="relative w-full min-h-screen bg-white">
-      {/* Ambient sky-tinted gradient — top-left corner */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-0"
-        style={{
-          background:
-            "radial-gradient(720px 420px at 0% 0%, rgba(219,234,254,0.55), transparent 60%), radial-gradient(600px 400px at 100% 0%, rgba(237,233,254,0.45), transparent 60%)",
-        }}
-      />
+    <div className="relative w-full min-h-screen">
+
 
       <div className="relative w-full max-w-[1440px] mx-auto px-6 lg:px-8 pt-6 pb-10">
 
