@@ -37,19 +37,20 @@ const benefits: Benefit[] = [
 
 /* ── Right-side orbit visual ──────────────────────────────────────────── */
 
-const OrbitVisual = () => (
-  <div className="relative w-full aspect-square max-w-[520px] mx-auto">
-    {/* Lottie animation background */}
-    <div className="absolute inset-0 rounded-full overflow-hidden bg-[#F4F5F7]">
-      <Lottie
-        animationData={useCasesAnimation}
-        loop={true}
-        autoplay={true}
-        className="absolute inset-0 w-full h-full"
-      />
-    </div>
+const OrbitVisual = () => {
+  const { View } = useLottie(
+    { animationData: useCasesAnimation, loop: true, autoplay: true },
+    { width: "100%", height: "100%" }
+  );
 
-    {/* Inner white circle */}
+  return (
+    <div className="relative w-full aspect-square max-w-[520px] mx-auto">
+      {/* Lottie animation background */}
+      <div className="absolute inset-0 rounded-full overflow-hidden bg-[#F4F5F7]">
+        {View}
+      </div>
+
+      {/* Inner white circle */}
     <div className="absolute inset-[18%] rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" />
 
     {/* Innermost accent ring */}
