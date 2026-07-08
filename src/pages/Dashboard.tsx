@@ -266,19 +266,26 @@ export default function Dashboard() {
   const chartData = (() => {
     const result: { date: string; leadsFound: number; contacted: number }[] = [];
     const now = new Date();
+    const days = periodDays[period];
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - days);
     const leadCounts: Record<string, number> = {};
     const contactedCounts: Record<string, number> = {};
 
     (chartContacts ?? []).forEach((c) => {
-      const key = new Date(c.imported_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const d = new Date(c.imported_at);
+      if (d < cutoff) return;
+      const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       leadCounts[key] = (leadCounts[key] || 0) + 1;
     });
     (chartRequests ?? []).forEach((r) => {
-      const key = new Date(r.sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const d = new Date(r.sent_at);
+      if (d < cutoff) return;
+      const key = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
       contactedCounts[key] = (contactedCounts[key] || 0) + 1;
     });
 
-    for (let i = 30; i >= 0; i--) {
+    for (let i = days; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
