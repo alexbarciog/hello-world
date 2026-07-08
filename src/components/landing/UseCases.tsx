@@ -1,158 +1,141 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, ArrowRight, Check } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Check, Radar, MessageSquare, Calendar, Thermometer, Workflow, TrendingUp } from "lucide-react";
 
-/* ── Mini-mocks (premium, full-bleed) ─────────────────────────────────── */
+/* ── Mini-mocks (benefit-led) ─────────────────────────────────────────── */
 
-const SaasMock = () => (
-  <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] p-4">
-    <div className="flex items-center gap-3 mb-3">
-      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1A8FE3] to-[#0E5A99] flex items-center justify-center text-white text-xs font-bold shrink-0">
-        Ac
+const FindMock = () => (
+  <div className="relative w-full max-w-[280px] h-[120px] flex items-center justify-center">
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="w-24 h-24 rounded-full border border-[#1A8FE3]/20 animate-pulse" />
+      <div className="absolute w-16 h-16 rounded-full border border-[#1A8FE3]/30" />
+      <div className="absolute w-8 h-8 rounded-full bg-[#1A8FE3] flex items-center justify-center">
+        <Radar className="w-4 h-4 text-white" />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-semibold text-foreground truncate">Acme Inc.</div>
-        <div className="text-[11px] text-muted-foreground truncate">acme.com · 120 employees</div>
-      </div>
-      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
     </div>
-    <div className="text-[12px] text-foreground mb-3 leading-snug">
-      Hiring <span className="font-semibold">3 Account Executives</span> · last week
+    <div className="absolute top-2 left-4 bg-white rounded-full px-2 py-1 shadow-sm text-[10px] font-medium text-foreground flex items-center gap-1">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Hiring signal
     </div>
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#C8FF00]/40 text-[#1A1A2E]">
-        +42 intent
-      </span>
-      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-600 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Hot
-      </span>
-      <span className="ml-auto text-[10px] text-muted-foreground">2h ago</span>
+    <div className="absolute bottom-4 right-4 bg-white rounded-full px-2 py-1 shadow-sm text-[10px] font-medium text-foreground flex items-center gap-1">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#C8FF00]" /> Mention spike
     </div>
   </div>
 );
 
-const AgencyMock = () => {
-  const clients = [
-    { name: "Acme", initials: "Ac", count: 12, points: "0,8 10,6 20,7 30,4 40,5 50,2" },
-    { name: "Globex", initials: "Gl", count: 8, points: "0,6 10,7 20,5 30,6 40,3 50,4" },
-    { name: "Initech", initials: "In", count: 15, points: "0,9 10,7 20,8 30,5 40,3 50,1" },
-  ];
-  return (
-    <div className="w-full max-w-[280px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] p-3 space-y-2">
-      {clients.map((c) => (
-        <div key={c.name} className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#1A8FE3]/10 flex items-center justify-center text-[10px] font-semibold text-[#1A8FE3] shrink-0">
-            {c.initials}
+const MessageMock = () => (
+  <div className="w-full max-w-[260px] space-y-2">
+    <div className="bg-white rounded-2xl rounded-tl-sm p-3 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.1)]">
+      <p className="text-[11px] text-foreground leading-snug">
+        Saw you just opened a Berlin office — congrats. Most teams there need help with outbound before they scale sales.
+      </p>
+    </div>
+    <div className="flex items-center gap-2 pl-2">
+      <MessageSquare className="w-3.5 h-3.5 text-[#1A8FE3]" />
+      <span className="text-[10px] text-muted-foreground">Written for their actual situation</span>
+    </div>
+  </div>
+);
+
+const CalendarMock = () => (
+  <div className="w-full max-w-[240px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)] p-4">
+    <div className="flex items-center gap-2 mb-3">
+      <Calendar className="w-4 h-4 text-[#1A8FE3]" />
+      <span className="text-[11px] font-semibold text-foreground">This week</span>
+    </div>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-[10px]">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <span className="text-muted-foreground">Tue</span>
+        <span className="font-medium text-foreground">Meeting booked · Acme Inc.</span>
+      </div>
+      <div className="flex items-center gap-2 text-[10px]">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <span className="text-muted-foreground">Thu</span>
+        <span className="font-medium text-foreground">Meeting booked · Globex</span>
+      </div>
+      <div className="flex items-center gap-2 text-[10px]">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#1A8FE3]" />
+        <span className="text-muted-foreground">Fri</span>
+        <span className="font-medium text-foreground">Follow-up sent · 3 leads</span>
+      </div>
+    </div>
+  </div>
+);
+
+const WarmthMock = () => (
+  <div className="w-full max-w-[240px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)] p-4">
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-[11px] font-semibold text-foreground">Lead temperature</span>
+      <Thermometer className="w-4 h-4 text-red-500" />
+    </div>
+    <div className="space-y-2.5">
+      <div>
+        <div className="flex items-center justify-between text-[10px] mb-1">
+          <span className="text-muted-foreground">Hot leads</span>
+          <span className="font-semibold text-foreground">18</span>
+        </div>
+        <div className="h-2 rounded-full bg-red-100 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full" style={{ width: "78%" }} />
+        </div>
+      </div>
+      <div>
+        <div className="flex items-center justify-between text-[10px] mb-1">
+          <span className="text-muted-foreground">Cold leads</span>
+          <span className="font-semibold text-foreground">3</span>
+        </div>
+        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+          <div className="h-full bg-slate-300 rounded-full" style={{ width: "12%" }} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const AllInOneMock = () => (
+  <div className="w-full max-w-[260px]">
+    <div className="flex items-center justify-between">
+      {["Find", "Write", "Send", "Book"].map((step, i) => (
+        <div key={step} className="flex items-center">
+          <div className="w-12 h-12 rounded-xl bg-white shadow-[0_4px_12px_-4px_rgba(15,23,42,0.1)] flex items-center justify-center">
+            <span className="text-[10px] font-semibold text-foreground">{step}</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-medium text-foreground truncate">{c.name}</div>
-            <div className="text-[10px] text-muted-foreground">{c.count} leads</div>
-          </div>
-          <svg viewBox="0 0 50 10" className="w-12 h-4 shrink-0" preserveAspectRatio="none">
-            <polyline fill="none" stroke="#1A8FE3" strokeWidth="1" points={c.points} />
-          </svg>
+          {i < 3 && <div className="w-4 h-0.5 bg-[#1A8FE3]/20" />}
         </div>
       ))}
     </div>
-  );
-};
-
-const SalesMock = () => (
-  <div className="w-full max-w-[280px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] p-3.5">
-    <div className="flex items-center gap-2.5 mb-2">
-      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A8FE3] to-[#0E5A99] flex items-center justify-center text-[11px] font-semibold text-white shrink-0">
-        JD
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[12px] font-semibold text-foreground truncate">Jamie Doe</div>
-        <div className="text-[10px] text-muted-foreground truncate">VP Sales · Acme</div>
-      </div>
-      <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-red-500 text-white flex items-center gap-1 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-white" /> Hot · 92
-      </span>
+    <div className="flex items-center justify-center mt-3">
+      <Workflow className="w-4 h-4 text-[#1A8FE3] mr-1.5" />
+      <span className="text-[10px] text-muted-foreground">One workflow, zero handoffs</span>
     </div>
-    <div className="text-[10px] text-muted-foreground pl-[46px]">Replied 2h ago</div>
   </div>
 );
 
-const FounderMock = () => (
-  <div className="w-full max-w-[240px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] p-4 text-center">
-    <div className="text-[44px] font-bold leading-none tracking-tight text-[#1A8FE3] mb-1">12</div>
-    <div className="text-[11px] font-medium text-foreground mb-0.5">meetings booked</div>
-    <div className="text-[10px] text-muted-foreground">1 founder · last 30 days</div>
-  </div>
-);
-
-const ServicesMock = () => (
-  <div className="w-full max-w-[280px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] p-3.5">
-    <svg viewBox="0 0 100 32" className="w-full h-12 mb-2" preserveAspectRatio="none">
+const LearnMock = () => (
+  <div className="w-full max-w-[260px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)] p-4">
+    <div className="flex items-center justify-between mb-4">
+      <span className="text-[11px] font-semibold text-foreground">Reply rate over time</span>
+      <TrendingUp className="w-4 h-4 text-emerald-500" />
+    </div>
+    <svg viewBox="0 0 100 40" className="w-full h-14" preserveAspectRatio="none">
       <defs>
-        <linearGradient id="svc-grad" x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id="learn-grad" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="#1A8FE3" stopOpacity="0.25" />
           <stop offset="100%" stopColor="#1A8FE3" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polyline
-        fill="url(#svc-grad)"
-        stroke="none"
-        points="0,26 14,23 28,19 42,21 56,12 70,8 84,5 100,2 100,32 0,32"
-      />
-      <polyline
-        fill="none"
-        stroke="#1A8FE3"
-        strokeWidth="1.5"
-        points="0,26 14,23 28,19 42,21 56,12 70,8 84,5 100,2"
-      />
+      <polyline fill="url(#learn-grad)" stroke="none" points="0,38 14,32 28,30 42,24 56,18 70,14 84,8 100,4 100,40 0,40" />
+      <polyline fill="none" stroke="#1A8FE3" strokeWidth="2" points="0,38 14,32 28,30 42,24 56,18 70,14 84,8 100,4" />
     </svg>
-    <div className="grid grid-cols-3 gap-1.5">
-      <div className="bg-emerald-50 rounded-md px-1.5 py-1 text-center">
-        <div className="text-[10px] font-bold text-emerald-600">+28%</div>
-        <div className="text-[8px] text-muted-foreground">Hiring</div>
-      </div>
-      <div className="bg-[#1A8FE3]/10 rounded-md px-1.5 py-1 text-center">
-        <div className="text-[10px] font-bold text-[#1A8FE3]">↑</div>
-        <div className="text-[8px] text-muted-foreground">Mentions</div>
-      </div>
-      <div className="bg-[#C8FF00]/30 rounded-md px-1.5 py-1 text-center">
-        <div className="text-[10px] font-bold text-[#1A1A2E]">4</div>
-        <div className="text-[8px] text-muted-foreground">Roles</div>
-      </div>
-    </div>
-  </div>
-);
-
-const RevOpsMock = () => (
-  <div className="w-full max-w-[280px] bg-white rounded-2xl shadow-[0_8px_24px_-8px_rgba(15,23,42,0.18)] p-3.5 space-y-2.5">
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] font-medium text-muted-foreground">Fit score</span>
-        <span className="text-[11px] font-bold text-foreground">8.4</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-[#1A8FE3]/15 overflow-hidden">
-        <div className="h-full bg-[#1A8FE3] rounded-full" style={{ width: "84%" }} />
-      </div>
-    </div>
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-[10px] font-medium text-muted-foreground">Intent score</span>
-        <span className="text-[11px] font-bold text-foreground">9.1</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-[#C8FF00]/30 overflow-hidden">
-        <div className="h-full bg-[#C8FF00] rounded-full" style={{ width: "91%" }} />
-      </div>
-    </div>
-    <div className="flex items-center gap-1.5 pt-1 border-t border-black/5">
-      <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-      </div>
-      <span className="text-[10px] font-medium text-foreground">Add to outreach</span>
+    <div className="flex items-center gap-2 mt-2">
+      <span className="text-[10px] font-bold text-emerald-600">+34%</span>
+      <span className="text-[10px] text-muted-foreground">this month</span>
     </div>
   </div>
 );
 
 /* ── Cards config ─────────────────────────────────────────────────────── */
 
-type UseCase = {
+type Benefit = {
   title: string;
   desc: string;
   meta: string;
@@ -162,54 +145,54 @@ type UseCase = {
   wide?: boolean;
 };
 
-const cases: UseCase[] = [
+const benefits: Benefit[] = [
   {
-    title: "B2B SaaS teams",
-    desc: "Find companies entering your category before they hit any database.",
-    meta: "Use case · SaaS",
-    slug: "saas",
-    Mock: SaasMock,
+    title: "Find ready-to-buy companies",
+    desc: "Spot the companies already showing buying signals — before they show up in any database.",
+    meta: "Discovery",
+    slug: "find",
+    Mock: FindMock,
     bg: "bg-[radial-gradient(ellipse_at_top_left,rgba(26,143,227,0.12),transparent_60%),linear-gradient(180deg,#F4F9FE_0%,#FFFFFF_100%)]",
     wide: true,
   },
   {
-    title: "Sales teams",
-    desc: "Prioritize by timing, not just ICP fit.",
-    meta: "Use case · Sales",
-    slug: "sales",
-    Mock: SalesMock,
+    title: "Write messages people reply to",
+    desc: "AI drafts outreach based on what each lead actually cares about, not generic templates.",
+    meta: "Personalization",
+    slug: "messages",
+    Mock: MessageMock,
     bg: "bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.10),transparent_60%),linear-gradient(180deg,#F6F7FB_0%,#FFFFFF_100%)]",
   },
   {
-    title: "Lead-gen agencies",
-    desc: "Stronger angles for client outreach.",
-    meta: "Use case · Agency",
-    slug: "agency",
-    Mock: AgencyMock,
+    title: "Book meetings while you sleep",
+    desc: "Follow-ups happen automatically, so conversations keep moving even when you're offline.",
+    meta: "Automation",
+    slug: "book",
+    Mock: CalendarMock,
     bg: "bg-[radial-gradient(ellipse_at_top,rgba(200,255,0,0.18),transparent_60%),linear-gradient(180deg,#FAFCEF_0%,#FFFFFF_100%)]",
   },
   {
-    title: "Founders",
-    desc: "Lean outbound, no full SDR stack.",
-    meta: "Use case · Founder",
-    slug: "founder",
-    Mock: FounderMock,
+    title: "Stop chasing cold leads",
+    desc: "Focus on people who have recently signaled interest, instead of spraying everyone.",
+    meta: "Prioritization",
+    slug: "warm",
+    Mock: WarmthMock,
     bg: "bg-[radial-gradient(ellipse_at_center,rgba(26,143,227,0.08),transparent_60%),linear-gradient(180deg,#FBF9F5_0%,#FFFFFF_100%)]",
   },
   {
-    title: "B2B service businesses",
-    desc: "Spot demand triggers as they happen.",
-    meta: "Use case · Services",
-    slug: "services",
-    Mock: ServicesMock,
+    title: "One tool, no sales team needed",
+    desc: "Everything from finding leads to booking meetings happens in one simple workflow.",
+    meta: "All-in-one",
+    slug: "workflow",
+    Mock: AllInOneMock,
     bg: "bg-[radial-gradient(ellipse_at_top_left,rgba(200,255,0,0.20),transparent_60%),linear-gradient(180deg,#F9FCEC_0%,#FFFFFF_100%)]",
   },
   {
-    title: "RevOps / GTM operators",
-    desc: "Better inputs for account selection.",
-    meta: "Use case · RevOps",
-    slug: "revops",
-    Mock: RevOpsMock,
+    title: "Gets smarter over time",
+    desc: "Learns from replies and keeps improving your next messages, so results compound.",
+    meta: "Learning",
+    slug: "learn",
+    Mock: LearnMock,
     bg: "bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.12),transparent_60%),linear-gradient(180deg,#F5F6FB_0%,#FFFFFF_100%)]",
   },
 ];
@@ -229,40 +212,40 @@ const UseCases = () => {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="max-w-2xl"
           >
-            <span className="section-label mb-6 block">Who Intentsly is for</span>
+            <span className="section-label mb-6 block">What Intentsly does for you</span>
             <h2
               className="text-4xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] mb-4"
               style={{ color: "hsl(var(--aeline-dark))" }}
             >
-              Built for B2B teams that care about timing
+              Turn signals into meetings — without hiring a sales team
             </h2>
             <p className="text-base text-muted-foreground leading-relaxed">
-              One product. Six teams. Same edge: timing.
+              Everything you need to find interested leads, start real conversations, and book meetings on autopilot.
             </p>
           </motion.div>
           <div className="hidden md:block text-[11px] uppercase tracking-[0.18em] text-muted-foreground pb-2 shrink-0">
-            6 use cases
+            6 benefits
           </div>
         </div>
 
         {/* Bento grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {cases.map((c, i) => (
+          {benefits.map((b, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.5, delay: (i % 3) * 0.06, ease: [0.22, 1, 0.36, 1] }}
-              className={c.wide ? "lg:col-span-2" : ""}
+              className={b.wide ? "lg:col-span-2" : ""}
             >
               <Link
-                to={`/register?ref=usecase-${c.slug}`}
+                to={`/register?ref=benefit-${b.slug}`}
                 className="group relative block overflow-hidden rounded-[28px] bg-white border border-black/5 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.04),0_20px_44px_-16px_rgba(0,0,0,0.14)] hover:-translate-y-[2px] hover:scale-[1.01] transition-all duration-300"
               >
                 {/* Visual zone */}
                 <div
-                  className={`relative ${c.bg} h-[170px] md:h-[200px] flex items-center justify-center px-6 overflow-hidden`}
+                  className={`relative ${b.bg} h-[170px] md:h-[200px] flex items-center justify-center px-6 overflow-hidden`}
                 >
                   {/* Faint grid pattern overlay */}
                   <div
@@ -274,7 +257,7 @@ const UseCases = () => {
                     }}
                   />
                   <div className="relative z-10 w-full flex justify-center">
-                    <c.Mock />
+                    <b.Mock />
                   </div>
                 </div>
 
@@ -287,12 +270,12 @@ const UseCases = () => {
                     className="text-lg font-semibold tracking-tight mb-1.5"
                     style={{ color: "hsl(var(--aeline-dark))" }}
                   >
-                    {c.title}
+                    {b.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-5">{c.desc}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-5">{b.desc}</p>
                   <div className="flex items-center justify-between pt-3 border-t border-black/[0.04]">
                     <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground font-medium">
-                      {c.meta}
+                      {b.meta}
                     </span>
                     <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-[#1A8FE3] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" />
                   </div>
@@ -316,7 +299,7 @@ const UseCases = () => {
             </div>
             <div>
               <p className="text-base md:text-lg font-medium" style={{ color: "hsl(var(--aeline-dark))" }}>
-                Whichever team you're on — you're 5 minutes from your first hot lead.
+                Start booking meetings in your first week — no sales experience required.
               </p>
               <p className="text-xs text-muted-foreground mt-1">No contract · Cancel anytime · 5-min setup</p>
             </div>
