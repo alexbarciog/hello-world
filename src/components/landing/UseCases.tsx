@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Command, LayoutGrid, GitBranch, Contrast } from "lucide-react";
+import { useLottie } from "lottie-react";
 import whyIntentslyIcon from "@/assets/why-intentsly-icon.png.asset.json";
+import useCasesAnimation from "@/assets/use-cases-animation.json";
 
 /* ── Benefits (4 cards, matches reference layout) ─────────────────────── */
 
@@ -35,40 +37,21 @@ const benefits: Benefit[] = [
 
 /* ── Right-side orbit visual ──────────────────────────────────────────── */
 
-const OrbitVisual = () => (
-  <div className="relative w-full aspect-square max-w-[520px] mx-auto">
-    {/* Outer circle with vertical line pattern */}
-    <div className="absolute inset-0 rounded-full overflow-hidden bg-[#F4F5F7]">
-      <div
-        className="absolute inset-0 opacity-60"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, rgba(15,23,42,0.06) 0 1px, transparent 1px 6px)",
-        }}
-      />
-    </div>
+const OrbitVisual = () => {
+  const { View } = useLottie(
+    { animationData: useCasesAnimation, loop: true, autoplay: true },
+    { width: "100%", height: "100%" }
+  );
 
-    {/* Inner white circle */}
-    <div className="absolute inset-[18%] rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)]" />
-
-    {/* Innermost accent ring */}
-    <div className="absolute inset-[38%] rounded-full border border-[#1A8FE3]/10" />
-
-    {/* Floating pills */}
-    <div className="absolute top-[22%] right-[8%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      LinkedIn <span className="text-base leading-none">💼</span>
+  return (
+    <div className="relative w-full aspect-square max-w-[520px] mx-auto">
+      {/* Lottie animation */}
+      <div className="absolute inset-0 rounded-full overflow-hidden bg-[#F4F5F7]">
+        {View}
+      </div>
     </div>
-    <div className="absolute top-[42%] left-[6%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      Reddit <span className="text-base leading-none">👽</span>
-    </div>
-    <div className="absolute top-[58%] right-[2%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      Global Signals <span className="w-2 h-2 rounded-full bg-[#1A8FE3]" />
-    </div>
-    <div className="absolute bottom-[14%] left-[28%] bg-white rounded-full pl-3 pr-3 py-1.5 shadow-[0_6px_20px_-8px_rgba(15,23,42,0.18)] flex items-center gap-2 text-[12px] font-medium text-foreground">
-      X / Twitter <span className="text-base leading-none">🐦</span>
-    </div>
-  </div>
-);
+  );
+};
 
 /* ── Component ────────────────────────────────────────────────────────── */
 
