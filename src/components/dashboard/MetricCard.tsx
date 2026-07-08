@@ -82,10 +82,10 @@ export function MetricCard({
       <button
         type="button"
         onClick={onDetails}
-        className="mt-auto -mb-1 flex items-center justify-between text-[12px] text-[#6D7181] transition-colors border-t border-[#EBECF0] pt-3"
+        className="mt-auto -mb-1 flex items-center justify-between text-[13px] text-[#6D7181] transition-colors border-t border-[#EBECF0] pt-3"
       >
         <span className="tracking-[-0.02em]">View details</span>
-        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
       </button>
     </motion.div>
   );
