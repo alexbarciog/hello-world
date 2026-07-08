@@ -195,6 +195,7 @@ export default function CampaignDetail() {
     editedByUser?: boolean;
     contactLinkedinUrl?: string;
     contactSignalUrl?: string;
+    contactSignalPostExcerpt?: string;
   };
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [editingScheduledIdx, setEditingScheduledIdx] = useState<number | null>(null);
