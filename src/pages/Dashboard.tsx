@@ -360,8 +360,8 @@ export default function Dashboard() {
           {/* ── Page header: title + subtitle + period + CTA ── */}
           <motion.header variants={fadeStaggerItem} className="flex items-end justify-between flex-wrap gap-4 mb-1">
             <div>
-              <h1 className="text-[36px] md:text-[42px] leading-[1.05] font-semibold tracking-[-0.03em] text-neutral-900">
-                Pipeline Activity<span className="text-neutral-300"> — This month</span>
+              <h1 className="text-[28px] md:text-[32px] leading-[1.1] font-medium tracking-[-0.01em] text-neutral-900">
+                Pipeline Activity<span className="text-black"> — This month</span>
               </h1>
               <p className="mt-2 text-[14.5px] text-neutral-500">
                 Stay updated with your latest signals, conversations and hot opportunities.
