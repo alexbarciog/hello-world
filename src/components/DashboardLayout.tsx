@@ -459,25 +459,100 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AgencyImpersonationBanner />
-        {/* Top navbar */}
-        <header className="flex items-center justify-between px-4 md:px-6 py-3 shrink-0" style={{ background: "hsl(195 14% 95%)" }}>
-          {/* Hamburger — mobile only */}
-          <button
-            className="md:hidden p-1.5 rounded-md hover:bg-foreground/10 transition-colors text-foreground/60"
-            onClick={() => setMobileMenuOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          {/* Logo centred on mobile */}
-          <div className="md:hidden flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
-            <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
-            <span className="font-bold text-sm text-foreground">Intentsly</span>
+        {/* Top navbar: breadcrumb + right utilities */}
+        <header className="flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white border-b border-neutral-200/70">
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              className="md:hidden p-1.5 rounded-md hover:bg-neutral-100 transition-colors text-neutral-500 mr-1"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => window.history.forward()}
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            <div className="hidden md:flex items-center gap-2 ml-3 text-[13.5px] min-w-0">
+              <span className="text-neutral-400">Intentsly</span>
+              <span className="text-neutral-300">›</span>
+              <span className="text-neutral-900 font-medium truncate">{crumbLabel}</span>
+            </div>
+            <div className="md:hidden flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
+              <img src={intentslyIcon} alt="Intentsly" className="w-6 h-6 object-contain" />
+              <span className="font-bold text-sm text-neutral-900">Intentsly</span>
+            </div>
           </div>
-          <div className="hidden md:block" />
-          <NotificationsPanel />
+
+          <div className="flex items-center gap-2">
+            <button
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-50 transition-colors"
+              title="Dark mode"
+            >
+              <Moon className="w-4 h-4" />
+            </button>
+            <button
+              className="hidden md:inline-flex w-9 h-9 rounded-full items-center justify-center bg-white border border-neutral-200 text-neutral-900 hover:bg-neutral-50 transition-colors"
+              title="Light mode"
+            >
+              <Sun className="w-4 h-4" />
+            </button>
+            <div className="relative">
+              <NotificationsPanel />
+            </div>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen((o) => !o)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-2 ring-white shadow-sm hover:opacity-90 transition-opacity"
+                style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
+              >
+                {userDisplay.initials || "?"}
+              </button>
+              {userMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 rounded-xl bg-white shadow-xl border border-neutral-200 overflow-hidden z-50">
+                  <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-100">
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                      style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
+                    >
+                      {userDisplay.initials || "?"}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-neutral-900 truncate">{userDisplay.name || userDisplay.email}</p>
+                      <p className="text-xs text-neutral-500 truncate">{userDisplay.email}</p>
+                    </div>
+                  </div>
+                  <div className="py-1.5">
+                    <button
+                      onClick={() => { setUserMenuOpen(false); navigate("/billing"); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                    >
+                      <CreditCard className="w-4 h-4 text-[#3B82F6]" />
+                      Billing &amp; Plans
+                    </button>
+                    <button
+                      onClick={async () => { await supabase.auth.signOut(); navigate("/login"); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0" style={{ background: "hsl(195 14% 95%)" }}>
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-white">
+
           {!sub.loading && !sub.hasAccess && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
               <div className="flex items-start gap-2.5">
