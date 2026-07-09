@@ -503,21 +503,27 @@ Deno.serve(async (req) => {
     try {
       rawMessage = await callModel(systemPrompt, userPrompt);
 
-      // Step 2 quality guard: banned phrases, missing question, over 60 words → one rewrite.
+      // Step 2 quality guard: greeting, banned phrases, missing question, over 70 words, missing signal ref → one rewrite.
       if (isStep2) {
-        const initialClean = sanitizeMessage(rawMessage, lead, false);
+        // Prepend greeting if missing BEFORE evaluating other guards.
+        rawMessage = ensureGreeting(rawMessage, lead.firstName);
+        const initialClean = sanitizeMessage(rawMessage, lead, false, true);
         const bans = findBannedHits(initialClean);
         const wc = wordCount(initialClean);
         const missingQ = !/\?/.test(initialClean);
-        if (bans.length || wc > 60 || missingQ) {
+        // Check signal anchor in the body AFTER the greeting sentence.
+        const bodyAfterGreeting = initialClean.replace(/^hey\s+[^.!?]*[.!?]\s*(thanks[^.!?]*[.!?]\s*)?/i, '');
+        const missingSignal = !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
+        if (bans.length || wc > 70 || missingQ || missingSignal) {
           const issues: string[] = [];
           if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
-          if (wc > 60) issues.push(`Too long (${wc} words). Rewrite in 35 to 55 words.`);
+          if (wc > 70) issues.push(`Too long (${wc} words). Rewrite in 40 to 65 words.`);
           if (missingQ) issues.push(`You must end with ONE curious question ending in "?".`);
-          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. Return ONLY the new message.`;
+          if (missingSignal) issues.push(`You did not reference what they engaged with. Add a specific reference to the post (use "saw", "caught", "noticed", or "your take").`);
+          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. It MUST start with "Hey ${lead.firstName || 'there'}! Thanks for connecting." Return ONLY the new message.`;
           console.log('[step2] rewriting due to:', issues.join(' | '));
           try {
-            rawMessage = await callModel(systemPrompt, rewritePrompt);
+            rawMessage = ensureGreeting(await callModel(systemPrompt, rewritePrompt), lead.firstName);
           } catch (e) {
             console.warn('[step2] rewrite failed, keeping first draft:', e);
           }
@@ -537,7 +543,8 @@ Deno.serve(async (req) => {
       throw e;
     }
 
-    const message = sanitizeMessage(rawMessage, lead, false);
+    const message = sanitizeMessage(rawMessage, lead, false, isStep2);
+
 
     return new Response(JSON.stringify({ message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
