@@ -247,13 +247,21 @@ export default function Dashboard() {
   });
 
   // Chart data: leads found per day + contacted per day
+  const chartCutoffISO = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - periodDays[period]);
+    return d.toISOString();
+  })();
+
   const { data: chartContacts } = useQuery({
-    queryKey: ["dashboard-chart-contacts"],
+    queryKey: ["dashboard-chart-contacts", chartCutoffISO],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
         .select("imported_at")
-        .order("imported_at", { ascending: true });
+        .gte("imported_at", chartCutoffISO)
+        .order("imported_at", { ascending: true })
+        .limit(50000);
       if (error) throw error;
       return data ?? [];
     },
@@ -261,17 +269,20 @@ export default function Dashboard() {
   });
 
   const { data: chartRequests } = useQuery({
-    queryKey: ["dashboard-chart-requests"],
+    queryKey: ["dashboard-chart-requests", chartCutoffISO],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaign_connection_requests")
         .select("sent_at")
-        .order("sent_at", { ascending: true });
+        .gte("sent_at", chartCutoffISO)
+        .order("sent_at", { ascending: true })
+        .limit(50000);
       if (error) throw error;
       return data ?? [];
     },
     staleTime: 60_000,
   });
+
 
   const chartData = (() => {
     const result: { date: string; leadsFound: number; contacted: number }[] = [];
