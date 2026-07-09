@@ -82,7 +82,17 @@ function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function sanitizeMessage(raw: string, lead: LeadContext, isConversational = false): string {
+function ensureGreeting(msg: string, firstName: string): string {
+  const trimmed = msg.trimStart();
+  const head = trimmed.slice(0, 20).toLowerCase();
+  if (/^(hey|hi|hello)\b/.test(head)) return trimmed;
+  const name = firstName || 'there';
+  return `Hey ${name}! Thanks for connecting. ${trimmed}`;
+}
+
+const SIGNAL_ANCHOR_RE = /\b(saw|caught|noticed|your post|you engaged|you shared|you commented|your take|your comment)\b/i;
+
+function sanitizeMessage(raw: string, lead: LeadContext, isConversational = false, isStep2 = false): string {
   let msg = raw
     .replace(/[—–]/g, ', ')
     .replace(/;/g, '.')
@@ -99,7 +109,7 @@ function sanitizeMessage(raw: string, lead: LeadContext, isConversational = fals
     .filter((line, idx, arr) => line.length > 0 || (idx > 0 && arr[idx - 1].length > 0))
     .join('\n');
 
-  const maxLen = isConversational ? 150 : 300;
+  const maxLen = isConversational ? 150 : isStep2 ? 500 : 300;
 
   if (msg.length > maxLen) {
     const trimmed = msg.slice(0, maxLen);
@@ -113,10 +123,9 @@ function sanitizeMessage(raw: string, lead: LeadContext, isConversational = fals
     }
   }
 
-  // No auto-append CTA — let the AI choose its own closing naturally
-
   return msg.trim();
 }
+
 
 // ── Conversational reply handler ──
 async function handleConversationalReply(
@@ -333,14 +342,14 @@ ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 ${postBlock}
 
 ===== HOW TO WRITE IT =====
-Length: 30 to 55 words. Never over 60. Two or three short sentences.
+Length: 40 to 65 words. Never over 70. Two or three short sentences.
 Reading level: 6th grade. Simple words a non-native English speaker gets on the first read.
 Voice: peer to peer. Warm, curious human — not a vendor. Use "I" and "you".
 
 STRUCTURE (follow this shape exactly, do not label the lines):
-1) GREETING + THANKS — start with "Hey ${lead.firstName || 'there'}!" then thank them for connecting. One short line. Example: "Hey ${lead.firstName || 'there'}! Thanks for connecting."
-2) SIGNAL REFERENCE — reference what they engaged with on LinkedIn. Be specific about the topic (not the hashtag, not "your post"). ${hasRealPost ? 'Quote or paraphrase ONE concrete detail from the POST_EXCERPT.' : 'Mention the specific topic from the POST_SUMMARY.'} Phrases like "I saw the post you..." / "Saw you engaged with..." / "Caught your take on..." are fine and encouraged.
-3) CURIOUS QUESTION — ask ONE simple, open question tied to the topic they engaged with, probing whether it's something they care about or work on themselves. Format like: "are you {doing/thinking about/dealing with X}?" — low-stakes, one sentence, they can answer in 10 seconds. NEVER a CTA, NEVER "open to a chat", NEVER "worth a quick call".
+1) GREETING + THANKS — the message MUST start with exactly: "Hey ${lead.firstName || 'there'}! Thanks for connecting." This is non-negotiable. Do not skip it, do not rephrase it.
+2) SIGNAL REFERENCE — reference what they engaged with on LinkedIn. Be specific about the topic (not the hashtag, not "your post" alone). ${hasRealPost ? 'Quote or paraphrase ONE concrete detail from the POST_EXCERPT.' : 'Mention the specific topic from the POST_SUMMARY.'} Openers like "I saw the post you..." / "Saw you engaged with..." / "Caught your take on..." are encouraged.
+3) CURIOUS QUESTION — end with ONE simple, open question tied to the topic they engaged with. Format like: "are you {doing/thinking about/dealing with X}?" — low-stakes, one sentence, they can answer in 10 seconds. MUST end with "?". NEVER a CTA, NEVER "open to a chat", NEVER "worth a quick call".
 
 ===== PSYCHOLOGY (use, never name) =====
 - Warm greeting + thanks lowers their guard immediately.
@@ -354,24 +363,34 @@ Words: leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, e
 Phrases: "hope this finds you well", "engaging with #", "as someone in the {industry} space", "quick chat", "quick call", "hop on a call", "worth a chat", "book a time", "grab 15 minutes", "just wanted to reach out", "reaching out because", "we help companies like yours".
 Formatting: no emojis, no em-dashes (—), no semicolons, no bullet points, no line breaks, no signature, no product name, no statistic or percentage, no hashtag.
 
-The message must end with a question mark.
+The message MUST end with a question mark.
 
 ===== EXAMPLES =====
 GOOD (warm, human, signal-grounded, one question):
 "Hey Julia! Thanks for connecting. I saw the post you engaged with on human-led sales driving revenue and it really stuck — feels like everyone's automating themselves out of actual conversations right now. Is that something you're seeing with your team too, or is it more of a broader industry thing?"
 
 GOOD (short, personal):
-"Hey Mark! Thanks for accepting. Caught your take on ACH reconciliations eating up founder mornings — heard the same thing from two others last week. Is that mostly a compliance headache for you, or more the manual matching side?"
+"Hey Mark! Thanks for connecting. Caught your take on ACH reconciliations eating up founder mornings — heard the same thing from two others last week. Is that mostly a compliance headache for you, or more the manual matching side?"
+
+BAD (missing greeting, no question — this is what we're fixing):
+"Your point about sales needing to be human-led really hit home. It feels like people forget that behind every business goal is a person just trying to solve a specific problem."
 
 BAD (generic, pitchy, AI-slop):
-"Hi Sarah, I noticed you've been engaging with #lending. We built a platform that leverages AI to streamline merchant payments and we're seeing 40% reduction in admin work. Would you be open to a quick call this week?"
+"Hi Sarah, I noticed you've been engaging with #lending. We built a platform that leverages AI to streamline merchant payments. Would you be open to a quick call this week?"
 
-Write ONLY the message body. No signature. No labels. Start with "Hey ${lead.firstName || 'there'}!".${langLine}${customLine}
+Write ONLY the message body. No signature. No labels. Start with EXACTLY "Hey ${lead.firstName || 'there'}! Thanks for connecting."${langLine}${customLine}
 ${personalityBlock}`;
 
-    const userPrompt = `Write the first message now. Remember: start with "Hey ${lead.firstName || 'there'}!" and thanks for connecting, then a specific reference to ${hasRealPost ? 'the post excerpt' : 'the signal topic'}, then ONE curious question ending in "?". 30-55 words total. Return ONLY the message text.`;
+    const userPrompt = `Write the first message now.
+
+MANDATORY: The FIRST sentence must be exactly "Hey ${lead.firstName || 'there'}! Thanks for connecting." — no variations, no skipping.
+Then: a specific reference to ${hasRealPost ? 'the post excerpt' : 'the signal topic'}.
+Then: ONE curious question ending in "?".
+Total: 40-65 words.
+Return ONLY the message text, nothing else.`;
     return { systemPrompt, userPrompt };
   }
+
 
   // ── Message 2 (Step 3): soft follow-up, max 10 words ──
   if (stepNumber === 3) {
@@ -484,21 +503,27 @@ Deno.serve(async (req) => {
     try {
       rawMessage = await callModel(systemPrompt, userPrompt);
 
-      // Step 2 quality guard: banned phrases, missing question, over 60 words → one rewrite.
+      // Step 2 quality guard: greeting, banned phrases, missing question, over 70 words, missing signal ref → one rewrite.
       if (isStep2) {
-        const initialClean = sanitizeMessage(rawMessage, lead, false);
+        // Prepend greeting if missing BEFORE evaluating other guards.
+        rawMessage = ensureGreeting(rawMessage, lead.firstName);
+        const initialClean = sanitizeMessage(rawMessage, lead, false, true);
         const bans = findBannedHits(initialClean);
         const wc = wordCount(initialClean);
         const missingQ = !/\?/.test(initialClean);
-        if (bans.length || wc > 60 || missingQ) {
+        // Check signal anchor in the body AFTER the greeting sentence.
+        const bodyAfterGreeting = initialClean.replace(/^hey\s+[^.!?]*[.!?]\s*(thanks[^.!?]*[.!?]\s*)?/i, '');
+        const missingSignal = !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
+        if (bans.length || wc > 70 || missingQ || missingSignal) {
           const issues: string[] = [];
           if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
-          if (wc > 60) issues.push(`Too long (${wc} words). Rewrite in 35 to 55 words.`);
+          if (wc > 70) issues.push(`Too long (${wc} words). Rewrite in 40 to 65 words.`);
           if (missingQ) issues.push(`You must end with ONE curious question ending in "?".`);
-          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. Return ONLY the new message.`;
+          if (missingSignal) issues.push(`You did not reference what they engaged with. Add a specific reference to the post (use "saw", "caught", "noticed", or "your take").`);
+          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. It MUST start with "Hey ${lead.firstName || 'there'}! Thanks for connecting." Return ONLY the new message.`;
           console.log('[step2] rewriting due to:', issues.join(' | '));
           try {
-            rawMessage = await callModel(systemPrompt, rewritePrompt);
+            rawMessage = ensureGreeting(await callModel(systemPrompt, rewritePrompt), lead.firstName);
           } catch (e) {
             console.warn('[step2] rewrite failed, keeping first draft:', e);
           }
@@ -518,7 +543,8 @@ Deno.serve(async (req) => {
       throw e;
     }
 
-    const message = sanitizeMessage(rawMessage, lead, false);
+    const message = sanitizeMessage(rawMessage, lead, false, isStep2);
+
 
     return new Response(JSON.stringify({ message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

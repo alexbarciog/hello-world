@@ -1,81 +1,61 @@
-# Fix the terrible Step 2 "Send message"
+# Fix Step 2 messages that ship with no greeting and no question
 
-The first outreach message reads like AI slop because two things are broken:
+## What's actually broken (from Julia's screenshot)
 
-1. **It has no idea what the post actually said.** `generate-step-message` expects a `signalPostText` field, but none of the callers (`process-campaign-followups`, `process-ai-replies`, `CampaignDetail.tsx`) pass it. It silently falls back to `lead.signal` — a summary string like *"liked Acme's post about lending"*. So the AI writes about a hashtag/topic instead of a real reaction.
-2. **The prompt is generic.** It says "reference something specific" but gives the model nothing specific to reference, and its anti-AI rules are soft.
+The sent message reads:
+> "Your point about sales needing to be human-led to actually drive revenue really hit home… behind every business goal is a person just trying to solve a specific problem."
 
-## Plan
+No "Hey Julia! Thanks for connecting." No question. Two causes:
 
-### 1. Persist the actual post text on the contact
-- Add column `contacts.signal_post_excerpt text` (nullable, ~500 chars).
-- Backfill nothing; new signals fill it going forward.
-- Save the post body in the four signal ingestors that already have `p.text` in hand:
-  - `signal-keyword-posts`
-  - `signal-post-engagers`
-  - `signal-hashtag-engagement`
-  - `signal-competitor`
-  - `discover-leads`
-  - `ai-chat-search-leads` (already computes it — just persist)
-- Store `text.trim().slice(0, 500)`.
+1. **`sanitizeMessage` caps cold outreach at 300 characters.** A proper greeting + signal reference + question is 320–420 chars. Sanitizer cuts at the last period before the cap, silently deleting the closing question. The `?` guard then can't retry because the *pre-sanitize* draft did have `?`, but by the time it's stored/sent, sanitize has stripped it.
+2. **No structural enforcement.** The prompt asks for the 3-part shape (greeting → signal ref → question) but only the "must end in `?`" and "must be ≤60 words" rules are enforced in code. When the model drops the greeting to sound casual (as it did here), nothing catches it.
 
-### 2. Pass it into the message generator
-- `process-campaign-followups`, `process-ai-replies`, and both `CampaignDetail.tsx` invoke sites: include `signalPostText: contact.signal_post_excerpt` in the payload.
-- `generate-step-message` already reads `req.signalPostText` — no change needed there beyond the new prompt.
+## Fix
 
-### 3. Rewrite the Step 2 prompt (`buildOutreachPrompts`, `stepNumber <= 2`)
-New structure, tight and psychology-driven:
+Scope: `supabase/functions/generate-step-message/index.ts` only. No UI, no other functions, no schema changes.
 
-**Inputs given to the model, clearly labeled:**
-- `POST_EXCERPT` (the real text, or `(none)` fallback)
-- `POST_SUMMARY` (the old signal string, as backup)
-- `FIRST_NAME`, `HEADLINE`, `COMPANY`
-- `WHAT_WE_DO` (one-liner)
-- `PAIN_POINTS` (bullets)
+### 1. Stop truncating Step 2 mid-message
 
-**Message rules (replaces the current block):**
-- **Length:** 35–55 words. Never over 60. 2–3 short sentences.
-- **Reading level:** 6th grade. Simple words a non-native English speaker gets instantly.
-- **Formatting:** all lowercase openers OK, no emojis, no em-dashes, no semicolons, no bullet lists, no line breaks unless natural.
-- **Opener (line 1):** quote or paraphrase ONE concrete detail from `POST_EXCERPT`. If no excerpt, reference the specific thing in `POST_SUMMARY` (never the hashtag, never the industry). Never start with "I noticed / I saw / I came across / Hope you're well / Great post".
-- **Middle (line 2):** one honest human reaction — agreement, a small counter-take, or a "we hear the same thing from X" observation. Uses "I / we", not "our platform".
-- **Close (line 3):** ONE curious question about their situation. Never a CTA, never "open to a call", never a calendar link, never "would love to connect". The question must be answerable in one sentence.
-- **Psychology levers to use (pick 1, never name them):**
-  - *Specificity* → proves it's not a template.
-  - *Curiosity gap* → question implies you might know something useful without saying so.
-  - *Low-stakes reciprocity* → offering a small observation before asking anything.
-  - *Peer framing* → "founder to founder", not "vendor to prospect".
-- **Hard bans (regex-checked in `sanitizeMessage`, see step 4):** *leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, empower, resonate, spearhead, bandwidth, circle back, touch base, deep dive, game-changer, cutting-edge, robust, seamless, holistic, actionable, hope this finds you well, saw your post, came across your profile, engaging with #, as someone in the \<industry\> space*.
-- **Never mention:** the product name, any statistic/percentage, "we built / our solution / our platform", any hashtag, any CTA.
+- In `sanitizeMessage`, raise the cap for Step 2 to `500` chars (add an `isStep2` flag alongside `isConversational`). Keep 300 for Step 3+ and 150 for conversational.
+- Word cap (≤60) already enforced in the retry loop — that's the real length guard; character cap only needs to prevent runaway output.
+- Pass `isStep2` from the two call sites (retry check + final sanitize).
 
-**Two labeled examples in the prompt** — one GOOD (post-grounded, human, ends in one question), one BAD (generic, pitchy, statistic-laden) — so the model has a clear target.
+### 2. Enforce the greeting in code, not just in the prompt
 
-### 4. Tighten `sanitizeMessage` for step 2
-- Add a banned-phrase regex sweep; if any hit, log and regenerate once (single retry with a "you used a banned phrase, rewrite" nudge). If still bad, keep the output but strip the offending phrase.
-- Enforce word cap 60; if over, trim to last full sentence under the cap.
-- Reject messages that don't contain `?` (step 2 must end in a question) → one retry.
+Add a helper `ensureGreeting(msg, firstName)`:
+- If the message does not start with `hey|hi|hello` (case-insensitive) within the first ~15 chars, prepend `Hey ${firstName || 'there'}! Thanks for connecting. ` and return it.
+- Applied *before* the `?` / word-count / banned-phrase guard, so the prepended greeting doesn't count against banned-word regex and is included in retry decisions.
+
+### 3. Tighten the Step 2 retry guard
+
+Current guard triggers rewrite on: banned phrases, >60 words, missing `?`. Add two more triggers:
+
+- **Missing greeting** — if after `ensureGreeting` the message *still* has no `hey/hi/hello` opener (paranoia guard for edge cases like the model returning JSON), retry.
+- **Missing signal reference** — if the message body (after the greeting sentence) contains none of a small set of anchor phrases (`saw`, `caught`, `noticed your`, `your post`, `you engaged`, `you shared`, `you commented`), retry with an instruction to explicitly reference the post. This is a soft check — one anchor is enough.
+
+The retry prompt lists all violations at once (already does this) so it stays a single extra model call, not a loop.
+
+### 4. Prompt tweaks (small, targeted)
+
+In `buildOutreachPrompts` for `stepNumber <= 2`:
+- Move the greeting from "STRUCTURE line 1" to a **mandatory first line** shown *in the user prompt*, not just the system prompt: `The message MUST start with exactly: "Hey ${firstName}! Thanks for connecting."` — models follow user-prompt directives more reliably than system-prompt structure lists.
+- Raise the target length to **40–65 words** (was 30–55). The current range squeezes out either the greeting or the question. 40–65 fits all three parts comfortably.
+- Update the retry `wc > 60` cap to `wc > 70` to match.
 
 ### 5. No changes to
-- Step 3 (soft follow-up) and Step 4 (polite exit) prompts — user only asked about step 1.
+
+- Step 3 / Step 4 prompts.
 - Conversational reply handler.
-- UI / campaign wizard.
-
-## Technical notes
-
-- Migration: `ALTER TABLE public.contacts ADD COLUMN signal_post_excerpt text;` (RLS already covers it via existing policies; no grant changes needed since column inherits table grants).
-- `sanitizeMessage` gets a new `isStep2` flag; retry loop lives in the outreach handler, capped at 1 retry to stay within latency budget.
-- `signal_post_excerpt` also becomes available to the personality-prediction and lead-insights functions later, but that's out of scope here.
+- `process-campaign-followups`, `process-ai-replies`, `CampaignDetail.tsx` — they already pass `signalPostText` correctly.
+- DB schema, RLS, migrations.
 
 ## Files touched
 
-- `supabase/migrations/<new>.sql` (add column)
-- `supabase/functions/generate-step-message/index.ts` (prompt + sanitizer + retry)
-- `supabase/functions/process-campaign-followups/index.ts` (pass `signalPostText`)
-- `supabase/functions/process-ai-replies/index.ts` (pass `signalPostText`)
-- `supabase/functions/signal-keyword-posts/index.ts`
-- `supabase/functions/signal-post-engagers/index.ts`
-- `supabase/functions/signal-hashtag-engagement/index.ts`
-- `supabase/functions/signal-competitor/index.ts`
-- `supabase/functions/discover-leads/index.ts`
-- `supabase/functions/ai-chat-search-leads/index.ts` (persist excerpt on save path)
-- `src/pages/CampaignDetail.tsx` (two invoke sites pass `signalPostText`)
+- `supabase/functions/generate-step-message/index.ts` (only file)
+
+## Verification after build
+
+- Redeploy the edge function.
+- Trigger a Step 2 generation on a test contact with a real `signal_post_excerpt`; confirm the stored `scheduled_messages.message` starts with "Hey {name}! Thanks for connecting." and ends with `?`.
+- Confirm word count is 40–65 and no banned phrases.
+- Old already-scheduled messages won't retroactively fix — user can regenerate them from the campaign scheduled queue if needed (existing UI supports it).
