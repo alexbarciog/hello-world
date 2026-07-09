@@ -45,9 +45,9 @@ const STEPS: Step[] = [
     key: "pay",
     index: 3,
     icon: Sparkles,
-    title: "Add payment method",
-    desc: "Pay only when meetings are booked",
-    cta: "Add payment",
+    title: "Choose your plan",
+    desc: "Subscribe to activate your AI SDR",
+    cta: "View plans",
     href: "/billing",
   },
   {
