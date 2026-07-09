@@ -20,7 +20,10 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 // Hard ceiling — runs older than this are reaped no matter what.
-const RUN_HARD_TIMEOUT_MS = 30 * 60 * 1000; // 30 min
+// Bumped from 30→45 min: keyword runs with 4+ batches × 75s cooldown × up to
+// 5.5-min fetch budget can legitimately push past 25 min. Task-level leases
+// (6 min) still bound any actual runaway worker.
+const RUN_HARD_TIMEOUT_MS = 45 * 60 * 1000; // 45 min
 
 // A task is considered stuck if lease has expired by this much.
 const TASK_LEASE_GRACE_MS = 60 * 1000; // 1 min after lease expiry
@@ -82,7 +85,7 @@ Deno.serve(async (req) => {
         await supabase.from('signal_agent_tasks')
           .update({
             status: 'failed',
-            error: 'Reaped: parent run hit hard timeout (30min)',
+            error: 'Reaped: parent run hit hard timeout (45min)',
             completed_at: nowIso,
           })
           .eq('run_id', run.id)
@@ -109,7 +112,7 @@ Deno.serve(async (req) => {
           completed_tasks: doneCount,
           completed_at: nowIso,
           rejected_profiles_sample: aggregatedRejected,
-          error: finalStatus === 'failed' ? 'Reaped: hard 30min timeout, no tasks completed' : null,
+          error: finalStatus === 'failed' ? 'Reaped: hard 45min timeout, no tasks completed' : null,
         }).eq('id', run.id);
 
         // Update agent results count if we have any leads.

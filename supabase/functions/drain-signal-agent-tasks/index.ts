@@ -19,7 +19,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LEASE_DURATION_MS = 6 * 60 * 1000; // 6 min — keyword fetch usually < 4 min
 
 // Cooldown between consecutive keyword batches of the SAME run.
-const NEXT_BATCH_COOLDOWN_MS = 75_000; // ~75s — paces against Unipile rate limits.
+const NEXT_BATCH_COOLDOWN_MS = 30_000; // ~30s — paces against Unipile rate limits.
 
 // Max number of tasks to dispatch per cron tick (across all runs).
 const MAX_DISPATCH_PER_TICK = 8;
