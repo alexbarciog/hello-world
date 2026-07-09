@@ -65,7 +65,7 @@ The company sending these messages:
     const userPrompt = `Generate a 4-step LinkedIn outreach sequence:
 
 Step 1 - Connection Request (no message needed, leave empty — LinkedIn shows your profile as the message)
-Step 2 - First Message (sent +1 day after connection accepted): An icebreaker that references {{signal}} — the reason this lead was found. Make it feel personal and curious, not pitchy.
+Step 2 - First Message (sent +1 day after connection accepted): A 6-part opener that references {{signal}}: (1) greeting "Hey {{first_name}},", (2) personalization/trigger on their LinkedIn action, (3) assumption of pain — the outcome they want, (4) competitor attack / risk of the typical way, (5) different approach positioning what we do as safer/different, (6) low-friction CTA question. Keep it peer-to-peer, not pitchy.
 Step 3 - Follow-up Message (sent +2 days): Build on the first message. Reference a pain point relevant to {{title}} at {{company}}. Show you understand their world.
 Step 4 - Final Follow-up (sent +3 days): A short, low-pressure nudge. Acknowledge they're busy. ${campaignGoal === 'demos' ? 'Offer a specific CTA (quick call/demo).' : 'Keep the door open for future conversation.'}
 
