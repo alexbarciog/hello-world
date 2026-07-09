@@ -529,15 +529,23 @@ async function processCampaign(
   if (pendingRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (${recentPending?.length || 0} recent + ${olderPending?.length || 0} older)`);
 
+    // ── BATCH prefetch contacts (incl. personality_prediction) for the whole set ──
+    const pendingContactIds = [...new Set(pendingRequests.map(r => r.contact_id).filter(Boolean))];
+    const { data: pendingContacts } = pendingContactIds.length
+      ? await supabase
+          .from('contacts')
+          .select('id, linkedin_profile_id, linkedin_url, first_name, last_name, title, company, signal, personality_prediction')
+          .in('id', pendingContactIds)
+      : { data: [] as any[] };
+    const pendingContactById = new Map<string, any>();
+    for (const c of pendingContacts || []) pendingContactById.set(c.id, c);
+    console.log(`[BATCH] followup Phase B: prefetched ${pendingContactById.size} contacts in 1 query`);
+
     for (const req of pendingRequests) {
       try {
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('linkedin_profile_id, linkedin_url, first_name, last_name')
-          .eq('id', req.contact_id)
-          .single();
-
+        const contact = pendingContactById.get(req.contact_id);
         if (!contact) continue;
+
 
         let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
         if (!publicId) {
