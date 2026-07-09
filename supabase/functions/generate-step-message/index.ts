@@ -342,14 +342,14 @@ ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 ${postBlock}
 
 ===== HOW TO WRITE IT =====
-Length: 30 to 55 words. Never over 60. Two or three short sentences.
+Length: 40 to 65 words. Never over 70. Two or three short sentences.
 Reading level: 6th grade. Simple words a non-native English speaker gets on the first read.
 Voice: peer to peer. Warm, curious human — not a vendor. Use "I" and "you".
 
 STRUCTURE (follow this shape exactly, do not label the lines):
-1) GREETING + THANKS — start with "Hey ${lead.firstName || 'there'}!" then thank them for connecting. One short line. Example: "Hey ${lead.firstName || 'there'}! Thanks for connecting."
-2) SIGNAL REFERENCE — reference what they engaged with on LinkedIn. Be specific about the topic (not the hashtag, not "your post"). ${hasRealPost ? 'Quote or paraphrase ONE concrete detail from the POST_EXCERPT.' : 'Mention the specific topic from the POST_SUMMARY.'} Phrases like "I saw the post you..." / "Saw you engaged with..." / "Caught your take on..." are fine and encouraged.
-3) CURIOUS QUESTION — ask ONE simple, open question tied to the topic they engaged with, probing whether it's something they care about or work on themselves. Format like: "are you {doing/thinking about/dealing with X}?" — low-stakes, one sentence, they can answer in 10 seconds. NEVER a CTA, NEVER "open to a chat", NEVER "worth a quick call".
+1) GREETING + THANKS — the message MUST start with exactly: "Hey ${lead.firstName || 'there'}! Thanks for connecting." This is non-negotiable. Do not skip it, do not rephrase it.
+2) SIGNAL REFERENCE — reference what they engaged with on LinkedIn. Be specific about the topic (not the hashtag, not "your post" alone). ${hasRealPost ? 'Quote or paraphrase ONE concrete detail from the POST_EXCERPT.' : 'Mention the specific topic from the POST_SUMMARY.'} Openers like "I saw the post you..." / "Saw you engaged with..." / "Caught your take on..." are encouraged.
+3) CURIOUS QUESTION — end with ONE simple, open question tied to the topic they engaged with. Format like: "are you {doing/thinking about/dealing with X}?" — low-stakes, one sentence, they can answer in 10 seconds. MUST end with "?". NEVER a CTA, NEVER "open to a chat", NEVER "worth a quick call".
 
 ===== PSYCHOLOGY (use, never name) =====
 - Warm greeting + thanks lowers their guard immediately.
@@ -363,24 +363,34 @@ Words: leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, e
 Phrases: "hope this finds you well", "engaging with #", "as someone in the {industry} space", "quick chat", "quick call", "hop on a call", "worth a chat", "book a time", "grab 15 minutes", "just wanted to reach out", "reaching out because", "we help companies like yours".
 Formatting: no emojis, no em-dashes (—), no semicolons, no bullet points, no line breaks, no signature, no product name, no statistic or percentage, no hashtag.
 
-The message must end with a question mark.
+The message MUST end with a question mark.
 
 ===== EXAMPLES =====
 GOOD (warm, human, signal-grounded, one question):
 "Hey Julia! Thanks for connecting. I saw the post you engaged with on human-led sales driving revenue and it really stuck — feels like everyone's automating themselves out of actual conversations right now. Is that something you're seeing with your team too, or is it more of a broader industry thing?"
 
 GOOD (short, personal):
-"Hey Mark! Thanks for accepting. Caught your take on ACH reconciliations eating up founder mornings — heard the same thing from two others last week. Is that mostly a compliance headache for you, or more the manual matching side?"
+"Hey Mark! Thanks for connecting. Caught your take on ACH reconciliations eating up founder mornings — heard the same thing from two others last week. Is that mostly a compliance headache for you, or more the manual matching side?"
+
+BAD (missing greeting, no question — this is what we're fixing):
+"Your point about sales needing to be human-led really hit home. It feels like people forget that behind every business goal is a person just trying to solve a specific problem."
 
 BAD (generic, pitchy, AI-slop):
-"Hi Sarah, I noticed you've been engaging with #lending. We built a platform that leverages AI to streamline merchant payments and we're seeing 40% reduction in admin work. Would you be open to a quick call this week?"
+"Hi Sarah, I noticed you've been engaging with #lending. We built a platform that leverages AI to streamline merchant payments. Would you be open to a quick call this week?"
 
-Write ONLY the message body. No signature. No labels. Start with "Hey ${lead.firstName || 'there'}!".${langLine}${customLine}
+Write ONLY the message body. No signature. No labels. Start with EXACTLY "Hey ${lead.firstName || 'there'}! Thanks for connecting."${langLine}${customLine}
 ${personalityBlock}`;
 
-    const userPrompt = `Write the first message now. Remember: start with "Hey ${lead.firstName || 'there'}!" and thanks for connecting, then a specific reference to ${hasRealPost ? 'the post excerpt' : 'the signal topic'}, then ONE curious question ending in "?". 30-55 words total. Return ONLY the message text.`;
+    const userPrompt = `Write the first message now.
+
+MANDATORY: The FIRST sentence must be exactly "Hey ${lead.firstName || 'there'}! Thanks for connecting." — no variations, no skipping.
+Then: a specific reference to ${hasRealPost ? 'the post excerpt' : 'the signal topic'}.
+Then: ONE curious question ending in "?".
+Total: 40-65 words.
+Return ONLY the message text, nothing else.`;
     return { systemPrompt, userPrompt };
   }
+
 
   // ── Message 2 (Step 3): soft follow-up, max 10 words ──
   if (stepNumber === 3) {
