@@ -78,71 +78,75 @@ Deno.serve(async (req) => {
       if (candidates.length >= MAX_DISPATCH_PER_TICK) break;
     }
 
-    // ── 2. For each candidate, verify no other keyword task for the same run is already running ──
-    for (const task of candidates) {
-      // Skip if another keyword task is currently running/leased for the same run
-      const { data: inflight } = await supabase
+    // ── 2. Batch-fetch in-flight guard + parent-run status for ALL candidates ──
+    const candidateRunIds = candidates.map(c => c.run_id);
+    const [inflightRes, runsRes] = await Promise.all([
+      supabase
         .from('signal_agent_tasks')
-        .select('id, lease_expires_at')
-        .eq('run_id', task.run_id)
+        .select('run_id, lease_expires_at')
+        .in('run_id', candidateRunIds)
         .eq('signal_type', 'keyword_posts')
-        .eq('status', 'running')
-        .limit(1);
-      const leaseStillValid = inflight?.[0]?.lease_expires_at
-        && new Date(inflight[0].lease_expires_at) > now;
-      if (inflight?.length && leaseStillValid) {
+        .eq('status', 'running'),
+      supabase
+        .from('signal_agent_runs')
+        .select('id, status')
+        .in('id', candidateRunIds),
+    ]);
+    console.log(`[BATCH] drain: fetched ${inflightRes.data?.length ?? 0} inflight + ${runsRes.data?.length ?? 0} runs in 2 queries for ${candidateRunIds.length} candidates`);
+
+    const inflightByRun = new Map<string, string | null>();
+    for (const row of inflightRes.data || []) {
+      // Keep the freshest lease we've seen for the run
+      const prev = inflightByRun.get(row.run_id);
+      if (!prev || (row.lease_expires_at && row.lease_expires_at > prev)) {
+        inflightByRun.set(row.run_id, row.lease_expires_at);
+      }
+    }
+    const runStatusById = new Map<string, string>();
+    for (const r of runsRes.data || []) runStatusById.set(r.id, r.status);
+
+    // ── 3. For each candidate: claim + dispatch ──
+    const queuedForCooldown: string[] = []; // run_ids that got a dispatch this tick
+    for (const task of candidates) {
+      const lease = inflightByRun.get(task.run_id);
+      const leaseStillValid = lease && new Date(lease) > now;
+      if (leaseStillValid) {
         console.log(`[DRAIN] Run ${task.run_id} already has in-flight keyword task — skipping`);
         continue;
       }
 
-      // ── 3. Optimistic claim: set status=running, lease_expires_at, attempt_count++ ──
-      const lease = new Date(now.getTime() + LEASE_DURATION_MS).toISOString();
+      const parentStatus = runStatusById.get(task.run_id);
+      if (!parentStatus || ['done', 'failed', 'partial'].includes(parentStatus)) {
+        // Parent already finalized — mark task failed without claiming.
+        await supabase.from('signal_agent_tasks').update({
+          status: 'failed', error: 'Parent run finalized', completed_at: nowIso,
+        }).eq('id', task.id).eq('status', 'pending');
+        continue;
+      }
+
+      // Optimistic claim
+      const leaseIso = new Date(now.getTime() + LEASE_DURATION_MS).toISOString();
       const { data: claimed, error: claimErr } = await supabase
         .from('signal_agent_tasks')
         .update({
           status: 'running',
           started_at: nowIso,
-          lease_expires_at: lease,
+          lease_expires_at: leaseIso,
           last_heartbeat_at: nowIso,
           attempt_count: (task.attempt_count || 0) + 1,
         })
         .eq('id', task.id)
-        .eq('status', 'pending') // optimistic guard
+        .eq('status', 'pending')
         .select('id')
         .single();
-      if (claimErr || !claimed) {
-        // Another worker beat us to it
-        continue;
-      }
+      if (claimErr || !claimed) continue; // another worker won
 
-      // Make sure the parent run is still active
-      const { data: run } = await supabase
-        .from('signal_agent_runs')
-        .select('status')
-        .eq('id', task.run_id)
-        .single();
-      if (!run || ['done', 'failed', 'partial'].includes(run.status)) {
-        // Parent run already finalized — release the task as failed (it shouldn't run anymore)
-        await supabase.from('signal_agent_tasks').update({
-          status: 'failed', error: 'Parent run finalized', completed_at: nowIso,
-        }).eq('id', task.id);
-        continue;
-      }
-
-      // Make sure the run is marked running (might still be 'queued' if dispatched fast)
-      if (run.status === 'queued') {
+      if (parentStatus === 'queued') {
         await supabase.from('signal_agent_runs').update({ status: 'running' }).eq('id', task.run_id);
       }
 
-      // ── 4. Fire-and-forget the keyword fetcher ──
-      const payload = {
-        ...(task.payload || {}),
-        run_id: task.run_id,
-        task_key: task.task_key,
-      };
-
-      // We do NOT await the response — signal-keyword-posts self-reports completion
-      // and finalizes the run when all tasks are done.
+      // Fire-and-forget the keyword fetcher
+      const payload = { ...(task.payload || {}), run_id: task.run_id, task_key: task.task_key };
       fetch(`${SUPABASE_URL}/functions/v1/signal-keyword-posts`, {
         method: 'POST',
         headers: {
@@ -154,33 +158,32 @@ Deno.serve(async (req) => {
         console.error(`[DRAIN] kickoff for ${task.task_key} failed:`, err);
       });
 
-      // ── 5. Schedule the NEXT pending keyword task for this run with a cooldown ──
-      // This is what enforces the pacing across batches without the orchestrator
-      // having to stay alive.
-      const nextAvailable = new Date(now.getTime() + NEXT_BATCH_COOLDOWN_MS).toISOString();
-      const { data: nextTasks } = await supabase
-        .from('signal_agent_tasks')
-        .select('id, available_at')
-        .eq('run_id', task.run_id)
-        .eq('signal_type', 'keyword_posts')
-        .eq('status', 'pending')
-        .order('task_key', { ascending: true })
-        .limit(5);
-      if (nextTasks?.length) {
-        // Push out any sibling pending task whose available_at is sooner than the cooldown.
-        for (const nt of nextTasks) {
-          if (!nt.available_at || new Date(nt.available_at) < new Date(nextAvailable)) {
-            await supabase.from('signal_agent_tasks')
-              .update({ available_at: nextAvailable })
-              .eq('id', nt.id);
-          }
-        }
-      }
-
+      queuedForCooldown.push(task.run_id);
       dispatched++;
       dispatchedTasks.push({ run_id: task.run_id, task_key: task.task_key });
-      console.log(`[DRAIN] ✅ Dispatched ${task.task_key} for run ${task.run_id} (lease until ${lease})`);
+      console.log(`[DRAIN] ✅ Dispatched ${task.task_key} for run ${task.run_id} (lease until ${leaseIso})`);
     }
+
+    // ── 4. Bulk-push cooldown on the next pending sibling of every dispatched run ──
+    if (queuedForCooldown.length) {
+      const nextAvailable = new Date(now.getTime() + NEXT_BATCH_COOLDOWN_MS).toISOString();
+      const { data: siblings } = await supabase
+        .from('signal_agent_tasks')
+        .select('id, run_id, available_at')
+        .in('run_id', queuedForCooldown)
+        .eq('signal_type', 'keyword_posts')
+        .eq('status', 'pending');
+      const toBump = (siblings || [])
+        .filter(s => !s.available_at || new Date(s.available_at) < new Date(nextAvailable))
+        .map(s => s.id);
+      console.log(`[BATCH] drain: cooldown bump on ${toBump.length}/${siblings?.length ?? 0} sibling tasks`);
+      if (toBump.length) {
+        await supabase.from('signal_agent_tasks')
+          .update({ available_at: nextAvailable })
+          .in('id', toBump);
+      }
+    }
+
 
     return new Response(JSON.stringify({ dispatched, tasks: dispatchedTasks }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
