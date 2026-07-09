@@ -164,16 +164,38 @@ async function processCampaign(
 
   if (acceptedRequests && acceptedRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] Phase A: processing ${acceptedRequests.length} accepted contacts for messages`);
+
+    // ── BATCH prefetch: contacts + scheduled_messages for the whole set ──
+    const contactIds = [...new Set(acceptedRequests.map(r => r.contact_id).filter(Boolean))];
+    const requestIds = acceptedRequests.map(r => r.id);
+    const [contactsRes, schedRes] = await Promise.all([
+      contactIds.length
+        ? supabase
+            .from('contacts')
+            .select('id, first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
+            .in('id', contactIds)
+        : Promise.resolve({ data: [] as any[] }),
+      requestIds.length
+        ? supabase
+            .from('scheduled_messages')
+            .select('id, message, status, connection_request_id, step_index')
+            .in('connection_request_id', requestIds)
+            .in('status', ['generated', 'edited'])
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const contactById = new Map<string, any>();
+    for (const c of contactsRes.data || []) contactById.set(c.id, c);
+    const schedByReqStep = new Map<string, any>();
+    for (const s of schedRes.data || []) schedByReqStep.set(`${s.connection_request_id}:${s.step_index}`, s);
+    console.log(`[BATCH] followup Phase A: prefetched ${contactById.size} contacts + ${schedByReqStep.size} scheduled messages in 2 queries`);
+
     for (const req of acceptedRequests) {
       try {
         // Resolve provider_id early
         let resolvedProviderId: string | null = null;
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
-          .eq('id', req.contact_id)
-          .single();
+        const contact = contactById.get(req.contact_id);
         if (!contact) continue;
+
 
         let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
         if (publicId) {
