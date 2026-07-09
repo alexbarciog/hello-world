@@ -164,16 +164,38 @@ async function processCampaign(
 
   if (acceptedRequests && acceptedRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] Phase A: processing ${acceptedRequests.length} accepted contacts for messages`);
+
+    // ── BATCH prefetch: contacts + scheduled_messages for the whole set ──
+    const contactIds = [...new Set(acceptedRequests.map(r => r.contact_id).filter(Boolean))];
+    const requestIds = acceptedRequests.map(r => r.id);
+    const [contactsRes, schedRes] = await Promise.all([
+      contactIds.length
+        ? supabase
+            .from('contacts')
+            .select('id, first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
+            .in('id', contactIds)
+        : Promise.resolve({ data: [] as any[] }),
+      requestIds.length
+        ? supabase
+            .from('scheduled_messages')
+            .select('id, message, status, connection_request_id, step_index')
+            .in('connection_request_id', requestIds)
+            .in('status', ['generated', 'edited'])
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const contactById = new Map<string, any>();
+    for (const c of contactsRes.data || []) contactById.set(c.id, c);
+    const schedByReqStep = new Map<string, any>();
+    for (const s of schedRes.data || []) schedByReqStep.set(`${s.connection_request_id}:${s.step_index}`, s);
+    console.log(`[BATCH] followup Phase A: prefetched ${contactById.size} contacts + ${schedByReqStep.size} scheduled messages in 2 queries`);
+
     for (const req of acceptedRequests) {
       try {
         // Resolve provider_id early
         let resolvedProviderId: string | null = null;
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('first_name, last_name, company, title, signal, linkedin_profile_id, linkedin_url')
-          .eq('id', req.contact_id)
-          .single();
+        const contact = contactById.get(req.contact_id);
         if (!contact) continue;
+
 
         let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
         if (publicId) {
@@ -290,17 +312,12 @@ async function processCampaign(
         }
 
         let message = '';
-        const { data: scheduledMsg } = await supabase
-          .from('scheduled_messages')
-          .select('id, message, status')
-          .eq('connection_request_id', req.id)
-          .eq('step_index', nextWfIdx)
-          .in('status', ['generated', 'edited'])
-          .maybeSingle();
+        const scheduledMsg = schedByReqStep.get(`${req.id}:${nextWfIdx}`) || null;
 
         if (scheduledMsg && scheduledMsg.message) {
           message = scheduledMsg.message;
           console.log(`[followup] Using pre-generated message for contact ${req.contact_id} (${scheduledMsg.status})`);
+
         } else if (!nextStep.ai_icebreaker && nextStep.message) {
           message = nextStep.message;
           if (contact) {
@@ -512,15 +529,23 @@ async function processCampaign(
   if (pendingRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] checking ${pendingRequests.length} pending invitations (${recentPending?.length || 0} recent + ${olderPending?.length || 0} older)`);
 
+    // ── BATCH prefetch contacts (incl. personality_prediction) for the whole set ──
+    const pendingContactIds = [...new Set(pendingRequests.map(r => r.contact_id).filter(Boolean))];
+    const { data: pendingContacts } = pendingContactIds.length
+      ? await supabase
+          .from('contacts')
+          .select('id, linkedin_profile_id, linkedin_url, first_name, last_name, title, company, signal, personality_prediction')
+          .in('id', pendingContactIds)
+      : { data: [] as any[] };
+    const pendingContactById = new Map<string, any>();
+    for (const c of pendingContacts || []) pendingContactById.set(c.id, c);
+    console.log(`[BATCH] followup Phase B: prefetched ${pendingContactById.size} contacts in 1 query`);
+
     for (const req of pendingRequests) {
       try {
-        const { data: contact } = await supabase
-          .from('contacts')
-          .select('linkedin_profile_id, linkedin_url, first_name, last_name')
-          .eq('id', req.contact_id)
-          .single();
-
+        const contact = pendingContactById.get(req.contact_id);
         if (!contact) continue;
+
 
         let publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
         if (!publicId) {
@@ -580,11 +605,7 @@ async function processCampaign(
           // The edge function is idempotent (caches result); it skips if already generated.
           // We don't await — message generation should not be blocked.
           try {
-            const { data: existingPersonality } = await supabase
-              .from('contacts')
-              .select('first_name, last_name, title, company, signal, personality_prediction')
-              .eq('id', req.contact_id)
-              .single();
+            const existingPersonality = pendingContactById.get(req.contact_id);
 
             if (existingPersonality && !existingPersonality.personality_prediction) {
               fetch(`${supabaseUrl}/functions/v1/generate-personality-prediction`, {
@@ -607,6 +628,7 @@ async function processCampaign(
           } catch (e) {
             console.warn(`[followup] personality precheck failed for ${req.contact_id}:`, (e as Error)?.message);
           }
+
 
           const wfIdx = getNextWorkflowIndex(1, workflowSteps);
           const gen = await generateNextStepMessage(
