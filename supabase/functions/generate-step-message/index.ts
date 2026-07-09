@@ -346,7 +346,7 @@ ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 ${postBlock}
 
 ===== HOW TO WRITE IT =====
-Length: 50 to 85 words. Never over 100.
+Length: 35 to 60 words. Never over 70. Shorter is better — cut every word that does not earn its place.
 Reading level: 6th grade. Simple words a non-native English speaker gets on the first read.
 Voice: peer to peer. Warm, direct human — not a vendor. Use "I" and "you".
 Format: 2-4 short paragraphs. The greeting can stand alone or flow into the next sentence. Single line breaks between paragraphs are allowed.
@@ -403,7 +403,7 @@ Then follow the 6-part structure in order:
 4) Different approach (position what we do as safer/different)
 5) Low-friction CTA (one easy "yes" question ending in "?")
 
-Total: 50-85 words. Never over 100.
+Total: 35-60 words. Never over 70. Keep every sentence short and tight.
 Return ONLY the message text, nothing else.`;
     return { systemPrompt, userPrompt };
   }
@@ -531,13 +531,13 @@ Deno.serve(async (req) => {
         // Check signal anchor in the body AFTER the greeting sentence.
         const bodyAfterGreeting = initialClean.replace(/^hey\s+[^\n]*\n?/i, '');
         const missingSignal = !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
-        if (bans.length || wc > 100 || missingQ || missingSignal) {
+        if (bans.length || wc > 70 || missingQ || missingSignal) {
           const issues: string[] = [];
           if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
-          if (wc > 100) issues.push(`Too long (${wc} words). Rewrite in 50 to 85 words.`);
+          if (wc > 70) issues.push(`Too long (${wc} words). Rewrite in 35 to 60 words.`);
           if (missingQ) issues.push(`You must end with ONE low-friction CTA question ending in "?".`);
           if (missingSignal) issues.push(`You did not reference what they engaged with. Add a specific reference to the post (use "saw", "caught", "noticed", "your take", or "your comment").`);
-          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. It MUST start with "Hey ${lead.firstName || 'there'}," and follow the 6-part structure: personalization/trigger → assumption of pain → competitor risk → different approach → low-friction CTA. Return ONLY the new message.`;
+          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. It MUST start with "Hey ${lead.firstName || 'there'}," and follow the 6-part structure: personalization/trigger → assumption of pain → competitor risk → different approach → low-friction CTA. Keep it tight: 35-60 words. Return ONLY the new message.`;
           console.log('[step2] rewriting due to:', issues.join(' | '));
           try {
             rawMessage = ensureGreeting(await callModel(systemPrompt, rewritePrompt), lead.firstName);
