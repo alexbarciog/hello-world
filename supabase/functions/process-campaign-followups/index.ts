@@ -605,11 +605,7 @@ async function processCampaign(
           // The edge function is idempotent (caches result); it skips if already generated.
           // We don't await — message generation should not be blocked.
           try {
-            const { data: existingPersonality } = await supabase
-              .from('contacts')
-              .select('first_name, last_name, title, company, signal, personality_prediction')
-              .eq('id', req.contact_id)
-              .single();
+            const existingPersonality = pendingContactById.get(req.contact_id);
 
             if (existingPersonality && !existingPersonality.personality_prediction) {
               fetch(`${supabaseUrl}/functions/v1/generate-personality-prediction`, {
@@ -632,6 +628,7 @@ async function processCampaign(
           } catch (e) {
             console.warn(`[followup] personality precheck failed for ${req.contact_id}:`, (e as Error)?.message);
           }
+
 
           const wfIdx = getNextWorkflowIndex(1, workflowSteps);
           const gen = await generateNextStepMessage(
