@@ -93,10 +93,19 @@ const Hero = () => {
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 bg-[#0a0a0a] text-white text-[15px] font-semibold rounded-xl px-6 py-3.5 md:py-4 hover:bg-neutral-800 transition-colors"
+                className="inline-flex flex-col items-center justify-center gap-1 bg-[#0a0a0a] text-white rounded-xl px-6 py-3.5 md:py-4 hover:bg-neutral-800 transition-colors"
               >
-                Start for $97
-                <ArrowRight className="w-4 h-4" />
+                <span className="inline-flex items-center justify-center gap-2 text-[15px] font-semibold">
+                  Start for $97
+                  <ArrowRight className="w-4 h-4" />
+                </span>
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[hsl(var(--aeline-lime))]">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--aeline-lime))] opacity-80" />
+                    <span className="relative inline-flex h-full w-full rounded-full bg-[hsl(var(--aeline-lime))]" />
+                  </span>
+                  14 spots left at this price
+                </span>
               </motion.a>
               <motion.a
                 whileHover={{ scale: 1.03, y: -2 }}
@@ -112,19 +121,6 @@ const Hero = () => {
                 <ArrowRight className="w-4 h-4" />
               </motion.a>
             </motion.div>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 1.05, ease: EASE }}
-              className="mt-3 flex items-center gap-1.5 text-[13px] font-semibold text-[hsl(var(--aeline-lime))]"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--aeline-lime))] opacity-80" />
-                <span className="relative inline-flex h-full w-full rounded-full bg-[hsl(var(--aeline-lime))]" />
-              </span>
-              14 spots left at this price
-            </motion.p>
 
             <motion.p
               initial={{ opacity: 0 }}
