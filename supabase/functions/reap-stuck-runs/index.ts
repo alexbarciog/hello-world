@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         await supabase.from('signal_agent_tasks')
           .update({
             status: 'failed',
-            error: 'Reaped: parent run hit hard timeout (30min)',
+            error: 'Reaped: parent run hit hard timeout (45min)',
             completed_at: nowIso,
           })
           .eq('run_id', run.id)
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
           completed_tasks: doneCount,
           completed_at: nowIso,
           rejected_profiles_sample: aggregatedRejected,
-          error: finalStatus === 'failed' ? 'Reaped: hard 30min timeout, no tasks completed' : null,
+          error: finalStatus === 'failed' ? 'Reaped: hard 45min timeout, no tasks completed' : null,
         }).eq('id', run.id);
 
         // Update agent results count if we have any leads.
