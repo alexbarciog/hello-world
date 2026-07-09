@@ -82,7 +82,17 @@ function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function sanitizeMessage(raw: string, lead: LeadContext, isConversational = false): string {
+function ensureGreeting(msg: string, firstName: string): string {
+  const trimmed = msg.trimStart();
+  const head = trimmed.slice(0, 20).toLowerCase();
+  if (/^(hey|hi|hello)\b/.test(head)) return trimmed;
+  const name = firstName || 'there';
+  return `Hey ${name}! Thanks for connecting. ${trimmed}`;
+}
+
+const SIGNAL_ANCHOR_RE = /\b(saw|caught|noticed|your post|you engaged|you shared|you commented|your take|your comment)\b/i;
+
+function sanitizeMessage(raw: string, lead: LeadContext, isConversational = false, isStep2 = false): string {
   let msg = raw
     .replace(/[—–]/g, ', ')
     .replace(/;/g, '.')
@@ -99,7 +109,7 @@ function sanitizeMessage(raw: string, lead: LeadContext, isConversational = fals
     .filter((line, idx, arr) => line.length > 0 || (idx > 0 && arr[idx - 1].length > 0))
     .join('\n');
 
-  const maxLen = isConversational ? 150 : 300;
+  const maxLen = isConversational ? 150 : isStep2 ? 500 : 300;
 
   if (msg.length > maxLen) {
     const trimmed = msg.slice(0, maxLen);
@@ -113,10 +123,9 @@ function sanitizeMessage(raw: string, lead: LeadContext, isConversational = fals
     }
   }
 
-  // No auto-append CTA — let the AI choose its own closing naturally
-
   return msg.trim();
 }
+
 
 // ── Conversational reply handler ──
 async function handleConversationalReply(
