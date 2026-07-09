@@ -46,13 +46,35 @@ export function ShareLeadsDialog({ open, onOpenChange, selectedContactIds }: Sha
 
   async function handleCopy() {
     if (!shareUrl) return;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
+    const markSuccess = () => {
       setCopied(true);
       toast.success("Link copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
+    };
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+        markSuccess();
+        return;
+      }
+      throw new Error("clipboard-unavailable");
     } catch {
-      toast.error("Could not copy to clipboard");
+      // Fallback for iframes / non-secure contexts where navigator.clipboard is blocked
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = shareUrl;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (!ok) throw new Error("execCommand failed");
+        markSuccess();
+      } catch {
+        toast.error("Could not copy — please copy the link manually");
+      }
     }
   }
 
