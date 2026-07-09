@@ -395,10 +395,15 @@ ${personalityBlock}`;
 
     const userPrompt = `Write the first message now.
 
-MANDATORY: The FIRST sentence must be exactly "Hey ${lead.firstName || 'there'}! Thanks for connecting." — no variations, no skipping.
-Then: a specific reference to ${hasRealPost ? 'the post excerpt' : 'the signal topic'}.
-Then: ONE curious question ending in "?".
-Total: 40-65 words.
+MANDATORY: Start with exactly "Hey ${lead.firstName || 'there'}," — comma, no exclamation, NO "Thanks for connecting".
+Then follow the 6-part structure in order:
+1) Personalization / trigger + relevance (reference their specific LinkedIn action)
+2) Assumption of pain (state the outcome they want)
+3) Competitor attack / risk (danger of the typical way)
+4) Different approach (position what we do as safer/different)
+5) Low-friction CTA (one easy "yes" question ending in "?")
+
+Total: 50-85 words. Never over 100.
 Return ONLY the message text, nothing else.`;
     return { systemPrompt, userPrompt };
   }
