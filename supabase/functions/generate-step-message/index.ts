@@ -348,8 +348,17 @@ ${postBlock}
 ===== HOW TO WRITE IT =====
 Length: 35 to 60 words. Never over 70. Shorter is better — cut every word that does not earn its place.
 Reading level: 6th grade. Simple words a non-native English speaker gets on the first read.
-Voice: peer to peer. Warm, direct human — not a vendor. Use "I" and "you".
+Voice: peer to peer. Warm, direct human — not a vendor. Use "I" and "you". Write like a real founder typing on their phone between meetings, not a polished sales rep.
 Format: 2-4 short paragraphs. The greeting can stand alone or flow into the next sentence. Single line breaks between paragraphs are allowed.
+
+===== SOUND HUMAN =====
+- Use contractions everywhere: "you're", "we're", "don't", "it's", "that's".
+- Vary sentence length. Mix a very short sentence (3-5 words) with a longer one. Fragments are ok.
+- Occasional lowercase starts after a line break are ok ("sounds like...", "curious if..."). Not required.
+- Use plain, spoken phrasing: "kinda", "usually", "most of the time", "honestly", "tbh" — sparingly, max one per message, only if it fits.
+- No corporate rhythm. No parallel structures like "we do X, we do Y, we do Z".
+- Slight imperfection > polish. A tiny casual aside beats a perfectly balanced sentence.
+- Do NOT sound like a template. If two sentences in a row start the same way, rewrite one.
 
 STRUCTURE (follow this shape exactly, do not label the lines):
 1) GREETING — Start with exactly: "Hey ${lead.firstName || 'there'},". Comma, no exclamation, NO "Thanks for connecting".
