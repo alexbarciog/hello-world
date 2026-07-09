@@ -116,6 +116,19 @@ const Hero = () => {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 1.05, ease: EASE }}
+              className="mt-3 flex items-center gap-1.5 text-[13px] font-semibold text-[hsl(var(--aeline-lime))]"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--aeline-lime))] opacity-80" />
+                <span className="relative inline-flex h-full w-full rounded-full bg-[hsl(var(--aeline-lime))]" />
+              </span>
+              14 spots left at this price
+            </motion.p>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 1.1, ease: EASE }}
               className="mt-5 text-xs uppercase tracking-[0.14em] text-neutral-400"
             >
