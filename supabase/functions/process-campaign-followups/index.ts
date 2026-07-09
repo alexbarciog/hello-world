@@ -312,17 +312,12 @@ async function processCampaign(
         }
 
         let message = '';
-        const { data: scheduledMsg } = await supabase
-          .from('scheduled_messages')
-          .select('id, message, status')
-          .eq('connection_request_id', req.id)
-          .eq('step_index', nextWfIdx)
-          .in('status', ['generated', 'edited'])
-          .maybeSingle();
+        const scheduledMsg = schedByReqStep.get(`${req.id}:${nextWfIdx}`) || null;
 
         if (scheduledMsg && scheduledMsg.message) {
           message = scheduledMsg.message;
           console.log(`[followup] Using pre-generated message for contact ${req.contact_id} (${scheduledMsg.status})`);
+
         } else if (!nextStep.ai_icebreaker && nextStep.message) {
           message = nextStep.message;
           if (contact) {
