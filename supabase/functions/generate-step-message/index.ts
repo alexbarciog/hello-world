@@ -520,7 +520,7 @@ Deno.serve(async (req) => {
     try {
       rawMessage = await callModel(systemPrompt, userPrompt);
 
-      // Step 2 quality guard: greeting, banned phrases, missing question, over 70 words, missing signal ref → one rewrite.
+      // Step 2 quality guard: greeting, banned phrases, missing question, over 100 words, missing signal ref → one rewrite.
       if (isStep2) {
         // Prepend greeting if missing BEFORE evaluating other guards.
         rawMessage = ensureGreeting(rawMessage, lead.firstName);
@@ -529,15 +529,15 @@ Deno.serve(async (req) => {
         const wc = wordCount(initialClean);
         const missingQ = !/\?/.test(initialClean);
         // Check signal anchor in the body AFTER the greeting sentence.
-        const bodyAfterGreeting = initialClean.replace(/^hey\s+[^.!?]*[.!?]\s*(thanks[^.!?]*[.!?]\s*)?/i, '');
+        const bodyAfterGreeting = initialClean.replace(/^hey\s+[^\n]*\n?/i, '');
         const missingSignal = !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
-        if (bans.length || wc > 70 || missingQ || missingSignal) {
+        if (bans.length || wc > 100 || missingQ || missingSignal) {
           const issues: string[] = [];
           if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
-          if (wc > 70) issues.push(`Too long (${wc} words). Rewrite in 40 to 65 words.`);
-          if (missingQ) issues.push(`You must end with ONE curious question ending in "?".`);
-          if (missingSignal) issues.push(`You did not reference what they engaged with. Add a specific reference to the post (use "saw", "caught", "noticed", or "your take").`);
-          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. It MUST start with "Hey ${lead.firstName || 'there'}! Thanks for connecting." Return ONLY the new message.`;
+          if (wc > 100) issues.push(`Too long (${wc} words). Rewrite in 50 to 85 words.`);
+          if (missingQ) issues.push(`You must end with ONE low-friction CTA question ending in "?".`);
+          if (missingSignal) issues.push(`You did not reference what they engaged with. Add a specific reference to the post (use "saw", "caught", "noticed", "your take", or "your comment").`);
+          const rewritePrompt = `Your previous draft was:\n"""\n${rawMessage}\n"""\n\nProblems:\n- ${issues.join('\n- ')}\n\nRewrite the message following ALL the original rules. It MUST start with "Hey ${lead.firstName || 'there'}," and follow the 6-part structure: personalization/trigger → assumption of pain → competitor risk → different approach → low-friction CTA. Return ONLY the new message.`;
           console.log('[step2] rewriting due to:', issues.join(' | '));
           try {
             rawMessage = ensureGreeting(await callModel(systemPrompt, rewritePrompt), lead.firstName);
