@@ -83,11 +83,15 @@ function wordCount(text: string): number {
 }
 
 function ensureGreeting(msg: string, firstName: string): string {
-  const trimmed = msg.trimStart();
+  let trimmed = msg.trimStart();
+  // Strip the old "Thanks for connecting" greeting if the model still produces it.
+  trimmed = trimmed.replace(/^(hey|hi|hello)\s+[^,!.?]*!?\s*thanks for connecting[.!?]?\s*/i, '').trimStart();
+
   const head = trimmed.slice(0, 20).toLowerCase();
   if (/^(hey|hi|hello)\b/.test(head)) return trimmed;
+
   const name = firstName || 'there';
-  return `Hey ${name}! Thanks for connecting. ${trimmed}`;
+  return `Hey ${name},\n${trimmed}`;
 }
 
 const SIGNAL_ANCHOR_RE = /\b(saw|caught|noticed|your post|you engaged|you shared|you commented|your take|your comment)\b/i;
