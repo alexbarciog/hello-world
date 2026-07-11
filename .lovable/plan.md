@@ -1,48 +1,53 @@
+## Overview
+Add a new workflow step type `comment` to campaign workflows. It lets the AI post a personalised comment on the LinkedIn post that triggered the lead. This spans the workflow builder UI, a new preview edge function, backend execution, and activity logging.
 
-## Goal
+## 1. Data model (no migration needed)
+Store as a new entry in `campaigns.workflow_steps` (jsonb):
+```json
+{
+  "type": "comment",
+  "post_filter": "authored_only" | "all_signals",
+  "ai_instructions": "…",
+  "delay_hours": 0
+}
+```
+Signal-source detection uses existing `contacts.signal` field. Treat signals matching `/^posted about/i` (case-insensitive) as "lead authored". Everything else (Liked, Commented, Engaged) → skip.
 
-Cut round-trips inside our three heaviest cron-driven edge functions. Combined with the crons-staggering + indexes already shipped, this should end the connection-pool exhaustion.
+## 2. Workflow builder UI (`src/pages/CampaignDetail.tsx`)
+- Add `Comment on signal post` (MessageCircle icon) to the "Add step" picker (currently at ~line 1637).
+- Render a new card variant for `type === "comment"` alongside the existing message card, with:
+  - Radio: post filter (`authored_only` default / `all_signals`) + helper text.
+  - Textarea: AI instructions + placeholder + helper text.
+  - "Preview comment" button → calls new edge function, shows sample in read-only box.
+  - Reuse existing delay selector component.
+  - Badge on card header: "⚡ Only runs on 'Posted about' signals" when `authored_only`.
+- Non-blocking tip banner if a `message` step precedes a `comment` step.
+- Add/edit/delete/reorder wired through the same `workflow_steps` update path already used for message steps.
 
-## Scope (surgical, no behavior change)
+## 3. New edge function: `generate-comment-preview`
+- Input: `{ ai_instructions, sample_post? }`
+- Uses Lovable AI Gateway (`google/gemini-2.5-flash`) with a system prompt that mirrors the runtime generator.
+- Returns `{ comment: string }`.
+- Deployed automatically.
 
-### 1. `drain-signal-agent-tasks` (runs every 2 min)
-Currently: for each candidate task (up to N per tick), we run 4 sequential queries — in-flight check, claim, parent-run check, next-task lookup + per-row update loop.
+## 4. New edge function: `post-signal-comment` (runtime executor)
+- Input: `{ request_id }` (a `campaign_connection_requests` row at this step).
+- Loads campaign step config, contact (signal text, signal_post_url, first_name, company), user's Unipile account.
+- If `post_filter === "authored_only"` and signal is not "Posted about" → mark step complete, insert activity log entry "Comment step skipped — signal type was X", advance to next step.
+- Else: generate comment via Lovable AI, POST to `https://api{DSN}/api/v1/posts/{post_id}/comments` via Unipile (extract post id from signal_post_url), store generated comment + status in activity log.
 
-Change:
-- Fetch in-flight guard + parent-run status in a single `.in('run_id', [...])` batch up-front for all candidates.
-- Replace the per-row `next_tasks` update loop with a single bulk `update` using `.in('id', ids)`.
+## 5. Runtime integration
+- `process-campaign-followups` (existing dispatcher) gets a branch: when the next step's `type === "comment"`, invoke `post-signal-comment` instead of the message sender. Reuse existing scheduling/delay logic; the delay_hours field is honoured the same way as other steps.
 
-Expected: ~4x fewer queries per tick.
+## 6. Activity log
+Reuse existing `scheduled_messages` / activity-timeline pattern already used for messages. Add rows with `action_type = "comment"`, `status ∈ {sent, skipped, failed}`, `body = generated comment`, and (for skipped) a `skip_reason` field in metadata.
 
-### 2. `process-campaign-followups` (runs at :07 and :37)
-Currently: iterates contacts and issues per-contact selects/updates (message lookups, status writes, connection-request updates).
-
-Change:
-- Prefetch related rows for the full batch with `.in('contact_id', ids)` and build in-memory maps.
-- Group all status writes into 2-3 bulk `update ... in (...)` calls at the end of the loop.
-- Keep the actual Unipile send calls untouched — only the DB layer changes.
-
-### 3. `process-signal-agents` (runs 5 times/day)
-Currently: per-agent lookups for org, list, and results-count.
-
-Change:
-- Single upfront query loading all agents-due-to-run + joined org/list in one round-trip.
-- Bulk update `results_count` at the end.
-
-## Non-goals
-
-- No logic changes, no schedule changes, no new tables, no schema changes.
-- Reddit/X pollers are already 2x/day — not worth touching.
-- Signal-keyword-posts fetcher stays as-is (already parallelizable at the run level).
-
-## Rollout & safety
-
-- Ship all three in one commit so tomorrow morning's cron ticks all benefit.
-- Add one `console.log('[BATCH] fetched N in 1 query')` line per hot loop so we can eyeball logs after.
-- If anything misbehaves, revert is a one-file git revert per function (no schema to unwind).
+## What is NOT changed
+- Existing step types, delay logic, personalisation, sequencing, and Reply Guard behaviour are untouched.
+- No changes to onboarding, signals, dashboard, or other unrelated surfaces.
 
 ## Technical notes
-
-- `.in()` PostgREST queries have a ~2000-char URL limit; if a batch would exceed it we chunk into 500-id groups (already the pattern used in `drain-signal-agent-tasks`).
-- Optimistic-claim semantics are preserved: we still guard with `.eq('status', 'pending')` on the update so two workers can't double-claim.
-- Heartbeat / lease timings unchanged.
+- File touched most heavily: `src/pages/CampaignDetail.tsx` (workflow builder region only).
+- Two new edge functions under `supabase/functions/`.
+- Small change to `process-campaign-followups/index.ts` to route `comment` steps.
+- No DB migration required; step config lives inside the existing `workflow_steps` jsonb column.
