@@ -224,14 +224,38 @@ async function processCampaign(
         const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
         const nextStep = workflowSteps[nextWfIdx];
 
-        if (!nextStep || nextStep.type !== 'message') {
-          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message').length;
+        if (!nextStep || (nextStep.type !== 'message' && nextStep.type !== 'comment')) {
+          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message' || s.type === 'comment').length;
           const completedMsgSteps = currentStep - 1;
           if (completedMsgSteps >= totalSteps) {
             await supabase
               .from('campaign_connection_requests')
               .update({ status: 'completed' })
               .eq('id', req.id);
+          }
+          continue;
+        }
+
+        // ── Comment step branch: delegate to execute-comment-step ──
+        if (nextStep.type === 'comment') {
+          const stepCompletedAtC = req.step_completed_at ? new Date(req.step_completed_at) : null;
+          if (!stepCompletedAtC) continue;
+          const delayHoursC = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 0);
+          if (delayHoursC > 0 && Date.now() - stepCompletedAtC.getTime() < delayHoursC * 60 * 60 * 1000) {
+            continue;
+          }
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/execute-comment-step`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+              },
+              body: JSON.stringify({ request_id: req.id, step_index: nextWfIdx }),
+            });
+            console.log(`[followup] dispatched comment step ${nextWfIdx} for req ${req.id}`);
+          } catch (e) {
+            console.error(`[followup] comment step dispatch failed for req ${req.id}:`, e);
           }
           continue;
         }

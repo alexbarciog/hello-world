@@ -254,13 +254,19 @@ export default function CampaignDetail() {
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
-  const [newStepType, setNewStepType] = useState<"message" | "visit_profile">("message");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment">("message");
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
   const [newStepInstructions, setNewStepInstructions] = useState("");
   const [editStepInstructionsIdx, setEditStepInstructionsIdx] = useState<number | null>(null);
   const [editStepInstructionsText, setEditStepInstructionsText] = useState("");
+  // Comment step config
+  const [newStepPostFilter, setNewStepPostFilter] = useState<"authored_only" | "all_signals">("authored_only");
+  const [newStepCommentInstructions, setNewStepCommentInstructions] = useState("");
+  const [newStepCommentDelayHours, setNewStepCommentDelayHours] = useState(0);
+  const [commentPreviewLoading, setCommentPreviewLoading] = useState(false);
+  const [commentPreviewText, setCommentPreviewText] = useState("");
 
   
   const [settingsGoal, setSettingsGoal] = useState("");
@@ -1075,18 +1081,37 @@ export default function CampaignDetail() {
 
   async function saveNewStep() {
     if (!campaign) return;
-    const newStep: any = {
-      type: newStepType === "visit_profile" ? "visit_profile" : "message",
-      message: newStepMessageMode === "ai" ? "" : newStepMessage,
-      delay_days: newStepDelay,
-      ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
-      ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
-    };
+    let newStep: any;
+    if (newStepType === "comment") {
+      if (!newStepCommentInstructions.trim()) {
+        toast.error("Please add AI instructions for the comment.");
+        return;
+      }
+      newStep = {
+        type: "comment",
+        post_filter: newStepPostFilter,
+        ai_instructions: newStepCommentInstructions.trim(),
+        delay_hours: Math.max(0, newStepCommentDelayHours || 0),
+      };
+    } else {
+      newStep = {
+        type: newStepType === "visit_profile" ? "visit_profile" : "message",
+        message: newStepMessageMode === "ai" ? "" : newStepMessage,
+        delay_days: newStepDelay,
+        ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
+        ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
+      };
+    }
     const updated = [...workflowSteps, newStep];
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to add step"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setAddStepOpen(false);
+    // Reset comment state
+    setNewStepPostFilter("authored_only");
+    setNewStepCommentInstructions("");
+    setNewStepCommentDelayHours(0);
+    setCommentPreviewText("");
     toast.success("Step added!");
   }
 
@@ -1422,6 +1447,84 @@ export default function CampaignDetail() {
                       const isEditing = editingStep === i;
                       const stepNum = i + 2; // Step 1 is always the invitation
 
+                      // ── Comment step card ────────────────────────────────
+                      if (ws.type === "comment") {
+                        const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation");
+                        const anyMessageBefore = nonInv.slice(0, i).some((w: any) => w.type === "message");
+                        const delayH = ws.delay_hours ?? 0;
+                        return (
+                          <div key={i} className="flex items-start">
+                            <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
+                              <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                {delayH === 0 ? "immediate" : `+ ${delayH} hr${delayH !== 1 ? "s" : ""}`}
+                              </span>
+                              <svg width="60" height="2" className="text-primary">
+                                <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                              </svg>
+                              <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
+                            </div>
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.08 }}
+                              className="min-w-[240px] max-w-[260px] shrink-0"
+                            >
+                              <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(280 70% 55%), hsl(310 65% 50%))" }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <MessageCircle className="w-4 h-4" />
+                                    <span className="text-sm font-bold">Comment on signal</span>
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                        <AlertDialogDescription>This will permanently remove this comment step.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                                <p className="text-xs opacity-80">Step {stepNum}</p>
+                              </div>
+
+                              <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm space-y-2">
+                                {(ws.post_filter || "authored_only") === "authored_only" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                    <Zap className="w-3 h-3" /> Only runs on "Posted about" signals
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                                  <span className="text-foreground font-bold">AI-generated comment</span>
+                                </div>
+                                {ws.ai_instructions ? (
+                                  <div className="p-2 bg-muted/40 rounded-lg border border-border">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Instructions</p>
+                                    <p className="text-[11px] text-foreground leading-relaxed line-clamp-3">{ws.ai_instructions}</p>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground italic">No instructions configured...</p>
+                                )}
+                                {anyMessageBefore && (
+                                  <div className="p-2 rounded-lg border border-blue-200 bg-blue-50 text-[11px] text-blue-900 leading-relaxed">
+                                    💡 Tip: commenting on a post before sending a DM usually increases reply rates. Consider moving this step before your DM step.
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={i} className="flex items-start">
                           {/* Connector + delay badge */}
@@ -1635,6 +1738,7 @@ export default function CampaignDetail() {
                         <div className="space-y-3">
                           {[
                             { type: "message" as const, icon: Send, label: "Send Message", desc: "Send messages, PDF and GIFs to connected leads", color: "hsl(210 80% 50%)" },
+                            { type: "comment" as const, icon: MessageCircle, label: "Comment on signal post", desc: "AI writes and posts a personalised comment on the LinkedIn post that triggered this lead", color: "hsl(280 70% 55%)" },
                             { type: "message" as const, icon: Mic, label: "Send Voice Message", desc: "Record and send a voice message to connected leads", color: "hsl(142 70% 45%)", badge: "Coming soon" },
                             { type: "visit_profile" as const, icon: User, label: "Visit Profile", desc: "Visit the LinkedIn profile of your leads", color: "hsl(0 60% 50%)" },
                           ].map((opt) => (
@@ -1664,91 +1768,193 @@ export default function CampaignDetail() {
                           <DialogTitle className="text-lg font-bold">Edit Campaign Step</DialogTitle>
                         </DialogHeader>
 
-                        {/* Message mode toggle */}
-                        <div className="grid grid-cols-2 gap-3 mb-5">
-                          <button
-                            onClick={() => setNewStepMessageMode("manual")}
-                            className={`p-3.5 rounded-xl border-2 text-left transition-all ${newStepMessageMode === "manual" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
-                          >
-                            <p className="text-sm font-bold text-foreground">Same message for everyone</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">Use variables to craft your message</p>
-                          </button>
-                          <button
-                            onClick={() => setNewStepMessageMode("ai")}
-                            className={`p-3.5 rounded-xl border-2 text-left transition-all relative ${newStepMessageMode === "ai" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
-                          >
-                            <p className="text-sm font-bold text-foreground flex items-center gap-1.5">AI Follow-up <Sparkles className="w-3.5 h-3.5 text-amber-500" /></p>
-                            <p className="text-xs text-muted-foreground mt-0.5">Personalized follow-up, generated by AI for each lead</p>
-                          </button>
-                        </div>
-
-                        {/* Message content */}
-                        {newStepMessageMode === "manual" && (
-                          <div className="mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <label className="text-sm font-bold text-foreground">Message Content</label>
-                              <button className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                                <Sparkles className="w-3 h-3" /> Generate with AI
-                              </button>
-                            </div>
-                            <textarea
-                              value={newStepMessage}
-                              onChange={(e) => setNewStepMessage(e.target.value)}
-                              className="w-full min-h-[140px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                              placeholder="Type your message..."
-                              maxLength={1900}
-                            />
-                            <div className="flex items-center justify-between mt-2 px-1">
-                              <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-1.5">
-                                <span className="text-xs text-muted-foreground">Insert:</span>
-                                {["FirstName", "LastName", "Company"].map((v) => (
+                        {newStepType === "comment" ? (
+                          <div className="space-y-5">
+                            {/* Post filter */}
+                            <div>
+                              <label className="text-sm font-bold text-foreground block mb-2">Which signals should trigger this step?</label>
+                              <div className="space-y-2">
+                                {[
+                                  { v: "authored_only", title: "Only posts written by the lead", rec: true },
+                                  { v: "all_signals", title: "All signal types", rec: false },
+                                ].map((o) => (
                                   <button
-                                    key={v}
-                                    onClick={() => insertVariable(v)}
-                                    className="text-xs font-medium text-primary bg-primary/10 rounded px-2 py-0.5 hover:bg-primary/20 transition-colors"
+                                    key={o.v}
+                                    onClick={() => setNewStepPostFilter(o.v as any)}
+                                    className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${newStepPostFilter === o.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
                                   >
-                                    {v}
+                                    <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${newStepPostFilter === o.v ? "border-primary" : "border-muted-foreground/40"}`}>
+                                      {newStepPostFilter === o.v && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        {o.title}
+                                        {o.rec && <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">Recommended</span>}
+                                      </p>
+                                    </div>
                                   </button>
                                 ))}
                               </div>
-                              <span className="text-xs text-muted-foreground">{newStepMessage.length}/1900</span>
+                              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                                We recommend only commenting on posts the lead wrote themselves — commenting on posts they liked or engaged with may feel intrusive and out of context.
+                              </p>
                             </div>
-                          </div>
-                        )}
 
-                        {newStepMessageMode === "ai" && (
-                          <div className="mb-4 rounded-xl border border-border bg-muted/20 p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Sparkles className="w-4 h-4 text-amber-500" />
-                              <span className="text-sm font-bold text-foreground">AI-Personalized Message</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-3">Each lead will receive a unique, personalized message generated by AI based on their profile, company, and signal data.</p>
-                            <div className="mt-2">
-                              <label className="text-xs font-semibold text-foreground mb-1.5 block">Custom Instructions (optional)</label>
+                            {/* AI Instructions */}
+                            <div>
+                              <label className="text-sm font-bold text-foreground block mb-2">How should the AI write the comment?</label>
                               <textarea
-                                value={newStepInstructions}
-                                onChange={(e) => setNewStepInstructions(e.target.value)}
-                                className="w-full min-h-[80px] text-xs border border-border rounded-lg p-2.5 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-                                placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
-                                maxLength={500}
+                                value={newStepCommentInstructions}
+                                onChange={(e) => setNewStepCommentInstructions(e.target.value)}
+                                className="w-full min-h-[120px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                placeholder="e.g. Write a helpful comment that adds value to what they posted. Sound human and genuine. Do not pitch anything. End with a relevant question that invites a reply. Keep it under 150 words."
+                                maxLength={800}
                               />
-                              <p className="text-[10px] text-muted-foreground mt-1">{newStepInstructions.length}/500 — These instructions will guide the AI for this specific step only.</p>
+                              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                                The AI will read the lead's actual post and generate a unique comment based on your instructions. Every comment is personalised to what that specific lead posted.
+                              </p>
+                            </div>
+
+                            {/* Preview */}
+                            <div>
+                              <button
+                                onClick={async () => {
+                                  if (!newStepCommentInstructions.trim()) { toast.error("Add AI instructions first"); return; }
+                                  setCommentPreviewLoading(true);
+                                  setCommentPreviewText("");
+                                  try {
+                                    const { data, error } = await supabase.functions.invoke("generate-comment-preview", {
+                                      body: { ai_instructions: newStepCommentInstructions.trim() },
+                                    });
+                                    if (error) throw error;
+                                    setCommentPreviewText(data?.comment || "");
+                                  } catch (e: any) {
+                                    toast.error(e?.message || "Preview failed");
+                                  } finally {
+                                    setCommentPreviewLoading(false);
+                                  }
+                                }}
+                                disabled={commentPreviewLoading}
+                                className="inline-flex items-center gap-2 text-sm font-semibold text-primary border border-primary/30 bg-primary/5 rounded-lg px-3 py-2 hover:bg-primary/10 transition-colors disabled:opacity-60"
+                              >
+                                {commentPreviewLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                Preview comment
+                              </button>
+                              {commentPreviewText && (
+                                <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Sample output — this is what the AI might write</p>
+                                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{commentPreviewText}</p>
+                                  <p className="text-[11px] text-muted-foreground mt-2 italic">Each real comment will be unique and based on the lead's actual post.</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Delay */}
+                            <div className="flex items-center gap-3 pt-3 border-t border-border">
+                              <div className="flex-1">
+                                <label className="text-sm font-medium text-foreground block">Wait before commenting</label>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">Adding a short delay (15–30 min) makes the comment feel more natural and less automated.</p>
+                              </div>
+                              <input
+                                type="number"
+                                value={newStepCommentDelayHours}
+                                onChange={(e) => setNewStepCommentDelayHours(Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-16 text-sm text-center border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                min={0}
+                              />
+                              <span className="text-sm text-muted-foreground shrink-0">hours</span>
                             </div>
                           </div>
+                        ) : (
+                          <>
+                            {/* Message mode toggle */}
+                            <div className="grid grid-cols-2 gap-3 mb-5">
+                              <button
+                                onClick={() => setNewStepMessageMode("manual")}
+                                className={`p-3.5 rounded-xl border-2 text-left transition-all ${newStepMessageMode === "manual" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
+                              >
+                                <p className="text-sm font-bold text-foreground">Same message for everyone</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Use variables to craft your message</p>
+                              </button>
+                              <button
+                                onClick={() => setNewStepMessageMode("ai")}
+                                className={`p-3.5 rounded-xl border-2 text-left transition-all relative ${newStepMessageMode === "ai" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
+                              >
+                                <p className="text-sm font-bold text-foreground flex items-center gap-1.5">AI Follow-up <Sparkles className="w-3.5 h-3.5 text-amber-500" /></p>
+                                <p className="text-xs text-muted-foreground mt-0.5">Personalized follow-up, generated by AI for each lead</p>
+                              </button>
+                            </div>
+
+                            {/* Message content */}
+                            {newStepMessageMode === "manual" && (
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <label className="text-sm font-bold text-foreground">Message Content</label>
+                                  <button className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                                    <Sparkles className="w-3 h-3" /> Generate with AI
+                                  </button>
+                                </div>
+                                <textarea
+                                  value={newStepMessage}
+                                  onChange={(e) => setNewStepMessage(e.target.value)}
+                                  className="w-full min-h-[140px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                  placeholder="Type your message..."
+                                  maxLength={1900}
+                                />
+                                <div className="flex items-center justify-between mt-2 px-1">
+                                  <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-1.5">
+                                    <span className="text-xs text-muted-foreground">Insert:</span>
+                                    {["FirstName", "LastName", "Company"].map((v) => (
+                                      <button
+                                        key={v}
+                                        onClick={() => insertVariable(v)}
+                                        className="text-xs font-medium text-primary bg-primary/10 rounded px-2 py-0.5 hover:bg-primary/20 transition-colors"
+                                      >
+                                        {v}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">{newStepMessage.length}/1900</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {newStepMessageMode === "ai" && (
+                              <div className="mb-4 rounded-xl border border-border bg-muted/20 p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Sparkles className="w-4 h-4 text-amber-500" />
+                                  <span className="text-sm font-bold text-foreground">AI-Personalized Message</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-3">Each lead will receive a unique, personalized message generated by AI based on their profile, company, and signal data.</p>
+                                <div className="mt-2">
+                                  <label className="text-xs font-semibold text-foreground mb-1.5 block">Custom Instructions (optional)</label>
+                                  <textarea
+                                    value={newStepInstructions}
+                                    onChange={(e) => setNewStepInstructions(e.target.value)}
+                                    className="w-full min-h-[80px] text-xs border border-border rounded-lg p-2.5 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                                    placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
+                                    maxLength={500}
+                                  />
+                                  <p className="text-[10px] text-muted-foreground mt-1">{newStepInstructions.length}/500 — These instructions will guide the AI for this specific step only.</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Delay */}
+                            <div className="flex items-center gap-3 mb-6 pt-3 border-t border-border">
+                              <span className="text-sm text-foreground font-medium">Wait</span>
+                              <input
+                                type="number"
+                                value={newStepDelay}
+                                onChange={(e) => setNewStepDelay(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="w-16 text-sm text-center border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                min={1}
+                              />
+                              <span className="text-sm text-muted-foreground">days after previous step</span>
+                            </div>
+                          </>
                         )}
 
-                        {/* Delay */}
-                        <div className="flex items-center gap-3 mb-6 pt-3 border-t border-border">
-                          <span className="text-sm text-foreground font-medium">Wait</span>
-                          <input
-                            type="number"
-                            value={newStepDelay}
-                            onChange={(e) => setNewStepDelay(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-16 text-sm text-center border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                            min={1}
-                          />
-                          <span className="text-sm text-muted-foreground">days after previous step</span>
-                        </div>
 
                         {/* Actions */}
                         <div className="flex justify-end gap-2 pt-3 border-t border-border">
