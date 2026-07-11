@@ -1081,18 +1081,37 @@ export default function CampaignDetail() {
 
   async function saveNewStep() {
     if (!campaign) return;
-    const newStep: any = {
-      type: newStepType === "visit_profile" ? "visit_profile" : "message",
-      message: newStepMessageMode === "ai" ? "" : newStepMessage,
-      delay_days: newStepDelay,
-      ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
-      ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
-    };
+    let newStep: any;
+    if (newStepType === "comment") {
+      if (!newStepCommentInstructions.trim()) {
+        toast.error("Please add AI instructions for the comment.");
+        return;
+      }
+      newStep = {
+        type: "comment",
+        post_filter: newStepPostFilter,
+        ai_instructions: newStepCommentInstructions.trim(),
+        delay_hours: Math.max(0, newStepCommentDelayHours || 0),
+      };
+    } else {
+      newStep = {
+        type: newStepType === "visit_profile" ? "visit_profile" : "message",
+        message: newStepMessageMode === "ai" ? "" : newStepMessage,
+        delay_days: newStepDelay,
+        ...(newStepMessageMode === "ai" ? { ai_icebreaker: true } : {}),
+        ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
+      };
+    }
     const updated = [...workflowSteps, newStep];
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to add step"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setAddStepOpen(false);
+    // Reset comment state
+    setNewStepPostFilter("authored_only");
+    setNewStepCommentInstructions("");
+    setNewStepCommentDelayHours(0);
+    setCommentPreviewText("");
     toast.success("Step added!");
   }
 
