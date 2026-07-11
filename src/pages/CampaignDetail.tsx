@@ -1443,9 +1443,92 @@ export default function CampaignDetail() {
                     </motion.div>
 
                     {/* Dynamic message steps (skip the first invitation step from data) */}
+                    {(() => {
+                      const nonInv = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+                      const precedingHasMessage = nonInv.some((s: any, idx: number) => s.type === "message" && nonInv.findIndex((z: any) => z.type === "comment") > idx);
+                      return null;
+                    })()}
                     {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, i: number) => {
                       const isEditing = editingStep === i;
                       const stepNum = i + 2; // Step 1 is always the invitation
+
+                      // ── Comment step card ────────────────────────────────
+                      if (ws.type === "comment") {
+                        const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation");
+                        const anyMessageBefore = nonInv.slice(0, i).some((w: any) => w.type === "message");
+                        const delayH = ws.delay_hours ?? 0;
+                        return (
+                          <div key={i} className="flex items-start">
+                            <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
+                              <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                {delayH === 0 ? "immediate" : `+ ${delayH} hr${delayH !== 1 ? "s" : ""}`}
+                              </span>
+                              <svg width="60" height="2" className="text-primary">
+                                <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                              </svg>
+                              <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
+                            </div>
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.08 }}
+                              className="min-w-[240px] max-w-[260px] shrink-0"
+                            >
+                              <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(280 70% 55%), hsl(310 65% 50%))" }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <MessageCircle className="w-4 h-4" />
+                                    <span className="text-sm font-bold">Comment on signal</span>
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                        <AlertDialogDescription>This will permanently remove this comment step.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                                <p className="text-xs opacity-80">Step {stepNum}</p>
+                              </div>
+
+                              <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm space-y-2">
+                                {(ws.post_filter || "authored_only") === "authored_only" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                    <Zap className="w-3 h-3" /> Only runs on "Posted about" signals
+                                  </span>
+                                )}
+                                <div className="flex items-center gap-1.5 text-xs">
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                                  <span className="text-foreground font-bold">AI-generated comment</span>
+                                </div>
+                                {ws.ai_instructions ? (
+                                  <div className="p-2 bg-muted/40 rounded-lg border border-border">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Instructions</p>
+                                    <p className="text-[11px] text-foreground leading-relaxed line-clamp-3">{ws.ai_instructions}</p>
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground italic">No instructions configured...</p>
+                                )}
+                                {anyMessageBefore && (
+                                  <div className="p-2 rounded-lg border border-blue-200 bg-blue-50 text-[11px] text-blue-900 leading-relaxed">
+                                    💡 Tip: commenting on a post before sending a DM usually increases reply rates. Consider moving this step before your DM step.
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div key={i} className="flex items-start">
