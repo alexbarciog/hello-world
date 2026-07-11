@@ -1443,11 +1443,6 @@ export default function CampaignDetail() {
                     </motion.div>
 
                     {/* Dynamic message steps (skip the first invitation step from data) */}
-                    {(() => {
-                      const nonInv = workflowSteps.filter((ws: any) => ws.type !== "invitation");
-                      const precedingHasMessage = nonInv.some((s: any, idx: number) => s.type === "message" && nonInv.findIndex((z: any) => z.type === "comment") > idx);
-                      return null;
-                    })()}
                     {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, i: number) => {
                       const isEditing = editingStep === i;
                       const stepNum = i + 2; // Step 1 is always the invitation
