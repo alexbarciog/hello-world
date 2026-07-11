@@ -254,13 +254,19 @@ export default function CampaignDetail() {
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
-  const [newStepType, setNewStepType] = useState<"message" | "visit_profile">("message");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment">("message");
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
   const [newStepInstructions, setNewStepInstructions] = useState("");
   const [editStepInstructionsIdx, setEditStepInstructionsIdx] = useState<number | null>(null);
   const [editStepInstructionsText, setEditStepInstructionsText] = useState("");
+  // Comment step config
+  const [newStepPostFilter, setNewStepPostFilter] = useState<"authored_only" | "all_signals">("authored_only");
+  const [newStepCommentInstructions, setNewStepCommentInstructions] = useState("");
+  const [newStepCommentDelayHours, setNewStepCommentDelayHours] = useState(0);
+  const [commentPreviewLoading, setCommentPreviewLoading] = useState(false);
+  const [commentPreviewText, setCommentPreviewText] = useState("");
 
   
   const [settingsGoal, setSettingsGoal] = useState("");
