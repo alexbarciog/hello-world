@@ -246,12 +246,17 @@ export default function Dashboard() {
     enabled: Boolean(profileData?.linkedinConnected),
   });
 
-  // Chart data: leads found per day + contacted per day
-  const chartCutoffISO = (() => {
+  // Chart data: leads found per day + contacted per day.
+  // IMPORTANT: memoize the cutoff so it isn't a new value every render — otherwise
+  // the useQuery key rotates on each render and `data` is perpetually undefined,
+  // which is what caused the chart to render as "No leads yet" even with data present.
+  const chartCutoffISO = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - periodDays[period]);
+    // Round to the hour so minor render-to-render skew doesn't invalidate the key.
+    d.setMinutes(0, 0, 0);
     return d.toISOString();
-  })();
+  }, [period]);
 
   const { data: chartContacts } = useQuery({
     queryKey: ["dashboard-chart-contacts", chartCutoffISO],
