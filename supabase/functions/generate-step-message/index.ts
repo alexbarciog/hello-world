@@ -326,12 +326,23 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
   const message1Text: string =
     (req.previousStepMessage || prevMsgsArray[0] || '').toString().trim();
 
+  // Post author (present when the lead engaged with — liked/commented on — someone else's post)
+  const signalPostAuthorFull: string = (req.signalPostAuthor || '').toString().trim();
+  const signalPostAuthorFirst: string = signalPostAuthorFull.split(/\s+/)[0] || '';
+  const signalLower = (lead.signal || '').toLowerCase();
+  const isEngagementSignal = /liked|reacted|commented|engaged/.test(signalLower);
+  const isLikeSignal = /liked|reacted/.test(signalLower) && !/commented/.test(signalLower);
+
   // ── Message 1 (Step 2): cold opener ──
   if (stepNumber <= 2) {
     const hasRealPost = signalPostText.length > 40; // heuristic: real excerpts are >40 chars, summaries like "Posted about X" are shorter
     const postBlock = hasRealPost
       ? `POST_EXCERPT (their actual words — reference something concrete from this):\n"""\n${signalPostText.slice(0, 600)}\n"""`
       : `POST_SUMMARY (short signal, no full text available — reference the specific topic, not the hashtag):\n"${signalPostText || lead.signal || '(none)'}"`;
+
+    const authorBlock = (isEngagementSignal && signalPostAuthorFirst)
+      ? `\nPOST_AUTHOR_FIRST_NAME: ${signalPostAuthorFirst}\nENGAGEMENT_TYPE: ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post\nIMPORTANT: The lead did NOT publish this post — they ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post. In the trigger sentence you MUST attribute the post to ${signalPostAuthorFirst} by first name and mention the topic (e.g. "saw you ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post on {topic}"). Never say "your post" or "your take" when the lead is only an engager — that breaks trust.`
+      : '';
 
     const systemPrompt = `You are ${lead.firstName ? `messaging ${lead.firstName}` : 'writing a LinkedIn DM'} — founder to founder, peer to peer. This is the FIRST message right after they accepted your connection request. It has to feel like a real human wrote it in 30 seconds after glancing at their activity.
 
