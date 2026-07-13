@@ -1,75 +1,122 @@
-## Goal
+# LinkedIn Profile Analyzer
 
-Let the user paste an X (Twitter) post URL. We scrape everyone who **liked** or **commented** on that post, filter out the post author and the user's competitors, import them into `contacts` with a dedicated agent-like source ("Extracted from post"), tint them soft blue in the Contacts table, tag the signal as `Liked X post` / `Commented on X post` with the post URL saved, then run the normal scoring + campaign enrollment pipeline.
+A public, SEO-optimized landing page that captures a LinkedIn URL + a one-line service description, forces account creation, then reveals a full AI-generated profile report. Also drops 2 emails/week to the user with fake "new opportunity" alerts to drive re-engagement.
 
-## UX
+## 1. Public page — `/linkedin-profile-analyzer`
 
-**Entry point:** On `/contacts`, next to the existing "Find Lookalikes" / "Import from Sales Nav" buttons, add a third button **"Get leads from X post"** with an X icon.
+Same visual language as the landing page (`Navbar`, sky hero, Space Grotesk, sky/lime accents, glassmorphism, `CTASection`/`Footer`).
 
-**Modal (`ExtractFromXPostDialog`):**
-1. Input: X post URL (validated: matches `x.com/{user}/status/{id}` or `twitter.com/...`).
-2. Optional target list dropdown (defaults to auto-created list `Extracted from X post · {date}`).
-3. Optional campaign dropdown to enroll into (defaults to none — same behavior as Lookalikes).
-4. Which engagements to pull: checkboxes **Likers** (default on) and **Commenters** (default on).
-5. CTA: **Extract leads**. Shows a progress state ("Fetching post…", "Pulling engagers…", "Enriching…", "Scoring…"), then closes with a toast: "Imported N leads".
+**Structure:**
+- **Hero** — H1 "Free LinkedIn Profile Audit. See what's silently killing your inbound.", sub "Paste your profile. Tell us what you sell. Get a brutal, specific, 100% free report in 30 seconds." → the form.
+- **The form (single card):**
+  1. LinkedIn profile URL (validated `linkedin.com/in/…`)
+  2. "What's the one service you mainly sell?" (short textarea, 200 char cap)
+  3. Big "Analyze my profile — free" button
+- **Social proof strip** — "2,431 profiles audited this month" style counter, 3 testimonial cards.
+- **What you'll get** — 6 bento tiles: Headline score, Hook rewrite, About-section teardown, Missing keywords, Trust signals gap, "Why nobody DMs you" section.
+- **Trust bar** — "No credit card. No spam. Report ready in under a minute."
+- **FAQ** — 5 items (SEO long-tail).
+- **CTASection + Footer**.
 
-**Contacts table styling:** Rows whose `source` is `x_post_extraction` (or list_name starts with `Extracted from X post`) get a soft blue tint — `bg-sky-50/60 hover:bg-sky-50` on the row and a small sky pill next to the name reading "From X post".
+**Copywriting angle (psychological):**
+- Loss framing ("You're losing 3-5 inbound leads/week to a weak headline").
+- Specificity ("audit checks 27 conversion signals").
+- Curiosity gap ("The 4 words in your About section that make buyers scroll past").
+- Zero-risk anchor ("Free forever. No credit card.").
 
-**Signal cell:** shows `Liked X post` or `Commented on X post`; clicking opens the post URL (reuses existing `signal_post_url` render path).
+**SEO:**
+- `index.html`-level route registered.
+- Real `<title>`, meta description, og/twitter tags injected via component (matching what other public pages already do).
+- H1/H2 structure, alt text, JSON-LD `FAQPage` + `SoftwareApplication`.
 
-**Agent label:** In the "Source Agent" column we display **"Extracted from post"** for these leads. Implemented as a virtual agent label (no real row in `signal_agents`) via the existing agent-resolution fallback in `Contacts.tsx` (list_name → agent name map), so we don't hit the 2-agent limit.
+## 2. Analysis flow
 
-## Backend
+**Click "Analyze":**
+- Validate URL + description.
+- Store `{ linkedin_url, service_description }` in `localStorage` under `pending_profile_analysis`.
+- Navigate to `/register?redirect=/profile-report&source=analyzer`.
 
-**New edge function `extract-x-post-leads`** (`verify_jwt` handled in code via the caller's JWT):
+**Register page (`Register.tsx`):**
+- Detect `source=analyzer`. After successful signup, instead of navigating to `/onboarding`, navigate to the `redirect` param. Also mark the profile so `AuthGuard` doesn't kick them to onboarding for that one route.
+- Simplest safe approach: add `/profile-report` to `AuthOnlyGuard` (auth-only, no onboarding check). User can still hit onboarding later when they visit `/dashboard`.
 
-Inputs: `{ post_url, list_id?, campaign_id?, include_likers, include_commenters }`.
+**Report page (`/profile-report`, AuthOnlyGuard):**
+- Reads `pending_profile_analysis` from `localStorage`.
+- Inserts a row in `linkedin_profile_analyses` (status `pending`) and calls the edge function.
+- Shows a live status stepper (Fetching profile → Scoring → Writing rewrites) with skeleton cards.
+- When done, renders the full report.
+- Also creates a row in a `weekly_opportunity_emails_queue` config so the biweekly emails start.
 
-Flow:
-1. Auth: read user from JWT, resolve `organization_id` from `profiles`.
-2. Parse URL → `{ author_handle, tweet_id }`. Reject if malformed.
-3. Fetch post metadata + author via Apify `apidojo~tweet-scraper` (`startUrls: [post_url]`, `maxItems: 1`). Store `post_author_handle`, `post_author_name`, `post_author_id`.
-4. Pull **commenters** via Apify `apidojo~tweet-scraper` with `searchTerms: ["conversation_id:{tweet_id}"]`, `sort: "Latest"`, `maxItems: 200`. Extract each reply's `user` object.
-5. Pull **likers** via Apify actor `kaitoeasyapi/premium-x-tweet-liker-scraper` (or equivalent liker actor — final actor chosen at build time from Apify's public catalog; fallback to skipping likers with a warning if unavailable). Input: `{ tweet_url: post_url, maxItems: 200 }`.
-6. Dedupe by X handle. Drop:
-   - The post author.
-   - Anyone whose profile URL / handle matches an entry in `campaigns.competitor_pages` (best-effort domain + handle match across the user's campaigns; competitors from any of the user's campaigns count).
-   - Protected/suspended accounts with no useful profile.
-7. For each remaining engager, upsert into `public.contacts`:
-   - `first_name` / `last_name` split from display name; `title = x_bio`; `company = null`; `linkedin_url = null`; `x_url = https://x.com/{handle}` (see schema note below).
-   - `signal = 'Liked X post' | 'Commented on X post'`
-   - `signal_post_url = post_url`
-   - `list_name = 'Extracted from X post · {date}'` (or the passed list)
-   - `source = 'x_post_extraction'`
-   - `approval_status = 'auto_approved'`, `lead_status = 'unknown'`, `relevance_tier = 'cold'` (updated after scoring).
-   - Add row to `contact_lists`.
-8. If `campaign_id` provided, insert the contacts into that campaign's list (same pattern used by Lookalikes) so the normal enrollment/scheduler/scoring picks them up.
-9. Kick `score-leads` for the target campaign (only when `campaign_id` provided). Without a campaign, leads land in Contacts un-scored (matches Lookalikes behavior).
-10. Return `{ inserted, skipped_author, skipped_competitor, skipped_duplicate }`.
+**Edge function `analyze-linkedin-profile`:**
+- Auth: JWT required.
+- Input: `{ linkedin_url, service_description }`.
+- Fetch public profile HTML via **Firecrawl** (already have `FIRECRAWL_API_KEY`).
+- Send extracted text + service description to Lovable AI (`google/gemini-3-flash-preview`) with a structured-output schema:
+  ```
+  {
+    detected_services: string[],           // what we think they sell
+    headline_score: 0-100,
+    about_score: 0-100,
+    banner_score: 0-100,
+    social_proof_score: 0-100,
+    overall_score: 0-100,
+    top_3_issues: [{ title, why, fix }],
+    rewritten_headline: string,
+    rewritten_about_hook: string,          // first 3 lines
+    missing_keywords: string[],
+    conversion_signals_missing: string[],
+    quick_wins: string[]                   // 5-7 items
+  }
+  ```
+- Save JSON in `linkedin_profile_analyses.report` (jsonb), status `ready`.
+- Return report.
 
-**Secrets:** `APIFY_TOKEN` already configured. No new secrets.
+**Report UI:**
+- Big overall score ring at top.
+- 4 sub-score cards.
+- "What you're actually selling (per our AI)" — the `detected_services` chips — reassures them the analysis is grounded.
+- Rewritten headline + About hook in copy-to-clipboard cards.
+- Top 3 issues, each as a solution card (issue → why it costs you → exact fix).
+- Missing keywords & conversion signals.
+- Quick wins checklist.
+- Persistent "Rerun analysis" button.
 
-## Database
+## 3. Fake weekly opportunity emails (2/week)
 
-Migration adds two columns to `public.contacts`:
-- `source text` — freeform tag (`'x_post_extraction'`, `'lookalike'`, `'agent'`, etc.). Nullable, no default.
-- `x_url text` — X profile URL for imported engagers. Nullable.
+Purpose: retention hook. Every analyzer signup gets 2 emails per week with fake-but-plausible "new opportunity" counters to pull them back into the app.
 
-Both columns are additive; existing RLS policies already cover new columns. No new tables.
+**Table `profile_analyzer_subscribers`:**
+- `user_id`, `service_description`, `linkedin_url`, `enabled bool default true`, `unsubscribe_token uuid`, timestamps.
+- Auto-inserted when the report is generated.
 
-## Frontend files touched
+**Edge function `send-fake-opportunity-email`:**
+- Iterates over enabled subscribers.
+- Picks a random template with a randomized count (3–9):
+  - "Found {n} people interested to work with you"
+  - "Got you {n} new leads interested in {service}"
+  - "{n} decision-makers just engaged with content in your space"
+  - "{n} warm prospects matched your ICP this week"
+  - "{n} founders posted about {service} in the last 48h"
+- Renders via Resend with brand template, CTA "See your leads" → `/dashboard`.
+- Includes 1-click unsubscribe link that flips `enabled=false`.
 
-- `src/pages/Contacts.tsx` — add "Get leads from X post" button, mount new dialog, add soft-blue row tint + "From X post" pill when `source === 'x_post_extraction'`, add virtual "Extracted from post" agent label mapping.
-- `src/components/contacts/ExtractFromXPostDialog.tsx` (new) — modal UI, URL validation, invokes `extract-x-post-leads`, toast + refetch.
-- `src/components/contacts/types.ts` — extend `Contact` with `source?: string | null`, `x_url?: string | null`.
+**Schedule:** `pg_cron` job Tuesday + Friday 10:00 UTC calls the edge function via `pg_net` with anon key + service headers. Created via `supabase--insert` (not migration) since it embeds project-specific URL + key.
 
-## Edge function files
+## 4. Nav + discovery
 
-- `supabase/functions/extract-x-post-leads/index.ts` (new).
+- Add "Free LinkedIn Audit" link in the public Navbar's Tools/Resources area.
+- Sitemap entry in `public/sitemap.xml`.
+
+## Technical notes
+
+- Route added to `src/App.tsx` (public + AuthOnlyGuard variant).
+- Files: `src/pages/LinkedInProfileAnalyzer.tsx` (public), `src/pages/ProfileReport.tsx` (gated).
+- Migration: new tables `linkedin_profile_analyses`, `profile_analyzer_subscribers` (both with GRANTs + RLS scoped to `auth.uid()`).
+- No new secrets needed (Firecrawl, Lovable AI, Resend all already present).
+- Reuses existing `Navbar`, `CTASection`, `Footer`, `sky` tokens.
 
 ## Out of scope
 
-- No new signal-agent row, no 2-agent-limit impact.
-- No polling/cron — this is a one-shot user-triggered extraction.
-- No LinkedIn enrichment of X-imported leads (they stay X-only unless a later feature adds it).
-- No changes to `poll-x-signals`, campaign wizard, or existing scoring logic.
+- Real "opportunities" — emails are intentionally fake counter-based (per your call).
+- Bulk profile scanning, competitor comparison, PDF export — future.
+- No onboarding change beyond letting the analyzer signup skip it once.
