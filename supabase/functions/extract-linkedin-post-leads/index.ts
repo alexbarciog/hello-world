@@ -412,12 +412,12 @@ Deno.serve(async (req) => {
         signal: signalLabel,
         signal_post_url: canonicalUrl,
         signal_post_excerpt: postText ? postText.slice(0, 500) : null,
-        relevance_tier: 'cold',
+        relevance_tier: eng.relevance_tier,
         lead_status: 'unknown',
         approval_status: 'auto_approved',
         list_name: listName,
         source: 'linkedin_post_extraction',
-        ai_score: 1,
+        ai_score: eng.ai_score,
       } as any).select('id').single();
       if (insErr) { console.warn('[extract-li] insert err', insErr.message); continue; }
       insertedIds.push(row.id);
@@ -425,15 +425,10 @@ Deno.serve(async (req) => {
       inserted++;
     }
 
-    if (campaign_id && insertedIds.length > 0) {
-      try {
-        await admin.functions.invoke('score-leads', { body: { campaign_id } });
-      } catch (e) { console.warn('[extract-li] score-leads invoke failed', e); }
-    }
-
     return jsonResp({
       inserted,
       skipped_competitor,
+      skipped_low_fit,
       skipped_duplicate,
       reactions_fetched,
       comments_fetched,
