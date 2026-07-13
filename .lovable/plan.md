@@ -1,53 +1,78 @@
-## Overview
-Add a new workflow step type `comment` to campaign workflows. It lets the AI post a personalised comment on the LinkedIn post that triggered the lead. This spans the workflow builder UI, a new preview edge function, backend execution, and activity logging.
+# Add "Send Email" step to Campaign Workflow
 
-## 1. Data model (no migration needed)
-Store as a new entry in `campaigns.workflow_steps` (jsonb):
-```json
-{
-  "type": "comment",
-  "post_filter": "authored_only" | "all_signals",
-  "ai_instructions": "…",
-  "delay_hours": 0
-}
+A new workflow step type that sends a real email (via Resend) to leads who have an email address on file. Leads without an email are automatically skipped. Sits alongside existing LinkedIn steps — no changes to invitation/message/comment/visit behavior.
+
+## 1. Workflow builder UI (`src/pages/CampaignDetail.tsx`)
+
+**Add step picker** — new option in the "Add new step" dialog:
+- Icon: `Mail` (lucide)
+- Label: "Send Email"
+- Description: "Send a personalised email to leads that have an email on file. Leads without an email are skipped."
+- Color: `hsl(25 95% 53%)` (orange, matches email accent)
+
+**Step type:** `"email"` added to `newStepType` union and to `workflow_steps` schema:
 ```
-Signal-source detection uses existing `contacts.signal` field. Treat signals matching `/^posted about/i` (case-insensitive) as "lead authored". Everything else (Liked, Commented, Engaged) → skip.
+{ type: "email", subject: string, message: string, ai_sdr: boolean, delay_hours: number, custom_instructions?: string }
+```
 
-## 2. Workflow builder UI (`src/pages/CampaignDetail.tsx`)
-- Add `Comment on signal post` (MessageCircle icon) to the "Add step" picker (currently at ~line 1637).
-- Render a new card variant for `type === "comment"` alongside the existing message card, with:
-  - Radio: post filter (`authored_only` default / `all_signals`) + helper text.
-  - Textarea: AI instructions + placeholder + helper text.
-  - "Preview comment" button → calls new edge function, shows sample in read-only box.
-  - Reuse existing delay selector component.
-  - Badge on card header: "⚡ Only runs on 'Posted about' signals" when `authored_only`.
-- Non-blocking tip banner if a `message` step precedes a `comment` step.
-- Add/edit/delete/reorder wired through the same `workflow_steps` update path already used for message steps.
+**Edit panel** for email step:
+- Subject line input (required, personalisation vars supported: `{first_name}`, `{company}`, `{signal}`)
+- Body textarea (or "AI SDR Mode" toggle — same pattern as existing message step; when AI SDR is on, body is generated per-lead)
+- Delay control (reuses existing delay UI)
+- Custom instructions field (when AI SDR on)
 
-## 3. New edge function: `generate-comment-preview`
-- Input: `{ ai_instructions, sample_post? }`
-- Uses Lovable AI Gateway (`google/gemini-2.5-flash`) with a system prompt that mirrors the runtime generator.
-- Returns `{ comment: string }`.
-- Deployed automatically.
+**Step card rendering** in the workflow visualization:
+- Same visual style as Send Message card, but with Mail icon + orange accent
+- Shows metrics: `X contact(s) with email · Y sent · Z skipped (no email)`
+- "View Contacts" and "Edit" / "Instructions" buttons (parity with message step)
 
-## 4. New edge function: `post-signal-comment` (runtime executor)
-- Input: `{ request_id }` (a `campaign_connection_requests` row at this step).
-- Loads campaign step config, contact (signal text, signal_post_url, first_name, company), user's Unipile account.
-- If `post_filter === "authored_only"` and signal is not "Posted about" → mark step complete, insert activity log entry "Comment step skipped — signal type was X", advance to next step.
-- Else: generate comment via Lovable AI, POST to `https://api{DSN}/api/v1/posts/{post_id}/comments` via Unipile (extract post id from signal_post_url), store generated comment + status in activity log.
+## 2. Execution (`supabase/functions/process-campaign-followups/index.ts`)
 
-## 5. Runtime integration
-- `process-campaign-followups` (existing dispatcher) gets a branch: when the next step's `type === "comment"`, invoke `post-signal-comment` instead of the message sender. Reuse existing scheduling/delay logic; the delay_hours field is honoured the same way as other steps.
+Add a branch for `step.type === "email"`:
+1. Load contact; if `contact.email` is null/empty → mark scheduled_message as `skipped` with reason `"no_email"` and continue to next step.
+2. If AI SDR mode: call existing `generate-step-message` (add `channel: "email"` param so it produces subject + body suitable for email, longer/more formal than LI DM).
+3. Send via existing `send-email` edge function (Resend). From address: verified sender configured per workspace (fallback `onboarding@resend.dev` for tests).
+4. On success: increment `messages_sent`, log to `scheduled_messages` with `channel: "email"`, `status: "sent"`.
+5. On failure: `status: "failed"` with error text.
+6. Respect Reply Guard: if lead already replied on any channel, halt subsequent email steps too.
 
-## 6. Activity log
-Reuse existing `scheduled_messages` / activity-timeline pattern already used for messages. Add rows with `action_type = "comment"`, `status ∈ {sent, skipped, failed}`, `body = generated comment`, and (for skipped) a `skip_reason` field in metadata.
+## 3. AI SDR generation (`supabase/functions/generate-step-message/index.ts`)
 
-## What is NOT changed
-- Existing step types, delay logic, personalisation, sequencing, and Reply Guard behaviour are untouched.
-- No changes to onboarding, signals, dashboard, or other unrelated surfaces.
+Extend to accept `channel: "linkedin" | "email"`. For email:
+- Generate `{ subject, body }` JSON
+- Body: 4–6 sentences, still peer-to-peer, banned-terms rules preserved
+- Return both fields so caller can pass them to Resend
 
-## Technical notes
-- File touched most heavily: `src/pages/CampaignDetail.tsx` (workflow builder region only).
-- Two new edge functions under `supabase/functions/`.
-- Small change to `process-campaign-followups/index.ts` to route `comment` steps.
-- No DB migration required; step config lives inside the existing `workflow_steps` jsonb column.
+## 4. Scheduled tab
+
+Scheduled messages of `channel: "email"` render with a Mail icon and show subject + body preview. Editable pre-send, read-only after sent (existing pattern).
+
+## 5. Contacts view (per step)
+
+"View Contacts" for an email step filters to contacts whose email is populated (or shows both, with a "Skipped (no email)" badge on those without).
+
+## 6. Data / secrets
+
+- Reuse existing `RESEND_API_KEY` secret (already configured).
+- `scheduled_messages` table already exists; add `channel` and `subject` handling in code — if columns don't exist, plan a migration to add `channel text default 'linkedin'` and `subject text`.
+- No new tables required.
+
+## Files touched
+
+- `src/pages/CampaignDetail.tsx` — add option, edit panel, step card, scheduled/contacts filters
+- `supabase/functions/process-campaign-followups/index.ts` — email branch + skip-on-no-email
+- `supabase/functions/generate-step-message/index.ts` — channel-aware output
+- `supabase/functions/send-email/index.ts` — already exists, reused as-is
+- Migration (only if `scheduled_messages.channel`/`subject` are missing)
+
+## Out of scope
+
+- No changes to existing LinkedIn step types, delays, Reply Guard, or Conversational AI logic.
+- No inbox / reply parsing for email (LinkedIn Unibox stays LinkedIn-only for now).
+- No domain verification UI — user configures Resend sender via existing settings/secrets.
+
+## Questions before build
+
+1. **AI SDR by default for the email step, or manual template by default?** (Message step defaults to AI SDR; I'd mirror that.)
+2. **Sender address**: use a single global verified sender for now, or add a per-campaign "From" field in this step's config?
+3. **Reply detection for email**: skip for v1 (email steps only send, don't listen), or wire a Resend inbound webhook now?
