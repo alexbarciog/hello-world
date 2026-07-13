@@ -911,6 +911,7 @@ async function generateNextStepMessage(
       leadTitle: contact.title,
       buyingSignal: contact.signal,
       signalPostText: contact.signal_post_excerpt || contact.signal || '',
+      signalPostAuthor: (contact as any).signal_post_author || '',
       leadIndustry: contact.industry,
       personality: contact.personality_prediction,
     });
