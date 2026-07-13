@@ -328,9 +328,10 @@ Deno.serve(async (req) => {
           post_url, postId, list_id, campaign_id,
           include_likers, include_commenters,
         });
-        const { inserted = 0, skipped_competitor = 0, skipped_low_fit = 0, skipped_duplicate = 0, raw_unique = 0, list_name } = result || {};
-        const bodyText = inserted > 0
-          ? `Imported ${inserted} lead${inserted === 1 ? '' : 's'} from ${raw_unique} engager${raw_unique === 1 ? '' : 's'} into "${list_name}".`
+        const { inserted = 0, added_to_list = 0, skipped_competitor = 0, skipped_low_fit = 0, skipped_duplicate = 0, raw_unique = 0, list_name } = result || {};
+        const totalToList = inserted + added_to_list;
+        const bodyText = totalToList > 0
+          ? `Added ${totalToList} lead${totalToList === 1 ? '' : 's'} to "${list_name}" (${inserted} new, ${added_to_list} existing) from ${raw_unique} engager${raw_unique === 1 ? '' : 's'}.`
           : `No qualified leads found (skipped ${skipped_competitor} competitors, ${skipped_low_fit} low-fit, ${skipped_duplicate} duplicates).`;
         await admin.from('notifications').insert({
           user_id: user.id,
