@@ -90,11 +90,12 @@ Deno.serve(async (req) => {
       return jsonResp({ error: 'Please connect your LinkedIn account first (Settings → LinkedIn).' }, 400);
     }
 
-    // Collect competitor slugs from user's campaigns
+    // Load user's campaigns for competitor list + business context
     const { data: userCampaigns } = await admin
       .from('campaigns')
-      .select('competitor_pages')
-      .eq('user_id', user.id);
+      .select('id, company_name, description, industry, services, competitor_pages, icp_job_titles, icp_industries, icp_locations, icp_company_sizes')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
     const competitorCompanies = new Set<string>();
     for (const c of userCampaigns || []) {
       for (const url of ((c as any).competitor_pages || [])) {
@@ -102,6 +103,27 @@ Deno.serve(async (req) => {
         if (slug) competitorCompanies.add(slug);
       }
     }
+    // Pick a context campaign: explicit id > first campaign
+    const ctxCampaign =
+      (campaign_id && (userCampaigns || []).find((c: any) => c.id === campaign_id)) ||
+      (userCampaigns || [])[0] ||
+      null;
+    const businessContext = ctxCampaign
+      ? [
+          ctxCampaign.company_name ? `Company: ${ctxCampaign.company_name}` : '',
+          ctxCampaign.industry ? `Industry: ${ctxCampaign.industry}` : '',
+          ctxCampaign.description ? `What we sell: ${ctxCampaign.description}` : '',
+          Array.isArray(ctxCampaign.services) && ctxCampaign.services.length ? `Services: ${ctxCampaign.services.join(', ')}` : '',
+        ].filter(Boolean).join('\n')
+      : '';
+    const idealLead = ctxCampaign
+      ? [
+          Array.isArray(ctxCampaign.icp_job_titles) && ctxCampaign.icp_job_titles.length ? `Job titles: ${ctxCampaign.icp_job_titles.join(', ')}` : '',
+          Array.isArray(ctxCampaign.icp_industries) && ctxCampaign.icp_industries.length ? `Industries: ${ctxCampaign.icp_industries.join(', ')}` : '',
+          Array.isArray(ctxCampaign.icp_locations) && ctxCampaign.icp_locations.length ? `Locations: ${ctxCampaign.icp_locations.join(', ')}` : '',
+          Array.isArray(ctxCampaign.icp_company_sizes) && ctxCampaign.icp_company_sizes.length ? `Company sizes: ${ctxCampaign.icp_company_sizes.join(', ')}` : '',
+        ].filter(Boolean).join('\n')
+      : '';
 
     // 1) Post metadata → try to identify author slug so we can skip them
     let postAuthorSlug: string | null = null;
