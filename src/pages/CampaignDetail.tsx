@@ -1761,8 +1761,20 @@ export default function CampaignDetail() {
                         );
                       }
 
+                      const nonInvMapG = workflowSteps.map((w: any, idx: number) => ({ w, idx })).filter((it: any) => it.w.type !== "invitation" && !it.w.before_invitation);
+                      const actualIdxG = nonInvMapG[i]?.idx ?? 0;
                       return (
                         <div key={i} className="flex items-start">
+                          {/* Insert-between button */}
+                          <div className="flex flex-col items-center self-start pt-14 mr-1 ml-[-8px]">
+                            <button
+                              onClick={() => openAddStep({ insertIndex: actualIdxG })}
+                              title="Insert step here"
+                              className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
                           {/* Connector + delay badge */}
                           <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
                             {editingDelayStep === i ? (() => {
