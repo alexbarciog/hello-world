@@ -295,6 +295,38 @@ export default function CampaignDetail() {
   const [invitationNoteMode, setInvitationNoteMode] = useState<"without" | "with">("without");
   const [invitationNote, setInvitationNote] = useState("");
 
+  // Comment step edit dialog state
+  const [editCommentIdx, setEditCommentIdx] = useState<number | null>(null);
+  const [editCommentInstructions, setEditCommentInstructions] = useState("");
+  const [editCommentPostFilter, setEditCommentPostFilter] = useState<"authored_only" | "all_signals">("authored_only");
+  const [editCommentDelayHours, setEditCommentDelayHours] = useState(0);
+
+  function openEditComment(actualIdx: number) {
+    const ws: any = workflowSteps[actualIdx];
+    if (!ws || ws.type !== "comment") return;
+    setEditCommentIdx(actualIdx);
+    setEditCommentInstructions(ws.ai_instructions || "");
+    setEditCommentPostFilter((ws.post_filter as any) || "authored_only");
+    setEditCommentDelayHours(Number(ws.delay_hours ?? 0));
+  }
+
+  async function saveEditComment() {
+    if (!campaign || editCommentIdx === null) return;
+    if (!editCommentInstructions.trim()) { toast.error("Please add AI instructions."); return; }
+    const updated = [...workflowSteps];
+    updated[editCommentIdx] = {
+      ...updated[editCommentIdx],
+      ai_instructions: editCommentInstructions.trim(),
+      post_filter: editCommentPostFilter,
+      delay_hours: Math.max(0, editCommentDelayHours || 0),
+    };
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to save"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setEditCommentIdx(null);
+    toast.success("Comment step updated");
+  }
+
   // Meeting booking state
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
@@ -1571,6 +1603,15 @@ export default function CampaignDetail() {
                                     >
                                       <ChevronRight className="w-3.5 h-3.5" />
                                     </button>
+                                    {ws.type === "comment" && (
+                                      <button
+                                        onClick={() => openEditComment(actualIdx)}
+                                        title="Edit comment step"
+                                        className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
@@ -1742,6 +1783,13 @@ export default function CampaignDetail() {
                                       disabled={actualIdxC >= workflowSteps.length - 1}
                                     >
                                       <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => openEditComment(actualIdxC)}
+                                      title="Edit comment step"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
                                     </button>
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
@@ -2605,6 +2653,74 @@ export default function CampaignDetail() {
                       Save
                     </button>
                     <button onClick={() => setEditInvitationOpen(false)} className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={editCommentIdx !== null} onOpenChange={(open) => { if (!open) setEditCommentIdx(null); }}>
+                <DialogContent className="sm:max-w-[520px] p-6 gap-0">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                      <MessageCircle className="w-4 h-4 text-purple-600" />
+                      Edit comment step
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground">AI Instructions</label>
+                      <textarea
+                        value={editCommentInstructions}
+                        onChange={(e) => setEditCommentInstructions(e.target.value)}
+                        className="w-full text-xs border border-border rounded-lg p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        rows={6}
+                        placeholder="Describe the persona, tone, and what the AI should say..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground">Post filter</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setEditCommentPostFilter("authored_only")}
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${editCommentPostFilter === "authored_only" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                        >
+                          <p className="text-xs font-bold text-foreground">Only "Posted about"</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Comment only on posts authored by the lead.</p>
+                        </button>
+                        <button
+                          onClick={() => setEditCommentPostFilter("all_signals")}
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${editCommentPostFilter === "all_signals" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                        >
+                          <p className="text-xs font-bold text-foreground">All signal posts</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Comment on any post from the signal.</p>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground">Delay (hours)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editCommentDelayHours}
+                        onChange={(e) => setEditCommentDelayHours(Math.max(0, parseInt(e.target.value || "0", 10)))}
+                        className="w-32 text-xs border border-border rounded-lg p-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="text-[10px] text-muted-foreground">0 = immediate. For pre-invitation steps this delays before the invite is sent.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={saveEditComment}
+                      className="text-xs font-bold text-white bg-primary rounded-lg px-4 py-2 hover:bg-primary/90 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button onClick={() => setEditCommentIdx(null)} className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">
                       Cancel
                     </button>
                   </div>
