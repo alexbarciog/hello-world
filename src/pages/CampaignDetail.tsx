@@ -1127,6 +1127,7 @@ export default function CampaignDetail() {
     setNewStepCommentInstructions("");
     setNewStepCommentDelayHours(0);
     setCommentPreviewText("");
+    setNewStepEmailSubject("");
     toast.success("Step added!");
   }
 
