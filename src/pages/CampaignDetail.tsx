@@ -1094,6 +1094,20 @@ export default function CampaignDetail() {
         ai_instructions: newStepCommentInstructions.trim(),
         delay_hours: Math.max(0, newStepCommentDelayHours || 0),
       };
+    } else if (newStepType === "email") {
+      const isAi = newStepMessageMode === "ai";
+      if (!isAi && (!newStepEmailSubject.trim() || !newStepMessage.trim())) {
+        toast.error("Please add a subject and body, or switch to AI SDR mode.");
+        return;
+      }
+      newStep = {
+        type: "email",
+        subject: isAi ? "" : newStepEmailSubject.trim(),
+        message: isAi ? "" : newStepMessage,
+        delay_hours: Math.max(0, (newStepDelay || 1) * 24),
+        ai_sdr: isAi,
+        ...(isAi && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
+      };
     } else {
       newStep = {
         type: newStepType === "visit_profile" ? "visit_profile" : "message",
