@@ -740,6 +740,7 @@ async function performExtraction(ctx: {
 
     return {
       inserted,
+      added_to_list,
       skipped_competitor,
       skipped_low_fit,
       skipped_duplicate,
