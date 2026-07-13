@@ -161,6 +161,13 @@ export default function Register() {
       return;
     }
 
+    // Analyzer flow — skip onboarding, jump straight to the report page
+    if (sourceParam === "analyzer" && redirectParam) {
+      toast.success("Account created! Generating your LinkedIn audit…");
+      navigate(redirectParam);
+      return;
+    }
+
     toast.success("Account created! Let's set up your first campaign.");
     navigate("/onboarding");
   };
