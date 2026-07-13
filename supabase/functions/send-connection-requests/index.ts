@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
         // Get campaign and user profile limits
         const { data: campaign } = await serviceClient
           .from('campaigns')
-          .select('daily_connect_limit, user_id, exclude_first_degree, timezone')
+          .select('daily_connect_limit, user_id, exclude_first_degree, timezone, workflow_steps')
           .eq('id', campaignId)
           .eq('status', 'active')
           .single();
