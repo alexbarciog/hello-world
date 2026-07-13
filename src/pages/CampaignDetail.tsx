@@ -254,7 +254,12 @@ export default function CampaignDetail() {
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
-  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment" | "email">("message");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment" | "email" | "like">("message");
+  const [newStepInsertIndex, setNewStepInsertIndex] = useState<number | null>(null); // null = append
+  const [newStepBeforeInvitation, setNewStepBeforeInvitation] = useState(false);
+  const [newStepAllowedTypes, setNewStepAllowedTypes] = useState<Array<"message" | "email" | "comment" | "visit_profile" | "like">>(["message", "email", "comment", "visit_profile", "like"]);
+  const [newStepLikePostFilter, setNewStepLikePostFilter] = useState<"authored_only" | "all_signals">("authored_only");
+  const [newStepLikeDelayHours, setNewStepLikeDelayHours] = useState(0);
   const [newStepEmailSubject, setNewStepEmailSubject] = useState("");
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
