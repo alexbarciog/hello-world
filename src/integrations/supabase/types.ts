@@ -543,6 +543,7 @@ export type Database = {
           signal_b_hit: boolean | null
           signal_c_hit: boolean | null
           signal_count: number
+          signal_post_author: string | null
           signal_post_excerpt: string | null
           signal_post_url: string | null
           source: string | null
@@ -579,6 +580,7 @@ export type Database = {
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
           signal_count?: number
+          signal_post_author?: string | null
           signal_post_excerpt?: string | null
           signal_post_url?: string | null
           source?: string | null
@@ -615,6 +617,7 @@ export type Database = {
           signal_b_hit?: boolean | null
           signal_c_hit?: boolean | null
           signal_count?: number
+          signal_post_author?: string | null
           signal_post_excerpt?: string | null
           signal_post_url?: string | null
           source?: string | null

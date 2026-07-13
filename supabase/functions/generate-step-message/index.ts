@@ -326,12 +326,23 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
   const message1Text: string =
     (req.previousStepMessage || prevMsgsArray[0] || '').toString().trim();
 
+  // Post author (present when the lead engaged with — liked/commented on — someone else's post)
+  const signalPostAuthorFull: string = (req.signalPostAuthor || '').toString().trim();
+  const signalPostAuthorFirst: string = signalPostAuthorFull.split(/\s+/)[0] || '';
+  const signalLower = (lead.signal || '').toLowerCase();
+  const isEngagementSignal = /liked|reacted|commented|engaged/.test(signalLower);
+  const isLikeSignal = /liked|reacted/.test(signalLower) && !/commented/.test(signalLower);
+
   // ── Message 1 (Step 2): cold opener ──
   if (stepNumber <= 2) {
     const hasRealPost = signalPostText.length > 40; // heuristic: real excerpts are >40 chars, summaries like "Posted about X" are shorter
     const postBlock = hasRealPost
       ? `POST_EXCERPT (their actual words — reference something concrete from this):\n"""\n${signalPostText.slice(0, 600)}\n"""`
       : `POST_SUMMARY (short signal, no full text available — reference the specific topic, not the hashtag):\n"${signalPostText || lead.signal || '(none)'}"`;
+
+    const authorBlock = (isEngagementSignal && signalPostAuthorFirst)
+      ? `\nPOST_AUTHOR_FIRST_NAME: ${signalPostAuthorFirst}\nENGAGEMENT_TYPE: ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post\nIMPORTANT: The lead did NOT publish this post — they ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post. In the trigger sentence you MUST attribute the post to ${signalPostAuthorFirst} by first name and mention the topic (e.g. "saw you ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post on {topic}"). Never say "your post" or "your take" when the lead is only an engager — that breaks trust.`
+      : '';
 
     const systemPrompt = `You are ${lead.firstName ? `messaging ${lead.firstName}` : 'writing a LinkedIn DM'} — founder to founder, peer to peer. This is the FIRST message right after they accepted your connection request. It has to feel like a real human wrote it in 30 seconds after glancing at their activity.
 
@@ -343,7 +354,7 @@ WHAT_WE_DO (background context — use to position the "different approach", but
 ${painPoints.length ? `PAIN_POINTS they might have:\n${painPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}` : ''}
 ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 
-${postBlock}
+${postBlock}${authorBlock}
 
 ===== HOW TO WRITE IT =====
 Length: 35 to 60 words. Never over 70. Shorter is better — cut every word that does not earn its place.
@@ -362,7 +373,7 @@ Format: 2-4 short paragraphs. The greeting can stand alone or flow into the next
 
 STRUCTURE (follow this shape exactly, do not label the lines):
 1) GREETING — Start with exactly: "Hey ${lead.firstName || 'there'},". Comma, no exclamation, NO "Thanks for connecting".
-2) PERSONALIZATION / TRIGGER + RELEVANCE — One sentence referencing the SPECIFIC action they took on LinkedIn (their comment, post, take, engagement). Be concrete about the topic. Example openers: "I saw your comment on the {topic} solution." / "Caught your take on {topic}." / "Noticed your post about {topic}." This must prove you actually saw their activity.
+2) PERSONALIZATION / TRIGGER + RELEVANCE — One sentence referencing the SPECIFIC action they took on LinkedIn. If POST_AUTHOR_FIRST_NAME is provided, they engaged with someone else's post — attribute the post to that author by first name and mention the topic (e.g. "saw you liked ${signalPostAuthorFirst || '{author}'}'s post on {topic}." / "caught your comment on ${signalPostAuthorFirst || '{author}'}'s post about {topic}."). If no author is provided, treat the post as the lead's own ("Noticed your post about {topic}." / "Caught your take on {topic}."). This must prove you actually saw their activity and never falsely claim they wrote a post they only liked.
 3) ASSUMPTION OF PAIN — One sentence stating the real outcome they likely care about. Format: "Seems like you're looking for {better outcome}." / "Sounds like you're trying to {desired result}." Make it THEIR goal, not your pitch.
 4) COMPETITOR ATTACK (RISK) — One sentence highlighting the danger or downside of the typical / competitor way to get that outcome. Keep it factual and specific. Creates fear of loss.
 5) DIFFERENT APPROACH — One short clause or sentence positioning what you do as safer or different. "We use a completely different approach," or similar. Use WHAT_WE_DO context; do not name the product or list features.

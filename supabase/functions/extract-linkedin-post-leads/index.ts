@@ -418,6 +418,7 @@ async function performExtraction(ctx: {
 
     // 1) Post metadata → try to identify author slug so we can skip them
     let postAuthorSlug: string | null = null;
+    let postAuthorName: string | null = null;
     let postText = '';
     try {
       const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}?account_id=${accountId}`, {
@@ -429,6 +430,10 @@ async function performExtraction(ctx: {
         const auth = p?.author || p?.user || {};
         postAuthorSlug = (auth?.public_identifier || auth?.public_id || null);
         if (!postAuthorSlug && auth?.linkedin_url) postAuthorSlug = extractProfileSlugFromUrl(String(auth.linkedin_url));
+        const first = String(auth?.first_name || '').trim();
+        const last = String(auth?.last_name || '').trim();
+        const full = String(auth?.name || auth?.full_name || '').trim();
+        postAuthorName = (first || last) ? `${first} ${last}`.trim() : (full || null);
       } else {
         console.warn('[extract-li] post meta failed', r.status);
       }
@@ -706,7 +711,10 @@ async function performExtraction(ctx: {
         continue;
       }
 
-      const signalLabel = eng.engagement === 'like' ? 'Liked LinkedIn post' : 'Commented on LinkedIn post';
+      const authorFirst = (postAuthorName || '').split(/\s+/)[0] || '';
+      const signalLabel = eng.engagement === 'like'
+        ? (authorFirst ? `Liked ${authorFirst}'s LinkedIn post` : 'Liked LinkedIn post')
+        : (authorFirst ? `Commented on ${authorFirst}'s LinkedIn post` : 'Commented on LinkedIn post');
       const { data: row, error: insErr } = await admin.from('contacts').insert({
         user_id: user.id,
         organization_id,
@@ -720,6 +728,7 @@ async function performExtraction(ctx: {
         signal: signalLabel,
         signal_post_url: canonicalUrl,
         signal_post_excerpt: postText ? postText.slice(0, 500) : null,
+        signal_post_author: postAuthorName,
         relevance_tier: eng.relevance_tier,
         lead_status: 'unknown',
         approval_status: 'auto_approved',
