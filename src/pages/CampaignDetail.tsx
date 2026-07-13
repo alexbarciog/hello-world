@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Switch } from "@/components/ui/switch";
 import {
-  ChevronLeft, Play, Pause, Pencil, Settings as SettingsIcon,
+  ChevronLeft, ChevronRight, Play, Pause, Pencil, Settings as SettingsIcon,
   Users, BarChart3, Clock, GitBranch, Search, Flame, AtSign,
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
@@ -1044,6 +1044,70 @@ export default function CampaignDetail() {
     }
     setSavingSettings(false);
   }
+  async function persistWorkflowSteps(updated: any[], successMessage = "Workflow updated") {
+    if (!campaign) return false;
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) {
+      toast.error("Failed to update workflow");
+      return false;
+    }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    toast.success(successMessage);
+    return true;
+  }
+
+  async function moveWorkflowStep(actualIdx: number, direction: -1 | 1) {
+    if (!campaign) return;
+    const step = workflowSteps[actualIdx];
+    if (!step || step.type === "invitation") return;
+
+    const targetIdx = actualIdx + direction;
+    if (targetIdx < 0 || targetIdx >= workflowSteps.length) return;
+
+    const updated = [...workflowSteps];
+    const targetStep = updated[targetIdx];
+    const isSignalAction = step.type === "comment" || step.type === "like";
+
+    if (targetStep?.type === "invitation") {
+      if (!isSignalAction) return;
+
+      const movedStep = { ...step };
+      updated.splice(actualIdx, 1);
+
+      const invitationIdx = updated.findIndex((ws: any) => ws.type === "invitation");
+      if (invitationIdx === -1) return;
+
+      if (direction < 0) {
+        movedStep.before_invitation = true;
+        updated.splice(invitationIdx, 0, movedStep);
+      } else {
+        delete movedStep.before_invitation;
+        updated.splice(invitationIdx + 1, 0, movedStep);
+      }
+
+      await persistWorkflowSteps(updated, "Step moved");
+      return;
+    }
+
+    const [movedStep] = updated.splice(actualIdx, 1);
+    updated.splice(targetIdx, 0, movedStep);
+    await persistWorkflowSteps(updated, "Step moved");
+  }
+
+  async function moveSignalStepBeforeInvitation(actualIdx: number) {
+    if (!campaign) return;
+    const step = workflowSteps[actualIdx];
+    if (!step || (step.type !== "comment" && step.type !== "like")) return;
+
+    const updated = [...workflowSteps];
+    const [movedStep] = updated.splice(actualIdx, 1);
+    const invitationIdx = updated.findIndex((ws: any) => ws.type === "invitation");
+    if (invitationIdx === -1) return;
+
+    updated.splice(invitationIdx, 0, { ...movedStep, before_invitation: true });
+    await persistWorkflowSteps(updated, "Step moved before invitation");
+  }
+
   function openAddStep(opts?: { insertIndex?: number | null; beforeInvitation?: boolean; restrictToSignalActions?: boolean }) {
     const restrict = !!opts?.restrictToSignalActions;
     setNewStepInsertIndex(opts?.insertIndex ?? null);
@@ -1491,30 +1555,47 @@ export default function CampaignDetail() {
                                     <Icon className="w-4 h-4" />
                                     <span className="text-sm font-bold">{label}</span>
                                   </div>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete this pre-invitation step?</AlertDialogTitle>
-                                        <AlertDialogDescription>This step runs before the connection request is sent.</AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={async () => {
-                                          if (!campaign) return;
-                                          const updated = workflowSteps.filter((_: any, i: number) => i !== actualIdx);
-                                          const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
-                                          if (error) { toast.error("Failed to delete"); return; }
-                                          setCampaign({ ...campaign, workflow_steps: updated });
-                                          toast.success("Step deleted");
-                                        }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => moveWorkflowStep(actualIdx, -1)}
+                                      title="Move left"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100 disabled:opacity-30"
+                                      disabled={actualIdx === 0}
+                                    >
+                                      <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveWorkflowStep(actualIdx, 1)}
+                                      title="Move right"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete this pre-invitation step?</AlertDialogTitle>
+                                          <AlertDialogDescription>This step runs before the connection request is sent.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={async () => {
+                                            if (!campaign) return;
+                                            const updated = workflowSteps.filter((_: any, i: number) => i !== actualIdx);
+                                            const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+                                            if (error) { toast.error("Failed to delete"); return; }
+                                            setCampaign({ ...campaign, workflow_steps: updated });
+                                            toast.success("Step deleted");
+                                          }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                                 <p className="text-[10px] uppercase font-bold opacity-80 tracking-wider">Before invitation</p>
                               </div>
@@ -1639,23 +1720,47 @@ export default function CampaignDetail() {
                                     <MessageCircle className="w-4 h-4" />
                                     <span className="text-sm font-bold">Comment on signal</span>
                                   </div>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
-                                        <AlertDialogDescription>This will permanently remove this comment step.</AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => moveSignalStepBeforeInvitation(actualIdxC)}
+                                      title="Move before invitation"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <UserPlus className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveWorkflowStep(actualIdxC, -1)}
+                                      title="Move left"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveWorkflowStep(actualIdxC, 1)}
+                                      title="Move right"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100 disabled:opacity-30"
+                                      disabled={actualIdxC >= workflowSteps.length - 1}
+                                    >
+                                      <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                          <AlertDialogDescription>This will permanently remove this comment step.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                                 <p className="text-xs opacity-80">Step {stepNum}</p>
                               </div>
@@ -1728,23 +1833,47 @@ export default function CampaignDetail() {
                                     <ThumbsUp className="w-4 h-4" />
                                     <span className="text-sm font-bold">Like post</span>
                                   </div>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
-                                        <AlertDialogDescription>This will permanently remove this like step.</AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => moveSignalStepBeforeInvitation(actualIdx)}
+                                      title="Move before invitation"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <UserPlus className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveWorkflowStep(actualIdx, -1)}
+                                      title="Move left"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <ChevronLeft className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => moveWorkflowStep(actualIdx, 1)}
+                                      title="Move right"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100 disabled:opacity-30"
+                                      disabled={actualIdx >= workflowSteps.length - 1}
+                                    >
+                                      <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                          <AlertDialogDescription>This will permanently remove this like step.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                                 <p className="text-xs opacity-80">Step {stepNum}</p>
                               </div>
