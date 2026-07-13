@@ -10,6 +10,7 @@ import {
   CheckCircle2, XCircle, ShieldCheck, Share2,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
+import { EmailCell } from "@/components/contacts/EmailCell";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
