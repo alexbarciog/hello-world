@@ -1884,6 +1884,30 @@ export default function CampaignDetail() {
                           </div>
                         ) : (
                           <>
+                            {newStepType === "email" && (
+                              <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50/50 p-3 flex items-start gap-2">
+                                <Mail className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-orange-900">Email step</p>
+                                  <p className="text-[11px] text-orange-800/80 mt-0.5">Sends via email to leads that have an email on file. Leads without one are automatically skipped.</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {newStepType === "email" && newStepMessageMode === "manual" && (
+                              <div className="mb-4">
+                                <label className="text-sm font-bold text-foreground block mb-2">Subject line</label>
+                                <input
+                                  type="text"
+                                  value={newStepEmailSubject}
+                                  onChange={(e) => setNewStepEmailSubject(e.target.value)}
+                                  placeholder="e.g. Quick idea for {{company}}"
+                                  className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                  maxLength={200}
+                                />
+                              </div>
+                            )}
+
                             {/* Message mode toggle */}
                             <div className="grid grid-cols-2 gap-3 mb-5">
                               <button
