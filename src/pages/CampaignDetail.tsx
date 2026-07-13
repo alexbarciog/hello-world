@@ -2659,6 +2659,74 @@ export default function CampaignDetail() {
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={editCommentIdx !== null} onOpenChange={(open) => { if (!open) setEditCommentIdx(null); }}>
+                <DialogContent className="sm:max-w-[520px] p-6 gap-0">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                      <MessageCircle className="w-4 h-4 text-purple-600" />
+                      Edit comment step
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <div className="mt-4 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground">AI Instructions</label>
+                      <textarea
+                        value={editCommentInstructions}
+                        onChange={(e) => setEditCommentInstructions(e.target.value)}
+                        className="w-full text-xs border border-border rounded-lg p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        rows={6}
+                        placeholder="Describe the persona, tone, and what the AI should say..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground">Post filter</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setEditCommentPostFilter("authored_only")}
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${editCommentPostFilter === "authored_only" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                        >
+                          <p className="text-xs font-bold text-foreground">Only "Posted about"</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Comment only on posts authored by the lead.</p>
+                        </button>
+                        <button
+                          onClick={() => setEditCommentPostFilter("all_signals")}
+                          className={`text-left p-3 rounded-lg border-2 transition-all ${editCommentPostFilter === "all_signals" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                        >
+                          <p className="text-xs font-bold text-foreground">All signal posts</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Comment on any post from the signal.</p>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground">Delay (hours)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editCommentDelayHours}
+                        onChange={(e) => setEditCommentDelayHours(Math.max(0, parseInt(e.target.value || "0", 10)))}
+                        className="w-32 text-xs border border-border rounded-lg p-2 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="text-[10px] text-muted-foreground">0 = immediate. For pre-invitation steps this delays before the invite is sent.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-6">
+                    <button
+                      onClick={saveEditComment}
+                      className="text-xs font-bold text-white bg-primary rounded-lg px-4 py-2 hover:bg-primary/90 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button onClick={() => setEditCommentIdx(null)} className="text-xs font-medium text-muted-foreground border border-border rounded-lg px-4 py-2 hover:bg-muted/50 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={editStepInstructionsIdx !== null} onOpenChange={(open) => { if (!open) setEditStepInstructionsIdx(null); }}>
                 <DialogContent className="sm:max-w-[480px] p-6 gap-0">
                   <DialogHeader className="mb-4">
