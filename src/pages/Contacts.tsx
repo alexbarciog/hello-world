@@ -18,6 +18,7 @@ import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
 import { FindLookalikesDialog } from "@/components/contacts/FindLookalikesDialog";
+import { ExtractFromXPostDialog } from "@/components/contacts/ExtractFromXPostDialog";
 import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
