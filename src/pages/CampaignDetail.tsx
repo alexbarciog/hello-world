@@ -764,6 +764,11 @@ export default function CampaignDetail() {
     if (!item || !campaign) return;
     setRegeneratingQueueIdx(idx);
     try {
+      const { data: contactAuthor } = await supabase
+        .from('contacts')
+        .select('signal_post_author')
+        .eq('id', item.contactId)
+        .maybeSingle();
       const { data, error } = await supabase.functions.invoke('generate-step-message', {
         body: {
           stepNumber: item.stepIndex,
@@ -783,6 +788,7 @@ export default function CampaignDetail() {
           leadTitle: item.contactTitle || "",
           buyingSignal: item.contactSignal || "",
           signalPostText: (item as any).contactSignalPostExcerpt || item.contactSignal || "",
+          signalPostAuthor: (contactAuthor as any)?.signal_post_author || "",
         },
       });
       if (error) throw error;
