@@ -224,8 +224,8 @@ async function processCampaign(
         const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
         const nextStep = workflowSteps[nextWfIdx];
 
-        if (!nextStep || (nextStep.type !== 'message' && nextStep.type !== 'comment')) {
-          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message' || s.type === 'comment').length;
+        if (!nextStep || (nextStep.type !== 'message' && nextStep.type !== 'comment' && nextStep.type !== 'email')) {
+          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message' || s.type === 'comment' || s.type === 'email').length;
           const completedMsgSteps = currentStep - 1;
           if (completedMsgSteps >= totalSteps) {
             await supabase
@@ -256,6 +256,30 @@ async function processCampaign(
             console.log(`[followup] dispatched comment step ${nextWfIdx} for req ${req.id}`);
           } catch (e) {
             console.error(`[followup] comment step dispatch failed for req ${req.id}:`, e);
+          }
+          continue;
+        }
+
+        // ── Email step branch: delegate to execute-email-step ──
+        if (nextStep.type === 'email') {
+          const stepCompletedAtE = req.step_completed_at ? new Date(req.step_completed_at) : null;
+          if (!stepCompletedAtE) continue;
+          const delayHoursE = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 0);
+          if (delayHoursE > 0 && Date.now() - stepCompletedAtE.getTime() < delayHoursE * 60 * 60 * 1000) {
+            continue;
+          }
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/execute-email-step`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+              },
+              body: JSON.stringify({ request_id: req.id, step_index: nextWfIdx }),
+            });
+            console.log(`[followup] dispatched email step ${nextWfIdx} for req ${req.id}`);
+          } catch (e) {
+            console.error(`[followup] email step dispatch failed for req ${req.id}:`, e);
           }
           continue;
         }
