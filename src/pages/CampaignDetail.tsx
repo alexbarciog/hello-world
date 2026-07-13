@@ -1678,6 +1678,78 @@ export default function CampaignDetail() {
                         );
                       }
 
+                      // ── Like step card ──────────────────────────────────
+                      if (ws.type === "like") {
+                        const delayH = ws.delay_hours ?? 0;
+                        // find actual workflow index (for splice-based insert-before)
+                        const nonInvMap = workflowSteps.map((w: any, idx: number) => ({ w, idx })).filter((it: any) => it.w.type !== "invitation" && !it.w.before_invitation);
+                        const actualIdx = nonInvMap[i]?.idx ?? 0;
+                        return (
+                          <div key={i} className="flex items-start">
+                            <div className="flex flex-col items-center self-start pt-10 px-2 min-w-[60px]">
+                              <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                {delayH === 0 ? "immediate" : `+ ${delayH} hr${delayH !== 1 ? "s" : ""}`}
+                              </span>
+                              <svg width="40" height="2" className="text-primary">
+                                <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                              </svg>
+                              <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[32px]" />
+                            </div>
+                            {/* Insert-between button */}
+                            <div className="flex flex-col items-center self-start pt-14 mr-1">
+                              <button
+                                onClick={() => openAddStep({ insertIndex: actualIdx, restrictToSignalActions: true })}
+                                title="Insert Comment or Like step here"
+                                className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.08 }}
+                              className="min-w-[220px] max-w-[240px] shrink-0"
+                            >
+                              <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(200 80% 50%), hsl(220 75% 55%))" }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <ThumbsUp className="w-4 h-4" />
+                                    <span className="text-sm font-bold">Like post</span>
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                        <AlertDialogDescription>This will permanently remove this like step.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                                <p className="text-xs opacity-80">Step {stepNum}</p>
+                              </div>
+                              <div className="mt-2 rounded-xl border border-border bg-card p-3 shadow-sm space-y-1.5">
+                                {(ws.post_filter || "authored_only") === "authored_only" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                    <Zap className="w-3 h-3" /> Only on "Posted about" signals
+                                  </span>
+                                )}
+                                <p className="text-xs text-muted-foreground italic">Sends a like on the lead's signal post.</p>
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div key={i} className="flex items-start">
                           {/* Connector + delay badge */}
