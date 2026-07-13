@@ -102,9 +102,17 @@ Deno.serve(async (req) => {
         for (const campaign of userCamps) {
           if (!campaign.source_list_id) continue;
 
+          // Per-campaign cap (falls back to sender limit if unset)
+          const campaignCap = campaign.daily_connect_limit && campaign.daily_connect_limit > 0
+            ? campaign.daily_connect_limit
+            : connectionsLimit;
+
           // ── Schedule connection requests ──
-          // Use profile limit as the primary cap (user-level daily max)
-          const remainingConnections = connectionsLimit - connectionsScheduled;
+          // Respect BOTH the sender-wide cap and the per-campaign cap
+          const remainingConnections = Math.min(
+            connectionsLimit - connectionsScheduled,
+            campaignCap,
+          );
 
           if (remainingConnections > 0) {
             // Get contacts in list — batch to avoid URL length limits
