@@ -202,7 +202,7 @@ function ReportInner() {
 
             <div className="max-w-md mx-auto space-y-3">
               {PHASE_STEPS.map((s) => {
-                const done = phase === "ready" || PHASE_STEPS.findIndex(p => p.key === phase) > PHASE_STEPS.findIndex(p => p.key === s.key);
+                const done = (phase as Phase) === "ready" || PHASE_STEPS.findIndex(p => p.key === phase) > PHASE_STEPS.findIndex(p => p.key === s.key);
                 const active = s.key === phase;
                 return (
                   <div key={s.key} className={`flex items-center gap-3 rounded-xl px-4 py-3 border ${active ? "border-sky-200 bg-sky-50/60" : done ? "border-green-200 bg-green-50/50" : "border-slate-200 bg-white"}`}>
