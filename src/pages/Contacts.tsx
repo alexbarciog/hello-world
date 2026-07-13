@@ -64,6 +64,7 @@ export default function Contacts() {
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
   const [showLookalikes, setShowLookalikes] = useState(false);
+  const [showExtractX, setShowExtractX] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   const fetchData = useCallback(async () => {
