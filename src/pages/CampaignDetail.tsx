@@ -254,7 +254,8 @@ export default function CampaignDetail() {
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
-  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment">("message");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment" | "email">("message");
+  const [newStepEmailSubject, setNewStepEmailSubject] = useState("");
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
