@@ -418,6 +418,7 @@ async function performExtraction(ctx: {
 
     // 1) Post metadata → try to identify author slug so we can skip them
     let postAuthorSlug: string | null = null;
+    let postAuthorName: string | null = null;
     let postText = '';
     try {
       const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}?account_id=${accountId}`, {
@@ -429,6 +430,10 @@ async function performExtraction(ctx: {
         const auth = p?.author || p?.user || {};
         postAuthorSlug = (auth?.public_identifier || auth?.public_id || null);
         if (!postAuthorSlug && auth?.linkedin_url) postAuthorSlug = extractProfileSlugFromUrl(String(auth.linkedin_url));
+        const first = String(auth?.first_name || '').trim();
+        const last = String(auth?.last_name || '').trim();
+        const full = String(auth?.name || auth?.full_name || '').trim();
+        postAuthorName = (first || last) ? `${first} ${last}`.trim() : (full || null);
       } else {
         console.warn('[extract-li] post meta failed', r.status);
       }
