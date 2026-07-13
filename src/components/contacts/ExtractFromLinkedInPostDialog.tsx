@@ -67,11 +67,15 @@ export function ExtractFromLinkedInPostDialog({ open, onOpenChange, lists, onImp
       });
       if (error) throw error;
       const inserted = (data as any)?.inserted ?? 0;
+      const rawUnique = (data as any)?.raw_unique ?? 0;
+      const fetched = ((data as any)?.reactions_fetched ?? 0) + ((data as any)?.comments_fetched ?? 0);
       const skippedComp = (data as any)?.skipped_competitor ?? 0;
+      const skippedLow = (data as any)?.skipped_low_fit ?? 0;
       const skippedDup = (data as any)?.skipped_duplicate ?? 0;
+      const skipped = skippedComp + skippedLow + skippedDup;
       toast.success(
-        `Imported ${inserted} lead${inserted === 1 ? "" : "s"} from LinkedIn post` +
-          (skippedComp || skippedDup ? ` (skipped ${skippedComp} competitor, ${skippedDup} duplicate)` : "")
+        `Imported ${inserted} lead${inserted === 1 ? "" : "s"} from ${rawUnique || fetched} engager${(rawUnique || fetched) === 1 ? "" : "s"}` +
+          (skipped ? ` (skipped ${skippedComp} competitors, ${skippedLow} low-fit, ${skippedDup} duplicates)` : "")
       );
       onImported();
       onOpenChange(false);

@@ -23,11 +23,25 @@ function parseName(fullName: string | null | undefined): { first: string; last: 
   return { first: parts[0], last: parts.slice(1).join(' ') || null };
 }
 
-function sanitizeLinkedinUrl(raw: string | null | undefined): string | null {
+function isLikelyInternalLinkedInId(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const v = String(value).trim();
+  if (!v) return false;
+  return (
+    /^urn:li:/i.test(v) ||
+    /^ACo[A-Za-z0-9_-]{8,}$/i.test(v) ||
+    /^\d{8,}$/.test(v) ||
+    v.includes('=')
+  );
+}
+
+function sanitizeLinkedinProfileUrl(raw: string | null | undefined): string | null {
   if (!raw) return null;
   try {
     const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
     if (!/linkedin\.com$/i.test(u.hostname.replace(/^www\./, ''))) return null;
+    const slug = extractProfileSlugFromUrl(u.toString());
+    if (!slug || isLikelyInternalLinkedInId(slug)) return null;
     u.search = ''; u.hash = '';
     return u.toString().replace(/\/+$/, '').toLowerCase();
   } catch { return null; }
@@ -43,9 +57,130 @@ function extractProfileSlugFromUrl(url: string): string | null {
   return m ? m[1].toLowerCase() : null;
 }
 
+function pickFirst(...values: unknown[]): string | null {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim()) return v.trim();
+    if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+  }
+  return null;
+}
+
+function publicSlugFromProfile(p: any): string | null {
+  const fromUrl = extractProfileSlugFromUrl(String(p?.linkedin_url || p?.public_url || p?.profile_url || p?.public_profile_url || p?.url || ''));
+  const direct = pickFirst(p?.public_identifier, p?.public_id, p?.publicIdentifier, p?.public_profile_id);
+  const slug = (fromUrl || direct || '').trim().toLowerCase();
+  if (!slug || isLikelyInternalLinkedInId(slug)) return null;
+  return slug;
+}
+
+function providerIdFromProfile(p: any): string | null {
+  return pickFirst(
+    p?.provider_id,
+    p?.member_id,
+    p?.profile_id,
+    p?.id,
+    p?.entity_urn,
+    p?.urn,
+    p?.attendee_provider_id,
+  );
+}
+
+function normalizeCompany(profile: any): string | null {
+  return pickFirst(
+    profile?.company,
+    profile?.current_company?.name,
+    profile?.currentCompany?.name,
+    profile?.current_positions?.[0]?.company,
+    profile?.current_positions?.[0]?.company_name,
+    profile?.position?.company,
+    profile?.experiences?.[0]?.company,
+    profile?.work_experience?.[0]?.company,
+  );
+}
+
+function extractItems(payload: any): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.data?.items)) return payload.data.items;
+  if (Array.isArray(payload?.data?.results)) return payload.data.results;
+  if (Array.isArray(payload?.elements)) return payload.elements;
+  return [];
+}
+
+function extractNextCursor(payload: any): string | null {
+  const cursor = pickFirst(
+    payload?.cursor,
+    payload?.next_cursor,
+    payload?.nextCursor,
+    payload?.paging?.cursor,
+    payload?.paging?.next_cursor,
+    payload?.pagination?.cursor,
+    payload?.pagination?.next_cursor,
+    payload?.metadata?.next_cursor,
+    payload?.data?.cursor,
+    payload?.data?.next_cursor,
+  );
+  if (cursor) return cursor;
+  const nextUrl = pickFirst(payload?.next, payload?.paging?.next, payload?.pagination?.next);
+  if (!nextUrl) return null;
+  try {
+    const u = new URL(nextUrl.startsWith('http') ? nextUrl : `https://placeholder.local${nextUrl}`);
+    return pickFirst(u.searchParams.get('cursor'), u.searchParams.get('next_cursor'));
+  } catch { return null; }
+}
+
+function appendQuery(url: string, params: Record<string, string | number | null | undefined>): string {
+  const u = new URL(url);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== null && v !== undefined && String(v).trim()) u.searchParams.set(k, String(v));
+  }
+  return u.toString();
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const SELLER_KEYWORDS = [
+  'agency', 'consultant', 'consulting', 'freelancer', 'fractional', 'coach', 'coaching',
+  'lead generation', 'lead-gen', 'lead gen', 'appointment setting', 'cold email', 'outbound',
+  'sdr as a service', 'demand generation', 'growth partner', 'b2b sales', 'sales automation',
+  'linkedin automation', 'marketing agency', 'seo agency', 'ads agency', 'paid ads', 'copywriter',
+];
+
+const BUYER_ROLE_KEYWORDS = [
+  'founder', 'co-founder', 'ceo', 'owner', 'partner', 'director', 'vp', 'head of', 'chief',
+  'revenue', 'sales', 'growth', 'marketing', 'business development', 'commercial', 'go-to-market', 'gtm',
+];
+
+function looksLikeSameMarketSeller(text: string, businessContext: string): boolean {
+  const hay = text.toLowerCase();
+  if (!SELLER_KEYWORDS.some(k => hay.includes(k))) return false;
+  const ctx = businessContext.toLowerCase();
+  const marketHints = [
+    'lead', 'linkedin', 'outbound', 'appointment', 'sales', 'sdr', 'growth', 'marketing', 'demand', 'email', 'agency',
+  ].filter(k => ctx.includes(k));
+  if (marketHints.length === 0) return false;
+  return marketHints.some(k => hay.includes(k));
+}
+
+function deterministicScore(headline: string, company: string, businessContext: string): { is_competitor: boolean; score: number; reason: string } | null {
+  const text = `${headline} ${company}`.trim();
+  if (!text) return null;
+  if (looksLikeSameMarketSeller(text, businessContext)) {
+    return { is_competitor: true, score: 1, reason: 'Appears to sell similar services.' };
+  }
+  const lower = text.toLowerCase();
+  if (BUYER_ROLE_KEYWORDS.some(k => lower.includes(k))) {
+    return { is_competitor: false, score: 2, reason: 'Looks like a possible buyer role.' };
+  }
+  return null;
+}
+
 // ─── AI classifier: competitor + buyer-fit score (1-3) ─────────────────────
 async function classifyLeads(
-  items: { id: string; headline: string; company: string }[],
+  items: { id: string; name: string; headline: string; company: string; location: string }[],
   businessContext: string,
   idealLead: string,
 ): Promise<Map<string, { is_competitor: boolean; score: number; reason: string }>> {
@@ -53,7 +188,7 @@ async function classifyLeads(
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY || items.length === 0 || !businessContext) return out;
 
-  const systemPrompt = `You classify LinkedIn users who engaged with a post. For each person you see only HEADLINE + COMPANY.
+  const systemPrompt = `You classify LinkedIn users who engaged with a post. For each person you see NAME + HEADLINE + COMPANY + LOCATION.
 
 USER'S BUSINESS:
 ${businessContext}
@@ -66,19 +201,24 @@ For each PERSON output:
    - 2 = WARM: adjacent role/industry, could buy but not obvious.
    - 1 = COLD: student, intern, retired, unrelated industry, junior IC in unrelated function, or headline gives no signal.
    If is_competitor=true, always return score=1.
-3) reason: 1 short sentence.
+ 3) reason: 1 short sentence.
 
-Be strict on score=3. Default to 1 or 2 when unsure. Respond ONLY via the tool call.`;
+Never mark someone HOT unless they look like a buyer or decision maker. Do not reward competitors for posting/selling similar services.
+Be strict on score=3. Default to 2 when the person has a plausible buyer role but incomplete data. Respond ONLY via the tool call.`;
 
   for (let i = 0; i < items.length; i += 15) {
     const batch = items.slice(i, i + 15);
     const userMsg = batch.map((b, idx) =>
-      `PERSON ${idx + 1} [id=${b.id}]\nHEADLINE: ${b.headline || '(none)'}\nCOMPANY: ${b.company || '(none)'}`
+      `PERSON ${idx + 1} [id=${b.id}]\nNAME: ${b.name || '(none)'}\nHEADLINE: ${b.headline || '(none)'}\nCOMPANY: ${b.company || '(none)'}\nLOCATION: ${b.location || '(none)'}`
     ).join('\n\n');
     try {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Lovable-API-Key': LOVABLE_API_KEY,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           model: 'google/gemini-3-flash-preview',
           messages: [
@@ -233,117 +373,173 @@ Deno.serve(async (req) => {
 
     type Engager = {
       key: string;
+      profile_id: string | null;
+      public_slug: string | null;
       first_name: string;
       last_name: string | null;
+      full_name: string | null;
       headline: string | null;
       linkedin_url: string | null;
       company: string | null;
+      location: string | null;
       engagement: 'like' | 'comment';
     };
     const engagersByKey = new Map<string, Engager>();
 
+    const upsertEngager = (rawProfile: any, engagement: 'like' | 'comment') => {
+      const p = rawProfile?.author || rawProfile?.user || rawProfile?.profile || rawProfile?.member || rawProfile;
+      const publicSlug = publicSlugFromProfile(p);
+      const profileId = providerIdFromProfile(p);
+      const fullName = pickFirst(p?.name, p?.full_name, p?.display_name, [p?.first_name, p?.last_name].filter(Boolean).join(' '));
+      const { first, last } = parseName(fullName);
+      const key = publicSlug ? `slug:${publicSlug}` : profileId ? `id:${profileId}` : fullName ? `name:${fullName.toLowerCase()}|${pickFirst(p?.headline, p?.title) || ''}` : null;
+      if (!key) return;
+      if (postAuthorSlug && publicSlug && publicSlug.toLowerCase() === postAuthorSlug.toLowerCase()) return;
+
+      const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
+      const linkedinUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : null);
+      const existing = engagersByKey.get(key);
+      if (existing && existing.engagement === 'comment') return;
+      engagersByKey.set(key, {
+        key,
+        profile_id: profileId,
+        public_slug: publicSlug,
+        first_name: pickFirst(p?.first_name) || first,
+        last_name: pickFirst(p?.last_name) || last,
+        full_name: fullName,
+        headline: pickFirst(p?.headline, p?.title, p?.occupation),
+        linkedin_url: linkedinUrl,
+        company: normalizeCompany(p),
+        location: pickFirst(p?.location, p?.geo?.full, p?.geo_region, p?.country),
+        engagement,
+      });
+    };
+
+    const fetchPagedPostItems = async (kind: 'reactions' | 'comments') => {
+      const all: any[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+      const seenCursors = new Set<string>();
+      while (pages < 12 && all.length < 1000) {
+        pages++;
+        const base = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/${kind}`;
+        const url = appendQuery(base, { account_id: accountId, limit: 100, cursor });
+        const r = await fetch(url, { headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' } });
+        if (!r.ok) {
+          console.warn(`[extract-li] ${kind} failed`, r.status, (await r.text().catch(() => '')).slice(0, 400));
+          break;
+        }
+        const payload = await r.json();
+        const items = extractItems(payload);
+        all.push(...items);
+        const next = extractNextCursor(payload);
+        if (!next || seenCursors.has(next) || items.length === 0) break;
+        seenCursors.add(next);
+        cursor = next;
+      }
+      return { items: all.slice(0, 1000), pages };
+    };
+
+    const enrichEngagers = async () => {
+      let enriched = 0;
+      const targets = Array.from(engagersByKey.values()).filter(e =>
+        e.profile_id && (!e.headline || !e.company || !e.linkedin_url || !e.public_slug)
+      ).slice(0, 300);
+      for (const eng of targets) {
+        try {
+          await sleep(80);
+          const r = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/profile/${encodeURIComponent(eng.profile_id!)}?account_id=${encodeURIComponent(accountId)}`, {
+            headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' },
+          });
+          if (!r.ok) continue;
+          const p = await r.json();
+          const publicSlug = publicSlugFromProfile(p) || eng.public_slug;
+          const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
+          const liUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : eng.linkedin_url);
+          const fullName = pickFirst(p?.name, p?.full_name, p?.display_name, eng.full_name);
+          const parsedName = parseName(fullName);
+          eng.public_slug = publicSlug;
+          eng.first_name = pickFirst(p?.first_name, eng.first_name) || parsedName.first;
+          eng.last_name = pickFirst(p?.last_name, eng.last_name) || parsedName.last;
+          eng.full_name = fullName || eng.full_name;
+          eng.headline = pickFirst(p?.headline, p?.title, p?.occupation, eng.headline);
+          eng.company = normalizeCompany(p) || eng.company;
+          eng.location = pickFirst(p?.location, p?.geo?.full, p?.geo_region, p?.country, eng.location);
+          eng.linkedin_url = liUrl;
+          enriched++;
+        } catch (e) {
+          console.warn('[extract-li] profile enrich threw', e);
+        }
+      }
+      return enriched;
+    };
+
     // 2) Fetch reactions (likes)
     let reactions_fetched = 0;
+    let reaction_pages = 0;
     if (include_likers) {
       try {
-        const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/reactions?account_id=${accountId}&limit=100`, {
-          headers: { 'X-API-KEY': UNIPILE_API_KEY },
-        });
-        if (r.ok) {
-          const data = await r.json();
-          const items = (data?.items || []) as any[];
-          reactions_fetched = items.length;
-          for (const it of items) {
-            const p = it.author || it.user || it;
-            const slug = p.public_identifier || p.public_id || p.provider_id || p.id || (p.linkedin_url ? extractProfileSlugFromUrl(String(p.linkedin_url)) : null);
-            const key = String(slug || `${p.first_name || p.name || ''}|${p.headline || ''}`);
-            if (!key) continue;
-            if (postAuthorSlug && String(slug || '').toLowerCase() === postAuthorSlug.toLowerCase()) continue;
-            if (engagersByKey.has(key)) continue;
-            const fullName = p.name || [p.first_name, p.last_name].filter(Boolean).join(' ');
-            const { first, last } = parseName(fullName);
-            const liUrl = sanitizeLinkedinUrl(p.linkedin_url || p.public_url || (slug ? `https://www.linkedin.com/in/${slug}` : null));
-            engagersByKey.set(key, {
-              key,
-              first_name: p.first_name || first,
-              last_name: p.last_name ?? last,
-              headline: p.headline || p.title || null,
-              linkedin_url: liUrl,
-              company: p.company || p.current_company?.name || null,
-              engagement: 'like',
-            });
-          }
-        } else {
-          console.warn('[extract-li] reactions failed', r.status, (await r.text().catch(() => '')).slice(0, 400));
-        }
+        const fetched = await fetchPagedPostItems('reactions');
+        reactions_fetched = fetched.items.length;
+        reaction_pages = fetched.pages;
+        for (const it of fetched.items) upsertEngager(it, 'like');
       } catch (e) { console.warn('[extract-li] reactions threw', e); }
     }
 
     // 3) Fetch comments
     let comments_fetched = 0;
+    let comment_pages = 0;
     if (include_commenters) {
       try {
-        const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments?account_id=${accountId}&limit=100`, {
-          headers: { 'X-API-KEY': UNIPILE_API_KEY },
-        });
-        if (r.ok) {
-          const data = await r.json();
-          const items = (data?.items || []) as any[];
-          comments_fetched = items.length;
-          for (const it of items) {
-            const p = it.author || it.user || it;
-            const slug = p.public_identifier || p.public_id || p.provider_id || p.id || (p.linkedin_url ? extractProfileSlugFromUrl(String(p.linkedin_url)) : null);
-            const key = String(slug || `${p.first_name || p.name || ''}|${p.headline || ''}`);
-            if (!key) continue;
-            if (postAuthorSlug && String(slug || '').toLowerCase() === postAuthorSlug.toLowerCase()) continue;
-            // Comments override reactions (richer signal)
-            const fullName = p.name || [p.first_name, p.last_name].filter(Boolean).join(' ');
-            const { first, last } = parseName(fullName);
-            const liUrl = sanitizeLinkedinUrl(p.linkedin_url || p.public_url || (slug ? `https://www.linkedin.com/in/${slug}` : null));
-            engagersByKey.set(key, {
-              key,
-              first_name: p.first_name || first,
-              last_name: p.last_name ?? last,
-              headline: p.headline || p.title || null,
-              linkedin_url: liUrl,
-              company: p.company || p.current_company?.name || null,
-              engagement: 'comment',
-            });
-          }
-        } else {
-          console.warn('[extract-li] comments failed', r.status, (await r.text().catch(() => '')).slice(0, 400));
-        }
+        const fetched = await fetchPagedPostItems('comments');
+        comments_fetched = fetched.items.length;
+        comment_pages = fetched.pages;
+        for (const it of fetched.items) upsertEngager(it, 'comment');
       } catch (e) { console.warn('[extract-li] comments threw', e); }
     }
 
-    console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched} comments=${comments_fetched} unique=${engagersByKey.size}`);
+    const profiles_enriched = await enrichEngagers();
 
-    // Filter competitors (slug-based hard match first)
+    console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched}/${reaction_pages}p comments=${comments_fetched}/${comment_pages}p unique=${engagersByKey.size} enriched=${profiles_enriched}`);
+
+    // Filter competitors (explicit competitor pages + deterministic seller heuristics first)
     let skipped_competitor = 0;
     const prefiltered: Engager[] = [];
+    const deterministicMap = new Map<string, { is_competitor: boolean; score: number; reason: string }>();
     for (const eng of engagersByKey.values()) {
       const co = (eng.company || '').toLowerCase();
       if (co && Array.from(competitorCompanies).some(cc => co.includes(cc) || cc.includes(co))) {
         skipped_competitor++;
         continue;
       }
+      const deterministic = deterministicScore(eng.headline || '', eng.company || '', businessContext);
+      if (deterministic?.is_competitor) {
+        skipped_competitor++;
+        continue;
+      }
+      if (deterministic) deterministicMap.set(eng.key, deterministic);
       prefiltered.push(eng);
     }
 
     // AI classify: competitor detection (by headline) + buyer-fit score 1-3
     const classifierItems = prefiltered.map(e => ({
       id: e.key,
+      name: e.full_name || [e.first_name, e.last_name].filter(Boolean).join(' '),
       headline: (e.headline || '').slice(0, 200),
       company: (e.company || '').slice(0, 100),
+      location: (e.location || '').slice(0, 100),
     }));
     const classifyMap = await classifyLeads(classifierItems, businessContext, idealLead);
+    for (const [key, val] of deterministicMap) {
+      if (!classifyMap.has(key)) classifyMap.set(key, val);
+    }
 
     let skipped_low_fit = 0;
     const finalEngagers: (Engager & { ai_score: number; relevance_tier: 'hot' | 'warm' | 'cold' })[] = [];
     for (const eng of prefiltered) {
       const c = classifyMap.get(eng.key);
       if (c?.is_competitor) { skipped_competitor++; continue; }
-      const score = c?.score ?? (businessContext ? 1 : 2); // if no AI ran, default warm
+      const score = c?.score ?? (businessContext ? 2 : 2); // incomplete enriched data should not collapse to only 3 imported leads
       // Drop obvious dead weight when we have context to judge
       if (businessContext && classifyMap.size > 0 && score <= 1) { skipped_low_fit++; continue; }
       const tier: 'hot' | 'warm' | 'cold' = score >= 3 ? 'hot' : score === 2 ? 'warm' : 'cold';
@@ -358,6 +554,9 @@ Deno.serve(async (req) => {
         skipped_duplicate: 0,
         reactions_fetched,
         comments_fetched,
+        reaction_pages,
+        comment_pages,
+        profiles_enriched,
         message: 'No qualified engagers found for this post.',
       });
     }
@@ -381,16 +580,28 @@ Deno.serve(async (req) => {
       targetListId = newList.id;
     }
 
-    // Dedupe against existing contacts in this org by linkedin_url
+    // Dedupe against existing contacts in this org by LinkedIn profile id and valid public URL
     const liUrls = finalEngagers.map(e => e.linkedin_url).filter(Boolean) as string[];
-    let existingSet = new Set<string>();
+    const profileIds = finalEngagers.map(e => e.profile_id).filter(Boolean) as string[];
+    let existingUrlSet = new Set<string>();
+    let existingIdSet = new Set<string>();
     if (liUrls.length > 0) {
-      const { data: existing } = await admin
+      let q = admin
         .from('contacts')
         .select('linkedin_url')
-        .eq('organization_id', organization_id as any)
         .in('linkedin_url', liUrls);
-      existingSet = new Set((existing || []).map((r: any) => (r.linkedin_url || '').toLowerCase()));
+      q = organization_id ? q.eq('organization_id', organization_id as any) : q.eq('user_id', user.id);
+      const { data: existing } = await q;
+      existingUrlSet = new Set((existing || []).map((r: any) => (r.linkedin_url || '').toLowerCase()));
+    }
+    if (profileIds.length > 0) {
+      let q = admin
+        .from('contacts')
+        .select('linkedin_profile_id')
+        .in('linkedin_profile_id', profileIds);
+      q = organization_id ? q.eq('organization_id', organization_id as any) : q.eq('user_id', user.id);
+      const { data: existing } = await q;
+      existingIdSet = new Set((existing || []).map((r: any) => String(r.linkedin_profile_id || '')));
     }
 
     let inserted = 0;
@@ -398,7 +609,8 @@ Deno.serve(async (req) => {
     const insertedIds: string[] = [];
 
     for (const eng of finalEngagers) {
-      if (eng.linkedin_url && existingSet.has(eng.linkedin_url.toLowerCase())) { skipped_duplicate++; continue; }
+      if (eng.profile_id && existingIdSet.has(eng.profile_id)) { skipped_duplicate++; continue; }
+      if (eng.linkedin_url && existingUrlSet.has(eng.linkedin_url.toLowerCase())) { skipped_duplicate++; continue; }
       const signalLabel = eng.engagement === 'like' ? 'Liked LinkedIn post' : 'Commented on LinkedIn post';
       const { data: row, error: insErr } = await admin.from('contacts').insert({
         user_id: user.id,
@@ -409,6 +621,7 @@ Deno.serve(async (req) => {
         company: eng.company,
         industry: null,
         linkedin_url: eng.linkedin_url,
+        linkedin_profile_id: eng.profile_id,
         signal: signalLabel,
         signal_post_url: canonicalUrl,
         signal_post_excerpt: postText ? postText.slice(0, 500) : null,
@@ -420,6 +633,8 @@ Deno.serve(async (req) => {
         ai_score: eng.ai_score,
       } as any).select('id').single();
       if (insErr) { console.warn('[extract-li] insert err', insErr.message); continue; }
+      if (eng.profile_id) existingIdSet.add(eng.profile_id);
+      if (eng.linkedin_url) existingUrlSet.add(eng.linkedin_url.toLowerCase());
       insertedIds.push(row.id);
       await admin.from('contact_lists').insert({ contact_id: row.id, list_id: targetListId } as any);
       inserted++;
@@ -432,6 +647,10 @@ Deno.serve(async (req) => {
       skipped_duplicate,
       reactions_fetched,
       comments_fetched,
+      reaction_pages,
+      comment_pages,
+      profiles_enriched,
+      raw_unique: engagersByKey.size,
       list_id: targetListId,
       list_name: listName,
     });
