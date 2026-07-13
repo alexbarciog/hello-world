@@ -1044,6 +1044,70 @@ export default function CampaignDetail() {
     }
     setSavingSettings(false);
   }
+  async function persistWorkflowSteps(updated: any[], successMessage = "Workflow updated") {
+    if (!campaign) return false;
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) {
+      toast.error("Failed to update workflow");
+      return false;
+    }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    toast.success(successMessage);
+    return true;
+  }
+
+  async function moveWorkflowStep(actualIdx: number, direction: -1 | 1) {
+    if (!campaign) return;
+    const step = workflowSteps[actualIdx];
+    if (!step || step.type === "invitation") return;
+
+    const targetIdx = actualIdx + direction;
+    if (targetIdx < 0 || targetIdx >= workflowSteps.length) return;
+
+    const updated = [...workflowSteps];
+    const targetStep = updated[targetIdx];
+    const isSignalAction = step.type === "comment" || step.type === "like";
+
+    if (targetStep?.type === "invitation") {
+      if (!isSignalAction) return;
+
+      const movedStep = { ...step };
+      updated.splice(actualIdx, 1);
+
+      const invitationIdx = updated.findIndex((ws: any) => ws.type === "invitation");
+      if (invitationIdx === -1) return;
+
+      if (direction < 0) {
+        movedStep.before_invitation = true;
+        updated.splice(invitationIdx, 0, movedStep);
+      } else {
+        delete movedStep.before_invitation;
+        updated.splice(invitationIdx + 1, 0, movedStep);
+      }
+
+      await persistWorkflowSteps(updated, "Step moved");
+      return;
+    }
+
+    const [movedStep] = updated.splice(actualIdx, 1);
+    updated.splice(targetIdx, 0, movedStep);
+    await persistWorkflowSteps(updated, "Step moved");
+  }
+
+  async function moveSignalStepBeforeInvitation(actualIdx: number) {
+    if (!campaign) return;
+    const step = workflowSteps[actualIdx];
+    if (!step || (step.type !== "comment" && step.type !== "like")) return;
+
+    const updated = [...workflowSteps];
+    const [movedStep] = updated.splice(actualIdx, 1);
+    const invitationIdx = updated.findIndex((ws: any) => ws.type === "invitation");
+    if (invitationIdx === -1) return;
+
+    updated.splice(invitationIdx, 0, { ...movedStep, before_invitation: true });
+    await persistWorkflowSteps(updated, "Step moved before invitation");
+  }
+
   function openAddStep(opts?: { insertIndex?: number | null; beforeInvitation?: boolean; restrictToSignalActions?: boolean }) {
     const restrict = !!opts?.restrictToSignalActions;
     setNewStepInsertIndex(opts?.insertIndex ?? null);
