@@ -833,7 +833,7 @@ export default function CampaignDetail() {
       preGenMap[`${m.connection_request_id}_${m.step_index}`] = m;
     });
 
-    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation");
+    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation" && !s.before_invitation);
     const scheduled: ScheduledMessage[] = [];
 
     for (const cr of connReqs as any[]) {
