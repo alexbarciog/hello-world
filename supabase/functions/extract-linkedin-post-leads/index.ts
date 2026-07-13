@@ -609,7 +609,7 @@ async function performExtraction(ctx: {
     }
 
     if (finalEngagers.length === 0) {
-      return jsonResp({
+      return {
         inserted: 0,
         skipped_competitor,
         skipped_low_fit,
@@ -619,8 +619,10 @@ async function performExtraction(ctx: {
         reaction_pages,
         comment_pages,
         profiles_enriched,
+        raw_unique: engagersByKey.size,
+        list_name: null,
         message: 'No qualified engagers found for this post.',
-      });
+      };
     }
 
     // Resolve target list
@@ -702,7 +704,7 @@ async function performExtraction(ctx: {
       inserted++;
     }
 
-    return jsonResp({
+    return {
       inserted,
       skipped_competitor,
       skipped_low_fit,
@@ -715,9 +717,6 @@ async function performExtraction(ctx: {
       raw_unique: engagersByKey.size,
       list_id: targetListId,
       list_name: listName,
-    });
-  } catch (error) {
-    console.error('[extract-li] fatal', error);
-    return jsonResp({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
-  }
-});
+    };
+}
+
