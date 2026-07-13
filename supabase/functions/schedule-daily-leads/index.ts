@@ -270,7 +270,9 @@ Deno.serve(async (req) => {
           const perCampaignMsgCap = campaign.daily_connect_limit && campaign.daily_connect_limit > 0
             ? campaign.daily_connect_limit
             : remainingMessages;
-          const campaignMsgAllowance = Math.min(remainingMessages, perCampaignMsgCap);
+          const campaignMsgRemaining = perCampaignMsgCap - (perCampaignMsg[campaign.id] || 0);
+          const campaignMsgAllowance = Math.min(remainingMessages, campaignMsgRemaining);
+          if (campaignMsgAllowance <= 0) continue;
 
           // Get accepted contacts ready for next message
           const { data: acceptedRequests } = await supabase
