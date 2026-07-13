@@ -644,37 +644,67 @@ async function performExtraction(ctx: {
       targetListId = newList.id;
     }
 
-    // Dedupe against existing contacts in this org by LinkedIn profile id and valid public URL
+    // Look up existing contacts by LinkedIn profile id or URL so we can either skip
+    // (creating a duplicate) or attach them to the selected list.
     const liUrls = finalEngagers.map(e => e.linkedin_url).filter(Boolean) as string[];
     const profileIds = finalEngagers.map(e => e.profile_id).filter(Boolean) as string[];
-    let existingUrlSet = new Set<string>();
-    let existingIdSet = new Set<string>();
+    const existingByUrl = new Map<string, string>(); // linkedin_url(lower) -> contact.id
+    const existingById = new Map<string, string>();  // linkedin_profile_id -> contact.id
     if (liUrls.length > 0) {
-      let q = admin
-        .from('contacts')
-        .select('linkedin_url')
-        .in('linkedin_url', liUrls);
+      let q = admin.from('contacts').select('id, linkedin_url').in('linkedin_url', liUrls);
       q = organization_id ? q.eq('organization_id', organization_id as any) : q.eq('user_id', user.id);
       const { data: existing } = await q;
-      existingUrlSet = new Set((existing || []).map((r: any) => (r.linkedin_url || '').toLowerCase()));
+      for (const r of (existing || []) as any[]) {
+        if (r.linkedin_url) existingByUrl.set(String(r.linkedin_url).toLowerCase(), r.id);
+      }
     }
     if (profileIds.length > 0) {
-      let q = admin
-        .from('contacts')
-        .select('linkedin_profile_id')
-        .in('linkedin_profile_id', profileIds);
+      let q = admin.from('contacts').select('id, linkedin_profile_id').in('linkedin_profile_id', profileIds);
       q = organization_id ? q.eq('organization_id', organization_id as any) : q.eq('user_id', user.id);
       const { data: existing } = await q;
-      existingIdSet = new Set((existing || []).map((r: any) => String(r.linkedin_profile_id || '')));
+      for (const r of (existing || []) as any[]) {
+        if (r.linkedin_profile_id) existingById.set(String(r.linkedin_profile_id), r.id);
+      }
+    }
+
+    // Pre-load contact_lists memberships for existing contacts so we don't re-add
+    const existingContactIds = Array.from(new Set([...existingByUrl.values(), ...existingById.values()]));
+    const alreadyInList = new Set<string>();
+    if (existingContactIds.length > 0 && targetListId) {
+      const { data: memberships } = await admin
+        .from('contact_lists')
+        .select('contact_id')
+        .eq('list_id', targetListId)
+        .in('contact_id', existingContactIds);
+      for (const m of (memberships || []) as any[]) alreadyInList.add(String(m.contact_id));
     }
 
     let inserted = 0;
+    let added_to_list = 0;
     let skipped_duplicate = 0;
     const insertedIds: string[] = [];
 
     for (const eng of finalEngagers) {
-      if (eng.profile_id && existingIdSet.has(eng.profile_id)) { skipped_duplicate++; continue; }
-      if (eng.linkedin_url && existingUrlSet.has(eng.linkedin_url.toLowerCase())) { skipped_duplicate++; continue; }
+      const existingId =
+        (eng.profile_id && existingById.get(eng.profile_id)) ||
+        (eng.linkedin_url && existingByUrl.get(eng.linkedin_url.toLowerCase())) ||
+        null;
+
+      if (existingId) {
+        // Contact already exists — attach to selected list if not already there.
+        if (targetListId && !alreadyInList.has(existingId)) {
+          const { error: linkErr } = await admin
+            .from('contact_lists')
+            .insert({ contact_id: existingId, list_id: targetListId } as any);
+          if (!linkErr) {
+            alreadyInList.add(existingId);
+            added_to_list++;
+          }
+        }
+        skipped_duplicate++;
+        continue;
+      }
+
       const signalLabel = eng.engagement === 'like' ? 'Liked LinkedIn post' : 'Commented on LinkedIn post';
       const { data: row, error: insErr } = await admin.from('contacts').insert({
         user_id: user.id,
@@ -697,12 +727,16 @@ async function performExtraction(ctx: {
         ai_score: eng.ai_score,
       } as any).select('id').single();
       if (insErr) { console.warn('[extract-li] insert err', insErr.message); continue; }
-      if (eng.profile_id) existingIdSet.add(eng.profile_id);
-      if (eng.linkedin_url) existingUrlSet.add(eng.linkedin_url.toLowerCase());
+      if (eng.profile_id) existingById.set(eng.profile_id, row.id);
+      if (eng.linkedin_url) existingByUrl.set(eng.linkedin_url.toLowerCase(), row.id);
       insertedIds.push(row.id);
-      await admin.from('contact_lists').insert({ contact_id: row.id, list_id: targetListId } as any);
+      if (targetListId) {
+        await admin.from('contact_lists').insert({ contact_id: row.id, list_id: targetListId } as any);
+        alreadyInList.add(row.id);
+      }
       inserted++;
     }
+
 
     return {
       inserted,
