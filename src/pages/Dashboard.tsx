@@ -11,7 +11,7 @@ import LeadsByTier from "@/components/dashboard/LeadsByTier";
 import { ChevronDown, Flame, Users, MessageCircle, Radio, Plus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
