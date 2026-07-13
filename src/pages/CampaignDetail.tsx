@@ -1618,6 +1618,15 @@ export default function CampaignDetail() {
                               </svg>
                               <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
                             </div>
+                            <div className="flex flex-col items-center self-start pt-14 mr-1">
+                              <button
+                                onClick={() => openAddStep({ insertIndex: actualIdxC })}
+                                title="Insert step here"
+                                className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
                             <motion.div
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
