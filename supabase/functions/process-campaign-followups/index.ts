@@ -120,7 +120,10 @@ async function processCampaign(
   supabaseServiceRoleKey: string,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const today = new Date().toISOString().split('T')[0];
-  const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
+  // Filter out pre-invitation steps (before_invitation=true) — those are executed
+  // inline by send-connection-requests, not tracked in the post-accept flow.
+  const workflowSteps: any[] = (Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [])
+    .filter((s: any) => !s?.before_invitation);
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
   const _firstType = workflowSteps[0]?.type;
   console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${_firstType === 'invitation' || _firstType === 'invite'}`);
