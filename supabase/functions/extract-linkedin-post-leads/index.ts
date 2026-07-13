@@ -318,26 +318,47 @@ Deno.serve(async (req) => {
 
     console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched} comments=${comments_fetched} unique=${engagersByKey.size}`);
 
-    // Filter competitors
+    // Filter competitors (slug-based hard match first)
     let skipped_competitor = 0;
-    const finalEngagers: Engager[] = [];
+    const prefiltered: Engager[] = [];
     for (const eng of engagersByKey.values()) {
       const co = (eng.company || '').toLowerCase();
       if (co && Array.from(competitorCompanies).some(cc => co.includes(cc) || cc.includes(co))) {
         skipped_competitor++;
         continue;
       }
-      finalEngagers.push(eng);
+      prefiltered.push(eng);
+    }
+
+    // AI classify: competitor detection (by headline) + buyer-fit score 1-3
+    const classifierItems = prefiltered.map(e => ({
+      id: e.key,
+      headline: (e.headline || '').slice(0, 200),
+      company: (e.company || '').slice(0, 100),
+    }));
+    const classifyMap = await classifyLeads(classifierItems, businessContext, idealLead);
+
+    let skipped_low_fit = 0;
+    const finalEngagers: (Engager & { ai_score: number; relevance_tier: 'hot' | 'warm' | 'cold' })[] = [];
+    for (const eng of prefiltered) {
+      const c = classifyMap.get(eng.key);
+      if (c?.is_competitor) { skipped_competitor++; continue; }
+      const score = c?.score ?? (businessContext ? 1 : 2); // if no AI ran, default warm
+      // Drop obvious dead weight when we have context to judge
+      if (businessContext && classifyMap.size > 0 && score <= 1) { skipped_low_fit++; continue; }
+      const tier: 'hot' | 'warm' | 'cold' = score >= 3 ? 'hot' : score === 2 ? 'warm' : 'cold';
+      finalEngagers.push({ ...eng, ai_score: score, relevance_tier: tier });
     }
 
     if (finalEngagers.length === 0) {
       return jsonResp({
         inserted: 0,
         skipped_competitor,
+        skipped_low_fit,
         skipped_duplicate: 0,
         reactions_fetched,
         comments_fetched,
-        message: 'No engagers found for this post.',
+        message: 'No qualified engagers found for this post.',
       });
     }
 
