@@ -1971,13 +1971,14 @@ export default function CampaignDetail() {
                           <p className="text-sm text-muted-foreground">Select the type of step to add</p>
                         </DialogHeader>
                         <div className="space-y-3">
-                          {[
+                          {([
                             { type: "message" as const, icon: Send, label: "Send Message", desc: "Send messages, PDF and GIFs to connected leads", color: "hsl(210 80% 50%)" },
                             { type: "email" as const, icon: Mail, label: "Send Email", desc: "Send a personalised email to leads that have an email on file. Leads without an email are skipped.", color: "hsl(25 95% 53%)" },
                             { type: "comment" as const, icon: MessageCircle, label: "Comment on signal post", desc: "AI writes and posts a personalised comment on the LinkedIn post that triggered this lead", color: "hsl(280 70% 55%)" },
+                            { type: "like" as const, icon: ThumbsUp, label: "Like signal post", desc: "Sends a like on the lead's signal post. Great as a warm-up before an invite or DM.", color: "hsl(210 80% 50%)" },
                             { type: "message" as const, icon: Mic, label: "Send Voice Message", desc: "Record and send a voice message to connected leads", color: "hsl(142 70% 45%)", badge: "Coming soon" },
                             { type: "visit_profile" as const, icon: User, label: "Visit Profile", desc: "Visit the LinkedIn profile of your leads", color: "hsl(0 60% 50%)" },
-                          ].map((opt) => (
+                          ] as any[]).filter((o) => newStepAllowedTypes.includes(o.type)).map((opt) => (
                             <button
                               key={opt.label}
                               disabled={!!opt.badge}
