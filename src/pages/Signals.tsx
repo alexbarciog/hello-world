@@ -336,6 +336,7 @@ export default function Signals() {
   const [runningAgentIds, setRunningAgentIds] = useState<string[]>([]);
   const [showAddCard, setShowAddCard] = useState(false);
   const [addCardLoading, setAddCardLoading] = useState(false);
+  const [isAgentLimitExempt, setIsAgentLimitExempt] = useState(false);
 
   const [newName, setNewName] = useState("My Agent");
   const [newType, setNewType] = useState("recently_changed_jobs");
@@ -346,11 +347,19 @@ export default function Signals() {
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
   const maxAgents = 2;
+  const agentLimitReached = !isAgentLimitExempt && agents.length >= maxAgents;
+  const activeLimitLabel = isAgentLimitExempt ? "∞" : maxAgents;
 
   useEffect(() => {
     fetchAgents();
     fetchRuns();
   }, [currentOrg?.id]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setIsAgentLimitExempt(data.user?.email?.toLowerCase() === "alex123@gmail.com");
+    });
+  }, []);
 
   // Bandwidth-friendly polling: only when a run is in flight, every 15s, and
   // also refresh the run list so the History view stays current without
@@ -727,7 +736,7 @@ export default function Signals() {
             <span className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200/70 rounded-full px-2.5 py-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               {activeCount} active
-              <span className="text-emerald-500/70">/ {maxAgents}</span>
+              <span className="text-emerald-500/70">/ {activeLimitLabel}</span>
             </span>
           </div>
           <p className="mt-1.5 text-[13.5px] text-neutral-500">
@@ -837,7 +846,7 @@ export default function Signals() {
         )}
         <button
           onClick={() => { setEditAgentId(null); setShowCreate(true); }}
-          disabled={agents.length >= maxAgents}
+          disabled={agentLimitReached}
           className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 bg-blue-50/50 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
@@ -930,7 +939,7 @@ export default function Signals() {
         <div className="border-t border-dashed border-neutral-200 bg-neutral-50/40">
           <button
             onClick={() => { setEditAgentId(null); setShowCreate(true); }}
-            disabled={agents.length >= maxAgents}
+            disabled={agentLimitReached}
             className="w-full flex items-center justify-center gap-2 py-3.5 text-[13px] font-medium text-[#3B82F6] hover:bg-blue-50/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus className="w-4 h-4" />Create agent
