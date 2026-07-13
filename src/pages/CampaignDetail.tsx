@@ -1752,7 +1752,7 @@ export default function CampaignDetail() {
                     <div className="flex flex-col items-center self-start pt-10 px-2">
                       <div className="w-6 border-t-2 border-dashed border-muted-foreground/20" />
                       <button
-                        onClick={openAddStep}
+                        onClick={() => openAddStep()}
                         className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2"
                       >
                         <Plus className="w-4 h-4" />
