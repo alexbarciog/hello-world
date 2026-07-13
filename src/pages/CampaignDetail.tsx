@@ -11,7 +11,7 @@ import {
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
   RefreshCw, Loader2, MessageCircle, CalendarDays, Calendar, Zap, Inbox,
-  CircleDot, ChevronDown, Mail,
+  CircleDot, ChevronDown, Mail, ThumbsUp,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -254,7 +254,12 @@ export default function CampaignDetail() {
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
-  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment" | "email">("message");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment" | "email" | "like">("message");
+  const [newStepInsertIndex, setNewStepInsertIndex] = useState<number | null>(null); // null = append
+  const [newStepBeforeInvitation, setNewStepBeforeInvitation] = useState(false);
+  const [newStepAllowedTypes, setNewStepAllowedTypes] = useState<Array<"message" | "email" | "comment" | "visit_profile" | "like">>(["message", "email", "comment", "visit_profile", "like"]);
+  const [newStepLikePostFilter, setNewStepLikePostFilter] = useState<"authored_only" | "all_signals">("authored_only");
+  const [newStepLikeDelayHours, setNewStepLikeDelayHours] = useState(0);
   const [newStepEmailSubject, setNewStepEmailSubject] = useState("");
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
@@ -828,7 +833,7 @@ export default function CampaignDetail() {
       preGenMap[`${m.connection_request_id}_${m.step_index}`] = m;
     });
 
-    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation");
+    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation" && !s.before_invitation);
     const scheduled: ScheduledMessage[] = [];
 
     for (const cr of connReqs as any[]) {
@@ -1039,12 +1044,18 @@ export default function CampaignDetail() {
     }
     setSavingSettings(false);
   }
-  function openAddStep() {
-    setNewStepType("message");
+  function openAddStep(opts?: { insertIndex?: number | null; beforeInvitation?: boolean; restrictToSignalActions?: boolean }) {
+    const restrict = !!opts?.restrictToSignalActions;
+    setNewStepInsertIndex(opts?.insertIndex ?? null);
+    setNewStepBeforeInvitation(!!opts?.beforeInvitation);
+    setNewStepAllowedTypes(restrict ? ["comment", "like"] : ["message", "email", "comment", "visit_profile", "like"]);
+    setNewStepType(restrict ? "comment" : "message");
     setNewStepMessage("");
     setNewStepDelay(1);
     setNewStepMessageMode("manual");
     setNewStepInstructions("");
+    setNewStepLikePostFilter("authored_only");
+    setNewStepLikeDelayHours(0);
     setAddStepPhase("choose");
     setAddStepOpen(true);
   }
@@ -1056,7 +1067,7 @@ export default function CampaignDetail() {
   async function saveDelay(stepIndex: number, value: number, unit: "hours" | "days") {
     if (!campaign) return;
     const updated = [...workflowSteps];
-    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !item.ws.before_invitation);
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
     const delayHours = unit === "days" ? value * 24 : value;
@@ -1069,7 +1080,7 @@ export default function CampaignDetail() {
 
   async function deleteWorkflowStep(stepIndex: number) {
     if (!campaign) return;
-    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !item.ws.before_invitation);
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
     const updated = workflowSteps.filter((_: any, idx: number) => idx !== actualIdx);
@@ -1094,6 +1105,12 @@ export default function CampaignDetail() {
         ai_instructions: newStepCommentInstructions.trim(),
         delay_hours: Math.max(0, newStepCommentDelayHours || 0),
       };
+    } else if (newStepType === "like") {
+      newStep = {
+        type: "like",
+        post_filter: newStepLikePostFilter,
+        delay_hours: Math.max(0, newStepLikeDelayHours || 0),
+      };
     } else if (newStepType === "email") {
       const isAi = newStepMessageMode === "ai";
       if (!isAi && (!newStepEmailSubject.trim() || !newStepMessage.trim())) {
@@ -1117,17 +1134,28 @@ export default function CampaignDetail() {
         ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
       };
     }
-    const updated = [...workflowSteps, newStep];
+    if (newStepBeforeInvitation) newStep.before_invitation = true;
+
+    let updated = [...workflowSteps];
+    if (newStepInsertIndex !== null && newStepInsertIndex >= 0 && newStepInsertIndex <= updated.length) {
+      updated.splice(newStepInsertIndex, 0, newStep);
+    } else {
+      updated.push(newStep);
+    }
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to add step"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setAddStepOpen(false);
-    // Reset comment state
+    // Reset state
     setNewStepPostFilter("authored_only");
     setNewStepCommentInstructions("");
     setNewStepCommentDelayHours(0);
     setCommentPreviewText("");
     setNewStepEmailSubject("");
+    setNewStepInsertIndex(null);
+    setNewStepBeforeInvitation(false);
+    setNewStepLikePostFilter("authored_only");
+    setNewStepLikeDelayHours(0);
     toast.success("Step added!");
   }
 
@@ -1137,7 +1165,7 @@ export default function CampaignDetail() {
 
     try {
       const allSteps = [...workflowSteps];
-      const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+      const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !item.ws.before_invitation);
       const actualIdx = nonInvMap[stepIndex]?.idx;
       if (actualIdx !== undefined) {
         allSteps[actualIdx] = { ...allSteps[actualIdx], message: "", ai_icebreaker: true };
@@ -1154,7 +1182,7 @@ export default function CampaignDetail() {
   }
 
   function openEditStepInstructions(stepIndex: number) {
-    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation" && !ws.before_invitation);
     const step = nonInvSteps[stepIndex];
     setEditStepInstructionsText(step?.step_instructions || "");
     setEditStepInstructionsIdx(stepIndex);
@@ -1163,7 +1191,7 @@ export default function CampaignDetail() {
   async function saveStepInstructions() {
     if (!campaign || editStepInstructionsIdx === null) return;
     const allSteps = [...workflowSteps];
-    const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !item.ws.before_invitation);
     const actualIdx = nonInvMap[editStepInstructionsIdx]?.idx;
     if (actualIdx === undefined) return;
     allSteps[actualIdx] = { ...allSteps[actualIdx], step_instructions: editStepInstructionsText.trim() || undefined };
@@ -1425,7 +1453,116 @@ export default function CampaignDetail() {
 
                   {/* Workflow Steps - horizontal row */}
                   <div className="flex items-start gap-0 mt-0">
-                    {/* Fixed Step 1: Send Connect Request (cannot be deleted) */}
+                    {/* ── Pre-invitation steps (Comment/Like only) ── */}
+                    {workflowSteps
+                      .map((ws: any, idx: number) => ({ ws, idx }))
+                      .filter((it: any) => it.ws?.before_invitation && (it.ws.type === "comment" || it.ws.type === "like"))
+                      .map((it: any, orderIdx: number, arr: any[]) => {
+                        const ws = it.ws;
+                        const actualIdx = it.idx;
+                        const delayH = ws.delay_hours ?? 0;
+                        const icon = ws.type === "like" ? ThumbsUp : MessageCircle;
+                        const Icon = icon;
+                        const label = ws.type === "like" ? "Like post" : "Comment on signal";
+                        const bg = ws.type === "like"
+                          ? "linear-gradient(135deg, hsl(200 80% 50%), hsl(220 75% 55%))"
+                          : "linear-gradient(135deg, hsl(280 70% 55%), hsl(310 65% 50%))";
+                        return (
+                          <div key={`pre-${actualIdx}`} className="flex items-start">
+                            {orderIdx > 0 && (
+                              <div className="flex flex-col items-center self-start pt-10 px-2 min-w-[60px]">
+                                <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                  {delayH === 0 ? "immediate" : `+ ${delayH} hr${delayH !== 1 ? "s" : ""}`}
+                                </span>
+                                <svg width="40" height="2" className="text-primary">
+                                  <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                                </svg>
+                                <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[32px]" />
+                              </div>
+                            )}
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="min-w-[200px] max-w-[220px] shrink-0"
+                            >
+                              <div className="rounded-xl text-white p-3.5 shadow-md relative group" style={{ background: bg }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4" />
+                                    <span className="text-sm font-bold">{label}</span>
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete this pre-invitation step?</AlertDialogTitle>
+                                        <AlertDialogDescription>This step runs before the connection request is sent.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={async () => {
+                                          if (!campaign) return;
+                                          const updated = workflowSteps.filter((_: any, i: number) => i !== actualIdx);
+                                          const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+                                          if (error) { toast.error("Failed to delete"); return; }
+                                          setCampaign({ ...campaign, workflow_steps: updated });
+                                          toast.success("Step deleted");
+                                        }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                                <p className="text-[10px] uppercase font-bold opacity-80 tracking-wider">Before invitation</p>
+                              </div>
+                              <div className="mt-2 rounded-xl border border-border bg-card p-3 shadow-sm space-y-1.5">
+                                {(ws.post_filter || "authored_only") === "authored_only" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                    <Zap className="w-3 h-3" /> Only on "Posted about"
+                                  </span>
+                                )}
+                                {ws.type === "comment" && ws.ai_instructions && (
+                                  <p className="text-[11px] text-foreground leading-relaxed line-clamp-3">{ws.ai_instructions}</p>
+                                )}
+                                {ws.type === "like" && (
+                                  <p className="text-[11px] text-muted-foreground italic">Likes the lead's signal post before sending the invite.</p>
+                                )}
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      })}
+
+                    {/* + Add step before invitation */}
+                    <div className="flex flex-col items-center self-start pt-10 px-2">
+                      <div className="w-6 border-t-2 border-dashed border-muted-foreground/20" />
+                      <button
+                        onClick={() => {
+                          // Insert at the position just before invitation index
+                          const invIdx = workflowSteps.findIndex((s: any) => s.type === "invitation");
+                          const insertAt = invIdx === -1 ? 0 : invIdx;
+                          openAddStep({ insertIndex: insertAt, beforeInvitation: true, restrictToSignalActions: true });
+                        }}
+                        title="Add a Comment or Like step before the invitation"
+                        className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <span className="text-[9px] font-bold text-muted-foreground/70 mt-1 whitespace-nowrap">before invite</span>
+                    </div>
+
+                    {/* Delay/connector into invitation */}
+                    <div className="flex flex-col items-center self-start pt-10 px-2 min-w-[60px]">
+                      <svg width="40" height="2" className="text-primary">
+                        <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                      </svg>
+                      <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[32px]" />
+                    </div>
+
+                    {/* Fixed Invitation card */}
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -1459,15 +1596,17 @@ export default function CampaignDetail() {
                     </motion.div>
 
                     {/* Dynamic message steps (skip the first invitation step from data) */}
-                    {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, i: number) => {
+                    {workflowSteps.filter((ws: any) => ws.type !== "invitation" && !ws.before_invitation).map((ws: any, i: number) => {
                       const isEditing = editingStep === i;
                       const stepNum = i + 2; // Step 1 is always the invitation
 
                       // ── Comment step card ────────────────────────────────
                       if (ws.type === "comment") {
-                        const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation");
+                        const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation" && !w.before_invitation);
                         const anyMessageBefore = nonInv.slice(0, i).some((w: any) => w.type === "message");
                         const delayH = ws.delay_hours ?? 0;
+                        const nonInvMapC = workflowSteps.map((w: any, idx: number) => ({ w, idx })).filter((it: any) => it.w.type !== "invitation" && !it.w.before_invitation);
+                        const actualIdxC = nonInvMapC[i]?.idx ?? 0;
                         return (
                           <div key={i} className="flex items-start">
                             <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
@@ -1478,6 +1617,15 @@ export default function CampaignDetail() {
                                 <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
                               </svg>
                               <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[52px]" />
+                            </div>
+                            <div className="flex flex-col items-center self-start pt-14 mr-1">
+                              <button
+                                onClick={() => openAddStep({ insertIndex: actualIdxC })}
+                                title="Insert step here"
+                                className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
                             </div>
                             <motion.div
                               initial={{ opacity: 0, scale: 0.95 }}
@@ -1541,8 +1689,92 @@ export default function CampaignDetail() {
                         );
                       }
 
+                      // ── Like step card ──────────────────────────────────
+                      if (ws.type === "like") {
+                        const delayH = ws.delay_hours ?? 0;
+                        // find actual workflow index (for splice-based insert-before)
+                        const nonInvMap = workflowSteps.map((w: any, idx: number) => ({ w, idx })).filter((it: any) => it.w.type !== "invitation" && !it.w.before_invitation);
+                        const actualIdx = nonInvMap[i]?.idx ?? 0;
+                        return (
+                          <div key={i} className="flex items-start">
+                            <div className="flex flex-col items-center self-start pt-10 px-2 min-w-[60px]">
+                              <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                {delayH === 0 ? "immediate" : `+ ${delayH} hr${delayH !== 1 ? "s" : ""}`}
+                              </span>
+                              <svg width="40" height="2" className="text-primary">
+                                <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                              </svg>
+                              <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[32px]" />
+                            </div>
+                            {/* Insert-between button */}
+                            <div className="flex flex-col items-center self-start pt-14 mr-1">
+                              <button
+                                onClick={() => openAddStep({ insertIndex: actualIdx })}
+                                title="Insert Comment or Like step here"
+                                className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: i * 0.08 }}
+                              className="min-w-[220px] max-w-[240px] shrink-0"
+                            >
+                              <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(200 80% 50%), hsl(220 75% 55%))" }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <ThumbsUp className="w-4 h-4" />
+                                    <span className="text-sm font-bold">Like post</span>
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Step {stepNum}?</AlertDialogTitle>
+                                        <AlertDialogDescription>This will permanently remove this like step.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteWorkflowStep(i)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                                <p className="text-xs opacity-80">Step {stepNum}</p>
+                              </div>
+                              <div className="mt-2 rounded-xl border border-border bg-card p-3 shadow-sm space-y-1.5">
+                                {(ws.post_filter || "authored_only") === "authored_only" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                    <Zap className="w-3 h-3" /> Only on "Posted about" signals
+                                  </span>
+                                )}
+                                <p className="text-xs text-muted-foreground italic">Sends a like on the lead's signal post.</p>
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      }
+
+                      const nonInvMapG = workflowSteps.map((w: any, idx: number) => ({ w, idx })).filter((it: any) => it.w.type !== "invitation" && !it.w.before_invitation);
+                      const actualIdxG = nonInvMapG[i]?.idx ?? 0;
                       return (
                         <div key={i} className="flex items-start">
+                          {/* Insert-between button */}
+                          <div className="flex flex-col items-center self-start pt-14 mr-1 ml-[-8px]">
+                            <button
+                              onClick={() => openAddStep({ insertIndex: actualIdxG })}
+                              title="Insert step here"
+                              className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
                           {/* Connector + delay badge */}
                           <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
                             {editingDelayStep === i ? (() => {
@@ -1741,7 +1973,7 @@ export default function CampaignDetail() {
                     <div className="flex flex-col items-center self-start pt-10 px-2">
                       <div className="w-6 border-t-2 border-dashed border-muted-foreground/20" />
                       <button
-                        onClick={openAddStep}
+                        onClick={() => openAddStep()}
                         className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2"
                       >
                         <Plus className="w-4 h-4" />
@@ -1762,13 +1994,14 @@ export default function CampaignDetail() {
                           <p className="text-sm text-muted-foreground">Select the type of step to add</p>
                         </DialogHeader>
                         <div className="space-y-3">
-                          {[
+                          {([
                             { type: "message" as const, icon: Send, label: "Send Message", desc: "Send messages, PDF and GIFs to connected leads", color: "hsl(210 80% 50%)" },
                             { type: "email" as const, icon: Mail, label: "Send Email", desc: "Send a personalised email to leads that have an email on file. Leads without an email are skipped.", color: "hsl(25 95% 53%)" },
                             { type: "comment" as const, icon: MessageCircle, label: "Comment on signal post", desc: "AI writes and posts a personalised comment on the LinkedIn post that triggered this lead", color: "hsl(280 70% 55%)" },
+                            { type: "like" as const, icon: ThumbsUp, label: "Like signal post", desc: "Sends a like on the lead's signal post. Great as a warm-up before an invite or DM.", color: "hsl(210 80% 50%)" },
                             { type: "message" as const, icon: Mic, label: "Send Voice Message", desc: "Record and send a voice message to connected leads", color: "hsl(142 70% 45%)", badge: "Coming soon" },
                             { type: "visit_profile" as const, icon: User, label: "Visit Profile", desc: "Visit the LinkedIn profile of your leads", color: "hsl(0 60% 50%)" },
-                          ].map((opt) => (
+                          ] as any[]).filter((o) => newStepAllowedTypes.includes(o.type)).map((opt) => (
                             <button
                               key={opt.label}
                               disabled={!!opt.badge}
@@ -1795,7 +2028,52 @@ export default function CampaignDetail() {
                           <DialogTitle className="text-lg font-bold">Edit Campaign Step</DialogTitle>
                         </DialogHeader>
 
-                        {newStepType === "comment" ? (
+                        {newStepType === "like" ? (
+                          <div className="space-y-5">
+                            <div>
+                              <label className="text-sm font-bold text-foreground block mb-2">Which signals should trigger this step?</label>
+                              <div className="space-y-2">
+                                {[
+                                  { v: "authored_only", title: "Only posts written by the lead", rec: true },
+                                  { v: "all_signals", title: "All signal types", rec: false },
+                                ].map((o) => (
+                                  <button
+                                    key={o.v}
+                                    onClick={() => setNewStepLikePostFilter(o.v as any)}
+                                    className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${newStepLikePostFilter === o.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
+                                  >
+                                    <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${newStepLikePostFilter === o.v ? "border-primary" : "border-muted-foreground/40"}`}>
+                                      {newStepLikePostFilter === o.v && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        {o.title}
+                                        {o.rec && <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">Recommended</span>}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                                A like on the lead's own post feels natural. Liking a random post they engaged with may feel intrusive.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3 pt-3 border-t border-border">
+                              <div className="flex-1">
+                                <label className="text-sm font-medium text-foreground block">Wait before liking</label>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">A short delay (10–30 min) makes the like feel more human.</p>
+                              </div>
+                              <input
+                                type="number"
+                                value={newStepLikeDelayHours}
+                                onChange={(e) => setNewStepLikeDelayHours(Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-16 text-sm text-center border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                min={0}
+                              />
+                              <span className="text-sm text-muted-foreground shrink-0">hours</span>
+                            </div>
+                          </div>
+                        ) : newStepType === "comment" ? (
                           <div className="space-y-5">
                             {/* Post filter */}
                             <div>
@@ -2036,7 +2314,7 @@ export default function CampaignDetail() {
                     <p className="text-sm text-muted-foreground">Choose how to create the message for Step {(editModePickerStep ?? 0) + 2}</p>
                   </DialogHeader>
                   {(() => {
-                    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+                    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation" && !ws.before_invitation);
                     const currentStep = editModePickerStep !== null ? nonInvSteps[editModePickerStep] : null;
                     const isCurrentlyAi = currentStep?.ai_icebreaker === true;
                     return (

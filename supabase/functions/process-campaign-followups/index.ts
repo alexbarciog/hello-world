@@ -120,7 +120,10 @@ async function processCampaign(
   supabaseServiceRoleKey: string,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const today = new Date().toISOString().split('T')[0];
-  const workflowSteps: any[] = Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [];
+  // Filter out pre-invitation steps (before_invitation=true) — those are executed
+  // inline by send-connection-requests, not tracked in the post-accept flow.
+  const workflowSteps: any[] = (Array.isArray(campaign.workflow_steps) ? campaign.workflow_steps : [])
+    .filter((s: any) => !s?.before_invitation);
   const messageStepsCount = workflowSteps.filter((s: any) => s.type === 'message').length;
   const _firstType = workflowSteps[0]?.type;
   console.log(`[followup][campaign ${campaign.id}] ${workflowSteps.length} workflow steps, ${messageStepsCount} message steps, hasInvitation: ${_firstType === 'invitation' || _firstType === 'invite'}`);
@@ -224,8 +227,8 @@ async function processCampaign(
         const nextWfIdx = getNextWorkflowIndex(currentStep, workflowSteps);
         const nextStep = workflowSteps[nextWfIdx];
 
-        if (!nextStep || (nextStep.type !== 'message' && nextStep.type !== 'comment' && nextStep.type !== 'email')) {
-          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message' || s.type === 'comment' || s.type === 'email').length;
+        if (!nextStep || (nextStep.type !== 'message' && nextStep.type !== 'comment' && nextStep.type !== 'email' && nextStep.type !== 'like')) {
+          const totalSteps = workflowSteps.filter((s: any) => s.type === 'message' || s.type === 'comment' || s.type === 'email' || s.type === 'like').length;
           const completedMsgSteps = currentStep - 1;
           if (completedMsgSteps >= totalSteps) {
             await supabase
@@ -236,16 +239,17 @@ async function processCampaign(
           continue;
         }
 
-        // ── Comment step branch: delegate to execute-comment-step ──
-        if (nextStep.type === 'comment') {
+        // ── Comment / Like step branch: delegate to executor ──
+        if (nextStep.type === 'comment' || nextStep.type === 'like') {
           const stepCompletedAtC = req.step_completed_at ? new Date(req.step_completed_at) : null;
           if (!stepCompletedAtC) continue;
           const delayHoursC = nextStep.delay_hours || (nextStep.delay_days ? nextStep.delay_days * 24 : 0);
           if (delayHoursC > 0 && Date.now() - stepCompletedAtC.getTime() < delayHoursC * 60 * 60 * 1000) {
             continue;
           }
+          const fnName = nextStep.type === 'comment' ? 'execute-comment-step' : 'execute-like-step';
           try {
-            await fetch(`${supabaseUrl}/functions/v1/execute-comment-step`, {
+            await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -253,9 +257,9 @@ async function processCampaign(
               },
               body: JSON.stringify({ request_id: req.id, step_index: nextWfIdx }),
             });
-            console.log(`[followup] dispatched comment step ${nextWfIdx} for req ${req.id}`);
+            console.log(`[followup] dispatched ${nextStep.type} step ${nextWfIdx} for req ${req.id}`);
           } catch (e) {
-            console.error(`[followup] comment step dispatch failed for req ${req.id}:`, e);
+            console.error(`[followup] ${nextStep.type} step dispatch failed for req ${req.id}:`, e);
           }
           continue;
         }
