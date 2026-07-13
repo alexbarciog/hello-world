@@ -833,7 +833,7 @@ export default function CampaignDetail() {
       preGenMap[`${m.connection_request_id}_${m.step_index}`] = m;
     });
 
-    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation");
+    const nonInvSteps = (steps || []).filter((s: any) => s.type !== "invitation" && !s.before_invitation);
     const scheduled: ScheduledMessage[] = [];
 
     for (const cr of connReqs as any[]) {
@@ -1067,7 +1067,7 @@ export default function CampaignDetail() {
   async function saveDelay(stepIndex: number, value: number, unit: "hours" | "days") {
     if (!campaign) return;
     const updated = [...workflowSteps];
-    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !ws.before_invitation && !item.ws.before_invitation && !s.before_invitation);
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
     const delayHours = unit === "days" ? value * 24 : value;
@@ -1080,7 +1080,7 @@ export default function CampaignDetail() {
 
   async function deleteWorkflowStep(stepIndex: number) {
     if (!campaign) return;
-    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !ws.before_invitation && !item.ws.before_invitation && !s.before_invitation);
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
     const updated = workflowSteps.filter((_: any, idx: number) => idx !== actualIdx);
@@ -1165,7 +1165,7 @@ export default function CampaignDetail() {
 
     try {
       const allSteps = [...workflowSteps];
-      const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+      const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !ws.before_invitation && !item.ws.before_invitation && !s.before_invitation);
       const actualIdx = nonInvMap[stepIndex]?.idx;
       if (actualIdx !== undefined) {
         allSteps[actualIdx] = { ...allSteps[actualIdx], message: "", ai_icebreaker: true };
@@ -1182,7 +1182,7 @@ export default function CampaignDetail() {
   }
 
   function openEditStepInstructions(stepIndex: number) {
-    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation" && !ws.before_invitation && !s.before_invitation);
     const step = nonInvSteps[stepIndex];
     setEditStepInstructionsText(step?.step_instructions || "");
     setEditStepInstructionsIdx(stepIndex);
@@ -1191,7 +1191,7 @@ export default function CampaignDetail() {
   async function saveStepInstructions() {
     if (!campaign || editStepInstructionsIdx === null) return;
     const allSteps = [...workflowSteps];
-    const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation");
+    const nonInvMap = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !ws.before_invitation && !item.ws.before_invitation && !s.before_invitation);
     const actualIdx = nonInvMap[editStepInstructionsIdx]?.idx;
     if (actualIdx === undefined) return;
     allSteps[actualIdx] = { ...allSteps[actualIdx], step_instructions: editStepInstructionsText.trim() || undefined };
@@ -1487,13 +1487,13 @@ export default function CampaignDetail() {
                     </motion.div>
 
                     {/* Dynamic message steps (skip the first invitation step from data) */}
-                    {workflowSteps.filter((ws: any) => ws.type !== "invitation").map((ws: any, i: number) => {
+                    {workflowSteps.filter((ws: any) => ws.type !== "invitation" && !ws.before_invitation && !s.before_invitation).map((ws: any, i: number) => {
                       const isEditing = editingStep === i;
                       const stepNum = i + 2; // Step 1 is always the invitation
 
                       // ── Comment step card ────────────────────────────────
                       if (ws.type === "comment") {
-                        const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation");
+                        const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation" && !w.before_invitation);
                         const anyMessageBefore = nonInv.slice(0, i).some((w: any) => w.type === "message");
                         const delayH = ws.delay_hours ?? 0;
                         return (
@@ -2064,7 +2064,7 @@ export default function CampaignDetail() {
                     <p className="text-sm text-muted-foreground">Choose how to create the message for Step {(editModePickerStep ?? 0) + 2}</p>
                   </DialogHeader>
                   {(() => {
-                    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation");
+                    const nonInvSteps = workflowSteps.filter((ws: any) => ws.type !== "invitation" && !ws.before_invitation && !s.before_invitation);
                     const currentStep = editModePickerStep !== null ? nonInvSteps[editModePickerStep] : null;
                     const isCurrentlyAi = currentStep?.ai_icebreaker === true;
                     return (
