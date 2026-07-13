@@ -545,9 +545,11 @@ export type Database = {
           signal_count: number
           signal_post_excerpt: string | null
           signal_post_url: string | null
+          source: string | null
           source_campaign_id: string | null
           title: string | null
           user_id: string
+          x_url: string | null
         }
         Insert: {
           ai_score?: number | null
@@ -579,9 +581,11 @@ export type Database = {
           signal_count?: number
           signal_post_excerpt?: string | null
           signal_post_url?: string | null
+          source?: string | null
           source_campaign_id?: string | null
           title?: string | null
           user_id: string
+          x_url?: string | null
         }
         Update: {
           ai_score?: number | null
@@ -613,9 +617,11 @@ export type Database = {
           signal_count?: number
           signal_post_excerpt?: string | null
           signal_post_url?: string | null
+          source?: string | null
           source_campaign_id?: string | null
           title?: string | null
           user_id?: string
+          x_url?: string | null
         }
         Relationships: [
           {

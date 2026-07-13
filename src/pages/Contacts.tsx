@@ -18,6 +18,7 @@ import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
 import { FindLookalikesDialog } from "@/components/contacts/FindLookalikesDialog";
+import { ExtractFromXPostDialog } from "@/components/contacts/ExtractFromXPostDialog";
 import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
@@ -63,6 +64,7 @@ export default function Contacts() {
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
   const [showLookalikes, setShowLookalikes] = useState(false);
+  const [showExtractX, setShowExtractX] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -488,6 +490,9 @@ export default function Contacts() {
       const byName = agentsByListName[list.name?.trim().toLowerCase() || ""];
       if (byName) return byName;
     }
+    // Virtual agent for X-post extractions (no signal_agents row)
+    const c = contacts.find((x) => x.id === contactId);
+    if ((c as any)?.source === "x_post_extraction") return "Extracted from post";
     return null;
   }
 
@@ -568,6 +573,12 @@ export default function Contacts() {
                   className="flex items-center gap-1.5 text-xs font-medium text-foreground border border-border rounded-lg px-3 py-2 hover:bg-muted/50 transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" /> Import from Sales Nav
+                </button>
+                <button
+                  onClick={() => setShowExtractX(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-sky-700 border border-sky-200 bg-sky-50 rounded-lg px-3 py-2 hover:bg-sky-100 transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Get leads from X post
                 </button>
               </>
             )}
@@ -870,13 +881,17 @@ export default function Contacts() {
                 <tbody>
                   {paged.map((c) => {
                     const cLists = getContactListNames(c.id);
+                    const isFromX = (c as any).source === "x_post_extraction";
+                    const rowHover = isFromX ? "hover:bg-sky-100/60" : "hover:bg-muted/20";
+                    const stickyBg = isFromX ? "bg-sky-50/70" : "bg-card";
+                    const stickyHover = isFromX ? "group-hover:bg-sky-100/70" : "group-hover:bg-[hsl(var(--muted))]";
                     return (
-                    <tr key={c.id} className="group hover:bg-muted/20 transition-colors">
-                      <td style={{ width: 40, minWidth: 40, maxWidth: 40 }} className="sticky left-0 z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-4 py-3 border-b border-border/50">
+                    <tr key={c.id} className={`group ${isFromX ? "bg-sky-50/50" : ""} ${rowHover} transition-colors`}>
+                      <td style={{ width: 40, minWidth: 40, maxWidth: 40 }} className={`sticky left-0 z-10 ${stickyBg} ${stickyHover} px-4 py-3 border-b border-border/50`}>
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
                       </td>
-                      <td style={{ left: 40, width: 220, minWidth: 220, maxWidth: 220 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-border/50">
+                      <td style={{ left: 40, width: 220, minWidth: 220, maxWidth: 220 }} className={`sticky z-10 ${stickyBg} ${stickyHover} px-3 py-3 border-b border-border/50`}>
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white ${avatarColor(c.first_name + (c.last_name || ""))}`}>
@@ -888,9 +903,13 @@ export default function Contacts() {
                             }`} />
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               {c.linkedin_url ? (
                                 <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                  {c.first_name} {c.last_name || ""}
+                                </a>
+                              ) : (c as any).x_url ? (
+                                <a href={(c as any).x_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
                                   {c.first_name} {c.last_name || ""}
                                 </a>
                               ) : (
@@ -903,6 +922,9 @@ export default function Contacts() {
                                   <LinkedInIcon />
                                 </a>
                               )}
+                              {isFromX && (
+                                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-200 rounded-full px-1.5 py-0.5">From X post</span>
+                              )}
                             </div>
                             <p className="text-xs text-muted-foreground truncate max-w-[180px]">{c.title}</p>
                             <div className="flex items-center gap-1 mt-0.5">
@@ -912,9 +934,10 @@ export default function Contacts() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ left: 260, width: 180, minWidth: 180, maxWidth: 180 }} className="sticky z-10 bg-card group-hover:bg-[hsl(var(--muted))] px-3 py-3 border-b border-border/50">
+                      <td style={{ left: 260, width: 180, minWidth: 180, maxWidth: 180 }} className={`sticky z-10 ${stickyBg} ${stickyHover} px-3 py-3 border-b border-border/50`}>
                         {c.signal_post_url ? (
                           <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
+
                             {c.signal}
                           </a>
                         ) : (
@@ -1269,6 +1292,14 @@ export default function Contacts() {
       <ImportSalesNavDialog
         open={showImport}
         onOpenChange={setShowImport}
+        lists={lists}
+        onImported={fetchData}
+      />
+
+      {/* ── Extract from X post Dialog ── */}
+      <ExtractFromXPostDialog
+        open={showExtractX}
+        onOpenChange={setShowExtractX}
         lists={lists}
         onImported={fetchData}
       />
