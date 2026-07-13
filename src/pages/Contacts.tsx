@@ -574,6 +574,12 @@ export default function Contacts() {
                 >
                   <Download className="w-3.5 h-3.5" /> Import from Sales Nav
                 </button>
+                <button
+                  onClick={() => setShowExtractX(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-sky-700 border border-sky-200 bg-sky-50 rounded-lg px-3 py-2 hover:bg-sky-100 transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Get leads from X post
+                </button>
               </>
             )}
           </div>
