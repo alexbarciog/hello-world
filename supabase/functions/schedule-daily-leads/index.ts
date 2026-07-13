@@ -96,8 +96,27 @@ Deno.serve(async (req) => {
         const connectionsLimit = profile?.daily_connections_limit || 15;
         const messagesLimit = profile?.daily_messages_limit || 15;
 
+        // Count what is ALREADY scheduled today across this user (any status) so
+        // repeated invocations don't double-count and starve later campaigns.
+        const { data: existingToday } = await supabase
+          .from('daily_scheduled_leads')
+          .select('campaign_id, action_type')
+          .eq('user_id', userId)
+          .eq('scheduled_date', today);
+
         let connectionsScheduled = 0;
         let messagesScheduled = 0;
+        const perCampaignConn: Record<string, number> = {};
+        const perCampaignMsg: Record<string, number> = {};
+        for (const row of existingToday || []) {
+          if (row.action_type === 'connection') {
+            connectionsScheduled++;
+            perCampaignConn[row.campaign_id] = (perCampaignConn[row.campaign_id] || 0) + 1;
+          } else if (typeof row.action_type === 'string' && row.action_type.startsWith('message_step_')) {
+            messagesScheduled++;
+            perCampaignMsg[row.campaign_id] = (perCampaignMsg[row.campaign_id] || 0) + 1;
+          }
+        }
 
         for (const campaign of userCamps) {
           if (!campaign.source_list_id) continue;
@@ -108,10 +127,11 @@ Deno.serve(async (req) => {
             : connectionsLimit;
 
           // ── Schedule connection requests ──
-          // Respect BOTH the sender-wide cap and the per-campaign cap
+          // Respect BOTH the sender-wide cap and the remaining per-campaign cap
+          const campaignConnRemaining = campaignCap - (perCampaignConn[campaign.id] || 0);
           const remainingConnections = Math.min(
             connectionsLimit - connectionsScheduled,
-            campaignCap,
+            campaignConnRemaining,
           );
 
           if (remainingConnections > 0) {
@@ -250,7 +270,9 @@ Deno.serve(async (req) => {
           const perCampaignMsgCap = campaign.daily_connect_limit && campaign.daily_connect_limit > 0
             ? campaign.daily_connect_limit
             : remainingMessages;
-          const campaignMsgAllowance = Math.min(remainingMessages, perCampaignMsgCap);
+          const campaignMsgRemaining = perCampaignMsgCap - (perCampaignMsg[campaign.id] || 0);
+          const campaignMsgAllowance = Math.min(remainingMessages, campaignMsgRemaining);
+          if (campaignMsgAllowance <= 0) continue;
 
           // Get accepted contacts ready for next message
           const { data: acceptedRequests } = await supabase
