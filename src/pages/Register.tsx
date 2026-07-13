@@ -32,6 +32,7 @@ export default function Register() {
   const inviteToken = searchParams.get("invite");
   const redirectParam = searchParams.get("redirect");
   const claimParam = searchParams.get("claim");
+  const sourceParam = searchParams.get("source");
 
   // Step state
   const [step, setStep] = useState(1);
