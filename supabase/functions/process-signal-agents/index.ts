@@ -267,10 +267,27 @@ async function processSingleAgent(agentId: string, runId: string) {
   }
 
   // Keyword posts: split into batches of 4 (smaller batches finish faster, easier on Unipile)
+  // Per-run budgets (50 profile fetches, 60 inserts) mean typically only the FIRST batch
+  // actually queries posts before b2..bN abort at the budget check. If a user has more
+  // keywords than fit in one batch, we rotate the starting offset per run so every
+  // keyword eventually gets queried across successive runs instead of the first 4 hogging
+  // every run forever.
   const KEYWORD_BATCH_SIZE = 4;
   if (enabled.includes('keyword_posts')) {
-    const kws = signalKeywords['keyword_posts'] || agent.keywords || [];
-    if (kws.length > 0) {
+    const kwsRaw = signalKeywords['keyword_posts'] || agent.keywords || [];
+    if (kwsRaw.length > 0) {
+      let kws = kwsRaw;
+      if (kwsRaw.length > KEYWORD_BATCH_SIZE) {
+        // Count prior runs for this agent to derive a stable rotating offset.
+        const { count: priorRunCount } = await supabase
+          .from('signal_agent_runs')
+          .select('id', { count: 'exact', head: true })
+          .eq('agent_id', agentId)
+          .neq('id', runId);
+        const rotation = ((priorRunCount || 0) * KEYWORD_BATCH_SIZE) % kwsRaw.length;
+        kws = [...kwsRaw.slice(rotation), ...kwsRaw.slice(0, rotation)];
+        console.log(`[KEYWORD-ROTATION] Agent ${agentId}: run #${(priorRunCount || 0) + 1}, offset=${rotation}/${kwsRaw.length} → first keyword this run: "${kws[0]}"`);
+      }
       for (let i = 0; i < kws.length; i += KEYWORD_BATCH_SIZE) {
         const batch = kws.slice(i, i + KEYWORD_BATCH_SIZE);
         const batchNum = Math.floor(i / KEYWORD_BATCH_SIZE) + 1;
