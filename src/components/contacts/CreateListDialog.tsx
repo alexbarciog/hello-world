@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ContactList } from "./types";
 import { Plus, FolderPlus } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { toast } from "sonner";
 
 interface CreateListDialogProps {
   open: boolean;
@@ -31,39 +32,55 @@ export function CreateListDialog({
     if (selectedContactIds.size === 0) return;
     setSaving(true);
 
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) { setSaving(false); return; }
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error("Please sign in again before saving.");
 
-    let listId: string;
+      let listId: string;
 
-    if (mode === "new") {
-      if (!newName.trim()) { setSaving(false); return; }
-      const { data, error } = await (supabase.from("lists") as any)
-        .insert({ user_id: user.id, organization_id: currentOrg?.id ?? null, name: newName.trim(), description: newDesc.trim() || null })
-        .select("id")
-        .single();
-      if (error || !data) { console.error(error); setSaving(false); return; }
-      listId = data.id;
-    } else {
-      if (!selectedListId) { setSaving(false); return; }
-      listId = selectedListId;
+      if (mode === "new") {
+        if (!newName.trim()) throw new Error("Enter a list name.");
+        const { data, error } = await (supabase.from("lists") as any)
+          .insert({ user_id: user.id, organization_id: currentOrg?.id ?? null, name: newName.trim(), description: newDesc.trim() || null })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (!data) throw new Error("List was not created.");
+        listId = data.id;
+      } else {
+        if (!selectedListId) throw new Error("Choose a list first.");
+        listId = selectedListId;
+      }
+
+      const contactIds = [...selectedContactIds];
+      const { data: existingLinks, error: existingError } = await (supabase.from("contact_lists") as any)
+        .select("contact_id")
+        .eq("list_id", listId)
+        .in("contact_id", contactIds);
+      if (existingError) throw existingError;
+
+      const existingContactIds = new Set((existingLinks ?? []).map((row: { contact_id: string }) => row.contact_id));
+      const entries = contactIds
+        .filter((contactId) => !existingContactIds.has(contactId))
+        .map((contactId) => ({ contact_id: contactId, list_id: listId }));
+
+      if (entries.length > 0) {
+        const { error: linkError } = await (supabase.from("contact_lists") as any).insert(entries);
+        if (linkError) throw linkError;
+      }
+
+      toast.success(entries.length > 0 ? `Added ${entries.length} contact${entries.length === 1 ? "" : "s"} to list` : "Selected contacts are already in this list");
+      setNewName("");
+      setNewDesc("");
+      setSelectedListId("");
+      onOpenChange(false);
+      onCreated();
+    } catch (err: any) {
+      console.error("Add contacts to list error:", err);
+      toast.error(err?.message || "Failed to add contacts to list");
+    } finally {
+      setSaving(false);
     }
-
-    // Insert contact_lists entries
-    const entries = [...selectedContactIds].map((contactId) => ({
-      contact_id: contactId,
-      list_id: listId,
-    }));
-
-    const { error: linkError } = await (supabase.from("contact_lists") as any).insert(entries);
-    if (linkError) console.error("Link error:", linkError);
-
-    setSaving(false);
-    setNewName("");
-    setNewDesc("");
-    setSelectedListId("");
-    onOpenChange(false);
-    onCreated();
   }
 
   return (
