@@ -1453,7 +1453,116 @@ export default function CampaignDetail() {
 
                   {/* Workflow Steps - horizontal row */}
                   <div className="flex items-start gap-0 mt-0">
-                    {/* Fixed Step 1: Send Connect Request (cannot be deleted) */}
+                    {/* ── Pre-invitation steps (Comment/Like only) ── */}
+                    {workflowSteps
+                      .map((ws: any, idx: number) => ({ ws, idx }))
+                      .filter((it: any) => it.ws?.before_invitation && (it.ws.type === "comment" || it.ws.type === "like"))
+                      .map((it: any, orderIdx: number, arr: any[]) => {
+                        const ws = it.ws;
+                        const actualIdx = it.idx;
+                        const delayH = ws.delay_hours ?? 0;
+                        const icon = ws.type === "like" ? ThumbsUp : MessageCircle;
+                        const Icon = icon;
+                        const label = ws.type === "like" ? "Like post" : "Comment on signal";
+                        const bg = ws.type === "like"
+                          ? "linear-gradient(135deg, hsl(200 80% 50%), hsl(220 75% 55%))"
+                          : "linear-gradient(135deg, hsl(280 70% 55%), hsl(310 65% 50%))";
+                        return (
+                          <div key={`pre-${actualIdx}`} className="flex items-start">
+                            {orderIdx > 0 && (
+                              <div className="flex flex-col items-center self-start pt-10 px-2 min-w-[60px]">
+                                <span className="text-[10px] font-bold text-muted-foreground border border-border bg-card px-2 py-0.5 rounded-full mb-2 whitespace-nowrap shadow-sm">
+                                  {delayH === 0 ? "immediate" : `+ ${delayH} hr${delayH !== 1 ? "s" : ""}`}
+                                </span>
+                                <svg width="40" height="2" className="text-primary">
+                                  <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                                </svg>
+                                <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[32px]" />
+                              </div>
+                            )}
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="min-w-[200px] max-w-[220px] shrink-0"
+                            >
+                              <div className="rounded-xl text-white p-3.5 shadow-md relative group" style={{ background: bg }}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="w-4 h-4" />
+                                    <span className="text-sm font-bold">{label}</span>
+                                  </div>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete this pre-invitation step?</AlertDialogTitle>
+                                        <AlertDialogDescription>This step runs before the connection request is sent.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={async () => {
+                                          if (!campaign) return;
+                                          const updated = workflowSteps.filter((_: any, i: number) => i !== actualIdx);
+                                          const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+                                          if (error) { toast.error("Failed to delete"); return; }
+                                          setCampaign({ ...campaign, workflow_steps: updated });
+                                          toast.success("Step deleted");
+                                        }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                                <p className="text-[10px] uppercase font-bold opacity-80 tracking-wider">Before invitation</p>
+                              </div>
+                              <div className="mt-2 rounded-xl border border-border bg-card p-3 shadow-sm space-y-1.5">
+                                {(ws.post_filter || "authored_only") === "authored_only" && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                    <Zap className="w-3 h-3" /> Only on "Posted about"
+                                  </span>
+                                )}
+                                {ws.type === "comment" && ws.ai_instructions && (
+                                  <p className="text-[11px] text-foreground leading-relaxed line-clamp-3">{ws.ai_instructions}</p>
+                                )}
+                                {ws.type === "like" && (
+                                  <p className="text-[11px] text-muted-foreground italic">Likes the lead's signal post before sending the invite.</p>
+                                )}
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      })}
+
+                    {/* + Add step before invitation */}
+                    <div className="flex flex-col items-center self-start pt-10 px-2">
+                      <div className="w-6 border-t-2 border-dashed border-muted-foreground/20" />
+                      <button
+                        onClick={() => {
+                          // Insert at the position just before invitation index
+                          const invIdx = workflowSteps.findIndex((s: any) => s.type === "invitation");
+                          const insertAt = invIdx === -1 ? 0 : invIdx;
+                          openAddStep({ insertIndex: insertAt, beforeInvitation: true, restrictToSignalActions: true });
+                        }}
+                        title="Add a Comment or Like step before the invitation"
+                        className="w-9 h-9 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors mt-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <span className="text-[9px] font-bold text-muted-foreground/70 mt-1 whitespace-nowrap">before invite</span>
+                    </div>
+
+                    {/* Delay/connector into invitation */}
+                    <div className="flex flex-col items-center self-start pt-10 px-2 min-w-[60px]">
+                      <svg width="40" height="2" className="text-primary">
+                        <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
+                      </svg>
+                      <ArrowRight className="w-4 h-4 text-primary -mt-[11px] ml-[32px]" />
+                    </div>
+
+                    {/* Fixed Invitation card */}
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
