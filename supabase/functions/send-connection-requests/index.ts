@@ -200,6 +200,41 @@ Deno.serve(async (req) => {
 
             const providerId = resolveData.provider_id;
 
+            const providerId = resolveData.provider_id;
+
+            // ── Pre-invitation Comment/Like steps ─────────────────────────
+            // Run any workflow steps marked `before_invitation: true` inline
+            // before sending the invite. Skips silently on failure.
+            const preSteps = ((campaign as any).workflow_steps || [])
+              .filter((s: any) => s?.before_invitation && (s.type === 'like' || s.type === 'comment'));
+            for (const preStep of preSteps) {
+              const fnName = preStep.type === 'like' ? 'execute-like-step' : 'execute-comment-step';
+              try {
+                await fetch(`${SUPABASE_URL}/functions/v1/${fnName}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                  },
+                  body: JSON.stringify({
+                    inline: true,
+                    account_id: accountId,
+                    step: preStep,
+                    contact: {
+                      id: contact.id,
+                      first_name: contact.first_name,
+                      company: (contact as any).company,
+                      signal: (contact as any).signal,
+                      signal_post_url: (contact as any).signal_post_url,
+                    },
+                  }),
+                });
+                await new Promise(r => setTimeout(r, 1500));
+              } catch (e) {
+                console.error(`[send-conn] pre-invite ${preStep.type} failed for ${contact.id}:`, e);
+              }
+            }
+
             // Step 2: Send invitation via Unipile
             const inviteRes = await fetch(`https://${UNIPILE_DSN}/api/v1/users/invite`, {
               method: 'POST',
