@@ -923,7 +923,7 @@ export default function Contacts() {
                                 </a>
                               )}
                               {isFromLI && (
-                                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-200 rounded-full px-1.5 py-0.5">From X post</span>
+                                <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-200 rounded-full px-1.5 py-0.5">Extracted from post</span>
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground truncate max-w-[180px]">{c.title}</p>
