@@ -181,7 +181,7 @@ function deterministicScore(headline: string, company: string, businessContext: 
 
 // ─── AI classifier: competitor + buyer-fit score (1-3) ─────────────────────
 async function classifyLeads(
-  items: { id: string; headline: string; company: string }[],
+  items: { id: string; name: string; headline: string; company: string; location: string }[],
   businessContext: string,
   idealLead: string,
 ): Promise<Map<string, { is_competitor: boolean; score: number; reason: string }>> {
@@ -189,7 +189,7 @@ async function classifyLeads(
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY || items.length === 0 || !businessContext) return out;
 
-  const systemPrompt = `You classify LinkedIn users who engaged with a post. For each person you see only HEADLINE + COMPANY.
+  const systemPrompt = `You classify LinkedIn users who engaged with a post. For each person you see NAME + HEADLINE + COMPANY + LOCATION.
 
 USER'S BUSINESS:
 ${businessContext}
@@ -202,14 +202,15 @@ For each PERSON output:
    - 2 = WARM: adjacent role/industry, could buy but not obvious.
    - 1 = COLD: student, intern, retired, unrelated industry, junior IC in unrelated function, or headline gives no signal.
    If is_competitor=true, always return score=1.
-3) reason: 1 short sentence.
+ 3) reason: 1 short sentence.
 
-Be strict on score=3. Default to 1 or 2 when unsure. Respond ONLY via the tool call.`;
+Never mark someone HOT unless they look like a buyer or decision maker. Do not reward competitors for posting/selling similar services.
+Be strict on score=3. Default to 2 when the person has a plausible buyer role but incomplete data. Respond ONLY via the tool call.`;
 
   for (let i = 0; i < items.length; i += 15) {
     const batch = items.slice(i, i + 15);
     const userMsg = batch.map((b, idx) =>
-      `PERSON ${idx + 1} [id=${b.id}]\nHEADLINE: ${b.headline || '(none)'}\nCOMPANY: ${b.company || '(none)'}`
+      `PERSON ${idx + 1} [id=${b.id}]\nNAME: ${b.name || '(none)'}\nHEADLINE: ${b.headline || '(none)'}\nCOMPANY: ${b.company || '(none)'}\nLOCATION: ${b.location || '(none)'}`
     ).join('\n\n');
     try {
       const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
