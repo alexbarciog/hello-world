@@ -23,11 +23,26 @@ function parseName(fullName: string | null | undefined): { first: string; last: 
   return { first: parts[0], last: parts.slice(1).join(' ') || null };
 }
 
-function sanitizeLinkedinUrl(raw: string | null | undefined): string | null {
+function isLikelyInternalLinkedInId(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const v = String(value).trim();
+  if (!v) return false;
+  return (
+    /^urn:li:/i.test(v) ||
+    /^ACo[A-Za-z0-9_-]{8,}$/i.test(v) ||
+    /^[A-Za-z0-9_-]{18,}$/.test(v) ||
+    /^\d{8,}$/.test(v) ||
+    v.includes('=')
+  );
+}
+
+function sanitizeLinkedinProfileUrl(raw: string | null | undefined): string | null {
   if (!raw) return null;
   try {
     const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
     if (!/linkedin\.com$/i.test(u.hostname.replace(/^www\./, ''))) return null;
+    const slug = extractProfileSlugFromUrl(u.toString());
+    if (!slug || isLikelyInternalLinkedInId(slug)) return null;
     u.search = ''; u.hash = '';
     return u.toString().replace(/\/+$/, '').toLowerCase();
   } catch { return null; }
@@ -41,6 +56,127 @@ function extractCompanySlugFromUrl(url: string): string | null {
 function extractProfileSlugFromUrl(url: string): string | null {
   const m = url.match(/linkedin\.com\/in\/([^/?#]+)/i);
   return m ? m[1].toLowerCase() : null;
+}
+
+function pickFirst(...values: unknown[]): string | null {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim()) return v.trim();
+    if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+  }
+  return null;
+}
+
+function publicSlugFromProfile(p: any): string | null {
+  const fromUrl = extractProfileSlugFromUrl(String(p?.linkedin_url || p?.public_url || p?.profile_url || p?.public_profile_url || p?.url || ''));
+  const direct = pickFirst(p?.public_identifier, p?.public_id, p?.publicIdentifier, p?.public_profile_id);
+  const slug = (fromUrl || direct || '').trim().toLowerCase();
+  if (!slug || isLikelyInternalLinkedInId(slug)) return null;
+  return slug;
+}
+
+function providerIdFromProfile(p: any): string | null {
+  return pickFirst(
+    p?.provider_id,
+    p?.member_id,
+    p?.profile_id,
+    p?.id,
+    p?.entity_urn,
+    p?.urn,
+    p?.attendee_provider_id,
+  );
+}
+
+function normalizeCompany(profile: any): string | null {
+  return pickFirst(
+    profile?.company,
+    profile?.current_company?.name,
+    profile?.currentCompany?.name,
+    profile?.current_positions?.[0]?.company,
+    profile?.current_positions?.[0]?.company_name,
+    profile?.position?.company,
+    profile?.experiences?.[0]?.company,
+    profile?.work_experience?.[0]?.company,
+  );
+}
+
+function extractItems(payload: any): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.data?.items)) return payload.data.items;
+  if (Array.isArray(payload?.data?.results)) return payload.data.results;
+  if (Array.isArray(payload?.elements)) return payload.elements;
+  return [];
+}
+
+function extractNextCursor(payload: any): string | null {
+  const cursor = pickFirst(
+    payload?.cursor,
+    payload?.next_cursor,
+    payload?.nextCursor,
+    payload?.paging?.cursor,
+    payload?.paging?.next_cursor,
+    payload?.pagination?.cursor,
+    payload?.pagination?.next_cursor,
+    payload?.metadata?.next_cursor,
+    payload?.data?.cursor,
+    payload?.data?.next_cursor,
+  );
+  if (cursor) return cursor;
+  const nextUrl = pickFirst(payload?.next, payload?.paging?.next, payload?.pagination?.next);
+  if (!nextUrl) return null;
+  try {
+    const u = new URL(nextUrl.startsWith('http') ? nextUrl : `https://placeholder.local${nextUrl}`);
+    return pickFirst(u.searchParams.get('cursor'), u.searchParams.get('next_cursor'));
+  } catch { return null; }
+}
+
+function appendQuery(url: string, params: Record<string, string | number | null | undefined>): string {
+  const u = new URL(url);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== null && v !== undefined && String(v).trim()) u.searchParams.set(k, String(v));
+  }
+  return u.toString();
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const SELLER_KEYWORDS = [
+  'agency', 'consultant', 'consulting', 'freelancer', 'fractional', 'coach', 'coaching',
+  'lead generation', 'lead-gen', 'lead gen', 'appointment setting', 'cold email', 'outbound',
+  'sdr as a service', 'demand generation', 'growth partner', 'b2b sales', 'sales automation',
+  'linkedin automation', 'marketing agency', 'seo agency', 'ads agency', 'paid ads', 'copywriter',
+];
+
+const BUYER_ROLE_KEYWORDS = [
+  'founder', 'co-founder', 'ceo', 'owner', 'partner', 'director', 'vp', 'head of', 'chief',
+  'revenue', 'sales', 'growth', 'marketing', 'business development', 'commercial', 'go-to-market', 'gtm',
+];
+
+function looksLikeSameMarketSeller(text: string, businessContext: string): boolean {
+  const hay = text.toLowerCase();
+  if (!SELLER_KEYWORDS.some(k => hay.includes(k))) return false;
+  const ctx = businessContext.toLowerCase();
+  const marketHints = [
+    'lead', 'linkedin', 'outbound', 'appointment', 'sales', 'sdr', 'growth', 'marketing', 'demand', 'email', 'agency',
+  ].filter(k => ctx.includes(k));
+  if (marketHints.length === 0) return false;
+  return marketHints.some(k => hay.includes(k));
+}
+
+function deterministicScore(headline: string, company: string, businessContext: string): { is_competitor: boolean; score: number; reason: string } | null {
+  const text = `${headline} ${company}`.trim();
+  if (!text) return null;
+  if (looksLikeSameMarketSeller(text, businessContext)) {
+    return { is_competitor: true, score: 1, reason: 'Appears to sell similar services.' };
+  }
+  const lower = text.toLowerCase();
+  if (BUYER_ROLE_KEYWORDS.some(k => lower.includes(k))) {
+    return { is_competitor: false, score: 2, reason: 'Looks like a possible buyer role.' };
+  }
+  return null;
 }
 
 // ─── AI classifier: competitor + buyer-fit score (1-3) ─────────────────────

@@ -1,122 +1,46 @@
-# LinkedIn Profile Analyzer
+## Plan
 
-A public, SEO-optimized landing page that captures a LinkedIn URL + a one-line service description, forces account creation, then reveals a full AI-generated profile report. Also drops 2 emails/week to the user with fake "new opportunity" alerts to drive re-engagement.
+### Goal
+Make “Get leads from LinkedIn post” reliably import many real engagers from large LinkedIn posts, with valid profile links and far better relevance filtering.
 
-## 1. Public page — `/linkedin-profile-analyzer`
+### Problems to fix
+- The function only requests one page of reactions/comments with `limit=100`, so posts with 500+ engagers can return a tiny subset depending on API pagination.
+- Profile links are built from `provider_id`/internal IDs when no public LinkedIn slug exists, causing invalid `/in/...` URLs even though names are correct.
+- Filtering/scoring currently relies on sparse reaction/comment payload fields (`headline`, `company`) that may be missing or partial, so irrelevant people and competitors slip through.
+- The UI toast only says how many were imported, not how many were fetched/skipped, making failures look mysterious.
 
-Same visual language as the landing page (`Navbar`, sky hero, Space Grotesk, sky/lime accents, glassmorphism, `CTASection`/`Footer`).
+### Implementation
+1. **Add robust Unipile pagination**
+   - Fetch reactions and comments in pages using returned cursors (`cursor`, `next_cursor`, `paging.cursor`, etc.) until exhausted or a safe cap is reached.
+   - Increase the extraction cap enough for large posts, e.g. up to 1,000 raw engagers per run.
+   - Log and return fetched/page counts for diagnostics.
 
-**Structure:**
-- **Hero** — H1 "Free LinkedIn Profile Audit. See what's silently killing your inbound.", sub "Paste your profile. Tell us what you sell. Get a brutal, specific, 100% free report in 30 seconds." → the form.
-- **The form (single card):**
-  1. LinkedIn profile URL (validated `linkedin.com/in/…`)
-  2. "What's the one service you mainly sell?" (short textarea, 200 char cap)
-  3. Big "Analyze my profile — free" button
-- **Social proof strip** — "2,431 profiles audited this month" style counter, 3 testimonial cards.
-- **What you'll get** — 6 bento tiles: Headline score, Hook rewrite, About-section teardown, Missing keywords, Trust signals gap, "Why nobody DMs you" section.
-- **Trust bar** — "No credit card. No spam. Report ready in under a minute."
-- **FAQ** — 5 items (SEO long-tail).
-- **CTASection + Footer**.
+2. **Normalize engager identity safely**
+   - Split “profile ID” from “public LinkedIn slug”.
+   - Only generate `https://www.linkedin.com/in/{slug}` from real public identifiers, never from internal `provider_id`/URN/account IDs.
+   - Store `linkedin_profile_id` separately for dedupe and future profile lookups.
+   - If a valid profile URL cannot be produced, still use the provider/profile ID for enrichment, but don’t create fake invalid links.
 
-**Copywriting angle (psychological):**
-- Loss framing ("You're losing 3-5 inbound leads/week to a weak headline").
-- Specificity ("audit checks 27 conversion signals").
-- Curiosity gap ("The 4 words in your About section that make buyers scroll past").
-- Zero-risk anchor ("Free forever. No credit card.").
+3. **Enrich profiles before scoring**
+   - For raw engagers with missing or weak data, call Unipile profile lookup by provider/profile ID in controlled batches.
+   - Use enriched fields: headline, current company, public identifier, profile URL, location if available.
+   - De-dupe by provider ID first, then public URL/name fallback.
 
-**SEO:**
-- `index.html`-level route registered.
-- Real `<title>`, meta description, og/twitter tags injected via component (matching what other public pages already do).
-- H1/H2 structure, alt text, JSON-LD `FAQPage` + `SoftwareApplication`.
+4. **Improve competitor and relevance filtering**
+   - Add deterministic keyword checks for obvious sellers/agencies/consultants in the same space before AI scoring.
+   - Feed the AI classifier richer enriched profile fields and business/ICP context.
+   - Keep warm/hot leads, reject competitors and true low-fit leads, but avoid over-filtering when profile data is incomplete.
 
-## 2. Analysis flow
+5. **Improve insertion and duplicate handling**
+   - Dedupe existing contacts by both `linkedin_profile_id` and valid `linkedin_url`.
+   - Insert `linkedin_profile_id` on contacts so future imports don’t duplicate the same person.
+   - Preserve list assignment and optional campaign enrollment behavior.
 
-**Click "Analyze":**
-- Validate URL + description.
-- Store `{ linkedin_url, service_description }` in `localStorage` under `pending_profile_analysis`.
-- Navigate to `/register?redirect=/profile-report&source=analyzer`.
+6. **Improve user feedback**
+   - Update the success toast/message to include fetched, imported, skipped competitors, skipped low-fit, and duplicate counts.
+   - Return clearer diagnostics from the edge function so we can see whether the issue is API access, pagination, enrichment, or scoring.
 
-**Register page (`Register.tsx`):**
-- Detect `source=analyzer`. After successful signup, instead of navigating to `/onboarding`, navigate to the `redirect` param. Also mark the profile so `AuthGuard` doesn't kick them to onboarding for that one route.
-- Simplest safe approach: add `/profile-report` to `AuthOnlyGuard` (auth-only, no onboarding check). User can still hit onboarding later when they visit `/dashboard`.
-
-**Report page (`/profile-report`, AuthOnlyGuard):**
-- Reads `pending_profile_analysis` from `localStorage`.
-- Inserts a row in `linkedin_profile_analyses` (status `pending`) and calls the edge function.
-- Shows a live status stepper (Fetching profile → Scoring → Writing rewrites) with skeleton cards.
-- When done, renders the full report.
-- Also creates a row in a `weekly_opportunity_emails_queue` config so the biweekly emails start.
-
-**Edge function `analyze-linkedin-profile`:**
-- Auth: JWT required.
-- Input: `{ linkedin_url, service_description }`.
-- Fetch public profile HTML via **Firecrawl** (already have `FIRECRAWL_API_KEY`).
-- Send extracted text + service description to Lovable AI (`google/gemini-3-flash-preview`) with a structured-output schema:
-  ```
-  {
-    detected_services: string[],           // what we think they sell
-    headline_score: 0-100,
-    about_score: 0-100,
-    banner_score: 0-100,
-    social_proof_score: 0-100,
-    overall_score: 0-100,
-    top_3_issues: [{ title, why, fix }],
-    rewritten_headline: string,
-    rewritten_about_hook: string,          // first 3 lines
-    missing_keywords: string[],
-    conversion_signals_missing: string[],
-    quick_wins: string[]                   // 5-7 items
-  }
-  ```
-- Save JSON in `linkedin_profile_analyses.report` (jsonb), status `ready`.
-- Return report.
-
-**Report UI:**
-- Big overall score ring at top.
-- 4 sub-score cards.
-- "What you're actually selling (per our AI)" — the `detected_services` chips — reassures them the analysis is grounded.
-- Rewritten headline + About hook in copy-to-clipboard cards.
-- Top 3 issues, each as a solution card (issue → why it costs you → exact fix).
-- Missing keywords & conversion signals.
-- Quick wins checklist.
-- Persistent "Rerun analysis" button.
-
-## 3. Fake weekly opportunity emails (2/week)
-
-Purpose: retention hook. Every analyzer signup gets 2 emails per week with fake-but-plausible "new opportunity" counters to pull them back into the app.
-
-**Table `profile_analyzer_subscribers`:**
-- `user_id`, `service_description`, `linkedin_url`, `enabled bool default true`, `unsubscribe_token uuid`, timestamps.
-- Auto-inserted when the report is generated.
-
-**Edge function `send-fake-opportunity-email`:**
-- Iterates over enabled subscribers.
-- Picks a random template with a randomized count (3–9):
-  - "Found {n} people interested to work with you"
-  - "Got you {n} new leads interested in {service}"
-  - "{n} decision-makers just engaged with content in your space"
-  - "{n} warm prospects matched your ICP this week"
-  - "{n} founders posted about {service} in the last 48h"
-- Renders via Resend with brand template, CTA "See your leads" → `/dashboard`.
-- Includes 1-click unsubscribe link that flips `enabled=false`.
-
-**Schedule:** `pg_cron` job Tuesday + Friday 10:00 UTC calls the edge function via `pg_net` with anon key + service headers. Created via `supabase--insert` (not migration) since it embeds project-specific URL + key.
-
-## 4. Nav + discovery
-
-- Add "Free LinkedIn Audit" link in the public Navbar's Tools/Resources area.
-- Sitemap entry in `public/sitemap.xml`.
-
-## Technical notes
-
-- Route added to `src/App.tsx` (public + AuthOnlyGuard variant).
-- Files: `src/pages/LinkedInProfileAnalyzer.tsx` (public), `src/pages/ProfileReport.tsx` (gated).
-- Migration: new tables `linkedin_profile_analyses`, `profile_analyzer_subscribers` (both with GRANTs + RLS scoped to `auth.uid()`).
-- No new secrets needed (Firecrawl, Lovable AI, Resend all already present).
-- Reuses existing `Navbar`, `CTASection`, `Footer`, `sky` tokens.
-
-## Out of scope
-
-- Real "opportunities" — emails are intentionally fake counter-based (per your call).
-- Bulk profile scanning, competitor comparison, PDF export — future.
-- No onboarding change beyond letting the analyzer signup skip it once.
+### Validation
+- Use edge function logs after a run to confirm raw reactions/comments/page counts are much higher than 3 on large posts.
+- Confirm imported contacts have valid LinkedIn URLs only when a public URL/slug exists.
+- Confirm irrelevant competitors are skipped and relevant buyer-like profiles survive scoring.
