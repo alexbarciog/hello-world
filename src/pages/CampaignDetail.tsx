@@ -1105,6 +1105,12 @@ export default function CampaignDetail() {
         ai_instructions: newStepCommentInstructions.trim(),
         delay_hours: Math.max(0, newStepCommentDelayHours || 0),
       };
+    } else if (newStepType === "like") {
+      newStep = {
+        type: "like",
+        post_filter: newStepLikePostFilter,
+        delay_hours: Math.max(0, newStepLikeDelayHours || 0),
+      };
     } else if (newStepType === "email") {
       const isAi = newStepMessageMode === "ai";
       if (!isAi && (!newStepEmailSubject.trim() || !newStepMessage.trim())) {
@@ -1128,17 +1134,28 @@ export default function CampaignDetail() {
         ...(newStepMessageMode === "ai" && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
       };
     }
-    const updated = [...workflowSteps, newStep];
+    if (newStepBeforeInvitation) newStep.before_invitation = true;
+
+    let updated = [...workflowSteps];
+    if (newStepInsertIndex !== null && newStepInsertIndex >= 0 && newStepInsertIndex <= updated.length) {
+      updated.splice(newStepInsertIndex, 0, newStep);
+    } else {
+      updated.push(newStep);
+    }
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to add step"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setAddStepOpen(false);
-    // Reset comment state
+    // Reset state
     setNewStepPostFilter("authored_only");
     setNewStepCommentInstructions("");
     setNewStepCommentDelayHours(0);
     setCommentPreviewText("");
     setNewStepEmailSubject("");
+    setNewStepInsertIndex(null);
+    setNewStepBeforeInvitation(false);
+    setNewStepLikePostFilter("authored_only");
+    setNewStepLikeDelayHours(0);
     toast.success("Step added!");
   }
 
