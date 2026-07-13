@@ -354,7 +354,7 @@ WHAT_WE_DO (background context — use to position the "different approach", but
 ${painPoints.length ? `PAIN_POINTS they might have:\n${painPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}` : ''}
 ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
 
-${postBlock}
+${postBlock}${authorBlock}
 
 ===== HOW TO WRITE IT =====
 Length: 35 to 60 words. Never over 70. Shorter is better — cut every word that does not earn its place.
