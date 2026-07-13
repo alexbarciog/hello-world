@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,10 @@ interface Props {
   onImported: () => void;
 }
 
-const URL_RE = /^https?:\/\/(?:www\.)?(?:x|twitter)\.com\/[A-Za-z0-9_]{1,20}\/status\/\d{5,25}(?:\?.*)?$/i;
+// Accept common LinkedIn post URL shapes
+const URL_RE = /^https?:\/\/(?:[a-z]{2,3}\.)?linkedin\.com\/(?:posts\/[^/]+|feed\/update\/urn:li:(?:activity|share|ugcPost):\d+)/i;
 
-export function ExtractFromXPostDialog({ open, onOpenChange, lists, onImported }: Props) {
+export function ExtractFromLinkedInPostDialog({ open, onOpenChange, lists, onImported }: Props) {
   const today = useMemo(
     () => new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
     []
@@ -41,24 +42,21 @@ export function ExtractFromXPostDialog({ open, onOpenChange, lists, onImported }
     setStatus("");
   }
 
-  async function loadCampaigns() {
-    const { data } = await supabase.from("campaigns").select("id, company_name").order("created_at", { ascending: false }).limit(10);
-    setCampaigns(data || []);
-  }
-
-  async function handleOpenChange(v: boolean) {
-    if (v) loadCampaigns();
-    else reset();
-    onOpenChange(v);
-  }
+  useEffect(() => {
+    if (open) {
+      supabase.from("campaigns").select("id, company_name").order("created_at", { ascending: false }).limit(10)
+        .then(({ data }) => setCampaigns(data || []));
+    } else {
+      reset();
+    }
+  }, [open]);
 
   async function handleSubmit() {
     if (!valid || submitting) return;
     setSubmitting(true);
-    setStatus("Fetching post…");
+    setStatus("Fetching post & engagers…");
     try {
-      setStatus("Pulling engagers…");
-      const { data, error } = await supabase.functions.invoke("extract-x-post-leads", {
+      const { data, error } = await supabase.functions.invoke("extract-linkedin-post-leads", {
         body: {
           post_url: postUrl.trim(),
           list_id: listChoice === "__new__" ? null : listChoice,
@@ -72,7 +70,7 @@ export function ExtractFromXPostDialog({ open, onOpenChange, lists, onImported }
       const skippedComp = (data as any)?.skipped_competitor ?? 0;
       const skippedDup = (data as any)?.skipped_duplicate ?? 0;
       toast.success(
-        `Imported ${inserted} lead${inserted === 1 ? "" : "s"} from X post` +
+        `Imported ${inserted} lead${inserted === 1 ? "" : "s"} from LinkedIn post` +
           (skippedComp || skippedDup ? ` (skipped ${skippedComp} competitor, ${skippedDup} duplicate)` : "")
       );
       onImported();
@@ -88,15 +86,15 @@ export function ExtractFromXPostDialog({ open, onOpenChange, lists, onImported }
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[520px] p-6 gap-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Sparkles className="w-4 h-4 text-sky-600" />
-            Get leads from X post
+            Get leads from LinkedIn post
           </DialogTitle>
           <DialogDescription className="text-xs mt-1">
-            Paste an X (Twitter) post URL. We'll import everyone who liked or commented on it, skipping the post author and your listed competitors.
+            Paste any LinkedIn post URL. We'll import everyone who liked or commented on it, skipping the post author and your listed competitors.
           </DialogDescription>
         </DialogHeader>
 
@@ -106,11 +104,11 @@ export function ExtractFromXPostDialog({ open, onOpenChange, lists, onImported }
             <Input
               value={postUrl}
               onChange={(e) => setPostUrl(e.target.value)}
-              placeholder="https://x.com/username/status/1234567890"
+              placeholder="https://www.linkedin.com/posts/username_slug-activity-1234567890"
               className="text-xs"
             />
             {postUrl && !URL_RE.test(postUrl.trim()) && (
-              <p className="text-[10px] text-destructive">Expected format: https://x.com/&#123;user&#125;/status/&#123;id&#125;</p>
+              <p className="text-[10px] text-destructive">Expected a linkedin.com/posts/… or linkedin.com/feed/update/urn:li:activity:… URL</p>
             )}
           </div>
 
@@ -135,7 +133,7 @@ export function ExtractFromXPostDialog({ open, onOpenChange, lists, onImported }
               onChange={(e) => setListChoice(e.target.value)}
               className="w-full text-xs border border-border rounded-lg p-2 bg-background text-foreground"
             >
-              <option value="__new__">➕ New list — "Extracted from X post · {today}"</option>
+              <option value="__new__">➕ New list — "Extracted from LinkedIn post · {today}"</option>
               {lists.map((l) => (
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}

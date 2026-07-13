@@ -18,7 +18,7 @@ import { MeetingPrepPanel } from "@/components/contacts/MeetingPrepPanel";
 import { AIInsightsModal } from "@/components/contacts/AIInsightsModal";
 import { ImportSalesNavDialog } from "@/components/contacts/ImportSalesNavDialog";
 import { FindLookalikesDialog } from "@/components/contacts/FindLookalikesDialog";
-import { ExtractFromXPostDialog } from "@/components/contacts/ExtractFromXPostDialog";
+import { ExtractFromLinkedInPostDialog } from "@/components/contacts/ExtractFromLinkedInPostDialog";
 import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
@@ -64,7 +64,7 @@ export default function Contacts() {
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [showImport, setShowImport] = useState(false);
   const [showLookalikes, setShowLookalikes] = useState(false);
-  const [showExtractX, setShowExtractX] = useState(false);
+  const [showExtractLI, setShowExtractX] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -492,7 +492,7 @@ export default function Contacts() {
     }
     // Virtual agent for X-post extractions (no signal_agents row)
     const c = contacts.find((x) => x.id === contactId);
-    if ((c as any)?.source === "x_post_extraction") return "Extracted from post";
+    if ((c as any)?.source === "linkedin_post_extraction") return "Extracted from post";
     return null;
   }
 
@@ -578,7 +578,7 @@ export default function Contacts() {
                   onClick={() => setShowExtractX(true)}
                   className="flex items-center gap-1.5 text-xs font-medium text-sky-700 border border-sky-200 bg-sky-50 rounded-lg px-3 py-2 hover:bg-sky-100 transition-colors"
                 >
-                  <Sparkles className="w-3.5 h-3.5" /> Get leads from X post
+                  <Sparkles className="w-3.5 h-3.5" /> Get leads from LinkedIn post
                 </button>
               </>
             )}
@@ -881,12 +881,12 @@ export default function Contacts() {
                 <tbody>
                   {paged.map((c) => {
                     const cLists = getContactListNames(c.id);
-                    const isFromX = (c as any).source === "x_post_extraction";
-                    const rowHover = isFromX ? "hover:bg-sky-100/60" : "hover:bg-muted/20";
-                    const stickyBg = isFromX ? "bg-sky-50/70" : "bg-card";
-                    const stickyHover = isFromX ? "group-hover:bg-sky-100/70" : "group-hover:bg-[hsl(var(--muted))]";
+                    const isFromLI = (c as any).source === "linkedin_post_extraction";
+                    const rowHover = isFromLI ? "hover:bg-sky-100/60" : "hover:bg-muted/20";
+                    const stickyBg = isFromLI ? "bg-sky-50/70" : "bg-card";
+                    const stickyHover = isFromLI ? "group-hover:bg-sky-100/70" : "group-hover:bg-[hsl(var(--muted))]";
                     return (
-                    <tr key={c.id} className={`group ${isFromX ? "bg-sky-50/50" : ""} ${rowHover} transition-colors`}>
+                    <tr key={c.id} className={`group ${isFromLI ? "bg-sky-50/50" : ""} ${rowHover} transition-colors`}>
                       <td style={{ width: 40, minWidth: 40, maxWidth: 40 }} className={`sticky left-0 z-10 ${stickyBg} ${stickyHover} px-4 py-3 border-b border-border/50`}>
                         <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer" />
@@ -922,7 +922,7 @@ export default function Contacts() {
                                   <LinkedInIcon />
                                 </a>
                               )}
-                              {isFromX && (
+                              {isFromLI && (
                                 <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100 border border-sky-200 rounded-full px-1.5 py-0.5">From X post</span>
                               )}
                             </div>
@@ -1297,8 +1297,8 @@ export default function Contacts() {
       />
 
       {/* ── Extract from X post Dialog ── */}
-      <ExtractFromXPostDialog
-        open={showExtractX}
+      <ExtractFromLinkedInPostDialog
+        open={showExtractLI}
         onOpenChange={setShowExtractX}
         lists={lists}
         onImported={fetchData}
