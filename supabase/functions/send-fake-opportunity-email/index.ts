@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
       const n = rand(3, 9);
       const { subject, hook, body: msg } = tpl(n, sub.service_description || "your service");
       const ctaUrl = `${APP_URL}/dashboard?utm_source=intentsly&utm_medium=email&utm_campaign=analyzer_reengagement`;
-      const unsubUrl = `${APP_URL}/api/analyzer-unsubscribe?token=${sub.unsubscribe_token}`;
+      const unsubUrl = `${SUPABASE_URL}/functions/v1/analyzer-unsubscribe?token=${sub.unsubscribe_token}`;
       const html = renderEmail(sub.first_name || "", subject, hook, msg, ctaUrl, unsubUrl);
 
       if (dryRun) { sent++; continue; }
