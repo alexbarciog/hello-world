@@ -1698,7 +1698,7 @@ export default function CampaignDetail() {
                             {/* Insert-between button */}
                             <div className="flex flex-col items-center self-start pt-14 mr-1">
                               <button
-                                onClick={() => openAddStep({ insertIndex: actualIdx, restrictToSignalActions: true })}
+                                onClick={() => openAddStep({ insertIndex: actualIdx })}
                                 title="Insert Comment or Like step here"
                                 className="w-6 h-6 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                               >
