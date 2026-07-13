@@ -488,6 +488,9 @@ export default function Contacts() {
       const byName = agentsByListName[list.name?.trim().toLowerCase() || ""];
       if (byName) return byName;
     }
+    // Virtual agent for X-post extractions (no signal_agents row)
+    const c = contacts.find((x) => x.id === contactId);
+    if ((c as any)?.source === "x_post_extraction") return "Extracted from post";
     return null;
   }
 
