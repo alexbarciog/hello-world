@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
           try {
             const { data: contact } = await serviceClient
               .from('contacts')
-              .select('id, first_name, last_name, linkedin_profile_id, linkedin_url')
+              .select('id, first_name, last_name, linkedin_profile_id, linkedin_url, company, signal, signal_post_url')
               .eq('id', sl.contact_id)
               .single();
 
