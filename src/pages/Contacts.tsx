@@ -947,6 +947,19 @@ export default function Contacts() {
                           {c.industry || <span className="text-muted-foreground/60">—</span>}
                         </span>
                       </td>
+                      <td className="px-3 py-3 border-b border-border/50 min-w-[200px]">
+                        {isDataLocked ? (
+                          <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><Lock className="w-3 h-3" />Locked</span>
+                        ) : (
+                          <EmailCell
+                            contactId={c.id}
+                            email={c.email}
+                            onSaved={(newEmail) =>
+                              setContacts((prev) => prev.map((x) => x.id === c.id ? { ...x, email: newEmail, email_enriched: !!newEmail } : x))
+                            }
+                          />
+                        )}
+                      </td>
                       <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex flex-col gap-1">
                           {c.lead_status === 'meeting_booked' && meetings[c.id] && (
