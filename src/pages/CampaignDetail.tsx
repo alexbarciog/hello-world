@@ -1784,6 +1784,13 @@ export default function CampaignDetail() {
                                     >
                                       <ChevronRight className="w-3.5 h-3.5" />
                                     </button>
+                                    <button
+                                      onClick={() => openEditComment(actualIdxC)}
+                                      title="Edit comment step"
+                                      className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <button className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-white/20 transition-colors opacity-70 hover:opacity-100">
