@@ -207,6 +207,11 @@ export default function CampaignDetail() {
     if (!sm || !campaign) return;
     setRegeneratingIdx(idx);
     try {
+      const { data: contactAuthor } = await supabase
+        .from('contacts')
+        .select('signal_post_author')
+        .eq('id', sm.contactId)
+        .maybeSingle();
       const { data, error } = await supabase.functions.invoke('generate-step-message', {
         body: {
           stepNumber: sm.nextStepNum,
@@ -226,6 +231,7 @@ export default function CampaignDetail() {
           leadTitle: sm.contactTitle || "",
           buyingSignal: sm.contactSignal || "",
           signalPostText: (sm as any).contactSignalPostExcerpt || sm.contactSignal || "",
+          signalPostAuthor: (contactAuthor as any)?.signal_post_author || "",
           leadIndustry: (sm as any).contactIndustry || "",
         },
       });
