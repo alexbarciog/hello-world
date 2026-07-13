@@ -129,3 +129,8 @@ verify_jwt = false
 [functions.switch-organization]
 verify_jwt = false
 
+[functions.analyzer-unsubscribe]
+verify_jwt = false
+
+[functions.send-fake-opportunity-email]
+verify_jwt = false
