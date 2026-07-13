@@ -30,7 +30,6 @@ function isLikelyInternalLinkedInId(value: string | null | undefined): boolean {
   return (
     /^urn:li:/i.test(v) ||
     /^ACo[A-Za-z0-9_-]{8,}$/i.test(v) ||
-    /^[A-Za-z0-9_-]{18,}$/.test(v) ||
     /^\d{8,}$/.test(v) ||
     v.includes('=')
   );
