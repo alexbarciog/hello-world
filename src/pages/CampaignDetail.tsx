@@ -2005,7 +2005,52 @@ export default function CampaignDetail() {
                           <DialogTitle className="text-lg font-bold">Edit Campaign Step</DialogTitle>
                         </DialogHeader>
 
-                        {newStepType === "comment" ? (
+                        {newStepType === "like" ? (
+                          <div className="space-y-5">
+                            <div>
+                              <label className="text-sm font-bold text-foreground block mb-2">Which signals should trigger this step?</label>
+                              <div className="space-y-2">
+                                {[
+                                  { v: "authored_only", title: "Only posts written by the lead", rec: true },
+                                  { v: "all_signals", title: "All signal types", rec: false },
+                                ].map((o) => (
+                                  <button
+                                    key={o.v}
+                                    onClick={() => setNewStepLikePostFilter(o.v as any)}
+                                    className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-left transition-all ${newStepLikePostFilter === o.v ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40"}`}
+                                  >
+                                    <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${newStepLikePostFilter === o.v ? "border-primary" : "border-muted-foreground/40"}`}>
+                                      {newStepLikePostFilter === o.v && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        {o.title}
+                                        {o.rec && <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">Recommended</span>}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                                A like on the lead's own post feels natural. Liking a random post they engaged with may feel intrusive.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3 pt-3 border-t border-border">
+                              <div className="flex-1">
+                                <label className="text-sm font-medium text-foreground block">Wait before liking</label>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">A short delay (10–30 min) makes the like feel more human.</p>
+                              </div>
+                              <input
+                                type="number"
+                                value={newStepLikeDelayHours}
+                                onChange={(e) => setNewStepLikeDelayHours(Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-16 text-sm text-center border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                min={0}
+                              />
+                              <span className="text-sm text-muted-foreground shrink-0">hours</span>
+                            </div>
+                          </div>
+                        ) : newStepType === "comment" ? (
                           <div className="space-y-5">
                             {/* Post filter */}
                             <div>
