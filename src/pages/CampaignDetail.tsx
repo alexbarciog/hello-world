@@ -1679,7 +1679,7 @@ export default function CampaignDetail() {
                                 </div>
                               ) : (
                                 <>
-                                  {ws.ai_icebreaker ? (
+                                  {(ws.ai_icebreaker || ws.ai_sdr) ? (
                                     <div className="space-y-1.5">
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1.5 text-xs">
@@ -1688,7 +1688,11 @@ export default function CampaignDetail() {
                                         </div>
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">Active</span>
                                       </div>
-                                      <p className="text-[11px] text-muted-foreground leading-relaxed">Each lead will receive a unique AI-generated message based on their role, company, signal & your business context.</p>
+                                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        {ws.type === "email"
+                                          ? "Each lead gets a unique AI-generated email (subject + body) based on their role, company, signal & your business context."
+                                          : "Each lead will receive a unique AI-generated message based on their role, company, signal & your business context."}
+                                      </p>
                                       {ws.step_instructions && (
                                         <div className="mt-2 p-2 bg-muted/40 rounded-lg border border-border">
                                           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Custom Instructions:</p>
@@ -1698,11 +1702,17 @@ export default function CampaignDetail() {
                                     </div>
                                   ) : ws.message ? (
                                     <div>
-                                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 tracking-wider">MESSAGE:</p>
+                                      {ws.type === "email" && ws.subject && (
+                                        <>
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">SUBJECT:</p>
+                                          <p className="text-xs text-foreground font-semibold leading-relaxed line-clamp-1 mb-2">{ws.subject}</p>
+                                        </>
+                                      )}
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 tracking-wider">{ws.type === "email" ? "BODY:" : "MESSAGE:"}</p>
                                       <p className="text-xs text-foreground leading-relaxed line-clamp-3">{ws.message}</p>
                                     </div>
                                   ) : (
-                                    <p className="text-xs text-muted-foreground italic">No message configured...</p>
+                                    <p className="text-xs text-muted-foreground italic">{ws.type === "email" ? "No email configured..." : "No message configured..."}</p>
                                   )}
 
                                   <div className="flex items-center gap-3 mt-3 text-xs">
@@ -1712,7 +1722,7 @@ export default function CampaignDetail() {
 
                                   <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
                                     <button onClick={() => { setStepFilter(String(stepNum)); setTab("contacts"); }} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
-                                    {ws.ai_icebreaker && (
+                                    {(ws.ai_icebreaker || ws.ai_sdr) && (
                                       <button onClick={() => openEditStepInstructions(i)} className="text-xs font-medium text-amber-600 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors w-full">
                                         <span className="flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Instructions</span>
                                       </button>
