@@ -711,7 +711,10 @@ async function performExtraction(ctx: {
         continue;
       }
 
-      const signalLabel = eng.engagement === 'like' ? 'Liked LinkedIn post' : 'Commented on LinkedIn post';
+      const authorFirst = (postAuthorName || '').split(/\s+/)[0] || '';
+      const signalLabel = eng.engagement === 'like'
+        ? (authorFirst ? `Liked ${authorFirst}'s LinkedIn post` : 'Liked LinkedIn post')
+        : (authorFirst ? `Commented on ${authorFirst}'s LinkedIn post` : 'Commented on LinkedIn post');
       const { data: row, error: insErr } = await admin.from('contacts').insert({
         user_id: user.id,
         organization_id,
@@ -725,6 +728,7 @@ async function performExtraction(ctx: {
         signal: signalLabel,
         signal_post_url: canonicalUrl,
         signal_post_excerpt: postText ? postText.slice(0, 500) : null,
+        signal_post_author: postAuthorName,
         relevance_tier: eng.relevance_tier,
         lead_status: 'unknown',
         approval_status: 'auto_approved',
