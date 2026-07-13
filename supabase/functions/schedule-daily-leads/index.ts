@@ -245,6 +245,13 @@ Deno.serve(async (req) => {
           const remainingMessages = messagesLimit - messagesScheduled;
           if (remainingMessages <= 0) continue;
 
+          // Per-campaign message cap: reuse daily_connect_limit as the campaign's
+          // overall daily action cap so a small campaign doesn't hog the sender quota.
+          const perCampaignMsgCap = campaign.daily_connect_limit && campaign.daily_connect_limit > 0
+            ? campaign.daily_connect_limit
+            : remainingMessages;
+          const campaignMsgAllowance = Math.min(remainingMessages, perCampaignMsgCap);
+
           // Get accepted contacts ready for next message
           const { data: acceptedRequests } = await supabase
             .from('campaign_connection_requests')
@@ -259,7 +266,7 @@ Deno.serve(async (req) => {
           let msgScheduledThisCampaign = 0;
 
           for (const req of acceptedRequests) {
-            if (msgScheduledThisCampaign >= remainingMessages) break;
+            if (msgScheduledThisCampaign >= campaignMsgAllowance) break;
             // chat_id may not exist yet for newly accepted contacts — still schedule
 
             const currentStep = req.current_step || 1;
