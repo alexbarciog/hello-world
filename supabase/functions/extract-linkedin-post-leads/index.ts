@@ -43,6 +43,94 @@ function extractProfileSlugFromUrl(url: string): string | null {
   return m ? m[1].toLowerCase() : null;
 }
 
+// ─── AI classifier: competitor + buyer-fit score (1-3) ─────────────────────
+async function classifyLeads(
+  items: { id: string; headline: string; company: string }[],
+  businessContext: string,
+  idealLead: string,
+): Promise<Map<string, { is_competitor: boolean; score: number; reason: string }>> {
+  const out = new Map<string, { is_competitor: boolean; score: number; reason: string }>();
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY || items.length === 0 || !businessContext) return out;
+
+  const systemPrompt = `You classify LinkedIn users who engaged with a post. For each person you see only HEADLINE + COMPANY.
+
+USER'S BUSINESS:
+${businessContext}
+${idealLead ? `\nIDEAL LEAD PROFILE:\n${idealLead}\n` : ''}
+
+For each PERSON output:
+1) is_competitor (boolean): TRUE if the person SELLS the same/similar service as the user's business (another agency, consultant, freelancer, or vendor in the same category — anyone who could compete for the same clients). Examples of competitors when user sells "AI lead-gen": "Founder @ OutreachAgency", "Lead-gen consultant", "We help B2B book meetings", "Cold email expert". In-house roles like "VP Sales at Acme", "Head of Growth at SaaSCo" are NOT competitors.
+2) score (integer 1-3): buyer fit for the user's business.
+   - 3 = HOT: role + industry clearly matches ideal lead, plausible decision-maker who would buy this service.
+   - 2 = WARM: adjacent role/industry, could buy but not obvious.
+   - 1 = COLD: student, intern, retired, unrelated industry, junior IC in unrelated function, or headline gives no signal.
+   If is_competitor=true, always return score=1.
+3) reason: 1 short sentence.
+
+Be strict on score=3. Default to 1 or 2 when unsure. Respond ONLY via the tool call.`;
+
+  for (let i = 0; i < items.length; i += 15) {
+    const batch = items.slice(i, i + 15);
+    const userMsg = batch.map((b, idx) =>
+      `PERSON ${idx + 1} [id=${b.id}]\nHEADLINE: ${b.headline || '(none)'}\nCOMPANY: ${b.company || '(none)'}`
+    ).join('\n\n');
+    try {
+      const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${LOVABLE_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMsg },
+          ],
+          tools: [{
+            type: 'function',
+            function: {
+              name: 'classify_leads',
+              parameters: {
+                type: 'object',
+                properties: {
+                  results: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        is_competitor: { type: 'boolean' },
+                        score: { type: 'integer', minimum: 1, maximum: 3 },
+                        reason: { type: 'string' },
+                      },
+                      required: ['id', 'is_competitor', 'score', 'reason'],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ['results'],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: 'function', function: { name: 'classify_leads' } },
+        }),
+      });
+      if (!res.ok) { console.warn('[extract-li] classifier HTTP', res.status); continue; }
+      const data = await res.json();
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall) continue;
+      const parsed = JSON.parse(toolCall.function.arguments);
+      for (const r of (parsed.results || [])) {
+        if (typeof r?.id !== 'string') continue;
+        const isC = r.is_competitor === true;
+        const score = Math.max(1, Math.min(3, Number(r.score) || 1));
+        out.set(r.id, { is_competitor: isC, score: isC ? 1 : score, reason: String(r.reason || '') });
+      }
+    } catch (e) { console.warn('[extract-li] classifier error', e); }
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -90,11 +178,12 @@ Deno.serve(async (req) => {
       return jsonResp({ error: 'Please connect your LinkedIn account first (Settings → LinkedIn).' }, 400);
     }
 
-    // Collect competitor slugs from user's campaigns
+    // Load user's campaigns for competitor list + business context
     const { data: userCampaigns } = await admin
       .from('campaigns')
-      .select('competitor_pages')
-      .eq('user_id', user.id);
+      .select('id, company_name, description, industry, services, competitor_pages, icp_job_titles, icp_industries, icp_locations, icp_company_sizes')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
     const competitorCompanies = new Set<string>();
     for (const c of userCampaigns || []) {
       for (const url of ((c as any).competitor_pages || [])) {
@@ -102,6 +191,27 @@ Deno.serve(async (req) => {
         if (slug) competitorCompanies.add(slug);
       }
     }
+    // Pick a context campaign: explicit id > first campaign
+    const ctxCampaign =
+      (campaign_id && (userCampaigns || []).find((c: any) => c.id === campaign_id)) ||
+      (userCampaigns || [])[0] ||
+      null;
+    const businessContext = ctxCampaign
+      ? [
+          ctxCampaign.company_name ? `Company: ${ctxCampaign.company_name}` : '',
+          ctxCampaign.industry ? `Industry: ${ctxCampaign.industry}` : '',
+          ctxCampaign.description ? `What we sell: ${ctxCampaign.description}` : '',
+          Array.isArray(ctxCampaign.services) && ctxCampaign.services.length ? `Services: ${ctxCampaign.services.join(', ')}` : '',
+        ].filter(Boolean).join('\n')
+      : '';
+    const idealLead = ctxCampaign
+      ? [
+          Array.isArray(ctxCampaign.icp_job_titles) && ctxCampaign.icp_job_titles.length ? `Job titles: ${ctxCampaign.icp_job_titles.join(', ')}` : '',
+          Array.isArray(ctxCampaign.icp_industries) && ctxCampaign.icp_industries.length ? `Industries: ${ctxCampaign.icp_industries.join(', ')}` : '',
+          Array.isArray(ctxCampaign.icp_locations) && ctxCampaign.icp_locations.length ? `Locations: ${ctxCampaign.icp_locations.join(', ')}` : '',
+          Array.isArray(ctxCampaign.icp_company_sizes) && ctxCampaign.icp_company_sizes.length ? `Company sizes: ${ctxCampaign.icp_company_sizes.join(', ')}` : '',
+        ].filter(Boolean).join('\n')
+      : '';
 
     // 1) Post metadata → try to identify author slug so we can skip them
     let postAuthorSlug: string | null = null;
@@ -208,26 +318,47 @@ Deno.serve(async (req) => {
 
     console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched} comments=${comments_fetched} unique=${engagersByKey.size}`);
 
-    // Filter competitors
+    // Filter competitors (slug-based hard match first)
     let skipped_competitor = 0;
-    const finalEngagers: Engager[] = [];
+    const prefiltered: Engager[] = [];
     for (const eng of engagersByKey.values()) {
       const co = (eng.company || '').toLowerCase();
       if (co && Array.from(competitorCompanies).some(cc => co.includes(cc) || cc.includes(co))) {
         skipped_competitor++;
         continue;
       }
-      finalEngagers.push(eng);
+      prefiltered.push(eng);
+    }
+
+    // AI classify: competitor detection (by headline) + buyer-fit score 1-3
+    const classifierItems = prefiltered.map(e => ({
+      id: e.key,
+      headline: (e.headline || '').slice(0, 200),
+      company: (e.company || '').slice(0, 100),
+    }));
+    const classifyMap = await classifyLeads(classifierItems, businessContext, idealLead);
+
+    let skipped_low_fit = 0;
+    const finalEngagers: (Engager & { ai_score: number; relevance_tier: 'hot' | 'warm' | 'cold' })[] = [];
+    for (const eng of prefiltered) {
+      const c = classifyMap.get(eng.key);
+      if (c?.is_competitor) { skipped_competitor++; continue; }
+      const score = c?.score ?? (businessContext ? 1 : 2); // if no AI ran, default warm
+      // Drop obvious dead weight when we have context to judge
+      if (businessContext && classifyMap.size > 0 && score <= 1) { skipped_low_fit++; continue; }
+      const tier: 'hot' | 'warm' | 'cold' = score >= 3 ? 'hot' : score === 2 ? 'warm' : 'cold';
+      finalEngagers.push({ ...eng, ai_score: score, relevance_tier: tier });
     }
 
     if (finalEngagers.length === 0) {
       return jsonResp({
         inserted: 0,
         skipped_competitor,
+        skipped_low_fit,
         skipped_duplicate: 0,
         reactions_fetched,
         comments_fetched,
-        message: 'No engagers found for this post.',
+        message: 'No qualified engagers found for this post.',
       });
     }
 
@@ -281,12 +412,12 @@ Deno.serve(async (req) => {
         signal: signalLabel,
         signal_post_url: canonicalUrl,
         signal_post_excerpt: postText ? postText.slice(0, 500) : null,
-        relevance_tier: 'cold',
+        relevance_tier: eng.relevance_tier,
         lead_status: 'unknown',
         approval_status: 'auto_approved',
         list_name: listName,
         source: 'linkedin_post_extraction',
-        ai_score: 1,
+        ai_score: eng.ai_score,
       } as any).select('id').single();
       if (insErr) { console.warn('[extract-li] insert err', insErr.message); continue; }
       insertedIds.push(row.id);
@@ -294,15 +425,10 @@ Deno.serve(async (req) => {
       inserted++;
     }
 
-    if (campaign_id && insertedIds.length > 0) {
-      try {
-        await admin.functions.invoke('score-leads', { body: { campaign_id } });
-      } catch (e) { console.warn('[extract-li] score-leads invoke failed', e); }
-    }
-
     return jsonResp({
       inserted,
       skipped_competitor,
+      skipped_low_fit,
       skipped_duplicate,
       reactions_fetched,
       comments_fetched,
