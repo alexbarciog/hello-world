@@ -1573,7 +1573,7 @@ export default function CampaignDetail() {
                           <UserPlus className="w-4 h-4" />
                           <span className="text-sm font-bold">Send Invitation</span>
                         </div>
-                        <p className="text-xs opacity-80">Step 1</p>
+                        <p className="text-xs opacity-80">Step {workflowSteps.filter((s: any) => s.before_invitation).length + 1}</p>
                       </div>
                       <div className="mt-2 rounded-xl border border-border bg-card p-3.5 shadow-sm">
                         {(() => { const invStep = workflowSteps.find((ws: any) => ws.type === "invitation"); return invStep?.connect_note ? (
