@@ -30,6 +30,8 @@ import Support from "./pages/Support.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import VideoShowcase from "./pages/VideoShowcase.tsx";
 import PricingPage from "./pages/PricingPage.tsx";
+import LinkedInProfileAnalyzer from "./pages/LinkedInProfileAnalyzer.tsx";
+import ProfileReport from "./pages/ProfileReport.tsx";
 import CaseStudies from "./pages/CaseStudies.tsx";
 import CaseStudyDetail from "./pages/CaseStudyDetail.tsx";
 import IntegrationsPage from "./pages/Integrations.tsx";
@@ -222,6 +224,8 @@ const App = () => (
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
+          <Route path="/linkedin-profile-analyzer" element={<LinkedInProfileAnalyzer />} />
+          <Route path="/profile-report" element={<ProfileReport />} />
           <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/video" element={<VideoShowcase />} />
           <Route path="/pitch/strawberry" element={<StrawberryPitch />} />

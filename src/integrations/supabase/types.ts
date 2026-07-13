@@ -1057,6 +1057,42 @@ export type Database = {
         }
         Relationships: []
       }
+      linkedin_profile_analyses: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          linkedin_url: string
+          report: Json | null
+          service_description: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          linkedin_url: string
+          report?: Json | null
+          service_description: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          linkedin_url?: string
+          report?: Json | null
+          service_description?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lists: {
         Row: {
           created_at: string
@@ -1432,6 +1468,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile_analyzer_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          enabled: boolean
+          first_name: string | null
+          id: string
+          last_sent_at: string | null
+          linkedin_url: string | null
+          send_count: number
+          service_description: string
+          unsubscribe_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          enabled?: boolean
+          first_name?: string | null
+          id?: string
+          last_sent_at?: string | null
+          linkedin_url?: string | null
+          send_count?: number
+          service_description: string
+          unsubscribe_token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          enabled?: boolean
+          first_name?: string | null
+          id?: string
+          last_sent_at?: string | null
+          linkedin_url?: string | null
+          send_count?: number
+          service_description?: string
+          unsubscribe_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

@@ -32,6 +32,7 @@ export default function Register() {
   const inviteToken = searchParams.get("invite");
   const redirectParam = searchParams.get("redirect");
   const claimParam = searchParams.get("claim");
+  const sourceParam = searchParams.get("source");
 
   // Step state
   const [step, setStep] = useState(1);
@@ -157,6 +158,13 @@ export default function Register() {
       }
       toast.success("Account created! Your shared leads have been saved.");
       navigate(redirectParam || "/dashboard");
+      return;
+    }
+
+    // Analyzer flow — skip onboarding, jump straight to the report page
+    if (sourceParam === "analyzer" && redirectParam) {
+      toast.success("Account created! Generating your LinkedIn audit…");
+      navigate(redirectParam);
       return;
     }
 
