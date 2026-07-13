@@ -1044,12 +1044,18 @@ export default function CampaignDetail() {
     }
     setSavingSettings(false);
   }
-  function openAddStep() {
-    setNewStepType("message");
+  function openAddStep(opts?: { insertIndex?: number | null; beforeInvitation?: boolean; restrictToSignalActions?: boolean }) {
+    const restrict = !!opts?.restrictToSignalActions;
+    setNewStepInsertIndex(opts?.insertIndex ?? null);
+    setNewStepBeforeInvitation(!!opts?.beforeInvitation);
+    setNewStepAllowedTypes(restrict ? ["comment", "like"] : ["message", "email", "comment", "visit_profile", "like"]);
+    setNewStepType(restrict ? "comment" : "message");
     setNewStepMessage("");
     setNewStepDelay(1);
     setNewStepMessageMode("manual");
     setNewStepInstructions("");
+    setNewStepLikePostFilter("authored_only");
+    setNewStepLikeDelayHours(0);
     setAddStepPhase("choose");
     setAddStepOpen(true);
   }
