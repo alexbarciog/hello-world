@@ -1605,6 +1605,8 @@ export default function CampaignDetail() {
                         const nonInv = workflowSteps.filter((w: any) => w.type !== "invitation" && !w.before_invitation);
                         const anyMessageBefore = nonInv.slice(0, i).some((w: any) => w.type === "message");
                         const delayH = ws.delay_hours ?? 0;
+                        const nonInvMapC = workflowSteps.map((w: any, idx: number) => ({ w, idx })).filter((it: any) => it.w.type !== "invitation" && !it.w.before_invitation);
+                        const actualIdxC = nonInvMapC[i]?.idx ?? 0;
                         return (
                           <div key={i} className="flex items-start">
                             <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
