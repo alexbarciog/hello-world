@@ -860,7 +860,7 @@ export default function Contacts() {
                     <th style={{ left: 440, width: 90, minWidth: 90, maxWidth: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                       Score
                     </th>
-                    {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
+                    {["Role", "Company", "Industry", "Email", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border bg-[hsl(var(--muted))]">
                         {h}
                       </th>
