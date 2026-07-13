@@ -1296,6 +1296,14 @@ export default function Contacts() {
         onImported={fetchData}
       />
 
+      {/* ── Extract from X post Dialog ── */}
+      <ExtractFromXPostDialog
+        open={showExtractX}
+        onOpenChange={setShowExtractX}
+        lists={lists}
+        onImported={fetchData}
+      />
+
       {/* ── Share Leads Dialog ── */}
       <ShareLeadsDialog
         open={showShare}
