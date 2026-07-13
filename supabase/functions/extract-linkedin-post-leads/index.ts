@@ -370,90 +370,134 @@ Deno.serve(async (req) => {
 
     type Engager = {
       key: string;
+      profile_id: string | null;
+      public_slug: string | null;
       first_name: string;
       last_name: string | null;
+      full_name: string | null;
       headline: string | null;
       linkedin_url: string | null;
       company: string | null;
+      location: string | null;
       engagement: 'like' | 'comment';
     };
     const engagersByKey = new Map<string, Engager>();
 
+    const upsertEngager = (rawProfile: any, engagement: 'like' | 'comment') => {
+      const p = rawProfile?.author || rawProfile?.user || rawProfile?.profile || rawProfile?.member || rawProfile;
+      const publicSlug = publicSlugFromProfile(p);
+      const profileId = providerIdFromProfile(p);
+      const fullName = pickFirst(p?.name, p?.full_name, p?.display_name, [p?.first_name, p?.last_name].filter(Boolean).join(' '));
+      const { first, last } = parseName(fullName);
+      const key = publicSlug ? `slug:${publicSlug}` : profileId ? `id:${profileId}` : fullName ? `name:${fullName.toLowerCase()}|${pickFirst(p?.headline, p?.title) || ''}` : null;
+      if (!key) return;
+      if (postAuthorSlug && publicSlug && publicSlug.toLowerCase() === postAuthorSlug.toLowerCase()) return;
+
+      const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
+      const linkedinUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : null);
+      const existing = engagersByKey.get(key);
+      if (existing && existing.engagement === 'comment') return;
+      engagersByKey.set(key, {
+        key,
+        profile_id: profileId,
+        public_slug: publicSlug,
+        first_name: pickFirst(p?.first_name) || first,
+        last_name: pickFirst(p?.last_name) || last,
+        full_name: fullName,
+        headline: pickFirst(p?.headline, p?.title, p?.occupation),
+        linkedin_url: linkedinUrl,
+        company: normalizeCompany(p),
+        location: pickFirst(p?.location, p?.geo?.full, p?.geo_region, p?.country),
+        engagement,
+      });
+    };
+
+    const fetchPagedPostItems = async (kind: 'reactions' | 'comments') => {
+      const all: any[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+      const seenCursors = new Set<string>();
+      while (pages < 12 && all.length < 1000) {
+        pages++;
+        const base = `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/${kind}`;
+        const url = appendQuery(base, { account_id: accountId, limit: 100, cursor });
+        const r = await fetch(url, { headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' } });
+        if (!r.ok) {
+          console.warn(`[extract-li] ${kind} failed`, r.status, (await r.text().catch(() => '')).slice(0, 400));
+          break;
+        }
+        const payload = await r.json();
+        const items = extractItems(payload);
+        all.push(...items);
+        const next = extractNextCursor(payload);
+        if (!next || seenCursors.has(next) || items.length === 0) break;
+        seenCursors.add(next);
+        cursor = next;
+      }
+      return { items: all.slice(0, 1000), pages };
+    };
+
+    const enrichEngagers = async () => {
+      let enriched = 0;
+      const targets = Array.from(engagersByKey.values()).filter(e =>
+        e.profile_id && (!e.headline || !e.company || !e.linkedin_url || !e.public_slug)
+      ).slice(0, 300);
+      for (const eng of targets) {
+        try {
+          await sleep(80);
+          const r = await fetch(`https://${UNIPILE_DSN}/api/v1/linkedin/profile/${encodeURIComponent(eng.profile_id!)}?account_id=${encodeURIComponent(accountId)}`, {
+            headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' },
+          });
+          if (!r.ok) continue;
+          const p = await r.json();
+          const publicSlug = publicSlugFromProfile(p) || eng.public_slug;
+          const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
+          const liUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : eng.linkedin_url);
+          const fullName = pickFirst(p?.name, p?.full_name, p?.display_name, eng.full_name);
+          const parsedName = parseName(fullName);
+          eng.public_slug = publicSlug;
+          eng.first_name = pickFirst(p?.first_name, eng.first_name) || parsedName.first;
+          eng.last_name = pickFirst(p?.last_name, eng.last_name) || parsedName.last;
+          eng.full_name = fullName || eng.full_name;
+          eng.headline = pickFirst(p?.headline, p?.title, p?.occupation, eng.headline);
+          eng.company = normalizeCompany(p) || eng.company;
+          eng.location = pickFirst(p?.location, p?.geo?.full, p?.geo_region, p?.country, eng.location);
+          eng.linkedin_url = liUrl;
+          enriched++;
+        } catch (e) {
+          console.warn('[extract-li] profile enrich threw', e);
+        }
+      }
+      return enriched;
+    };
+
     // 2) Fetch reactions (likes)
     let reactions_fetched = 0;
+    let reaction_pages = 0;
     if (include_likers) {
       try {
-        const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/reactions?account_id=${accountId}&limit=100`, {
-          headers: { 'X-API-KEY': UNIPILE_API_KEY },
-        });
-        if (r.ok) {
-          const data = await r.json();
-          const items = (data?.items || []) as any[];
-          reactions_fetched = items.length;
-          for (const it of items) {
-            const p = it.author || it.user || it;
-            const slug = p.public_identifier || p.public_id || p.provider_id || p.id || (p.linkedin_url ? extractProfileSlugFromUrl(String(p.linkedin_url)) : null);
-            const key = String(slug || `${p.first_name || p.name || ''}|${p.headline || ''}`);
-            if (!key) continue;
-            if (postAuthorSlug && String(slug || '').toLowerCase() === postAuthorSlug.toLowerCase()) continue;
-            if (engagersByKey.has(key)) continue;
-            const fullName = p.name || [p.first_name, p.last_name].filter(Boolean).join(' ');
-            const { first, last } = parseName(fullName);
-            const liUrl = sanitizeLinkedinUrl(p.linkedin_url || p.public_url || (slug ? `https://www.linkedin.com/in/${slug}` : null));
-            engagersByKey.set(key, {
-              key,
-              first_name: p.first_name || first,
-              last_name: p.last_name ?? last,
-              headline: p.headline || p.title || null,
-              linkedin_url: liUrl,
-              company: p.company || p.current_company?.name || null,
-              engagement: 'like',
-            });
-          }
-        } else {
-          console.warn('[extract-li] reactions failed', r.status, (await r.text().catch(() => '')).slice(0, 400));
-        }
+        const fetched = await fetchPagedPostItems('reactions');
+        reactions_fetched = fetched.items.length;
+        reaction_pages = fetched.pages;
+        for (const it of fetched.items) upsertEngager(it, 'like');
       } catch (e) { console.warn('[extract-li] reactions threw', e); }
     }
 
     // 3) Fetch comments
     let comments_fetched = 0;
+    let comment_pages = 0;
     if (include_commenters) {
       try {
-        const r = await fetch(`https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments?account_id=${accountId}&limit=100`, {
-          headers: { 'X-API-KEY': UNIPILE_API_KEY },
-        });
-        if (r.ok) {
-          const data = await r.json();
-          const items = (data?.items || []) as any[];
-          comments_fetched = items.length;
-          for (const it of items) {
-            const p = it.author || it.user || it;
-            const slug = p.public_identifier || p.public_id || p.provider_id || p.id || (p.linkedin_url ? extractProfileSlugFromUrl(String(p.linkedin_url)) : null);
-            const key = String(slug || `${p.first_name || p.name || ''}|${p.headline || ''}`);
-            if (!key) continue;
-            if (postAuthorSlug && String(slug || '').toLowerCase() === postAuthorSlug.toLowerCase()) continue;
-            // Comments override reactions (richer signal)
-            const fullName = p.name || [p.first_name, p.last_name].filter(Boolean).join(' ');
-            const { first, last } = parseName(fullName);
-            const liUrl = sanitizeLinkedinUrl(p.linkedin_url || p.public_url || (slug ? `https://www.linkedin.com/in/${slug}` : null));
-            engagersByKey.set(key, {
-              key,
-              first_name: p.first_name || first,
-              last_name: p.last_name ?? last,
-              headline: p.headline || p.title || null,
-              linkedin_url: liUrl,
-              company: p.company || p.current_company?.name || null,
-              engagement: 'comment',
-            });
-          }
-        } else {
-          console.warn('[extract-li] comments failed', r.status, (await r.text().catch(() => '')).slice(0, 400));
-        }
+        const fetched = await fetchPagedPostItems('comments');
+        comments_fetched = fetched.items.length;
+        comment_pages = fetched.pages;
+        for (const it of fetched.items) upsertEngager(it, 'comment');
       } catch (e) { console.warn('[extract-li] comments threw', e); }
     }
 
-    console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched} comments=${comments_fetched} unique=${engagersByKey.size}`);
+    const profiles_enriched = await enrichEngagers();
+
+    console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched}/${reaction_pages}p comments=${comments_fetched}/${comment_pages}p unique=${engagersByKey.size} enriched=${profiles_enriched}`);
 
     // Filter competitors (slug-based hard match first)
     let skipped_competitor = 0;
