@@ -499,32 +499,44 @@ Deno.serve(async (req) => {
 
     console.log(`[extract-li] user=${user.id} post=${postId} reactions=${reactions_fetched}/${reaction_pages}p comments=${comments_fetched}/${comment_pages}p unique=${engagersByKey.size} enriched=${profiles_enriched}`);
 
-    // Filter competitors (slug-based hard match first)
+    // Filter competitors (explicit competitor pages + deterministic seller heuristics first)
     let skipped_competitor = 0;
     const prefiltered: Engager[] = [];
+    const deterministicMap = new Map<string, { is_competitor: boolean; score: number; reason: string }>();
     for (const eng of engagersByKey.values()) {
       const co = (eng.company || '').toLowerCase();
       if (co && Array.from(competitorCompanies).some(cc => co.includes(cc) || cc.includes(co))) {
         skipped_competitor++;
         continue;
       }
+      const deterministic = deterministicScore(eng.headline || '', eng.company || '', businessContext);
+      if (deterministic?.is_competitor) {
+        skipped_competitor++;
+        continue;
+      }
+      if (deterministic) deterministicMap.set(eng.key, deterministic);
       prefiltered.push(eng);
     }
 
     // AI classify: competitor detection (by headline) + buyer-fit score 1-3
     const classifierItems = prefiltered.map(e => ({
       id: e.key,
+      name: e.full_name || [e.first_name, e.last_name].filter(Boolean).join(' '),
       headline: (e.headline || '').slice(0, 200),
       company: (e.company || '').slice(0, 100),
+      location: (e.location || '').slice(0, 100),
     }));
     const classifyMap = await classifyLeads(classifierItems, businessContext, idealLead);
+    for (const [key, val] of deterministicMap) {
+      if (!classifyMap.has(key)) classifyMap.set(key, val);
+    }
 
     let skipped_low_fit = 0;
     const finalEngagers: (Engager & { ai_score: number; relevance_tier: 'hot' | 'warm' | 'cold' })[] = [];
     for (const eng of prefiltered) {
       const c = classifyMap.get(eng.key);
       if (c?.is_competitor) { skipped_competitor++; continue; }
-      const score = c?.score ?? (businessContext ? 1 : 2); // if no AI ran, default warm
+      const score = c?.score ?? (businessContext ? 2 : 2); // incomplete enriched data should not collapse to only 3 imported leads
       // Drop obvious dead weight when we have context to judge
       if (businessContext && classifyMap.size > 0 && score <= 1) { skipped_low_fit++; continue; }
       const tier: 'hot' | 'warm' | 'cold' = score >= 3 ? 'hot' : score === 2 ? 'warm' : 'cold';
@@ -539,6 +551,9 @@ Deno.serve(async (req) => {
         skipped_duplicate: 0,
         reactions_fetched,
         comments_fetched,
+        reaction_pages,
+        comment_pages,
+        profiles_enriched,
         message: 'No qualified engagers found for this post.',
       });
     }
@@ -562,16 +577,28 @@ Deno.serve(async (req) => {
       targetListId = newList.id;
     }
 
-    // Dedupe against existing contacts in this org by linkedin_url
+    // Dedupe against existing contacts in this org by LinkedIn profile id and valid public URL
     const liUrls = finalEngagers.map(e => e.linkedin_url).filter(Boolean) as string[];
-    let existingSet = new Set<string>();
+    const profileIds = finalEngagers.map(e => e.profile_id).filter(Boolean) as string[];
+    let existingUrlSet = new Set<string>();
+    let existingIdSet = new Set<string>();
     if (liUrls.length > 0) {
-      const { data: existing } = await admin
+      let q = admin
         .from('contacts')
         .select('linkedin_url')
-        .eq('organization_id', organization_id as any)
         .in('linkedin_url', liUrls);
-      existingSet = new Set((existing || []).map((r: any) => (r.linkedin_url || '').toLowerCase()));
+      q = organization_id ? q.eq('organization_id', organization_id as any) : q.eq('user_id', user.id);
+      const { data: existing } = await q;
+      existingUrlSet = new Set((existing || []).map((r: any) => (r.linkedin_url || '').toLowerCase()));
+    }
+    if (profileIds.length > 0) {
+      let q = admin
+        .from('contacts')
+        .select('linkedin_profile_id')
+        .in('linkedin_profile_id', profileIds);
+      q = organization_id ? q.eq('organization_id', organization_id as any) : q.eq('user_id', user.id);
+      const { data: existing } = await q;
+      existingIdSet = new Set((existing || []).map((r: any) => String(r.linkedin_profile_id || '')));
     }
 
     let inserted = 0;
@@ -579,7 +606,8 @@ Deno.serve(async (req) => {
     const insertedIds: string[] = [];
 
     for (const eng of finalEngagers) {
-      if (eng.linkedin_url && existingSet.has(eng.linkedin_url.toLowerCase())) { skipped_duplicate++; continue; }
+      if (eng.profile_id && existingIdSet.has(eng.profile_id)) { skipped_duplicate++; continue; }
+      if (eng.linkedin_url && existingUrlSet.has(eng.linkedin_url.toLowerCase())) { skipped_duplicate++; continue; }
       const signalLabel = eng.engagement === 'like' ? 'Liked LinkedIn post' : 'Commented on LinkedIn post';
       const { data: row, error: insErr } = await admin.from('contacts').insert({
         user_id: user.id,
@@ -590,6 +618,7 @@ Deno.serve(async (req) => {
         company: eng.company,
         industry: null,
         linkedin_url: eng.linkedin_url,
+        linkedin_profile_id: eng.profile_id,
         signal: signalLabel,
         signal_post_url: canonicalUrl,
         signal_post_excerpt: postText ? postText.slice(0, 500) : null,
@@ -601,6 +630,8 @@ Deno.serve(async (req) => {
         ai_score: eng.ai_score,
       } as any).select('id').single();
       if (insErr) { console.warn('[extract-li] insert err', insErr.message); continue; }
+      if (eng.profile_id) existingIdSet.add(eng.profile_id);
+      if (eng.linkedin_url) existingUrlSet.add(eng.linkedin_url.toLowerCase());
       insertedIds.push(row.id);
       await admin.from('contact_lists').insert({ contact_id: row.id, list_id: targetListId } as any);
       inserted++;
@@ -613,6 +644,10 @@ Deno.serve(async (req) => {
       skipped_duplicate,
       reactions_fetched,
       comments_fetched,
+      reaction_pages,
+      comment_pages,
+      profiles_enriched,
+      raw_unique: engagersByKey.size,
       list_id: targetListId,
       list_name: listName,
     });
