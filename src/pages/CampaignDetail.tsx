@@ -295,6 +295,38 @@ export default function CampaignDetail() {
   const [invitationNoteMode, setInvitationNoteMode] = useState<"without" | "with">("without");
   const [invitationNote, setInvitationNote] = useState("");
 
+  // Comment step edit dialog state
+  const [editCommentIdx, setEditCommentIdx] = useState<number | null>(null);
+  const [editCommentInstructions, setEditCommentInstructions] = useState("");
+  const [editCommentPostFilter, setEditCommentPostFilter] = useState<"authored_only" | "all_signals">("authored_only");
+  const [editCommentDelayHours, setEditCommentDelayHours] = useState(0);
+
+  function openEditComment(actualIdx: number) {
+    const ws: any = workflowSteps[actualIdx];
+    if (!ws || ws.type !== "comment") return;
+    setEditCommentIdx(actualIdx);
+    setEditCommentInstructions(ws.ai_instructions || "");
+    setEditCommentPostFilter((ws.post_filter as any) || "authored_only");
+    setEditCommentDelayHours(Number(ws.delay_hours ?? 0));
+  }
+
+  async function saveEditComment() {
+    if (!campaign || editCommentIdx === null) return;
+    if (!editCommentInstructions.trim()) { toast.error("Please add AI instructions."); return; }
+    const updated = [...workflowSteps];
+    updated[editCommentIdx] = {
+      ...updated[editCommentIdx],
+      ai_instructions: editCommentInstructions.trim(),
+      post_filter: editCommentPostFilter,
+      delay_hours: Math.max(0, editCommentDelayHours || 0),
+    };
+    const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
+    if (error) { toast.error("Failed to save"); return; }
+    setCampaign({ ...campaign, workflow_steps: updated });
+    setEditCommentIdx(null);
+    toast.success("Comment step updated");
+  }
+
   // Meeting booking state
   const [bookMeetingContact, setBookMeetingContact] = useState<Contact | null>(null);
   const [meetingPrepData, setMeetingPrepData] = useState<any>(null);
