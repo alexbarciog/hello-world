@@ -10,6 +10,7 @@ import {
   CheckCircle2, XCircle, ShieldCheck, Share2,
 } from "lucide-react";
 import { Contact, ContactList, avatarColor, getInitials, timeAgo, DOT_COLORS } from "@/components/contacts/types";
+import { EmailCell } from "@/components/contacts/EmailCell";
 import { LinkedInIcon } from "@/components/contacts/LinkedInIcon";
 import { CreateListDialog } from "@/components/contacts/CreateListDialog";
 import { BookMeetingDialog } from "@/components/contacts/BookMeetingDialog";
@@ -859,7 +860,7 @@ export default function Contacts() {
                     <th style={{ left: 440, width: 90, minWidth: 90, maxWidth: 90 }} className="sticky z-20 bg-[hsl(var(--muted))] text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-r border-border shadow-[4px_0_8px_-4px_rgba(0,0,0,0.12)]">
                       Score
                     </th>
-                    {["Role", "Company", "Industry", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
+                    {["Role", "Company", "Industry", "Email", "Last Action", "Added", "Lists", "Source Agent", "Approval", ""].map((h) => (
                       <th key={h} className="text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 py-3 border-b border-border bg-[hsl(var(--muted))]">
                         {h}
                       </th>
@@ -945,6 +946,19 @@ export default function Contacts() {
                         <span className="text-xs text-muted-foreground truncate block max-w-[130px]" title={c.industry || ""}>
                           {c.industry || <span className="text-muted-foreground/60">—</span>}
                         </span>
+                      </td>
+                      <td className="px-3 py-3 border-b border-border/50 min-w-[200px]">
+                        {isDataLocked ? (
+                          <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><Lock className="w-3 h-3" />Locked</span>
+                        ) : (
+                          <EmailCell
+                            contactId={c.id}
+                            email={c.email}
+                            onSaved={(newEmail) =>
+                              setContacts((prev) => prev.map((x) => x.id === c.id ? { ...x, email: newEmail, email_enriched: !!newEmail } : x))
+                            }
+                          />
+                        )}
                       </td>
                       <td className="px-3 py-3 border-b border-border/50">
                         <div className="flex flex-col gap-1">
