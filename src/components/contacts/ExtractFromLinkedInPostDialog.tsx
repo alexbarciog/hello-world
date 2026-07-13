@@ -55,17 +55,25 @@ export function ExtractFromLinkedInPostDialog({ open, onOpenChange, lists, onImp
     if (!valid || submitting) return;
     setSubmitting(true);
     setStatus("Fetching post & engagers…");
-    try {
-      const { data, error } = await supabase.functions.invoke("extract-linkedin-post-leads", {
-        body: {
-          post_url: postUrl.trim(),
-          list_id: listChoice === "__new__" ? null : listChoice,
-          campaign_id: campaignChoice === "__none__" ? null : campaignChoice,
-          include_likers: includeLikers,
-          include_commenters: includeCommenters,
-        },
-      });
-      if (error) throw error;
+
+    let backgrounded = false;
+    const invokePromise = supabase.functions.invoke("extract-linkedin-post-leads", {
+      body: {
+        post_url: postUrl.trim(),
+        list_id: listChoice === "__new__" ? null : listChoice,
+        campaign_id: campaignChoice === "__none__" ? null : campaignChoice,
+        include_likers: includeLikers,
+        include_commenters: includeCommenters,
+      },
+    });
+
+    // Handle final result whether foreground or background
+    const handleResult = ({ data, error }: any) => {
+      if (error) {
+        console.error(error);
+        toast.error(error?.message || "Failed to extract leads");
+        return;
+      }
       const inserted = (data as any)?.inserted ?? 0;
       const rawUnique = (data as any)?.raw_unique ?? 0;
       const fetched = ((data as any)?.reactions_fetched ?? 0) + ((data as any)?.comments_fetched ?? 0);
@@ -78,14 +86,41 @@ export function ExtractFromLinkedInPostDialog({ open, onOpenChange, lists, onImp
           (skipped ? ` (skipped ${skippedComp} competitors, ${skippedLow} low-fit, ${skippedDup} duplicates)` : "")
       );
       onImported();
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      backgrounded = true;
+      toast.info("Still extracting — we'll notify you when it's done. You can keep working.", { duration: 6000 });
+      setSubmitting(false);
+      setStatus("");
       onOpenChange(false);
       reset();
+      // Continue in background
+      invokePromise.then(handleResult).catch((e) => {
+        console.error(e);
+        toast.error(e?.message || "Failed to extract leads");
+      });
+    }, 15000);
+
+    try {
+      const result = await invokePromise;
+      if (backgrounded) return; // background handler will take over
+      window.clearTimeout(timeoutId);
+      handleResult(result);
+      if (!result.error) {
+        onOpenChange(false);
+        reset();
+      }
     } catch (e: any) {
+      if (backgrounded) return;
+      window.clearTimeout(timeoutId);
       console.error(e);
       toast.error(e?.message || "Failed to extract leads");
     } finally {
-      setSubmitting(false);
-      setStatus("");
+      if (!backgrounded) {
+        setSubmitting(false);
+        setStatus("");
+      }
     }
   }
 
