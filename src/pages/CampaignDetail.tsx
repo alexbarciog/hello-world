@@ -1608,11 +1608,11 @@ export default function CampaignDetail() {
                             transition={{ delay: i * 0.08 }}
                             className="min-w-[220px] max-w-[240px] shrink-0"
                           >
-                            <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
+                            <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: ws.type === "email" ? "linear-gradient(135deg, hsl(25 95% 53%), hsl(15 90% 55%))" : "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
-                                  <Send className="w-4 h-4" />
-                                  <span className="text-sm font-bold">Send Message</span>
+                                  {ws.type === "email" ? <Mail className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                                  <span className="text-sm font-bold">{ws.type === "email" ? "Send Email" : "Send Message"}</span>
                                 </div>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
