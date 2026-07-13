@@ -318,6 +318,68 @@ Deno.serve(async (req) => {
       return jsonResp({ error: 'Please connect your LinkedIn account first (Settings → LinkedIn).' }, 400);
     }
 
+    // Heavy work runs in the background so the client never hits a gateway 504.
+    // We return 202 immediately; on completion we insert a notification for the user.
+    const runExtraction = async () => {
+      try {
+        const result = await performExtraction({
+          admin, user, organization_id, accountId,
+          UNIPILE_DSN, UNIPILE_API_KEY,
+          post_url, postId, list_id, campaign_id,
+          include_likers, include_commenters,
+        });
+        const { inserted = 0, skipped_competitor = 0, skipped_low_fit = 0, skipped_duplicate = 0, raw_unique = 0, list_name } = result || {};
+        const bodyText = inserted > 0
+          ? `Imported ${inserted} lead${inserted === 1 ? '' : 's'} from ${raw_unique} engager${raw_unique === 1 ? '' : 's'} into "${list_name}".`
+          : `No qualified leads found (skipped ${skipped_competitor} competitors, ${skipped_low_fit} low-fit, ${skipped_duplicate} duplicates).`;
+        await admin.from('notifications').insert({
+          user_id: user.id,
+          type: 'lead_extraction_complete',
+          title: 'LinkedIn post extraction finished',
+          body: bodyText,
+          link: '/contacts',
+        } as any);
+      } catch (e) {
+        console.error('[extract-li] background fatal', e);
+        await admin.from('notifications').insert({
+          user_id: user.id,
+          type: 'lead_extraction_failed',
+          title: 'LinkedIn post extraction failed',
+          body: e instanceof Error ? e.message : 'Unknown error',
+          link: '/contacts',
+        } as any).catch(() => {});
+      }
+    };
+
+    // @ts-ignore EdgeRuntime is provided by Supabase Edge Runtime
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime?.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(runExtraction());
+    } else {
+      // Fallback: fire and forget
+      runExtraction();
+    }
+
+    return jsonResp({ background: true, message: 'Extraction started. You will be notified when it finishes.' }, 202);
+  } catch (error) {
+    console.error('[extract-li] fatal', error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
+
+async function performExtraction(ctx: {
+  admin: any; user: any; organization_id: string | null; accountId: string;
+  UNIPILE_DSN: string; UNIPILE_API_KEY: string;
+  post_url: string; postId: string;
+  list_id: string | null; campaign_id: string | null;
+  include_likers: boolean; include_commenters: boolean;
+}) {
+  const { admin, user, organization_id, accountId, UNIPILE_DSN, UNIPILE_API_KEY,
+    post_url, postId, list_id, campaign_id, include_likers, include_commenters } = ctx;
+
+
     // Load user's campaigns for competitor list + business context
     const { data: userCampaigns } = await admin
       .from('campaigns')
@@ -547,7 +609,7 @@ Deno.serve(async (req) => {
     }
 
     if (finalEngagers.length === 0) {
-      return jsonResp({
+      return {
         inserted: 0,
         skipped_competitor,
         skipped_low_fit,
@@ -557,8 +619,10 @@ Deno.serve(async (req) => {
         reaction_pages,
         comment_pages,
         profiles_enriched,
+        raw_unique: engagersByKey.size,
+        list_name: null,
         message: 'No qualified engagers found for this post.',
-      });
+      };
     }
 
     // Resolve target list
@@ -640,7 +704,7 @@ Deno.serve(async (req) => {
       inserted++;
     }
 
-    return jsonResp({
+    return {
       inserted,
       skipped_competitor,
       skipped_low_fit,
@@ -653,9 +717,6 @@ Deno.serve(async (req) => {
       raw_unique: engagersByKey.size,
       list_id: targetListId,
       list_name: listName,
-    });
-  } catch (error) {
-    console.error('[extract-li] fatal', error);
-    return jsonResp({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
-  }
-});
+    };
+}
+
