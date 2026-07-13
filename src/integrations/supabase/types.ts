@@ -1661,6 +1661,7 @@ export type Database = {
       scheduled_messages: {
         Row: {
           campaign_id: string
+          channel: string
           connection_request_id: string
           contact_id: string
           created_at: string
@@ -1670,12 +1671,15 @@ export type Database = {
           message: string
           scheduled_for: string
           sent_at: string | null
+          skip_reason: string | null
           status: string
           step_index: number
+          subject: string | null
           user_id: string
         }
         Insert: {
           campaign_id: string
+          channel?: string
           connection_request_id: string
           contact_id: string
           created_at?: string
@@ -1685,12 +1689,15 @@ export type Database = {
           message?: string
           scheduled_for?: string
           sent_at?: string | null
+          skip_reason?: string | null
           status?: string
           step_index: number
+          subject?: string | null
           user_id: string
         }
         Update: {
           campaign_id?: string
+          channel?: string
           connection_request_id?: string
           contact_id?: string
           created_at?: string
@@ -1700,8 +1707,10 @@ export type Database = {
           message?: string
           scheduled_for?: string
           sent_at?: string | null
+          skip_reason?: string | null
           status?: string
           step_index?: number
+          subject?: string | null
           user_id?: string
         }
         Relationships: []

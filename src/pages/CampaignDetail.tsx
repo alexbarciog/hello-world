@@ -11,7 +11,7 @@ import {
   UserPlus, Send, MessageSquare, ArrowRight, ArrowDown, Save, Bot, Sparkles,
   AlertCircle, Plus, Shield, Eye, Target, Mic, Check, TrendingUp, X, User, Trash2,
   RefreshCw, Loader2, MessageCircle, CalendarDays, Calendar, Zap, Inbox,
-  CircleDot, ChevronDown,
+  CircleDot, ChevronDown, Mail,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -254,7 +254,8 @@ export default function CampaignDetail() {
 
   const [addStepOpen, setAddStepOpen] = useState(false);
   const [addStepPhase, setAddStepPhase] = useState<"choose" | "edit">("choose");
-  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment">("message");
+  const [newStepType, setNewStepType] = useState<"message" | "visit_profile" | "comment" | "email">("message");
+  const [newStepEmailSubject, setNewStepEmailSubject] = useState("");
   const [newStepMessage, setNewStepMessage] = useState("");
   const [newStepDelay, setNewStepDelay] = useState(1);
   const [newStepMessageMode, setNewStepMessageMode] = useState<"manual" | "ai">("manual");
@@ -1093,6 +1094,20 @@ export default function CampaignDetail() {
         ai_instructions: newStepCommentInstructions.trim(),
         delay_hours: Math.max(0, newStepCommentDelayHours || 0),
       };
+    } else if (newStepType === "email") {
+      const isAi = newStepMessageMode === "ai";
+      if (!isAi && (!newStepEmailSubject.trim() || !newStepMessage.trim())) {
+        toast.error("Please add a subject and body, or switch to AI SDR mode.");
+        return;
+      }
+      newStep = {
+        type: "email",
+        subject: isAi ? "" : newStepEmailSubject.trim(),
+        message: isAi ? "" : newStepMessage,
+        delay_hours: Math.max(0, (newStepDelay || 1) * 24),
+        ai_sdr: isAi,
+        ...(isAi && newStepInstructions.trim() ? { step_instructions: newStepInstructions.trim() } : {}),
+      };
     } else {
       newStep = {
         type: newStepType === "visit_profile" ? "visit_profile" : "message",
@@ -1112,6 +1127,7 @@ export default function CampaignDetail() {
     setNewStepCommentInstructions("");
     setNewStepCommentDelayHours(0);
     setCommentPreviewText("");
+    setNewStepEmailSubject("");
     toast.success("Step added!");
   }
 
@@ -1592,11 +1608,11 @@ export default function CampaignDetail() {
                             transition={{ delay: i * 0.08 }}
                             className="min-w-[220px] max-w-[240px] shrink-0"
                           >
-                            <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
+                            <div className="rounded-xl text-white p-4 shadow-md relative group" style={{ background: ws.type === "email" ? "linear-gradient(135deg, hsl(25 95% 53%), hsl(15 90% 55%))" : "linear-gradient(135deg, hsl(190 80% 45%), hsl(210 80% 50%))" }}>
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
-                                  <Send className="w-4 h-4" />
-                                  <span className="text-sm font-bold">Send Message</span>
+                                  {ws.type === "email" ? <Mail className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                                  <span className="text-sm font-bold">{ws.type === "email" ? "Send Email" : "Send Message"}</span>
                                 </div>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
@@ -1663,7 +1679,7 @@ export default function CampaignDetail() {
                                 </div>
                               ) : (
                                 <>
-                                  {ws.ai_icebreaker ? (
+                                  {(ws.ai_icebreaker || ws.ai_sdr) ? (
                                     <div className="space-y-1.5">
                                       <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-1.5 text-xs">
@@ -1672,7 +1688,11 @@ export default function CampaignDetail() {
                                         </div>
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">Active</span>
                                       </div>
-                                      <p className="text-[11px] text-muted-foreground leading-relaxed">Each lead will receive a unique AI-generated message based on their role, company, signal & your business context.</p>
+                                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        {ws.type === "email"
+                                          ? "Each lead gets a unique AI-generated email (subject + body) based on their role, company, signal & your business context."
+                                          : "Each lead will receive a unique AI-generated message based on their role, company, signal & your business context."}
+                                      </p>
                                       {ws.step_instructions && (
                                         <div className="mt-2 p-2 bg-muted/40 rounded-lg border border-border">
                                           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Custom Instructions:</p>
@@ -1682,11 +1702,17 @@ export default function CampaignDetail() {
                                     </div>
                                   ) : ws.message ? (
                                     <div>
-                                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 tracking-wider">MESSAGE:</p>
+                                      {ws.type === "email" && ws.subject && (
+                                        <>
+                                          <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">SUBJECT:</p>
+                                          <p className="text-xs text-foreground font-semibold leading-relaxed line-clamp-1 mb-2">{ws.subject}</p>
+                                        </>
+                                      )}
+                                      <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 tracking-wider">{ws.type === "email" ? "BODY:" : "MESSAGE:"}</p>
                                       <p className="text-xs text-foreground leading-relaxed line-clamp-3">{ws.message}</p>
                                     </div>
                                   ) : (
-                                    <p className="text-xs text-muted-foreground italic">No message configured...</p>
+                                    <p className="text-xs text-muted-foreground italic">{ws.type === "email" ? "No email configured..." : "No message configured..."}</p>
                                   )}
 
                                   <div className="flex items-center gap-3 mt-3 text-xs">
@@ -1696,7 +1722,7 @@ export default function CampaignDetail() {
 
                                   <div className="flex flex-col gap-1.5 mt-3 pt-2 border-t border-border">
                                     <button onClick={() => { setStepFilter(String(stepNum)); setTab("contacts"); }} className="text-xs font-medium text-foreground border border-border rounded-lg px-3 py-1.5 hover:bg-muted/50 transition-colors w-full">View Contacts</button>
-                                    {ws.ai_icebreaker && (
+                                    {(ws.ai_icebreaker || ws.ai_sdr) && (
                                       <button onClick={() => openEditStepInstructions(i)} className="text-xs font-medium text-amber-600 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-1.5 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors w-full">
                                         <span className="flex items-center justify-center gap-1"><Sparkles className="w-3 h-3" /> Instructions</span>
                                       </button>
@@ -1738,6 +1764,7 @@ export default function CampaignDetail() {
                         <div className="space-y-3">
                           {[
                             { type: "message" as const, icon: Send, label: "Send Message", desc: "Send messages, PDF and GIFs to connected leads", color: "hsl(210 80% 50%)" },
+                            { type: "email" as const, icon: Mail, label: "Send Email", desc: "Send a personalised email to leads that have an email on file. Leads without an email are skipped.", color: "hsl(25 95% 53%)" },
                             { type: "comment" as const, icon: MessageCircle, label: "Comment on signal post", desc: "AI writes and posts a personalised comment on the LinkedIn post that triggered this lead", color: "hsl(280 70% 55%)" },
                             { type: "message" as const, icon: Mic, label: "Send Voice Message", desc: "Record and send a voice message to connected leads", color: "hsl(142 70% 45%)", badge: "Coming soon" },
                             { type: "visit_profile" as const, icon: User, label: "Visit Profile", desc: "Visit the LinkedIn profile of your leads", color: "hsl(0 60% 50%)" },
@@ -1867,6 +1894,30 @@ export default function CampaignDetail() {
                           </div>
                         ) : (
                           <>
+                            {newStepType === "email" && (
+                              <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50/50 p-3 flex items-start gap-2">
+                                <Mail className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-orange-900">Email step</p>
+                                  <p className="text-[11px] text-orange-800/80 mt-0.5">Sends via email to leads that have an email on file. Leads without one are automatically skipped.</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {newStepType === "email" && newStepMessageMode === "manual" && (
+                              <div className="mb-4">
+                                <label className="text-sm font-bold text-foreground block mb-2">Subject line</label>
+                                <input
+                                  type="text"
+                                  value={newStepEmailSubject}
+                                  onChange={(e) => setNewStepEmailSubject(e.target.value)}
+                                  placeholder="e.g. Quick idea for {{company}}"
+                                  className="w-full text-sm border border-border rounded-xl px-3 py-2.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                  maxLength={200}
+                                />
+                              </div>
+                            )}
+
                             {/* Message mode toggle */}
                             <div className="grid grid-cols-2 gap-3 mb-5">
                               <button
