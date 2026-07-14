@@ -41,10 +41,23 @@ function sanitizeLinkedinProfileUrl(raw: string | null | undefined): string | nu
     const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
     if (!/linkedin\.com$/i.test(u.hostname.replace(/^www\./, ''))) return null;
     const slug = extractProfileSlugFromUrl(u.toString());
-    if (!slug || isLikelyInternalLinkedInId(slug)) return null;
+    if (!slug) return null;
+    // Keep internal-ID URLs (e.g. /in/ACoAA...) — LinkedIn resolves them and
+    // it's better to give the user a working link than nothing.
     u.search = ''; u.hash = '';
     return u.toString().replace(/\/+$/, '').toLowerCase();
   } catch { return null; }
+}
+
+function buildLinkedInUrl(publicSlug: string | null, providerId: string | null): string | null {
+  if (publicSlug && !isLikelyInternalLinkedInId(publicSlug)) {
+    return `https://www.linkedin.com/in/${publicSlug}`;
+  }
+  if (providerId && /^ACo[A-Za-z0-9_-]{8,}$/i.test(providerId)) {
+    return `https://www.linkedin.com/in/${providerId}`;
+  }
+  if (publicSlug) return `https://www.linkedin.com/in/${publicSlug}`;
+  return null;
 }
 
 function extractCompanySlugFromUrl(url: string): string | null {
@@ -465,7 +478,7 @@ async function performExtraction(ctx: {
       if (postAuthorSlug && publicSlug && publicSlug.toLowerCase() === postAuthorSlug.toLowerCase()) return;
 
       const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
-      const linkedinUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : null);
+      const linkedinUrl = sanitizeLinkedinProfileUrl(rawUrl) || buildLinkedInUrl(publicSlug, profileId);
       const existing = engagersByKey.get(key);
       if (existing && existing.engagement === 'comment') return;
       engagersByKey.set(key, {
@@ -523,7 +536,7 @@ async function performExtraction(ctx: {
           const p = await r.json();
           const publicSlug = publicSlugFromProfile(p) || eng.public_slug;
           const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
-          const liUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : eng.linkedin_url);
+          const liUrl = sanitizeLinkedinProfileUrl(rawUrl) || buildLinkedInUrl(publicSlug, eng.profile_id) || eng.linkedin_url;
           const fullName = pickFirst(p?.name, p?.full_name, p?.display_name, eng.full_name);
           const parsedName = parseName(fullName);
           eng.public_slug = publicSlug;
