@@ -1172,19 +1172,25 @@ export default function CampaignDetail() {
     setNewStepMessage(prev => prev + `{{${v}}}`);
   }
 
-  async function saveDelay(stepIndex: number, value: number, unit: "hours" | "days") {
+  async function saveDelay(stepIndex: number, value: number, unit: "minutes" | "hours" | "days") {
     if (!campaign) return;
     const updated = [...workflowSteps];
     const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !item.ws.before_invitation);
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
-    const delayHours = unit === "days" ? value * 24 : value;
-    updated[actualIdx] = { ...updated[actualIdx], delay_hours: Math.max(1, delayHours), delay_days: unit === "days" ? Math.max(1, value) : undefined };
+    const v = Math.max(1, value || 1);
+    const delayHours = unit === "days" ? v * 24 : unit === "minutes" ? v / 60 : v;
+    updated[actualIdx] = {
+      ...updated[actualIdx],
+      delay_hours: delayHours,
+      delay_days: unit === "days" ? v : undefined,
+    };
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to update delay"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setEditingDelayStep(null);
   }
+
 
   async function deleteWorkflowStep(stepIndex: number) {
     if (!campaign) return;
