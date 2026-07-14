@@ -20,6 +20,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Calendar, Check, ExternalLink, Key, Loader2, Plug, RefreshCw, Unplug } from "lucide-react";
+import EmailAccountsSection from "@/components/integrations/EmailAccountsSection";
 
 interface CalendarIntegration {
   id: string;
@@ -272,7 +273,7 @@ const Integrations = () => {
           <div>
             <h1 className="text-2xl text-foreground font-medium">Integrations</h1>
             <p className="text-sm text-muted-foreground">
-              Connect your calendars and CRM so the AI can detect booked meetings and push leads where you work.
+              Connect your inbox, calendars and CRM so campaigns send from your address and booked meetings sync back.
             </p>
           </div>
         </div>
@@ -362,6 +363,9 @@ const Integrations = () => {
             </div>
           </div>
         </div>
+
+        {/* Email accounts section */}
+        <EmailAccountsSection />
 
         {/* Calendars section */}
         <div>
