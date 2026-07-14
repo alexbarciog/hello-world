@@ -11,6 +11,8 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { decryptPassword } from '../_shared/email-account-crypto.ts';
+import { sendSmtp } from '../_shared/smtp-send.ts';
 
 function replaceVars(tpl: string, c: any): string {
   if (!tpl) return '';
