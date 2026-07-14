@@ -1,46 +1,44 @@
-## Plan
+## Goal
 
-### Goal
-Make “Get leads from LinkedIn post” reliably import many real engagers from large LinkedIn posts, with valid profile links and far better relevance filtering.
+Make `/linkedin-profile-analyzer` rank for the terms actual buyers search for. Semrush shows the winnable, on-topic queries are: **linkedin profile optimization** (720/mo, KD low), **linkedin profile review** (110/mo, KD 22), **linkedin profile audit** (20/mo, KD 0), **linkedin summary generator** (590/mo), **how to improve linkedin profile** (320/mo), **linkedin profile optimization services** (320/mo), **profile analyzer** (320/mo). Right now the page targets "audit" only, has no canonical, isn't in the sitemap, and its H1 is split across animated `<span>`s (crawlers still read the text, but it's not keyword-loaded).
 
-### Problems to fix
-- The function only requests one page of reactions/comments with `limit=100`, so posts with 500+ engagers can return a tiny subset depending on API pagination.
-- Profile links are built from `provider_id`/internal IDs when no public LinkedIn slug exists, causing invalid `/in/...` URLs even though names are correct.
-- Filtering/scoring currently relies on sparse reaction/comment payload fields (`headline`, `company`) that may be missing or partial, so irrelevant people and competitors slip through.
-- The UI toast only says how many were imported, not how many were fetched/skipped, making failures look mysterious.
+## Changes
 
-### Implementation
-1. **Add robust Unipile pagination**
-   - Fetch reactions and comments in pages using returned cursors (`cursor`, `next_cursor`, `paging.cursor`, etc.) until exhausted or a safe cap is reached.
-   - Increase the extraction cap enough for large posts, e.g. up to 1,000 raw engagers per run.
-   - Log and return fetched/page counts for diagnostics.
+### 1. `src/pages/LinkedInProfileAnalyzer.tsx` — head + on-page keywords
 
-2. **Normalize engager identity safely**
-   - Split “profile ID” from “public LinkedIn slug”.
-   - Only generate `https://www.linkedin.com/in/{slug}` from real public identifiers, never from internal `provider_id`/URN/account IDs.
-   - Store `linkedin_profile_id` separately for dedupe and future profile lookups.
-   - If a valid profile URL cannot be produced, still use the provider/profile ID for enrichment, but don’t create fake invalid links.
+- **Title** (≤60): `Free LinkedIn Profile Review & Optimization Audit | Intentsly`
+- **Meta description** (≤160): `Free AI LinkedIn profile review. Get an instant audit, conversion score, rewritten headline & About in 45 seconds. No credit card.`
+- Add **`<link rel="canonical" href="https://intentsly.com/linkedin-profile-analyzer">`** (currently missing → duplicate-content risk with the root canonical baked in `index.html`).
+- Set **`og:url`** to the same absolute URL (currently inherits site root).
+- Keep existing FAQPage + SoftwareApplication JSON-LD, add a **BreadcrumbList** (Home → LinkedIn Profile Review).
+- Add an SEO H2 line just under the animated H1 (visible, small `sr-only` if we don't want to alter design) so the primary keyword phrase appears verbatim: e.g. `<p className="sr-only">Free LinkedIn profile review, audit, and optimization tool.</p>`
+- Rework the "What you get" H2 to include a keyword: `A brutally specific LinkedIn profile review.`
+- Rework "How it works" H2: `How the LinkedIn profile audit works.`
+- Add descriptive `aria-label`s / alt text where images/icons carry meaning (currently mostly decorative — fine to leave `aria-hidden`).
 
-3. **Enrich profiles before scoring**
-   - For raw engagers with missing or weak data, call Unipile profile lookup by provider/profile ID in controlled batches.
-   - Use enriched fields: headline, current company, public identifier, profile URL, location if available.
-   - De-dupe by provider ID first, then public URL/name fallback.
+### 2. `public/robots.txt`
 
-4. **Improve competitor and relevance filtering**
-   - Add deterministic keyword checks for obvious sellers/agencies/consultants in the same space before AI scoring.
-   - Feed the AI classifier richer enriched profile fields and business/ICP context.
-   - Keep warm/hot leads, reject competitors and true low-fit leads, but avoid over-filtering when profile data is incomplete.
+Add sitemap directive:
+```
+Sitemap: https://intentsly.com/sitemap.xml
+```
 
-5. **Improve insertion and duplicate handling**
-   - Dedupe existing contacts by both `linkedin_profile_id` and valid `linkedin_url`.
-   - Insert `linkedin_profile_id` on contacts so future imports don’t duplicate the same person.
-   - Preserve list assignment and optional campaign enrollment behavior.
+### 3. Create `public/sitemap.xml` (static)
 
-6. **Improve user feedback**
-   - Update the success toast/message to include fetched, imported, skipped competitors, skipped low-fit, and duplicate counts.
-   - Return clearer diagnostics from the edge function so we can see whether the issue is API access, pagination, enrichment, or scoring.
+Include public routes only (root, features/*, pricing, case-studies, playbook, signal-playbook, partners, privacy, terms, help, linkedin-profile-analyzer, try-ai). Bump `linkedin-profile-analyzer` priority to `0.9`.
 
-### Validation
-- Use edge function logs after a run to confirm raw reactions/comments/page counts are much higher than 3 on large posts.
-- Confirm imported contacts have valid LinkedIn URLs only when a public URL/slug exists.
-- Confirm irrelevant competitors are skipped and relevant buyer-like profiles survive scoring.
+### 4. Head-collision fix
+
+`index.html` has a hard-coded `og:image`, `og:title`, `og:description`. `useSeoHead` in the analyzer overwrites title/description/og:title/og:description via `document.head.querySelector` — good. Extend it to also set/overwrite `og:url` and inject `<link rel="canonical">` on mount and restore on unmount so other routes aren't polluted.
+
+## Not doing
+
+- No `react-helmet-async` install — this is a one-page SEO fix, useSeoHead pattern already exists.
+- No new `og:image` (per head-meta rules, hosting injects a preview).
+- No route changes, no copy overhaul beyond H2 tweaks.
+
+## Verification
+
+- View-source the built page → confirm title/description/canonical/og:url present.
+- Confirm sitemap loads at `/sitemap.xml` and robots references it.
+- Trigger SEO scan afterwards so findings refresh.
