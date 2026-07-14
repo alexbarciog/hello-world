@@ -273,7 +273,7 @@ const Integrations = () => {
           <div>
             <h1 className="text-2xl text-foreground font-medium">Integrations</h1>
             <p className="text-sm text-muted-foreground">
-              Connect your calendars and CRM so the AI can detect booked meetings and push leads where you work.
+              Connect your inbox, calendars and CRM so campaigns send from your address and booked meetings sync back.
             </p>
           </div>
         </div>
