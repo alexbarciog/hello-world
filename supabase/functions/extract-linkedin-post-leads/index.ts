@@ -41,10 +41,23 @@ function sanitizeLinkedinProfileUrl(raw: string | null | undefined): string | nu
     const u = new URL(raw.startsWith('http') ? raw : `https://${raw}`);
     if (!/linkedin\.com$/i.test(u.hostname.replace(/^www\./, ''))) return null;
     const slug = extractProfileSlugFromUrl(u.toString());
-    if (!slug || isLikelyInternalLinkedInId(slug)) return null;
+    if (!slug) return null;
+    // Keep internal-ID URLs (e.g. /in/ACoAA...) — LinkedIn resolves them and
+    // it's better to give the user a working link than nothing.
     u.search = ''; u.hash = '';
     return u.toString().replace(/\/+$/, '').toLowerCase();
   } catch { return null; }
+}
+
+function buildLinkedInUrl(publicSlug: string | null, providerId: string | null): string | null {
+  if (publicSlug && !isLikelyInternalLinkedInId(publicSlug)) {
+    return `https://www.linkedin.com/in/${publicSlug}`;
+  }
+  if (providerId && /^ACo[A-Za-z0-9_-]{8,}$/i.test(providerId)) {
+    return `https://www.linkedin.com/in/${providerId}`;
+  }
+  if (publicSlug) return `https://www.linkedin.com/in/${publicSlug}`;
+  return null;
 }
 
 function extractCompanySlugFromUrl(url: string): string | null {
