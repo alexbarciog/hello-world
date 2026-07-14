@@ -262,7 +262,9 @@ export default function LinkedInProfileAnalyzer() {
               >
                 Avg. score before fix · <span className="text-neutral-700 font-semibold">42/100</span> · avg. after · <span className="text-neutral-700 font-semibold">81/100</span>
               </motion.p>
+              <h2 className="sr-only">Free LinkedIn profile review, audit, and optimization tool</h2>
             </div>
+
 
             {/* RIGHT — form card */}
             <motion.div
