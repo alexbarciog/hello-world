@@ -1198,9 +1198,13 @@ export default function Contacts() {
                     {/* Footer row */}
                     <div className="flex items-center justify-between mt-2.5 gap-2 flex-wrap">
                       <div className="flex items-center gap-0.5">
-                        {[c.signal_a_hit, c.signal_b_hit, c.signal_c_hit].map((hit, i) => (
-                          <Flame key={i} className={`w-3.5 h-3.5 ${hit ? "text-orange-500" : "text-muted-foreground/20"}`} fill={hit ? "currentColor" : "none"} />
-                        ))}
+                        {(() => {
+                          const tier = c.relevance_tier?.toLowerCase();
+                          const count = tier === "hot" ? 3 : tier === "warm" ? 2 : 1;
+                          return [0, 1, 2].map((i) => (
+                            <Flame key={i} className={`w-3.5 h-3.5 ${i < count ? "text-orange-500" : "text-muted-foreground/20"}`} fill={i < count ? "currentColor" : "none"} />
+                          ));
+                        })()}
                       </div>
                       {c.signal && (
                         c.signal_post_url ? (
