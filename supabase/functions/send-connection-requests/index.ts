@@ -200,7 +200,6 @@ Deno.serve(async (req) => {
 
             const providerId = resolveData.provider_id;
 
-            const providerId = resolveData.provider_id;
 
             // ── Pre-invitation Comment/Like steps ─────────────────────────
             // Run any workflow steps marked `before_invitation: true` inline
