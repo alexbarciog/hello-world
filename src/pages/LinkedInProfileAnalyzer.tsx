@@ -332,8 +332,19 @@ export default function LinkedInProfileAnalyzer() {
 
                 <div className="mt-5 flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    {["#3B82F6", "#C8FF00", "#f472b6", "#fb923c"].map((c, i) => (
-                      <div key={i} className="w-6 h-6 rounded-full border-2 border-white" style={{ background: c }} />
+                    {[
+                      "https://i.pravatar.cc/48?img=12",
+                      "https://i.pravatar.cc/48?img=32",
+                      "https://i.pravatar.cc/48?img=45",
+                      "https://i.pravatar.cc/48?img=68",
+                    ].map((src, i) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt=""
+                        loading="lazy"
+                        className="w-6 h-6 rounded-full border-2 border-white object-cover"
+                      />
                     ))}
                   </div>
                   <p className="text-[11px] text-neutral-500">
