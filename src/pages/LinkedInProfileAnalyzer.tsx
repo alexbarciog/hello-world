@@ -360,7 +360,7 @@ export default function LinkedInProfileAnalyzer() {
               What you get
             </span>
             <h2 className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a]" style={{ fontSize: "clamp(1.75rem, 3.6vw, 3rem)" }}>
-              A brutally specific teardown.<br />
+              A brutally specific LinkedIn profile review.<br />
               <span className="text-neutral-400">No generic advice.</span>
             </h2>
             <p className="mt-5 text-base md:text-lg text-neutral-500 leading-relaxed">
@@ -447,7 +447,7 @@ export default function LinkedInProfileAnalyzer() {
               How it works
             </span>
             <h2 className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a]" style={{ fontSize: "clamp(1.75rem, 3.6vw, 3rem)" }}>
-              Report in your hands in 3 steps.
+              How the LinkedIn profile audit works.
             </h2>
           </motion.div>
 
