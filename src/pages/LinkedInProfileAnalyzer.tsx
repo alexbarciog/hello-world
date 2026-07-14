@@ -19,6 +19,7 @@ import Navbar from "@/components/Navbar";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { Footer } from "@/components/CTAFooter";
 import { CountUp } from "@/lib/motion";
+import ogImageAsset from "@/assets/linkedin-profile-analyzer-og.png.asset.json";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const PENDING_KEY = "pending_profile_analysis";
@@ -30,8 +31,12 @@ function useSeoHead() {
     const title = "Free LinkedIn Profile Review & Optimization Audit | Intentsly";
     const desc =
       "Free AI LinkedIn profile review. Get an instant audit, conversion score, rewritten headline & About in 45 seconds. No credit card.";
+    const imageUrl = `https://intentsly.com${ogImageAsset.url}`;
     const prevTitle = document.title;
     document.title = title;
+
+    const createdEls: (HTMLMetaElement | HTMLLinkElement)[] = [];
+    const prevMeta: { el: HTMLMetaElement; attr: "name" | "property"; key: string; value: string | null }[] = [];
 
     const setMeta = (attr: "name" | "property", key: string, value: string) => {
       let el = document.head.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
@@ -39,6 +44,9 @@ function useSeoHead() {
         el = document.createElement("meta");
         el.setAttribute(attr, key);
         document.head.appendChild(el);
+        createdEls.push(el);
+      } else {
+        prevMeta.push({ el, attr, key, value: el.getAttribute("content") });
       }
       el.setAttribute("content", value);
     };
@@ -47,9 +55,11 @@ function useSeoHead() {
     setMeta("property", "og:description", desc);
     setMeta("property", "og:type", "website");
     setMeta("property", "og:url", url);
+    setMeta("property", "og:image", imageUrl);
     setMeta("name", "twitter:card", "summary_large_image");
     setMeta("name", "twitter:title", title);
     setMeta("name", "twitter:description", desc);
+    setMeta("name", "twitter:image", imageUrl);
 
     // Canonical
     let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -58,6 +68,7 @@ function useSeoHead() {
       canonical = document.createElement("link");
       canonical.setAttribute("rel", "canonical");
       document.head.appendChild(canonical);
+      createdEls.push(canonical);
     }
     const prevCanonicalHref = canonical.getAttribute("href");
     canonical.setAttribute("href", url);
@@ -103,6 +114,14 @@ function useSeoHead() {
       } else if (prevCanonicalHref) {
         canonical?.setAttribute("href", prevCanonicalHref);
       }
+      prevMeta.forEach(({ el, value }) => {
+        if (value === null) {
+          el.removeAttribute("content");
+        } else {
+          el.setAttribute("content", value);
+        }
+      });
+      createdEls.forEach((el) => el.parentNode?.removeChild(el));
       document.head.removeChild(ld);
     };
   }, []);
