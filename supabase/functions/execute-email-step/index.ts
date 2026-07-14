@@ -289,17 +289,44 @@ Deno.serve(async (req) => {
       .eq('user_id', campaign.user_id)
       .single();
 
-    const fromEmail = step.from_email || 'onboarding@resend.dev';
-    const fromName = step.from_name || profile?.full_name || campaign.company_name || 'Intentsly';
+    // Try connected mailbox first (SMTP / Gmail via app password)
+    const { data: mailbox } = await supabase
+      .from('email_accounts')
+      .select('*')
+      .eq('user_id', campaign.user_id)
+      .eq('is_default', true)
+      .maybeSingle();
 
-    const sendRes = await sendResendEmail({
-      apiKey: RESEND_API_KEY,
-      fromEmail,
-      fromName,
-      to: contact.email,
-      subject,
-      html: bodyToHtml(body),
-    });
+    let sendRes: { ok: boolean; error?: string; id?: string };
+    if (mailbox && mailbox.provider === 'smtp') {
+      try {
+        const password = await decryptPassword(mailbox.smtp_password_encrypted, mailbox.smtp_password_iv);
+        const smtpRes = await sendSmtp(
+          { host: mailbox.smtp_host, port: mailbox.smtp_port, username: mailbox.smtp_username, password, secure: !!mailbox.smtp_secure },
+          {
+            from: mailbox.from_email,
+            fromName: mailbox.from_name || profile?.full_name || campaign.company_name || undefined,
+            to: contact.email,
+            subject,
+            html: bodyToHtml(body),
+          },
+        );
+        sendRes = { ok: smtpRes.ok, error: smtpRes.error };
+      } catch (e) {
+        sendRes = { ok: false, error: e instanceof Error ? e.message : String(e) };
+      }
+    } else {
+      const fromEmail = step.from_email || 'onboarding@resend.dev';
+      const fromName = step.from_name || profile?.full_name || campaign.company_name || 'Intentsly';
+      sendRes = await sendResendEmail({
+        apiKey: RESEND_API_KEY,
+        fromEmail,
+        fromName,
+        to: contact.email,
+        subject,
+        html: bodyToHtml(body),
+      });
+    }
 
     if (!sendRes.ok) {
       if (schedId) {
