@@ -536,7 +536,7 @@ async function performExtraction(ctx: {
           const p = await r.json();
           const publicSlug = publicSlugFromProfile(p) || eng.public_slug;
           const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
-          const liUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : eng.linkedin_url);
+          const liUrl = sanitizeLinkedinProfileUrl(rawUrl) || buildLinkedInUrl(publicSlug, eng.profile_id) || eng.linkedin_url;
           const fullName = pickFirst(p?.name, p?.full_name, p?.display_name, eng.full_name);
           const parsedName = parseName(fullName);
           eng.public_slug = publicSlug;
