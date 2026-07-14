@@ -26,12 +26,15 @@ const LINKEDIN_RE = /^https?:\/\/(?:[a-z]{2,3}\.)?linkedin\.com\/in\/[^/?#\s]+/i
 
 function useSeoHead() {
   useEffect(() => {
-    const title = "Free LinkedIn Profile Audit — See Why You're Losing Inbound Leads | Intentsly";
+    const url = "https://intentsly.com/linkedin-profile-analyzer";
+    const title = "Free LinkedIn Profile Review & Optimization Audit | Intentsly";
     const desc =
-      "Paste your LinkedIn profile. Get an instant, brutal AI audit of the 27 conversion signals silently killing your inbound leads. Free. No credit card.";
+      "Free AI LinkedIn profile review. Get an instant audit, conversion score, rewritten headline & About in 45 seconds. No credit card.";
+    const prevTitle = document.title;
     document.title = title;
+
     const setMeta = (attr: "name" | "property", key: string, value: string) => {
-      let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+      let el = document.head.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
       if (!el) {
         el = document.createElement("meta");
         el.setAttribute(attr, key);
@@ -43,9 +46,21 @@ function useSeoHead() {
     setMeta("property", "og:title", title);
     setMeta("property", "og:description", desc);
     setMeta("property", "og:type", "website");
+    setMeta("property", "og:url", url);
     setMeta("name", "twitter:card", "summary_large_image");
     setMeta("name", "twitter:title", title);
     setMeta("name", "twitter:description", desc);
+
+    // Canonical
+    let canonical = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+    const createdCanonical = !canonical;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+    const prevCanonicalHref = canonical.getAttribute("href");
+    canonical.setAttribute("href", url);
 
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
@@ -55,8 +70,18 @@ function useSeoHead() {
         "@type": "SoftwareApplication",
         name: "Intentsly LinkedIn Profile Audit",
         applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        url,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
         aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "1284" },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://intentsly.com/" },
+          { "@type": "ListItem", position: 2, name: "LinkedIn Profile Review", item: url },
+        ],
       },
       {
         "@context": "https://schema.org",
@@ -72,10 +97,17 @@ function useSeoHead() {
     ]);
     document.head.appendChild(ld);
     return () => {
+      document.title = prevTitle;
+      if (createdCanonical) {
+        canonical?.parentNode?.removeChild(canonical);
+      } else if (prevCanonicalHref) {
+        canonical?.setAttribute("href", prevCanonicalHref);
+      }
       document.head.removeChild(ld);
     };
   }, []);
 }
+
 
 const bentoTiles = [
   { icon: Award, title: "Headline conversion score", desc: "The first 220 characters buyers read. Scored, diagnosed, rewritten." },
@@ -230,7 +262,9 @@ export default function LinkedInProfileAnalyzer() {
               >
                 Avg. score before fix · <span className="text-neutral-700 font-semibold">42/100</span> · avg. after · <span className="text-neutral-700 font-semibold">81/100</span>
               </motion.p>
+              <h2 className="sr-only">Free LinkedIn profile review, audit, and optimization tool</h2>
             </div>
+
 
             {/* RIGHT — form card */}
             <motion.div
@@ -326,7 +360,7 @@ export default function LinkedInProfileAnalyzer() {
               What you get
             </span>
             <h2 className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a]" style={{ fontSize: "clamp(1.75rem, 3.6vw, 3rem)" }}>
-              A brutally specific teardown.<br />
+              A brutally specific LinkedIn profile review.<br />
               <span className="text-neutral-400">No generic advice.</span>
             </h2>
             <p className="mt-5 text-base md:text-lg text-neutral-500 leading-relaxed">
@@ -413,7 +447,7 @@ export default function LinkedInProfileAnalyzer() {
               How it works
             </span>
             <h2 className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a]" style={{ fontSize: "clamp(1.75rem, 3.6vw, 3rem)" }}>
-              Report in your hands in 3 steps.
+              How the LinkedIn profile audit works.
             </h2>
           </motion.div>
 
