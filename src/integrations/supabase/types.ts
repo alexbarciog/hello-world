@@ -744,6 +744,69 @@ export type Database = {
         }
         Relationships: []
       }
+      email_accounts: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string | null
+          gmail_connection_id: string | null
+          id: string
+          is_default: boolean
+          last_error: string | null
+          organization_id: string | null
+          provider: string
+          smtp_host: string | null
+          smtp_password_encrypted: string | null
+          smtp_password_iv: string | null
+          smtp_port: number | null
+          smtp_secure: boolean | null
+          smtp_username: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          gmail_connection_id?: string | null
+          id?: string
+          is_default?: boolean
+          last_error?: string | null
+          organization_id?: string | null
+          provider: string
+          smtp_host?: string | null
+          smtp_password_encrypted?: string | null
+          smtp_password_iv?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_username?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          gmail_connection_id?: string | null
+          id?: string
+          is_default?: boolean
+          last_error?: string | null
+          organization_id?: string | null
+          provider?: string
+          smtp_host?: string | null
+          smtp_password_encrypted?: string | null
+          smtp_password_iv?: string | null
+          smtp_port?: number | null
+          smtp_secure?: boolean | null
+          smtp_username?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       engagement_spike_comments: {
         Row: {
           comment_text: string | null
