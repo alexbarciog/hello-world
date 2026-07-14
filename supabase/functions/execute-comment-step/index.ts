@@ -100,10 +100,61 @@ Write the comment now.`;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { request_id, step_index } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    // ── Inline mode (pre-invitation execution from send-connection-requests) ──
+    if (body.inline === true) {
+      const step = body.step;
+      const contact = body.contact;
+      const accountId = body.account_id;
+      if (!step || !contact || !accountId) return json({ error: "missing inline params" }, 400);
+
+      const postFilter = step.post_filter || "authored_only";
+      if (postFilter === "authored_only" && !isAuthoredSignal(contact.signal)) {
+        return json({ status: "skipped", reason: "not_authored_signal" });
+      }
+      const postId = extractPostId(contact.signal_post_url);
+      if (!postId) return json({ status: "skipped", reason: "no_post_id" });
+
+      const postText = (contact.signal || "").replace(/^posted about\s*/i, "").slice(0, 1500);
+      let comment = "";
+      try {
+        comment = await generateComment(
+          step.ai_instructions || "Write a helpful, human comment that adds value. End with a light question.",
+          postText,
+          contact.first_name || "",
+          contact.company || "",
+        );
+      } catch (e) {
+        console.error("[execute-comment-step] inline generation failed:", e);
+        return json({ status: "failed", reason: "generation_failed" });
+      }
+      if (!comment) return json({ status: "failed", reason: "empty_generation" });
+
+      const postRes = await fetch(
+        `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments`,
+        {
+          method: "POST",
+          headers: {
+            "X-API-KEY": UNIPILE_API_KEY,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({ account_id: accountId, text: comment }),
+        },
+      );
+      if (!postRes.ok) {
+        const details = await postRes.text();
+        console.error(`[execute-comment-step] inline Unipile ${postRes.status}: ${details}`);
+        return json({ status: "failed", details });
+      }
+      return json({ status: "sent", comment });
+    }
+
+    const { request_id, step_index } = body;
     if (!request_id) return json({ error: "request_id required" }, 400);
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     const { data: cr, error: crErr } = await supabase
       .from("campaign_connection_requests")
