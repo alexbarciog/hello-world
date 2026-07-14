@@ -164,9 +164,9 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
         <AnimatePresence>
           {menuOpen && (
             <>
-              <motion.div key="overlay" className="fixed inset-0 z-[60] md:hidden bg-black/30 backdrop-blur-sm"
+              <motion.div key="overlay" className="fixed inset-0 z-[60] lg:hidden bg-black/30 backdrop-blur-sm"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onClick={close} />
-              <motion.div key="menu" className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[280px] rounded-[22px] bg-white border border-border/40 shadow-xl"
+              <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[280px] rounded-[22px] bg-white border border-border/40 shadow-xl"
                 initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
                 transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}>
                 <div className="flex justify-end px-4 pt-4">
@@ -350,10 +350,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
       <AnimatePresence>
         {menuOpen && (
           <>
-            <motion.div key="overlay" className="fixed inset-0 z-[60] md:hidden bg-black/30 backdrop-blur-sm"
+            <motion.div key="overlay" className="fixed inset-0 z-[60] lg:hidden bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onClick={close} />
 
-            <motion.div key="menu" className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[280px] rounded-[22px] bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl"
+            <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[280px] rounded-[22px] bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl"
               initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
               transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}>
               <div className="flex justify-end px-4 pt-4">
