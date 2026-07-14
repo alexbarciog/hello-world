@@ -19,6 +19,7 @@ import Navbar from "@/components/Navbar";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { Footer } from "@/components/CTAFooter";
 import { CountUp } from "@/lib/motion";
+import ogImageAsset from "@/assets/linkedin-profile-analyzer-og.png.asset.json";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const PENDING_KEY = "pending_profile_analysis";
