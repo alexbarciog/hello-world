@@ -1172,19 +1172,25 @@ export default function CampaignDetail() {
     setNewStepMessage(prev => prev + `{{${v}}}`);
   }
 
-  async function saveDelay(stepIndex: number, value: number, unit: "hours" | "days") {
+  async function saveDelay(stepIndex: number, value: number, unit: "minutes" | "hours" | "days") {
     if (!campaign) return;
     const updated = [...workflowSteps];
     const nonInvitationSteps = workflowSteps.map((ws: any, idx: number) => ({ ws, idx })).filter((item: any) => item.ws.type !== "invitation" && !item.ws.before_invitation);
     const actualIdx = nonInvitationSteps[stepIndex]?.idx;
     if (actualIdx === undefined) return;
-    const delayHours = unit === "days" ? value * 24 : value;
-    updated[actualIdx] = { ...updated[actualIdx], delay_hours: Math.max(1, delayHours), delay_days: unit === "days" ? Math.max(1, value) : undefined };
+    const v = Math.max(1, value || 1);
+    const delayHours = unit === "days" ? v * 24 : unit === "minutes" ? v / 60 : v;
+    updated[actualIdx] = {
+      ...updated[actualIdx],
+      delay_hours: delayHours,
+      delay_days: unit === "days" ? v : undefined,
+    };
     const { error } = await supabase.from("campaigns").update({ workflow_steps: updated as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to update delay"); return; }
     setCampaign({ ...campaign, workflow_steps: updated });
     setEditingDelayStep(null);
   }
+
 
   async function deleteWorkflowStep(stepIndex: number) {
     if (!campaign) return;
@@ -1968,21 +1974,31 @@ export default function CampaignDetail() {
                           <div className="flex flex-col items-center self-start pt-10 px-3 min-w-[100px]">
                             {editingDelayStep === i ? (() => {
                               const currentHours = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
-                              const initialUnit = currentHours >= 24 && currentHours % 24 === 0 ? "days" : "hours";
-                              const initialValue = initialUnit === "days" ? currentHours / 24 : currentHours;
+                              const initialUnit: "minutes" | "hours" | "days" =
+                                currentHours > 0 && currentHours < 1
+                                  ? "minutes"
+                                  : currentHours >= 24 && currentHours % 24 === 0
+                                  ? "days"
+                                  : "hours";
+                              const initialValue =
+                                initialUnit === "days"
+                                  ? currentHours / 24
+                                  : initialUnit === "minutes"
+                                  ? Math.max(1, Math.round(currentHours * 60))
+                                  : currentHours;
                               return (
                                 <div className="flex items-center gap-1 mb-2" onBlur={(e) => {
                                   if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                                     const valEl = document.getElementById(`delay-value-${i}`) as HTMLInputElement;
                                     const unitEl = document.getElementById(`delay-unit-${i}`) as HTMLSelectElement;
                                     const val = parseInt(valEl?.value) || 1;
-                                    saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
+                                    saveDelay(i, val, (unitEl?.value as "minutes" | "hours" | "days") || initialUnit);
                                   }
                                 }}>
                                   <input
                                     type="number"
                                     min={1}
-                                    max={initialUnit === "days" ? 30 : 720}
+                                    max={initialUnit === "days" ? 30 : initialUnit === "minutes" ? 1440 : 720}
                                     defaultValue={initialValue}
                                     autoFocus
                                     id={`delay-value-${i}`}
@@ -1991,7 +2007,7 @@ export default function CampaignDetail() {
                                       if (e.key === "Enter") {
                                         const val = parseInt((e.target as HTMLInputElement).value) || 1;
                                         const unitEl = document.getElementById(`delay-unit-${i}`) as HTMLSelectElement;
-                                        saveDelay(i, val, (unitEl?.value as "hours" | "days") || initialUnit);
+                                        saveDelay(i, val, (unitEl?.value as "minutes" | "hours" | "days") || initialUnit);
                                       }
                                       if (e.key === "Escape") setEditingDelayStep(null);
                                     }}
@@ -2001,6 +2017,7 @@ export default function CampaignDetail() {
                                     defaultValue={initialUnit}
                                     className="text-[10px] font-bold border border-primary rounded-full px-1 py-0.5 bg-background text-foreground focus:outline-none"
                                   >
+                                    <option value="minutes">min</option>
                                     <option value="hours">hrs</option>
                                     <option value="days">days</option>
                                   </select>
@@ -2013,10 +2030,17 @@ export default function CampaignDetail() {
                               >
                                 {(() => {
                                   const h = ws.delay_hours || (ws.delay_days ? ws.delay_days * 24 : 24);
-                                  return h >= 24 && h % 24 === 0 ? `+ ${h / 24} day${h / 24 !== 1 ? "s" : ""}` : `+ ${h} hr${h !== 1 ? "s" : ""}`;
+                                  if (h > 0 && h < 1) {
+                                    const m = Math.max(1, Math.round(h * 60));
+                                    return `+ ${m} min${m !== 1 ? "s" : ""}`;
+                                  }
+                                  return h >= 24 && h % 24 === 0
+                                    ? `+ ${h / 24} day${h / 24 !== 1 ? "s" : ""}`
+                                    : `+ ${h} hr${h !== 1 ? "s" : ""}`;
                                 })()}
                               </button>
                             )}
+
                             <svg width="60" height="2" className="text-primary">
                               <line x1="0" y1="1" x2="60" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" />
                             </svg>
