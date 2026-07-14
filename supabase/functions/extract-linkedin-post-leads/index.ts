@@ -478,7 +478,7 @@ async function performExtraction(ctx: {
       if (postAuthorSlug && publicSlug && publicSlug.toLowerCase() === postAuthorSlug.toLowerCase()) return;
 
       const rawUrl = pickFirst(p?.linkedin_url, p?.public_url, p?.profile_url, p?.public_profile_url, p?.url);
-      const linkedinUrl = sanitizeLinkedinProfileUrl(rawUrl) || (publicSlug ? `https://www.linkedin.com/in/${publicSlug}` : null);
+      const linkedinUrl = sanitizeLinkedinProfileUrl(rawUrl) || buildLinkedInUrl(publicSlug, profileId);
       const existing = engagersByKey.get(key);
       if (existing && existing.engagement === 'comment') return;
       engagersByKey.set(key, {
