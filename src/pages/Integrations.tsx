@@ -20,6 +20,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Calendar, Check, ExternalLink, Key, Loader2, Plug, RefreshCw, Unplug } from "lucide-react";
+import EmailAccountsSection from "@/components/integrations/EmailAccountsSection";
 
 interface CalendarIntegration {
   id: string;
@@ -362,6 +363,9 @@ const Integrations = () => {
             </div>
           </div>
         </div>
+
+        {/* Email accounts section */}
+        <EmailAccountsSection />
 
         {/* Calendars section */}
         <div>
