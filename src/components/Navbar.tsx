@@ -58,8 +58,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
   if (variant === "light") {
     return (
       <>
-        {/* Desktop */}
-        <nav className="w-full bg-white border-b border-neutral-100 hidden md:block">
+        {/* Desktop xl+ */}
+        <nav className="w-full bg-white border-b border-neutral-100 hidden xl:block">
           <div className="max-w-7xl mx-auto px-8 h-[72px] flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">
               <img alt="Intentsly" className="h-9 object-contain" src={intentslyIcon} />
@@ -96,8 +96,46 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           </div>
         </nav>
 
-        {/* Mobile */}
-        <nav className="md:hidden w-full bg-white border-b border-neutral-100">
+        {/* Compact desktop lg-xl */}
+        <nav className="w-full bg-white border-b border-neutral-100 hidden lg:block xl:hidden">
+          <div className="max-w-7xl mx-auto px-5 h-[64px] flex items-center justify-between">
+            <a href="/" className="flex items-center gap-2">
+              <img alt="Intentsly" className="h-8 object-contain" src={intentslyIcon} />
+              <span className="text-base font-bold tracking-tight text-[#0a0a0a]">Intentsly.</span>
+            </a>
+
+            <div className="flex items-center gap-5">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-[13px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate("/login")}
+                className="text-[13px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => navigate("/register")}
+                className="inline-flex items-center gap-1.5 bg-[#0a0a0a] text-white text-[13px] font-semibold tracking-tight rounded-xl px-3.5 py-2 hover:bg-neutral-800 transition-colors"
+              >
+                Sign up
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        {/* Mobile + tablet */}
+        <nav className="lg:hidden w-full bg-white border-b border-neutral-100">
           <div className="px-5 h-14 flex items-center justify-between">
             <a href="/" className="flex items-center gap-2">
               <img alt="Intentsly" className="h-8 object-contain" src={intentslyIcon} />
@@ -126,9 +164,9 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
         <AnimatePresence>
           {menuOpen && (
             <>
-              <motion.div key="overlay" className="fixed inset-0 z-[60] md:hidden bg-black/30 backdrop-blur-sm"
+              <motion.div key="overlay" className="fixed inset-0 z-[60] lg:hidden bg-black/30 backdrop-blur-sm"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onClick={close} />
-              <motion.div key="menu" className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[280px] rounded-[22px] bg-white border border-border/40 shadow-xl"
+              <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[280px] rounded-[22px] bg-white border border-border/40 shadow-xl"
                 initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
                 transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}>
                 <div className="flex justify-end px-4 pt-4">
@@ -164,9 +202,9 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
   // ── Default (existing floating-pill) variant ─────────────────────
   return (
     <>
-      {/* Desktop navbar */}
+      {/* Desktop navbar xl+ */}
       <motion.nav
-        className="fixed top-0 left-0 right-0 z-50 px-6 pt-4 hidden md:block"
+        className="fixed top-0 left-0 right-0 z-50 px-6 pt-4 hidden xl:flex"
         initial={false}
         animate={{ y: hidden ? -120 : 0, opacity: hidden ? 0 : 1 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -215,9 +253,60 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
         </motion.div>
       </motion.nav>
 
-      {/* Mobile floating pill navbar — always accessible */}
+      {/* Compact desktop navbar lg-xl */}
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-50 px-4 pt-3 hidden lg:flex xl:hidden"
+        initial={false}
+        animate={{ y: hidden ? -120 : 0, opacity: hidden ? 0 : 1 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className={`mx-auto px-4 py-2.5 flex items-center justify-between rounded-full transition-all duration-300 ${
+            scrolled
+              ? "max-w-3xl bg-white/90 backdrop-blur-md border border-border/40 shadow-lg shadow-black/5"
+              : "max-w-4xl bg-white/20 backdrop-blur-md border border-white/20"
+          }`}
+        >
+          <a href="/" className="flex items-center gap-2">
+            <img alt="Intentsly" className="h-9 object-contain" src={intentslyIcon} />
+            <span className={`text-xs font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
+              Intentsly
+            </span>
+          </a>
+
+          <div className="flex items-center gap-5">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className={`text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
+              >
+                {link.label}
+              </a>
+            ))}
+            <button
+              onClick={() => navigate("/login")}
+              className={`text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
+            >
+              Login
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate("/register")} className="btn-cta text-[11px] !py-1.5 !px-4">
+              Start for $97
+              <ArrowUpRight className="w-3 h-3" />
+            </button>
+          </div>
+        </motion.div>
+      </motion.nav>
+
+      {/* Mobile + tablet floating pill navbar */}
       <motion.div
-        className="fixed top-3 left-3 right-3 z-50 md:hidden"
+        className="fixed top-3 left-3 right-3 z-50 lg:hidden"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: hidden ? 0 : 1, y: hidden ? -80 : 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -261,10 +350,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
       <AnimatePresence>
         {menuOpen && (
           <>
-            <motion.div key="overlay" className="fixed inset-0 z-[60] md:hidden bg-black/30 backdrop-blur-sm"
+            <motion.div key="overlay" className="fixed inset-0 z-[60] lg:hidden bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onClick={close} />
 
-            <motion.div key="menu" className="fixed top-4 right-5 z-[70] md:hidden origin-top-right w-[280px] rounded-[22px] bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl"
+            <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[280px] rounded-[22px] bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl"
               initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
               transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}>
               <div className="flex justify-end px-4 pt-4">
