@@ -368,23 +368,51 @@ export default function LinkedInProfileAnalyzer() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            {bentoTiles.map((t, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.6, delay: i * 0.06, ease: EASE }}
-                className="rounded-3xl bg-neutral-50 border border-neutral-100 p-7 flex flex-col hover:border-neutral-200 transition-colors"
-              >
-                <div className="w-11 h-11 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center mb-5">
-                  <t.icon className="w-5 h-5 text-[#3B82F6]" />
-                </div>
-                <h3 className="text-xl font-medium tracking-tight mb-2 text-[#0a0a0a]">{t.title}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{t.desc}</p>
-              </motion.div>
-            ))}
+          <div className="relative isolate rounded-[24px] md:rounded-[32px] p-5 sm:p-10 overflow-hidden bg-muted/20">
+            <div
+              className="pointer-events-none absolute inset-0 -z-10 opacity-70"
+              style={{
+                background:
+                  "radial-gradient(60% 60% at 0% 0%, rgba(200,255,0,0.18) 0%, transparent 55%), radial-gradient(60% 60% at 100% 100%, rgba(26,143,227,0.18) 0%, transparent 55%)",
+              }}
+              aria-hidden
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 relative z-10">
+              {bentoTiles.map((t, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
+                  whileHover={{ y: -6, transition: { type: "spring", stiffness: 300, damping: 18 } }}
+                  className="group relative bg-background rounded-[18px] md:rounded-[24px] p-5 md:p-6 min-h-[200px] md:min-h-[240px] flex flex-col overflow-hidden cursor-default"
+                >
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{
+                      background:
+                        "radial-gradient(120% 80% at 0% 0%, rgba(200,255,0,0.18) 0%, transparent 50%), radial-gradient(120% 80% at 100% 100%, rgba(26,143,227,0.15) 0%, transparent 55%)",
+                    }}
+                    aria-hidden
+                  />
+                  <motion.div
+                    whileHover={{ rotate: [0, -8, 8, 0], scale: 1.08 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className="relative w-10 h-10 md:w-11 md:h-11 rounded-lg md:rounded-xl flex items-center justify-center mb-auto"
+                    style={{ background: "radial-gradient(circle, #000000 0%, #535353 100%)" }}
+                  >
+                    <t.icon className="w-4 h-4 md:w-5 md:h-5 text-white" strokeWidth={2} />
+                  </motion.div>
+                  <div className="relative mt-6 md:mt-8">
+                    <h3 className="text-base md:text-lg font-semibold tracking-tight mb-1.5 md:mb-2 text-[#0a0a0a] transition-colors group-hover:text-[#1A8FE3]">
+                      {t.title}
+                    </h3>
+                    <p className="text-[13px] md:text-[13.5px] text-muted-foreground leading-relaxed">{t.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
