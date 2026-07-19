@@ -142,6 +142,20 @@ const SELLER_PHRASES = [
   'we specialize in', 'we work with', 'our team helps',
   'reach out if you', 'message me to', 'visit our website',
 ];
+// Unfunded-founder guard: "building in public" journey diaries and explicit
+// no-budget signals mean the author cannot BUY, however loud the intent looks
+// ("meeting teams to quote our MVP" while funding the app via door-to-door
+// sales is not a lead). FUNDED_BUYER_RE lets genuinely funded posts through.
+const JOURNEY_DIARY_RE = /\b(build(ing)?\s+in\s+public|#buildinpublic|day\s+\d+\s+of\s+(building|my|going)|my\s+entrepreneur(ial)?\s+journey)\b/i;
+const NO_BUDGET_RE = /\b(door[\s-]?to[\s-]?door|build\s+as\s+much\s+capital|raise\s+capital\s+quickly|save\s+up\s+(capital|money)|no\s+budget|zero\s+budget|sweat\s+equity|for\s+equity\b|(looking|searching)\s+for\s+a\s+(technical\s+)?co[\s-]?founder|teaching\s+myself\s+to\s+code|building\s+(it|the\s+app|this)\s+myself)\b/i;
+const FUNDED_BUYER_RE = /\b(budget\s+(of|is|approved)|we\s+(just\s+)?(raised|closed)\s+|funded|hiring\s+an?\s+(agency|firm|studio)|willing\s+to\s+pay|\$\s?\d)/i;
+
+function isUnfundedJourneyPost(text: string): boolean {
+  if (!text) return false;
+  if (FUNDED_BUYER_RE.test(text)) return false;
+  return JOURNEY_DIARY_RE.test(text) || NO_BUDGET_RE.test(text);
+}
+
 function isSeller(postText: string, authorHeadline: string): boolean {
   const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
   return SELLER_PHRASES.some(p => text.includes(p));
@@ -621,6 +635,7 @@ DEFAULT TO is_buyer=false. Only set is_buyer=true if the post passes ALL of thes
   3. There is an EXPLICIT signal: a question seeking recommendations, a stated frustration with a current vendor, a stated evaluation of alternatives, or an explicit "we need X / looking for X / anyone use X"
   4. The need is RELEVANT to the company context above. Vague pain ("we have growth challenges") is NOT enough.
   5. It is NOT thought leadership, advice-giving, hiring, self-promotion, case study, hot take, or congratulations
+  6. The author is a PLAUSIBLE PAYING CUSTOMER. Intent without budget is NOT buying intent. Reject when the post signals they cannot pay: raising cash through side gigs to fund the project, pre-revenue solo founders grinding for capital, asking for co-founders or equity partners instead of vendors, or building the thing THEMSELVES (DIY). Mentioning vendors/quotes does not override this — someone doing door-to-door sales to afford an app is not a lead.
 
 RESPOND ONLY via the tool call. No other text.
 
@@ -647,6 +662,10 @@ REJECT — these are NOT buyers (is_buyer: false, score < 50):
 - Case studies, testimonials, or "how we did X" stories
 - General industry commentary, predictions, or trends
 - "What's your biggest challenge?" — engagement bait, not buying intent
+- "Day 177 of building in public! Meeting technical teams Monday to quote our MVP. I've started door-to-door sales to build capital to reinvest into the app. 10-12pm: App Development" → journey diary + NO BUDGET (funding via side gig, building it himself) — the "quote our MVP" phrase does NOT make him a buyer
+- "Building in public" / "day X of my journey" posts → personal-brand content, not procurement
+- "Looking for a technical co-founder to build my idea" → wants an equity partner, not a paying customer
+- "Teaching myself to code so I can build my app" → DIY, will not pay a vendor
 
 STRICT SCORING:
 - 90-100: Author is asking RIGHT NOW for a specific alternative/recommendation, with named pain or named current vendor → BUYER
@@ -829,6 +848,15 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
           const rejected = { ...cls, is_buyer: false, reason: `perfect_lead_mismatch: ${cls.match_reason || "author does not fit the user's perfect-lead description"}` };
           results.set(`rejected:${cls.id}`, rejected);
           console.log(`[AI] 🚫 perfect-lead-mismatch ${cls.id}: ${cls.match_reason}`);
+          continue;
+        }
+
+        // Unfunded-founder guard (deterministic backstop to prompt rule 6):
+        // journey-diary / no-budget posts can never pass, whatever the AI scored.
+        if (cls.is_buyer && isUnfundedJourneyPost(matchingPost?.text || '')) {
+          const rejected = { ...cls, is_buyer: false, intent_score: Math.min(cls.intent_score, 45), reason: `unfunded_journey_post — ${cls.reason}` };
+          results.set(`rejected:${cls.id}`, rejected);
+          console.log(`[AI] 🚫 unfunded-journey ${cls.id}: diary/no-budget signals override score=${cls.intent_score}`);
           continue;
         }
 

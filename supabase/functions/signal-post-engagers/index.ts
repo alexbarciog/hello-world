@@ -199,7 +199,7 @@ ${icpSummary ? `TARGET ICP: ${icpSummary}` : ''}
 - 80-100: clearly the buyer persona (right role, seniority, and company type)
 - 60-79: plausible buyer (adjacent role or unclear seniority, right space)
 - 40-59: weak fit (wrong function or seniority, could still influence a purchase)
-- 0-39: clearly NOT a buyer (student, job seeker, irrelevant industry, private individual)
+- 0-39: clearly NOT a buyer (student, job seeker, irrelevant industry, private individual, or a pre-revenue solo founder / "building in public" hustler with no buying power)
 Engagement alone is NOT fit — score the PERSON, not the action. Give a short fit_reason (max 12 words).${rejectionFeedback}
 
 RESPOND ONLY via the tool call.`;
