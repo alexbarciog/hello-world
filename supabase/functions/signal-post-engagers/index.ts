@@ -7,6 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
 import { wordPhraseIncludes } from '../_shared/text-match.ts';
 import { fetchProfileWithExperience, enrichProfileInPlace } from '../_shared/profile-enrichment.ts';
+import { loadRejectionExamples } from '../_shared/rejection-feedback.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -136,6 +137,7 @@ async function classifyEngagersForCompetitors(
   businessContext: string,
   idealLeadDescription: string = '',
   icpSummary: string = '',
+  rejectionFeedback: string = '',
 ): Promise<Map<string, EngagerVerdict>> {
   const out = new Map<string, EngagerVerdict>();
   if ((!businessContext && !idealLeadDescription) || engagers.length === 0) return out;
@@ -198,7 +200,7 @@ ${icpSummary ? `TARGET ICP: ${icpSummary}` : ''}
 - 60-79: plausible buyer (adjacent role or unclear seniority, right space)
 - 40-59: weak fit (wrong function or seniority, could still influence a purchase)
 - 0-39: clearly NOT a buyer (student, job seeker, irrelevant industry, private individual)
-Engagement alone is NOT fit — score the PERSON, not the action. Give a short fit_reason (max 12 words).
+Engagement alone is NOT fit — score the PERSON, not the action. Give a short fit_reason (max 12 words).${rejectionFeedback}
 
 RESPOND ONLY via the tool call.`;
 
@@ -597,6 +599,9 @@ Deno.serve(async (req) => {
     const companyEnrichCache = new Map<string, EnrichedCompany | null>();
     const companyAiCache = new Map<string, boolean>();
 
+    // Feedback loop: recently rejected leads become negative examples for the fit classifier
+    const rejectionFeedback = await loadRejectionExamples(supabase, user_id);
+
     // Lightweight rejected-profile collector for AI suggestions (cap 200/task)
     const rejectedProfiles: Array<{ headline: string; industry: string; company: string; companyIndustry: string; rejectionReason: string; signalType: string; }> = [];
     function captureRejected(fp: any, reason: string) {
@@ -725,7 +730,7 @@ Deno.serve(async (req) => {
 
           // AI competitor + perfect-lead + buyer-fit pre-classification (batched, runs BEFORE Unipile profile fetch)
           const competitorMap = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription,
-            `Target roles: ${icp.jobTitles.slice(0, 10).join(', ') || 'any'}. Target industries: ${icp.industries.slice(0, 8).join(', ') || 'any'}`);
+            `Target roles: ${icp.jobTitles.slice(0, 10).join(', ') || 'any'}. Target industries: ${icp.industries.slice(0, 8).join(', ') || 'any'}`, rejectionFeedback);
 
           for (const engager of engagers) {
             if (!hasTime()) break;
@@ -871,7 +876,7 @@ Deno.serve(async (req) => {
 
             // AI competitor + perfect-lead + buyer-fit pre-classification (batched, runs BEFORE Unipile profile fetch)
             const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription,
-              `Target roles: ${icp.jobTitles.slice(0, 10).join(', ') || 'any'}. Target industries: ${icp.industries.slice(0, 8).join(', ') || 'any'}`);
+              `Target roles: ${icp.jobTitles.slice(0, 10).join(', ') || 'any'}. Target industries: ${icp.industries.slice(0, 8).join(', ') || 'any'}`, rejectionFeedback);
 
             for (const engager of engagers) {
               if (!hasTime()) break;

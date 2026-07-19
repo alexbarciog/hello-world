@@ -7,6 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
 import { wordPhraseIncludes } from '../_shared/text-match.ts';
 import { fetchProfileWithExperience, enrichProfileInPlace } from '../_shared/profile-enrichment.ts';
+import { loadRejectionExamples } from '../_shared/rejection-feedback.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -594,6 +595,7 @@ async function classifyIntentBatch(
   businessContext: string,
   minIntentScore: number,
   idealLeadDescription: string = '',
+  rejectionFeedback: string = '',
 ): Promise<Map<string, IntentClassification>> {
   const results = new Map<string, IntentClassification>();
 
@@ -703,7 +705,7 @@ Rules:
 - Only set matches_perfect_lead=false when the author's headline CLEARLY contradicts the description (e.g. description says "VP of Marketing at e-commerce brands" and the author is a "Software Engineer at a bank").
 - Provide a 1-sentence match_reason explaining the decision.
 
-The pipeline will REJECT any post where matches_perfect_lead=false, regardless of intent score.` : ''}`;
+The pipeline will REJECT any post where matches_perfect_lead=false, regardless of intent score.` : ''}${rejectionFeedback}`;
 
   for (let i = 0; i < postsWithText.length; i += 8) {
     const batch = postsWithText.slice(i, i + 8);
@@ -951,6 +953,14 @@ Deno.serve(async (req) => {
 
     const newlyProcessedPostIds: string[] = [];
 
+    // Feedback loop: recently rejected leads become negative examples for the intent classifier
+    const rejectionFeedback = await loadRejectionExamples(supabase, user_id);
+
+    // Fresher searches after the first run: cross-run dedup means week-old posts
+    // are mostly already processed, so daily re-runs only need the last day.
+    const dateWindow = alreadyProcessed.size > 0 ? 'past_day' : 'past_week';
+    console.log(`[CONFIG] date_posted window: ${dateWindow} (${alreadyProcessed.size} previously processed posts)`);
+
     const pipelineStats = {
       keywords_processed: 0,
       total_posts_fetched: 0,
@@ -1087,7 +1097,7 @@ Deno.serve(async (req) => {
         // ── Step 1: Fetch ONE page (~25 posts) ──
         const keywordPosts: any[] = [];
         try {
-          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: 'past_week', limit: 25 };
+          const searchBody: any = { api: 'classic', category: 'posts', keywords: keyword, date_posted: dateWindow, limit: 25 };
           if (cursor) searchBody.cursor = cursor;
 
           // Retry-with-backoff on Unipile 429 (rate-limit). Up to 5 attempts: 5s, 10s, 20s, 30s, 30s.
@@ -1480,7 +1490,7 @@ Deno.serve(async (req) => {
 
       pipelineStats.sent_to_ai += postsForAI.length;
 
-      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription);
+      const intentResults = await classifyIntentBatch(postsForAI, business_context || '', MIN_INTENT_SCORE, idealLeadDescription, rejectionFeedback);
 
       // Track AI results in stats
       for (const p of postsForAI) {
