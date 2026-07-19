@@ -374,6 +374,8 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
       ? `\nPOST_AUTHOR_FIRST_NAME: ${signalPostAuthorFirst}\nENGAGEMENT_TYPE: ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post\nIMPORTANT: The lead did NOT publish this post — they ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post. In the trigger sentence you MUST attribute the post to ${signalPostAuthorFirst} by first name and mention the topic (e.g. "saw you ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post on {topic}"). Never say "your post" or "your take" when the lead is only an engager — that breaks trust.`
       : '';
 
+    const profileBlock = formatProfileBlock(req.leadProfile);
+
     const systemPrompt = `You are ${lead.firstName ? `messaging ${lead.firstName}` : 'writing a LinkedIn DM'} — founder to founder, peer to peer. This is the FIRST message right after they accepted your connection request. It has to feel like a real human wrote it in 30 seconds after glancing at their activity.
 
 ===== WHAT YOU KNOW =====
@@ -383,8 +385,9 @@ COMPANY: ${lead.company || '(unknown)'}
 WHAT_WE_DO (background context — use to position the "different approach", but do NOT pitch features): ${productDescription || '(unspecified)'}
 ${painPoints.length ? `PAIN_POINTS they might have:\n${painPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}` : ''}
 ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
-
+${profileBlock}
 ${postBlock}${authorBlock}
+
 
 ===== HOW TO WRITE IT =====
 Length: 35 to 60 words. Never over 70. Shorter is better — cut every word that does not earn its place.
