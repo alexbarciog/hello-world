@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, urlHasInternalId } from '../_shared/linkedin-public-url.ts';
+import { enrichProfileInPlace } from '../_shared/profile-enrichment.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -729,12 +730,13 @@ async function performExtraction(ctx: {
       const signalLabel = eng.engagement === 'like'
         ? (authorFirst ? `Liked ${authorFirst}'s LinkedIn post` : 'Liked LinkedIn post')
         : (authorFirst ? `Commented on ${authorFirst}'s LinkedIn post` : 'Commented on LinkedIn post');
+      // Enrich with experience so title/company come from the real current
+      // position rather than the headline; also yields the public slug.
+      const pseudo: any = { linkedin_url: eng.linkedin_url, provider_id: eng.profile_id, public_id: eng.public_slug, headline: eng.headline, company: eng.company };
+      await enrichProfileInPlace(pseudo, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
       let engagerUrl = eng.linkedin_url;
       if (urlHasInternalId(engagerUrl) || (!engagerUrl && eng.profile_id)) {
-        const pub = await resolvePublicLinkedinUrl(
-          { linkedin_url: engagerUrl, provider_id: eng.profile_id, public_id: eng.public_slug },
-          accountId, UNIPILE_API_KEY, UNIPILE_DSN,
-        );
+        const pub = await resolvePublicLinkedinUrl(pseudo, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
         engagerUrl = pub.linkedin_url || engagerUrl;
       }
       const { data: row, error: insErr } = await admin.from('contacts').insert({
@@ -742,9 +744,9 @@ async function performExtraction(ctx: {
         organization_id,
         first_name: eng.first_name || 'Unknown',
         last_name: eng.last_name,
-        title: eng.headline ? eng.headline.slice(0, 500) : null,
-        company: eng.company,
-        industry: null,
+        title: (pseudo.current_role || eng.headline || '').slice(0, 500) || null,
+        company: pseudo.company || eng.company,
+        industry: pseudo.industry || null,
         linkedin_url: engagerUrl,
         linkedin_profile_id: eng.profile_id,
         signal: signalLabel,

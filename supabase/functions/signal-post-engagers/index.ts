@@ -6,6 +6,7 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
 import { wordPhraseIncludes } from '../_shared/text-match.ts';
+import { fetchProfileWithExperience, enrichProfileInPlace } from '../_shared/profile-enrichment.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -129,12 +130,14 @@ function sanitizeLinkedinUrl(raw: string): string {
 function engagerKey(p: any): string {
   return String(p?.provider_id || p?.public_id || p?.public_identifier || p?.id || `${p?.first_name || p?.name || ''}|${p?.headline || p?.title || ''}`).slice(0, 200);
 }
+type EngagerVerdict = { is_competitor: boolean; reason: string; matches_perfect_lead: boolean; match_reason: string; fit_score: number | null; fit_reason: string };
 async function classifyEngagersForCompetitors(
   engagers: any[],
   businessContext: string,
   idealLeadDescription: string = '',
-): Promise<Map<string, { is_competitor: boolean; reason: string; matches_perfect_lead: boolean; match_reason: string }>> {
-  const out = new Map<string, { is_competitor: boolean; reason: string; matches_perfect_lead: boolean; match_reason: string }>();
+  icpSummary: string = '',
+): Promise<Map<string, EngagerVerdict>> {
+  const out = new Map<string, EngagerVerdict>();
   if ((!businessContext && !idealLeadDescription) || engagers.length === 0) return out;
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) return out;
@@ -186,6 +189,17 @@ For each person, ALSO decide whether the headline + company plausibly fits this 
 
 The pipeline will SKIP any person where matches_perfect_lead=false.` : ''}
 
+═══════════════════════════════════════════════════════════════════════════════
+BUYER FIT SCORE (for every person, independent of the checks above)
+═══════════════════════════════════════════════════════════════════════════════
+Score 0-100 how well this person fits as a potential BUYER of the user's business:
+${icpSummary ? `TARGET ICP: ${icpSummary}` : ''}
+- 80-100: clearly the buyer persona (right role, seniority, and company type)
+- 60-79: plausible buyer (adjacent role or unclear seniority, right space)
+- 40-59: weak fit (wrong function or seniority, could still influence a purchase)
+- 0-39: clearly NOT a buyer (student, job seeker, irrelevant industry, private individual)
+Engagement alone is NOT fit — score the PERSON, not the action. Give a short fit_reason (max 12 words).
+
 RESPOND ONLY via the tool call.`;
 
   for (let i = 0; i < items.length; i += 10) {
@@ -222,8 +236,10 @@ RESPOND ONLY via the tool call.`;
                         reason: { type: 'string' },
                         matches_perfect_lead: { type: 'boolean', description: 'True if person plausibly fits the user\'s "Perfect Lead" description. Default true when unsure.' },
                         match_reason: { type: 'string' },
+                        fit_score: { type: 'number', description: '0-100 buyer-persona fit score for this person' },
+                        fit_reason: { type: 'string', description: 'Short reason for the fit score, max 12 words' },
                       },
-                      required: ['id', 'is_competitor', 'reason', 'matches_perfect_lead', 'match_reason'],
+                      required: ['id', 'is_competitor', 'reason', 'matches_perfect_lead', 'match_reason', 'fit_score', 'fit_reason'],
                       additionalProperties: false,
                     },
                   },
@@ -252,6 +268,8 @@ RESPOND ONLY via the tool call.`;
             reason: String(r.reason || ''),
             matches_perfect_lead: typeof r.matches_perfect_lead === 'boolean' ? r.matches_perfect_lead : true,
             match_reason: String(r.match_reason || ''),
+            fit_score: typeof r.fit_score === 'number' && r.fit_score >= 0 && r.fit_score <= 100 ? r.fit_score : null,
+            fit_reason: String(r.fit_reason || ''),
           });
         }
       }
@@ -287,7 +305,7 @@ async function fetchProfileIfNeeded(item: any,accountId: string,apiKey: string,d
   const numericOrUrn=item.id;
   const fetchId=id||(numericOrUrn&&!String(numericOrUrn).startsWith('urn:')&&!String(numericOrUrn).startsWith('ACo')?numericOrUrn:null);
   if(!fetchId) return norm.first_name?norm:null;
-  try{const res=await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`,apiKey,dsn);if(!res.ok){await res.text();return norm.first_name?norm:null;}return normalizeProfile(await res.json());}catch{return norm.first_name?norm:null;}
+  try{const full=await fetchProfileWithExperience(String(fetchId),accountId,apiKey,dsn);if(!full)return norm.first_name?norm:null;return normalizeProfile(full);}catch{return norm.first_name?norm:null;}
 }
 function delay(ms: number){return new Promise(r=>setTimeout(r,ms));}
 
@@ -447,18 +465,23 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'failed';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'exists';
+  if(accountId) await enrichProfileInPlace(p, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!);
   const pub = accountId ? await resolvePublicLinkedinUrl(p, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!) : null;
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
   const ei: ICPFilters={jobTitles:[],industries:[],locations:[],companySizes:[],companyTypes:[],excludeKeywords:[],competitorCompanies:[],restrictedCountries:[],restrictedRoles:[]};
-  const rt=classifyContact(m,icp||ei,hl)||'cold';
-  const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
+  // AI fit score (from the batched engager classifier) drives tier + score when present.
+  const fitScore = typeof p._fit_score === 'number' ? p._fit_score : null;
+  const rt = fitScore !== null ? (fitScore >= 75 ? 'hot' : fitScore >= 55 ? 'warm' : 'cold') : (classifyContact(m,icp||ei,hl)||'cold');
+  const q = fitScore !== null ? fitScore : m.score;
+  const sa=true;const sb2=q>=60;const sc=q>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
+  const signalWithReason = p._fit_reason ? `${signal} — ${p._fit_reason}` : signal;
   const{data:ins,error}=await sb.from('contacts').insert({
-    user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
+    user_id:uid,first_name:fn,last_name:lnn,title:p.current_role||p.headline||p.title||null,
     company:enrichedCompany?.name||p.company||p.current_company?.name||null,
     industry:enrichedCompany?.industry||p.industry||p.current_company?.industry||null,
     linkedin_url:pub?.linkedin_url||p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),
-    linkedin_profile_id:lpid,source_campaign_id:null,signal,signal_post_url:spu?(normalizePostUrl(spu)||spu):null,signal_post_excerpt:(postExcerpt||'').slice(0,500)||null,ai_score:as,
+    linkedin_profile_id:lpid,source_campaign_id:null,signal:signalWithReason,signal_post_url:spu?(normalizePostUrl(spu)||spu):null,signal_post_excerpt:(postExcerpt||'').slice(0,500)||null,ai_score:as,
     signal_a_hit:sa,signal_b_hit:sb2,signal_c_hit:sc,email_enriched:false,list_name:ln,
     company_icon_color:['orange','blue','green','purple','pink','gray'][Math.floor(Math.random()*6)],relevance_tier:rt,
     approval_status: manualApproval ? 'pending' : 'auto_approved',
@@ -700,8 +723,9 @@ Deno.serve(async (req) => {
           const postText = post.text || post.commentary || '';
           const snippet = postText.length > 50 ? postText.slice(0, 47) + '...' : postText;
 
-          // AI competitor + perfect-lead pre-classification (batched, runs BEFORE Unipile profile fetch)
-          const competitorMap = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription);
+          // AI competitor + perfect-lead + buyer-fit pre-classification (batched, runs BEFORE Unipile profile fetch)
+          const competitorMap = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription,
+            `Target roles: ${icp.jobTitles.slice(0, 10).join(', ') || 'any'}. Target industries: ${icp.industries.slice(0, 8).join(', ') || 'any'}`);
 
           for (const engager of engagers) {
             if (!hasTime()) break;
@@ -719,6 +743,13 @@ Deno.serve(async (req) => {
               diag.perfect_lead_mismatch++;
               console.log(`[AI] 🚫 perfect-lead-mismatch: ${profile.first_name || profile.name || 'unknown'} — ${compVerdict.match_reason}`);
               captureRejected(profile, 'perfect_lead_mismatch');
+              continue;
+            }
+            // Buyer-fit gate: an engagement (like/comment) alone is weak intent — the person must at least resemble a buyer.
+            if (compVerdict && typeof compVerdict.fit_score === 'number' && compVerdict.fit_score < 40) {
+              diag.low_fit_filtered = (diag.low_fit_filtered || 0) + 1;
+              console.log(`[AI] 🚫 low-fit (${compVerdict.fit_score}): ${profile.first_name || profile.name || 'unknown'} — ${compVerdict.fit_reason}`);
+              captureRejected(profile, `low_fit_${compVerdict.fit_score}`);
               continue;
             }
             const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
@@ -755,6 +786,7 @@ Deno.serve(async (req) => {
               enrichedCo = gate.company;
             }
             const signal = snippet ? `Reacted to your post: "${snippet}"` : 'Reacted to your post';
+            if (compVerdict) { fullProfile._fit_score = compVerdict.fit_score; fullProfile._fit_reason = compVerdict.fit_reason; }
             const result = await insertContact(supabase, fullProfile, user_id, agent_id, list_name, match, signal, postUrl, icp, manual_approval, enrichedCo, postText, account_id);
             if (result === 'exists') { diag.already_in_contacts++; continue; }
             if (result === 'inserted') { inserted++; diag.inserted++; if (cls === 'cold') coldCount++; else hotWarmCount++; }
@@ -837,8 +869,9 @@ Deno.serve(async (req) => {
             const postUrl = post.url||post.share_url||post.permalink||`https://www.linkedin.com/feed/update/${postId}`;
             const postText2 = post.text || post.commentary || '';
 
-            // AI competitor + perfect-lead pre-classification (batched, runs BEFORE Unipile profile fetch)
-            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription);
+            // AI competitor + perfect-lead + buyer-fit pre-classification (batched, runs BEFORE Unipile profile fetch)
+            const competitorMap2 = await classifyEngagersForCompetitors(engagers, business_context || '', idealLeadDescription,
+              `Target roles: ${icp.jobTitles.slice(0, 10).join(', ') || 'any'}. Target industries: ${icp.industries.slice(0, 8).join(', ') || 'any'}`);
 
             for (const engager of engagers) {
               if (!hasTime()) break;
@@ -856,6 +889,13 @@ Deno.serve(async (req) => {
                 diag.perfect_lead_mismatch++;
                 console.log(`[AI] 🚫 perfect-lead-mismatch: ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.match_reason}`);
                 captureRejected(ep2, 'perfect_lead_mismatch');
+                continue;
+              }
+              // Buyer-fit gate (see own-posts loop)
+              if (compVerdict2 && typeof compVerdict2.fit_score === 'number' && compVerdict2.fit_score < 40) {
+                diag.low_fit_filtered = (diag.low_fit_filtered || 0) + 1;
+                console.log(`[AI] 🚫 low-fit (${compVerdict2.fit_score}): ${ep2.first_name || ep2.name || 'unknown'} — ${compVerdict2.fit_reason}`);
+                captureRejected(ep2, `low_fit_${compVerdict2.fit_score}`);
                 continue;
               }
               const pf = engagerPreFilter(quickHl, icp, isHighPrecision);
@@ -891,6 +931,7 @@ Deno.serve(async (req) => {
                 else if (gate.verdict === 'accept_industry') diag.company_industry_matched++;
                 enrichedCo2 = gate.company;
               }
+              if (compVerdict2) { fp._fit_score = compVerdict2.fit_score; fp._fit_reason = compVerdict2.fit_reason; }
               const result = await insertContact(supabase, fp, user_id, agent_id, list_name, match, `Engaged with ${profileName}'s post`, postUrl, icp, manual_approval, enrichedCo2, postText2, account_id);
               if (result === 'exists') { diag.already_in_contacts++; continue; }
               if (result === 'inserted') { inserted++; diag.inserted++; if (cls2 === 'cold') coldCount++; else hotWarmCount++; }

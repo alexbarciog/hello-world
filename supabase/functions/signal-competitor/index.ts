@@ -6,6 +6,7 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
 import { wordPhraseIncludes } from '../_shared/text-match.ts';
+import { fetchProfileWithExperience, enrichProfileInPlace } from '../_shared/profile-enrichment.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -163,9 +164,9 @@ async function fetchFullProfile(item: any,accountId: string,apiKey: string,dsn: 
   const fetchId=id||(numericOrUrn&&!String(numericOrUrn).startsWith('urn:')&&!String(numericOrUrn).startsWith('ACo')?numericOrUrn:null);
   if(!fetchId) return normalizeProfile({...item});
   try{
-    const res=await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`,apiKey,dsn);
-    if(!res.ok){await res.text();return normalizeProfile({...item});}
-    return normalizeProfile(await res.json());
+    const full=await fetchProfileWithExperience(String(fetchId),accountId,apiKey,dsn);
+    if(!full)return normalizeProfile({...item});
+    return normalizeProfile(full);
   }catch{return normalizeProfile({...item});}
 }
 function delay(ms: number){return new Promise(r=>setTimeout(r,ms));}
@@ -379,6 +380,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   const lpid=p.public_id||p.public_identifier||p.provider_id||p.id; if(!lpid) return 'rejected';
   const{data:ex}=await sb.from('contacts').select('id').eq('user_id',uid).eq('linkedin_profile_id',lpid).limit(1);
   if(ex?.length>0) return 'duplicate';
+  if(accountId) await enrichProfileInPlace(p, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!);
   const pub = accountId ? await resolvePublicLinkedinUrl(p, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!) : null;
   const fn=p.first_name||p.name?.split(' ')[0]||'Unknown'; const lnn=p.last_name||p.name?.split(' ').slice(1).join(' ')||'';
   const hl=p.headline||p.title||'';
@@ -386,7 +388,7 @@ async function insertContact(sb: any,p: any,uid: string,aid: string,ln: string,m
   const rt=classifyCompetitorContact(m,icp||ei,hl)||'warm';
   const sa=true;const sb2=m.score>=60;const sc=m.score>=80;const as=Math.min(3,[sa,sb2,sc].filter(Boolean).length);
   const{data:ins,error}=await sb.from('contacts').insert({
-    user_id:uid,first_name:fn,last_name:lnn,title:p.headline||p.title||null,
+    user_id:uid,first_name:fn,last_name:lnn,title:p.current_role||p.headline||p.title||null,
     company: enrichedCompany?.name || p.company || p.current_company?.name || null,
     industry: enrichedCompany?.industry || p.industry || null,
     linkedin_url:pub?.linkedin_url||p.linkedin_url||p.public_url||p.profile_url||(lpid?`https://www.linkedin.com/in/${lpid}`:null),

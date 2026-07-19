@@ -6,6 +6,7 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
 import { wordPhraseIncludes } from '../_shared/text-match.ts';
+import { fetchProfileWithExperience, enrichProfileInPlace } from '../_shared/profile-enrichment.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -227,13 +228,11 @@ async function fetchFullProfile(item: any, accountId: string, apiKey: string, ds
   }
 
   try {
-    const res = await unipileGet(`/api/v1/linkedin/profile/${fetchId}?account_id=${accountId}`, apiKey, dsn);
-    if (!res.ok) {
-      await res.text();
+    const fetched = await fetchProfileWithExperience(String(fetchId), accountId, apiKey, dsn);
+    if (!fetched) {
       return { ...norm, public_id: norm.public_id || existingId };
     }
 
-    const fetched = await res.json();
     const normalizedFetched = normalizeProfile(fetched);
     return {
       ...normalizedFetched,
@@ -411,6 +410,7 @@ async function insertContact(
   if (!linkedinProfileId) return 'rejected';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
   if (existing && existing.length > 0) return 'duplicate';
+  if (accountId) await enrichProfileInPlace(profile, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!);
   const pub = accountId ? await resolvePublicLinkedinUrl(profile, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!) : null;
   const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
@@ -427,7 +427,7 @@ async function insertContact(
 
   const { data: inserted, error } = await supabase.from('contacts').insert({
     user_id: userId, first_name: firstName, last_name: lastName,
-    title: profile.headline || profile.title || null,
+    title: profile.current_role || profile.headline || profile.title || null,
     company: enrichedCompany?.name || profile.company || profile.current_company?.name || null,
     industry: enrichedCompany?.industry || profile.industry || profile.current_company?.industry || null,
     linkedin_url: pub?.linkedin_url || profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
