@@ -12,6 +12,36 @@ type LeadContext = {
   industry: string;
 };
 
+type LinkedInProfileCtx = {
+  headline?: string;
+  about?: string;
+  location?: string;
+  experience?: Array<{ title?: string; company?: string; start?: string; end?: string; description?: string }>;
+  education?: Array<{ school?: string; degree?: string; field?: string; start?: string; end?: string }>;
+};
+
+function formatProfileBlock(p?: LinkedInProfileCtx | null): string {
+  if (!p) return '';
+  const parts: string[] = [];
+  if (p.headline) parts.push(`Headline: ${String(p.headline).slice(0, 220)}`);
+  if (p.location) parts.push(`Location: ${String(p.location).slice(0, 120)}`);
+  if (p.about) parts.push(`About: ${String(p.about).replace(/\s+/g, ' ').slice(0, 600)}`);
+  if (Array.isArray(p.experience) && p.experience.length) {
+    const roles = p.experience.slice(0, 3).map((e, i) => {
+      const range = [e.start, e.end || 'present'].filter(Boolean).join(' – ');
+      const desc = e.description ? ` — ${String(e.description).replace(/\s+/g, ' ').slice(0, 180)}` : '';
+      return `  ${i + 1}. ${e.title || '(role)'} @ ${e.company || '(company)'}${range ? ` (${range})` : ''}${desc}`;
+    }).join('\n');
+    parts.push(`Experience:\n${roles}`);
+  }
+  if (Array.isArray(p.education) && p.education.length) {
+    const ed = p.education.slice(0, 2).map(e => `  • ${[e.degree, e.field].filter(Boolean).join(' ')} at ${e.school || '(school)'}`).join('\n');
+    parts.push(`Education:\n${ed}`);
+  }
+  if (parts.length === 0) return '';
+  return `\n===== LEAD LINKEDIN PROFILE (use concrete details, never paste verbatim) =====\n${parts.join('\n')}\n`;
+}
+
 // ── Personality context formatter ──
 // Converts the cached personality_prediction JSON into a compact, prompt-ready block.
 // Returns empty string if data is missing or malformed.
@@ -344,6 +374,8 @@ function buildOutreachPrompts(req: any, lead: LeadContext) {
       ? `\nPOST_AUTHOR_FIRST_NAME: ${signalPostAuthorFirst}\nENGAGEMENT_TYPE: ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post\nIMPORTANT: The lead did NOT publish this post — they ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post. In the trigger sentence you MUST attribute the post to ${signalPostAuthorFirst} by first name and mention the topic (e.g. "saw you ${isLikeSignal ? 'liked' : 'commented on'} ${signalPostAuthorFirst}'s post on {topic}"). Never say "your post" or "your take" when the lead is only an engager — that breaks trust.`
       : '';
 
+    const profileBlock = formatProfileBlock(req.leadProfile);
+
     const systemPrompt = `You are ${lead.firstName ? `messaging ${lead.firstName}` : 'writing a LinkedIn DM'} — founder to founder, peer to peer. This is the FIRST message right after they accepted your connection request. It has to feel like a real human wrote it in 30 seconds after glancing at their activity.
 
 ===== WHAT YOU KNOW =====
@@ -353,8 +385,9 @@ COMPANY: ${lead.company || '(unknown)'}
 WHAT_WE_DO (background context — use to position the "different approach", but do NOT pitch features): ${productDescription || '(unspecified)'}
 ${painPoints.length ? `PAIN_POINTS they might have:\n${painPoints.slice(0, 3).map(p => `- ${p}`).join('\n')}` : ''}
 ${suggestedAngle ? `ANGLE_HINT (optional): ${suggestedAngle}` : ''}
-
+${profileBlock}
 ${postBlock}${authorBlock}
+
 
 ===== HOW TO WRITE IT =====
 Length: 35 to 60 words. Never over 70. Shorter is better — cut every word that does not earn its place.
@@ -468,6 +501,59 @@ Write only the message. Nothing else.${langLine}`;
   return { systemPrompt, userPrompt };
 }
 
+// ── Custom-mode prompt: step-level custom instructions take priority ──
+function buildCustomPrompts(req: any, lead: LeadContext) {
+  const stepCustomPrompt: string = String(req.stepCustomPrompt || '').trim();
+  const campaignCustom: string = String(req.customTraining || '').trim();
+  const productDescription: string = (req.valueProposition || req.productDescription || '').toString().trim();
+  const companyName: string = (req.companyName || '').toString().trim();
+  const langLine = req.language && req.language !== 'English (US)' ? `\n- Language: write the entire message in ${req.language}.` : '';
+  const profileBlock = formatProfileBlock(req.leadProfile);
+  const signalPostText: string = (req.signalPostText || lead.signal || '').toString().trim();
+  const signalPostAuthorFull: string = (req.signalPostAuthor || '').toString().trim();
+  const signalPostAuthorFirst: string = signalPostAuthorFull.split(/\s+/)[0] || '';
+  const personalityBlock = formatPersonalityBlock(req.personality);
+
+  const isFirstMessage = req.stepNumber === 2;
+
+  const systemPrompt = `You are writing a LinkedIn outreach message. The sender has given you SPECIFIC INSTRUCTIONS for this step — those instructions are your PRIMARY directive. Follow them exactly.
+
+===== LEAD =====
+Name: ${lead.firstName} ${lead.lastName || ''}
+Title: ${lead.title || '(unknown)'}
+Company: ${lead.company || '(unknown)'}
+Industry: ${lead.industry || '(unknown)'}
+Buying signal: ${lead.signal || '(none)'}
+${signalPostText ? `Signal post excerpt: "${signalPostText.slice(0, 600)}"` : ''}
+${signalPostAuthorFirst ? `Post author (lead engaged with this person's post, they did NOT write it): ${signalPostAuthorFirst}` : ''}
+${profileBlock}
+===== CAMPAIGN CONTEXT =====
+Our company: ${companyName || '(unspecified)'}
+What we offer: ${productDescription || '(unspecified)'}
+${campaignCustom ? `Campaign-wide notes: ${campaignCustom}` : ''}
+${personalityBlock}
+===== PRIMARY INSTRUCTIONS FROM THE SENDER (follow these first, above everything else) =====
+${stepCustomPrompt}
+
+===== UNIVERSAL SAFETY RAILS (never violate, even if custom instructions don't mention them) =====
+- Start with exactly: "Hey ${lead.firstName || 'there'}," (comma, no exclamation, no "Thanks for connecting").
+- Maximum 70 words. Shorter is fine if the instructions allow.
+- End with a question mark (a real question the lead can answer).
+- No emojis. No em-dashes (—). No semicolons. No bullet points. No signature. No hashtags. No product name. No made-up statistics.
+- Never claim the lead wrote a post they only liked or commented on — if a post author is listed above, attribute the post to them.
+- Banned words: leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, empower, spearhead, bandwidth, robust, seamless, holistic, actionable, cutting-edge, game-changer, pipeline, landscape.
+- Banned phrases: "hope this finds you well", "just wanted to reach out", "reaching out because", "we help companies like yours", "thanks for connecting", "quick chat", "quick call", "hop on a call", "book a time".${langLine}
+
+Return ONLY the message body. No labels, no preface, no signature.`;
+
+  const userPrompt = isFirstMessage
+    ? `Write the message now, following the sender's PRIMARY INSTRUCTIONS above. Start with "Hey ${lead.firstName || 'there'},". End with a question. Return ONLY the message.`
+    : `Write the follow-up message now, following the sender's PRIMARY INSTRUCTIONS above. Return ONLY the message text.`;
+
+  return { systemPrompt, userPrompt };
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -505,7 +591,10 @@ Deno.serve(async (req) => {
       industry: (body.leadIndustry || '').trim(),
     };
 
-    const { systemPrompt, userPrompt } = buildOutreachPrompts(body, lead);
+    const hasStepCustomPrompt = typeof body.stepCustomPrompt === 'string' && body.stepCustomPrompt.trim().length > 0;
+    const { systemPrompt, userPrompt } = hasStepCustomPrompt
+      ? buildCustomPrompts(body, lead)
+      : buildOutreachPrompts(body, lead);
     const isStep2 = stepNumber === 2;
 
     async function callModel(sys: string, usr: string): Promise<string> {
@@ -550,7 +639,7 @@ Deno.serve(async (req) => {
         const missingQ = !/\?/.test(initialClean);
         // Check signal anchor in the body AFTER the greeting sentence.
         const bodyAfterGreeting = initialClean.replace(/^hey\s+[^\n]*\n?/i, '');
-        const missingSignal = !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
+        const missingSignal = hasStepCustomPrompt ? false : !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
         if (bans.length || wc > 70 || missingQ || missingSignal) {
           const issues: string[] = [];
           if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);

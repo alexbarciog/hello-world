@@ -485,6 +485,9 @@ async function processCampaign(
             lovableApiKey,
             supabaseUrl,
             supabaseServiceRoleKey,
+            unipileDsn,
+            unipileApiKey,
+            accountId,
           );
           if (gen) generatedCount++;
 
@@ -692,6 +695,9 @@ async function processCampaign(
             lovableApiKey,
             supabaseUrl,
             supabaseServiceRoleKey,
+            unipileDsn,
+            unipileApiKey,
+            accountId,
           );
           if (gen) generatedCount++;
 
@@ -825,6 +831,9 @@ async function processCampaign(
             lovableApiKey,
             supabaseUrl,
             supabaseServiceRoleKey,
+            unipileDsn,
+            unipileApiKey,
+            accountId,
           );
           if (gen) generatedCount++;
         } catch (err) {
@@ -849,6 +858,9 @@ async function generateNextStepMessage(
   lovableApiKey: string,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
+  unipileDsn?: string,
+  unipileApiKey?: string,
+  unipileAccountId?: string,
 ): Promise<boolean> {
   const nextStep = workflowSteps[wfIndex];
   if (!nextStep || nextStep.type !== 'message') return false;
@@ -865,7 +877,7 @@ async function generateNextStepMessage(
 
   const { data: contact } = await supabase
     .from('contacts')
-    .select('first_name, last_name, company, title, signal, signal_post_excerpt, signal_post_author, industry, personality_prediction')
+    .select('first_name, last_name, company, title, signal, signal_post_excerpt, signal_post_author, industry, personality_prediction, linkedin_profile_id, linkedin_url, linkedin_headline, linkedin_about, linkedin_experience, linkedin_education, linkedin_location, linkedin_profile_fetched_at')
     .eq('id', req.contact_id)
     .single();
 
@@ -893,6 +905,21 @@ async function generateNextStepMessage(
       ? previousMessagesArray[previousMessagesArray.length - 1]
       : '';
 
+    // Enrich full LinkedIn profile (cached ~30 days) so AI has real context.
+    let leadProfile: any = null;
+    try {
+      leadProfile = await enrichContactLinkedInProfile(
+        supabase,
+        contact,
+        req.contact_id,
+        unipileDsn,
+        unipileApiKey,
+        unipileAccountId,
+      );
+    } catch (err) {
+      console.warn(`[followup] enrichLinkedInProfile failed for ${req.contact_id}:`, (err as Error)?.message);
+    }
+
     message = await invokeGenerateStepMessage(supabaseUrl, supabaseServiceRoleKey, {
       stepNumber: displayStepNumber,
       previousStepMessage,
@@ -904,7 +931,8 @@ async function generateNextStepMessage(
       messageTone: campaign.message_tone,
       industry: campaign.industry,
       language: campaign.language,
-      customTraining: [campaign.custom_training, nextStep.step_instructions].filter(Boolean).join('\n\n'),
+      customTraining: campaign.custom_training || '',
+      stepCustomPrompt: nextStep.step_instructions || '',
       firstName: contact.first_name,
       lastName: contact.last_name,
       leadCompany: contact.company,
@@ -914,7 +942,10 @@ async function generateNextStepMessage(
       signalPostAuthor: (contact as any).signal_post_author || '',
       leadIndustry: contact.industry,
       personality: contact.personality_prediction,
+      leadHeadline: leadProfile?.headline || contact.linkedin_headline || '',
+      leadProfile,
     });
+
 
     if (!message.trim()) {
       console.error(`[followup] generate-step-message returned empty for contact ${req.contact_id}`);
@@ -986,7 +1017,86 @@ async function invokeGenerateStepMessage(
   }
 }
 
+// ── LinkedIn profile enrichment (cached on contacts row) ──
+function mapUnipileProfile(p: any): any {
+  if (!p || typeof p !== 'object') return null;
+  const headline = p.headline || p.title || p.occupation || '';
+  const about = p.summary || p.about || p.bio || '';
+  const location = p.location || p?.geo?.full || p.geo_region || p.country || '';
+  const rawExp = Array.isArray(p.work_experience) ? p.work_experience
+    : Array.isArray(p.experience) ? p.experience
+    : Array.isArray(p.experiences) ? p.experiences : [];
+  const experience = rawExp.slice(0, 8).map((e: any) => ({
+    title: e?.position || e?.title || e?.role || '',
+    company: e?.company || e?.company_name || e?.employer || '',
+    start: e?.start || e?.start_date || e?.starts_at || '',
+    end: e?.end || e?.end_date || e?.ends_at || '',
+    description: e?.description || e?.summary || '',
+  })).filter((e: any) => e.title || e.company);
+  const rawEd = Array.isArray(p.education) ? p.education : [];
+  const education = rawEd.slice(0, 4).map((e: any) => ({
+    school: e?.school || e?.school_name || e?.institution || '',
+    degree: e?.degree || '',
+    field: e?.field || e?.field_of_study || '',
+    start: e?.start || e?.start_date || '',
+    end: e?.end || e?.end_date || '',
+  })).filter((e: any) => e.school);
+  return { headline, about, location, experience, education };
+}
+
+async function enrichContactLinkedInProfile(
+  supabase: any,
+  contact: any,
+  contactId: string,
+  dsn?: string,
+  apiKey?: string,
+  accountId?: string,
+): Promise<any | null> {
+  // Use cache if fetched in the last 30 days.
+  const fetchedAt = contact?.linkedin_profile_fetched_at ? new Date(contact.linkedin_profile_fetched_at).getTime() : 0;
+  const cacheFresh = fetchedAt && (Date.now() - fetchedAt < 30 * 24 * 60 * 60 * 1000);
+  const cached = {
+    headline: contact?.linkedin_headline || '',
+    about: contact?.linkedin_about || '',
+    location: contact?.linkedin_location || '',
+    experience: contact?.linkedin_experience || [],
+    education: contact?.linkedin_education || [],
+  };
+  if (cacheFresh && (cached.headline || cached.about || (Array.isArray(cached.experience) && cached.experience.length))) {
+    return cached;
+  }
+
+  if (!dsn || !apiKey || !accountId) return cached.headline ? cached : null;
+  const publicId = contact?.linkedin_profile_id || extractLinkedinId(contact?.linkedin_url);
+  if (!publicId) return cached.headline ? cached : null;
+
+  try {
+    const url = `https://${dsn}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`;
+    const res = await fetch(url, { headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' } });
+    if (!res.ok) {
+      console.warn(`[enrichLI] ${publicId} HTTP ${res.status}`);
+      return cached.headline ? cached : null;
+    }
+    const raw = await res.json();
+    const mapped = mapUnipileProfile(raw);
+    if (!mapped) return cached.headline ? cached : null;
+    await supabase.from('contacts').update({
+      linkedin_headline: mapped.headline || null,
+      linkedin_about: mapped.about || null,
+      linkedin_location: mapped.location || null,
+      linkedin_experience: mapped.experience || null,
+      linkedin_education: mapped.education || null,
+      linkedin_profile_fetched_at: new Date().toISOString(),
+    }).eq('id', contactId);
+    return mapped;
+  } catch (err) {
+    console.warn('[enrichLI] threw:', (err as Error)?.message);
+    return cached.headline ? cached : null;
+  }
+}
+
 // ── Unipile API helpers ──
+
 
 async function resolveProviderId(
   dsn: string, apiKey: string, accountId: string, publicId: string
