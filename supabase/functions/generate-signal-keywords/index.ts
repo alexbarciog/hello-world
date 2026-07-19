@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -5,6 +7,8 @@ const corsHeaders = {
 
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+const UNIPILE_API_KEY = Deno.env.get('UNIPILE_API_KEY');
+const UNIPILE_DSN = Deno.env.get('UNIPILE_DSN');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STAGE 1 — Website scraping
@@ -45,7 +49,7 @@ async function scrapeWebsite(websiteUrl: string): Promise<string> {
         const json = await fc.json();
         const md = json?.data?.markdown || json?.markdown || '';
         if (md && md.length > 100) {
-          return md.substring(0, 3000);
+          return md.substring(0, 4500);
         }
       } else {
         console.warn('[KW_GEN] Firecrawl failed, falling back to fetch:', fc.status);
@@ -73,7 +77,7 @@ async function scrapeWebsite(websiteUrl: string): Promise<string> {
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    return cleaned.substring(0, 2500);
+    return cleaned.substring(0, 4000);
   } catch (e) {
     console.warn('[KW_GEN] Raw fetch timeout/error:', e instanceof Error ? e.message : e);
     return '';
@@ -132,7 +136,7 @@ async function callAITool(args: {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STAGE 2 — Business analysis
+// STAGE 2 — Business analysis (types; the AI call is combined with Stage 3 below)
 // ─────────────────────────────────────────────────────────────────────────────
 interface BusinessAnalysis {
   what_they_sell: string;
@@ -143,133 +147,92 @@ interface BusinessAnalysis {
   competitors_or_alternatives: string[];
   buyer_vocabulary: string[];
   category: string;
-}
-
-async function analyseBusinessFromWebsite(
-  websiteContent: string,
-  websiteUrl: string,
-  fallbackHints: { companyName?: string; description?: string; painPoints?: string | string[] },
-): Promise<BusinessAnalysis> {
-  const hintsBlock = [
-    fallbackHints.companyName && `Company name (user-provided): ${fallbackHints.companyName}`,
-    fallbackHints.description && `Description (user-provided): ${fallbackHints.description}`,
-    fallbackHints.painPoints && `Pain points (user-provided): ${Array.isArray(fallbackHints.painPoints) ? fallbackHints.painPoints.join(', ') : fallbackHints.painPoints}`,
-  ].filter(Boolean).join('\n');
-
-  const userPrompt = `Analyse this company's website to deeply understand their business.
-
-WEBSITE URL: ${websiteUrl}
-
-${hintsBlock ? `USER-PROVIDED CONTEXT:\n${hintsBlock}\n` : ''}
-WEBSITE CONTENT:
-${websiteContent}
-
-Be specific and concrete. No vague generalisations. Extract who really buys this and what pain they had RIGHT BEFORE deciding to buy.`;
-
-  return await callAITool({
-    userPrompt,
-    temperature: 0.1,
-    toolName: 'return_business_analysis',
-    toolDescription: 'Return a structured analysis of the business',
-    parameters: {
-      type: 'object',
-      properties: {
-        what_they_sell: { type: 'string', description: 'One sentence describing the exact product or service' },
-        primary_buyer: { type: 'string', description: 'Who is the main person who buys this — their role and company type' },
-        core_problem_solved: { type: 'string', description: 'The specific pain this eliminates — in plain English' },
-        before_state: { type: 'string', description: 'What does the buyer\'s life look like before they buy this? what are they struggling with?' },
-        after_state: { type: 'string', description: 'What does their life look like after buying this?' },
-        competitors_or_alternatives: { type: 'array', items: { type: 'string' }, description: 'List of tools or methods buyers use before finding this' },
-        buyer_vocabulary: { type: 'array', items: { type: 'string' }, description: '5-8 words or phrases the buyer themselves would use to describe their problem — not marketing language' },
-        category: { type: 'string', description: 'What type of product is this: SaaS tool / agency / consulting / platform / marketplace / other' },
-      },
-      required: ['what_they_sell', 'primary_buyer', 'core_problem_solved', 'before_state', 'after_state', 'competitors_or_alternatives', 'buyer_vocabulary', 'category'],
-      additionalProperties: false,
-    },
-  });
+  // Template slots — buyer-vocabulary nouns used for deterministic keyword
+  // expansion (the guaranteed "looking for a X" / "need someone to build Y" set).
+  service_category_buyer_words: string[]; // what buyers CALL this ("dev agency", "seo agency")
+  things_buyers_want_built: string[];     // deliverables with article ("an mvp", "a mobile app") — service businesses
+  outsourced_functions: string[];         // functions buyers outsource ("app development", "lead generation")
+  famous_alternatives: string[];          // ONLY globally famous alternatives (upwork, fiverr, in-house team)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STAGE 3 — Keyword generation from analysis
+// STAGE 3 — Keyword categories
+//
+// Keywords are LinkedIn post SEARCH QUERIES, not exact-match triggers: each one
+// is sent to Unipile post search and the downstream AI classifier judges every
+// returned post (`PHRASE_MATCH_REQUIRED = false` in signal-keyword-posts).
+// So the objective is RETRIEVAL: queries whose result pools are dense in real
+// buyers — not poetic phrases nobody ever posts.
 // ─────────────────────────────────────────────────────────────────────────────
 interface GeneratedKeywords {
-  frustration_current_tool: string[];
+  direct_ask: string[];
+  project_need: string[];
+  vendor_evaluation: string[];
   seeking_alternatives: string[];
-  describing_pain: string[];
-  asking_network: string[];
-  budget_decision: string[];
-  competitor_frustration: string[];
-  problem_confession: string[];
+  pain_point: string[];
 }
 
-async function generateKeywordsFromAnalysis(analysis: BusinessAnalysis): Promise<GeneratedKeywords> {
-  const systemPrompt = `You are a signal monitoring specialist for a B2B lead generation platform.
-
-Your job is to generate LinkedIn keyword phrases that ONLY a frustrated buyer would write — never a vendor, never a job poster, never a thought leader.
-
-GOLDEN RULE: Before including any phrase, ask yourself:
-"Would a company that SELLS this service ever post this phrase to attract clients?"
-If YES → reject it immediately.
-If NO → it is a genuine buyer signal.
-
-Examples of what PASSES the test:
-- "our reply rates have dropped to nothing" — a vendor never admits this
-- "anyone switched from Apollo" — a vendor never asks competitors for help
-- "client got hacked last week" — a vendor never confesses client failures
-
-Examples of what FAILS the test:
-- "lead generation tips" — vendors post this constantly
-- "best practices for outreach" — this is vendor content
-- "improve your pipeline" — every sales tool uses this phrase
-
-The phrases you generate will be searched on LinkedIn in real time.
-When someone posts one of these phrases it triggers an outreach.
-Getting it wrong wastes real money. Getting it right books real meetings.
-
-ALL phrases MUST be lowercase, conversational, and 2-5 words long. Never a single word. Never more than 5 words. Prefer 2-4 words — short enough to match real posts, long enough to carry intent.`;
-
-  const userPrompt = `Generate buying intent keywords for this business:
-
-WHAT THEY SELL: ${analysis.what_they_sell}
-PRIMARY BUYER: ${analysis.primary_buyer}
-CORE PROBLEM SOLVED: ${analysis.core_problem_solved}
-BEFORE STATE (buyer's pain): ${analysis.before_state}
-ALTERNATIVES BUYERS USE NOW: ${analysis.competitors_or_alternatives.join(', ') || 'unknown'}
-BUYER'S OWN VOCABULARY: ${analysis.buyer_vocabulary.join(', ') || 'unknown'}
-
-Generate keywords across 7 intent categories. Each phrase MUST be 2-5 words (never 1 word, never 6+ words), lowercase, conversational. Examples of correct length: "reply rates dropped", "tired of apollo", "anyone switched from apollo", "looking for lead gen". Examples of WRONG length (do NOT generate): "our outreach reply rates have dropped to nothing" (too long), "outreach" (too short).
-
-CATEGORIES:
-- frustration_current_tool (5): buyer is unhappy with what they use now. Reference competitors_or_alternatives.
-- seeking_alternatives (5): "anyone switched from [tool]" / "alternatives to [tool]"
-- describing_pain (5): buyer describes problem in plain English using before_state and buyer_vocabulary
-- asking_network (5): "anyone recommend" / "what are you using for"
-- budget_decision (4): "evaluating" / "pricing for" / "we approved budget for"
-- competitor_frustration (3): buyer mentions competitor by name negatively
-- problem_confession (3): buyer publicly admits a failure ("we got breached", "client churned because")`;
-
-  return await callAITool({
-    systemPrompt,
-    userPrompt,
-    temperature: 0.3,
-    toolName: 'return_keyword_categories',
-    toolDescription: 'Return buying-intent keyword phrases organised by intent category',
-    parameters: {
-      type: 'object',
-      properties: {
-        frustration_current_tool: { type: 'array', items: { type: 'string' }, description: '5 phrases — buyer unhappy with current tool' },
-        seeking_alternatives: { type: 'array', items: { type: 'string' }, description: '5 phrases — actively seeking alternatives' },
-        describing_pain: { type: 'array', items: { type: 'string' }, description: '5 phrases — describing the pain in plain English' },
-        asking_network: { type: 'array', items: { type: 'string' }, description: '5 phrases — asking network for recommendations' },
-        budget_decision: { type: 'array', items: { type: 'string' }, description: '4 phrases — signals they are ready to spend' },
-        competitor_frustration: { type: 'array', items: { type: 'string' }, description: '3 phrases — mentions a competitor negatively' },
-        problem_confession: { type: 'array', items: { type: 'string' }, description: '3 phrases — public confession of failure' },
-      },
-      required: ['frustration_current_tool', 'seeking_alternatives', 'describing_pain', 'asking_network', 'budget_decision', 'competitor_frustration', 'problem_confession'],
-      additionalProperties: false,
-    },
-  });
+/**
+ * Sanitize a model-produced phrase: strip non-ASCII garbage tokens (e.g. stray
+ * CJK characters), quotes/hashtags/punctuation, collapse whitespace, lowercase.
+ * Returns '' when nothing usable remains.
+ */
+function sanitizePhrase(raw: string): string {
+  if (typeof raw !== 'string') return '';
+  return raw
+    .normalize('NFKD')
+    .replace(/[^\x20-\x7E]/g, '')      // drop all non-printable-ASCII (CJK, emoji, combining marks)
+    .replace(/[#"'’`.,;:!?()\[\]{}]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEMPLATE EXPANSION — the structural guarantee.
+//
+// The ask-frame ("looking for a X", "recommend a X", "need someone to build Y")
+// is built by CODE from fixed templates; the AI only supplies the buyer-vocab
+// nouns. This guarantees the final list is dominated by literal ask fragments
+// no matter how the model behaves on a given day.
+// ─────────────────────────────────────────────────────────────────────────────
+function expandKeywordTemplates(analysis: BusinessAnalysis): { phrase: string; category: string }[] {
+  const out: { phrase: string; category: string }[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string, category: string) => {
+    const phrase = sanitizePhrase(raw);
+    const wc = phrase ? phrase.split(' ').length : 0;
+    if (wc < 2 || wc > 5 || seen.has(phrase)) return;
+    seen.add(phrase);
+    out.push({ phrase, category });
+  };
+  const clean = (arr: string[] | undefined, max: number) =>
+    (arr || []).map(sanitizePhrase).filter(s => s && s.split(' ').length <= 3).slice(0, max);
+
+  for (const cat of clean(analysis.service_category_buyer_words, 4)) {
+    push(`looking for a ${cat}`, 'direct_ask');
+    push(`recommend a ${cat}`, 'direct_ask');
+    push(`anyone recommend a ${cat}`, 'direct_ask');
+    push(`recommendations for a ${cat}`, 'direct_ask');
+    push(`need a ${cat}`, 'project_need');
+  }
+  for (const thing of clean(analysis.things_buyers_want_built, 3)) {
+    push(`need someone to build ${thing}`, 'project_need');
+    push(`who can build ${thing}`, 'project_need');
+    push(`looking to build ${thing}`, 'project_need');
+  }
+  for (const fn of clean(analysis.outsourced_functions, 3)) {
+    push(`looking to outsource ${fn}`, 'project_need');
+    push(`getting quotes for ${fn}`, 'vendor_evaluation');
+    push(`recommendations for ${fn}`, 'direct_ask');
+  }
+  for (const alt of clean(analysis.famous_alternatives, 4)) {
+    push(`alternative to ${alt}`, 'seeking_alternatives');
+    push(`moving away from ${alt}`, 'seeking_alternatives');
+  }
+  return out;
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMBINED Stage 2+3 — Single AI call for analysis + keywords (≈2× faster)
@@ -278,6 +241,7 @@ async function analyseAndGenerateInOneCall(
   websiteContent: string,
   websiteUrl: string,
   fallbackHints: { companyName?: string; description?: string; painPoints?: string | string[] },
+  keywordHistoryBlock: string = '',
 ): Promise<{ analysis: BusinessAnalysis; generated: GeneratedKeywords }> {
   const hintsBlock = [
     fallbackHints.companyName && `Company name: ${fallbackHints.companyName}`,
@@ -285,32 +249,49 @@ async function analyseAndGenerateInOneCall(
     fallbackHints.painPoints && `Pain points: ${Array.isArray(fallbackHints.painPoints) ? fallbackHints.painPoints.join(', ') : fallbackHints.painPoints}`,
   ].filter(Boolean).join('\n');
 
-  const systemPrompt = `You are a B2B signal-monitoring specialist. In a SINGLE step you (1) analyse a business and (2) produce LinkedIn keyword phrases that ONLY a frustrated buyer would write — never a vendor.
+  const systemPrompt = `You are a LinkedIn lead-discovery specialist for a B2B platform. In a SINGLE step you (1) analyse a business and (2) produce LinkedIn keyword phrases used to find its buyers.
 
-GOLDEN RULE: For every phrase ask "would a vendor selling this ever post this to attract clients?" If yes → reject. Vendors never confess pain, never ask competitors for help.
+HOW YOUR OUTPUT IS USED — this determines everything:
+Each phrase is sent verbatim to LinkedIn's post search, which returns the ~25 most recent posts containing those words. A downstream AI then reads each post and decides whether the author is a genuine buyer. You are writing SEARCH QUERIES, not slogans. Two things matter, in this order:
+1. VOLUME — real people must actually publish posts containing these exact words.
+2. BUYER DENSITY — among posts containing these words, a high share must be authors who need this product/service right now.
 
-PASS examples: "reply rates dropped", "tired of apollo", "anyone tried lemlist", "switching from outreach"
-FAIL examples: "lead generation tips", "best practices outreach", "improve your pipeline"
+THE FREQUENCY TEST (apply to every phrase): "Will at least 20 different people worldwide publish a LinkedIn post containing these exact words this month?" If not → REJECT. Invented micro-drama always fails this test: "devs ghosted me", "api costs spiking", "gigster too slow", "toptal is expensive" sound like buyer pain, but virtually nobody ever writes those exact words in a post, so they retrieve zero or random results. Never output phrases like these.
 
-ALL keyword phrases MUST be lowercase, conversational, 2-5 words. Never 1 word. Never 6+ words. Prefer 2-4 words.`;
+THE GOLD STANDARD is the direct ask post. The richest buying-intent genre on LinkedIn is people publicly asking their network for help:
+- "can anyone recommend a development agency"
+- "looking for an agency to build our mvp"
+- "any recommendations for a shopify developer"
+- "who do you use for payroll"
+These posts are frequent, unambiguous, and almost never written by vendors. Most of your phrases must be fragments of ask posts, in natural word order — the exact words that would appear inside such a post: "recommend a development agency", "looking for an agency", "need someone to build".
 
-  const userPrompt = `Analyse this business and produce buyer-intent keywords in ONE response.
+THE VENDOR TEST still applies: if a company selling this service would post the phrase to attract clients ("app development tips", "how to scale your team"), reject it. Ask-fragments naturally pass this test — vendors answer asks, they don't post them.
+
+COMPETITOR NAMES: only use a competitor/alternative name if it is famous enough that many people post about it every week (upwork, fiverr, toptal, salesforce — yes; an obscure startup — no).
+
+FORMAT RULES for every phrase: lowercase, 2-5 words (prefer 3-4), natural word order, no hashtags, no quotes, no punctuation. It must read as a literal fragment of a real post.`;
+
+  const userPrompt = `Analyse this business DEEPLY and produce buyer-intent search keywords in ONE response.
 
 WEBSITE URL: ${websiteUrl}
 ${hintsBlock ? `\nUSER-PROVIDED CONTEXT:\n${hintsBlock}\n` : ''}
 WEBSITE CONTENT:
 ${websiteContent}
+${keywordHistoryBlock}
+PART 1 — BUSINESS ANALYSIS. Be specific and concrete. Identify who really buys this and what they would post RIGHT BEFORE buying. The most important fields are the TEMPLATE SLOTS — short buyer-vocabulary nouns that will be inserted into fixed ask-templates by code:
+- service_category_buyer_words (3-4): what a buyer literally CALLS this kind of provider when asking their network, 1-3 words each, generic buyer language NOT the seller's marketing label. Examples for a software agency: "dev agency", "development agency", "app developer", "dev shop". Examples for an SEO agency: "seo agency", "seo expert".
+- things_buyers_want_built (2-3, service businesses only, else []): the deliverable with its article, 1-3 words: "an mvp", "a mobile app", "an internal tool".
+- outsourced_functions (2-3): the function a buyer outsources, 1-3 words: "app development", "mvp development".
+- famous_alternatives (0-4): ONLY globally famous alternatives many people post about weekly (upwork, fiverr, toptal, in-house team). Empty if none truly famous.
 
-Be specific and concrete — no vague generalisations. Identify who really buys this and what pain they had RIGHT BEFORE buying. Then produce 2-5 word keyword phrases across 7 intent categories using the buyer's own vocabulary and competitor names.
+PART 2 — FREE-FORM KEYWORDS across 5 retrieval categories. Every phrase must pass the FREQUENCY TEST and the VENDOR TEST, and must contain an explicit ask/need/evaluation frame ("looking for", "recommend", "need a", "who can", "alternative to", "getting quotes") — phrases WITHOUT such a frame are discarded by a hard filter, so do not waste slots on mood/opinion statements ("x is too expensive", "tired of x").
 
 CATEGORIES (counts):
-- frustration_current_tool (5)
-- seeking_alternatives (5)
-- describing_pain (5)
-- asking_network (5)
-- budget_decision (4)
-- competitor_frustration (3)
-- problem_confession (3)`;
+- direct_ask (8): fragments of "asking my network" posts — "recommend a [category]", "can anyone recommend", "looking for a [category]", "any suggestions for [category]".
+- project_need (7): first-person need statements — "need an mvp built", "looking to build an app", "need a technical partner", "want to outsource development".
+- vendor_evaluation (5): actively comparing or budgeting — "getting quotes for", "comparing dev agencies", "budget for app development".
+- seeking_alternatives (5): moving off a FAMOUS tool/platform/marketplace — "alternative to upwork", "moving away from fiverr", "switching from [famous tool]".
+- pain_point (3): first-person breakdown statements with real posting volume — "our developer quit", "my app is broken".`;
 
   const combined = await callAITool({
     systemPrompt,
@@ -329,19 +310,21 @@ CATEGORIES (counts):
         competitors_or_alternatives: { type: 'array', items: { type: 'string' } },
         buyer_vocabulary: { type: 'array', items: { type: 'string' } },
         category: { type: 'string' },
-        frustration_current_tool: { type: 'array', items: { type: 'string' } },
-        seeking_alternatives: { type: 'array', items: { type: 'string' } },
-        describing_pain: { type: 'array', items: { type: 'string' } },
-        asking_network: { type: 'array', items: { type: 'string' } },
-        budget_decision: { type: 'array', items: { type: 'string' } },
-        competitor_frustration: { type: 'array', items: { type: 'string' } },
-        problem_confession: { type: 'array', items: { type: 'string' } },
+        service_category_buyer_words: { type: 'array', items: { type: 'string' }, description: '3-4 buyer names for this provider type, 1-3 words each ("dev agency", "app developer")' },
+        things_buyers_want_built: { type: 'array', items: { type: 'string' }, description: '2-3 deliverables with article ("an mvp", "a mobile app"); [] for non-service businesses' },
+        outsourced_functions: { type: 'array', items: { type: 'string' }, description: '2-3 outsourceable functions ("app development")' },
+        famous_alternatives: { type: 'array', items: { type: 'string' }, description: '0-4 ONLY globally famous alternatives (upwork, fiverr, in-house team)' },
+        direct_ask: { type: 'array', items: { type: 'string' }, description: '8 fragments of ask-my-network posts' },
+        project_need: { type: 'array', items: { type: 'string' }, description: '7 first-person need statements' },
+        vendor_evaluation: { type: 'array', items: { type: 'string' }, description: '5 comparing/budgeting phrases' },
+        seeking_alternatives: { type: 'array', items: { type: 'string' }, description: '5 moving-off-a-famous-tool phrases' },
+        pain_point: { type: 'array', items: { type: 'string' }, description: '3 first-person breakdown statements' },
       },
       required: [
         'what_they_sell', 'primary_buyer', 'core_problem_solved', 'before_state', 'after_state',
         'competitors_or_alternatives', 'buyer_vocabulary', 'category',
-        'frustration_current_tool', 'seeking_alternatives', 'describing_pain', 'asking_network',
-        'budget_decision', 'competitor_frustration', 'problem_confession',
+        'service_category_buyer_words', 'things_buyers_want_built', 'outsourced_functions', 'famous_alternatives',
+        'direct_ask', 'project_need', 'vendor_evaluation', 'seeking_alternatives', 'pain_point',
       ],
       additionalProperties: false,
     },
@@ -356,15 +339,17 @@ CATEGORIES (counts):
     competitors_or_alternatives: combined.competitors_or_alternatives || [],
     buyer_vocabulary: combined.buyer_vocabulary || [],
     category: combined.category,
+    service_category_buyer_words: combined.service_category_buyer_words || [],
+    things_buyers_want_built: combined.things_buyers_want_built || [],
+    outsourced_functions: combined.outsourced_functions || [],
+    famous_alternatives: combined.famous_alternatives || [],
   };
   const generated: GeneratedKeywords = {
-    frustration_current_tool: combined.frustration_current_tool || [],
+    direct_ask: combined.direct_ask || [],
+    project_need: combined.project_need || [],
+    vendor_evaluation: combined.vendor_evaluation || [],
     seeking_alternatives: combined.seeking_alternatives || [],
-    describing_pain: combined.describing_pain || [],
-    asking_network: combined.asking_network || [],
-    budget_decision: combined.budget_decision || [],
-    competitor_frustration: combined.competitor_frustration || [],
-    problem_confession: combined.problem_confession || [],
+    pain_point: combined.pain_point || [],
   };
   return { analysis, generated };
 }
@@ -390,24 +375,39 @@ function validateAndScoreKeywords(
     'free consultation', 'check out', 'learn more', 'case study',
     'thought leadership', 'growth hacking', 'scale your',
     'boost your', 'improve your', 'optimize your', 'optimise your',
+    'hire us', 'dm me', 'we build', 'we offer',
   ];
 
+  // Retrieval-oriented scoring: these patterns mark phrases that appear in real
+  // ask/need/evaluation posts — the high-volume, high-buyer-density genres.
+  // (Drama phrases like "tired of X" / "X tanked" are no longer rewarded: they
+  // rarely appear verbatim in posts, so as search queries they retrieve noise.)
   const BUYER_SIGNALS: { pattern: RegExp; weight: number }[] = [
-    { pattern: /anyone (switched|tried|recommend)/i, weight: 20 },
-    { pattern: /alternatives? to/i, weight: 20 },
-    { pattern: /tired of|fed up with/i, weight: 25 },
-    { pattern: /not working|stopped working/i, weight: 20 },
-    { pattern: /\b(our|we|my)\b.*(dropped|tanked|broken|failing|crashed|died)/i, weight: 30 },
-    { pattern: /looking for.*(better|alternative|replacement)/i, weight: 20 },
-    { pattern: /switched from|switching from/i, weight: 25 },
-    { pattern: /cant find|can't find|struggle to find/i, weight: 20 },
-    { pattern: /any recommendations/i, weight: 15 },
-    { pattern: /evaluating|considering switching/i, weight: 18 },
-    { pattern: /need (a )?(better|new)/i, weight: 15 },
+    { pattern: /\b(can )?anyone recommend\b/i, weight: 30 },
+    { pattern: /\brecommendations? for\b/i, weight: 28 },
+    { pattern: /\blooking for\b/i, weight: 25 },
+    { pattern: /\blooking to (build|hire|find|outsource|rebuild|replace)\b/i, weight: 25 },
+    { pattern: /\bany suggestions?\b/i, weight: 25 },
+    { pattern: /\bwho (do you use|can build|would you recommend)\b/i, weight: 25 },
+    { pattern: /\bneed (a|an|some(one|body)|help)\b/i, weight: 22 },
+    { pattern: /\bwant to (build|outsource|rebuild|replace)\b/i, weight: 18 },
+    { pattern: /\balternatives? to\b/i, weight: 20 },
+    { pattern: /\b(switching|switched|moving away|migrating) from\b/i, weight: 20 },
+    { pattern: /\b(evaluating|comparing|getting quotes|quotes for|rfp)\b/i, weight: 20 },
+    { pattern: /\bbudget for\b/i, weight: 15 },
+    { pattern: /\boutsourc/i, weight: 15 },
+    { pattern: /\brecommend\b/i, weight: 12 },
+    { pattern: /\bhiring (a|an)\b/i, weight: 10 },
+    { pattern: /\b(our|my) \w+ (quit|left|failed|is broken|is down)\b/i, weight: 15 },
   ];
 
-  return keywords.map(({ phrase, category }) => {
-    const lower = phrase.toLowerCase();
+  return keywords.map(({ phrase: rawPhrase, category }) => {
+    // Sanitize first: strips garbage tokens (stray CJK/emoji), punctuation, casing.
+    const phrase = sanitizePhrase(rawPhrase);
+    if (!phrase) {
+      return { keyword: rawPhrase, score: 0, passes: false, category, rejectionReason: 'Unusable after sanitization (non-ASCII/garbage tokens)' };
+    }
+    const lower = phrase;
 
     // Hard rejection: vendor phrases
     const vendorHit = VENDOR_PHRASES.find(p => lower.includes(p));
@@ -415,7 +415,7 @@ function validateAndScoreKeywords(
       return { keyword: phrase, score: 0, passes: false, category, rejectionReason: `Contains vendor phrase: "${vendorHit}"` };
     }
 
-    const wordCount = phrase.trim().split(/\s+/).length;
+    const wordCount = phrase.split(' ').length;
     if (wordCount < 2) {
       return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too short — single words match too broadly' };
     }
@@ -423,9 +423,21 @@ function validateAndScoreKeywords(
       return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too long — must be 5 words max' };
     }
 
-    let score = 50;
+    let score = 45;
+    let hasAskFrame = false;
     for (const signal of BUYER_SIGNALS) {
-      if (signal.pattern.test(phrase)) score += signal.weight;
+      if (signal.pattern.test(phrase)) {
+        score += signal.weight;
+        hasAskFrame = true;
+      }
+    }
+
+    // HARD GATE: without an explicit ask/need/evaluation frame, a phrase is a
+    // mood/opinion statement ("toptal is too expensive", "tired of slow devs").
+    // As a search query it retrieves noise — no competitor mention or buyer
+    // vocabulary can rescue it.
+    if (!hasAskFrame) {
+      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'No ask/need/evaluation frame — mood/opinion phrases retrieve noise' };
     }
 
     const referencesCompetitor = analysis.competitors_or_alternatives.some(c => c && lower.includes(c.toLowerCase()));
@@ -437,6 +449,102 @@ function validateAndScoreKeywords(
     score = Math.min(score, 100);
     return { keyword: phrase, score, passes: score >= 50, category };
   });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAGE 5 — Reality feedback A: historical per-keyword performance
+//
+// signal-keyword-posts stores `Posted about "<keyword>" (...)` in contacts.signal,
+// and users approve/reject leads. Mining that gives per-keyword outcomes we feed
+// back into generation as few-shot guidance. Fail-open: any error returns ''.
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadKeywordPerformance(sb: any, userId: string): Promise<string> {
+  try {
+    const { data } = await sb
+      .from('contacts')
+      .select('signal, approval_status')
+      .eq('user_id', userId)
+      .like('signal', 'Posted about "%')
+      .order('imported_at', { ascending: false })
+      .limit(500);
+    if (!data || data.length === 0) return '';
+
+    const stats = new Map<string, { total: number; approved: number; rejected: number }>();
+    for (const row of data) {
+      const m = /^Posted about "(.+?)"/.exec(row.signal || '');
+      if (!m) continue;
+      const kw = m[1].toLowerCase();
+      const s = stats.get(kw) || { total: 0, approved: 0, rejected: 0 };
+      s.total++;
+      if (row.approval_status === 'approved') s.approved++;
+      if (row.approval_status === 'rejected') s.rejected++;
+      stats.set(kw, s);
+    }
+
+    const winners: string[] = [];
+    const losers: string[] = [];
+    for (const [kw, s] of stats) {
+      if (s.approved >= 1 && s.approved >= s.rejected) winners.push(`"${kw}" (${s.total} leads, ${s.approved} approved)`);
+      else if (s.rejected >= 2 && s.rejected > s.approved) losers.push(`"${kw}" (${s.total} leads, ${s.rejected} rejected)`);
+    }
+    if (winners.length === 0 && losers.length === 0) return '';
+
+    return `
+KEYWORD TRACK RECORD FOR THIS USER (from real past runs — weigh heavily):
+${winners.length ? `Keywords that produced leads the user APPROVED — generate more phrases in this style/topic:\n${winners.slice(0, 8).map(w => `  ✓ ${w}`).join('\n')}` : ''}
+${losers.length ? `Keywords that produced leads the user REJECTED — avoid this style/topic:\n${losers.slice(0, 8).map(l => `  ✗ ${l}`).join('\n')}` : ''}
+`;
+  } catch (e) {
+    console.warn('[KW_GEN] keyword performance load failed:', e instanceof Error ? e.message : e);
+    return '';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAGE 6 — Reality feedback B: live search backtest
+//
+// Run each candidate through the same Unipile LinkedIn post search the agent
+// will use, and count results from the past month. Keywords retrieving zero
+// posts are dead weight (25 posts/page budget wasted); high-volume keywords get
+// a boost. Gentle on rate limits (low concurrency, bail-out on failures) and
+// fully fail-open: returns null → selection falls back to score-only.
+// ─────────────────────────────────────────────────────────────────────────────
+async function backtestKeywords(
+  keywords: string[],
+  accountId: string,
+  deadlineMs: number,
+): Promise<Map<string, number> | null> {
+  if (!UNIPILE_API_KEY || !UNIPILE_DSN || !accountId || keywords.length === 0) return null;
+  const url = `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${accountId}`;
+  const results = new Map<string, number>();
+  const deadline = Date.now() + deadlineMs;
+  let idx = 0;
+  let failures = 0;
+
+  const worker = async () => {
+    while (idx < keywords.length && Date.now() < deadline && failures < 4) {
+      const kw = keywords[idx++];
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: kw, date_posted: 'past_month', limit: 10 }),
+          signal: ctrl.signal,
+        }).finally(() => clearTimeout(t));
+        if (!res.ok) { failures++; continue; }
+        const data = await res.json();
+        results.set(kw, Array.isArray(data.items) ? data.items.length : 0);
+      } catch {
+        failures++;
+      }
+    }
+  };
+
+  await Promise.all([worker(), worker(), worker()]);
+  console.log(`[KW_GEN] backtest: ${results.size}/${keywords.length} keywords tested, ${failures} failures`);
+  return results.size > 0 ? results : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -520,7 +628,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── 4-stage buyer-intent pipeline for keyword_posts ──────────────────────
+    // ── Buyer-intent pipeline for keyword_posts ──────────────────────────────
+
+    // STAGE 0 — Resolve caller (for history + backtest). Fail-open: keyword
+    // generation must keep working even if auth/profile lookup fails.
+    let callerUserId: string | null = null;
+    let unipileAccountId: string | null = null;
+    let sb: any = null;
+    try {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+      const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      const jwt = (req.headers.get('Authorization') || '').replace('Bearer ', '');
+      if (SUPABASE_URL && SERVICE_KEY && jwt) {
+        sb = createClient(SUPABASE_URL, SERVICE_KEY);
+        const { data } = await sb.auth.getUser(jwt);
+        callerUserId = data?.user?.id ?? null;
+        if (callerUserId) {
+          const { data: prof } = await sb.from('profiles').select('unipile_account_id').eq('user_id', callerUserId).maybeSingle();
+          unipileAccountId = prof?.unipile_account_id ?? null;
+        }
+      }
+    } catch (e) {
+      console.warn('[KW_GEN] Stage 0 caller resolution failed (continuing):', e instanceof Error ? e.message : e);
+    }
+    console.log(`[KW_GEN] Stage 0: user=${callerUserId ? 'resolved' : 'none'} unipile=${unipileAccountId ? 'available' : 'none'}`);
 
     // STAGE 1 — Scrape website
     let websiteContent = '';
@@ -551,36 +682,91 @@ Deno.serve(async (req) => {
     }
 
     // STAGE 2+3 (combined) — Analyse + generate in a SINGLE AI call (≈2× faster)
+    // Reality feedback A: per-keyword approve/reject history from past runs.
+    const keywordHistoryBlock = (sb && callerUserId) ? await loadKeywordPerformance(sb, callerUserId) : '';
+    if (keywordHistoryBlock) console.log('[KW_GEN] keyword history feedback loaded');
+
     console.log('[KW_GEN] Stage 2+3: combined analysis + keyword generation');
     const { analysis, generated } = await analyseAndGenerateInOneCall(
       websiteContent,
       website || 'unknown',
       { companyName, description, painPoints },
+      keywordHistoryBlock,
     );
     console.log('[KW_GEN] Stage 2+3 done. analysis:', JSON.stringify(analysis));
 
-    // Flatten with category tracking
-    const flat: { phrase: string; category: string }[] = [];
+    // STAGE 3.5 — Template expansion: code-built ask-frames from the analysis
+    // slots. These are the structural guarantee that the final list contains
+    // literal "looking for a X" / "recommend a X" / "need someone to build Y"
+    // queries regardless of how the free-form generation behaves.
+    const templated = expandKeywordTemplates(analysis);
+    console.log(`[KW_GEN] Stage 3.5: ${templated.length} template keywords:`, JSON.stringify(templated.map(t => t.phrase)));
+
+    // Flatten free-form AI keywords with category tracking; templates first so
+    // they win dedupe collisions.
+    const flat: { phrase: string; category: string }[] = [...templated];
+    const seenPhrases = new Set(templated.map(t => t.phrase));
     for (const [category, phrases] of Object.entries(generated)) {
       for (const p of (phrases as string[]) || []) {
-        if (typeof p === 'string' && p.trim()) flat.push({ phrase: p.trim(), category });
+        const phrase = sanitizePhrase(p);
+        if (!phrase || seenPhrases.has(phrase)) continue;
+        seenPhrases.add(phrase);
+        flat.push({ phrase, category });
       }
     }
-    console.log(`[KW_GEN] Stage 3 done: ${flat.length} raw keywords`);
+    console.log(`[KW_GEN] Stage 3 done: ${flat.length} candidates (${templated.length} templated + ${flat.length - templated.length} free-form)`);
 
     // STAGE 4 — Validate and score
     const scored = validateAndScoreKeywords(flat, analysis);
     const passing = scored.filter(k => k.passes).sort((a, b) => b.score - a.score);
     const rejected = scored.filter(k => !k.passes);
-
-    // Top 15 keywords (backward-compatible flat string array for callers)
-    const topKeywords = passing.slice(0, 15).map(k => k.keyword);
-
     console.log(`[KW_GEN] Stage 4 done: generated=${flat.length} passing=${passing.length} rejected=${rejected.length}`);
-    console.log('[KW_GEN] FINAL keywords:', JSON.stringify(topKeywords));
     if (rejected.length > 0) {
       console.log('[KW_GEN] rejected sample:', JSON.stringify(rejected.slice(0, 5).map(r => ({ p: r.keyword, why: r.rejectionReason }))));
     }
+
+    // STAGE 6 — Reality feedback B: live backtest against real LinkedIn search.
+    // A keyword that retrieves 0 posts in the past month is dead weight for the
+    // agent; high-volume keywords get a boost. Skipped when no Unipile account.
+    let backtest: Map<string, number> | null = null;
+    if (unipileAccountId && passing.length > 0) {
+      console.log(`[KW_GEN] Stage 6: backtesting ${Math.min(passing.length, 24)} candidates`);
+      backtest = await backtestKeywords(passing.slice(0, 24).map(k => k.keyword), unipileAccountId, 25_000);
+    }
+
+    type RankedKeyword = KeywordScore & { volume: number | null; finalScore: number };
+    let ranked: RankedKeyword[] = passing.map(k => {
+      const volume = backtest?.has(k.keyword) ? backtest.get(k.keyword)! : null;
+      // Volume boost: up to +30 for keywords proven to retrieve real posts.
+      const finalScore = k.score + (volume == null ? 0 : Math.min(volume, 10) * 3);
+      return { ...k, volume, finalScore };
+    });
+    if (backtest) {
+      const nonZero = ranked.filter(k => k.volume !== 0);
+      // Only drop zero-volume keywords when enough survivors remain.
+      if (nonZero.length >= 8) {
+        const dropped = ranked.filter(k => k.volume === 0);
+        if (dropped.length) console.log('[KW_GEN] dropped zero-volume keywords:', JSON.stringify(dropped.map(k => k.keyword)));
+        ranked = nonZero;
+      }
+    }
+    ranked.sort((a, b) => b.finalScore - a.finalScore);
+
+    // Diversity guard: never let one category monopolise the final list.
+    const MAX_PER_CATEGORY = 6;
+    const perCategory = new Map<string, number>();
+    const finalList: RankedKeyword[] = [];
+    for (const k of ranked) {
+      if (finalList.length >= 15) break;
+      const count = perCategory.get(k.category || '') || 0;
+      if (count >= MAX_PER_CATEGORY) continue;
+      perCategory.set(k.category || '', count + 1);
+      finalList.push(k);
+    }
+
+    // Backward-compatible flat string array for callers
+    const topKeywords = finalList.map(k => k.keyword);
+    console.log('[KW_GEN] FINAL keywords:', JSON.stringify(topKeywords));
 
     return new Response(JSON.stringify({
       keywords: topKeywords,
@@ -592,10 +778,12 @@ Deno.serve(async (req) => {
         competitors_detected: analysis.competitors_or_alternatives,
         buyer_vocabulary: analysis.buyer_vocabulary,
       },
-      detailed: passing.slice(0, 15).map(k => ({ phrase: k.keyword, score: k.score, category: k.category })),
+      detailed: finalList.map(k => ({ phrase: k.keyword, score: k.score, category: k.category, live_posts_past_month: k.volume })),
       rejected: rejected.map(k => ({ phrase: k.keyword, reason: k.rejectionReason })),
       total_generated: flat.length,
       total_passing: passing.length,
+      backtest_ran: !!backtest,
+      history_feedback_used: !!keywordHistoryBlock,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

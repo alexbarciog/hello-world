@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { generateCampaignBuyerKeywords } from '../_shared/buyer-intent-keywords.ts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -500,57 +501,8 @@ function errorResponse(message: string) {
   });
 }
 
+// Retrieval-optimised buyer-intent keywords via the shared module (same
+// objective as the signal-agent pipeline). Fail-open: returns [] on error.
 async function generateKeywords(campaign: any, lovableApiKey: string | undefined): Promise<string[]> {
-  if (!lovableApiKey) return [];
-
-  try {
-    const prompt = `Company: ${campaign.company_name || 'Unknown'}
-Industry: ${campaign.industry || 'Unknown'}
-Description: ${campaign.description || 'No description'}
-Target Job Titles: ${(campaign.icp_job_titles || []).join(', ') || 'Unknown'}
-Target Industries: ${(campaign.icp_industries || []).join(', ') || 'Unknown'}
-Pain Points: ${(campaign.pain_points || []).join(', ') || 'Unknown'}
-
-Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that potential buyers of this company's product/service would engage with on LinkedIn. Return only the keywords array.`;
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: 'You are a B2B sales intelligence expert. Generate LinkedIn search keywords for finding potential buyers.' },
-          { role: 'user', content: prompt },
-        ],
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'return_keywords',
-            description: 'Return LinkedIn search keywords',
-            parameters: {
-              type: 'object',
-              properties: {
-                keywords: { type: 'array', items: { type: 'string' } },
-              },
-              required: ['keywords'],
-              additionalProperties: false,
-            },
-          },
-        }],
-        tool_choice: { type: 'function', function: { name: 'return_keywords' } },
-      }),
-    });
-
-    if (!response.ok) return [];
-    const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) return [];
-    return (JSON.parse(toolCall.function.arguments).keywords || []).slice(0, 5);
-  } catch (e) {
-    console.error('Keyword generation failed:', e);
-    return [];
-  }
+  return await generateCampaignBuyerKeywords(campaign, lovableApiKey, 5);
 }

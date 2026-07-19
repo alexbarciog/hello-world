@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { generateCampaignBuyerKeywords } from '../_shared/buyer-intent-keywords.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -50,58 +51,11 @@ Deno.serve(async (req) => {
 
     if (campErr || !campaign) throw new Error('Campaign not found');
 
-    // Generate keywords via AI
-    const prompt = `Company: ${campaign.company_name || 'Unknown'}
-Industry: ${campaign.industry || 'Unknown'}
-Description: ${campaign.description || 'No description'}
-Target Job Titles: ${(campaign.icp_job_titles || []).join(', ') || 'Unknown'}
-Target Industries: ${(campaign.icp_industries || []).join(', ') || 'Unknown'}
-
-Generate exactly 5 short LinkedIn search keyword phrases (2-4 words each) that potential buyers of this company's product/service would engage with on LinkedIn. These should be specific enough to find relevant posts.`;
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: 'You are a B2B sales intelligence expert. Generate LinkedIn search keywords for finding potential buyers.' },
-          { role: 'user', content: prompt },
-        ],
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'return_keywords',
-            description: 'Return LinkedIn search keywords',
-            parameters: {
-              type: 'object',
-              properties: {
-                keywords: { type: 'array', items: { type: 'string' }, description: '5 keyword phrases' },
-              },
-              required: ['keywords'],
-              additionalProperties: false,
-            },
-          },
-        }],
-        tool_choice: { type: 'function', function: { name: 'return_keywords' } },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('AI gateway error:', response.status, errText);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) throw new Error('No tool call returned from AI');
-
-    const result = JSON.parse(toolCall.function.arguments);
-    const keywords = (result.keywords || []).slice(0, 5);
+    // Generate retrieval-optimised buyer-intent keywords (shared module —
+    // same objective as the signal-agent pipeline: search queries buyers
+    // actually post, never invented drama phrases).
+    const keywords = await generateCampaignBuyerKeywords(campaign, LOVABLE_API_KEY, 5);
+    if (keywords.length === 0) throw new Error('Keyword generation returned no valid keywords');
 
     // Save keywords to campaign
     const serviceClient = createClient(
