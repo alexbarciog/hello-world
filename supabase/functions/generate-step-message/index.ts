@@ -639,7 +639,7 @@ Deno.serve(async (req) => {
         const missingQ = !/\?/.test(initialClean);
         // Check signal anchor in the body AFTER the greeting sentence.
         const bodyAfterGreeting = initialClean.replace(/^hey\s+[^\n]*\n?/i, '');
-        const missingSignal = !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
+        const missingSignal = hasStepCustomPrompt ? false : !SIGNAL_ANCHOR_RE.test(bodyAfterGreeting);
         if (bans.length || wc > 70 || missingQ || missingSignal) {
           const issues: string[] = [];
           if (bans.length) issues.push(`You used banned phrases: ${bans.map(b => `"${b}"`).join(', ')}. Rewrite without any of them.`);
