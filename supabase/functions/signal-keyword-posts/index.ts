@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -403,12 +404,13 @@ async function insertContact(
   supabase: any, profile: any, userId: string, agentId: string,
   listName: string, match: MatchResult, signal: string, signalPostUrl: string | null, icp?: ICPFilters,
   intentScore?: number, intentReason?: string, manualApproval?: boolean,
-  enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null,
+  enrichedCompany?: EnrichedCompany | null, postExcerpt?: string | null, accountId?: string,
 ): Promise<'inserted' | 'duplicate' | 'rejected'> {
   const linkedinProfileId = extractLinkedinProfileId(profile) || (profile.id ? String(profile.id) : null);
   if (!linkedinProfileId) return 'rejected';
   const { data: existing } = await supabase.from('contacts').select('id').eq('user_id', userId).eq('linkedin_profile_id', linkedinProfileId).limit(1);
   if (existing && existing.length > 0) return 'duplicate';
+  const pub = accountId ? await resolvePublicLinkedinUrl(profile, accountId, Deno.env.get('UNIPILE_API_KEY')!, Deno.env.get('UNIPILE_DSN')!) : null;
   const firstName = profile.first_name || profile.name?.split(' ')[0] || 'Unknown';
   const lastName = profile.last_name || profile.name?.split(' ').slice(1).join(' ') || '';
   const hl = profile.headline || profile.title || '';
@@ -427,9 +429,9 @@ async function insertContact(
     title: profile.headline || profile.title || null,
     company: enrichedCompany?.name || profile.company || profile.current_company?.name || null,
     industry: enrichedCompany?.industry || profile.industry || profile.current_company?.industry || null,
-    linkedin_url: profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
+    linkedin_url: pub?.linkedin_url || profile.linkedin_url || profile.public_url || profile.profile_url || (linkedinProfileId ? `https://www.linkedin.com/in/${linkedinProfileId}` : null),
     linkedin_profile_id: linkedinProfileId, source_campaign_id: null,
-    signal: fullSignal, signal_post_url: signalPostUrl, signal_post_excerpt: (postExcerpt || '').slice(0, 500) || null, ai_score: aiScore,
+    signal: fullSignal, signal_post_url: signalPostUrl ? (normalizePostUrl(signalPostUrl) || signalPostUrl) : null, signal_post_excerpt: (postExcerpt || '').slice(0, 500) || null, ai_score: aiScore,
     signal_a_hit: signalAHit, signal_b_hit: signalBHit, signal_c_hit: signalCHit,
     email_enriched: false, list_name: listName,
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
@@ -1580,7 +1582,7 @@ Deno.serve(async (req) => {
         const result = await insertContact(
           supabase, author, user_id, agent_id, list_name, match, signal, postUrl, icp,
           intentData?.intent_score, intentData?.reason, manual_approval,
-          enrichedCompany, (post.text || '').toString(),
+          enrichedCompany, (post.text || '').toString(), account_id,
         );
 
         if (result === 'inserted') {
