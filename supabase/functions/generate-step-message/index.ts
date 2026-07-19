@@ -591,7 +591,10 @@ Deno.serve(async (req) => {
       industry: (body.leadIndustry || '').trim(),
     };
 
-    const { systemPrompt, userPrompt } = buildOutreachPrompts(body, lead);
+    const hasStepCustomPrompt = typeof body.stepCustomPrompt === 'string' && body.stepCustomPrompt.trim().length > 0;
+    const { systemPrompt, userPrompt } = hasStepCustomPrompt
+      ? buildCustomPrompts(body, lead)
+      : buildOutreachPrompts(body, lead);
     const isStep2 = stepNumber === 2;
 
     async function callModel(sys: string, usr: string): Promise<string> {
