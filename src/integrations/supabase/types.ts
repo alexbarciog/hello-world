@@ -531,6 +531,12 @@ export type Database = {
           last_name: string | null
           last_signal_at: string | null
           lead_status: string
+          linkedin_about: string | null
+          linkedin_education: Json | null
+          linkedin_experience: Json | null
+          linkedin_headline: string | null
+          linkedin_location: string | null
+          linkedin_profile_fetched_at: string | null
           linkedin_profile_id: string | null
           linkedin_url: string | null
           list_name: string | null
@@ -568,6 +574,12 @@ export type Database = {
           last_name?: string | null
           last_signal_at?: string | null
           lead_status?: string
+          linkedin_about?: string | null
+          linkedin_education?: Json | null
+          linkedin_experience?: Json | null
+          linkedin_headline?: string | null
+          linkedin_location?: string | null
+          linkedin_profile_fetched_at?: string | null
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
@@ -605,6 +617,12 @@ export type Database = {
           last_name?: string | null
           last_signal_at?: string | null
           lead_status?: string
+          linkedin_about?: string | null
+          linkedin_education?: Json | null
+          linkedin_experience?: Json | null
+          linkedin_headline?: string | null
+          linkedin_location?: string | null
+          linkedin_profile_fetched_at?: string | null
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null

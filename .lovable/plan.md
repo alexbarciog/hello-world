@@ -1,64 +1,59 @@
-
 ## Goal
-Let each user connect their own sending mailbox — Gmail/Google Workspace via OAuth, or any custom domain via SMTP — and have campaign emails (`execute-email-step`) sent from that mailbox instead of the shared Resend `onboarding@resend.dev` / `no-reply@intentsly.com` sender.
 
-## UX (Integrations page)
-Add a new "Email accounts" section on `src/pages/Integrations.tsx`, styled to match the existing CRM/Calendars cards:
+Two changes to how AI SDR messages are generated in campaign workflows:
 
-- **Gmail / Google Workspace** card → "Connect" button opens Google OAuth (App User Connector, `google_mail` connector, scope `gmail.send`). Once connected, shows connected email + Disconnect. Marked as default sender.
-- **Custom email (SMTP)** card → "Connect" opens a dialog collecting: from email, from name, SMTP host, port, username, password, TLS toggle. On save we verify credentials via an edge function (test connection) before storing.
-- Only one account can be marked "Default sender" at a time; per-campaign step can still override.
+1. **When a step has a custom prompt, that prompt becomes the primary directive** — the built-in 6-part cold-outreach template is bypassed. Only universal safety rails (greeting, hard-banned words/phrases, length ceiling, no emojis/em-dashes, ends with `?` for outreach, language) remain.
+2. **`generate-step-message` gets the lead's full LinkedIn profile** (headline, about, current + past experience, education, location) so the AI can reference concrete details instead of just title/company/signal.
 
-## Data model (one migration)
-New table `public.email_accounts`:
-- `id uuid pk`, `user_id uuid`, `organization_id uuid`
-- `provider text` ('gmail' | 'smtp')
-- `from_email text`, `from_name text`
-- `is_default bool`
-- `smtp_host`, `smtp_port int`, `smtp_username`, `smtp_password_encrypted text`, `smtp_secure bool` (null for gmail)
-- `gmail_connected_at timestamptz` (gmail token lives in App User Connector storage, not this table)
-- `verified_at`, `last_error`, timestamps
+## Behavior spec
 
-RLS: user can CRUD own rows (scoped by `user_id` / org membership). Standard GRANTs. Unique partial index enforcing one default per user.
+### Custom prompt priority
+- In `supabase/functions/process-campaign-followups/index.ts`, stop concatenating `campaign.custom_training + step.step_instructions` into `customTraining`. Send them as two separate fields: `customTraining` (campaign-wide) and `stepCustomPrompt` (step-level).
+- In `generate-step-message`, when `stepCustomPrompt` is present and non-empty for stepNumber ≥ 2:
+  - Build a **custom-mode prompt** instead of `buildOutreachPrompts`. The system prompt contains: lead context block, full LinkedIn profile block, campaign context (short), the step's custom prompt verbatim as the *primary* instructions, then a short "universal rails" section (greeting `Hey {first},`, hard-banned words list, no emojis/em-dashes/semicolons, max ~70 words, must end with `?`, language).
+  - Skip the 6-part structural rewrite guard (banned-words + length + ending-question guards still run, but the "missing signal reference" guard is dropped since the custom prompt may not want signal-anchored openers).
+- When `stepCustomPrompt` is empty, current behavior is unchanged.
 
-SMTP passwords stored encrypted using `pgsodium`/`vault` OR a symmetric key held in edge function secret (`EMAIL_ACCOUNT_ENCRYPTION_KEY`, generated via `generate_secret`). Plan: use edge-function-side AES-GCM with the generated key — DB just stores ciphertext + iv.
+### Full LinkedIn profile context
+- Add nullable columns on `public.contacts`:
+  - `linkedin_headline text`
+  - `linkedin_about text`
+  - `linkedin_experience jsonb` (array of `{title, company, start, end, description}`)
+  - `linkedin_education jsonb`
+  - `linkedin_location text`
+  - `linkedin_profile_fetched_at timestamptz`
+- New helper edge function `enrich-linkedin-profile` (or inline helper in `_shared/`) that, given a `contact_id`, calls Unipile `GET /users/{provider_id}` using the campaign owner's `unipile_account_id`, maps the response, and updates the row. Cached: skip if `linkedin_profile_fetched_at` is within 30 days.
+- In `process-campaign-followups`, before invoking `generate-step-message`, call the enrichment helper (best-effort; failures are logged and generation proceeds without profile).
+- `generate-step-message` accepts new optional payload fields (`leadHeadline` already used; add `leadAbout`, `leadExperience` [array], `leadEducation`, `leadLocation`). Both the default and custom-mode prompts include a `===== LEAD PROFILE =====` block summarizing them (experience trimmed to top 3 roles, about trimmed to ~600 chars).
 
-## Backend
-
-**App User Connector setup**
-- Call `connector_app_user--list_connectors` → `google_mail`, then `connect_client` so the workspace has a Google OAuth client wired to the connector gateway. Follow `google_mail-connector-app-user-setup` (scopes: `openid`, `email`, `profile`, `https://www.googleapis.com/auth/gmail.send`).
-
-**New edge functions**
-1. `email-account-connect-gmail` — starts App User OAuth flow (`connectAppUser`), on callback stores `{ provider: 'gmail', from_email }` in `email_accounts`.
-2. `email-account-save-smtp` — validates SMTP creds by opening a connection (use `denomailer` from `https://deno.land/x/denomailer`), encrypts password, upserts row.
-3. `email-account-send-test` — sends a test email to the user's own address using the stored account.
-4. `email-account-disconnect` — deletes row (and disconnects app-user connection for gmail).
-
-**Update `execute-email-step`**
-- Before sending, resolve the sender:
-  1. If the campaign step has an explicit `email_account_id` → use it.
-  2. Else use the campaign owner's default `email_accounts` row.
-  3. Else fall back to current Resend behavior (unchanged) so existing campaigns keep working.
-- Branch on `provider`:
-  - `gmail` → call Gmail API `users/me/messages/send` via connector gateway (`callAsAppUser`, connectorId `google_mail`), base64url-encoded RFC 2822 message (subject, from, to, html body). Handle 403 insufficient scope by writing `skip_reason='gmail_scope_missing'`.
-  - `smtp` → decrypt password, send via `denomailer` SMTPClient.
-  - fallback → existing Resend path.
-- On send failure, mark `scheduled_messages.status='failed'` with provider error (already the pattern).
-
-## Frontend
-
-- `src/pages/Integrations.tsx`: add `EmailAccountsSection` component with the two cards, wired to a `useEmailAccounts` hook (`supabase.from('email_accounts')`).
-- New `src/components/integrations/ConnectSmtpDialog.tsx` — form + "Send test email" button.
-- New `src/components/integrations/GmailConnectButton.tsx` — invokes `email-account-connect-gmail` and handles the popup.
-- Campaign create wizard (`CreateCampaignWizard.tsx`) email step: add a "Send from" dropdown listing connected accounts (default preselected). Non-blocking — if none connected, keep current behavior and show a hint linking to `/integrations`.
+### Callers touched
+- `process-campaign-followups/index.ts` — pass new fields, split custom prompts, invoke enrichment.
+- `generate-step-message/index.ts` — new custom-mode branch, new profile block, guard adjustments.
+- Migration for the new contact columns + GRANTs unchanged (existing table).
 
 ## Out of scope
-- Inbound email / reply parsing (Gmail history API, IMAP) — not touched now; Reply Guard still relies on LinkedIn Unipile for LI, and existing Resend transactional emails remain as-is.
-- Microsoft Outlook OAuth — can be added later using `microsoft_outlook` connector following the same pattern.
+- Conversational reply path (`isConversationalReply`) untouched.
+- Email step / `execute-email-step` custom prompt priority — same idea could apply, but only address if you also want it there (say the word).
+- Backfilling profile data for existing contacts — will populate lazily on next generation.
 
-## Rollout order
-1. Migration + secrets (`generate_secret EMAIL_ACCOUNT_ENCRYPTION_KEY`).
-2. `connect_client` for `google_mail` App User Connector.
-3. Edge functions (connect/save/test/disconnect) + update to `execute-email-step`.
-4. Integrations page UI + campaign wizard dropdown.
-5. Manual test: connect Gmail → send test → run a live email step in a campaign; same for SMTP with a personal domain.
+## Technical notes
+- Unipile endpoint: `GET {UNIPILE_DSN}/api/v1/users/{provider_id}?account_id={unipile_account_id}` returns `headline`, `summary`/`about`, `work_experience[]`, `education[]`, `location`. Same auth pattern already used in `extract-linkedin-post-leads`.
+- Custom-mode system prompt skeleton:
+  ```
+  You are writing a LinkedIn {message|email} in an outreach sequence.
+  ===== LEAD =====
+  {name, title, company, industry, signal}
+  ===== LEAD LINKEDIN PROFILE =====
+  {headline, about, top 3 experiences, education, location}
+  ===== CAMPAIGN CONTEXT =====
+  {companyName, valueProposition (short)}
+  ===== YOUR PRIMARY INSTRUCTIONS (follow these exactly) =====
+  {stepCustomPrompt verbatim}
+  ===== UNIVERSAL RAILS (never violate) =====
+  - Start with "Hey {first},"
+  - Language: {language}
+  - Max 70 words. No emojis, em-dashes, semicolons, bullet points.
+  - Banned words: leverage, utilize, synergy, ... (full list)
+  - Must end with a question mark.
+  Return ONLY the message body.
+  ```
