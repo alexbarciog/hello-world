@@ -896,6 +896,21 @@ async function generateNextStepMessage(
       ? previousMessagesArray[previousMessagesArray.length - 1]
       : '';
 
+    // Enrich full LinkedIn profile (cached ~30 days) so AI has real context.
+    let leadProfile: any = null;
+    try {
+      leadProfile = await enrichContactLinkedInProfile(
+        supabase,
+        contact,
+        req.contact_id,
+        unipileDsn,
+        unipileApiKey,
+        unipileAccountId,
+      );
+    } catch (err) {
+      console.warn(`[followup] enrichLinkedInProfile failed for ${req.contact_id}:`, (err as Error)?.message);
+    }
+
     message = await invokeGenerateStepMessage(supabaseUrl, supabaseServiceRoleKey, {
       stepNumber: displayStepNumber,
       previousStepMessage,
@@ -907,7 +922,8 @@ async function generateNextStepMessage(
       messageTone: campaign.message_tone,
       industry: campaign.industry,
       language: campaign.language,
-      customTraining: [campaign.custom_training, nextStep.step_instructions].filter(Boolean).join('\n\n'),
+      customTraining: campaign.custom_training || '',
+      stepCustomPrompt: nextStep.step_instructions || '',
       firstName: contact.first_name,
       lastName: contact.last_name,
       leadCompany: contact.company,
@@ -917,7 +933,10 @@ async function generateNextStepMessage(
       signalPostAuthor: (contact as any).signal_post_author || '',
       leadIndustry: contact.industry,
       personality: contact.personality_prediction,
+      leadHeadline: leadProfile?.headline || contact.linkedin_headline || '',
+      leadProfile,
     });
+
 
     if (!message.trim()) {
       console.error(`[followup] generate-step-message returned empty for contact ${req.contact_id}`);
