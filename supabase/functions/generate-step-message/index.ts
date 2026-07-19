@@ -12,6 +12,36 @@ type LeadContext = {
   industry: string;
 };
 
+type LinkedInProfileCtx = {
+  headline?: string;
+  about?: string;
+  location?: string;
+  experience?: Array<{ title?: string; company?: string; start?: string; end?: string; description?: string }>;
+  education?: Array<{ school?: string; degree?: string; field?: string; start?: string; end?: string }>;
+};
+
+function formatProfileBlock(p?: LinkedInProfileCtx | null): string {
+  if (!p) return '';
+  const parts: string[] = [];
+  if (p.headline) parts.push(`Headline: ${String(p.headline).slice(0, 220)}`);
+  if (p.location) parts.push(`Location: ${String(p.location).slice(0, 120)}`);
+  if (p.about) parts.push(`About: ${String(p.about).replace(/\s+/g, ' ').slice(0, 600)}`);
+  if (Array.isArray(p.experience) && p.experience.length) {
+    const roles = p.experience.slice(0, 3).map((e, i) => {
+      const range = [e.start, e.end || 'present'].filter(Boolean).join(' – ');
+      const desc = e.description ? ` — ${String(e.description).replace(/\s+/g, ' ').slice(0, 180)}` : '';
+      return `  ${i + 1}. ${e.title || '(role)'} @ ${e.company || '(company)'}${range ? ` (${range})` : ''}${desc}`;
+    }).join('\n');
+    parts.push(`Experience:\n${roles}`);
+  }
+  if (Array.isArray(p.education) && p.education.length) {
+    const ed = p.education.slice(0, 2).map(e => `  • ${[e.degree, e.field].filter(Boolean).join(' ')} at ${e.school || '(school)'}`).join('\n');
+    parts.push(`Education:\n${ed}`);
+  }
+  if (parts.length === 0) return '';
+  return `\n===== LEAD LINKEDIN PROFILE (use concrete details, never paste verbatim) =====\n${parts.join('\n')}\n`;
+}
+
 // ── Personality context formatter ──
 // Converts the cached personality_prediction JSON into a compact, prompt-ready block.
 // Returns empty string if data is missing or malformed.
