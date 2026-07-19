@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
+import { wordPhraseIncludes } from '../_shared/text-match.ts';
 
 // ─── Shared types & helpers (same as signal-keyword-posts) ────────────────────
 
@@ -26,7 +27,7 @@ const GENERIC_BLACKLIST = new Set([
 ]);
 
 function normalizeText(value: string): string { return (value || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim(); }
-function fuzzyMatchList(value: string, candidates: string[]): boolean { const h = normalizeText(value); if (!h) return false; return candidates.some(c => { const n = normalizeText(c); return n ? (h.includes(n) || n.includes(h)) : false; }); }
+function fuzzyMatchList(value: string, candidates: string[]): boolean { const h = normalizeText(value); if (!h) return false; return candidates.some(c => { const n = normalizeText(c); return n ? (wordPhraseIncludes(h, n) || wordPhraseIncludes(n, h)) : false; }); }
 
 function scoreProfileAgainstICP(profile: any, icp: ICPFilters): MatchResult {
   const title = profile.headline || profile.title || profile.role || '';

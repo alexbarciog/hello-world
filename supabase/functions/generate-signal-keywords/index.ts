@@ -226,7 +226,7 @@ The phrases you generate will be searched on LinkedIn in real time.
 When someone posts one of these phrases it triggers an outreach.
 Getting it wrong wastes real money. Getting it right books real meetings.
 
-ALL phrases MUST be lowercase, conversational, and STRICTLY 2-3 words long. Never more than 3 words. Never fewer than 2 words.`;
+ALL phrases MUST be lowercase, conversational, and 2-5 words long. Never a single word. Never more than 5 words. Prefer 2-4 words — short enough to match real posts, long enough to carry intent.`;
 
   const userPrompt = `Generate buying intent keywords for this business:
 
@@ -237,7 +237,7 @@ BEFORE STATE (buyer's pain): ${analysis.before_state}
 ALTERNATIVES BUYERS USE NOW: ${analysis.competitors_or_alternatives.join(', ') || 'unknown'}
 BUYER'S OWN VOCABULARY: ${analysis.buyer_vocabulary.join(', ') || 'unknown'}
 
-Generate keywords across 7 intent categories. Each phrase MUST be 2-3 words ONLY (never 1 word, never 4+ words), lowercase, conversational. Examples of correct length: "reply rates dropped", "tired of apollo", "anyone tried lemlist", "switching from outreach". Examples of WRONG length (do NOT generate): "our outreach reply rates have dropped to nothing" (too long), "outreach" (too short).
+Generate keywords across 7 intent categories. Each phrase MUST be 2-5 words (never 1 word, never 6+ words), lowercase, conversational. Examples of correct length: "reply rates dropped", "tired of apollo", "anyone switched from apollo", "looking for lead gen". Examples of WRONG length (do NOT generate): "our outreach reply rates have dropped to nothing" (too long), "outreach" (too short).
 
 CATEGORIES:
 - frustration_current_tool (5): buyer is unhappy with what they use now. Reference competitors_or_alternatives.
@@ -292,7 +292,7 @@ GOLDEN RULE: For every phrase ask "would a vendor selling this ever post this to
 PASS examples: "reply rates dropped", "tired of apollo", "anyone tried lemlist", "switching from outreach"
 FAIL examples: "lead generation tips", "best practices outreach", "improve your pipeline"
 
-ALL keyword phrases MUST be lowercase, conversational, STRICTLY 2-3 words. Never 1 word. Never 4+ words.`;
+ALL keyword phrases MUST be lowercase, conversational, 2-5 words. Never 1 word. Never 6+ words. Prefer 2-4 words.`;
 
   const userPrompt = `Analyse this business and produce buyer-intent keywords in ONE response.
 
@@ -301,7 +301,7 @@ ${hintsBlock ? `\nUSER-PROVIDED CONTEXT:\n${hintsBlock}\n` : ''}
 WEBSITE CONTENT:
 ${websiteContent}
 
-Be specific and concrete — no vague generalisations. Identify who really buys this and what pain they had RIGHT BEFORE buying. Then produce 2-3 word keyword phrases across 7 intent categories using the buyer's own vocabulary and competitor names.
+Be specific and concrete — no vague generalisations. Identify who really buys this and what pain they had RIGHT BEFORE buying. Then produce 2-5 word keyword phrases across 7 intent categories using the buyer's own vocabulary and competitor names.
 
 CATEGORIES (counts):
 - frustration_current_tool (5)
@@ -419,8 +419,8 @@ function validateAndScoreKeywords(
     if (wordCount < 2) {
       return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too short — single words match too broadly' };
     }
-    if (wordCount > 3) {
-      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too long — must be 2-3 words max' };
+    if (wordCount > 5) {
+      return { keyword: phrase, score: 0, passes: false, category, rejectionReason: 'Too long — must be 5 words max' };
     }
 
     let score = 50;

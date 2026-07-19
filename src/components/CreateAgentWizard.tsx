@@ -231,20 +231,42 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   async function generateSignalKeywords(signalId: string, mode: "replace" | "add" = "add") {
     setGeneratingKeywords((prev) => ({ ...prev, [signalId]: true }));
     try {
-      // Fetch business context from the user's campaign (same as generateWithAI)
-      const sessionId = localStorage.getItem("goji_session_id");
+      // Fetch business context from the user's campaign (same as generateWithAI):
+      // latest campaign by user_id first, session-based lookup only as onboarding fallback.
       let businessFields: Record<string, any> = {};
-      if (sessionId) {
-        const { data: campaign } = await supabase.from("campaigns").select("company_name, website, description, pain_points, campaign_goal").eq("session_id", sessionId).order("updated_at", { ascending: false }).limit(1).single();
-        if (campaign) {
-          businessFields = {
-            companyName: campaign.company_name,
-            website: campaign.website,
-            description: campaign.description,
-            painPoints: campaign.pain_points,
-            campaignGoal: campaign.campaign_goal,
-          };
+      const { data: { user } } = await supabase.auth.getUser();
+      let campaign: any = null;
+      if (user) {
+        const { data: byUser } = await supabase
+          .from("campaigns")
+          .select("company_name, website, description, pain_points, campaign_goal")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        campaign = byUser;
+      }
+      if (!campaign) {
+        const sessionId = localStorage.getItem("goji_session_id");
+        if (sessionId) {
+          const { data: bySession } = await supabase
+            .from("campaigns")
+            .select("company_name, website, description, pain_points, campaign_goal")
+            .eq("session_id", sessionId)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          campaign = bySession;
         }
+      }
+      if (campaign) {
+        businessFields = {
+          companyName: campaign.company_name,
+          website: campaign.website,
+          description: campaign.description,
+          painPoints: campaign.pain_points,
+          campaignGoal: campaign.campaign_goal,
+        };
       }
 
       const { data, error } = await supabase.functions.invoke("generate-signal-keywords", {
@@ -275,6 +297,13 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
           });
           toast.success(`Added ${additions.length} new keywords`);
         }
+      } else {
+        // Zero keywords back is a real failure state, not a no-op — tell the user why.
+        toast.error(
+          businessFields.website || businessFields.description
+            ? "AI couldn't generate quality keywords for this signal — try again or add them manually"
+            : "Add your website and description in your campaign first — AI needs business context to generate keywords"
+        );
       }
     } catch (e) {
       console.error("Failed to generate keywords:", e);

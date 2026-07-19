@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
+import { wordPhraseIncludes } from '../_shared/text-match.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ function fuzzyMatchList(value: string, candidates: string[]): boolean {
   return candidates.some(c => {
     const needle = normalizeText(c);
     if (!needle) return false;
-    return haystack.includes(needle) || needle.includes(haystack);
+    return wordPhraseIncludes(haystack, needle) || wordPhraseIncludes(needle, haystack);
   });
 }
 

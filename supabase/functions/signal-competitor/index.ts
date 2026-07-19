@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { resolvePublicLinkedinUrl, normalizePostUrl } from '../_shared/linkedin-public-url.ts';
+import { wordPhraseIncludes } from '../_shared/text-match.ts';
 
 // ─── Shared types & helpers ───────────────────────────────────────────────────
 
@@ -420,11 +421,11 @@ function fuzzyTitleMatch(hl: string, jobTitles: string[]): boolean {
   for (const t of jobTitles) {
     const needle = t.toLowerCase().trim();
     if (!needle) continue;
-    // Direct substring still counts (preserves old behaviour)
-    if (needle.length >= 3 && hlLower.includes(needle)) return true;
+    // Whole-word phrase match ("CEO" must not match "I help CEOs")
+    if (needle.length >= 3 && wordPhraseIncludes(hlLower, needle)) return true;
     // Token overlap: any meaningful token from the ICP title in the headline
     const tokens = needle.split(/[\s/,&|\-]+/).filter(w => w.length >= 3 && !TITLE_STOPWORDS.has(w));
-    if (tokens.some(tok => hlLower.includes(tok))) return true;
+    if (tokens.some(tok => wordPhraseIncludes(hlLower, tok))) return true;
   }
   return false;
 }
