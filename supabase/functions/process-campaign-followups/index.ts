@@ -849,6 +849,9 @@ async function generateNextStepMessage(
   lovableApiKey: string,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
+  unipileDsn?: string,
+  unipileApiKey?: string,
+  unipileAccountId?: string,
 ): Promise<boolean> {
   const nextStep = workflowSteps[wfIndex];
   if (!nextStep || nextStep.type !== 'message') return false;
