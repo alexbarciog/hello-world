@@ -485,6 +485,9 @@ async function processCampaign(
             lovableApiKey,
             supabaseUrl,
             supabaseServiceRoleKey,
+            unipileDsn,
+            unipileApiKey,
+            accountId,
           );
           if (gen) generatedCount++;
 
