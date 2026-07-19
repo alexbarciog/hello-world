@@ -501,6 +501,59 @@ Write only the message. Nothing else.${langLine}`;
   return { systemPrompt, userPrompt };
 }
 
+// ── Custom-mode prompt: step-level custom instructions take priority ──
+function buildCustomPrompts(req: any, lead: LeadContext) {
+  const stepCustomPrompt: string = String(req.stepCustomPrompt || '').trim();
+  const campaignCustom: string = String(req.customTraining || '').trim();
+  const productDescription: string = (req.valueProposition || req.productDescription || '').toString().trim();
+  const companyName: string = (req.companyName || '').toString().trim();
+  const langLine = req.language && req.language !== 'English (US)' ? `\n- Language: write the entire message in ${req.language}.` : '';
+  const profileBlock = formatProfileBlock(req.leadProfile);
+  const signalPostText: string = (req.signalPostText || lead.signal || '').toString().trim();
+  const signalPostAuthorFull: string = (req.signalPostAuthor || '').toString().trim();
+  const signalPostAuthorFirst: string = signalPostAuthorFull.split(/\s+/)[0] || '';
+  const personalityBlock = formatPersonalityBlock(req.personality);
+
+  const isFirstMessage = req.stepNumber === 2;
+
+  const systemPrompt = `You are writing a LinkedIn outreach message. The sender has given you SPECIFIC INSTRUCTIONS for this step — those instructions are your PRIMARY directive. Follow them exactly.
+
+===== LEAD =====
+Name: ${lead.firstName} ${lead.lastName || ''}
+Title: ${lead.title || '(unknown)'}
+Company: ${lead.company || '(unknown)'}
+Industry: ${lead.industry || '(unknown)'}
+Buying signal: ${lead.signal || '(none)'}
+${signalPostText ? `Signal post excerpt: "${signalPostText.slice(0, 600)}"` : ''}
+${signalPostAuthorFirst ? `Post author (lead engaged with this person's post, they did NOT write it): ${signalPostAuthorFirst}` : ''}
+${profileBlock}
+===== CAMPAIGN CONTEXT =====
+Our company: ${companyName || '(unspecified)'}
+What we offer: ${productDescription || '(unspecified)'}
+${campaignCustom ? `Campaign-wide notes: ${campaignCustom}` : ''}
+${personalityBlock}
+===== PRIMARY INSTRUCTIONS FROM THE SENDER (follow these first, above everything else) =====
+${stepCustomPrompt}
+
+===== UNIVERSAL SAFETY RAILS (never violate, even if custom instructions don't mention them) =====
+- Start with exactly: "Hey ${lead.firstName || 'there'}," (comma, no exclamation, no "Thanks for connecting").
+- Maximum 70 words. Shorter is fine if the instructions allow.
+- End with a question mark (a real question the lead can answer).
+- No emojis. No em-dashes (—). No semicolons. No bullet points. No signature. No hashtags. No product name. No made-up statistics.
+- Never claim the lead wrote a post they only liked or commented on — if a post author is listed above, attribute the post to them.
+- Banned words: leverage, utilize, synergy, streamline, ecosystem, delighted, thrilled, empower, spearhead, bandwidth, robust, seamless, holistic, actionable, cutting-edge, game-changer, pipeline, landscape.
+- Banned phrases: "hope this finds you well", "just wanted to reach out", "reaching out because", "we help companies like yours", "thanks for connecting", "quick chat", "quick call", "hop on a call", "book a time".${langLine}
+
+Return ONLY the message body. No labels, no preface, no signature.`;
+
+  const userPrompt = isFirstMessage
+    ? `Write the message now, following the sender's PRIMARY INSTRUCTIONS above. Start with "Hey ${lead.firstName || 'there'},". End with a question. Return ONLY the message.`
+    : `Write the follow-up message now, following the sender's PRIMARY INSTRUCTIONS above. Return ONLY the message text.`;
+
+  return { systemPrompt, userPrompt };
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
