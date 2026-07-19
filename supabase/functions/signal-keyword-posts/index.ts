@@ -156,6 +156,20 @@ function isUnfundedJourneyPost(text: string): boolean {
   return JOURNEY_DIARY_RE.test(text) || NO_BUDGET_RE.test(text);
 }
 
+// Peer-research guard (service sellers only): "which tools are you using /
+// how did other teams solve this" posts are discussion threads, not service
+// procurement — even when phrased as questions. VENDOR_SEEKING_RE exempts
+// posts that actually want external help.
+const PEER_RESEARCH_RE = /\b(would love to hear (from|how)|hear from (teams|others|people|folks)|what works,? (and )?what (doesn'?t|does not)|which (tools?|platforms?|stack) (are you|you'?re|you are|is everyone) using|how (are|do) (you|others|other (teams|companies)) (handl|solv|manag|approach)|curious (how|what|if) (others|you|anyone)|share (your|their) (experience|learnings|setup)|has anyone (built|implemented|figured|solved|automated))\b/i;
+const VENDOR_SEEKING_RE = /\b(hire|hiring|outsourc\w*|agency|agencies|dev shop|studio|freelanc\w*|contractor|vendor|consultant|(partner|someone|team) to (build|develop|do)|get (this|it) built|build (this|it) for us|paying|budget|quote|proposal)\b/i;
+const SERVICE_SELLER_RE = /\b(agency|agencies|studio|consultanc\w*|consulting|dev shop|development (service|agency|studio|company|firm)|software (house|development)|we (build|develop|design|create) (custom|apps|websites|software)|outsourc\w*|freelanc\w*|done[\s-]for[\s-]you|managed service)\b/i;
+
+function isPeerResearchPost(text: string): boolean {
+  if (!text) return false;
+  if (VENDOR_SEEKING_RE.test(text)) return false;
+  return PEER_RESEARCH_RE.test(text);
+}
+
 function isSeller(postText: string, authorHeadline: string): boolean {
   const text = ((postText || '') + ' ' + (authorHeadline || '')).toLowerCase();
   return SELLER_PHRASES.some(p => text.includes(p));
@@ -616,6 +630,10 @@ async function classifyIntentBatch(
   const postsWithText = posts.filter(p => p.text && p.text.length >= 20);
   if (postsWithText.length === 0) return results;
 
+  // Offering-type detection: the peer-research guard only applies to service
+  // sellers — for tool/SaaS sellers, tool-evaluation posts ARE buying signals.
+  const sellsServices = SERVICE_SELLER_RE.test(businessContext || '');
+
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) {
     // No AI key — accept all with default score
@@ -633,7 +651,7 @@ DEFAULT TO is_buyer=false. Only set is_buyer=true if the post passes ALL of thes
   1. Present tense — the need exists NOW (not "we did", "we used to", "last year")
   2. The AUTHOR (not their company in third person) is the one expressing the need / asking
   3. There is an EXPLICIT signal: a question seeking recommendations, a stated frustration with a current vendor, a stated evaluation of alternatives, or an explicit "we need X / looking for X / anyone use X"
-  4. The need is RELEVANT to the company context above. Vague pain ("we have growth challenges") is NOT enough.
+  4. The need is RELEVANT to the company context above AND matches what the user actually SELLS. If the user sells SERVICES (agency, dev shop, consulting), the author must want EXTERNAL HELP — hire, outsource, find an agency/team/partner to build it. Posts asking peers which TOOLS they use or how other teams solved something internally are PEER RESEARCH, not service procurement — reject them. If the user sells a PRODUCT/TOOL, tool-evaluation posts ARE relevant. Vague pain ("we have growth challenges") is NEVER enough.
   5. It is NOT thought leadership, advice-giving, hiring, self-promotion, case study, hot take, or congratulations
   6. The author is a PLAUSIBLE PAYING CUSTOMER. Intent without budget is NOT buying intent. Reject when the post signals they cannot pay: raising cash through side gigs to fund the project, pre-revenue solo founders grinding for capital, asking for co-founders or equity partners instead of vendors, or building the thing THEMSELVES (DIY). Mentioning vendors/quotes does not override this — someone doing door-to-door sales to afford an app is not a lead.
 
@@ -666,6 +684,8 @@ REJECT — these are NOT buyers (is_buyer: false, score < 50):
 - "Building in public" / "day X of my journey" posts → personal-brand content, not procurement
 - "Looking for a technical co-founder to build my idea" → wants an equity partner, not a paying customer
 - "Teaching myself to code so I can build my app" → DIY, will not pay a vendor
+- "Has anyone built a truly effective company-wide AI brain with strong MCP integrations? Would love to hear from teams that have figured this out — what works, what doesn't, and which tools you are using" → PEER RESEARCH: a CEO asking other teams to share experiences and tool choices. Nothing here seeks to HIRE anyone — reject for a services seller even though it looks like seeking_recommendation
+- "How are other RevOps teams handling attribution? Curious what's working for you" → peer discussion, not procurement
 
 STRICT SCORING:
 - 90-100: Author is asking RIGHT NOW for a specific alternative/recommendation, with named pain or named current vendor → BUYER
@@ -857,6 +877,16 @@ The pipeline will REJECT any post where matches_perfect_lead=false, regardless o
           const rejected = { ...cls, is_buyer: false, intent_score: Math.min(cls.intent_score, 45), reason: `unfunded_journey_post — ${cls.reason}` };
           results.set(`rejected:${cls.id}`, rejected);
           console.log(`[AI] 🚫 unfunded-journey ${cls.id}: diary/no-budget signals override score=${cls.intent_score}`);
+          continue;
+        }
+
+        // Peer-research guard (service sellers only, backstop to prompt rule 4):
+        // "which tools are you using / hear from teams" posts seek discussion,
+        // not a vendor — reject unless the post explicitly wants external help.
+        if (cls.is_buyer && sellsServices && isPeerResearchPost(matchingPost?.text || '')) {
+          const rejected = { ...cls, is_buyer: false, intent_score: Math.min(cls.intent_score, 45), reason: `peer_research_not_procurement — ${cls.reason}` };
+          results.set(`rejected:${cls.id}`, rejected);
+          console.log(`[AI] 🚫 peer-research ${cls.id}: discussion post, no vendor-seeking signal (score=${cls.intent_score})`);
           continue;
         }
 
