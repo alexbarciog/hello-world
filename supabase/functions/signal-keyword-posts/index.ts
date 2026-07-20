@@ -454,7 +454,7 @@ async function insertContact(
   // Build signal string with intent reason if available
   const fullSignal = intentReason ? `${signal} — ${intentReason}` : signal;
 
-  const { data: inserted, error } = await supabase.from('contacts').insert({
+  const contactRow: Record<string, unknown> = {
     user_id: userId, first_name: firstName, last_name: lastName,
     title: profile.current_role || profile.headline || profile.title || null,
     company: enrichedCompany?.name || profile.company || profile.current_company?.name || null,
@@ -467,7 +467,17 @@ async function insertContact(
     company_icon_color: ['orange', 'blue', 'green', 'purple', 'pink', 'gray'][Math.floor(Math.random() * 6)],
     relevance_tier: relevanceTier,
     approval_status: manualApproval ? 'pending' : 'auto_approved',
-  }).select('id').single();
+    // Persisted so campaigns can exclude already-connected leads at scheduling
+    // time ("Exclude 1st degree connections" setting).
+    network_distance: profile.network_distance ? String(profile.network_distance) : null,
+  };
+  let { data: inserted, error } = await supabase.from('contacts').insert(contactRow).select('id').single();
+  // Fail-open if the network_distance migration hasn't been applied yet:
+  // lead insertion must NEVER break on the optional column.
+  if (error && /network_distance/i.test(error.message || '')) {
+    delete contactRow.network_distance;
+    ({ data: inserted, error } = await supabase.from('contacts').insert(contactRow).select('id').single());
+  }
   if (error) { console.error(`Insert contact error: ${error.message}`); return 'rejected'; }
   if (inserted?.id && listName) {
     const listId = await ensureList(supabase, userId, listName, agentId);

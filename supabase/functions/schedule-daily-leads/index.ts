@@ -5,6 +5,15 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// True when a persisted contacts.network_distance value means "already a
+// 1st-degree connection". Values come from Unipile responses saved at
+// discovery or by send-connection-requests, so cover the common encodings.
+function isFirstDegreeDistance(value: unknown): boolean {
+  if (value == null) return false;
+  const v = String(value).trim().toUpperCase();
+  return v === '1' || v === 'FIRST_DEGREE' || v === 'FIRST' || v === 'DISTANCE_1' || v === '1ST';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,7 +55,7 @@ Deno.serve(async (req) => {
     // Get all active campaigns
     const { data: campaigns, error: campErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, source_list_id, source_agent_id, workflow_steps, daily_connect_limit')
+      .select('id, user_id, source_list_id, source_agent_id, workflow_steps, daily_connect_limit, exclude_first_degree')
       .eq('status', 'active');
 
     if (campErr) throw campErr;
@@ -164,9 +173,12 @@ Deno.serve(async (req) => {
                 if (data) alreadySent.push(...data);
               }
 
+              // 'skipped_already_connected' is TERMINAL: the send step confirmed via
+              // Unipile that this contact is already a 1st-degree connection. Without
+              // it here, such contacts were rescheduled (and re-skipped) every day.
               const doneSet = new Set(
                 alreadySent
-                  .filter((r: any) => ['sent', 'accepted', 'pending', 'completed'].includes(r.status))
+                  .filter((r: any) => ['sent', 'accepted', 'pending', 'completed', 'skipped_already_connected'].includes(r.status))
                   .map((r: any) => r.contact_id)
               );
 
@@ -178,15 +190,36 @@ Deno.serve(async (req) => {
                 let contactsWithTier: any[] = [];
                 for (let i = 0; i < unseenIds.length; i += 100) {
                   const batch = unseenIds.slice(i, i + 100);
-                  const { data, error: tierErr } = await supabase
+                  let { data, error: tierErr } = await supabase
                     .from('contacts')
-                    .select('id, relevance_tier, approval_status')
+                    .select('id, relevance_tier, approval_status, network_distance')
                     .in('id', batch)
                     .in('approval_status', ['approved', 'auto_approved']);
+                  // Fail-open if the network_distance migration hasn't run yet.
+                  if (tierErr && /network_distance/i.test(tierErr.message || '')) {
+                    ({ data, error: tierErr } = await supabase
+                      .from('contacts')
+                      .select('id, relevance_tier, approval_status')
+                      .in('id', batch)
+                      .in('approval_status', ['approved', 'auto_approved']));
+                  }
                   if (tierErr) {
                     console.error(`[schedule-daily] contacts batch error:`, tierErr.message);
                   }
                   if (data) contactsWithTier.push(...data);
+                }
+
+                // ── Exclude 1st degree connections at SCHEDULING time ──
+                // Uses the network_distance persisted at discovery / by the send
+                // step. Contacts with unknown distance still pass — the send-time
+                // Unipile check remains the authoritative backstop for those.
+                if ((campaign as any).exclude_first_degree !== false) {
+                  const before = contactsWithTier.length;
+                  contactsWithTier = contactsWithTier.filter((c: any) => !isFirstDegreeDistance(c.network_distance));
+                  const excluded = before - contactsWithTier.length;
+                  if (excluded > 0) {
+                    console.log(`[schedule-daily] campaign ${campaign.id}: excluded ${excluded} known 1st-degree connection(s)`);
+                  }
                 }
 
                 if (contactsWithTier.length > 0) {

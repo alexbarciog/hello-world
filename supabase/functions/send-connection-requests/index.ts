@@ -183,6 +183,20 @@ Deno.serve(async (req) => {
               continue;
             }
 
+            // Persist the freshly resolved network distance on the contact so
+            // schedule-daily-leads can exclude known 1st-degrees BEFORE they are
+            // ever scheduled again. Fail-open (column may not exist yet).
+            try {
+              const resolvedDistance = resolveData.network_distance
+                ? String(resolveData.network_distance)
+                : (isFirstDegree(resolveData) ? 'FIRST_DEGREE' : null);
+              if (resolvedDistance) {
+                await serviceClient.from('contacts').update({ network_distance: resolvedDistance }).eq('id', contact.id);
+              }
+            } catch (e) {
+              console.warn(`[send-conn] network_distance persist failed for ${contact.id}:`, e instanceof Error ? e.message : e);
+            }
+
             // Guard: if Exclude 1st degree connections is enabled and this profile is already
             // in the user's network (BEFORE the campaign sent any invite), skip entirely.
             // This is safe — we only reach this code when no invite has been sent yet for this lead.
