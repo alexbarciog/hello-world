@@ -84,6 +84,8 @@ Deno.serve(async (req) => {
     }
 
     let totalScheduled = 0;
+    // Per-campaign diagnostics so an empty day is explainable instead of silent.
+    const campaignReports: { campaign_id: string; scheduled_connections: number; scheduled_messages: number; note: string }[] = [];
 
     // Group campaigns by user to respect per-user limits
     const userCampaigns: Record<string, typeof campaigns> = {};
@@ -128,7 +130,15 @@ Deno.serve(async (req) => {
         }
 
         for (const campaign of userCamps) {
-          if (!campaign.source_list_id) continue;
+          const report = { campaign_id: campaign.id, scheduled_connections: 0, scheduled_messages: 0, note: '' };
+          campaignReports.push(report);
+          // Per-campaign isolation: one campaign's failure must never starve the
+          // user's other campaigns (previously an exception aborted the whole user).
+          try {
+          if (!campaign.source_list_id) {
+            report.note = 'no source list resolved — agent list missing or renamed';
+            continue;
+          }
 
           // Per-campaign cap (falls back to sender limit if unset)
           const campaignCap = campaign.daily_connect_limit && campaign.daily_connect_limit > 0
@@ -142,6 +152,10 @@ Deno.serve(async (req) => {
             connectionsLimit - connectionsScheduled,
             campaignConnRemaining,
           );
+
+          if (remainingConnections <= 0) {
+            report.note = `connection quota exhausted for today (user-wide limit ${connectionsLimit}, already scheduled ${connectionsScheduled}; campaign cap ${campaignCap})`;
+          }
 
           if (remainingConnections > 0) {
             // Get contacts in list — batch to avoid URL length limits
@@ -184,6 +198,9 @@ Deno.serve(async (req) => {
 
               const unseenIds = allContactIds.filter((id: string) => !doneSet.has(id));
               console.log(`[schedule-daily] campaign ${campaign.id}: ${allContactIds.length} total, ${doneSet.size} done, ${unseenIds.length} unseen`);
+              if (unseenIds.length === 0) {
+                report.note = `all ${allContactIds.length} contacts already contacted or terminally skipped`;
+              }
 
               if (unseenIds.length > 0) {
                 // Fetch with relevance tier — batch in chunks of 100, only approved/auto_approved
@@ -219,6 +236,9 @@ Deno.serve(async (req) => {
                   const excluded = before - contactsWithTier.length;
                   if (excluded > 0) {
                     console.log(`[schedule-daily] campaign ${campaign.id}: excluded ${excluded} known 1st-degree connection(s)`);
+                    if (contactsWithTier.length === 0) {
+                      report.note = `all ${before} eligible contacts are already 1st-degree connections`;
+                    }
                   }
                 }
 
@@ -249,6 +269,7 @@ Deno.serve(async (req) => {
                     } else {
                       connectionsScheduled++;
                       totalScheduled++;
+                      report.scheduled_connections++;
                     }
                   }
                 } else {
@@ -282,10 +303,12 @@ Deno.serve(async (req) => {
                       }
                     }
                   }
+                  if (!report.note) report.note = 'no approved contacts left — leads may be waiting for approval';
                   console.log(`[schedule-daily] campaign ${campaign.id}: no approved contacts with tier data found`);
                 }
               }
             } else {
+              report.note = 'source list has no contacts';
               console.log(`[schedule-daily] campaign ${campaign.id}: no contacts in list ${campaign.source_list_id}`);
             }
           }
@@ -359,7 +382,12 @@ Deno.serve(async (req) => {
               msgScheduledThisCampaign++;
               messagesScheduled++;
               totalScheduled++;
+              report.scheduled_messages++;
             }
+          }
+          } catch (campErr) {
+            report.note = `error: ${(campErr instanceof Error ? campErr.message : String(campErr)).slice(0, 200)}`;
+            console.error(`[schedule-daily] campaign ${campaign.id} error:`, campErr);
           }
         }
 
@@ -369,7 +397,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    return jsonRes({ status: 'ok', total_scheduled: totalScheduled, date: today });
+    console.log('[schedule-daily] campaign summary:', JSON.stringify(campaignReports));
+    return jsonRes({ status: 'ok', total_scheduled: totalScheduled, date: today, campaigns: campaignReports });
   } catch (error) {
     console.error('[schedule-daily] error:', error);
     return jsonRes({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
