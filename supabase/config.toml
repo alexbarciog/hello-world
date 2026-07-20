@@ -3,6 +3,11 @@ project_id = "uwwajlezgeurnvvrvdvb"
 [functions.connect-linkedin]
 verify_jwt = false
 
+# Receives Unipile events; authenticated via UNIPILE_WEBHOOK_SECRET header,
+# not Supabase JWTs.
+[functions.unipile-webhook]
+verify_jwt = false
+
 [functions.discover-leads]
 verify_jwt = false
 

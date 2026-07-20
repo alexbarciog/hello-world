@@ -116,6 +116,11 @@ Deno.serve(async (req) => {
       });
 
       if (result) {
+        // Fire-and-forget: make sure workspace webhooks (acceptance/replies)
+        // are registered with Unipile. Idempotent and best-effort.
+        ensureUnipileWebhooks(UNIPILE_API_KEY, UNIPILE_DSN).catch((e) =>
+          console.warn('[check_status] ensureUnipileWebhooks failed:', e?.message || e)
+        );
         return jsonResponse({
           status: 'connected',
           account_id: result.accountId,
@@ -436,6 +441,56 @@ function buildRedirectUrl(returnUrl: string | undefined, linkedinStatus: 'succes
   } catch {
     return undefined;
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Workspace webhook registration (idempotent, memoized per instance).
+// Registers Unipile → unipile-webhook for real-time acceptance ("users" /
+// new_relation) and reply ("messaging") events, authenticated with the
+// UNIPILE_WEBHOOK_SECRET header the receiving function verifies.
+// ─────────────────────────────────────────────────────────────────────────────
+let webhooksEnsured = false;
+async function ensureUnipileWebhooks(apiKey: string, dsn: string): Promise<void> {
+  if (webhooksEnsured) return;
+  const secret = Deno.env.get('UNIPILE_WEBHOOK_SECRET');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  if (!secret || !supabaseUrl) return;
+  const targetUrl = `${supabaseUrl}/functions/v1/unipile-webhook`;
+
+  const listRes = await fetch(`https://${dsn}/api/v1/webhooks`, {
+    headers: { 'X-API-KEY': apiKey, 'Accept': 'application/json' },
+  });
+  if (!listRes.ok) {
+    console.warn('[webhooks] list failed:', listRes.status);
+    return;
+  }
+  const listData = await listRes.json();
+  const existing = (listData.items || listData || []) as any[];
+  const have = new Set(
+    existing
+      .filter((w) => (w.request_url || w.url || '').startsWith(targetUrl))
+      .map((w) => (w.source || '').toString()),
+  );
+
+  for (const source of ['users', 'messaging']) {
+    if (have.has(source)) continue;
+    const createRes = await fetch(`https://${dsn}/api/v1/webhooks`, {
+      method: 'POST',
+      headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        source,
+        request_url: targetUrl,
+        name: `intentsly-${source}`,
+        headers: [{ key: 'X-Intentsly-Secret', value: secret }],
+      }),
+    });
+    if (createRes.ok) {
+      console.log(`[webhooks] registered ${source} webhook`);
+    } else {
+      console.warn(`[webhooks] create ${source} failed:`, createRes.status, (await createRes.text()).slice(0, 200));
+    }
+  }
+  webhooksEnsured = true;
 }
 
 async function resolveConnectedAccount({
