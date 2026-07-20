@@ -2,45 +2,61 @@ import type { MouseEvent } from "react";
 import { toast } from "sonner";
 
 /**
- * Open an external URL in a way that survives hostile embedding contexts.
+ * External-link handling that can never replace the app with a framed
+ * LinkedIn error page.
  *
- * Plain <a target="_blank"> fails when the app runs inside an embedding
- * iframe (editor previews, in-app browsers): the navigation gets forced into
- * the frame, LinkedIn refuses to be framed (X-Frame-Options), and the user
- * sees "www.linkedin.com refused to connect · ERR_BLOCKED_BY_RESPONSE".
- *
- * IMPORTANT: never pass "noopener" in the window.open features string —
- * Chrome then returns null even on SUCCESS, which makes any null-check
- * fallback fire on every click (and previously navigated the app itself to
- * LinkedIn). Open plainly, null-check, then detach the opener by hand.
+ * Two worlds:
+ * 1. App running in a normal top-level tab (production usage): native
+ *    <a target="_blank"> is bulletproof — we don't intercept AT ALL.
+ * 2. App running inside an embedding iframe (editor previews, in-app
+ *    browsers): those shells intercept anchor clicks AND monkey-patch
+ *    window.open, rerouting navigation into their frame — where LinkedIn
+ *    refuses to render (X-Frame-Options → ERR_BLOCKED_BY_RESPONSE).
+ *    There is no reliable way to open a tab from inside; so we don't
+ *    navigate at all — we copy the link and tell the user.
  */
+const isEmbedded = (() => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    // Cross-origin access to window.top throws → definitely embedded.
+    return true;
+  }
+})();
+
 export function openExternal(url: string | null | undefined): void {
   if (!url) return;
 
-  const w = window.open(url, "_blank");
-  if (w) {
-    try {
-      w.opener = null; // detach for security (what "noopener" would have done)
-    } catch {
-      /* cross-origin handle — already detached */
+  if (!isEmbedded) {
+    const w = window.open(url, "_blank");
+    if (w) {
+      try {
+        w.opener = null;
+      } catch {
+        /* cross-origin handle — already detached */
+      }
+      return;
     }
-    return;
+    // Popup blocker in a top-level tab — copy instead of navigating away.
   }
 
-  // Genuinely blocked (sandboxed embed without allow-popups, or a popup
-  // blocker). NEVER navigate the app itself — that replaces Intentsly with a
-  // framed LinkedIn error. Copy the link and tell the user instead.
   try {
     void navigator.clipboard?.writeText(url);
-    toast.error("New tab was blocked by this environment — link copied, paste it into a new tab.");
+    toast.info(
+      isEmbedded
+        ? "Links can't open from this embedded preview — copied to clipboard. Open Intentsly in its own browser tab for one-click links."
+        : "Your browser blocked the new tab — link copied to clipboard.",
+      { duration: 6000 },
+    );
   } catch {
-    toast.error("New tab was blocked by this environment. Open Intentsly in its own browser tab and try again.");
+    toast.info("Open Intentsly in its own browser tab to follow LinkedIn links.");
   }
 }
 
 /**
- * Spread onto an <a> so left-clicks route through openExternal while
- * middle-click / cmd-click / copy-link keep native anchor behavior.
+ * Spread onto an <a>. In a normal tab the anchor behaves 100% natively
+ * (we only stop row-level click handlers); inside an embedded preview we
+ * take over and copy the link instead of letting the shell frame LinkedIn.
  */
 export function externalLinkProps(url: string | null | undefined) {
   return {
@@ -48,13 +64,10 @@ export function externalLinkProps(url: string | null | undefined) {
     target: "_blank" as const,
     rel: "noopener noreferrer",
     onClick: (e: MouseEvent) => {
-      // Deliberately ignore e.defaultPrevented: embedding shells (editor
-      // previews) install document-level capture listeners that preventDefault
-      // and reroute anchor navigations into their iframe — we still want our
-      // own top-level tab in that case.
+      e.stopPropagation(); // keep row/card click handlers out of it
+      if (!isEmbedded) return; // top-level tab → pure native anchor behavior
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      e.stopPropagation();
       openExternal(url);
     },
   };
