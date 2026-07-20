@@ -430,13 +430,13 @@ export default function Dashboard() {
               <div className="relative" ref={periodRef}>
                 <button
                   onClick={() => setPeriodOpen((v) => !v)}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white/35 border border-white/60 rounded-full px-4 py-2.5 hover:bg-white/60 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-medium text-neutral-800 bg-white border border-[#EBEBED] rounded-full px-4 py-2.5 hover:bg-neutral-50 transition-colors"
                 >
                   {periodLabel[period]}
                   <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${periodOpen ? "rotate-180" : ""}`} />
                 </button>
                 {periodOpen && (
-                  <div className="absolute right-0 mt-2 w-44 bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-1.5 z-50">
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-[#EBEBED] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-1.5 z-50">
                     {(Object.keys(periodLabel) as Period[]).map((p) => (
                       <button
                         key={p}
@@ -456,10 +456,11 @@ export default function Dashboard() {
                 )}
               </div>
               <motion.button
-                whileHover={{ y: -1 }}
+                whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 22 }}
                 onClick={() => navigate("/campaigns/new")}
-                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-[#3B82F6] hover:bg-[#2563eb] rounded-full px-4 py-2.5 shadow-[0_6px_16px_-6px_rgba(59,130,246,0.5)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white bg-[#0a0a0a] hover:bg-neutral-800 rounded-full px-4 py-2.5 shadow-[0_8px_20px_-8px_rgba(10,10,10,0.4)] transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 New campaign

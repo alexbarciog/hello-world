@@ -48,7 +48,7 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-[22px] p-6 bg-white/25 backdrop-blur-xl border border-white/55 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_12px_32px_-14px_rgba(10,10,10,0.15)] transition-shadow"
+      className="rounded-2xl p-6 bg-white border border-[#EBEBED] hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow"
     >
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
@@ -65,7 +65,7 @@ export function PerformanceChart({ chartData }: PerformanceChartProps) {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white/35 border border-white/60 rounded-full px-3.5 py-2 hover:bg-white/60 transition-colors">
+            <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-[#EBEBED] rounded-full px-3.5 py-2 hover:bg-neutral-50 transition-colors">
               {range.label}
               <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
             </button>

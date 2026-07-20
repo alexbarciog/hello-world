@@ -16,8 +16,8 @@ interface LeadsByTierProps {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-// Reference-inspired palette: purple, blue, emerald
-const PALETTE = ["#0a0a0a", "#3B82F6", "#34D399"];
+// Semantic tier palette: hot = goji brand orange, warm = amber, cold = light blue
+const PALETTE = ["#FA7534", "#FBBF24", "#93C5FD"];
 
 const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
   const themed = data.map((d, i) => ({ ...d, color: PALETTE[i] ?? d.color }));
@@ -30,7 +30,7 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-[22px] p-6 bg-white/25 backdrop-blur-xl border border-white/55 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_12px_32px_-14px_rgba(10,10,10,0.15)] transition-shadow flex flex-col"
+      className="rounded-2xl p-6 bg-white border border-[#EBEBED] hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow flex flex-col"
     >
       <div className="flex items-start justify-between">
         <div>
@@ -44,14 +44,14 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
             </span>
           </div>
         </div>
-        <button className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:bg-white/45 hover:text-neutral-700 transition-colors">
+        <button className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 transition-colors">
           <MoreHorizontal className="w-4 h-4" />
         </button>
       </div>
 
       {loading ? (
         <div className="h-[180px] flex items-center justify-center">
-          <div className="h-6 w-32 bg-white/45 rounded-lg animate-pulse" />
+          <div className="h-6 w-32 bg-neutral-100 rounded-lg animate-pulse" />
         </div>
       ) : !hasData ? (
         <div className="h-[180px] flex items-center justify-center">

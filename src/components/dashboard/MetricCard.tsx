@@ -46,33 +46,33 @@ export function MetricCard({
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.55, ease: EASE }}
       whileHover={{ y: -3 }}
-      className="group relative rounded-[22px] bg-gradient-to-b from-[#F2F4FE] to-[#FDFDFD] border border-white/55 px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 shadow-[0_1px_2px_rgba(10,10,10,0.03)] hover:shadow-[0_16px_36px_-18px_rgba(10,10,10,0.18)] transition-shadow"
+      className="group relative rounded-2xl bg-white border border-[#EBEBED] px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.14)] transition-shadow"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {Icon && (
-            <span className="w-10 h-10 rounded-lg bg-white text-[#050E2A] flex items-center justify-center shrink-0 ring-1 ring-[#EBECF0]">
+            <span className="w-10 h-10 rounded-xl bg-[#F9F9FA] text-[#0a0a0a] flex items-center justify-center shrink-0 ring-1 ring-[#EBEBED]">
               <Icon className="w-[18px] h-[18px]" strokeWidth={2.1} />
             </span>
           )}
           <div className="min-w-0 flex flex-col">
             {loading ? (
-              <div className="h-8 w-24 bg-white/45 rounded animate-pulse" />
+              <div className="h-8 w-24 bg-neutral-100 rounded animate-pulse" />
             ) : numeric !== null ? (
               <div className="flex items-baseline gap-2">
                 <CountUp
                   to={numeric}
                   duration={1.4}
-                  className="text-[30px] leading-none font-medium tracking-[-0.03em] text-[#050E2A]"
+                  className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-[#0a0a0a]"
                 />
                 {trend && (
-                  <span className={`text-[11px] font-semibold ${trendPositive ? "text-emerald-600" : "text-rose-500"}`}>
-                    {trendPositive ? "+" : ""}{trend.value}%
+                  <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${trendPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                    {trendPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
                   </span>
                 )}
               </div>
             ) : (
-              <span className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-neutral-900">{value}</span>
+              <span className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-[#0a0a0a]">{value}</span>
             )}
             <span className="text-[12.5px] text-neutral-500 mt-1.5 truncate">{title}</span>
           </div>
@@ -82,7 +82,7 @@ export function MetricCard({
       <button
         type="button"
         onClick={onDetails}
-        className="mt-auto -mb-1 flex items-center justify-between text-[13px] text-[#6D7181] transition-colors border-t border-[#EBECF0] pt-3"
+        className="mt-auto -mb-1 flex items-center justify-between text-[13px] text-neutral-500 hover:text-[#0a0a0a] transition-colors border-t border-[#F4F4F5] pt-3"
       >
         <span className="tracking-[-0.02em]">View details</span>
         <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />

@@ -2,8 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
-import premiumBg from "@/assets/premium-gradient-bg.png";
-import platformBg from "@/assets/platform-bg.png.asset.json";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -233,20 +231,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [sub.loading, sub.hasAccess]);
 
   return (
-    <div
-      className="flex h-screen overflow-hidden bg-transparent"
-      style={{
-        backgroundImage: `url(${platformBg.url})`,
-        backgroundSize: "cover",
-        backgroundPosition: "top center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
-      }}
-    >
+    <div className="flex h-screen overflow-hidden" style={{ background: "#F7F7F8" }}>
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
       <aside
-        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 bg-white/40 backdrop-blur-xl ${collapsed ? "w-[72px]" : "w-[260px]"}`}
+        className={`hidden md:flex flex-col shrink-0 transition-all duration-200 border-r border-[#EBEBED] ${collapsed ? "w-[72px]" : "w-[260px]"}`}
       >
         {/* Logo row */}
         <div className="flex items-center justify-between px-5 py-5">
@@ -273,9 +262,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search"
-                className="w-full rounded-xl bg-white pl-9 pr-8 py-2.5 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none transition-colors"
+                className="w-full rounded-xl bg-white border border-[#EBEBED] pl-9 pr-8 py-2 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-300 transition-colors"
               />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-neutral-400 font-medium bg-white/80 border border-neutral-200 rounded-md px-1.5 py-0.5">
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-[10px] text-neutral-400 font-medium bg-[#F7F7F8] border border-[#EBEBED] rounded-md px-1.5 py-0.5">
                 ⌘K
               </div>
             </div>
@@ -290,7 +279,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Nav — grouped */}
         <nav className="flex-1 px-3 py-1 overflow-y-auto relative">
           {!collapsed && (
-            <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-neutral-600 px-2.5 pt-2 pb-1.5">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-neutral-400 px-2.5 pt-2 pb-1.5">
               Menu
             </p>
           )}
@@ -303,10 +292,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <button
                     onClick={() => navigate(item.path)}
                     title={collapsed ? item.label : undefined}
-                    className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors ${
+                    className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-[13.5px] font-medium border transition-colors ${
                       active
-                        ? "bg-blue-50/80 text-[#3B82F6]"
-                        : "text-neutral-600 hover:bg-white/60 hover:text-neutral-900"
+                        ? "bg-white text-[#0a0a0a] border-[#EBEBED] shadow-[0_1px_2px_rgba(10,10,10,0.04)]"
+                        : "text-neutral-500 border-transparent hover:bg-white/70 hover:text-neutral-900"
                     }`}
                   >
                     <span className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -316,7 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <span className="flex-1 text-left truncate flex items-center gap-1.5">
                         {item.label}
                         {(item as any).badge && (
-                          <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#3B82F6]/10 text-[#3B82F6] px-1.5 py-0.5 rounded-full leading-none">
+                          <span className="text-[9px] font-semibold uppercase tracking-wider bg-orange-50 text-goji-orange px-1.5 py-0.5 rounded-full leading-none">
                             {(item as any).badge}
                           </span>
                         )}
@@ -339,11 +328,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {settingsGroup.length > 0 && (
             <>
               {!collapsed && (
-                <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-neutral-600 px-2.5 pt-2 pb-1.5">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-neutral-400 px-2.5 pt-4 pb-1.5">
                   Settings
                 </p>
               )}
-              {collapsed && <div className="h-px bg-neutral-200/70 my-3 mx-2" />}
+              {collapsed && <div className="h-px bg-[#EBEBED] my-3 mx-2" />}
               <div className="space-y-0.5">
                 {settingsGroup.map((item) => {
                   const active = location.pathname === item.path;
@@ -353,10 +342,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       key={item.path}
                       onClick={() => navigate(item.path)}
                       title={collapsed ? item.label : undefined}
-                      className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium transition-colors ${
+                      className={`w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-[13.5px] font-medium border transition-colors ${
                         active
-                          ? "bg-blue-50/80 text-[#3B82F6]"
-                          : "text-neutral-600 hover:bg-white/60 hover:text-neutral-900"
+                          ? "bg-white text-[#0a0a0a] border-[#EBEBED] shadow-[0_1px_2px_rgba(10,10,10,0.04)]"
+                          : "text-neutral-500 border-transparent hover:bg-white/70 hover:text-neutral-900"
                       }`}
                     >
                       <span className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -372,18 +361,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {!collapsed && (
             <>
-              <div className="h-px bg-neutral-200/70 my-3 mx-2" />
+              <div className="h-px bg-[#EBEBED] my-3 mx-2" />
               <div className="space-y-0.5">
                 <button
                   onClick={() => navigate("/help")}
-                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-600 hover:bg-white/60 hover:text-neutral-900 transition-colors"
+                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-[13.5px] font-medium text-neutral-500 hover:bg-white/70 hover:text-neutral-900 transition-colors"
                 >
                   <HelpCircle className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate">Help Center</span>
                 </button>
                 <button
                   onClick={() => navigate("/support")}
-                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2.5 text-[13.5px] font-medium text-neutral-600 hover:bg-white/60 hover:text-neutral-900 transition-colors"
+                  className="w-full flex items-center gap-3 rounded-xl px-2.5 py-2 text-[13.5px] font-medium text-neutral-500 hover:bg-white/70 hover:text-neutral-900 transition-colors"
                 >
                   <LifeBuoy className="w-[18px] h-[18px] shrink-0" />
                   <span className="truncate">Support</span>
@@ -398,25 +387,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {collapsed ? (
             <button
               onClick={() => navigate("/billing")}
-              className="w-full flex items-center justify-center rounded-xl bg-white/60 border border-neutral-200/70 p-2.5 hover:bg-white/90 transition-colors"
+              className="w-full flex items-center justify-center rounded-xl bg-white border border-[#EBEBED] p-2.5 hover:bg-neutral-50 transition-colors"
               title="Billing"
             >
-              <Crown className="w-4 h-4 text-[#3B82F6]" />
+              <Crown className="w-4 h-4 text-goji-orange" />
             </button>
           ) : (
-            <div className="rounded-2xl bg-gradient-to-b from-white/70 to-white/40 border border-white/60 p-4 flex flex-col items-center text-center shadow-[0_1px_2px_rgba(10,10,10,0.03)] backdrop-blur-md">
-              <div className="w-9 h-9 rounded-full bg-white/80 border border-neutral-200 flex items-center justify-center shadow-sm mb-2">
-                <Crown className="w-4 h-4 text-[#3B82F6]" />
+            <div className="rounded-2xl bg-white border border-[#EBEBED] p-4 flex flex-col items-center text-center">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center mb-2"
+                style={{ background: "var(--gradient-brand)" }}
+              >
+                <Crown className="w-4 h-4 text-white" />
               </div>
-              <p className="text-[13.5px] font-semibold text-neutral-900">
-                Current Plan: <span className="text-[#3B82F6]">{sub.subscribed ? "Plus" : "Basic"}</span>
+              <p className="text-[13.5px] font-semibold text-[#0a0a0a]">
+                Current Plan: <span className="text-goji-orange">{sub.subscribed ? "Plus" : "Basic"}</span>
               </p>
               <p className="text-[11.5px] text-neutral-500 mt-0.5">
                 {sub.credits ?? 0} Credits Remaining
               </p>
               <button
                 onClick={() => navigate("/billing")}
-                className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-white/80 border border-neutral-200 px-3.5 py-2 text-[12.5px] font-semibold text-neutral-900 hover:bg-white transition-colors shadow-sm"
+                className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-[#0a0a0a] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-neutral-800 transition-colors"
               >
                 {sub.subscribed ? "Manage Plan" : "Upgrade Pro Account"}
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -432,7 +424,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
           {/* Panel */}
-          <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col" style={{ background: "hsl(195 14% 95%)" }}>
+          <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col" style={{ background: "#F7F7F8" }}>
             <div className="flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-2">
                 <img src={intentslyIcon} alt="Intentsly" className="w-7 h-7 object-contain" />
@@ -491,7 +483,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AgencyImpersonationBanner />
         {/* Top navbar: breadcrumb + right utilities */}
-        <header className="relative z-40 flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white/40 backdrop-blur-xl">
+        <header className="relative z-40 flex items-center justify-between px-4 md:px-8 py-3 shrink-0 bg-white border-b border-[#EBEBED]">
           <div className="flex items-center gap-2 min-w-0">
             <button
               className="md:hidden p-1.5 rounded-md hover:bg-white/60 transition-colors text-neutral-600 mr-1"
@@ -501,13 +493,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             <button
               onClick={() => window.history.back()}
-              className="hidden md:inline-flex w-9 h-9 rounded-lg items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-lg items-center justify-center bg-white border border-[#EBEBED] text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => window.history.forward()}
-              className="hidden md:inline-flex w-9 h-9 rounded-lg items-center justify-center bg-white/60 border border-neutral-200/70 text-neutral-600 hover:bg-white/90 transition-colors"
+              className="hidden md:inline-flex w-9 h-9 rounded-lg items-center justify-center bg-white border border-[#EBEBED] text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -530,18 +522,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen((o) => !o)}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 shadow-sm hover:opacity-90 transition-opacity"
-                style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 bg-[#0a0a0a] hover:bg-neutral-800 transition-colors"
               >
                 {userDisplay.initials || "?"}
               </button>
               {userMenuOpen && (
                 <div className="absolute top-full right-0 mt-2 w-64 rounded-xl bg-white shadow-xl border border-neutral-200 overflow-hidden z-50">
                   <div className="flex items-center gap-3 px-4 py-4 border-b border-neutral-100">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                      style={{ background: "linear-gradient(135deg, #5C92FF, #9FBDFB)" }}
-                    >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 bg-[#0a0a0a]">
                       {userDisplay.initials || "?"}
                     </div>
                     <div className="min-w-0">
@@ -571,7 +559,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-0 bg-white/40 backdrop-blur-xl">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
 
           {!sub.loading && !sub.hasAccess && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
@@ -604,13 +592,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* ── Mobile bottom navigation ──────────────────────────────────── */}
         <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 py-2 border-t"
-          style={{
-            background: "rgba(240,244,245,0.92)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            borderColor: "hsl(195 14% 88%)",
-          }}
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 py-2 border-t bg-white"
+          style={{ borderColor: "#EBEBED" }}
         >
           {mobileNavItems.map((item) => {
             const active = location.pathname === item.path;
@@ -620,7 +603,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-all"
-                style={active ? { background: "rgba(255,255,255,0.8)" } : undefined}
+                style={active ? { background: "#F4F4F5" } : undefined}
               >
                 <Icon className={`w-5 h-5 transition-colors ${active ? "text-foreground" : "text-foreground/40"}`} />
                 <span className={`text-[10px] font-medium transition-colors ${active ? "text-foreground" : "text-foreground/40"}`}>
