@@ -104,15 +104,22 @@ Deno.serve(async (req) => {
         }
 
         // ── Collect candidates from Unipile ──
-        let candidateProfiles = await searchPostAuthors(keywords, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
+        // Signal-first policy: only people who AUTHORED a relevant post qualify.
+        // The old people-search fallback padded campaigns with profile-only
+        // "ICP match" leads that carry zero buying intent — removed on purpose:
+        // an empty run is better than a lead without a signal.
+        const candidateProfiles = (await searchPostAuthors(keywords, accountId, UNIPILE_API_KEY, UNIPILE_DSN))
+          .filter((p) => {
+            const post = p._post;
+            return post && (post.text || post.commentary || post.content || post.url || post.share_url || post.id);
+          });
 
-        if (candidateProfiles.length < 3) {
-          console.log(`Campaign ${campaign.id}: only ${candidateProfiles.length} from posts, trying people search`);
-          const peopleFallback = await searchPeopleFallback(campaign, icp, accountId, UNIPILE_API_KEY, UNIPILE_DSN);
-          candidateProfiles = deduplicateProfiles([...candidateProfiles, ...peopleFallback]);
+        if (candidateProfiles.length === 0) {
+          console.log(`Campaign ${campaign.id}: no post-backed candidates this run — inserting nothing (signal-first policy)`);
+          continue;
         }
 
-        console.log(`Campaign ${campaign.id}: ${candidateProfiles.length} total candidates`);
+        console.log(`Campaign ${campaign.id}: ${candidateProfiles.length} post-backed candidates`);
 
         // ── Score & filter with precision mode ──
         const scoredCandidates = candidateProfiles
@@ -190,16 +197,13 @@ Deno.serve(async (req) => {
           const signalCHit = match.score >= 60;
           const aiScore = Math.min(3, [signalAHit, signalBHit, signalCHit].filter(Boolean).length);
 
-          // Build descriptive signal text
-          let signal: string;
-          if (postUrl) {
-            // Extract a snippet from the post text for context
-            const postText = post?.text || post?.commentary || post?.content || '';
-            const snippet = postText.length > 60 ? postText.slice(0, 57) + '...' : postText;
-            signal = snippet ? `Engaged with: "${snippet}"` : 'Engaged with a relevant LinkedIn post';
-          } else {
-            signal = `ICP match (${match.matchedFields.join(', ') || 'keyword'})`;
-          }
+          // Build descriptive signal text — candidates are post AUTHORS
+          // (signal-first filter above), so the signal always references the post.
+          const postText = post?.text || post?.commentary || post?.content || '';
+          const snippet = postText.length > 60 ? postText.slice(0, 57) + '...' : postText;
+          let signal: string = snippet
+            ? `Posted: "${snippet}"`
+            : 'Authored a relevant LinkedIn post';
           if (isTopActive) signal = 'Top 5% most active in your ICP (LinkedIn)';
           if (isRecentJobChange) signal = 'Strategic Window: Just hired (<90d)';
 
@@ -400,80 +404,7 @@ async function searchPostAuthors(
   return profiles;
 }
 
-async function searchPeopleFallback(
-  campaign: any,
-  icp: ICPFilters,
-  accountId: string,
-  apiKey: string,
-  dsn: string,
-): Promise<any[]> {
-  // Build search queries from ICP — prioritize job titles, then keywords
-  const searches = [
-    ...icp.jobTitles.slice(0, 3),
-    ...(campaign.discovery_keywords || []).slice(0, 2),
-  ].filter(Boolean);
-
-  const profiles: any[] = [];
-
-  for (const keyword of searches) {
-    if (profiles.length >= 10) break;
-    await delay(1200);
-
-    try {
-      // Build the search body with available Unipile filters
-      const searchBody: any = {
-        api: 'classic',
-        category: 'people',
-        keywords: keyword,
-      };
-
-      // Unipile accepts location as text in classic people search
-      // We pass the first location as a location hint
-      if (icp.locations.length > 0) {
-        searchBody.keywords = `${keyword} ${icp.locations[0]}`;
-      }
-
-      const res = await fetch(`https://${dsn}/api/v1/linkedin/search?account_id=${accountId}`, {
-        method: 'POST',
-        headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify(searchBody),
-      });
-
-      if (!res.ok) {
-        console.error(`People search failed for "${keyword}": ${res.status}`);
-        continue;
-      }
-
-      const data = await res.json();
-      for (const item of (data.items || data.results || [])) {
-        if (profiles.length >= 10) break;
-        profiles.push({
-          ...item,
-          title: item.headline || item.title || null,
-          linkedin_url: item.profile_url || item.public_profile_url || null,
-          public_id: item.public_identifier || item.id || null,
-          company: item.current_positions?.[0]?.company || null,
-        });
-      }
-    } catch (e) {
-      console.error(`People search error for "${keyword}":`, e);
-    }
-  }
-
-  return profiles;
-}
-
 // ─── Utilities ────────────────────────────────────────────────────────────────
-
-function deduplicateProfiles(profiles: any[]): any[] {
-  const seen = new Set<string>();
-  return profiles.filter((p) => {
-    const id = p.public_id || p.provider_id || p.id || '';
-    if (!id || seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
-}
 
 function checkRecentJobChange(profile: any): boolean {
   const experience = profile.experience || profile.positions || [];
