@@ -586,15 +586,31 @@ async function processCampaign(
     .order('sent_at', { ascending: false })
     .limit(20);
 
-  const { data: olderPending } = await supabase
+  // Older invitations rotate via a least-recently-checked cursor. The previous
+  // oldest-first order re-checked the SAME stale rows every run, so with a big
+  // backlog anything in the middle was never checked and accepted connections
+  // went undetected forever.
+  let { data: olderPending, error: olderErr } = await supabase
     .from('campaign_connection_requests')
     .select('id, contact_id, status, current_step, user_id')
     .eq('campaign_id', campaign.id)
     .eq('status', 'sent')
     .eq('current_step', 1)
     .lt('sent_at', oneDayAgo)
-    .order('sent_at', { ascending: true })
+    .order('last_acceptance_check_at', { ascending: true, nullsFirst: true })
     .limit(MAX_ACCEPTANCE_CHECKS - (recentPending?.length || 0));
+  if (olderErr && /last_acceptance_check_at/i.test(olderErr.message || '')) {
+    // Migration not applied yet — fall back to the old ordering.
+    ({ data: olderPending } = await supabase
+      .from('campaign_connection_requests')
+      .select('id, contact_id, status, current_step, user_id')
+      .eq('campaign_id', campaign.id)
+      .eq('status', 'sent')
+      .eq('current_step', 1)
+      .lt('sent_at', oneDayAgo)
+      .order('sent_at', { ascending: true })
+      .limit(MAX_ACCEPTANCE_CHECKS - (recentPending?.length || 0)));
+  }
 
   // Merge: recent first, then older
   const recentIds = new Set((recentPending || []).map((r: any) => r.id));
@@ -602,6 +618,16 @@ async function processCampaign(
     ...(recentPending || []),
     ...(olderPending || []).filter((r: any) => !recentIds.has(r.id)),
   ];
+
+  // Advance the rotation cursor for everything we're about to check.
+  if (pendingRequests.length > 0) {
+    try {
+      await supabase
+        .from('campaign_connection_requests')
+        .update({ last_acceptance_check_at: new Date().toISOString() })
+        .in('id', pendingRequests.map((r: any) => r.id));
+    } catch { /* column may not exist yet — rotation degrades gracefully */ }
+  }
 
   let acceptedCount = 0;
 
