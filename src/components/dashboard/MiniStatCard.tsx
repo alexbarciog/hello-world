@@ -68,7 +68,7 @@ export function MiniStatCard({
     <WidgetCard className="p-5">
       <WidgetHeader icon={icon} title={title} onExpand={onExpand} />
 
-      <div className="flex items-end justify-between gap-3 mt-4">
+      <div className="flex items-end justify-between gap-3 mt-3.5">
         <div className="min-w-0">
           {loading ? (
             <div className="h-8 w-20 bg-neutral-100 rounded animate-pulse" />
@@ -86,16 +86,10 @@ export function MiniStatCard({
           </div>
         </div>
 
-        <div className="w-[116px] h-[52px] shrink-0">
+        <div className={`w-[116px] h-[52px] shrink-0 ${!loading && !hasSeries ? "hidden" : ""}`}>
           {loading ? (
             <div className="w-full h-full bg-neutral-50 rounded animate-pulse" />
-          ) : !hasSeries ? (
-            <div className="w-full h-full flex items-end gap-[3px] opacity-60" aria-hidden>
-              {(data.length ? data : Array.from({ length: 7 }, (_, i) => ({ d: "", v: i }))).map((_, i) => (
-                <div key={i} className="flex-1 rounded-[2px] bg-[#F0F0F1]" style={{ height: `${16 + ((i * 13) % 4) * 12}%` }} />
-              ))}
-            </div>
-          ) : kind === "bars" ? (
+          ) : !hasSeries ? null : kind === "bars" ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
                 <Tooltip cursor={{ fill: "rgba(10,10,10,0.03)" }} content={<MiniTooltip />} />

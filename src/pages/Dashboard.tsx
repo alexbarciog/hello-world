@@ -585,32 +585,30 @@ export default function Dashboard() {
             <PerformanceChart chartData={chartData} loading={chartLoading} error={chartError} />
           </motion.div>
 
-          {/* ── Second zone: send activity + agents | tier donut ── */}
-          <Reveal y={24} className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-4 items-stretch">
-            <div className="flex flex-col gap-4">
-              <MiniStatCard
-                title="Messages sent"
-                icon={Send}
-                value={sendActivity?.messages.current ?? 0}
-                delta={sendActivity?.messages.delta ?? null}
-                data={sendActivity?.messages.series ?? []}
-                color="#635BEB"
-                kind="bars"
-                sublabel="last 7 days"
-                loading={sendActivityLoading}
-                onExpand={() => navigate("/unibox")}
-              />
-              <MiniStatCard
-                title="Active signals"
-                icon={Radio}
-                value={activeSignals}
-                sublabel="agents running now"
-                data={[]}
-                color="#FA7534"
-                kind="bars"
-                onExpand={() => navigate("/signals")}
-              />
-            </div>
+          {/* ── Second zone: three compact cards, equal weight ── */}
+          <Reveal y={24} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <MiniStatCard
+              title="Messages sent"
+              icon={Send}
+              value={sendActivity?.messages.current ?? 0}
+              delta={sendActivity?.messages.delta ?? null}
+              data={sendActivity?.messages.series ?? []}
+              color="#635BEB"
+              kind="bars"
+              sublabel="last 7 days"
+              loading={sendActivityLoading}
+              onExpand={() => navigate("/unibox")}
+            />
+            <MiniStatCard
+              title="Active signals"
+              icon={Radio}
+              value={activeSignals}
+              sublabel="agents running now"
+              data={[]}
+              color="#FA7534"
+              kind="bars"
+              onExpand={() => navigate("/signals")}
+            />
             <LeadsByTier data={tierData ?? []} loading={tierLoading} />
           </Reveal>
 
