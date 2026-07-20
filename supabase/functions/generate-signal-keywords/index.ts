@@ -234,24 +234,9 @@ function expandKeywordTemplates(analysis: BusinessAnalysis): { phrase: string; c
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMBINED Stage 2+3 — Single AI call for analysis + keywords (≈2× faster)
-// ─────────────────────────────────────────────────────────────────────────────
-async function analyseAndGenerateInOneCall(
-  websiteContent: string,
-  websiteUrl: string,
-  fallbackHints: { companyName?: string; description?: string; painPoints?: string | string[] },
-  keywordHistoryBlock: string = '',
-): Promise<{ analysis: BusinessAnalysis; generated: GeneratedKeywords }> {
-  const hintsBlock = [
-    fallbackHints.companyName && `Company name: ${fallbackHints.companyName}`,
-    fallbackHints.description && `Description: ${fallbackHints.description}`,
-    fallbackHints.painPoints && `Pain points: ${Array.isArray(fallbackHints.painPoints) ? fallbackHints.painPoints.join(', ') : fallbackHints.painPoints}`,
-  ].filter(Boolean).join('\n');
-
-  const systemPrompt = `You are a LinkedIn lead-discovery specialist for a B2B platform. In a SINGLE step you (1) analyse a business and (2) produce LinkedIn keyword phrases used to find its buyers.
-
-HOW YOUR OUTPUT IS USED — this determines everything:
+// Shared retrieval rules — used by both the combined (cache-miss) call and the
+// keywords-only (cache-hit) call so the two prompts can never drift apart.
+const RETRIEVAL_KEYWORD_RULES = `HOW YOUR OUTPUT IS USED — this determines everything:
 Each phrase is sent verbatim to LinkedIn's post search, which returns the ~25 most recent posts containing those words. A downstream AI then reads each post and decides whether the author is a genuine buyer. You are writing SEARCH QUERIES, not slogans. Two things matter, in this order:
 1. VOLUME — real people must actually publish posts containing these exact words.
 2. BUYER DENSITY — among posts containing these words, a high share must be authors who need this product/service right now.
@@ -270,6 +255,26 @@ THE VENDOR TEST still applies: if a company selling this service would post the 
 COMPETITOR NAMES: only use a competitor/alternative name if it is famous enough that many people post about it every week (upwork, fiverr, toptal, salesforce — yes; an obscure startup — no).
 
 FORMAT RULES for every phrase: lowercase, 2-5 words (prefer 3-4), natural word order, no hashtags, no quotes, no punctuation. It must read as a literal fragment of a real post.`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMBINED Stage 2+3 — Single AI call for analysis + keywords (≈2× faster).
+// Used on business-context CACHE MISS (first generation for an account).
+// ─────────────────────────────────────────────────────────────────────────────
+async function analyseAndGenerateInOneCall(
+  websiteContent: string,
+  websiteUrl: string,
+  fallbackHints: { companyName?: string; description?: string; painPoints?: string | string[] },
+  keywordHistoryBlock: string = '',
+): Promise<{ analysis: BusinessAnalysis; generated: GeneratedKeywords }> {
+  const hintsBlock = [
+    fallbackHints.companyName && `Company name: ${fallbackHints.companyName}`,
+    fallbackHints.description && `Description: ${fallbackHints.description}`,
+    fallbackHints.painPoints && `Pain points: ${Array.isArray(fallbackHints.painPoints) ? fallbackHints.painPoints.join(', ') : fallbackHints.painPoints}`,
+  ].filter(Boolean).join('\n');
+
+  const systemPrompt = `You are a LinkedIn lead-discovery specialist for a B2B platform. In a SINGLE step you (1) analyse a business and (2) produce LinkedIn keyword phrases used to find its buyers.
+
+${RETRIEVAL_KEYWORD_RULES}`;
 
   const userPrompt = `Analyse this business DEEPLY and produce buyer-intent search keywords in ONE response.
 
@@ -352,6 +357,66 @@ CATEGORIES (counts):
     pain_point: combined.pain_point || [],
   };
   return { analysis, generated };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STAGE 3 (cache-hit variant) — keywords ONLY, from the cached business
+// context. No website scrape, no re-analysis: one small, fast AI call.
+// ─────────────────────────────────────────────────────────────────────────────
+async function generateKeywordsFromContext(
+  analysis: BusinessAnalysis,
+  keywordHistoryBlock: string = '',
+): Promise<GeneratedKeywords> {
+  const systemPrompt = `You are a LinkedIn lead-discovery specialist for a B2B platform. You produce LinkedIn keyword phrases from an EXISTING business analysis — do not re-analyse the business.
+
+${RETRIEVAL_KEYWORD_RULES}`;
+
+  const userPrompt = `Produce buyer-intent search keywords for this business (analysis already done):
+
+WHAT THEY SELL: ${analysis.what_they_sell}
+PRIMARY BUYER: ${analysis.primary_buyer}
+CORE PROBLEM SOLVED: ${analysis.core_problem_solved}
+BEFORE STATE (buyer's pain): ${analysis.before_state}
+BUYER'S OWN VOCABULARY: ${analysis.buyer_vocabulary.join(', ') || 'unknown'}
+WHAT BUYERS CALL THIS PROVIDER: ${analysis.service_category_buyer_words.join(', ') || 'unknown'}
+FAMOUS ALTERNATIVES: ${analysis.famous_alternatives.join(', ') || 'none'}
+${keywordHistoryBlock}
+Every phrase must pass the FREQUENCY TEST and the VENDOR TEST, and must contain an explicit ask/need/evaluation frame ("looking for", "recommend", "need a", "who can", "alternative to", "getting quotes") — phrases WITHOUT such a frame are discarded by a hard filter, so do not waste slots on mood/opinion statements ("x is too expensive", "tired of x").
+
+CATEGORIES (counts):
+- direct_ask (8): fragments of "asking my network" posts — "recommend a [category]", "can anyone recommend", "looking for a [category]", "any suggestions for [category]".
+- project_need (7): first-person need statements — "need an mvp built", "looking to build an app", "need a technical partner", "want to outsource development".
+- vendor_evaluation (5): actively comparing or budgeting — "getting quotes for", "comparing dev agencies", "budget for app development".
+- seeking_alternatives (5): moving off a FAMOUS tool/platform/marketplace — "alternative to upwork", "moving away from fiverr", "switching from [famous tool]".
+- pain_point (3): first-person breakdown statements with real posting volume — "our developer quit", "my app is broken".`;
+
+  const result = await callAITool({
+    systemPrompt,
+    userPrompt,
+    temperature: 0.25,
+    toolName: 'return_keyword_categories',
+    toolDescription: 'Return buyer-intent keyword phrases organised by retrieval category',
+    parameters: {
+      type: 'object',
+      properties: {
+        direct_ask: { type: 'array', items: { type: 'string' }, description: '8 fragments of ask-my-network posts' },
+        project_need: { type: 'array', items: { type: 'string' }, description: '7 first-person need statements' },
+        vendor_evaluation: { type: 'array', items: { type: 'string' }, description: '5 comparing/budgeting phrases' },
+        seeking_alternatives: { type: 'array', items: { type: 'string' }, description: '5 moving-off-a-famous-tool phrases' },
+        pain_point: { type: 'array', items: { type: 'string' }, description: '3 first-person breakdown statements' },
+      },
+      required: ['direct_ask', 'project_need', 'vendor_evaluation', 'seeking_alternatives', 'pain_point'],
+      additionalProperties: false,
+    },
+  });
+
+  return {
+    direct_ask: result.direct_ask || [],
+    project_need: result.project_need || [],
+    vendor_evaluation: result.vendor_evaluation || [],
+    seeking_alternatives: result.seeking_alternatives || [],
+    pain_point: result.pain_point || [],
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -513,6 +578,7 @@ async function backtestKeywords(
   keywords: string[],
   accountId: string,
   deadlineMs: number,
+  datePosted: string = 'past_month',
 ): Promise<Map<string, number> | null> {
   if (!UNIPILE_API_KEY || !UNIPILE_DSN || !accountId || keywords.length === 0) return null;
   const url = `https://${UNIPILE_DSN}/api/v1/linkedin/search?account_id=${accountId}`;
@@ -530,7 +596,7 @@ async function backtestKeywords(
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: kw, date_posted: 'past_month', limit: 10 }),
+          body: JSON.stringify({ api: 'classic', category: 'posts', keywords: kw, date_posted: datePosted, limit: 10 }),
           signal: ctrl.signal,
         }).finally(() => clearTimeout(t));
         if (!res.ok) { failures++; continue; }
@@ -548,38 +614,86 @@ async function backtestKeywords(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LEGACY hashtag generator (kept for hashtag_engagement signal type)
+// HASHTAG generation (hashtag_engagement signal type)
+//
+// Different objective from keywords: signal-hashtag-engagement searches posts
+// containing "#tag" from the PAST WEEK, then collects the people who LIKED or
+// COMMENTED — the engagers become leads. So a good hashtag is a REAL hashtag
+// with weekly posting volume whose habitual AUDIENCE is the buyer, not the
+// seller's industry peers.
 // ─────────────────────────────────────────────────────────────────────────────
-async function generateHashtags(args: {
-  companyName?: string;
-  description?: string;
-  jobTitles?: string[];
-  industries?: string[];
-}): Promise<string[]> {
-  const businessContext = [
-    args.companyName && `Company: ${args.companyName}`,
-    args.description && `What they do: ${args.description}`,
-    args.industries?.length && `Industries: ${args.industries.join(', ')}`,
-    args.jobTitles?.length && `Target buyers: ${args.jobTitles.join(', ')}`,
-  ].filter(Boolean).join('\n');
+
+// Mirror of the generic/lifestyle blacklist in signal-hashtag-engagement —
+// rejecting them at generation time avoids wasting slots on tags the signal
+// function would discard anyway.
+const HASHTAG_GENERIC_BLACKLIST = new Set([
+  'sales', 'marketing', 'leadership', 'motivation', 'success', 'growth',
+  'entrepreneur', 'business', 'innovation', 'networking', 'mindset',
+  'hustle', 'grateful', 'blessed', 'family', 'weekend', 'vacation',
+  'holiday', 'inspiration', 'grind', 'lifestyle', 'love', 'happiness',
+  'thankful', 'morning', 'coffee', 'fitness', 'health', 'travel',
+]);
+
+/**
+ * Sanitize a model-produced hashtag: strip '#', drop ALL non-alphanumerics
+ * (spaces included — a hashtag is a single token), strip non-ASCII garbage.
+ * Returns '' when unusable.
+ */
+function sanitizeHashtag(raw: string): string {
+  if (typeof raw !== 'string') return '';
+  const cleaned = raw
+    .normalize('NFKD')
+    .replace(/[^\x20-\x7E]/g, '')
+    .replace(/^#+/, '')
+    .replace(/[^a-zA-Z0-9]/g, '');
+  if (cleaned.length < 3 || cleaned.length > 30) return '';
+  return cleaned;
+}
+
+async function generateHashtagsFromContext(
+  analysis: BusinessAnalysis,
+  jobTitles?: string[],
+  industries?: string[],
+): Promise<string[]> {
+  const systemPrompt = `You choose LinkedIn hashtags for buyer discovery via ENGAGEMENT.
+
+HOW YOUR OUTPUT IS USED — this determines everything:
+For each hashtag we fetch the posts from the PAST WEEK containing it, then collect the people who LIKED or COMMENTED on those posts — those engagers become leads. So judge a hashtag by its AUDIENCE, not its topic:
+
+1. VOLUME TEST — the hashtag must be in real, current use: at least ~30 LinkedIn posts per week. Invented niche compounds ("AIProductStudioForFounders", "ABMStrategyForSaaS") retrieve nothing — never output a hashtag you have not seen in real use.
+2. AUDIENCE = BUYER TEST — ask: "who habitually engages with posts under this hashtag?" It must be the target buyer, NOT the seller's own industry peers. Hashtags naming the SERVICE BEING SOLD fail this test: posts under "leadgeneration" are written and engaged by lead-gen vendors, not buyers of lead gen. Choose hashtags matching the BUYER's identity, communities and interests instead — for founders: "buildinpublic", "startups", "saas"; for HR buyers: "peopleops", "hrtech".
+3. PROFESSIONAL ONLY — never generic/lifestyle hashtags (motivation, success, leadership, mindset, entrepreneur) — their audience is everyone.
+
+FORMAT: each hashtag is a SINGLE token — CamelCase, NO spaces, NO '#' symbol, letters and digits only.`;
+
+  const userPrompt = `Choose the best LinkedIn hashtags whose ENGAGERS are buyers of this business:
+
+WHAT THEY SELL: ${analysis.what_they_sell}
+PRIMARY BUYER: ${analysis.primary_buyer}
+CORE PROBLEM SOLVED: ${analysis.core_problem_solved}
+BUYER'S OWN VOCABULARY: ${analysis.buyer_vocabulary.join(', ') || 'unknown'}
+${jobTitles?.length ? `TARGET JOB TITLES: ${jobTitles.join(', ')}` : ''}
+${industries?.length ? `TARGET INDUSTRIES: ${industries.join(', ')}` : ''}
+
+Return exactly 12 candidate hashtags, ordered best-first. Every one must pass the VOLUME TEST and the AUDIENCE = BUYER TEST.`;
 
   const result = await callAITool({
-    systemPrompt: `You generate niche, professional-only LinkedIn hashtags. NEVER return generic hashtags like Sales, Marketing, Leadership, Motivation, Success, Growth, Entrepreneur, Business, Innovation. Return CamelCase compound hashtags WITHOUT the # symbol.`,
-    userPrompt: `Generate exactly 7 niche LinkedIn hashtags for this business:\n\n${businessContext}\n\nThey must be specific enough that personal/lifestyle posts would NEVER use them. Examples: SalesAutomation, ABMStrategy, RevOps, DemandGen, ColdOutreach.`,
-    temperature: 0.3,
+    systemPrompt,
+    userPrompt,
+    temperature: 0.25,
     toolName: 'return_hashtags',
-    toolDescription: 'Return niche LinkedIn hashtags',
+    toolDescription: 'Return real, buyer-audience LinkedIn hashtags (single tokens, no # symbol)',
     parameters: {
       type: 'object',
       properties: {
-        hashtags: { type: 'array', items: { type: 'string' } },
+        hashtags: { type: 'array', items: { type: 'string' }, description: '12 single-token hashtags, best first' },
       },
       required: ['hashtags'],
       additionalProperties: false,
     },
   });
 
-  return (result.hashtags || []).slice(0, 7);
+  return (result.hashtags || []).slice(0, 12);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -610,30 +724,20 @@ Deno.serve(async (req) => {
 
     console.log(`[KW_GEN] start type=${signalType} website=${website || 'none'} company="${companyName || 'unknown'}"`);
 
-    // ── Hashtags: keep simple legacy path ────────────────────────────────────
-    if (signalType === 'hashtag_engagement') {
-      const hashtags = await generateHashtags({ companyName, description, jobTitles, industries });
-      console.log(`[KW_GEN] hashtags generated=${hashtags.length}:`, JSON.stringify(hashtags));
-      return new Response(JSON.stringify({ keywords: hashtags }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // ── For non-keyword_posts signals (profile_engagers, competitor_*) ───────
-    // These are URLs, not buying-intent phrases. Skip the 4-stage pipeline.
-    if (signalType !== 'keyword_posts') {
+    // ── Only keyword_posts and hashtag_engagement use this pipeline ──────────
+    // Other signals (profile_engagers, competitor_*) are URLs, not phrases.
+    if (signalType !== 'keyword_posts' && signalType !== 'hashtag_engagement') {
       console.log(`[KW_GEN] signal type ${signalType} not supported by buyer-intent pipeline; returning empty`);
       return new Response(JSON.stringify({ keywords: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // ── Buyer-intent pipeline for keyword_posts ──────────────────────────────
-
-    // STAGE 0 — Resolve caller (for history + backtest). Fail-open: keyword
-    // generation must keep working even if auth/profile lookup fails.
+    // STAGE 0 — Resolve caller + cached business context. Fail-open: generation
+    // must keep working even if auth/profile lookup fails.
     let callerUserId: string | null = null;
     let unipileAccountId: string | null = null;
+    let cachedContext: any = null;
     let sb: any = null;
     try {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -644,56 +748,159 @@ Deno.serve(async (req) => {
         const { data } = await sb.auth.getUser(jwt);
         callerUserId = data?.user?.id ?? null;
         if (callerUserId) {
-          const { data: prof } = await sb.from('profiles').select('unipile_account_id').eq('user_id', callerUserId).maybeSingle();
-          unipileAccountId = prof?.unipile_account_id ?? null;
+          const { data: prof, error: profErr } = await sb.from('profiles').select('unipile_account_id, business_context').eq('user_id', callerUserId).maybeSingle();
+          if (profErr) {
+            // business_context column may not exist yet (migration pending) —
+            // retry without it so the backtest account is still resolved.
+            const { data: prof2 } = await sb.from('profiles').select('unipile_account_id').eq('user_id', callerUserId).maybeSingle();
+            unipileAccountId = prof2?.unipile_account_id ?? null;
+          } else {
+            unipileAccountId = prof?.unipile_account_id ?? null;
+            cachedContext = prof?.business_context ?? null;
+          }
         }
       }
     } catch (e) {
       console.warn('[KW_GEN] Stage 0 caller resolution failed (continuing):', e instanceof Error ? e.message : e);
     }
-    console.log(`[KW_GEN] Stage 0: user=${callerUserId ? 'resolved' : 'none'} unipile=${unipileAccountId ? 'available' : 'none'}`);
+    console.log(`[KW_GEN] Stage 0: user=${callerUserId ? 'resolved' : 'none'} unipile=${unipileAccountId ? 'available' : 'none'} cached_context=${cachedContext ? 'yes' : 'no'}`);
 
-    // STAGE 1 — Scrape website
-    let websiteContent = '';
-    if (website) {
-      try {
-        console.log('[KW_GEN] Stage 1: scraping', website);
-        websiteContent = await scrapeWebsite(website);
-        console.log(`[KW_GEN] Stage 1 done: ${websiteContent.length} chars extracted`);
-      } catch (e) {
-        console.warn('[KW_GEN] Stage 1 failed:', e instanceof Error ? e.message : e);
+    // Reality feedback A: per-keyword approve/reject history from past runs.
+    const keywordHistoryBlock = (signalType === 'keyword_posts' && sb && callerUserId) ? await loadKeywordPerformance(sb, callerUserId) : '';
+    if (keywordHistoryBlock) console.log('[KW_GEN] keyword history feedback loaded');
+
+    // STAGE 1+2 — Business analysis, generated ONCE per account and cached in
+    // profiles.business_context. Re-generated only when the website changes or
+    // the caller passes refresh_context: true.
+    const refreshContext = body.refresh_context === true || body.refreshContext === true;
+    const contextFromCache = !!cachedContext && !refreshContext && (!website || cachedContext.source_website === website);
+    let analysis: BusinessAnalysis;
+    let generatedFromMiss: GeneratedKeywords | null = null;
+
+    if (contextFromCache) {
+      analysis = {
+        what_they_sell: cachedContext.what_they_sell || '',
+        primary_buyer: cachedContext.primary_buyer || '',
+        core_problem_solved: cachedContext.core_problem_solved || '',
+        before_state: cachedContext.before_state || '',
+        after_state: cachedContext.after_state || '',
+        competitors_or_alternatives: cachedContext.competitors_or_alternatives || [],
+        buyer_vocabulary: cachedContext.buyer_vocabulary || [],
+        category: cachedContext.category || '',
+        service_category_buyer_words: cachedContext.service_category_buyer_words || [],
+        things_buyers_want_built: cachedContext.things_buyers_want_built || [],
+        outsourced_functions: cachedContext.outsourced_functions || [],
+        famous_alternatives: cachedContext.famous_alternatives || [],
+      };
+      console.log('[KW_GEN] Stage 1+2 skipped: using cached business context');
+    } else {
+      // STAGE 1 — Scrape website
+      let websiteContent = '';
+      if (website) {
+        try {
+          console.log('[KW_GEN] Stage 1: scraping', website);
+          websiteContent = await scrapeWebsite(website);
+          console.log(`[KW_GEN] Stage 1 done: ${websiteContent.length} chars extracted`);
+        } catch (e) {
+          console.warn('[KW_GEN] Stage 1 failed:', e instanceof Error ? e.message : e);
+        }
+      }
+
+      // Build a synthetic context if no website / scrape failed
+      if (!websiteContent || websiteContent.length < 100) {
+        const fallback = [
+          companyName && `Company: ${companyName}`,
+          description && `What they do: ${description}`,
+          painPoints && `Problems they solve: ${Array.isArray(painPoints) ? painPoints.join(', ') : painPoints}`,
+          campaignGoal && `Campaign goal: ${campaignGoal}`,
+          jobTitles?.length && `Target job titles: ${jobTitles.join(', ')}`,
+          industries?.length && `Target industries: ${industries.join(', ')}`,
+          companyTypes?.length && `Target company types: ${companyTypes.join(', ')}`,
+          locations?.length && `Target locations: ${locations.join(', ')}`,
+        ].filter(Boolean).join('\n');
+        websiteContent = fallback || 'No business context provided';
+        console.log('[KW_GEN] Using fallback context (no website content)');
+      }
+
+      // STAGE 2+3 (combined) — Analyse + generate keywords in a single AI call.
+      console.log('[KW_GEN] Stage 2+3: combined analysis + keyword generation');
+      const res = await analyseAndGenerateInOneCall(
+        websiteContent,
+        website || 'unknown',
+        { companyName, description, painPoints },
+        keywordHistoryBlock,
+      );
+      analysis = res.analysis;
+      generatedFromMiss = signalType === 'keyword_posts' ? res.generated : null;
+      console.log('[KW_GEN] Stage 2+3 done. analysis:', JSON.stringify(analysis));
+
+      // Cache the analysis on the profile so future generations reuse it.
+      if (sb && callerUserId) {
+        try {
+          const { error: cacheErr } = await sb
+            .from('profiles')
+            .update({
+              business_context: { ...analysis, source_website: website || null },
+              business_context_updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', callerUserId);
+          if (cacheErr) console.warn('[KW_GEN] business context cache write failed:', cacheErr.message);
+          else console.log('[KW_GEN] business context cached to profile');
+        } catch (e) {
+          console.warn('[KW_GEN] business context cache write failed:', e instanceof Error ? e.message : e);
+        }
       }
     }
 
-    // Build a synthetic context if no website / scrape failed
-    if (!websiteContent || websiteContent.length < 100) {
-      const fallback = [
-        companyName && `Company: ${companyName}`,
-        description && `What they do: ${description}`,
-        painPoints && `Problems they solve: ${Array.isArray(painPoints) ? painPoints.join(', ') : painPoints}`,
-        campaignGoal && `Campaign goal: ${campaignGoal}`,
-        jobTitles?.length && `Target job titles: ${jobTitles.join(', ')}`,
-        industries?.length && `Target industries: ${industries.join(', ')}`,
-        companyTypes?.length && `Target company types: ${companyTypes.join(', ')}`,
-        locations?.length && `Target locations: ${locations.join(', ')}`,
-      ].filter(Boolean).join('\n');
-      websiteContent = fallback || 'No business context provided';
-      console.log('[KW_GEN] Using fallback context (no website content)');
+    // ── HASHTAG PATH ─────────────────────────────────────────────────────────
+    if (signalType === 'hashtag_engagement') {
+      const candidates = await generateHashtagsFromContext(analysis, jobTitles, industries);
+      const seenTags = new Set<string>();
+      let tags: string[] = [];
+      for (const c of candidates) {
+        const t = sanitizeHashtag(c);
+        if (!t) continue;
+        const lower = t.toLowerCase();
+        if (seenTags.has(lower) || HASHTAG_GENERIC_BLACKLIST.has(lower)) continue;
+        seenTags.add(lower);
+        tags.push(t);
+      }
+
+      // Live backtest with the EXACT production query shape ("#tag", past week,
+      // same search endpoint signal-hashtag-engagement uses).
+      let hashtagBacktestRan = false;
+      if (unipileAccountId && tags.length > 0) {
+        const bt = await backtestKeywords(tags.map(t => `#${t}`), unipileAccountId, 20_000, 'past_week');
+        if (bt) {
+          hashtagBacktestRan = true;
+          const withVol = tags.map(t => ({ t, v: bt.has(`#${t}`) ? bt.get(`#${t}`)! : null }));
+          const nonZero = withVol.filter(x => x.v !== 0);
+          const dropped = withVol.filter(x => x.v === 0);
+          if (dropped.length && nonZero.length >= 5) {
+            console.log('[KW_GEN] dropped zero-volume hashtags:', JSON.stringify(dropped.map(x => x.t)));
+          }
+          const pool = nonZero.length >= 5 ? nonZero : withVol;
+          pool.sort((a, b) => (b.v ?? -1) - (a.v ?? -1));
+          tags = pool.map(x => x.t);
+        }
+      }
+
+      const hashtags = tags.slice(0, 7);
+      console.log(`[KW_GEN] hashtags generated=${hashtags.length}:`, JSON.stringify(hashtags));
+      return new Response(JSON.stringify({
+        keywords: hashtags,
+        backtest_ran: hashtagBacktestRan,
+        business_context_cached: contextFromCache,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // STAGE 2+3 (combined) — Analyse + generate in a SINGLE AI call (≈2× faster)
-    // Reality feedback A: per-keyword approve/reject history from past runs.
-    const keywordHistoryBlock = (sb && callerUserId) ? await loadKeywordPerformance(sb, callerUserId) : '';
-    if (keywordHistoryBlock) console.log('[KW_GEN] keyword history feedback loaded');
-
-    console.log('[KW_GEN] Stage 2+3: combined analysis + keyword generation');
-    const { analysis, generated } = await analyseAndGenerateInOneCall(
-      websiteContent,
-      website || 'unknown',
-      { companyName, description, painPoints },
-      keywordHistoryBlock,
-    );
-    console.log('[KW_GEN] Stage 2+3 done. analysis:', JSON.stringify(analysis));
+    // ── KEYWORD PATH ─────────────────────────────────────────────────────────
+    // On cache hit generate keywords from the stored context (fast, no scrape);
+    // on cache miss they already came from the combined call above.
+    const generated = generatedFromMiss ?? await generateKeywordsFromContext(analysis, keywordHistoryBlock);
+    if (!generatedFromMiss) console.log('[KW_GEN] Stage 3: keywords generated from cached context');
 
     // STAGE 3.5 — Template expansion: code-built ask-frames from the analysis
     // slots. These are the structural guarantee that the final list contains
@@ -784,6 +991,7 @@ Deno.serve(async (req) => {
       total_passing: passing.length,
       backtest_ran: !!backtest,
       history_feedback_used: !!keywordHistoryBlock,
+      business_context_cached: contextFromCache,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
