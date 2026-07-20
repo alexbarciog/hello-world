@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, ChevronDown, ExternalLink, Flame, Linkedin, Check } from "lucide-react";
 import { useState } from "react";
+import { externalLinkProps } from "@/lib/openExternal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -205,9 +206,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                         </span>
                         {l.linkedin_url ? (
                           <a
-                            href={l.linkedin_url}
-                            target="_blank"
-                            rel="noreferrer"
+                            {...externalLinkProps(l.linkedin_url)}
                             className="font-medium text-sky-600 underline hover:text-sky-700 truncate"
                           >
                             {l.name}
@@ -217,9 +216,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                         )}
                         {l.linkedin_url && (
                           <a
-                            href={l.linkedin_url}
-                            target="_blank"
-                            rel="noreferrer"
+                            {...externalLinkProps(l.linkedin_url)}
                             aria-label="Open LinkedIn profile"
                             className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-sky-50 text-sky-600 hover:bg-sky-100 transition-colors shrink-0"
                           >
@@ -233,9 +230,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                     <td className="px-4 py-3.5 truncate max-w-[160px]">
                       {l.signal_post_url ? (
                         <a
-                          href={l.signal_post_url}
-                          target="_blank"
-                          rel="noreferrer"
+                          {...externalLinkProps(l.signal_post_url)}
                           className="text-sky-600 underline hover:text-sky-700 truncate"
                         >
                           {l.signal ?? "View signal"}
@@ -262,7 +257,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
                     </td>
                     <td className="px-6 py-3.5 text-right">
                       {l.linkedin_url && (
-                        <a href={l.linkedin_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] text-neutral-500 hover:text-neutral-900 transition-colors">
+                        <a {...externalLinkProps(l.linkedin_url)} className="inline-flex items-center gap-1 text-[12px] text-neutral-500 hover:text-neutral-900 transition-colors">
                           Open <ExternalLink className="w-3 h-3" />
                         </a>
                       )}

@@ -22,6 +22,7 @@ import { ExtractFromLinkedInPostDialog } from "@/components/contacts/ExtractFrom
 import { ShareLeadsDialog } from "@/components/contacts/ShareLeadsDialog";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { externalLinkProps } from "@/lib/openExternal";
 
 type Tab = "all" | "hot" | "warm" | "cold" | "not_interested" | "meeting_booked" | "pending_approval";
 
@@ -905,11 +906,11 @@ export default function Contacts() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {c.linkedin_url ? (
-                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                <a {...externalLinkProps(c.linkedin_url)} className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
                                   {c.first_name} {c.last_name || ""}
                                 </a>
                               ) : (c as any).x_url ? (
-                                <a href={(c as any).x_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
+                                <a {...externalLinkProps((c as any).x_url)} className="text-sm font-semibold text-primary hover:underline cursor-pointer truncate">
                                   {c.first_name} {c.last_name || ""}
                                 </a>
                               ) : (
@@ -918,7 +919,7 @@ export default function Contacts() {
                                 </span>
                               )}
                               {c.linkedin_url && (
-                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                <a {...externalLinkProps(c.linkedin_url)} className="shrink-0 hover:opacity-70 transition-opacity">
                                   <LinkedInIcon />
                                 </a>
                               )}
@@ -936,7 +937,7 @@ export default function Contacts() {
                       </td>
                       <td style={{ left: 260, width: 180, minWidth: 180, maxWidth: 180 }} className={`sticky z-10 ${stickyBg} ${stickyHover} px-3 py-3 border-b border-border/50`}>
                         {c.signal_post_url ? (
-                          <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
+                          <a {...externalLinkProps(c.signal_post_url)} className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 truncate block max-w-[200px]">
 
                             {c.signal}
                           </a>
@@ -1164,14 +1165,14 @@ export default function Contacts() {
                   <div className="flex-1 min-w-0 pr-6">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {c.linkedin_url ? (
-                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
+                        <a {...externalLinkProps(c.linkedin_url)} className="text-sm font-semibold text-primary hover:underline truncate">
                           {c.first_name} {c.last_name || ""}
                         </a>
                       ) : (
                         <span className="text-sm font-semibold text-foreground truncate">{c.first_name} {c.last_name || ""}</span>
                       )}
                       {c.linkedin_url && (
-                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                        <a {...externalLinkProps(c.linkedin_url)} className="shrink-0 hover:opacity-70 transition-opacity">
                           <LinkedInIcon />
                         </a>
                       )}
@@ -1208,7 +1209,7 @@ export default function Contacts() {
                       </div>
                       {c.signal && (
                         c.signal_post_url ? (
-                          <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                          <a {...externalLinkProps(c.signal_post_url)}
                             className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full truncate max-w-[160px] underline underline-offset-2">
                             {c.signal}
                           </a>
