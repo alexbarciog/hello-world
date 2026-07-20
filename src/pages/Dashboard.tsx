@@ -8,7 +8,8 @@ import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
 import { AgencyWelcomeBanner } from "@/components/dashboard/AgencyWelcomeBanner";
 import LeadsByTier from "@/components/dashboard/LeadsByTier";
-import { ChevronDown, Flame, Users, MessageCircle, Radio, Plus, Check } from "lucide-react";
+import { MiniStatCard } from "@/components/dashboard/MiniStatCard";
+import { ChevronDown, Flame, Users, MessageCircle, Radio, Plus, Check, TrendingUp, UserPlus, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { Reveal, fadeStagger, fadeStaggerItem, CountUp } from "@/lib/motion";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -258,8 +259,14 @@ export default function Dashboard() {
     return d.toISOString();
   }, [period]);
 
-  const { data: chartContacts } = useQuery({
+  // Gate chart queries on the user query so they never fire before the auth
+  // session is restored — an unauthenticated first fetch returns empty rows
+  // that stick for staleTime and render as a permanently empty chart.
+  const authReady = userData !== undefined;
+
+  const { data: chartContacts, isLoading: chartContactsLoading, isError: chartContactsError } = useQuery({
     queryKey: ["dashboard-chart-contacts", chartCutoffISO],
+    enabled: authReady,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contacts")
@@ -273,8 +280,9 @@ export default function Dashboard() {
     staleTime: 60_000,
   });
 
-  const { data: chartRequests } = useQuery({
+  const { data: chartRequests, isLoading: chartRequestsLoading, isError: chartRequestsError } = useQuery({
     queryKey: ["dashboard-chart-requests", chartCutoffISO],
+    enabled: authReady,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaign_connection_requests")
@@ -284,6 +292,58 @@ export default function Dashboard() {
         .limit(50000);
       if (error) throw error;
       return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+
+  // Send activity (14d window → last-7d series + previous-7d totals for real deltas)
+  const { data: sendActivity, isLoading: sendActivityLoading } = useQuery({
+    queryKey: ["dashboard-send-activity-14d"],
+    enabled: authReady,
+    queryFn: async () => {
+      const now = new Date();
+      const start14 = new Date(now);
+      start14.setDate(start14.getDate() - 14);
+      const iso14 = start14.toISOString();
+      const sevenAgo = new Date(now);
+      sevenAgo.setDate(sevenAgo.getDate() - 7);
+
+      const [connRes, msgRes] = await Promise.all([
+        supabase.from("campaign_connection_requests").select("sent_at").not("sent_at", "is", null).gte("sent_at", iso14),
+        supabase.from("scheduled_messages").select("sent_at").not("sent_at", "is", null).gte("sent_at", iso14),
+      ]);
+
+      const dayKey = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const bucket = (rows: Array<{ sent_at: string | null }>) => {
+        const counts: Record<string, number> = {};
+        let current = 0;
+        let previous = 0;
+        for (const r of rows) {
+          if (!r.sent_at) continue;
+          const d = new Date(r.sent_at);
+          if (d >= sevenAgo) {
+            current++;
+            const k = dayKey(d);
+            counts[k] = (counts[k] || 0) + 1;
+          } else {
+            previous++;
+          }
+        }
+        const series: { d: string; v: number }[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const k = dayKey(d);
+          series.push({ d: k, v: counts[k] || 0 });
+        }
+        const delta = previous > 0 ? Math.round(((current - previous) / previous) * 100) : null;
+        return { series, current, delta };
+      };
+
+      return {
+        connections: bucket(connRes.data ?? []),
+        messages: bucket(msgRes.data ?? []),
+      };
     },
     staleTime: 60_000,
   });
@@ -398,10 +458,21 @@ export default function Dashboard() {
   const leadsEngaged = engagementData?.leadsEngaged ?? 0;
   const conversations = engagementData?.conversations ?? 0;
   const activeSignals = signalData?.activeCount ?? 0;
+
+  // Conversion rate: replies as a share of contacted leads in the period
+  const conversionRate = leadsEngaged > 0 ? Math.round((conversations / leadsEngaged) * 100) : 0;
+  const repliesSeries = (weeklyActivityData ?? []).map((d) => ({
+    d: d.date.split(",")[0],
+    v: d.responses,
+  }));
+
+  const chartLoading = chartContactsLoading || chartRequestsLoading || !authReady;
+  const chartError = chartContactsError || chartRequestsError;
+
   void profileData;
   void campaignMeta;
-  void navigate;
-  void userData;
+  void latestReplies;
+  void repliesLoading;
 
   return (
     <div className="relative w-full min-h-screen bg-transparent">
@@ -473,23 +544,58 @@ export default function Dashboard() {
           <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
 
           <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="blue" icon={Flame} trend={{ value: 3.2 }} onDetails={() => navigate("/contacts")} />
-            <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="indigo" icon={Users} trend={{ value: 5.1 }} onDetails={() => navigate("/contacts")} />
-            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="lime" icon={MessageCircle} trend={{ value: 1.4 }} onDetails={() => navigate("/unibox")} />
-            <MetricCard title="Active Signals" value={activeSignals} accent="black" icon={Radio} trend={{ value: 2.6 }} onDetails={() => navigate("/signals")} />
+            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="blue" icon={Flame} onDetails={() => navigate("/contacts")} />
+            <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="indigo" icon={Users} onDetails={() => navigate("/contacts")} />
+            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="lime" icon={MessageCircle} onDetails={() => navigate("/unibox")} />
+            <MetricCard title="Active Signals" value={activeSignals} accent="black" icon={Radio} onDetails={() => navigate("/signals")} />
+          </motion.div>
+
+          {/* Reference-style compact analytics: rate + daily send activity */}
+          <motion.div variants={fadeStaggerItem} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <MiniStatCard
+              title="Conversion rate"
+              icon={TrendingUp}
+              value={`${conversionRate}%`}
+              sublabel={`replies per contacted lead · ${periodLabel[period].toLowerCase()}`}
+              data={repliesSeries}
+              color="#4F46E5"
+              kind="line"
+              loading={engagementLoading || weeklyActivityLoading}
+            />
+            <MiniStatCard
+              title="Connections sent"
+              icon={UserPlus}
+              value={sendActivity?.connections.current ?? 0}
+              delta={sendActivity?.connections.delta ?? null}
+              deltaLabel="(7d)"
+              sublabel="last 7 days"
+              data={sendActivity?.connections.series ?? []}
+              color="#FA7534"
+              kind="bars"
+              loading={sendActivityLoading}
+            />
+            <MiniStatCard
+              title="Messages sent"
+              icon={Send}
+              value={sendActivity?.messages.current ?? 0}
+              delta={sendActivity?.messages.delta ?? null}
+              deltaLabel="(7d)"
+              sublabel="last 7 days"
+              data={sendActivity?.messages.series ?? []}
+              color="#4F46E5"
+              kind="bars"
+              loading={sendActivityLoading}
+            />
           </motion.div>
 
           <Reveal y={24} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-            <PerformanceChart chartData={chartData} />
+            <PerformanceChart chartData={chartData} loading={chartLoading} error={chartError} />
             <LeadsByTier data={tierData ?? []} loading={tierLoading} />
           </Reveal>
 
           <Reveal y={24} delay={0.1}>
             <RecentLeadsTable leads={latestLeads ?? []} loading={leadsLoading} />
           </Reveal>
-
-          {/* Silence unused vars from removed sections */}
-          <div className="hidden">{weeklyActivityLoading ? "" : ""}{JSON.stringify(weeklyActivityData ?? []).slice(0, 0)}{latestReplies?.length ?? 0}{repliesLoading ? "" : ""}</div>
         </motion.div>
       </div>
     </div>

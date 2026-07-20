@@ -30,7 +30,7 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-2xl p-6 bg-white border border-[#EBEBED] hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow flex flex-col"
+      className="rounded-2xl p-6 bg-white border border-[#F0F0F2] hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow flex flex-col"
     >
       <div className="flex items-start justify-between">
         <div>

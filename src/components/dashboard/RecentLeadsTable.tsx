@@ -87,7 +87,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl bg-white border border-[#EBEBED] overflow-hidden"
+      className="rounded-2xl bg-white border border-[#F0F0F2] overflow-hidden"
     >
       <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4 flex-wrap">
         <div>
@@ -103,12 +103,12 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search"
-              className="w-[180px] rounded-full bg-[#F9F9FA] border border-[#EBEBED] pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-neutral-300 transition-colors"
+              className="w-[180px] rounded-full bg-[#F9F9FA] border border-[#F0F0F2] pl-8 pr-3 py-2 text-[12.5px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-neutral-300 transition-colors"
             />
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-[#EBEBED] rounded-full px-3 py-2 hover:bg-neutral-50 transition-colors">
+              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-[#F0F0F2] rounded-full px-3 py-2 hover:bg-neutral-50 transition-colors">
                 {extraFilter === "all" ? "Filter" : currentExtraLabel}
                 <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />
               </button>
@@ -132,7 +132,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-[#EBEBED] rounded-full px-3 py-2 hover:bg-neutral-50 transition-colors">
+              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-[#F0F0F2] rounded-full px-3 py-2 hover:bg-neutral-50 transition-colors">
                 {currentTierLabel}
                 <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
               </button>

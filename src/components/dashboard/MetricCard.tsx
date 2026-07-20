@@ -46,12 +46,12 @@ export function MetricCard({
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.55, ease: EASE }}
       whileHover={{ y: -3 }}
-      className="group relative rounded-2xl bg-white border border-[#EBEBED] px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.14)] transition-shadow"
+      className="group relative rounded-2xl bg-white border border-[#F0F0F2] px-5 pt-5 pb-4 flex flex-col gap-5 min-w-0 hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.14)] transition-shadow"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           {Icon && (
-            <span className="w-10 h-10 rounded-xl bg-[#F9F9FA] text-[#0a0a0a] flex items-center justify-center shrink-0 ring-1 ring-[#EBEBED]">
+            <span className="w-10 h-10 rounded-xl bg-[#F9F9FA] text-[#0a0a0a] flex items-center justify-center shrink-0 ring-1 ring-[#F0F0F2]">
               <Icon className="w-[18px] h-[18px]" strokeWidth={2.1} />
             </span>
           )}
