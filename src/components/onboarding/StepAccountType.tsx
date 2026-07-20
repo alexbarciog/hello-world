@@ -1,4 +1,6 @@
-import { User, Briefcase, Sparkles, ArrowRight, Check } from "lucide-react";
+import { User, Briefcase, Sparkles, ArrowRight, Check, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { OnboardingBadge, StaggerTitle, PrimaryCta, ONBOARDING_EASE } from "./ui";
 
 export type AccountType = "personal" | "agency";
 
@@ -33,91 +35,104 @@ const OPTIONS: {
 export function StepAccountType({ value, onChange, onContinue, submitting }: Props) {
   return (
     <div className="w-full">
-      <div className="text-center mb-8">
-        <div
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-4"
-          style={{ background: "hsl(220 90% 56% / 0.08)", color: "hsl(220 90% 40%)" }}
-        >
-          <Sparkles className="w-3 h-3" />
+      <div className="mb-8 md:mb-10">
+        <OnboardingBadge icon={<Sparkles className="w-3 h-3 text-goji-orange" />}>
           Quick question
-        </div>
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mb-2 text-foreground">
-          How are you planning to use Intentsly?
-        </h1>
-        <p className="text-sm md:text-base text-muted-foreground">
+        </OnboardingBadge>
+        <StaggerTitle
+          text="How will you use"
+          accent="Intentsly?"
+          className="mt-5 font-headline font-semibold tracking-[-0.025em] leading-[1.08] text-[#0a0a0a] text-[1.9rem] md:text-4xl"
+        />
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35, ease: ONBOARDING_EASE }}
+          className="mt-3 text-[15px] text-neutral-500 leading-relaxed"
+        >
           We'll tailor your setup based on your answer.
-        </p>
+        </motion.p>
       </div>
 
       <div className="space-y-3">
-        {OPTIONS.map((opt) => {
+        {OPTIONS.map((opt, i) => {
           const selected = value === opt.key;
           const Icon = opt.icon;
           return (
-            <button
+            <motion.button
               key={opt.key}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 + i * 0.08, ease: ONBOARDING_EASE }}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.99 }}
               type="button"
               onClick={() => onChange(opt.key)}
-              className="w-full text-left rounded-2xl p-5 transition-all duration-200 flex items-start gap-4"
+              className="w-full text-left rounded-[20px] p-5 flex items-start gap-4 transition-[border-color,background-color,box-shadow] duration-200"
               style={{
-                background: selected ? "hsl(220 90% 56% / 0.06)" : "hsl(0 0% 96%)",
-                border: selected
-                  ? "2px solid hsl(220 90% 56%)"
-                  : "2px solid transparent",
+                background: selected ? "rgba(237, 238, 252, 0.45)" : "#FFFFFF",
+                border: selected ? "1.5px solid #4F46E5" : "1.5px solid #E0E0E3",
+                boxShadow: selected
+                  ? "0 0 0 4px rgba(79, 70, 229, 0.08)"
+                  : "0 1px 2px rgba(10, 10, 10, 0.03)",
               }}
             >
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200"
                 style={{
-                  background: selected ? "hsl(220 90% 56%)" : "hsl(0 0% 100%)",
-                  color: selected ? "hsl(0 0% 100%)" : "hsl(220 14% 30%)",
-                  boxShadow: selected ? "none" : "0 1px 3px hsl(220 14% 10% / 0.06)",
+                  background: selected ? "#4F46E5" : "#F9F9FA",
+                  color: selected ? "#FFFFFF" : "#3A3A4A",
                 }}
               >
                 <Icon className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-semibold text-foreground">{opt.title}</h3>
-                  {selected && (
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ background: "hsl(220 90% 56%)", color: "hsl(0 0% 100%)" }}
-                    >
-                      <Check className="w-3 h-3" />
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  {opt.description}
-                </p>
+                <h3 className="text-[15px] font-semibold text-[#0a0a0a]">{opt.title}</h3>
+                <p className="text-sm text-neutral-500 mt-1 leading-relaxed">{opt.description}</p>
               </div>
-            </button>
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-200"
+                style={{
+                  background: selected ? "#4F46E5" : "transparent",
+                  border: selected ? "none" : "1.5px solid #E0E0E3",
+                  color: "#FFFFFF",
+                }}
+              >
+                {selected && (
+                  <motion.span
+                    initial={{ scale: 0.4, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 24 }}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </motion.span>
+                )}
+              </div>
+            </motion.button>
           );
         })}
       </div>
 
-      <button
-        type="button"
-        onClick={onContinue}
-        disabled={!value || submitting}
-        className="mt-8 w-full h-14 rounded-2xl text-base font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        style={{
-          background:
-            !value || submitting
-              ? "hsl(220 14% 90%)"
-              : "linear-gradient(135deg, #0057bd 0%, #4647d3 100%)",
-          color:
-            !value || submitting
-              ? "hsl(var(--muted-foreground))"
-              : "hsl(0 0% 100%)",
-          boxShadow:
-            !value || submitting ? "none" : "0 4px 14px rgba(0, 87, 189, 0.3)",
-        }}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6, ease: ONBOARDING_EASE }}
+        className="mt-8"
       >
-        Continue
-        <ArrowRight className="w-4 h-4" />
-      </button>
+        <PrimaryCta onClick={onContinue} disabled={!value || submitting}>
+          {submitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            <>
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </PrimaryCta>
+      </motion.div>
     </div>
   );
 }

@@ -1,15 +1,104 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { CalendarCheck, Radar } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import heroGradient from "@/assets/hero-gradient-right.png";
 import { supabase } from "@/integrations/supabase/client";
 import { scrapeWebsite } from "@/lib/api/firecrawl";
 import { markOnboardingComplete, OnboardingEntryGuard } from "@/components/OnboardingGuard";
 import { Step1Scan } from "@/components/onboarding/Step1Scan";
 import { Step2Preview } from "@/components/onboarding/Step2Preview";
 import { StepAccountType, type AccountType } from "@/components/onboarding/StepAccountType";
+import { ONBOARDING_EASE } from "@/components/onboarding/ui";
+import { Float } from "@/lib/motion";
 import { toast } from "sonner";
 
 type Phase = "account_type" | "scan" | "preview";
+
+const PHASE_INDEX: Record<Phase, number> = { account_type: 0, scan: 1, preview: 2 };
+const TOTAL_STEPS = 3;
+
+/** Right-hand brand panel: landing hero gradient + dashboard-style preview cards. */
+function BrandPanel() {
+  return (
+    <div className="hidden lg:block relative w-[44%] max-w-[720px] shrink-0 overflow-hidden">
+      <img
+        src={heroGradient}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 p-10">
+        {/* Lead preview card — dashboard lead style */}
+        <Float duration={5.5} y={7}>
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: ONBOARDING_EASE }}
+            className="w-[320px] rounded-2xl bg-white/95 backdrop-blur-sm p-4 shadow-[0_12px_40px_rgba(10,10,10,0.12)]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#EDEEFC] text-[#4F46E5] flex items-center justify-center text-sm font-bold">
+                SK
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#0a0a0a] truncate">Sarah Kim</div>
+                <div className="text-xs text-neutral-500 truncate">Founder @ Finlo · 2nd</div>
+              </div>
+              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[#0a0a0a] shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                High intent
+              </span>
+            </div>
+            <p className="mt-3 text-xs text-neutral-500 leading-relaxed border-l-2 border-[#EDEEFC] pl-2.5">
+              “Can anyone recommend a dev agency to build our MVP? Budget approved…”
+            </p>
+          </motion.div>
+        </Float>
+
+        {/* Signal card */}
+        <Float duration={6.2} y={6} delay={0.6}>
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.55, ease: ONBOARDING_EASE }}
+            className="w-[320px] -ml-16 rounded-2xl bg-white/95 backdrop-blur-sm p-4 shadow-[0_12px_40px_rgba(10,10,10,0.12)] flex items-center gap-3"
+          >
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white"
+              style={{ background: "var(--gradient-brand)" }}
+            >
+              <Radar className="w-[18px] h-[18px]" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[#0a0a0a]">New buying signals</div>
+              <div className="text-xs text-neutral-500">23 people posted about your keywords today</div>
+            </div>
+          </motion.div>
+        </Float>
+
+        {/* Meeting card */}
+        <Float duration={5} y={8} delay={1.1}>
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: ONBOARDING_EASE }}
+            className="w-[300px] ml-20 rounded-2xl bg-white/95 backdrop-blur-sm p-4 shadow-[0_12px_40px_rgba(10,10,10,0.12)] flex items-center gap-3"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[#E9F9EF] flex items-center justify-center shrink-0">
+              <CalendarCheck className="w-[18px] h-[18px] text-[#16A34A]" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-[#0a0a0a]">Meeting booked</div>
+              <div className="text-xs text-neutral-500">Tomorrow, 10:30 AM — booked by your AI SDR</div>
+            </div>
+          </motion.div>
+        </Float>
+      </div>
+    </div>
+  );
+}
 
 function OnboardingInner() {
   const navigate = useNavigate();
@@ -189,58 +278,91 @@ function OnboardingInner() {
     }
   }
 
-  return (
-    <div
-      className="min-h-screen flex flex-col items-center px-3 py-6 md:py-12 md:px-4"
-      style={{ background: "hsl(195 14% 95%)" }}
-    >
-      <a href="/" className="flex items-center gap-2 mb-6 md:mb-10 shrink-0">
-        <img src={intentslyIcon} alt="Intentsly" className="h-7 md:h-8 object-contain" />
-        <span className="text-lg md:text-xl font-bold tracking-tight text-foreground">Intentsly</span>
-      </a>
+  const stepIndex = PHASE_INDEX[phase];
 
-      <div
-        className="w-full rounded-2xl md:rounded-3xl bg-card border-2 border-background overflow-hidden flex flex-col"
-        style={{
-          maxWidth: "640px",
-          boxShadow: "0 8px 40px hsl(220 14% 10% / 0.08)",
-        }}
-      >
-        <div className="flex-1 px-5 pt-8 pb-8 md:px-10 md:pt-10 md:pb-10">
-          {phase === "account_type" && (
-            <StepAccountType
-              value={accountType}
-              onChange={setAccountType}
-              onContinue={handleAccountTypeContinue}
-              submitting={savingAccountType}
-            />
-          )}
-          {phase === "scan" && (
-            <Step1Scan
-              website={website}
-              onWebsiteChange={setWebsite}
-              onAnalyze={handleAnalyze}
-              loading={loading}
-              loadingStep={loadingStep}
-              errorMsg={errorMsg}
-            />
-          )}
-          {phase === "preview" && (
-            <Step2Preview
-              companyName={companyName}
-              description={description}
-              services={services}
-              painPoints={painPoints}
-              onCompanyNameChange={setCompanyName}
-              onDescriptionChange={setDescription}
-              onContinue={handleContinue}
-              submitting={submitting}
-            />
-          )}
+  return (
+    <div className="min-h-screen bg-white flex">
+      {/* LEFT — content column */}
+      <div className="flex-1 flex flex-col min-h-screen px-5 md:px-12 xl:px-20 py-6 md:py-8">
+        {/* Header: logo + step counter */}
+        <div className="flex items-center justify-between w-full max-w-xl mx-auto shrink-0">
+          <a href="/" className="flex items-center gap-2">
+            <img src={intentslyIcon} alt="Intentsly" className="h-7 object-contain" />
+            <span className="text-lg font-bold tracking-tight text-[#0a0a0a]">Intentsly</span>
+          </a>
+          <span className="text-xs font-semibold text-neutral-400 tabular-nums">
+            Step {stepIndex + 1} of {TOTAL_STEPS}
+          </span>
         </div>
+
+        {/* Progress segments — goji brand gradient fill */}
+        <div className="flex gap-1.5 w-full max-w-xl mx-auto mt-5 shrink-0">
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+            <div key={i} className="h-1 flex-1 rounded-full bg-[#F4F4F5] overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "var(--gradient-brand)" }}
+                initial={false}
+                animate={{ width: i <= stepIndex ? "100%" : "0%" }}
+                transition={{ duration: 0.6, ease: ONBOARDING_EASE }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Step content */}
+        <div className="flex-1 flex items-center w-full max-w-xl mx-auto py-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={phase}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.45, ease: ONBOARDING_EASE }}
+              className="w-full"
+            >
+              {phase === "account_type" && (
+                <StepAccountType
+                  value={accountType}
+                  onChange={setAccountType}
+                  onContinue={handleAccountTypeContinue}
+                  submitting={savingAccountType}
+                />
+              )}
+              {phase === "scan" && (
+                <Step1Scan
+                  website={website}
+                  onWebsiteChange={setWebsite}
+                  onAnalyze={handleAnalyze}
+                  loading={loading}
+                  loadingStep={loadingStep}
+                  errorMsg={errorMsg}
+                />
+              )}
+              {phase === "preview" && (
+                <Step2Preview
+                  companyName={companyName}
+                  description={description}
+                  services={services}
+                  painPoints={painPoints}
+                  onCompanyNameChange={setCompanyName}
+                  onDescriptionChange={setDescription}
+                  onContinue={handleContinue}
+                  submitting={submitting}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Footer micro-copy — landing style */}
+        <p className="w-full max-w-xl mx-auto text-[11px] uppercase tracking-[0.14em] text-neutral-400 shrink-0 text-center lg:text-left">
+          No contract · Cancel anytime · 5-min setup
+        </p>
       </div>
 
-      <div className="h-4 md:hidden shrink-0" />
+      {/* RIGHT — brand gradient panel */}
+      <BrandPanel />
     </div>
   );
 }

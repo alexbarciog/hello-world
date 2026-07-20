@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Loader2, Package, Target, Pencil } from "lucide-react";
+import { ArrowRight, Loader2, Package, Target, Pencil, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { OnboardingBadge, StaggerTitle, PrimaryCta, ONBOARDING_EASE } from "./ui";
 
 type Props = {
   companyName: string;
@@ -26,14 +28,39 @@ export function Step2Preview({
   const [editingHeader, setEditingHeader] = useState(false);
 
   return (
-    <div className="w-full animate-fade-in">
-      {/* Company header card */}
-      <div
-        className="rounded-2xl p-5 mb-4"
-        style={{
-          background: "hsl(220 14% 97%)",
-          border: "1px solid hsl(220 14% 92%)",
-        }}
+    <div className="w-full">
+      <div className="mb-7 md:mb-8">
+        <OnboardingBadge
+          icon={
+            <span className="w-4 h-4 rounded-full bg-[#22C55E] flex items-center justify-center">
+              <Check className="w-2.5 h-2.5 text-white" />
+            </span>
+          }
+        >
+          Analysis complete
+        </OnboardingBadge>
+        <StaggerTitle
+          text="Does this look"
+          accent="right?"
+          className="mt-5 font-headline font-semibold tracking-[-0.025em] leading-[1.08] text-[#0a0a0a] text-[1.9rem] md:text-4xl"
+        />
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.35, ease: ONBOARDING_EASE }}
+          className="mt-3 text-[15px] text-neutral-500 leading-relaxed"
+        >
+          We'll use this to find people with real buying intent for you.
+        </motion.p>
+      </div>
+
+      {/* Company header card — snow surface */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2, ease: ONBOARDING_EASE }}
+        className="rounded-[20px] p-5 mb-3"
+        style={{ background: "#F9F9FA" }}
       >
         {editingHeader ? (
           <div className="space-y-3">
@@ -41,146 +68,147 @@ export function Step2Preview({
               value={companyName}
               onChange={(e) => onCompanyNameChange(e.target.value)}
               placeholder="Company name"
-              className="h-10 rounded-lg text-sm font-semibold"
+              className="h-10 rounded-lg text-sm font-semibold bg-white"
             />
             <textarea
               value={description}
               onChange={(e) => onDescriptionChange(e.target.value)}
               placeholder="One-line description"
               rows={2}
-              className="flex w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex w-full rounded-lg border border-border bg-white px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <button
               type="button"
               onClick={() => setEditingHeader(false)}
-              className="text-xs font-medium text-primary hover:underline"
+              className="text-xs font-semibold text-[#4F46E5] hover:underline"
             >
               Done
             </button>
           </div>
         ) : (
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-foreground truncate">
-                {companyName || "Your company"}
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                {description || "Add a short description"}
-              </p>
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold"
+                style={{ background: "#EDEEFC", color: "#4F46E5" }}
+              >
+                {(companyName || "?").slice(0, 2).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold text-[#0a0a0a] truncate">
+                  {companyName || "Your company"}
+                </h2>
+                <p className="text-sm text-neutral-500 mt-0.5 line-clamp-2 leading-relaxed">
+                  {description || "Add a short description"}
+                </p>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setEditingHeader(true)}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-background hover:text-foreground transition-colors shrink-0"
+              className="p-2 rounded-lg text-neutral-400 hover:bg-white hover:text-[#0a0a0a] transition-colors shrink-0"
               aria-label="Edit company info"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      {/* Bento blocks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+      {/* Bento blocks — dashboard MetricCard pastels, 24px radius, no borders */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-7">
         {/* Services */}
-        <div
-          className="rounded-2xl p-5"
-          style={{
-            background: "hsl(220 90% 56% / 0.05)",
-            border: "1px solid hsl(220 90% 56% / 0.15)",
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: ONBOARDING_EASE }}
+          className="rounded-3xl p-6"
+          style={{ background: "#EDEEFC" }}
         >
-          <div className="flex items-center gap-2 mb-3">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "hsl(220 90% 56%)", color: "hsl(0 0% 100%)" }}
-            >
-              <Package className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center">
+              <Package className="w-4 h-4 text-[#4F46E5]" />
             </div>
-            <h3 className="text-sm font-semibold text-foreground">What you sell</h3>
+            <h3 className="text-sm font-semibold text-[#0a0a0a]">What you sell</h3>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {services.length === 0 ? (
-              <li className="text-xs text-muted-foreground italic">No services detected</li>
+              <li className="text-xs text-neutral-500 italic">No services detected</li>
             ) : (
               services.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full mt-2 shrink-0"
-                    style={{ background: "hsl(220 90% 56%)" }}
-                  />
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.45 + i * 0.06, ease: ONBOARDING_EASE }}
+                  className="flex items-start gap-2.5 text-sm text-[#1A1A2E]"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full mt-[7px] shrink-0 bg-[#4F46E5]" />
                   <span className="leading-snug">{s}</span>
-                </li>
+                </motion.li>
               ))
             )}
           </ul>
-        </div>
+        </motion.div>
 
         {/* Pain points */}
-        <div
-          className="rounded-2xl p-5"
-          style={{
-            background: "hsl(20 90% 56% / 0.05)",
-            border: "1px solid hsl(20 90% 56% / 0.15)",
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.38, ease: ONBOARDING_EASE }}
+          className="rounded-3xl p-6"
+          style={{ background: "hsl(var(--goji-bg-hero-2))" }}
         >
-          <div className="flex items-center gap-2 mb-3">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "hsl(20 90% 56%)", color: "hsl(0 0% 100%)" }}
-            >
-              <Target className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center">
+              <Target className="w-4 h-4 text-goji-orange" />
             </div>
-            <h3 className="text-sm font-semibold text-foreground">Buyer pain points</h3>
+            <h3 className="text-sm font-semibold text-[#0a0a0a]">Buyer pain points</h3>
           </div>
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {painPoints.length === 0 ? (
-              <li className="text-xs text-muted-foreground italic">No pain points detected</li>
+              <li className="text-xs text-neutral-500 italic">No pain points detected</li>
             ) : (
               painPoints.map((p, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full mt-2 shrink-0"
-                    style={{ background: "hsl(20 90% 56%)" }}
-                  />
+                <motion.li
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.5 + i * 0.06, ease: ONBOARDING_EASE }}
+                  className="flex items-start gap-2.5 text-sm text-[#1A1A2E]"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full mt-[7px] shrink-0 bg-goji-orange" />
                   <span className="leading-snug">{p}</span>
-                </li>
+                </motion.li>
               ))
             )}
           </ul>
-        </div>
+        </motion.div>
       </div>
 
       {/* CTA */}
-      <button
-        type="button"
-        onClick={onContinue}
-        disabled={submitting || !companyName}
-        className="w-full h-14 rounded-2xl text-base font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        style={{
-          background: submitting
-            ? "hsl(220 14% 90%)"
-            : "linear-gradient(135deg, #0057bd 0%, #4647d3 100%)",
-          color: submitting ? "hsl(var(--muted-foreground))" : "hsl(0 0% 100%)",
-          boxShadow: submitting ? "none" : "0 4px 14px rgba(0, 87, 189, 0.3)",
-        }}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.55, ease: ONBOARDING_EASE }}
       >
-        {submitting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Setting things up…
-          </>
-        ) : (
-          <>
-            Get Buyers
-            <ArrowRight className="w-4 h-4" />
-          </>
-        )}
-      </button>
-
-      <p className="text-center text-xs text-muted-foreground mt-3">
-        You can edit everything later in settings
-      </p>
+        <PrimaryCta onClick={onContinue} disabled={submitting || !companyName}>
+          {submitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Setting things up…
+            </>
+          ) : (
+            <>
+              Get Buyers
+              <ArrowRight className="w-4 h-4" />
+            </>
+          )}
+        </PrimaryCta>
+        <p className="text-center text-xs text-neutral-400 mt-3">
+          You can edit everything later in settings
+        </p>
+      </motion.div>
     </div>
   );
 }
