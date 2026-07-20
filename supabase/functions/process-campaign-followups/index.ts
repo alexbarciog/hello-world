@@ -152,6 +152,39 @@ async function processCampaign(
   // This runs before acceptance checking to ensure messages are never blocked by timeout
   let messagesSent = 0;
 
+  // ══ HARD PER-ACCOUNT DAILY BUDGET (LinkedIn safety) ══
+  // Authoritative count of messages actually sent TODAY for this user across
+  // ALL campaigns, from the scheduled_messages ledger. Previously nothing
+  // counted daily sends at send time: every 30-min run could send a full
+  // MAX_MESSAGE_SENDS batch, flooding accounts far past their configured limit.
+  const { data: senderProfile } = await supabase
+    .from('profiles')
+    .select('daily_messages_limit')
+    .eq('user_id', campaign.user_id)
+    .single();
+  const dailyMsgLimit = senderProfile?.daily_messages_limit || 15;
+  const todayStart = new Date().toISOString().split('T')[0];
+  const { count: sentTodayUser } = await supabase
+    .from('scheduled_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', campaign.user_id)
+    .gte('sent_at', todayStart);
+  const remainingToday = Math.max(0, dailyMsgLimit - (sentTodayUser || 0));
+
+  // Human-behaviour pacing: small randomized per-run batch (2-4) and a 20%
+  // chance to sit a run out entirely — an unstructured pattern instead of a
+  // metronome. With runs every 30 min the daily limit is still comfortably
+  // reached (~48 runs × ~3 × 80% ≫ any sane limit).
+  const HUMAN_RUN_CAP = 2 + Math.floor(Math.random() * 3);
+  const skipThisRun = Math.random() < 0.2;
+  const sendBudget = skipThisRun ? 0 : Math.min(remainingToday, HUMAN_RUN_CAP);
+
+  if (remainingToday <= 0) {
+    console.log(`[followup][campaign ${campaign.id}] daily message limit reached (${sentTodayUser}/${dailyMsgLimit}) — no sends this run`);
+  } else if (skipThisRun) {
+    console.log(`[followup][campaign ${campaign.id}] human-pacing: sitting this run out (${sentTodayUser}/${dailyMsgLimit} sent today)`);
+  }
+
   // Order by current_step ASC so step 1 contacts (short delay) are processed before step 2+ (long delay)
   // ★ CRITICAL: Exclude contacts who have replied — Conversational AI SDR handles them
   const { data: acceptedRequests } = await supabase
@@ -163,7 +196,7 @@ async function processCampaign(
     .eq('conversation_stopped', false)
     .order('current_step', { ascending: true })
     .order('step_completed_at', { ascending: true })
-    .limit(MAX_MESSAGE_SENDS);
+    .limit(sendBudget > 0 ? MAX_MESSAGE_SENDS : 0);
 
   if (acceptedRequests && acceptedRequests.length > 0) {
     console.log(`[followup][campaign ${campaign.id}] Phase A: processing ${acceptedRequests.length} accepted contacts for messages`);
@@ -193,6 +226,11 @@ async function processCampaign(
     console.log(`[BATCH] followup Phase A: prefetched ${contactById.size} contacts + ${schedByReqStep.size} scheduled messages in 2 queries`);
 
     for (const req of acceptedRequests) {
+      // Hard stop at the per-run human budget / per-account daily limit.
+      if (messagesSent >= sendBudget) {
+        console.log(`[followup][campaign ${campaign.id}] send budget reached this run (${messagesSent}/${sendBudget})`);
+        break;
+      }
       try {
         // Resolve provider_id early
         let resolvedProviderId: string | null = null;
@@ -471,6 +509,20 @@ async function processCampaign(
             .from('scheduled_messages')
             .update({ status: 'sent', sent_at: new Date().toISOString() })
             .eq('id', scheduledMsg.id);
+        } else {
+          // Template sends had no ledger row — insert one so the per-account
+          // daily budget above counts EVERY message actually sent.
+          await supabase.from('scheduled_messages').insert({
+            campaign_id: campaign.id,
+            contact_id: req.contact_id,
+            connection_request_id: req.id,
+            step_index: nextWfIdx,
+            message: message.trim(),
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            scheduled_for: today,
+            user_id: req.user_id || campaign.user_id,
+          });
         }
 
         const newStep = currentStep + 1;
@@ -550,7 +602,9 @@ async function processCampaign(
           }
         }
 
-        await delay(500);
+        // Human-behaviour spacing between sends: 12-30s randomized instead of a
+        // robotic fixed 500ms burst.
+        await delay(12_000 + Math.floor(Math.random() * 18_000));
       } catch (err) {
         console.error(`[followup] message error for ${req.contact_id}:`, err);
       }

@@ -104,8 +104,21 @@ Deno.serve(async (req) => {
         const dailyLimit = userProfile?.daily_connections_limit || 25;
         const batchSize = Math.max(1, Math.ceil(dailyLimit / SEQUENCES_PER_DAY));
 
-        // Count how many were already sent today
-        const { count: sentToday } = await serviceClient
+        // ══ PER-ACCOUNT daily budget (LinkedIn safety) ══
+        // Invitations actually sent today across ALL campaigns of this user.
+        // The old count was per-campaign only, so N active campaigns could send
+        // N× the account's configured daily limit.
+        const { count: sentTodayUser } = await serviceClient
+          .from('campaign_connection_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', campaign.user_id)
+          .gte('sent_at', today);
+
+        // Campaign-level cap on top (campaign settings)
+        const campaignCap = campaign.daily_connect_limit && campaign.daily_connect_limit > 0
+          ? campaign.daily_connect_limit
+          : dailyLimit;
+        const { count: sentTodayCampaign } = await serviceClient
           .from('daily_scheduled_leads')
           .select('id', { count: 'exact', head: true })
           .eq('campaign_id', campaignId)
@@ -113,13 +126,22 @@ Deno.serve(async (req) => {
           .eq('action_type', 'connection')
           .eq('status', 'sent');
 
-        const remainingToday = Math.max(0, dailyLimit - (sentToday || 0));
-        const toSendNow = Math.min(batchSize, remainingToday, leads.length);
+        const remainingToday = Math.max(0, Math.min(
+          dailyLimit - (sentTodayUser || 0),
+          campaignCap - (sentTodayCampaign || 0),
+        ));
+
+        // Human-behaviour: batch size varies run to run (occasionally one less)
+        const humanTrim = Math.random() < 0.35 ? 1 : 0;
+        const toSendNow = Math.max(0, Math.min(batchSize - humanTrim, remainingToday, leads.length));
 
         if (toSendNow === 0) {
-          console.log(`[send-conn] campaign ${campaignId} daily limit reached`);
+          console.log(`[send-conn] campaign ${campaignId} daily budget exhausted (user ${sentTodayUser}/${dailyLimit}, campaign ${sentTodayCampaign}/${campaignCap})`);
           continue;
         }
+
+        // Human-behaviour: randomized warm-up before the batch starts
+        await new Promise((r) => setTimeout(r, 3000 + Math.floor(Math.random() * 9000)));
 
         // Get user's Unipile account_id
         const { data: profile } = await serviceClient
@@ -344,8 +366,9 @@ Deno.serve(async (req) => {
             totalSent++;
             sentThisBatch++;
 
-            // Small delay between requests
-            await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
+            // Human-behaviour spacing between invitations: 15-40s randomized
+            // (was a robotic 2-4s burst)
+            await new Promise(resolve => setTimeout(resolve, 15_000 + Math.random() * 25_000));
           } catch (err) {
             console.error(`[send-conn] error sending to ${sl.contact_id}:`, err);
             const reason = `Unexpected error: ${(err instanceof Error ? err.message : String(err)).slice(0, 180)}`;
