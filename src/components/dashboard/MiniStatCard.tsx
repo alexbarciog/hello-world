@@ -1,36 +1,40 @@
-import { motion } from "framer-motion";
 import { CountUp } from "@/lib/motion";
 import type { LucideIcon } from "lucide-react";
 import {
   Bar,
   BarChart,
+  Cell,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import { WidgetCard, WidgetHeader, DeltaBadge } from "./WidgetCard";
 
 interface MiniStatCardProps {
   title: string;
   icon: LucideIcon;
   value: number | string;
-  /** % change vs the previous window; null hides the chip */
+  /** % change vs the previous window; null hides the badge */
   delta?: number | null;
   deltaLabel?: string;
   sublabel?: string;
   data: { d: string; v: number }[];
+  /** Accent for the emphasized marks (rest of the series stays grey) */
   color: string;
   kind: "bars" | "line";
   loading?: boolean;
+  onExpand?: () => void;
 }
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+const GREY_MARK = "#E7E7EA";
+const GREY_LINE = "#D6D6DA";
 
 function MiniTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: { d: string; v: number } }> }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="bg-white rounded-lg border border-[#F0F0F2] shadow-[0_8px_24px_-8px_rgba(10,10,10,0.15)] px-2.5 py-1.5 text-[11px]">
+    <div className="bg-white rounded-lg border border-[#F0F0F1] shadow-[0_8px_24px_-8px_rgba(10,10,10,0.15)] px-2.5 py-1.5 text-[11px]">
       <span className="text-neutral-400">{p.d}</span>
       <span className="text-neutral-900 font-semibold ml-2">{p.v}</span>
     </div>
@@ -38,40 +42,33 @@ function MiniTooltip({ active, payload }: { active?: boolean; payload?: Array<{ 
 }
 
 /**
- * Reference-style compact stat card: title row, big value + delta chip on the
- * left, a small live chart (bars or line) on the right.
+ * Reference-style compact stat card (the "Comments"/"Commits" pattern):
+ * header row with actions cluster, big value + diagonal-arrow delta on the
+ * left, a small grey-base chart with accent-highlighted marks on the right.
  */
 export function MiniStatCard({
   title,
-  icon: Icon,
+  icon,
   value,
   delta,
-  deltaLabel,
+  deltaLabel = "(7d)",
   sublabel,
   data,
   color,
   kind,
   loading,
+  onExpand,
 }: MiniStatCardProps) {
   const numeric = typeof value === "number" ? value : null;
-  const deltaPositive = (delta ?? 0) >= 0;
   const hasSeries = data.some((p) => p.v > 0);
+  const maxV = Math.max(...data.map((p) => p.v), 0);
+  const lastIdx = data.length - 1;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.55, ease: EASE }}
-      whileHover={{ y: -3 }}
-      className="rounded-2xl bg-white border border-[#F0F0F2] p-5 min-w-0 hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow"
-    >
-      <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-neutral-500" strokeWidth={1.9} />
-        <h3 className="text-[13.5px] font-semibold text-neutral-900 tracking-tight truncate">{title}</h3>
-      </div>
+    <WidgetCard className="p-5">
+      <WidgetHeader icon={icon} title={title} onExpand={onExpand} />
 
-      <div className="flex items-end justify-between gap-3 mt-3">
+      <div className="flex items-end justify-between gap-3 mt-4">
         <div className="min-w-0">
           {loading ? (
             <div className="h-8 w-20 bg-neutral-100 rounded animate-pulse" />
@@ -80,50 +77,69 @@ export function MiniStatCard({
               {numeric !== null ? <CountUp to={numeric} duration={1.2} /> : value}
             </div>
           )}
-          {delta != null ? (
-            <div className={`mt-1.5 text-[11.5px] font-semibold ${deltaPositive ? "text-emerald-600" : "text-rose-500"}`}>
-              {deltaPositive ? "↗" : "↘"} {deltaPositive ? "+" : ""}{delta}%{" "}
-              {deltaLabel && <span className="text-neutral-400 font-medium">{deltaLabel}</span>}
-            </div>
-          ) : sublabel ? (
-            <div className="mt-1.5 text-[11.5px] text-neutral-400 font-medium truncate">{sublabel}</div>
-          ) : null}
+          <div className="mt-2 min-h-[18px]">
+            {delta != null ? (
+              <DeltaBadge delta={delta} windowLabel={deltaLabel} />
+            ) : sublabel ? (
+              <span className="text-[11.5px] text-neutral-400 font-medium truncate block">{sublabel}</span>
+            ) : null}
+          </div>
         </div>
 
-        <div className="w-[110px] h-[48px] shrink-0">
+        <div className="w-[116px] h-[52px] shrink-0">
           {loading ? (
             <div className="w-full h-full bg-neutral-50 rounded animate-pulse" />
           ) : !hasSeries ? (
-            <div className="w-full h-full flex items-end gap-[3px] opacity-40" aria-hidden>
-              {data.map((_, i) => (
-                <div key={i} className="flex-1 rounded-t-[2px] bg-[#F0F0F2]" style={{ height: `${18 + (i % 3) * 10}%` }} />
+            <div className="w-full h-full flex items-end gap-[3px] opacity-60" aria-hidden>
+              {(data.length ? data : Array.from({ length: 7 }, (_, i) => ({ d: "", v: i }))).map((_, i) => (
+                <div key={i} className="flex-1 rounded-[2px] bg-[#F0F0F1]" style={{ height: `${16 + ((i * 13) % 4) * 12}%` }} />
               ))}
             </div>
           ) : kind === "bars" ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
                 <Tooltip cursor={{ fill: "rgba(10,10,10,0.03)" }} content={<MiniTooltip />} />
-                <Bar dataKey="v" fill={color} radius={[2, 2, 0, 0]} barSize={7} isAnimationActive animationDuration={900} />
+                <Bar dataKey="v" radius={[2, 2, 2, 2]} barSize={7} isAnimationActive animationDuration={900}>
+                  {/* Grey base series; accent only on the emphasized marks (today / peak) */}
+                  {data.map((p, i) => (
+                    <Cell key={i} fill={i === lastIdx || (p.v === maxV && p.v > 0) ? color : GREY_MARK} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 2 }}>
-                <Tooltip cursor={{ stroke: "#E5E5E5", strokeWidth: 1 }} content={<MiniTooltip />} />
+              <LineChart data={data} margin={{ top: 6, right: 6, left: 6, bottom: 4 }}>
+                <Tooltip cursor={{ stroke: GREY_LINE, strokeWidth: 1 }} content={<MiniTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="v"
-                  stroke={color}
-                  strokeWidth={2}
-                  dot={{ r: 2, fill: color, strokeWidth: 0 }}
+                  stroke={GREY_LINE}
+                  strokeWidth={1.5}
                   isAnimationActive
                   animationDuration={900}
+                  dot={(props: { cx?: number; cy?: number; index?: number; payload?: { v: number } }) => {
+                    const { cx, cy, index, payload } = props;
+                    if (cx == null || cy == null) return <g key={`d-${index}`} />;
+                    const emphasized = index === lastIdx || (payload && payload.v === maxV && payload.v > 0);
+                    return (
+                      <circle
+                        key={`d-${index}`}
+                        cx={cx}
+                        cy={cy}
+                        r={emphasized ? 3 : 2.25}
+                        fill={emphasized ? color : "#C9C9CF"}
+                        stroke="#fff"
+                        strokeWidth={1}
+                      />
+                    );
+                  }}
                 />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
       </div>
-    </motion.div>
+    </WidgetCard>
   );
 }

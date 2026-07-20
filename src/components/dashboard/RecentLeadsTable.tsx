@@ -87,7 +87,7 @@ export function RecentLeadsTable({ leads, loading }: { leads: Lead[]; loading?: 
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="rounded-2xl bg-white border border-[#F0F0F2] overflow-hidden"
+      className="rounded-2xl bg-white border border-[#F0F0F1] shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.08)] overflow-hidden"
     >
       <div className="flex items-center justify-between gap-3 px-6 pt-6 pb-4 flex-wrap">
         <div>

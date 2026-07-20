@@ -7,16 +7,16 @@ import {
   ResponsiveContainer,
   ComposedChart,
 } from "recharts";
-import { motion } from "framer-motion";
-import { ChevronDown, Check, TrendingUp, AlertCircle } from "lucide-react";
-import { CountUp } from "@/lib/motion";
+import { ChevronDown, Check, Flag, AlertCircle } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { WidgetCard, WidgetHeader, DeltaBadge } from "./WidgetCard";
 
 interface PerformanceChartProps {
   chartData: Array<{ date: string; leadsFound: number; contacted: number }>;
@@ -25,7 +25,7 @@ interface PerformanceChartProps {
 }
 
 // Validated series palette (CVD ΔE 33+): leads = indigo, contacted = goji orange.
-const LEADS_COLOR = "#4F46E5";
+const LEADS_COLOR = "#635BEB";
 const CONTACTED_COLOR = "#FA7534";
 
 const RANGE_OPTIONS = [
@@ -36,6 +36,7 @@ const RANGE_OPTIONS = [
 ] as const;
 
 export function PerformanceChart({ chartData, loading, error }: PerformanceChartProps) {
+  const navigate = useNavigate();
   const [range, setRange] = useState<(typeof RANGE_OPTIONS)[number]>(RANGE_OPTIONS[1]);
 
   const visibleData = useMemo(() => {
@@ -48,35 +49,29 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
   const half = Math.floor(visibleData.length / 2);
   const firstHalf = visibleData.slice(0, half).reduce((s, d) => s + d.leadsFound, 0);
   const secondHalf = visibleData.slice(half).reduce((s, d) => s + d.leadsFound, 0);
-  const delta = firstHalf > 0 ? Math.round(((secondHalf - firstHalf) / firstHalf) * 100) : 0;
-  const deltaPositive = delta >= 0;
+  const delta = firstHalf > 0 ? Math.round(((secondHalf - firstHalf) / firstHalf) * 100) : null;
 
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-2xl p-6 bg-white border border-[#F0F0F2] hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow"
-    >
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-neutral-500" strokeWidth={1.9} />
-            <h2 className="text-[15px] font-semibold text-neutral-900 tracking-tight">Leads found</h2>
-          </div>
-          <div className="flex items-baseline gap-2 mt-2.5">
-            <span className="text-[32px] leading-none font-semibold tracking-[-0.03em] text-[#0a0a0a]">
-              {loading ? "—" : <CountUp to={total} duration={1.4} />}
-            </span>
-            {!loading && hasData && (
-              <span className={`text-[11.5px] font-semibold ${deltaPositive ? "text-emerald-600" : "text-rose-500"}`}>
-                {deltaPositive ? "↗" : "↘"} {deltaPositive ? "+" : ""}{delta}%{" "}
-                <span className="text-neutral-400 font-medium">({range.label.toLowerCase().replace("last ", "")})</span>
-              </span>
-            )}
-          </div>
+    <WidgetCard className="p-5 flex flex-col">
+      <WidgetHeader
+        icon={Flag}
+        title="Leads found"
+        suffix="(vs contacted)"
+        onExpand={() => navigate("/contacts")}
+        menuItems={[
+          { label: "View contacts", onSelect: () => navigate("/contacts") },
+          { label: "View campaigns", onSelect: () => navigate("/campaigns") },
+        ]}
+      />
+
+      <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
+        <div className="flex items-baseline gap-2.5">
+          <span className="text-[13px] text-neutral-500">
+            <span className="font-semibold text-neutral-900">{loading ? "—" : total}</span> leads found
+          </span>
+          {!loading && hasData && <DeltaBadge delta={delta} windowLabel={`(${range.label.toLowerCase().replace("last ", "")})`} />}
         </div>
         <div className="flex items-center gap-3">
-          {/* Legend — identity never color-alone; labels sit beside the marks */}
           <div className="hidden sm:flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: LEADS_COLOR }} />
@@ -89,7 +84,7 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-700 bg-white border border-[#F0F0F2] rounded-full px-3.5 py-2 hover:bg-neutral-50 transition-colors">
+              <button className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-600 bg-white border border-[#F0F0F1] rounded-lg px-2.5 py-1.5 hover:bg-neutral-50 transition-colors">
                 {range.label}
                 <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
               </button>
@@ -110,11 +105,9 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
         </div>
       </div>
 
-      <div style={{ height: 240 }}>
+      <div className="mt-3 flex-1" style={{ minHeight: 232 }}>
         {loading ? (
-          <div className="h-full flex flex-col justify-end gap-0 animate-pulse">
-            <div className="flex-1 rounded-xl bg-neutral-50" />
-          </div>
+          <div className="h-full rounded-xl bg-neutral-50 animate-pulse" />
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <AlertCircle className="w-5 h-5 text-neutral-300" />
@@ -126,28 +119,30 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={visibleData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <ComposedChart data={visibleData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <defs>
                 <linearGradient id="leadsFillIndigo" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={LEADS_COLOR} stopOpacity={0.14} />
+                  <stop offset="0%" stopColor={LEADS_COLOR} stopOpacity={0.12} />
                   <stop offset="100%" stopColor={LEADS_COLOR} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} stroke="#F4F4F5" />
+              {/* Reference burndown: dotted horizontal guides only */}
+              <CartesianGrid vertical={false} stroke="#E7E7EA" strokeDasharray="2 6" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "#a3a3a3" }}
+                tick={{ fontSize: 11, fill: "#A3A3A8" }}
                 tickLine={false}
                 axisLine={false}
-                minTickGap={28}
+                minTickGap={32}
                 interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#a3a3a3" }}
+                tick={{ fontSize: 11, fill: "#A3A3A8" }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                width={44}
+                tickCount={5}
+                width={40}
                 tickFormatter={(v) => (v >= 1000 ? `${v / 1000}K` : v)}
               />
               <Tooltip
@@ -157,7 +152,7 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
                   const leads = payload.find((p) => p.dataKey === "leadsFound")?.value;
                   const contacted = payload.find((p) => p.dataKey === "contacted")?.value;
                   return (
-                    <div className="bg-white rounded-xl border border-[#F0F0F2] shadow-[0_8px_24px_-8px_rgba(10,10,10,0.15)] px-3.5 py-2.5 text-xs min-w-[150px]">
+                    <div className="bg-white rounded-xl border border-[#F0F0F1] shadow-[0_8px_24px_-8px_rgba(10,10,10,0.15)] px-3.5 py-2.5 text-xs min-w-[150px]">
                       <p className="text-neutral-400 mb-1.5 text-[10.5px] uppercase tracking-wider">{label}</p>
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5 text-neutral-500">
@@ -183,7 +178,7 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
                 type="monotone"
                 dataKey="leadsFound"
                 stroke={LEADS_COLOR}
-                strokeWidth={2}
+                strokeWidth={1.8}
                 fill="url(#leadsFillIndigo)"
                 dot={false}
                 isAnimationActive
@@ -195,7 +190,7 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
                 type="monotone"
                 dataKey="contacted"
                 stroke={CONTACTED_COLOR}
-                strokeWidth={2}
+                strokeWidth={1.8}
                 fill="transparent"
                 dot={false}
                 isAnimationActive
@@ -208,6 +203,6 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
           </ResponsiveContainer>
         )}
       </div>
-    </motion.div>
+    </WidgetCard>
   );
 }

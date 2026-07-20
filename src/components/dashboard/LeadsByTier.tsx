@@ -1,7 +1,9 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { motion } from "framer-motion";
 import { CountUp } from "@/lib/motion";
-import { MoreHorizontal } from "lucide-react";
+import { PieChart as PieIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { WidgetCard, WidgetHeader } from "./WidgetCard";
 
 interface TierData {
   name: string;
@@ -26,27 +28,21 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
   const pctHot = total > 0 ? Math.round((hot / total) * 100) : 0;
   const hasData = total > 0;
 
+  const navigate = useNavigate();
+
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="rounded-2xl p-6 bg-white border border-[#F0F0F2] hover:shadow-[0_12px_32px_-16px_rgba(10,10,10,0.12)] transition-shadow flex flex-col"
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-[15px] font-semibold text-neutral-900 tracking-tight">Leads by Tier</h3>
-          <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-[34px] leading-none font-semibold tracking-[-0.03em] text-neutral-900">
-              <CountUp to={total} duration={1.4} />
-            </span>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
-              ↑ {pctHot}% hot
-            </span>
-          </div>
-        </div>
-        <button className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 transition-colors">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
+    <WidgetCard className="p-5 flex flex-col">
+      <WidgetHeader
+        icon={PieIcon}
+        title="Leads by tier"
+        onExpand={() => navigate("/contacts")}
+        menuItems={[{ label: "View contacts", onSelect: () => navigate("/contacts") }]}
+      />
+      <div className="flex items-baseline gap-2.5 mt-3">
+        <span className="text-[13px] text-neutral-500">
+          <span className="font-semibold text-neutral-900"><CountUp to={total} duration={1.4} /></span> total leads
+        </span>
+        <span className="text-[12.5px] font-semibold text-goji-orange">{pctHot}% hot</span>
       </div>
 
       {loading ? (
@@ -105,7 +101,7 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
           </div>
         </>
       )}
-    </motion.div>
+    </WidgetCard>
   );
 };
 

@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MetricCard } from "@/components/dashboard/MetricCard";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
+import { PipelineStatusCard } from "@/components/dashboard/PipelineStatusCard";
 import { RecentLeadsTable } from "@/components/dashboard/RecentLeadsTable";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
@@ -469,6 +469,9 @@ export default function Dashboard() {
   const chartLoading = chartContactsLoading || chartRequestsLoading || !authReady;
   const chartError = chartContactsError || chartRequestsError;
 
+  // Last-7-days discovery intensity for the Pipeline status gradient strip
+  const stripData = chartData.slice(-7).map((d) => d.leadsFound);
+
   void profileData;
   void campaignMeta;
   void latestReplies;
@@ -543,53 +546,71 @@ export default function Dashboard() {
           <motion.div variants={fadeStaggerItem}><SetupWizardBanner /></motion.div>
           <motion.div variants={fadeStaggerItem}><SubscriptionBanner /></motion.div>
 
-          <motion.div variants={fadeStaggerItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard title="Hot Opportunities" value={hotOpps} loading={hotOppsLoading} accent="blue" icon={Flame} onDetails={() => navigate("/contacts")} />
-            <MetricCard title="Leads Engaged" value={leadsEngaged} loading={engagementLoading} accent="indigo" icon={Users} onDetails={() => navigate("/contacts")} />
-            <MetricCard title="Conversations" value={conversations} loading={engagementLoading} accent="lime" icon={MessageCircle} onDetails={() => navigate("/unibox")} />
-            <MetricCard title="Active Signals" value={activeSignals} accent="black" icon={Radio} onDetails={() => navigate("/signals")} />
-          </motion.div>
-
-          {/* Reference-style compact analytics: rate + daily send activity */}
-          <motion.div variants={fadeStaggerItem} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <MiniStatCard
-              title="Conversion rate"
-              icon={TrendingUp}
-              value={`${conversionRate}%`}
-              sublabel={`replies per contacted lead · ${periodLabel[period].toLowerCase()}`}
-              data={repliesSeries}
-              color="#4F46E5"
-              kind="line"
-              loading={engagementLoading || weeklyActivityLoading}
+          {/* ── Top zone — reference layout: status card | stacked stats | big chart ── */}
+          <motion.div variants={fadeStaggerItem} className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.78fr_1.55fr] gap-4 items-stretch">
+            <PipelineStatusCard
+              stats={[
+                { label: "Hot leads", value: hotOpps, icon: Flame, loading: hotOppsLoading, onClick: () => navigate("/contacts") },
+                { label: "Engaged", value: leadsEngaged, icon: Users, loading: engagementLoading, onClick: () => navigate("/contacts") },
+                { label: "Replies", value: conversations, icon: MessageCircle, loading: engagementLoading, onClick: () => navigate("/unibox") },
+              ]}
+              stripData={stripData}
+              onExpand={() => navigate("/contacts")}
             />
-            <MiniStatCard
-              title="Connections sent"
-              icon={UserPlus}
-              value={sendActivity?.connections.current ?? 0}
-              delta={sendActivity?.connections.delta ?? null}
-              deltaLabel="(7d)"
-              sublabel="last 7 days"
-              data={sendActivity?.connections.series ?? []}
-              color="#FA7534"
-              kind="bars"
-              loading={sendActivityLoading}
-            />
-            <MiniStatCard
-              title="Messages sent"
-              icon={Send}
-              value={sendActivity?.messages.current ?? 0}
-              delta={sendActivity?.messages.delta ?? null}
-              deltaLabel="(7d)"
-              sublabel="last 7 days"
-              data={sendActivity?.messages.series ?? []}
-              color="#4F46E5"
-              kind="bars"
-              loading={sendActivityLoading}
-            />
-          </motion.div>
-
-          <Reveal y={24} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+            <div className="flex flex-col gap-4">
+              <MiniStatCard
+                title="Conversion rate"
+                icon={TrendingUp}
+                value={`${conversionRate}%`}
+                sublabel={`replies · ${periodLabel[period].toLowerCase()}`}
+                data={repliesSeries}
+                color="#635BEB"
+                kind="line"
+                loading={engagementLoading || weeklyActivityLoading}
+                onExpand={() => navigate("/unibox")}
+              />
+              <MiniStatCard
+                title="Connections sent"
+                icon={UserPlus}
+                value={sendActivity?.connections.current ?? 0}
+                delta={sendActivity?.connections.delta ?? null}
+                data={sendActivity?.connections.series ?? []}
+                color="#FA7534"
+                kind="bars"
+                sublabel="last 7 days"
+                loading={sendActivityLoading}
+                onExpand={() => navigate("/campaigns")}
+              />
+            </div>
             <PerformanceChart chartData={chartData} loading={chartLoading} error={chartError} />
+          </motion.div>
+
+          {/* ── Second zone: send activity + agents | tier donut ── */}
+          <Reveal y={24} className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-4 items-stretch">
+            <div className="flex flex-col gap-4">
+              <MiniStatCard
+                title="Messages sent"
+                icon={Send}
+                value={sendActivity?.messages.current ?? 0}
+                delta={sendActivity?.messages.delta ?? null}
+                data={sendActivity?.messages.series ?? []}
+                color="#635BEB"
+                kind="bars"
+                sublabel="last 7 days"
+                loading={sendActivityLoading}
+                onExpand={() => navigate("/unibox")}
+              />
+              <MiniStatCard
+                title="Active signals"
+                icon={Radio}
+                value={activeSignals}
+                sublabel="agents running now"
+                data={[]}
+                color="#FA7534"
+                kind="bars"
+                onExpand={() => navigate("/signals")}
+              />
+            </div>
             <LeadsByTier data={tierData ?? []} loading={tierLoading} />
           </Reveal>
 
