@@ -1,4 +1,5 @@
 import type { MouseEvent } from "react";
+import { toast } from "sonner";
 
 /**
  * Open an external URL in a way that survives hostile embedding contexts.
@@ -7,24 +8,33 @@ import type { MouseEvent } from "react";
  * iframe (editor previews, in-app browsers): the navigation gets forced into
  * the frame, LinkedIn refuses to be framed (X-Frame-Options), and the user
  * sees "www.linkedin.com refused to connect · ERR_BLOCKED_BY_RESPONSE".
- * window.open() from a user gesture opens a genuine top-level tab instead,
- * and "noopener,noreferrer" also strips the referrer — which LinkedIn uses
- * to block some cross-site profile navigations.
+ *
+ * IMPORTANT: never pass "noopener" in the window.open features string —
+ * Chrome then returns null even on SUCCESS, which makes any null-check
+ * fallback fire on every click (and previously navigated the app itself to
+ * LinkedIn). Open plainly, null-check, then detach the opener by hand.
  */
 export function openExternal(url: string | null | undefined): void {
   if (!url) return;
-  const w = window.open(url, "_blank", "noopener,noreferrer");
-  if (!w) {
-    // Popup blocked (sandboxed frame) — escape via top-level navigation.
+
+  const w = window.open(url, "_blank");
+  if (w) {
     try {
-      if (window.top && window.top !== window) {
-        window.top.location.href = url;
-        return;
-      }
+      w.opener = null; // detach for security (what "noopener" would have done)
     } catch {
-      /* cross-origin top without navigation permission */
+      /* cross-origin handle — already detached */
     }
-    window.location.href = url;
+    return;
+  }
+
+  // Genuinely blocked (sandboxed embed without allow-popups, or a popup
+  // blocker). NEVER navigate the app itself — that replaces Intentsly with a
+  // framed LinkedIn error. Copy the link and tell the user instead.
+  try {
+    void navigator.clipboard?.writeText(url);
+    toast.error("New tab was blocked by this environment — link copied, paste it into a new tab.");
+  } catch {
+    toast.error("New tab was blocked by this environment. Open Intentsly in its own browser tab and try again.");
   }
 }
 
