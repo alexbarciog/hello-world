@@ -191,14 +191,20 @@ Deno.serve(async (req) => {
 
             if (!resolveRes.ok || !resolveData.provider_id) {
               const detail = (resolveData?.title || resolveData?.detail || resolveData?.type || resolveRaw || '').toString().slice(0, 160);
-              const reason = `Profile lookup failed (HTTP ${resolveRes.status})${detail ? `: ${detail}` : ''}`;
+              // "Recipient cannot be reached" = the /in/ slug doesn't resolve to a
+              // person (company page saved as a lead, or deactivated profile).
+              // Permanent — mark terminally so it stops being retried every day.
+              const unreachable = resolveRes.status === 422 && /cannot be reached/i.test(detail);
+              const reason = unreachable
+                ? 'Profile unreachable — likely a company page or deactivated account'
+                : `Profile lookup failed (HTTP ${resolveRes.status})${detail ? `: ${detail}` : ''}`;
               console.error(`[send-conn] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status, detail);
-              await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
+              await updateScheduledStatus(serviceClient, sl.id, unreachable ? 'skipped' : 'failed', reason);
               await insertConnReq(serviceClient, {
                 campaign_id: campaignId,
                 contact_id: contact.id,
                 user_id: sl.user_id,
-                status: 'failed',
+                status: unreachable ? 'skipped_unreachable' : 'failed',
                 error_reason: reason,
               });
               continue;
@@ -291,6 +297,24 @@ Deno.serve(async (req) => {
             if (!inviteRes.ok) {
               const detail = [inviteData?.title, inviteData?.detail, inviteData?.type]
                 .filter(Boolean).join(' — ') || inviteRaw.slice(0, 160);
+
+              // LinkedIn already has a pending invitation for this person (e.g. a
+              // previous run sent it but crashed before recording). Not a failure:
+              // record as sent so acceptance tracking takes over instead of
+              // retrying and failing daily.
+              if (/already_invited_recently|already been sent recently/i.test(detail)) {
+                console.log(`[send-conn] invite already pending for ${contact.id} — recording as sent`);
+                await updateScheduledStatus(serviceClient, sl.id, 'sent');
+                await insertConnReq(serviceClient, {
+                  campaign_id: campaignId,
+                  contact_id: contact.id,
+                  user_id: sl.user_id,
+                  status: 'sent',
+                  error_reason: 'Invitation was already pending on LinkedIn (sent by an earlier run)',
+                });
+                continue;
+              }
+
               const reason = `Invite failed (HTTP ${inviteRes.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`;
               console.error(`[send-conn] invite failed for ${contact.id}:`, inviteRes.status, detail);
               await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
@@ -304,13 +328,16 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            // Record successful send
+            // Record successful send (upsert: a previous failed attempt may have
+            // left a row — a plain insert would silently collide and the sent
+            // invite would never be recorded, causing daily re-sends).
             await updateScheduledStatus(serviceClient, sl.id, 'sent');
-            await serviceClient.from('campaign_connection_requests').insert({
+            await insertConnReq(serviceClient, {
               campaign_id: campaignId,
               contact_id: contact.id,
               user_id: sl.user_id,
               status: 'sent',
+              sent_at: new Date().toISOString(),
               unipile_request_id: inviteData.request_id || inviteData.id || null,
             });
 
@@ -369,12 +396,22 @@ async function updateScheduledStatus(client: any, id: string, status: string, re
   if (error) console.error('[send-conn] updateScheduledStatus error:', error.message);
 }
 
-/** Insert a campaign_connection_requests row, retrying without error_reason if the column is missing. */
+/**
+ * Record a campaign_connection_requests outcome. The table has a UNIQUE
+ * (campaign_id, contact_id) constraint and retried contacts already have a row
+ * from a previous attempt — a plain insert fails silently and the status stays
+ * frozen at the first failure forever. Upsert so retries update the outcome.
+ * Falls back without error_reason if that migration hasn't been applied.
+ */
 async function insertConnReq(client: any, row: Record<string, unknown>) {
-  let { error } = await client.from('campaign_connection_requests').insert(row);
+  let { error } = await client
+    .from('campaign_connection_requests')
+    .upsert(row, { onConflict: 'campaign_id,contact_id' });
   if (error && /error_reason/i.test(error.message || '')) {
     const { error_reason: _dropped, ...rest } = row;
-    ({ error } = await client.from('campaign_connection_requests').insert(rest));
+    ({ error } = await client
+      .from('campaign_connection_requests')
+      .upsert(rest, { onConflict: 'campaign_id,contact_id' }));
   }
   if (error) console.error('[send-conn] insertConnReq error:', error.message);
 }
