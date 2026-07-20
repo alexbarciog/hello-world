@@ -1,4 +1,5 @@
 import { ExternalLink, MapPin, Building2, Sparkles, Check, X, Crown, Globe2, ThumbsUp, MessageCircle, Repeat2, Send, Flame } from "lucide-react";
+import { externalLinkProps } from "@/lib/openExternal";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LeadResult } from "./types";
@@ -54,7 +55,7 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-foreground truncate">{lead.full_name}</p>
               {lead.linkedin_url && (
-                <a href={lead.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-foreground/40 hover:text-[hsl(var(--md-secondary))]">
+                <a {...externalLinkProps(lead.linkedin_url)} className="text-foreground/40 hover:text-[hsl(var(--md-secondary))]">
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
@@ -119,9 +120,7 @@ export function LeadCard({ lead, status, onSave, onSkip }: Props) {
         {/* LinkedIn-style post mockup */}
         {lead.signal_post_excerpt && (
           <a
-            href={lead.signal_post_url || lead.linkedin_url}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...externalLinkProps(lead.signal_post_url || lead.linkedin_url)}
             className="block rounded-lg border border-gray-200 bg-white hover:shadow-sm transition-shadow overflow-hidden group"
           >
             {/* LinkedIn post header */}

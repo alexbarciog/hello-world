@@ -1,4 +1,5 @@
 import { ExternalLink, X } from "lucide-react";
+import { externalLinkProps } from "@/lib/openExternal";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { StageData } from "./FunnelTemplates";
@@ -93,9 +94,7 @@ function SampleItem({ item }: { item: unknown }) {
         <div className="text-sm font-medium text-foreground truncate">{name}</div>
         {profileUrl && (
           <a
-            href={profileUrl}
-            target="_blank"
-            rel="noreferrer"
+            {...externalLinkProps(profileUrl)}
             className="text-muted-foreground hover:text-primary shrink-0"
             title="Open LinkedIn profile"
           >
@@ -111,9 +110,7 @@ function SampleItem({ item }: { item: unknown }) {
           <span className="text-muted-foreground">Company:</span>
           {companyUrl ? (
             <a
-              href={companyUrl}
-              target="_blank"
-              rel="noreferrer"
+              {...externalLinkProps(companyUrl)}
               className="text-primary hover:underline inline-flex items-center gap-1 truncate"
             >
               {company || companyUrl}
@@ -169,9 +166,7 @@ function SampleItem({ item }: { item: unknown }) {
       )}
       {postUrl && (
         <a
-          href={postUrl}
-          target="_blank"
-          rel="noreferrer"
+          {...externalLinkProps(postUrl)}
           className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
         >
           Open post on LinkedIn

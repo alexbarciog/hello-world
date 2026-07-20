@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { openExternal } from "@/lib/openExternal";
 import { Users, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -100,7 +101,7 @@ export function HotLeadsList({ leads, loading }: HotLeadsListProps) {
                 transition={{ duration: 0.4, delay: i * 0.05, ease: EASE }}
                 whileHover={{ x: 2 }}
                 className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
-                onClick={() => lead.linkedin_url && window.open(lead.linkedin_url, "_blank")}
+                onClick={() => openExternal(lead.linkedin_url)}
               >
                 <motion.div className="relative" whileHover={{ scale: 1.08 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
                   <LeadAvatar initials={initials} color={avatarColors[i % avatarColors.length]} />

@@ -48,7 +48,11 @@ export function externalLinkProps(url: string | null | undefined) {
     target: "_blank" as const,
     rel: "noopener noreferrer",
     onClick: (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      // Deliberately ignore e.defaultPrevented: embedding shells (editor
+      // previews) install document-level capture listeners that preventDefault
+      // and reroute anchor navigations into their iframe — we still want our
+      // own top-level tab in that case.
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
       e.stopPropagation();
       openExternal(url);

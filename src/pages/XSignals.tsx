@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { externalLinkProps } from "@/lib/openExternal";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -606,10 +607,7 @@ export default function XSignals() {
                 <div className="flex gap-3">
                   {/* Avatar */}
                   <a
-                    href={profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={e => e.stopPropagation()}
+                    {...externalLinkProps(profileUrl)}
                     className="shrink-0"
                   >
                     {avatarUrl ? (
@@ -625,10 +623,7 @@ export default function XSignals() {
                     {/* Author line */}
                     <div className="flex items-center gap-1 text-sm leading-5">
                       <a
-                        href={profileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
+                        {...externalLinkProps(profileUrl)}
                         className="font-bold text-foreground hover:underline truncate max-w-[160px]"
                       >
                         {displayName}
@@ -691,10 +686,7 @@ export default function XSignals() {
                           <Bookmark className={`w-[18px] h-[18px] ${m.saved ? "fill-current" : ""}`} />
                         </button>
                         <a
-                          href={m.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
+                          {...externalLinkProps(m.url)}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
                           title="Open on X"
                         >

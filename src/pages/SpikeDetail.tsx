@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { externalLinkProps } from "@/lib/openExternal";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -139,7 +140,7 @@ function CommentRow({ c, requireApproval, onChange }: { c: any; requireApproval?
           </div>
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{c.post_snippet}</p>
           {c.post_url && (
-            <a href={c.post_url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline inline-flex items-center gap-0.5 mt-1">
+            <a {...externalLinkProps(c.post_url)} className="text-[11px] text-blue-600 hover:underline inline-flex items-center gap-0.5 mt-1">
               View post <ExternalLink className="w-3 h-3" />
             </a>
           )}

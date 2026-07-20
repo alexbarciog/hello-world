@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { externalLinkProps } from "@/lib/openExternal";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -669,9 +670,7 @@ export default function RedditSignals() {
                 {/* Actions */}
                 <div className="flex items-center gap-2 mt-auto pt-3">
                   <a
-                    href={mention.url.replace('://old.reddit.com', '://www.reddit.com')}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    {...externalLinkProps(mention.url.replace('://old.reddit.com', '://www.reddit.com'))}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground/70 hover:bg-muted transition-colors flex-1 justify-center"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { externalLinkProps } from "@/lib/openExternal";
 import aiSdrBannerBg from "@/assets/ai-sdr-banner-bg.png";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -2914,11 +2915,11 @@ export default function CampaignDetail() {
                                   <div>
                                     <div className="flex items-center gap-1.5">
                                       {c.linkedin_url ? (
-                                        <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">{c.first_name} {c.last_name || ""}</a>
+                                        <a {...externalLinkProps(c.linkedin_url)} className="text-sm font-bold text-primary hover:underline">{c.first_name} {c.last_name || ""}</a>
                                       ) : (
                                         <span className="text-sm font-bold text-foreground">{c.first_name} {c.last_name || ""}</span>
                                       )}
-                                      {c.linkedin_url && <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer"><LinkedInIcon /></a>}
+                                      {c.linkedin_url && <a {...externalLinkProps(c.linkedin_url)}><LinkedInIcon /></a>}
                                     </div>
                                     <p className="text-xs text-muted-foreground">{c.title}</p>
                                     {c.company && (
@@ -2932,7 +2933,7 @@ export default function CampaignDetail() {
                               </td>
                               <td className="px-3 py-3">
                                 {c.signal_post_url ? (
-                                  <a href={c.signal_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline underline-offset-2">{c.signal}</a>
+                                  <a {...externalLinkProps(c.signal_post_url)} className="text-xs text-primary underline underline-offset-2">{c.signal}</a>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">{c.signal}</span>
                                 )}
@@ -3910,14 +3911,14 @@ export default function CampaignDetail() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               {c.linkedin_url ? (
-                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
+                                <a {...externalLinkProps(c.linkedin_url)} className="text-sm font-semibold text-primary hover:underline truncate">
                                   {c.first_name} {c.last_name || ""}
                                 </a>
                               ) : (
                                 <span className="text-sm font-semibold text-foreground truncate">{c.first_name} {c.last_name || ""}</span>
                               )}
                               {c.linkedin_url && (
-                                <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" className="shrink-0 hover:opacity-70 transition-opacity">
+                                <a {...externalLinkProps(c.linkedin_url)} className="shrink-0 hover:opacity-70 transition-opacity">
                                   <LinkedInIcon />
                                 </a>
                               )}

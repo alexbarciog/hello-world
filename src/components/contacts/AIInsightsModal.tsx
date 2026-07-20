@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { externalLinkProps } from "@/lib/openExternal";
 import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -174,9 +175,7 @@ export function AIInsightsModal({ contact, insights, insightsLoading, onClose }:
         {/* Sticky footer — lime CTA */}
         <div className="shrink-0 border-t border-slate-200/60 p-4 bg-white/60">
           <a
-            href={contact.linkedin_url || "#"}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...externalLinkProps(contact.linkedin_url)}
             className={`flex items-center justify-center gap-2 w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-colors ${
               contact.linkedin_url
                 ? "text-slate-900"
