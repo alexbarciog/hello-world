@@ -158,6 +158,7 @@ export default function CampaignDetail() {
     stepIndex: number;
     status: string;
     sentAt: string | null;
+    errorReason: string | null;
     message: string | null;
     scheduledMsgId: string | null;
     connectionRequestId: string | null;
@@ -586,12 +587,21 @@ export default function CampaignDetail() {
     setLoadingQueue(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const { data: queueData } = await supabase
+      let { data: queueData } = await supabase
         .from("daily_scheduled_leads" as any)
-        .select("id, contact_id, action_type, step_index, status, sent_at")
+        .select("id, contact_id, action_type, step_index, status, sent_at, error_reason")
         .eq("campaign_id", campaignId)
         .eq("scheduled_date", today)
         .order("created_at", { ascending: true });
+      if (!queueData) {
+        // Fallback for environments where the error_reason migration hasn't run yet
+        ({ data: queueData } = await supabase
+          .from("daily_scheduled_leads" as any)
+          .select("id, contact_id, action_type, step_index, status, sent_at")
+          .eq("campaign_id", campaignId)
+          .eq("scheduled_date", today)
+          .order("created_at", { ascending: true }));
+      }
 
       if (!queueData || queueData.length === 0) {
         setDailyQueue([]);
@@ -654,6 +664,7 @@ export default function CampaignDetail() {
           stepIndex: q.step_index,
           status: q.status,
           sentAt: q.sent_at,
+          errorReason: q.error_reason || null,
           message: scheduledMsg?.message || null,
           scheduledMsgId: scheduledMsg?.id || null,
           connectionRequestId: crId,
@@ -3620,7 +3631,9 @@ export default function CampaignDetail() {
                                                 );
                                               })}
                                             </div>
-                                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                            <span
+                                              title={item.errorReason || undefined}
+                                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 ${
                                               item.status === "sent"
                                                 ? "text-emerald-600 bg-emerald-500/10"
                                                 : item.status === "failed"
@@ -3634,6 +3647,11 @@ export default function CampaignDetail() {
                                               }`} />
                                               {item.status === "sent" ? "Sent" : item.status === "failed" ? "Failed" : item.status === "skipped" ? "Skipped" : "Pending"}
                                             </span>
+                                            {(item.status === "failed" || item.status === "skipped") && item.errorReason && (
+                                              <span className="text-[10px] text-muted-foreground max-w-[220px] truncate" title={item.errorReason}>
+                                                {item.errorReason}
+                                              </span>
+                                            )}
                                             {item.status === "sent" && item.sentAt && (() => {
                                               const diff = Date.now() - new Date(item.sentAt).getTime();
                                               const mins = Math.floor(diff / 60000);

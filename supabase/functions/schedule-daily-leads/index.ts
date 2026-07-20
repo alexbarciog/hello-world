@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
               // it here, such contacts were rescheduled (and re-skipped) every day.
               const doneSet = new Set(
                 alreadySent
-                  .filter((r: any) => ['sent', 'accepted', 'pending', 'completed', 'skipped_already_connected'].includes(r.status))
+                  .filter((r: any) => ['sent', 'accepted', 'pending', 'completed', 'skipped_already_connected', 'skipped_company'].includes(r.status))
                   .map((r: any) => r.contact_id)
               );
 

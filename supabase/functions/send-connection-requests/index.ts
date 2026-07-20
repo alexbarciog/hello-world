@@ -146,20 +146,36 @@ Deno.serve(async (req) => {
               .single();
 
             if (!contact) {
-              await updateScheduledStatus(serviceClient, sl.id, 'skipped');
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped', 'Contact record no longer exists');
+              continue;
+            }
+
+            // Company pages can never receive connection invites — permanent skip.
+            if ((contact.linkedin_url || '').includes('/company/')) {
+              const reason = 'Company page — LinkedIn company profiles cannot receive connection invites';
+              console.log(`[send-conn] contact ${contact.id} is a company page, skipping`);
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped', reason);
+              await insertConnReq(serviceClient, {
+                campaign_id: campaignId,
+                contact_id: contact.id,
+                user_id: sl.user_id,
+                status: 'skipped_company',
+                error_reason: reason,
+              });
               continue;
             }
 
             const publicId = contact.linkedin_profile_id || extractLinkedinId(contact.linkedin_url);
             if (!publicId) {
+              const reason = 'No LinkedIn profile URL on this lead';
               console.log(`[send-conn] contact ${contact.id} has no linkedin ID, skipping`);
-              await updateScheduledStatus(serviceClient, sl.id, 'skipped');
-              // Also record in campaign_connection_requests
-              await serviceClient.from('campaign_connection_requests').insert({
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped', reason);
+              await insertConnReq(serviceClient, {
                 campaign_id: campaignId,
                 contact_id: contact.id,
                 user_id: sl.user_id,
                 status: 'skipped',
+                error_reason: reason,
               });
               continue;
             }
@@ -169,16 +185,21 @@ Deno.serve(async (req) => {
               `https://${UNIPILE_DSN}/api/v1/users/${encodeURIComponent(publicId)}?account_id=${accountId}`,
               { headers: { 'X-API-KEY': UNIPILE_API_KEY, 'Accept': 'application/json' } }
             );
-            const resolveData = await resolveRes.json();
+            const resolveRaw = await resolveRes.text();
+            let resolveData: any = {};
+            try { resolveData = JSON.parse(resolveRaw); } catch { /* non-JSON error body */ }
 
             if (!resolveRes.ok || !resolveData.provider_id) {
-              console.error(`[send-conn] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status);
-              await updateScheduledStatus(serviceClient, sl.id, 'failed');
-              await serviceClient.from('campaign_connection_requests').insert({
+              const detail = (resolveData?.title || resolveData?.detail || resolveData?.type || resolveRaw || '').toString().slice(0, 160);
+              const reason = `Profile lookup failed (HTTP ${resolveRes.status})${detail ? `: ${detail}` : ''}`;
+              console.error(`[send-conn] resolve failed for ${contact.id} (${publicId}):`, resolveRes.status, detail);
+              await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
+              await insertConnReq(serviceClient, {
                 campaign_id: campaignId,
                 contact_id: contact.id,
                 user_id: sl.user_id,
                 status: 'failed',
+                error_reason: reason,
               });
               continue;
             }
@@ -201,13 +222,15 @@ Deno.serve(async (req) => {
             // in the user's network (BEFORE the campaign sent any invite), skip entirely.
             // This is safe — we only reach this code when no invite has been sent yet for this lead.
             if (excludeFirstDegree && isFirstDegree(resolveData)) {
+              const reason = 'Already a 1st-degree connection (excluded by campaign setting)';
               console.log(`[send-conn] contact ${contact.id} already 1st degree, skipping per campaign setting`);
-              await updateScheduledStatus(serviceClient, sl.id, 'skipped');
-              await serviceClient.from('campaign_connection_requests').insert({
+              await updateScheduledStatus(serviceClient, sl.id, 'skipped', reason);
+              await insertConnReq(serviceClient, {
                 campaign_id: campaignId,
                 contact_id: contact.id,
                 user_id: sl.user_id,
                 status: 'skipped_already_connected',
+                error_reason: reason,
               });
               continue;
             }
@@ -261,16 +284,22 @@ Deno.serve(async (req) => {
               }),
             });
 
-            const inviteData = await inviteRes.json();
+            const inviteRaw = await inviteRes.text();
+            let inviteData: any = {};
+            try { inviteData = JSON.parse(inviteRaw); } catch { /* non-JSON error body */ }
 
             if (!inviteRes.ok) {
-              console.error(`[send-conn] invite failed for ${contact.id}:`, inviteRes.status);
-              await updateScheduledStatus(serviceClient, sl.id, 'failed');
-              await serviceClient.from('campaign_connection_requests').insert({
+              const detail = [inviteData?.title, inviteData?.detail, inviteData?.type]
+                .filter(Boolean).join(' — ') || inviteRaw.slice(0, 160);
+              const reason = `Invite failed (HTTP ${inviteRes.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`;
+              console.error(`[send-conn] invite failed for ${contact.id}:`, inviteRes.status, detail);
+              await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
+              await insertConnReq(serviceClient, {
                 campaign_id: campaignId,
                 contact_id: contact.id,
                 user_id: sl.user_id,
                 status: 'failed',
+                error_reason: reason,
               });
               continue;
             }
@@ -292,7 +321,8 @@ Deno.serve(async (req) => {
             await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
           } catch (err) {
             console.error(`[send-conn] error sending to ${sl.contact_id}:`, err);
-            await updateScheduledStatus(serviceClient, sl.id, 'failed');
+            const reason = `Unexpected error: ${(err instanceof Error ? err.message : String(err)).slice(0, 180)}`;
+            await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
           }
         }
 
@@ -324,14 +354,29 @@ Deno.serve(async (req) => {
   }
 });
 
-async function updateScheduledStatus(client: any, id: string, status: string) {
-  await client
-    .from('daily_scheduled_leads')
-    .update({
-      status,
-      sent_at: status === 'sent' ? new Date().toISOString() : null,
-    })
-    .eq('id', id);
+async function updateScheduledStatus(client: any, id: string, status: string, reason?: string) {
+  const payload: Record<string, unknown> = {
+    status,
+    sent_at: status === 'sent' ? new Date().toISOString() : null,
+    error_reason: reason ?? null,
+  };
+  let { error } = await client.from('daily_scheduled_leads').update(payload).eq('id', id);
+  // Fail-open if the error_reason migration hasn't been applied yet.
+  if (error && /error_reason/i.test(error.message || '')) {
+    delete payload.error_reason;
+    ({ error } = await client.from('daily_scheduled_leads').update(payload).eq('id', id));
+  }
+  if (error) console.error('[send-conn] updateScheduledStatus error:', error.message);
+}
+
+/** Insert a campaign_connection_requests row, retrying without error_reason if the column is missing. */
+async function insertConnReq(client: any, row: Record<string, unknown>) {
+  let { error } = await client.from('campaign_connection_requests').insert(row);
+  if (error && /error_reason/i.test(error.message || '')) {
+    const { error_reason: _dropped, ...rest } = row;
+    ({ error } = await client.from('campaign_connection_requests').insert(rest));
+  }
+  if (error) console.error('[send-conn] insertConnReq error:', error.message);
 }
 
 function extractLinkedinId(url: string | null): string | null {
