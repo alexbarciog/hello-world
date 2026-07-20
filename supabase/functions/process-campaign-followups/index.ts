@@ -84,7 +84,17 @@ Deno.serve(async (req) => {
     let totalMessagesSent = 0;
     let totalGenerated = 0;
 
+    // Wall-clock budget: exit gracefully before the edge runtime kills us
+    // mid-loop (observed as empty responses with half-finished work). The
+    // 30-min cron picks up where we left off.
+    const RUN_DEADLINE = Date.now() + 320_000;
+    const hasTime = () => Date.now() < RUN_DEADLINE;
+
     for (const campaign of campaigns) {
+      if (!hasTime()) {
+        console.log(`[followup] wall-clock budget reached — deferring remaining campaigns to next run`);
+        break;
+      }
       try {
         const result = await processCampaign(
           supabase,
@@ -94,6 +104,7 @@ Deno.serve(async (req) => {
           LOVABLE_API_KEY,
           SUPABASE_URL,
           SUPABASE_SERVICE_ROLE_KEY,
+          hasTime,
         );
         totalAccepted += result.accepted;
         totalMessagesSent += result.messagesSent;
@@ -119,6 +130,7 @@ async function processCampaign(
   lovableApiKey: string | undefined,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
+  hasTime: () => boolean = () => true,
 ): Promise<{ accepted: number; messagesSent: number; generated: number }> {
   const today = new Date().toISOString().split('T')[0];
   // Filter out pre-invitation steps (before_invitation=true) — those are executed
@@ -242,6 +254,10 @@ async function processCampaign(
       // Hard stop at the per-run human budget / per-account daily limit.
       if (messagesSent >= sendBudget) {
         console.log(`[followup][campaign ${campaign.id}] send budget reached this run (${messagesSent}/${sendBudget})`);
+        break;
+      }
+      if (!hasTime()) {
+        console.log(`[followup][campaign ${campaign.id}] wall-clock budget reached mid-Phase-A — resuming next run`);
         break;
       }
       try {
@@ -721,6 +737,10 @@ async function processCampaign(
     console.log(`[BATCH] followup Phase B: prefetched ${pendingContactById.size} contacts in 1 query`);
 
     for (const req of pendingRequests) {
+      if (!hasTime()) {
+        console.log(`[followup][campaign ${campaign.id}] wall-clock budget reached mid-Phase-B — remaining checks next run`);
+        break;
+      }
       try {
         const contact = pendingContactById.get(req.contact_id);
         if (!contact) continue;
