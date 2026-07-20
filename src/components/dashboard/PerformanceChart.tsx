@@ -105,7 +105,7 @@ export function PerformanceChart({ chartData, loading, error }: PerformanceChart
         </div>
       </div>
 
-      <div className="mt-3 flex-1" style={{ minHeight: 232 }}>
+      <div className="mt-3 flex-1" style={{ minHeight: 250 }}>
         {loading ? (
           <div className="h-full rounded-xl bg-neutral-50 animate-pulse" />
         ) : error ? (

@@ -559,6 +559,7 @@ export default function Dashboard() {
             />
             <div className="flex flex-col gap-4">
               <MiniStatCard
+                className="flex-1"
                 title="Conversion rate"
                 icon={TrendingUp}
                 value={`${conversionRate}%`}
@@ -570,6 +571,7 @@ export default function Dashboard() {
                 onExpand={() => navigate("/unibox")}
               />
               <MiniStatCard
+                className="flex-1"
                 title="Connections sent"
                 icon={UserPlus}
                 value={sendActivity?.connections.current ?? 0}
@@ -586,7 +588,7 @@ export default function Dashboard() {
           </motion.div>
 
           {/* ── Second zone: three compact cards, equal weight ── */}
-          <Reveal y={24} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          <Reveal y={24} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
             <MiniStatCard
               title="Messages sent"
               icon={Send}

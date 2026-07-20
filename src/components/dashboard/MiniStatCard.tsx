@@ -25,6 +25,7 @@ interface MiniStatCardProps {
   kind: "bars" | "line";
   loading?: boolean;
   onExpand?: () => void;
+  className?: string;
 }
 
 const GREY_MARK = "#E7E7EA";
@@ -58,6 +59,7 @@ export function MiniStatCard({
   kind,
   loading,
   onExpand,
+  className = "",
 }: MiniStatCardProps) {
   const numeric = typeof value === "number" ? value : null;
   const hasSeries = data.some((p) => p.v > 0);
@@ -65,10 +67,11 @@ export function MiniStatCard({
   const lastIdx = data.length - 1;
 
   return (
-    <WidgetCard className="p-5">
+    <WidgetCard className={`p-5 flex flex-col ${className}`}>
       <WidgetHeader icon={icon} title={title} onExpand={onExpand} />
 
-      <div className="flex items-end justify-between gap-3 mt-3.5">
+      {/* flex-1 + items-center keeps content balanced when the grid stretches the card */}
+      <div className="flex-1 flex items-center justify-between gap-3 mt-3.5">
         <div className="min-w-0">
           {loading ? (
             <div className="h-8 w-20 bg-neutral-100 rounded animate-pulse" />
