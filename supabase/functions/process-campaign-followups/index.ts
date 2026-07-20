@@ -381,7 +381,31 @@ async function processCampaign(
               .replace(/\{\{signal\}\}/gi, contact?.signal || '');
           }
         } else {
-          console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextWfIdx + 1} — waiting for generation`);
+          // AI step with no stored draft (e.g. drafts were invalidated after the
+          // user changed the step's custom instructions). Generate now with the
+          // CURRENT instructions; the message sends on the next cycle.
+          if (nextStep.ai_icebreaker && lovableApiKey) {
+            console.log(`[followup] No draft for contact ${req.contact_id}, step ${nextWfIdx + 1} — generating with current step instructions`);
+            try {
+              await generateNextStepMessage(
+                supabase,
+                campaign,
+                req,
+                nextWfIdx,
+                workflowSteps,
+                lovableApiKey,
+                supabaseUrl,
+                supabaseServiceRoleKey,
+                unipileDsn,
+                unipileApiKey,
+                accountId,
+              );
+            } catch (genErr) {
+              console.error(`[followup] on-demand generation failed for ${req.contact_id}:`, genErr);
+            }
+          } else {
+            console.log(`[followup] No message available for contact ${req.contact_id}, step ${nextWfIdx + 1} — waiting for generation`);
+          }
           continue;
         }
 

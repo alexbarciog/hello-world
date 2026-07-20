@@ -1312,9 +1312,26 @@ export default function CampaignDetail() {
     allSteps[actualIdx] = { ...allSteps[actualIdx], step_instructions: editStepInstructionsText.trim() || undefined };
     const { error } = await supabase.from("campaigns").update({ workflow_steps: allSteps as any } as any).eq("id", campaign.id);
     if (error) { toast.error("Failed to save instructions"); return; }
+
+    // Invalidate pending AI drafts for this step: they were generated under the
+    // OLD instructions and would be sent as-is otherwise. Only untouched
+    // 'generated' drafts are removed — sent messages and user-edited drafts
+    // stay. The followup engine regenerates them with the new instructions.
+    const { error: purgeErr, count: purged } = await supabase
+      .from("scheduled_messages")
+      .delete({ count: "exact" })
+      .eq("campaign_id", campaign.id)
+      .eq("step_index", actualIdx)
+      .eq("status", "generated");
+    if (purgeErr) console.warn("Failed to invalidate pending drafts:", purgeErr.message);
+
     setCampaign({ ...campaign, workflow_steps: allSteps });
     setEditStepInstructionsIdx(null);
-    toast.success("Step instructions saved!");
+    toast.success(
+      purged
+        ? `Instructions saved — ${purged} pending AI draft${purged === 1 ? "" : "s"} will regenerate with the new instructions.`
+        : "Step instructions saved!"
+    );
   }
 
   const filteredContacts = useMemo(() => {
