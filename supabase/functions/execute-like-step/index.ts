@@ -12,6 +12,17 @@
  * and no scheduled_messages row / request advance will be written.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getLinkedInBudget, recordLinkedInAction, humanDelay } from "../_shared/linkedin-budget.ts";
+
+/** Resolve the owning user for an account id (inline mode has no user_id). */
+async function userForAccount(supabase: any, accountId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("unipile_account_id", accountId)
+    .maybeSingle();
+  return data?.user_id ?? null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,7 +94,16 @@ Deno.serve(async (req) => {
       }
       const postId = extractPostId(contact.signal_post_url);
       if (!postId) return json({ status: "skipped", reason: "no_post_id" });
+
+      // LinkedIn safety budget (likes+comments share the engagement pool)
+      const inlineUserId = await userForAccount(supabase, accountId);
+      if (inlineUserId) {
+        const budget = await getLinkedInBudget(supabase, inlineUserId, "like");
+        if (!budget.allowed) return json({ status: "skipped", reason: `budget: ${budget.reason}` });
+      }
+      await humanDelay(2000, 8000);
       const result = await likePost(postId, accountId);
+      if (result.ok && inlineUserId) await recordLinkedInAction(supabase, inlineUserId, accountId, "like");
       return json({ status: result.ok ? "sent" : "failed", details: result.details });
     }
 
@@ -159,6 +179,15 @@ Deno.serve(async (req) => {
     const accountId = profile?.unipile_account_id;
     if (!accountId) return json({ status: "failed", reason: "no_unipile_account" });
 
+    // LinkedIn safety budget — when exhausted, DON'T advance the step; the
+    // followup engine retries on a later run once budget is available.
+    const budget = await getLinkedInBudget(supabase, campaign.user_id, "like");
+    if (!budget.allowed) {
+      console.log(`[execute-like-step] deferred: ${budget.reason}`);
+      return json({ status: "deferred", reason: budget.reason });
+    }
+
+    await humanDelay(2000, 8000);
     const result = await likePost(postId, accountId);
     if (!result.ok) {
       console.error(`[execute-like-step] Unipile ${result.status}: ${result.details}`);
@@ -167,6 +196,7 @@ Deno.serve(async (req) => {
     }
 
     await advance("sent", "Liked post");
+    await recordLinkedInAction(supabase, campaign.user_id, accountId, "like");
     return json({ status: "sent" });
   } catch (e) {
     console.error("execute-like-step error", e);

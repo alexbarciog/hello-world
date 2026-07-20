@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
 
 /**
  * Compute the workflow_steps array index for the next step to process.
@@ -151,6 +152,8 @@ async function processCampaign(
   // ── Phase A: Send follow-up messages FIRST (highest priority) ──
   // This runs before acceptance checking to ensure messages are never blocked by timeout
   let messagesSent = 0;
+  // Distress detection: repeated LinkedIn errors trigger a protective cooldown.
+  let msgDistressCount = 0;
 
   // ══ HARD PER-ACCOUNT DAILY BUDGET (LinkedIn safety) ══
   // Authoritative count of messages actually sent TODAY for this user across
@@ -177,7 +180,17 @@ async function processCampaign(
   // reached (~48 runs × ~3 × 80% ≫ any sane limit).
   const HUMAN_RUN_CAP = 2 + Math.floor(Math.random() * 3);
   const skipThisRun = Math.random() < 0.2;
-  const sendBudget = skipThisRun ? 0 : Math.min(remainingToday, HUMAN_RUN_CAP);
+
+  // Central safety budget adds cooldown + post-flag ramp-up on top of the
+  // scheduled_messages daily count.
+  const centralBudget = await getLinkedInBudget(supabase, campaign.user_id, 'message');
+  if (!centralBudget.allowed) {
+    console.log(`[followup][campaign ${campaign.id}] blocked by safety budget: ${centralBudget.reason}`);
+  }
+
+  const sendBudget = skipThisRun || !centralBudget.allowed
+    ? 0
+    : Math.min(remainingToday, centralBudget.remainingToday, HUMAN_RUN_CAP);
 
   if (remainingToday <= 0) {
     console.log(`[followup][campaign ${campaign.id}] daily message limit reached (${sentTodayUser}/${dailyMsgLimit}) — no sends this run`);
@@ -463,6 +476,7 @@ async function processCampaign(
           if (sendRes.ok) {
             sendOk = true;
           } else {
+            if (sendRes.status === 429 || sendRes.status >= 500) msgDistressCount++;
             console.error(`[followup] send via chat failed for ${req.contact_id}:`, sendRes.status, await sendRes.text());
           }
         }
@@ -493,16 +507,22 @@ async function processCampaign(
             }
             sendOk = true;
           } else {
+            if (newChatRes.status === 429 || newChatRes.status >= 500) msgDistressCount++;
             console.error(`[followup] create chat failed for ${req.contact_id}:`, newChatRes.status, await newChatRes.text());
           }
         }
 
         if (!sendOk) {
           console.log(`[followup] failed to send message to contact ${req.contact_id}`);
+          if (msgDistressCount >= 3) {
+            await triggerLinkedInCooldown(supabase, campaign.user_id, 'repeated LinkedIn errors while sending messages');
+            break;
+          }
           continue;
         }
 
         console.log(`[followup] sent step ${currentStep + 1} to contact ${req.contact_id}`);
+        await recordLinkedInAction(supabase, req.user_id || campaign.user_id, accountId, 'message');
 
         if (scheduledMsg) {
           await supabase

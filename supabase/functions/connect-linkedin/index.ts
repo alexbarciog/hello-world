@@ -705,6 +705,9 @@ async function saveAccountInfo(
   const serviceClient = createClient(supabaseUrl, serviceRoleKey);
   const updateData: Record<string, unknown> = { user_id: userId, unipile_account_id: accountId };
   if (displayName) updateData.linkedin_display_name = displayName;
+  // Freshly connected accounts start on a safety ramp (5/day climbing +2/day
+  // toward the configured limits) instead of jumping straight to full volume.
+  updateData.linkedin_ramp_started_at = new Date().toISOString();
   
   const { error } = await serviceClient
     .from('profiles')

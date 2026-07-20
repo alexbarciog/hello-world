@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getLinkedInBudget, recordLinkedInAction, humanDelay } from "../_shared/linkedin-budget.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,9 +46,18 @@ Deno.serve(async (req) => {
       .limit(50);
 
     let sent = 0, failed = 0;
+    // Per-user LinkedIn budget cache — comments count against the shared
+    // engagement pool. Exhausted users' rows stay pending for the next run.
+    const budgetByUser = new Map<string, boolean>();
     for (const row of due || []) {
       const spike = (row as any).engagement_spikes;
       if (!spike || spike.status === "cancelled" || spike.status === "failed") continue;
+      if (!budgetByUser.has(row.user_id)) {
+        const verdict = await getLinkedInBudget(admin, row.user_id, "comment");
+        budgetByUser.set(row.user_id, verdict.allowed);
+        if (!verdict.allowed) console.log(`[spikes] user ${row.user_id} deferred: ${verdict.reason}`);
+      }
+      if (!budgetByUser.get(row.user_id)) continue; // retry next run
       if (row.status === "failed" && !String(row.error || "").includes("/account_id")) continue;
       // If spike requires approval, only send approved
       if (spike.require_approval && row.status !== "approved" && row.status !== "failed") continue;
@@ -83,6 +93,11 @@ Deno.serve(async (req) => {
           unipile_comment_id: payload?.id || payload?.comment_id || null,
         }).eq("id", row.id);
         sent++;
+        await recordLinkedInAction(admin, row.user_id, accountId, "comment");
+        // Re-evaluate budget after each send so a run can't blow past the cap
+        const verdict = await getLinkedInBudget(admin, row.user_id, "comment");
+        budgetByUser.set(row.user_id, verdict.allowed);
+        await humanDelay(6000, 18000);
       } else {
         console.error("comment post failed", r.status, text);
         await admin.from("engagement_spike_comments").update({

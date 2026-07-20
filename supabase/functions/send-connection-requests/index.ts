@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
 
 const SEQUENCES_PER_DAY = 20; // 20 x 30-min slots between 08:00-18:00
 
@@ -126,9 +127,17 @@ Deno.serve(async (req) => {
           .eq('action_type', 'connection')
           .eq('status', 'sent');
 
+        // Central safety budget: cooldown, ramp-up and the WEEKLY invite wall.
+        const budget = await getLinkedInBudget(serviceClient, campaign.user_id, 'invite');
+        if (!budget.allowed) {
+          console.log(`[send-conn] campaign ${campaignId} blocked by safety budget: ${budget.reason}`);
+          continue;
+        }
+
         const remainingToday = Math.max(0, Math.min(
           dailyLimit - (sentTodayUser || 0),
           campaignCap - (sentTodayCampaign || 0),
+          budget.remainingToday,
         ));
 
         // Human-behaviour: batch size varies run to run (occasionally one less)
@@ -157,9 +166,16 @@ Deno.serve(async (req) => {
 
         const accountId = profile.unipile_account_id;
         let sentThisBatch = 0;
+        // Distress detection: repeated unexpected LinkedIn errors in one run
+        // trigger a protective cooldown for the whole account.
+        let distressCount = 0;
 
         for (const sl of leads) {
           if (sentThisBatch >= toSendNow) break;
+          if (distressCount >= 3) {
+            await triggerLinkedInCooldown(serviceClient, campaign.user_id, 'repeated LinkedIn errors while sending invitations');
+            break;
+          }
           try {
             const { data: contact } = await serviceClient
               .from('contacts')
@@ -213,6 +229,7 @@ Deno.serve(async (req) => {
 
             if (!resolveRes.ok || !resolveData.provider_id) {
               const detail = (resolveData?.title || resolveData?.detail || resolveData?.type || resolveRaw || '').toString().slice(0, 160);
+              if (resolveRes.status === 429 || resolveRes.status >= 500) distressCount++;
               // "Recipient cannot be reached" = the /in/ slug doesn't resolve to a
               // person (company page saved as a lead, or deactivated profile).
               // Permanent — mark terminally so it stops being retried every day.
@@ -338,6 +355,7 @@ Deno.serve(async (req) => {
               }
 
               const reason = `Invite failed (HTTP ${inviteRes.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`;
+              if (inviteRes.status === 429 || inviteRes.status >= 500 || /restricted|blocked|unusual activity/i.test(detail)) distressCount++;
               console.error(`[send-conn] invite failed for ${contact.id}:`, inviteRes.status, detail);
               await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
               await insertConnReq(serviceClient, {
@@ -365,6 +383,7 @@ Deno.serve(async (req) => {
 
             totalSent++;
             sentThisBatch++;
+            await recordLinkedInAction(serviceClient, campaign.user_id, accountId, 'invite');
 
             // Human-behaviour spacing between invitations: 15-40s randomized
             // (was a robotic 2-4s burst)

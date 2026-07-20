@@ -18,6 +18,17 @@
  * Body: { request_id: string, step_index: number }
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getLinkedInBudget, recordLinkedInAction, humanDelay } from "../_shared/linkedin-budget.ts";
+
+/** Resolve the owning user for an account id (inline mode has no user_id). */
+async function userForAccount(supabase: any, accountId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("unipile_account_id", accountId)
+    .maybeSingle();
+  return data?.user_id ?? null;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -117,6 +128,13 @@ Deno.serve(async (req) => {
       const postId = extractPostId(contact.signal_post_url);
       if (!postId) return json({ status: "skipped", reason: "no_post_id" });
 
+      // LinkedIn safety budget (likes+comments share the engagement pool)
+      const inlineUserId = await userForAccount(supabase, accountId);
+      if (inlineUserId) {
+        const budget = await getLinkedInBudget(supabase, inlineUserId, "comment");
+        if (!budget.allowed) return json({ status: "skipped", reason: `budget: ${budget.reason}` });
+      }
+
       const postText = (contact.signal || "").replace(/^posted about\s*/i, "").slice(0, 1500);
       let comment = "";
       try {
@@ -132,6 +150,7 @@ Deno.serve(async (req) => {
       }
       if (!comment) return json({ status: "failed", reason: "empty_generation" });
 
+      await humanDelay(3000, 10000);
       const postRes = await fetch(
         `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments`,
         {
@@ -149,6 +168,7 @@ Deno.serve(async (req) => {
         console.error(`[execute-comment-step] inline Unipile ${postRes.status}: ${details}`);
         return json({ status: "failed", details });
       }
+      if (inlineUserId) await recordLinkedInAction(supabase, inlineUserId, accountId, "comment");
       return json({ status: "sent", comment });
     }
 
@@ -233,6 +253,14 @@ Deno.serve(async (req) => {
     const accountId = profile?.unipile_account_id;
     if (!accountId) return json({ status: "failed", reason: "no_unipile_account" });
 
+    // LinkedIn safety budget — when exhausted, DON'T advance the step; the
+    // followup engine retries on a later run once budget is available.
+    const budget = await getLinkedInBudget(supabase, campaign.user_id, "comment");
+    if (!budget.allowed) {
+      console.log(`[execute-comment-step] deferred: ${budget.reason}`);
+      return json({ status: "deferred", reason: budget.reason });
+    }
+
     const postText = (contact.signal || "").replace(/^posted about\s*/i, "").slice(0, 1500);
     const comment = await generateComment(
       step.ai_instructions || "Write a helpful, human comment that adds value. End with a light question.",
@@ -245,6 +273,7 @@ Deno.serve(async (req) => {
       return json({ status: "failed", reason: "empty_generation" });
     }
 
+    await humanDelay(3000, 10000);
     const postRes = await fetch(
       `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postId)}/comments`,
       {
@@ -293,6 +322,7 @@ Deno.serve(async (req) => {
       })
       .eq("id", cr.id);
 
+    await recordLinkedInAction(supabase, campaign.user_id, accountId, "comment");
     return json({ status: "sent", comment });
   } catch (e) {
     console.error("execute-comment-step error", e);

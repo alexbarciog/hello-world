@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { getLinkedInBudget, recordLinkedInAction, humanDelay } from "../_shared/linkedin-budget.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,9 +105,15 @@ Deno.serve(async (req) => {
 
       if (!shouldFire) { results.push({ id: p.id, waiting: true }); continue; }
 
+      // LinkedIn safety budget — deferred posts retry on the next cron run.
+      const budget = await getLinkedInBudget(admin, p.user_id, "comment");
+      if (!budget.allowed) { results.push({ id: p.id, deferred: budget.reason }); continue; }
+
+      await humanDelay(3000, 9000);
       const r = await postComment(accountId, p.unipile_post_id, p.auto_comment_text);
       if (r.ok) {
         await admin.from("linkedin_posts").update({ auto_comment_posted_at: new Date().toISOString(), unipile_post_id: r.socialPostId }).eq("id", p.id);
+        await recordLinkedInAction(admin, p.user_id, accountId, "comment");
         results.push({ id: p.id, ok: true });
       } else {
         results.push({ id: p.id, ok: false, error: r.text.slice(0, 200) });
