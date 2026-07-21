@@ -179,13 +179,25 @@ Deno.serve(async (req) => {
           try {
             const { data: contact } = await serviceClient
               .from('contacts')
-              .select('id, first_name, last_name, linkedin_profile_id, linkedin_url, company, signal, signal_post_url')
+              .select('id, first_name, last_name, linkedin_profile_id, linkedin_url, company, signal, signal_post_url, linkedin_location')
               .eq('id', sl.contact_id)
               .single();
 
             if (!contact) {
               await updateScheduledStatus(serviceClient, sl.id, 'skipped', 'Contact record no longer exists');
               continue;
+            }
+
+            // Per-lead quiet hours: don't knock on someone's door at 3am their
+            // time. Leads outside their local 7:00-20:00 stay pending for a
+            // later run today (rows expire at midnight regardless).
+            const leadOffset = inferUtcOffsetHours((contact as any).linkedin_location);
+            if (leadOffset !== null) {
+              const leadLocalHour = (new Date().getUTCHours() + 24 + leadOffset) % 24;
+              if (leadLocalHour < 7 || leadLocalHour >= 20) {
+                console.log(`[send-conn] contact ${contact.id} in quiet hours (local ~${Math.round(leadLocalHour)}h) — deferring`);
+                continue;
+              }
             }
 
             // Company pages can never receive connection invites — permanent skip.
@@ -456,6 +468,38 @@ async function insertConnReq(client: any, row: Record<string, unknown>) {
       .upsert(rest, { onConflict: 'campaign_id,contact_id' }));
   }
   if (error) console.error('[send-conn] insertConnReq error:', error.message);
+}
+
+// Coarse location → UTC offset inference for per-lead quiet hours. Only needs
+// to be roughly right; unknown locations return null (always eligible).
+const LOCATION_OFFSETS: Array<[RegExp, number]> = [
+  [/india|bengaluru|bangalore|mumbai|delhi|hyderabad|chennai|pune|kolkata/i, 5.5],
+  [/pakistan|karachi|lahore|islamabad/i, 5],
+  [/bangladesh|dhaka/i, 6],
+  [/philippines|manila|indonesia|jakarta|thailand|bangkok|vietnam|hanoi/i, 7],
+  [/singapore|malaysia|kuala lumpur|hong kong|china|shanghai|beijing|taiwan|taipei|perth/i, 8],
+  [/japan|tokyo|osaka|korea|seoul/i, 9],
+  [/sydney|melbourne|brisbane|australia/i, 10],
+  [/new zealand|auckland/i, 12],
+  [/dubai|abu dhabi|united arab emirates|uae/i, 4],
+  [/israel|tel aviv|turkey|istanbul|kenya|nairobi|saudi|riyadh|moscow/i, 3],
+  [/south africa|johannesburg|cape town|egypt|cairo|greece|athens|romania|bucharest|finland|helsinki|ukraine|kyiv/i, 2],
+  [/germany|berlin|munich|france|paris|italy|milan|rome|spain|madrid|barcelona|netherlands|amsterdam|belgium|brussels|poland|warsaw|sweden|stockholm|norway|oslo|denmark|copenhagen|austria|vienna|switzerland|zurich|czech|prague/i, 1],
+  [/united kingdom|london|manchester|ireland|dublin|portugal|lisbon/i, 0],
+  [/brazil|s[aã]o paulo|rio de janeiro|argentina|buenos aires/i, -3],
+  [/new york|boston|philadelphia|atlanta|miami|toronto|montreal|washington|florida|georgia|virginia|carolina|ontario|quebec/i, -5],
+  [/chicago|dallas|houston|austin|texas|minneapolis|illinois/i, -6],
+  [/denver|phoenix|colorado|arizona|utah/i, -7],
+  [/san francisco|los angeles|seattle|san diego|california|portland|vancouver|washington state|bay area/i, -8],
+  [/united states|usa\b|canada/i, -6],
+];
+
+function inferUtcOffsetHours(location: string | null | undefined): number | null {
+  if (!location) return null;
+  for (const [re, offset] of LOCATION_OFFSETS) {
+    if (re.test(location)) return offset;
+  }
+  return null;
 }
 
 function extractLinkedinId(url: string | null): string | null {

@@ -29,6 +29,51 @@ function json(body: unknown, status = 200) {
   });
 }
 
+/** Classify a lead's reply as positive / neutral / negative buying interest. */
+async function classifyReplySentiment(text: string): Promise<string | null> {
+  const key = Deno.env.get('LOVABLE_API_KEY');
+  if (!key) return null;
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-3-flash-preview',
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content: 'Classify a LinkedIn reply from a sales lead. positive = shows interest, asks questions, open to talking. negative = declines, not interested, asks to stop. neutral = anything else (pleasantries, vague).',
+        },
+        { role: 'user', content: text },
+      ],
+      tools: [{
+        type: 'function',
+        function: {
+          name: 'classify',
+          description: 'Return the reply sentiment',
+          parameters: {
+            type: 'object',
+            properties: { sentiment: { type: 'string', enum: ['positive', 'neutral', 'negative'] } },
+            required: ['sentiment'],
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: 'function', function: { name: 'classify' } },
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  const call = data.choices?.[0]?.message?.tool_calls?.[0];
+  if (!call) return null;
+  try {
+    const parsed = JSON.parse(call.function.arguments);
+    return ['positive', 'neutral', 'negative'].includes(parsed.sentiment) ? parsed.sentiment : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -110,7 +155,7 @@ Deno.serve(async (req) => {
 
       const chatId = (payload.chat_id || payload.chatId || '').toString();
       const now = new Date().toISOString();
-      let matched = 0;
+      const matchedIds: string[] = [];
 
       if (chatId) {
         const { data: updated } = await supabase
@@ -120,11 +165,11 @@ Deno.serve(async (req) => {
           .eq('chat_id', chatId)
           .is('last_incoming_message_at', null)
           .select('id');
-        matched = updated?.length || 0;
+        for (const u of updated || []) matchedIds.push(u.id);
       }
 
       // Fallback: match by the sender's provider id via contacts
-      if (matched === 0 && senderId) {
+      if (matchedIds.length === 0 && senderId) {
         const { data: contacts } = await supabase
           .from('contacts')
           .select('id')
@@ -139,12 +184,30 @@ Deno.serve(async (req) => {
             .eq('contact_id', contacts[0].id)
             .is('last_incoming_message_at', null)
             .select('id');
-          matched = updated?.length || 0;
+          for (const u of updated || []) matchedIds.push(u.id);
         }
       }
 
-      console.log(`[unipile-webhook] message_received → ${matched} request(s) marked replied`);
-      return json({ ok: true, replied: matched });
+      // Reply-outcome learning: classify the reply so the system can learn
+      // which signals/titles produce interested replies. Best-effort.
+      const msgText = (payload.message?.text || payload.message_text || payload.text || payload.body || '')
+        .toString().trim().slice(0, 600);
+      if (matchedIds.length > 0 && msgText) {
+        try {
+          const sentiment = await classifyReplySentiment(msgText);
+          if (sentiment) {
+            await supabase
+              .from('campaign_connection_requests')
+              .update({ reply_sentiment: sentiment, last_reply_excerpt: msgText.slice(0, 300) })
+              .in('id', matchedIds);
+          }
+        } catch (e) {
+          console.warn('[unipile-webhook] sentiment classification failed:', e instanceof Error ? e.message : e);
+        }
+      }
+
+      console.log(`[unipile-webhook] message_received → ${matchedIds.length} request(s) marked replied`);
+      return json({ ok: true, replied: matchedIds.length });
     }
 
     return json({ ok: true, ignored: event || 'unknown event' });

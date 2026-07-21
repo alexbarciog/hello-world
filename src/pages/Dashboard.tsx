@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PerformanceChart } from "@/components/dashboard/PerformanceChart";
 import { PipelineStatusCard } from "@/components/dashboard/PipelineStatusCard";
+import { AccountHealthCard } from "@/components/dashboard/AccountHealthCard";
 import { RecentLeadsTable } from "@/components/dashboard/RecentLeadsTable";
 import { SubscriptionBanner } from "@/components/dashboard/SubscriptionBanner";
 import { SetupWizardBanner } from "@/components/dashboard/SetupWizardBanner";
@@ -587,30 +588,35 @@ export default function Dashboard() {
             <PerformanceChart chartData={chartData} loading={chartLoading} error={chartError} />
           </motion.div>
 
-          {/* ── Second zone: three compact cards, equal weight ── */}
-          <Reveal y={24} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-            <MiniStatCard
-              title="Messages sent"
-              icon={Send}
-              value={sendActivity?.messages.current ?? 0}
-              delta={sendActivity?.messages.delta ?? null}
-              data={sendActivity?.messages.series ?? []}
-              color="#635BEB"
-              kind="bars"
-              sublabel="last 7 days"
-              loading={sendActivityLoading}
-              onExpand={() => navigate("/unibox")}
-            />
-            <MiniStatCard
-              title="Active signals"
-              icon={Radio}
-              value={activeSignals}
-              sublabel="agents running now"
-              data={[]}
-              color="#FA7534"
-              kind="bars"
-              onExpand={() => navigate("/signals")}
-            />
+          {/* ── Second zone: safety, activity, tiers ── */}
+          <Reveal y={24} className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <AccountHealthCard />
+            <div className="flex flex-col gap-4">
+              <MiniStatCard
+                className="flex-1"
+                title="Messages sent"
+                icon={Send}
+                value={sendActivity?.messages.current ?? 0}
+                delta={sendActivity?.messages.delta ?? null}
+                data={sendActivity?.messages.series ?? []}
+                color="#635BEB"
+                kind="bars"
+                sublabel="last 7 days"
+                loading={sendActivityLoading}
+                onExpand={() => navigate("/unibox")}
+              />
+              <MiniStatCard
+                className="flex-1"
+                title="Active signals"
+                icon={Radio}
+                value={activeSignals}
+                sublabel="agents running now"
+                data={[]}
+                color="#FA7534"
+                kind="bars"
+                onExpand={() => navigate("/signals")}
+              />
+            </div>
             <LeadsByTier data={tierData ?? []} loading={tierLoading} />
           </Reveal>
 

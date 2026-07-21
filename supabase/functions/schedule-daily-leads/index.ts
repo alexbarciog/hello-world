@@ -209,14 +209,14 @@ Deno.serve(async (req) => {
                   const batch = unseenIds.slice(i, i + 100);
                   let { data, error: tierErr } = await supabase
                     .from('contacts')
-                    .select('id, relevance_tier, approval_status, network_distance')
+                    .select('id, relevance_tier, approval_status, network_distance, ai_score, imported_at, signal_post_url')
                     .in('id', batch)
                     .in('approval_status', ['approved', 'auto_approved']);
                   // Fail-open if the network_distance migration hasn't run yet.
                   if (tierErr && /network_distance/i.test(tierErr.message || '')) {
                     ({ data, error: tierErr } = await supabase
                       .from('contacts')
-                      .select('id, relevance_tier, approval_status')
+                      .select('id, relevance_tier, approval_status, ai_score, imported_at, signal_post_url')
                       .in('id', batch)
                       .in('approval_status', ['approved', 'auto_approved']));
                   }
@@ -243,10 +243,19 @@ Deno.serve(async (req) => {
                 }
 
                 if (contactsWithTier.length > 0) {
+                  // Priority-ordered sending: the daily budget is a hard cap, so
+                  // spend it on the strongest, freshest intent first —
+                  // tier → post-backed signal → AI score → signal recency.
                   const tierOrder: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
-                  contactsWithTier.sort((a: any, b: any) =>
-                    (tierOrder[a.relevance_tier] ?? 2) - (tierOrder[b.relevance_tier] ?? 2)
-                  );
+                  contactsWithTier.sort((a: any, b: any) => {
+                    const tierDiff = (tierOrder[a.relevance_tier] ?? 2) - (tierOrder[b.relevance_tier] ?? 2);
+                    if (tierDiff !== 0) return tierDiff;
+                    const postDiff = (b.signal_post_url ? 1 : 0) - (a.signal_post_url ? 1 : 0);
+                    if (postDiff !== 0) return postDiff;
+                    const scoreDiff = (b.ai_score ?? 0) - (a.ai_score ?? 0);
+                    if (scoreDiff !== 0) return scoreDiff;
+                    return new Date(b.imported_at ?? 0).getTime() - new Date(a.imported_at ?? 0).getTime();
+                  });
 
                   const toSchedule = contactsWithTier.slice(0, remainingConnections);
                   console.log(`[schedule-daily] campaign ${campaign.id}: scheduling ${toSchedule.length} connections`);
