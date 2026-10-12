@@ -214,10 +214,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`mx-auto px-6 py-3 flex items-center justify-between rounded-full transition-all duration-300 ${
+          className={`mx-auto w-full px-6 py-3 flex items-center justify-between gap-6 whitespace-nowrap rounded-full transition-all duration-300 ${
             scrolled
-              ? "max-w-4xl bg-white/90 backdrop-blur-md border border-border/40 shadow-lg shadow-black/5"
-              : "max-w-5xl bg-white/20 backdrop-blur-md border border-white/20"
+              ? "max-w-[1120px] bg-white/90 backdrop-blur-md border border-border/40 shadow-lg shadow-black/5"
+              : "max-w-[1180px] bg-white/20 backdrop-blur-md border border-white/20"
           }`}
         >
           <a href="/" className="flex items-center gap-2">
@@ -227,7 +227,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             </span>
           </a>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -265,10 +265,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`mx-auto px-4 py-2.5 flex items-center justify-between rounded-full transition-all duration-300 ${
+          className={`mx-auto w-full px-4 py-2.5 flex items-center justify-between gap-4 whitespace-nowrap rounded-full transition-all duration-300 ${
             scrolled
-              ? "max-w-3xl bg-white/90 backdrop-blur-md border border-border/40 shadow-lg shadow-black/5"
-              : "max-w-4xl bg-white/20 backdrop-blur-md border border-white/20"
+              ? "max-w-[960px] bg-white/90 backdrop-blur-md border border-border/40 shadow-lg shadow-black/5"
+              : "max-w-[992px] bg-white/20 backdrop-blur-md border border-white/20"
           }`}
         >
           <a href="/" className="flex items-center gap-2">
@@ -278,7 +278,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             </span>
           </a>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             {navLinks.map((link) => (
               <a
                 key={link.href}
