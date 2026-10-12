@@ -139,3 +139,6 @@ verify_jwt = false
 
 [functions.send-fake-opportunity-email]
 verify_jwt = false
+
+[functions.blog-publish]
+verify_jwt = false

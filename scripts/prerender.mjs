@@ -3,6 +3,12 @@
 // get real content and Google gets a unique title/description/canonical per
 // URL. Also writes sitemap.xml from the same route list.
 //
+// Blog articles come from the Supabase table `blog_posts` (published rows,
+// public key). They are fetched here at build time, so a newly published
+// article is served as static HTML from the next deploy; until then it still
+// renders client-side through the SPA fallback. Set BLOG_POSTS_FILE to a JSON
+// file to prerender from local data instead (offline builds, tests).
+//
 // Runs as the last step of `npm run build`; needs dist/ and dist-ssr/.
 import { JSDOM } from "jsdom";
 import fs from "node:fs";
@@ -137,6 +143,53 @@ function installDomGlobals() {
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+function readDotEnv() {
+  const env = {};
+  try {
+    for (const line of fs.readFileSync(path.resolve(".env"), "utf8").split("\n")) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*"?([^"\n]*)"?\s*$/);
+      if (m) env[m[1]] = m[2];
+    }
+  } catch {
+    // no .env: rely on process.env
+  }
+  return env;
+}
+
+// A blog outage must never fail the deploy: on any error, build without articles.
+async function loadBlogPosts() {
+  if (process.env.BLOG_POSTS_FILE) {
+    return JSON.parse(fs.readFileSync(process.env.BLOG_POSTS_FILE, "utf8"));
+  }
+  const env = { ...readDotEnv(), ...process.env };
+  const url = env.VITE_SUPABASE_URL;
+  const key = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    console.warn("blog: Supabase URL/key not found, skipping articles");
+    return [];
+  }
+  const columns =
+    "slug,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name,meta_title,meta_description,content_md,faq,author_title";
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/blog_posts?status=eq.published&select=${columns}&order=published_at.desc&limit=1000`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(20000) },
+    );
+    if (!res.ok) {
+      console.warn(`blog: could not load articles (HTTP ${res.status}), skipping`);
+      return [];
+    }
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    console.warn("blog: could not load articles, skipping:", err.message);
+    return [];
+  }
+}
+
+// JSON placed inside a <script> must not be able to close the tag.
+const safeJson = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028|\u2029/g, "");
+
 function setMeta(html, attr, name, content) {
   const re = new RegExp(`<meta\\s+${attr}="${name}"\\s+content="[^"]*"\\s*/?>`);
   const tag = `<meta ${attr}="${name}" content="${esc(content)}">`;
@@ -156,7 +209,14 @@ function buildPage(template, route, appHtml) {
     html = setMeta(html, "property", "og:image", route.image);
     html = setMeta(html, "name", "twitter:image", route.image);
   }
+  if (route.ogType) html = setMeta(html, "property", "og:type", route.ogType);
   html = html.replace("</head>", `  <link rel="canonical" href="${url}">\n</head>`);
+  if (route.jsonLd) {
+    html = html.replace("</head>", `  <script type="application/ld+json" id="page-jsonld">${safeJson(route.jsonLd)}</script>\n</head>`);
+  }
+  if (route.blogData) {
+    html = html.replace("</head>", `  <script>window.__BLOG__=${safeJson(route.blogData)}</script>\n</head>`);
+  }
   // index.html doubles as the SPA fallback for app routes (/dashboard, …);
   // drop the prerendered markup there so the homepage never flashes first.
   const guard = `<script>if(location.pathname.replace(/\\/+$/,"")!==${JSON.stringify(route.path === "/" ? "" : route.path)})document.getElementById("root").innerHTML=""</script>`;
@@ -164,7 +224,14 @@ function buildPage(template, route, appHtml) {
 }
 
 installDomGlobals();
-const { render, caseStudies } = await import(pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href);
+const { render, caseStudies, setBlogPrerenderData, buildPostJsonLd, toSummary, BLOG_TITLE, BLOG_DESCRIPTION } = await import(
+  pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
+);
+
+const blogPosts = await loadBlogPosts();
+setBlogPrerenderData(blogPosts);
+const blogSummaries = blogPosts.map(toSummary);
+console.log(`blog: ${blogPosts.length} published article(s)`);
 
 const routes = [
   ...ROUTES,
@@ -174,6 +241,25 @@ const routes = [
     description: s.metaDescription,
     image: s.ogImage?.startsWith("/") ? `${SITE}${s.ogImage}` : s.ogImage,
     priority: "0.6",
+  })),
+  {
+    path: "/blog",
+    title: BLOG_TITLE,
+    description: BLOG_DESCRIPTION,
+    priority: "0.8",
+    changefreq: "weekly",
+    blogData: { posts: blogSummaries },
+  },
+  ...blogPosts.map((post) => ({
+    path: `/blog/${post.slug}`,
+    title: `${post.meta_title} | Intentsly`,
+    description: post.meta_description,
+    image: post.cover_image_url || undefined,
+    ogType: "article",
+    jsonLd: buildPostJsonLd(post),
+    blogData: { post, posts: blogSummaries },
+    lastmod: (post.updated_at || post.published_at || "").slice(0, 10) || undefined,
+    priority: "0.7",
   })),
 ];
 
@@ -202,7 +288,7 @@ const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 ${routes
   .map(
     (r) =>
-      `  <url><loc>${SITE}${r.path}</loc><lastmod>${lastmod}</lastmod><changefreq>${r.changefreq || "monthly"}</changefreq><priority>${r.priority}</priority></url>`,
+      `  <url><loc>${SITE}${r.path}</loc><lastmod>${r.lastmod || lastmod}</lastmod><changefreq>${r.changefreq || "monthly"}</changefreq><priority>${r.priority}</priority></url>`,
   )
   .join("\n")}
 </urlset>

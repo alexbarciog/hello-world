@@ -25,6 +25,10 @@
 - [B2B playbook](https://intentsly.com/playbook): 0 to 100 customers in 90 days
 - [Buying Signal Playbook](https://intentsly.com/signal-playbook): Spotting and acting on buying signals
 
+## Blog
+
+- [Blog](https://intentsly.com/blog): Guides to signal-based outbound on LinkedIn, Reddit and X
+
 ## Company
 
 - [Partner program](https://intentsly.com/partners)
