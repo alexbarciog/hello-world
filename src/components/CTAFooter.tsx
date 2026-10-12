@@ -97,6 +97,7 @@ const Footer = () => {
               <a href="/#expertise" className="text-sm text-white/60 hover:text-white transition-colors">Expertise</a>
               <a href="/#pricing" className="text-sm text-white/60 hover:text-white transition-colors">Pricing</a>
               <a href="/#testimonials" className="text-sm text-white/60 hover:text-white transition-colors">Testimonials</a>
+              <a href="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</a>
             </div>
             <div className="flex flex-col gap-4">
               <a href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy</a>

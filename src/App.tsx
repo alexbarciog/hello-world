@@ -23,6 +23,8 @@ import AiChat from "./pages/AiChat.tsx";
 import PublicAiChat from "./pages/PublicAiChat.tsx";
 import SharedLeads from "./pages/SharedLeads.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Blog from "./pages/Blog.tsx";
+import BlogPost from "./pages/BlogPost.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
 import BillingPlans from "./pages/BillingPlans.tsx";
@@ -242,6 +244,8 @@ export const AppContent = () => (
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/linkedin-profile-analyzer" element={<LinkedInProfileAnalyzer />} />
           <Route path="/profile-report" element={<ProfileReport />} />
           <Route path="/try-ai" element={<PublicAiChat />} />
