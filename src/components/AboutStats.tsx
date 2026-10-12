@@ -16,7 +16,8 @@ const useReveal = () => {
 };
 
 const CountUp = ({ end, suffix = "" }: { end: number; suffix?: string }) => {
-  const [val, setVal] = useState(0);
+  // Prerendered HTML shows the final value (see CountUp in lib/motion).
+  const [val, setVal] = useState(import.meta.env.SSR ? end : 0);
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const obs = new IntersectionObserver(([e]) => {

@@ -76,7 +76,9 @@ export const CountUp = ({
 }: CountUpProps) => {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.5 });
-  const count = useMotionValue(from);
+  // The build-time prerender has no viewport to scroll into, so start at the
+  // final value there — otherwise crawlers read "$0/month".
+  const count = useMotionValue(import.meta.env.SSR ? to : from);
   const rounded = useTransform(count, (v) => `${prefix}${Math.round(v)}${suffix}`);
 
   useEffect(() => {

@@ -53,12 +53,22 @@ import SpikeDetail from "./pages/SpikeDetail.tsx";
 import SuperScale from "./pages/SuperScale.tsx";
 import { OrganizationProvider } from "./contexts/OrganizationContext.tsx";
 import { RefCodeCapture } from "./components/RefCodeCapture.tsx";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { ttqPage, ttqIdentify } from "@/lib/tiktok-pixel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
+
+// Query keys don't carry the user id, so cached data must not outlive the
+// session: without this the next person to log in on the same tab briefly saw
+// the previous account's dashboard, and admin/agency flags stuck around.
+supabase.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") {
+    queryClient.clear();
+    try { localStorage.removeItem("intentsly_agency_impersonation"); } catch { /* ignore */ }
+  }
+});
 
 // Fires ttq.page() on every SPA route change and identifies logged-in users
 function TikTokPageTracker() {
@@ -147,12 +157,20 @@ function CalendarOAuthHandler() {
   return null;
 }
 
-const App = () => (
+// Split from the router so the build-time prerender (src/entry-prerender.tsx)
+// can render the same tree under a StaticRouter.
+export const AppProviders = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      {children}
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export const AppContent = () => (
+  <>
         <TikTokPageTracker />
         <CalendarOAuthHandler />
         <RefCodeCapture />
@@ -242,9 +260,15 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
         </OrganizationProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  </>
+);
+
+const App = () => (
+  <AppProviders>
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  </AppProviders>
 );
 
 export default App;

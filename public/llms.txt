@@ -1,0 +1,33 @@
+# Intentsly
+
+> Intentsly is a B2B sales platform that monitors LinkedIn, Reddit and X for buying signals, enriches the people behind them with verified emails, and runs AI-written LinkedIn and email outreach so teams book meetings with buyers who are already looking for what they sell.
+
+## Product
+
+- [Home](https://intentsly.com/): What Intentsly does and how it works
+- [LinkedIn buying signals](https://intentsly.com/features/linkedin-signals): Find leads from LinkedIn posts, comments, job changes and competitor engagement
+- [Reddit & X monitoring](https://intentsly.com/features/reddit-x-signals): Capture buying signals from Reddit and X conversations
+- [AI SDR outreach](https://intentsly.com/features/ai-sdr): AI-written, signal-based LinkedIn and email outreach with follow-ups
+- [Conversational AI](https://intentsly.com/features/conversational-ai): AI that replies to prospects and moves them towards a booked meeting
+- [Pricing](https://intentsly.com/pricing): Plans and pricing
+
+## Proof
+
+- [Case studies](https://intentsly.com/case-studies): Results from teams using Intentsly
+- [Intentsly case study](https://intentsly.com/case-studies/intentsly)
+- [Massoftind case study](https://intentsly.com/case-studies/massoftind)
+- [LogicMelon case study](https://intentsly.com/case-studies/logicmelon)
+
+## Free tools and guides
+
+- [LinkedIn Profile Analyzer](https://intentsly.com/linkedin-profile-analyzer): Free AI review of a LinkedIn profile
+- [Try Intentsly AI](https://intentsly.com/try-ai): Describe who you sell to and get matching buyers
+- [B2B playbook](https://intentsly.com/playbook): 0 to 100 customers in 90 days
+- [Buying Signal Playbook](https://intentsly.com/signal-playbook): Spotting and acting on buying signals
+
+## Company
+
+- [Partner program](https://intentsly.com/partners)
+- [Help center](https://intentsly.com/help)
+- [Privacy policy](https://intentsly.com/privacy)
+- [Terms of service](https://intentsly.com/terms)
