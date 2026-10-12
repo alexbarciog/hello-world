@@ -1,0 +1,40 @@
+{
+  "site": "https://intentsly.com",
+  "blog_path": "/blog",
+  "author": "Alex Barciog",
+  "author_title": "CEO & Founder, Intentsly",
+  "autopublish": true,
+  "max_posts_per_week": 7,
+  "publish_days": [
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
+    "Sun"
+  ],
+  "timezone": "Europe/Bucharest",
+  "min_words": {
+    "how-to": 1200,
+    "alternatives": 1500,
+    "listicle": 1500,
+    "comparison": 1300,
+    "pillar": 2200,
+    "data": 1000,
+    "templates": 1200,
+    "explainer": 1100
+  },
+  "max_words": 4000,
+  "meta_title_max": 60,
+  "meta_description_range": [
+    120,
+    160
+  ],
+  "max_keyword_density_pct": 2.0,
+  "min_internal_links": 2,
+  "min_external_links": 2,
+  "min_faq": 3,
+  "competitor_fact_max_age_days": 30,
+  "max_posts_per_day": 1
+}

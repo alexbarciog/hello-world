@@ -1,0 +1,16 @@
+{
+  "_comment": "Pages articles may link to. Published article URLs are added automatically.",
+  "pages": {
+    "/": "Homepage",
+    "/features/linkedin-signals": "LinkedIn intent signals feature",
+    "/features/reddit-x-signals": "Reddit and X signals feature",
+    "/features/ai-sdr": "AI SDR feature",
+    "/features/conversational-ai": "Conversational AI feature",
+    "/signal-playbook": "The Buying Signal Playbook (free download)",
+    "/playbook": "Playbook",
+    "/linkedin-profile-analyzer": "Free LinkedIn Profile Analyzer",
+    "/case-studies": "Case studies",
+    "/pricing": "Pricing",
+    "/try-ai": "Try the AI"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "author": {
+    "name": "Alex Barciog",
+    "title": "CEO & Founder, Intentsly",
+    "company": "Intentsly",
+    "site": "https://intentsly.com",
+    "linkedin_profile": "https://www.linkedin.com/in/YOUR-HANDLE/"
+  },
+  "publishing": {
+    "autopublish": true,
+    "max_posts_per_day": 1,
+    "post_days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    "post_time_local": "09:10",
+    "timezone": "Europe/Bucharest",
+    "min_chars": 400,
+    "max_chars": 2800,
+    "max_hashtags": 3,
+    "allow_links_in_body": false,
+    "require_trained_voice": true,
+    "linkedin_api_version": "202609"
+  },
+  "pillars": ["signals-over-spray", "building-in-public", "signal-playbook", "ai-sdr-reality", "founder-led-sales"],
+  "research": {
+    "sources": ["reddit", "x", "hacker news", "linkedin"],
+    "queries": [
+      "cold outreach not working",
+      "buyer intent signals B2B",
+      "AI SDR results",
+      "LinkedIn outbound reply rates",
+      "founder-led sales"
+    ],
+    "subreddits": ["sales", "SaaS", "startups", "Entrepreneur", "b2bmarketing"]
+  },
+  "leads": {
+    "tier_a_min": 70,
+    "tier_b_min": 45
+  }
+}
