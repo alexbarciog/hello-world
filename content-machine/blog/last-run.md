@@ -1,50 +1,60 @@
-# Last run: 2026-10-13
+# Last run: 2026-10-14
 
-- Keyword: trigify alternatives
-- Title: Trigify Alternatives: 7 Tools to Replace It by 22 October
-- Live URL: https://intentsly.com/blog/trigify-alternatives
-- Status: published (Supabase row confirmed `status = published`, stored content matches the draft)
-- Gate: passed on the first run, 2,490 words, no warnings
-- Keywords blocked: none
+- Keyword: gojiberry alternatives
+- Title: Gojiberry Alternatives: 7 Tools Sorted by Why You're Leaving
+- Live URL: https://intentsly.com/blog/gojiberry-alternatives
+- Status: published (Supabase row returned `status = published`, published_at 2026-10-14 06:27 UTC)
+- Gate: passed on the second run (first run: meta description 164 chars, trimmed to 158), 2,651 words, no warnings
+- Keywords blocked: none. 37 keywords still queued, so no new keywords were added.
 
 ## What the research turned up
-Trigify's own site now carries only a wind-down notice dated 23 September 2026: the team is joining
-HubSpot and the standalone product is retired, with access ending for most customers at 11:59pm BST
-on 22 October 2026. The article was written for that reader (a Trigify customer with days left),
-not as a generic comparison. Every ranking page is written by a vendor that lists itself first.
+- "gojiberry alternatives" is ambiguous: G2's alternatives page is for a different Gojiberry (survey
+  software). The article says in its second paragraph which product it covers.
+- Every ranking page (Valley, SalesRobot, CommunityTracker, Fuzzy, Embers, Sbl.so) is a vendor list
+  that ranks itself first. None sorts the options by the reason the reader is leaving, which is the
+  angle this article takes. Two of them recommend Trigify, which is retiring on 22 October.
+- Gojiberry's own help centre (4 September 2026) now describes "a single core subscription plan" plus
+  add-ons. The alternatives pages still describe Pro/Elite tiers at $99 and $249. The help article
+  does not state the base price.
 
 ## Calls made without review
-- Intentsly's features are described from `brain/wiki/product.md` and `company.md` (read from the
-  site on 2026-10-08), as in yesterday's article. Numbers come only from verified proof rows
-  (14 qualified demos in 14 days, 4x reply rate). No price is stated; the table links to /pricing.
-- The article says Intentsly is the wrong choice for people who only want a data feed for their own
-  workflows, and that it is not a like-for-like replacement for listening on YouTube, podcasts or
-  Hacker News. Both follow from what the brain files say the product covers (LinkedIn, Reddit, X,
-  signal to booked demo). Correct the article if either is wrong.
-- Competitor facts were read on each vendor's own site on 2026-10-13 through page summaries.
-  Prices quoted: Gojiberry Pro $99/month; Valley Starter $199 per seat per month; Teamfluence
-  449€/month; Clay Launch $167/mo and Growth $446/mo (its FAQ quotes $185 and $495);
-  PhantomBuster Start $69/month or $56 annual (its explainer dated July 2026); Common Room
-  Essential $2,500/mo billed annually; Trigify Starter $40/mo and Max $199/mo. A quick human
-  spot-check of these would be worthwhile, since they change often.
-- "Runs outreach?" is marked "Not checked for this article" for Clay, PhantomBuster and Common Room
-  because it was not confirmed on their sites today.
+- gojiberry.ai and gojiberry.ai/pricing could not be opened in this run (the fetch tool withheld
+  permission for URLs not returned by search). The article therefore quotes only Gojiberry's help
+  centre: add-ons at $59, $29, $99 and credit packs from $25, and tells the reader the base price is
+  on gojiberry.ai. It does not quote the $99 Pro price that third-party pages give.
+- The same fetch limitation blocked teamfluence.com, expandi.io, trigify.io and clay.com/pricing.
+  Teamfluence, Expandi, Dripify and Apollo were left out rather than sourced from third parties.
+  Clay facts come from university.clay.com (Clay's own docs). The Trigify retirement is mentioned in
+  one sentence, explicitly dated to our 13 October check and linked to our Trigify article, because
+  readers choosing from the ranking lists would otherwise move to a product that is closing. This is
+  the one competitor fact not re-checked on the vendor's site today; remove the sentence if you would
+  rather keep the rule strict.
+- Embers, CommunityTracker and Sbl.so facts come from each vendor's own "Gojiberry alternatives"
+  page (their own domain), since those were the vendor pages search returned.
+- Intentsly's "wrong choice if" says: you want to send every message by hand, or you need many
+  LinkedIn senders under one account. Both follow from the brain files (AI SDR does the sending;
+  nothing in product.md describes multi-sender pools). Correct the article if either is wrong.
+- Intentsly numbers used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate, 12
+  signals worth chasing and 8 to ignore. No price stated; the table links to /pricing.
 
 ## Time-sensitive follow-ups
-- This article is dated by design. After 22 October 2026 it needs an update (past tense, remove the
-  deadline wording, re-check prices).
-- The queue item "trigify vs gojiberry" (priority 2) no longer makes sense for a product that is
-  closing. Consider marking it skipped. "gojiberry alternatives" and "joinvalley alternatives" are
-  still valid.
+- Prices quoted today: Valley Starter $199/seat/mo ($149 quarterly), Plus $299; Embers Solo $49,
+  Growth $99, Enterprise $199; CommunityTracker Starter $39, Pro $99, free plan; HeyReach Growth $79
+  per sender, agency from $999, Unlimited $2,999; Sbl.so $99/mo and rented profiles from $65/mo;
+  Clay Launch from $185, Growth from $495. A human spot-check is worthwhile.
+- The Trigify sentence should be updated after 22 October (past tense).
+- The queue item "trigify vs gojiberry" (priority 2) still makes little sense for a product that is
+  closing; consider marking it skipped.
 
 ## What the founder should supply
-- Confirm whether Intentsly can send signals out to other tools (webhook, CRM sync, API, CSV).
-  If it can, the "wrong choice if" line for Intentsly should be softened.
-- Confirm the sources covered beyond LinkedIn, Reddit and X, if any.
-- A confirmed price, so comparison articles can show Intentsly's price beside the others.
-- Any real migration from Trigify to Intentsly (with the customer's permission): what was moved,
-  how long it took, what the first week produced. That would be the strongest addition to this page.
-- The two unverified proof rows (12,400+ buyers detected weekly; the Mike Ruiz quote) are still
-  unusable until confirmed.
+- Confirm whether Intentsly can run several LinkedIn sender accounts under one workspace. If yes,
+  the "wrong choice if" line for Intentsly and the HeyReach/Sbl.so routing should change.
+- Confirm whether Intentsly offers a CSV, webhook or API export of signals and contacts, for
+  the "I want to own the workflow" reader.
+- A confirmed price, so comparison tables can show Intentsly beside the others.
+- Any real customer who moved from Gojiberry to Intentsly (with permission): what they exported,
+  how long setup took, what the first two weeks produced.
+- The two unverified proof rows (12,400+ buyers detected weekly; the Mike Ruiz quote) remain unusable
+  until confirmed.
 - First-hand detail for the 14-demos story: the first reply, a message that was sent, what was
   switched off.

@@ -19,8 +19,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "gojiberry-alternatives",
    "monthly_volume": null
   },
   {
