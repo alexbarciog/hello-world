@@ -103,17 +103,34 @@ export default function Dashboard() {
   const { data: engagementData, isLoading: engagementLoading } = useQuery({
     queryKey: ["dashboard-engagement", period],
     queryFn: async () => {
-      const { data: requests, error } = await supabase
-        .from("campaign_connection_requests")
-        .select("id, sent_at, last_incoming_message_at")
-        .gte("sent_at", periodStartISO);
-      if (error) throw error;
-      const all = requests ?? [];
-      const leadsEngaged = all.length;
-      const conversations = all.filter(
-        (r) => r.last_incoming_message_at !== null && new Date(r.last_incoming_message_at) >= new Date(periodStartISO)
-      ).length;
-      return { leadsEngaged, conversations };
+      // Replies and meetings are counted by when they happened, not by when the
+      // lead was invited: most replies come from leads invited weeks earlier, so
+      // filtering them by sent_at showed 0 replies while leads were replying.
+      const [invitedRes, repliedRes, meetingsRes] = await Promise.all([
+        supabase
+          .from("campaign_connection_requests")
+          .select("id", { count: "exact", head: true })
+          // skipped/failed attempts also have a row — count real invitations only
+          .in("status", ["sent", "accepted", "completed"])
+          .gte("sent_at", periodStartISO),
+        supabase
+          .from("campaign_connection_requests")
+          .select("contact_id")
+          .gte("last_incoming_message_at", periodStartISO),
+        supabase
+          .from("meetings")
+          .select("contact_id")
+          .neq("status", "cancelled")
+          .gte("created_at", periodStartISO),
+      ]);
+      if (invitedRes.error) throw invitedRes.error;
+      if (repliedRes.error) throw repliedRes.error;
+      if (meetingsRes.error) throw meetingsRes.error;
+      const leadsEngaged = invitedRes.count ?? 0;
+      const conversations = new Set((repliedRes.data ?? []).map((r) => r.contact_id)).size;
+      // Distinct leads: the same lead can end up with several meeting rows.
+      const meetingLeads = new Set((meetingsRes.data ?? []).map((m) => m.contact_id)).size;
+      return { leadsEngaged, conversations, meetingLeads };
     },
     staleTime: 30_000,
   });
@@ -288,6 +305,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("campaign_connection_requests")
         .select("sent_at")
+        .in("status", ["sent", "accepted", "completed"])
         .gte("sent_at", chartCutoffISO)
         .order("sent_at", { ascending: true })
         .limit(50000);
@@ -310,7 +328,7 @@ export default function Dashboard() {
       sevenAgo.setDate(sevenAgo.getDate() - 7);
 
       const [connRes, msgRes] = await Promise.all([
-        supabase.from("campaign_connection_requests").select("sent_at").not("sent_at", "is", null).gte("sent_at", iso14),
+        supabase.from("campaign_connection_requests").select("sent_at").in("status", ["sent", "accepted", "completed"]).gte("sent_at", iso14),
         supabase.from("scheduled_messages").select("sent_at").not("sent_at", "is", null).gte("sent_at", iso14),
       ]);
 
@@ -460,8 +478,10 @@ export default function Dashboard() {
   const conversations = engagementData?.conversations ?? 0;
   const activeSignals = signalData?.activeCount ?? 0;
 
-  // Conversion rate: replies as a share of contacted leads in the period
-  const conversionRate = leadsEngaged > 0 ? Math.round((conversations / leadsEngaged) * 100) : 0;
+  const meetingLeads = engagementData?.meetingLeads ?? 0;
+
+  // Conversion rate: leads who replied in the period that turned into a meeting
+  const conversionRate = conversations > 0 ? Math.min(100, Math.round((meetingLeads / conversations) * 100)) : 0;
   const repliesSeries = (weeklyActivityData ?? []).map((d) => ({
     d: d.date.split(",")[0],
     v: d.responses,
@@ -564,7 +584,7 @@ export default function Dashboard() {
                 title="Conversion rate"
                 icon={TrendingUp}
                 value={`${conversionRate}%`}
-                sublabel={`replies · ${periodLabel[period].toLowerCase()}`}
+                sublabel={`${meetingLeads} meeting${meetingLeads === 1 ? "" : "s"} from ${conversations} repl${conversations === 1 ? "y" : "ies"} · ${periodLabel[period].toLowerCase()}`}
                 data={repliesSeries}
                 color="#635BEB"
                 kind="line"
