@@ -56,8 +56,22 @@ from the founder. Do not publish filler.
 - **FAQ**: 3 to 6 real questions from stage 1 with answers of 40 to 70 words each.
 - **Internal links**: 2 to 5 from `blog/site-pages.json` and published articles, placed where the
   reader would want them. Descriptive anchor text, never "click here".
-- **One call to action**, matched to intent: informational articles point to the free Buying
-  Signal Playbook or Profile Analyzer; commercial ones to the relevant feature page.
+- **Conversion path (required, the gate checks it).** The reader should be able to move from
+  this page to trying Intentsly without leaving the site. Every page needs:
+  1. A link to at least one other published content page (`blog/published/`, any section), placed
+     where that page answers the reader's next question. Prefer a different section (an article
+     links to the guide that does the thing; a guide links to the lesson that defines the terms;
+     both link to the solution page for the reader's business type).
+  2. A link to at least one conversion page from `config/blog.json` `conversion_pages`:
+     informational pages point to `/signal-playbook` or `/linkedin-profile-analyzer`, commercial
+     pages to the relevant `/features/...` page, `/try-ai` or `/register`.
+  3. One contextual sentence in the body, at the point where the reader would want the manual
+     work done for them, that says what Intentsly does for that exact step and links to it.
+     Not a banner, not a pitch paragraph: one sentence that reads as advice.
+  4. The closing section ends on the next action, which is trying Intentsly (`/try-ai` shows
+     matching buyers with no account) or the free asset, with a one-line reason.
+  The site adds an inline card, a next-step box and a sticky bar to every page automatically,
+  so the body copy must not repeat generic pitches; it links where the reader needs it.
 
 ## 4. Draft
 

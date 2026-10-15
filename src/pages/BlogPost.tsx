@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
+import { InlineCta, NextStepCta, StickyCta } from "@/components/ContentCta";
 import { applySeo } from "@/lib/seo";
 import {
   SECTIONS,
@@ -83,6 +84,21 @@ const markdownComponents: Components = {
   hr: () => <hr className="my-10 border-border" />,
 };
 
+/** Split markdown before the Nth H2 (outside fenced code) so a CTA can sit between sections. */
+const splitAtHeading = (md: string, n: number): [string, string] => {
+  const lines = md.split("\n");
+  let inCode = false;
+  let seen = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trimStart().startsWith("```")) inCode = !inCode;
+    if (!inCode && /^##\s+/.test(lines[i])) {
+      seen += 1;
+      if (seen === n) return [lines.slice(0, i).join("\n"), lines.slice(i).join("\n")];
+    }
+  }
+  return [md, ""];
+};
+
 const Shell = ({ children }: { children: ReactNode }) => (
   <div className="min-h-screen bg-background font-sans">
     <Navbar />
@@ -100,6 +116,11 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
   const { data: allPosts } = useBlogPosts();
 
   const headings = useMemo(() => (post ? extractHeadings(post.content_md) : []), [post]);
+  // Inline CTA before the third H2 when the article has at least four; otherwise after the body.
+  const [before, after] = useMemo(
+    () => (post && headings.length >= 4 ? splitAtHeading(post.content_md, 3) : [post?.content_md ?? "", ""]),
+    [post, headings.length],
+  );
   const related = useMemo(() => {
     if (!post || !allPosts) return [];
     const others = allPosts.filter((p) => p.slug !== post.slug);
@@ -217,10 +238,18 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
           )}
 
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {post.content_md}
+            {before}
           </ReactMarkdown>
+          <InlineCta section={section} />
+          {after && (
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {after}
+            </ReactMarkdown>
+          )}
         </div>
       </article>
+
+      <NextStepCta section={section} />
 
       {related.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 pb-20" aria-labelledby="related-heading">
@@ -246,6 +275,7 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
       )}
 
       <CTASection />
+      <StickyCta section={section} />
     </Shell>
   );
 };

@@ -17,7 +17,10 @@ Shared rules for all four sections:
 - 2 to 5 internal links: one to the section index, one to a related page in another section
   (a guide links to a lesson that defines its terms; a solution page links to the guides it
   relies on), and the rest to feature pages from `blog/site-pages.json`.
-- One call to action, placed after the reader has got what they came for, never above it.
+- Conversion path exactly as in blog-write.md "Conversion path": a link to another content
+  page, a link to a conversion page, one contextual Intentsly sentence at the step it replaces,
+  and a closing next action. The site adds its own CTA card, next-step box and sticky bar, so the
+  body links rather than pitches.
 - FAQ: 3 to 6 real questions, 40 to 70 word answers. The FAQ becomes FAQPage schema.
 - No invented numbers, customers or quotes, ever. See blog-write.md "Facts".
 

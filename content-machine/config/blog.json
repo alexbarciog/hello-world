@@ -35,7 +35,7 @@
     160
   ],
   "max_keyword_density_pct": 2.0,
-  "min_internal_links": 2,
+  "min_internal_links": 3,
   "min_external_links": 2,
   "min_faq": 3,
   "competitor_fact_max_age_days": 30,
@@ -46,5 +46,16 @@
     "learn": "/learn",
     "solutions": "/solutions",
     "compare": "/compare"
-  }
+  },
+  "conversion_pages": [
+    "/register",
+    "/try-ai",
+    "/pricing",
+    "/features/linkedin-signals",
+    "/features/reddit-x-signals",
+    "/features/ai-sdr",
+    "/features/conversational-ai",
+    "/signal-playbook",
+    "/linkedin-profile-analyzer"
+  ]
 }

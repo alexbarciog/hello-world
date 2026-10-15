@@ -129,6 +129,12 @@ def check(path):
         fails.append("internal links to pages that do not exist: " + ", ".join(bad))
     if len(set(internal)) < c["min_internal_links"]:
         fails.append(f"{len(set(internal))} internal links (min {c['min_internal_links']})")
+    conv = set(c.get("conversion_pages", []))
+    if conv and not any(u in conv for u in internal):
+        fails.append("no link to a conversion page (" + ", ".join(sorted(conv)[:4]) + ", ...): every page must give the reader a way to try Intentsly")
+    content_prefixes = tuple(f"{v}/" for v in secs.values())
+    if not any(u.startswith(content_prefixes) for u in internal):
+        fails.append("no link to another published content page (blog, guide, lesson, solution or comparison): promote related pages")
     if len(set(external)) < c["min_external_links"]:
         fails.append(f"{len(set(external))} external source links (min {c['min_external_links']})")
     if re.search(r"\]\([^)]*\)\s*\[?(click here|here|this link)\b", body, re.I) or re.search(r"\[(click here|here|this)\]\(", body, re.I):
