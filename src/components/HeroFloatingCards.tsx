@@ -8,14 +8,17 @@ const cardBase =
 
 const HeroFloatingCards = () => {
   return (
-    <div className="relative w-full h-full min-h-[560px]">
-      {/* Main lead card */}
+    <div className="relative w-full h-full lg:min-h-[560px]">
+      {/* Main lead card. Centred with flex, not translate classes: the
+          entrance animation sets its own transform, which overrode
+          -translate-x/y-1/2 and pushed the card off-centre (cut off on phones). */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.9, delay: 0.4, ease: EASE }}
         whileHover={{ scale: 1.03, rotate: -0.6, transition: { type: "spring", stiffness: 250, damping: 18 } }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[340px] bg-white rounded-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] p-5 z-10 cursor-default"
+        className="relative pointer-events-auto w-[min(300px,100%)] sm:w-[340px] bg-white rounded-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)] p-4 sm:p-5 z-10 cursor-default"
       >
         {/* Pulse ring */}
         <motion.div
@@ -92,11 +95,12 @@ const HeroFloatingCards = () => {
           </motion.button>
         </div>
       </motion.div>
+      </div>
 
       {/* Floating cards */}
       {[
         {
-          pos: "top-[6%] left-[-4%] sm:left-[-2%]",
+          pos: "top-[6%] left-0 sm:left-[-2%]",
           delay: 0.6,
           float: 0,
           icon: <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />,
@@ -106,7 +110,7 @@ const HeroFloatingCards = () => {
           from: { x: -30, y: -20 },
         },
         {
-          pos: "top-[18%] right-[-2%] sm:right-[0%]",
+          pos: "top-[18%] right-0",
           delay: 0.8,
           float: 1,
           icon: <UserPlus className="w-4 h-4 text-neutral-900" />,
@@ -132,7 +136,7 @@ const HeroFloatingCards = () => {
           from: { x: -30, y: 20 },
         },
         {
-          pos: "bottom-[6%] right-[-2%] sm:right-[2%]",
+          pos: "bottom-[6%] right-0 sm:right-[2%]",
           delay: 1.2,
           float: 3,
           icon: <Check className="w-4 h-4 text-white" strokeWidth={3} />,

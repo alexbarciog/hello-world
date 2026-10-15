@@ -138,7 +138,7 @@ const Hero = () => {
             transition={{ duration: 1, delay: 0.3, ease: EASE }}
             className="relative"
           >
-            <div className="relative overflow-hidden aspect-[4/5] lg:aspect-auto lg:min-h-[620px]">
+            <div className="relative overflow-hidden h-[520px] sm:h-auto sm:aspect-[4/5] lg:aspect-auto lg:min-h-[620px]">
               <img
                 src={heroGradient}
                 alt=""
