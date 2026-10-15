@@ -981,8 +981,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-intent-data",
    "monthly_volume": null
   },
   {

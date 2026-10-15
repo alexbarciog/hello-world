@@ -1,48 +1,43 @@
-# Last run: 2026-10-15 (Trigify campaign run, evening)
+# Last run: 2026-10-15 (learn section, evening)
 
-- Keyword: trigify shutting down (cluster trigify, explainer, priority 0)
-- Title: Trigify Shutting Down: What Ends on 22 October and What to Save
-- Live URL: https://intentsly.com/blog/trigify-shutting-down
-- Status: published (Supabase row returned `status = published`, published_at 2026-10-15 17:55 UTC)
-- Gate: passed on the first run, 2,085 words, 8 H2s, 6 FAQ entries, 4 internal links, 10 external links,
-  no warnings. Second article of the day (daily cap 3; joinvalley-alternatives went out this morning).
-- Keywords blocked or skipped: none. 17 trigify keywords and 52 keywords in total remain queued, so no
-  new keywords were added.
-- Date logic: run on 15 October 2026, so present tense ("Trigify is shutting down on 22 October 2026").
-  From 23 October this article needs a past-tense edit: opening paragraph, the "What to do in the next
-  seven days" section and the FAQ answers all say "closes" and "before your access ends".
+- Keyword: what is intent data (section learn, cluster fundamentals, lesson, priority 1)
+- Title: What Is Intent Data? Definition, Types and Examples
+- Live URL: https://intentsly.com/learn/what-is-intent-data
+- Status: published (Supabase row returned `status = published`, published_at 2026-10-15 18:30 UTC)
+- Gate: passed on the first run, 1,776 words (lesson range 1,000 to 1,800), 8 H2s, 4 FAQ entries,
+  5 internal links (/learn, /blog/find-b2b-leads-on-reddit, /signal-playbook, /features/linkedin-signals,
+  /features/reddit-x-signals), 2 external links, no warnings. Third article published today (daily cap 7).
+- Keywords blocked or skipped: none. 11 learn keywords and 97 keywords in total remain queued, so no new
+  keywords were added.
+- First /learn page. "Related lessons" links to the /learn index because no other lesson is published yet;
+  when "what is a buying signal", "what is an ideal customer profile" and "what is lead scoring" go live,
+  this page's Related lessons paragraph should link to them (blog_cloud.py has no update mode yet).
 
 ## What the research turned up
-- Every ranking page (Buska, Octolens, Signado, Deberli, Syft, Cleed, HeyReach) is a vendor-written
-  alternatives list; none is a plain explainer of the shutdown. The article fills that format.
-- trigify.io (read today) has no pricing anywhere and 11 FAQs. Facts used: 23 Sep announcement, 11:59pm
-  BST 22 Oct cutoff, own dates for other notice periods, reminders promised, no migration, data retained or
-  deleted per obligations, HubSpot does not use it, export via product options or hugo@trigify.io,
-  integrations/API/monitoring/signal collection stop, no renewal, invoice/credits/refunds direct.
-- help.trigify.io (read today): the Output tab has "Export CSV" of the current page (25/50/100 rows,
-  nested sub-tables separate). The Signals feed and Listening articles describe no export. Listening sources
-  listed today: business network, Reddit, X, YouTube, podcasts. Hacker News is NOT listed in the article
-  opened today, so the campaign brief's "Hacker News" claim was not used. The help docs now call LinkedIn
-  "business network".
-- Octolens and Signado both claim Trigify's last pricing was $40 to $199 a month; neither links a source,
-  so the article does not repeat the figures.
+- Every ranking page (Bombora, Boomi, G2 glossary, FoxData, Ninetailed, Artisan, several abmatic.ai
+  near-duplicates) is vendor-written, defines first-party vs third-party, lists benefits and stops. None
+  separates account-level from person-level intent data, none states downsides, none gives a decision rule.
+- Outside statistic used: Gartner press release 9 March 2026 (survey of 646 B2B buyers, Aug to Sep 2025,
+  67% prefer a rep-free experience, 45% used AI during a recent purchase), opened this run and linked in the
+  same paragraph.
+- Bombora's own page (opened today) supplied the three third-party subtypes (data cooperative, publisher
+  direct, bidstream). No prices, no claims about Bombora's accuracy.
+- Trade statistics found on other pages (e.g. "93% of marketers report higher conversions") trace to
+  vendor round-ups with no primary source, so none was used.
 
 ## Calls made without review
-- The hub article trigify-alternatives already carries "trigify shutting down" as a secondary keyword and
-  has one H2 on the announcement. The explainer was still written because it answers the shutdown query
-  alone (what stops, data, refunds, per-screen export) rather than listing tools; the two pages link to each
-  other. Change the keyword to `skipped` if you consider this duplication.
-- No published article has `cluster: trigify` yet (the hub is `cluster: competitor`), so the brief's
-  "link to another campaign article" rule could only be met by linking to the hub.
-- The hub article has no "Related" list, so the brief's step to add the new article there was skipped.
-  blog_cloud.py also has no update mode for published files.
-- Other options named per job come only from vendor pages opened today: Signado, Deberli (job 1), Buska,
-  Octolens (job 2); Clay with PhantomBuster is referenced via the hub (job 3). Intentsly's limits stated:
-  no YouTube or podcast sources, no CRM-native nodes, no public API.
-- Used the verified "14 qualified demos in 14 days" line once. No price, no customer names, no quotes.
+- Used the verified "14 qualified demos in 14 days ... no manual outreach" line once, in the "How to use
+  it this week" section, phrased as "our own launch campaign". No price, no customer names, no quotes.
+- Product features named: LinkedIn signals (comments, likes, competitor-page followers), Reddit and X
+  monitoring, scoring against the customer profile. All are in brain/wiki/product.md.
+- The hypothetical agency example is labelled as an example and uses no real company.
+- Trimmed from 1,905 to 1,776 words to stay inside the lesson range (the gate only enforces the minimum).
 
 ## For the founder
-- Confirm that Intentsly has no public API and no native CRM nodes; the article says so as a limit.
 - Add posts to brain/posts/ and run brain-ingest: voice.md is still "untrained".
-- The "12,400+ buyers detected weekly" and the GrowthLab quote are still unverified in proof.md.
-- From 23 October, the hub and this article both need the past-tense pass described in the campaign brief.
+- The "12,400+ buyers detected weekly" figure and the GrowthLab quote are still unverified in proof.md;
+  a verified weekly-detection number would strengthen every lesson in this cluster.
+- A short first-hand story about one intent signal that turned into a deal (what the person posted, what
+  we replied, what happened) would give the lessons on buying signals and triggers a real example instead
+  of a labelled hypothetical.
+- The Trigify past-tense edit from 23 October (see the previous last-run) is still pending.
