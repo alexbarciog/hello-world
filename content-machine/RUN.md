@@ -14,6 +14,11 @@ One run = at most one published article. Work from this folder (`content-machine
 - In git, change only files under `content-machine/`. Never touch the website code.
 - If a file named `PAUSE` exists in this folder, stop immediately and report it.
 
+## Campaigns
+If the keyword's `cluster` is `trigify`, read `blog/briefs/trigify-campaign.md` before writing and
+follow its date logic and linking rules. That cluster is time-critical (Trigify closes 22 October
+2026); it sorts first because its keywords have priority 0.
+
 ## Steps
 1. `python3 scripts/blog_next.py` gives the next keyword. If a draft without a `blocked:` line is
    already in `blog/drafts/`, resume that one instead.

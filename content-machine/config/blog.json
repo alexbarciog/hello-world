@@ -4,7 +4,7 @@
   "author": "Alex Barciog",
   "author_title": "CEO & Founder, Intentsly",
   "autopublish": true,
-  "max_posts_per_week": 7,
+  "max_posts_per_week": 21,
   "publish_days": [
     "Mon",
     "Tue",
@@ -36,5 +36,5 @@
   "min_external_links": 2,
   "min_faq": 3,
   "competitor_fact_max_age_days": 30,
-  "max_posts_per_day": 1
+  "max_posts_per_day": 3
 }
