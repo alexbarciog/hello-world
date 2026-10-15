@@ -250,6 +250,10 @@ const routes = [
     priority: "0.8",
     changefreq: "weekly",
     blogData: { posts: blogSummaries },
+    lastmod: blogPosts
+      .map((post) => (post.updated_at || post.published_at || "").slice(0, 10))
+      .sort()
+      .pop() || undefined,
   },
   ...blogPosts.map((post) => ({
     path: `/blog/${post.slug}`,
@@ -283,13 +287,16 @@ for (const route of routes) {
   }
 }
 
-const lastmod = new Date().toISOString().slice(0, 10);
+// Only real modification dates go in <lastmod>. Stamping every page with the
+// build date on each deploy teaches Google to ignore lastmod entirely —
+// including the accurate dates on blog posts, which is what gets new
+// articles recrawled quickly.
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes
   .map(
     (r) =>
-      `  <url><loc>${SITE}${r.path}</loc><lastmod>${r.lastmod || lastmod}</lastmod><changefreq>${r.changefreq || "monthly"}</changefreq><priority>${r.priority}</priority></url>`,
+      `  <url><loc>${SITE}${r.path}</loc>${r.lastmod ? `<lastmod>${r.lastmod}</lastmod>` : ""}<changefreq>${r.changefreq || "monthly"}</changefreq><priority>${r.priority}</priority></url>`,
   )
   .join("\n")}
 </urlset>
