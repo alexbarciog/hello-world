@@ -77,7 +77,7 @@ const ColdListMock = () => (
           <span className="w-2 h-2 rounded-full bg-amber-500" />
           <div className="min-w-0">
             <div className="text-base font-semibold leading-none" style={{ color: "hsl(var(--aeline-dark))" }}>
-              <CountUp to={3} duration={1.4} />
+              <CountUp to={3} />
             </div>
             <div className="text-[10px] text-muted-foreground mt-1">competitors already reached out</div>
           </div>

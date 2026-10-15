@@ -82,7 +82,7 @@ const LeadsByTier = ({ data, loading }: LeadsByTierProps) => {
           <div className="flex-1 min-w-0 space-y-2.5">
             <div className="text-[12.5px] text-neutral-400">
               <span className="font-semibold text-neutral-900 text-[13.5px]">
-                <CountUp to={total} duration={1.2} />
+                <CountUp to={total} />
               </span>{" "}
               total leads
             </div>

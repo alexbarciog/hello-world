@@ -2,7 +2,6 @@ import { ArrowRight, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import HeroFloatingCards from "./HeroFloatingCards";
 import heroGradient from "@/assets/hero-gradient-right.png";
-import { CountUp } from "@/lib/motion";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -32,7 +31,7 @@ const Hero = () => {
                 🔥
               </motion.span>
               <span className="text-[12px] md:text-[13px] font-semibold text-neutral-900">
-                <CountUp to={127} /> buyers showed intent in the last hour
+                Live buying signals from LinkedIn, Reddit &amp; X
               </span>
             </motion.div>
 

@@ -1,5 +1,5 @@
-import { motion, useInView, useMotionValue, useTransform, animate, type Variants } from "framer-motion";
-import { useEffect, useRef, type ReactNode, type CSSProperties } from "react";
+import { motion, type Variants } from "framer-motion";
+import { type ReactNode, type CSSProperties } from "react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -59,36 +59,17 @@ export const Float = ({ children, className, duration = 5, y = 6, delay = 0 }: F
 
 interface CountUpProps {
   to: number;
-  from?: number;
-  duration?: number;
   prefix?: string;
   suffix?: string;
   className?: string;
 }
 
-export const CountUp = ({
-  to,
-  from = 0,
-  duration = 1.6,
-  prefix = "",
-  suffix = "",
-  className,
-}: CountUpProps) => {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.5 });
-  // The build-time prerender has no viewport to scroll into, so start at the
-  // final value there — otherwise crawlers read "$0/month".
-  const count = useMotionValue(import.meta.env.SSR ? to : from);
-  const rounded = useTransform(count, (v) => `${prefix}${Math.round(v)}${suffix}`);
-
-  useEffect(() => {
-    if (!inView) return;
-    const controls = animate(count, to, { duration, ease: "easeOut" });
-    return () => controls.stop();
-  }, [inView, count, to, duration]);
-
-  return <motion.span ref={ref} className={className}>{rounded}</motion.span>;
-};
+// Shows the value as-is. It used to count up from 0 once scrolled into view,
+// so a quick glance, a slow device or a background tab saw "0" (and a price
+// caught mid-animation read "$94" instead of "$97").
+export const CountUp = ({ to, prefix = "", suffix = "", className }: CountUpProps) => (
+  <span className={className}>{`${prefix}${to}${suffix}`}</span>
+);
 
 export const fadeStagger: Variants = {
   hidden: {},

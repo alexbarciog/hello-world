@@ -18,7 +18,6 @@ import {
 import Navbar from "@/components/Navbar";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { Footer } from "@/components/CTAFooter";
-import { CountUp } from "@/lib/motion";
 import ogImageAsset from "@/assets/linkedin-profile-analyzer-og.png.asset.json";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -213,7 +212,7 @@ export default function LinkedInProfileAnalyzer() {
                   🔥
                 </motion.span>
                 <span className="text-[12px] md:text-[13px] font-semibold text-neutral-900">
-                  <CountUp to={2431} /> profiles audited this month
+                  Free LinkedIn profile audit
                 </span>
               </motion.div>
 
@@ -349,27 +348,6 @@ export default function LinkedInProfileAnalyzer() {
                   </span>
                 </motion.button>
 
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {[
-                      "https://i.pravatar.cc/48?img=12",
-                      "https://i.pravatar.cc/48?img=32",
-                      "https://i.pravatar.cc/48?img=45",
-                      "https://i.pravatar.cc/48?img=68",
-                    ].map((src, i) => (
-                      <img
-                        key={i}
-                        src={src}
-                        alt=""
-                        loading="lazy"
-                        className="w-6 h-6 rounded-full border-2 border-white object-cover"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-neutral-500">
-                    Joined by <b className="text-neutral-800">2,431 operators</b> this month
-                  </p>
-                </div>
               </div>
             </motion.div>
           </div>

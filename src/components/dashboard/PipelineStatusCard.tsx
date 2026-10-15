@@ -67,7 +67,7 @@ export function PipelineStatusCard({ stats, stripData, onExpand }: PipelineStatu
                 <div className="h-8 w-14 bg-neutral-100 rounded animate-pulse" />
               ) : (
                 <div className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-[#0a0a0a]">
-                  <CountUp to={s.value} duration={1.2} />
+                  <CountUp to={s.value} />
                 </div>
               )}
               <div className="flex items-center gap-1.5 mt-2 text-[13px] text-neutral-500 group-hover:text-neutral-800 transition-colors">

@@ -62,7 +62,6 @@ export function MetricCard({
               <div className="flex items-baseline gap-2">
                 <CountUp
                   to={numeric}
-                  duration={1.4}
                   className="text-[30px] leading-none font-semibold tracking-[-0.03em] text-[#0a0a0a]"
                 />
                 {trend && (

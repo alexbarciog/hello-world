@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ttqInitiateCheckout, ttqAddToCart } from "@/lib/tiktok-pixel";
-import { CountUp } from "@/lib/motion";
 
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
 const PRO_PRICE_ID = "price_1TRekzFsgTpFMX56qcKFrGKS";
@@ -73,18 +72,6 @@ const Pricing = () => {
         </div>
 
         {/* Scarcity bar */}
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200/70">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-            </span>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-orange-700">
-              <CountUp to={12} /> teams started this week
-            </span>
-          </div>
-        </div>
-
         <div className="max-w-md mx-auto">
           <div className="relative rounded-3xl bg-[#f5f5f5] p-6 md:p-10 flex flex-col">
             {/* Most popular ribbon */}
@@ -109,7 +96,7 @@ const Pricing = () => {
 
             <div className="flex items-baseline gap-1 mb-8">
               <span className="text-5xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>
-                $<CountUp to={97} duration={1.2} />
+                $97
               </span>
               <span className="text-sm text-muted-foreground">/month</span>
             </div>

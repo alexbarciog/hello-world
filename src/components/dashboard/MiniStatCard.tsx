@@ -77,7 +77,7 @@ export function MiniStatCard({
             <div className="h-8 w-20 bg-neutral-100 rounded animate-pulse" />
           ) : (
             <div className="text-[28px] leading-none font-semibold tracking-[-0.03em] text-[#0a0a0a]">
-              {numeric !== null ? <CountUp to={numeric} duration={1.2} /> : value}
+              {numeric !== null ? <CountUp to={numeric} /> : value}
             </div>
           )}
           <div className="mt-2 min-h-[18px]">

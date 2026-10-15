@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Zap, Shield } from "lucide-react";
 
 const useReveal = () => {
@@ -15,30 +15,9 @@ const useReveal = () => {
   return ref;
 };
 
-const CountUp = ({ end, suffix = "" }: { end: number; suffix?: string }) => {
-  // Prerendered HTML shows the final value (see CountUp in lib/motion).
-  const [val, setVal] = useState(import.meta.env.SSR ? end : 0);
-  const ref = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) {
-        let start = 0;
-        const duration = 1500;
-        const step = (ts: number) => {
-          if (!start) start = ts;
-          const progress = Math.min((ts - start) / duration, 1);
-          setVal(Math.floor(progress * end));
-          if (progress < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-        obs.disconnect();
-      }
-    }, { threshold: 0.5 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [end]);
-  return <span ref={ref}>{val}{suffix}</span>;
-};
+// Static on purpose: counting up from 0 showed "0" to anyone who didn't
+// scroll the stat fully into view (see CountUp in lib/motion).
+const CountUp = ({ end, suffix = "" }: { end: number; suffix?: string }) => <span>{end}{suffix}</span>;
 
 const AboutStats = () => {
   const ref = useReveal();

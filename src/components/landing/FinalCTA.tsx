@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { CountUp } from "@/lib/motion";
 import finalCtaBg from "@/assets/finalcta-bg.png.asset.json";
 
 const FinalCTA = () => {
@@ -65,7 +64,7 @@ const FinalCTA = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-900">
-              <CountUp to={127} /> buyers showing intent right now
+              Buying signals monitored 24/7
             </span>
           </motion.div>
 
