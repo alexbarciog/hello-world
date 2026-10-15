@@ -1,76 +1,72 @@
-# Correction run 2026-10-15
+# Last run: 2026-10-15 (compare section, evening)
 
-One-off correction after the founder confirmed (15 October 2026) that Reddit and X monitoring do not work yet
-and that the AI SDR sends LinkedIn messages only. Five published pages described Intentsly as covering Reddit
-and X; each was rewritten to LinkedIn-only, `checked_on` set to 2026-10-15, re-gated, and upserted (slug
-conflict, original `published_at` kept). No `mark` run; no scripts/, config/ or brain/ changes.
-
-| Slug | Republished | Supabase result |
-|---|---|---|
-| find-b2b-leads-on-reddit | yes | status = published, published_at 2026-10-12 20:51 UTC (unchanged) |
-| gojiberry-alternatives | yes | status = published, published_at 2026-10-14 06:27 UTC (unchanged) |
-| joinvalley-alternatives | yes | status = published, published_at 2026-10-15 06:12 UTC (unchanged) |
-| trigify-alternatives | yes | status = published, published_at 2026-10-13 06:09 UTC (unchanged) |
-| trigify-shutting-down | yes | status = published, published_at 2026-10-15 17:55 UTC (unchanged) |
-
-Gate fixes needed on the second pass: find-b2b-leads-on-reddit (removing the Reddit pitch dropped it to 2
-internal links and no link to another content page, so a link to /learn/what-is-intent-data was added in "What
-to do next"); gojiberry-alternatives and joinvalley-alternatives (opening paragraph over 90 words after the
-rewrite; shortened). Where an article said "buyers not on LinkedIn, choose Intentsly", the recommendation now
-names CommunityTracker (gojiberry-alternatives) or says plainly that no tool in the list, Intentsly included,
-listens outside LinkedIn (joinvalley-alternatives, with a link to the manual Reddit method).
-
-Still needs the founder:
-- `blog/published/what-is-intent-data.md` (learn section, not in this correction's scope) still links
-  /features/reddit-x-signals as a working feature in its "Watch two sources by hand" step. Needs the same fix.
-- `blog/site-pages.json` still lists /features/reddit-x-signals as a page articles may link to; the gate does
-  not block it. Consider removing it (config change, not made here) or taking the feature page down.
-- gojiberry-alternatives says the Buying Signal Playbook includes "the Reddit and X queries" to find signals.
-  product.md describes the playbook as LinkedIn triggers and scripts; confirm the playbook really contains
-  Reddit/X queries, otherwise that sentence needs editing too.
-- trigify-shutting-down says Intentsly has "no public API". product.md does not confirm or deny an API; the
-  sentence was kept but now acknowledges the native HubSpot integration. Confirm the API claim.
-
-# Last run: 2026-10-15 (learn section, evening)
-
-- Keyword: what is intent data (section learn, cluster fundamentals, lesson, priority 1)
-- Title: What Is Intent Data? Definition, Types and Examples
-- Live URL: https://intentsly.com/learn/what-is-intent-data
-- Status: published (Supabase row returned `status = published`, published_at 2026-10-15 18:30 UTC)
-- Gate: passed on the first run, 1,776 words (lesson range 1,000 to 1,800), 8 H2s, 4 FAQ entries,
-  5 internal links (/learn, /blog/find-b2b-leads-on-reddit, /signal-playbook, /features/linkedin-signals,
-  /features/reddit-x-signals), 2 external links, no warnings. Third article published today (daily cap 7).
-- Keywords blocked or skipped: none. 11 learn keywords and 97 keywords in total remain queued, so no new
-  keywords were added.
-- First /learn page. "Related lessons" links to the /learn index because no other lesson is published yet;
-  when "what is a buying signal", "what is an ideal customer profile" and "what is lead scoring" go live,
-  this page's Related lessons paragraph should link to them (blog_cloud.py has no update mode yet).
+- Keyword: trigify vs intentsly (section compare, cluster trigify, comparison, priority 0)
+- Title: Trigify vs Intentsly: Which Trigify Jobs Does It Cover?
+- Live URL: https://intentsly.com/compare/trigify-vs-intentsly
+- Status: published (Supabase row returned `status = published`, published_at 2026-10-15 21:08 UTC)
+- Gate: passed on the first run, 2,351 words (comparison range 1,300 to 2,500), 8 H2s, 6 FAQ entries,
+  internal links to /blog/trigify-alternatives (hub, "Trigify alternatives" anchor in the first 300 words),
+  /blog/trigify-shutting-down, /features/linkedin-signals, /features/ai-sdr, /signal-playbook, /pricing,
+  /try-ai, /compare; 8 external links, all to trigify.io or Trigify's help centre. No warnings.
+  Fourth new article published today (daily cap 7).
+- Keywords blocked or skipped: none. 10 compare keywords (all cluster intentsly-vs) and 96 keywords in
+  total remain queued, so no new keywords were added. First /compare page.
+- Date logic: run on 15 October 2026, before the 22 October cutoff, so present tense and deadline first.
+  From 23 October this page needs the past-tense edit described in blog/briefs/trigify-campaign.md
+  (verdict paragraph, "while you still have it" H2, "Can you use both?", checklist intro, FAQ 2).
+- Hub "Related" link: blog/published/trigify-alternatives.md has no "Related" list, and this run's
+  rules allow one database write only, so the hub was not touched. The hub already links the compare
+  index; a one-line link to this page could be added in a later update of the hub.
 
 ## What the research turned up
-- Every ranking page (Bombora, Boomi, G2 glossary, FoxData, Ninetailed, Artisan, several abmatic.ai
-  near-duplicates) is vendor-written, defines first-party vs third-party, lists benefits and stops. None
-  separates account-level from person-level intent data, none states downsides, none gives a decision rule.
-- Outside statistic used: Gartner press release 9 March 2026 (survey of 646 B2B buyers, Aug to Sep 2025,
-  67% prefer a rep-free experience, 45% used AI during a recent purchase), opened this run and linked in the
-  same paragraph.
-- Bombora's own page (opened today) supplied the three third-party subtypes (data cooperative, publisher
-  direct, bidstream). No prices, no claims about Bombora's accuracy.
-- Trade statistics found on other pages (e.g. "93% of marketers report higher conversions") trace to
-  vendor round-ups with no primary source, so none was used.
+- No page targets "trigify vs intentsly". The neighbourhood is vendor "vs Trigify" and "Trigify
+  alternatives" pages (Valley, SyncGTM, Embers, Overloop, Teamfluence, SignalRaven, Deberli, Revexa,
+  Getcleed, Reactin, Easeclaw). None mention Intentsly. Several still omit the retirement; SyncGTM quotes
+  prices "from user reports" ($49/$99/$199) that do not match Trigify's own help centre.
+- trigify.io (opened today) shows only the 23 September 2026 retirement notice and FAQ; no features, no
+  pricing. The pricing page could not be opened directly (no search result pointed at it). Trigify's help
+  centre (trigifyio.featurebase.app, canonical help.trigify.io) still publishes a Plans & Pricing article:
+  Starter $40/mo (4,000 credits, 25 saved searches, 1 workspace), Max $199/mo (40,000 credits, unlimited
+  searches, 3 workspaces, BYOK, free Jarvis), Enterprise custom, overage $0.012/credit, legacy Essential
+  $149, Growth $270, Scale $549. Quoted with the link and the date; the article says plainly that what
+  applies to a given account depends on the customer's invoice and notice.
+- Trigify features used, all from help-centre articles opened today: Social Signals (tracked profiles and
+  companies, 16 signal types incl. role change, hiring, expansion; fires within 24 to 72 hours, first run
+  looks back 30 days; early access, free during beta), Listening (Business Network, Reddit, X, YouTube,
+  podcasts; "only finds posts"), Workflows (AI Agent nodes, General and Sentiment agents, enrichment for
+  email and phone, destinations HubSpot, Salesforce, Attio, Slack), Output tab Export CSV (current page,
+  25/50/100 rows, nested sub-tables export separately), help-centre sidebar listing API docs, CLI and MCP.
+  Trigify's docs say "Business Network" rather than naming LinkedIn; the page keeps that wording for
+  Trigify and says "LinkedIn" only for Intentsly.
+- No outside statistics were used, so no third-party stat links were needed.
 
 ## Calls made without review
-- Used the verified "14 qualified demos in 14 days ... no manual outreach" line once, in the "How to use
-  it this week" section, phrased as "our own launch campaign". No price, no customer names, no quotes.
-- Product features named: LinkedIn signals (comments, likes, competitor-page followers), Reddit and X
-  monitoring, scoring against the customer profile. All are in brain/wiki/product.md.
-- The hypothetical agency example is labelled as an example and uses no real company.
-- Trimmed from 1,905 to 1,776 words to stay inside the lesson range (the gate only enforces the minimum).
+- Verdict reframed: since Trigify retires on 22 October, "choose Trigify" is not an option, so the page
+  maps Trigify jobs to Intentsly coverage instead of pretending to be a neutral pick between two live
+  tools. "Where Trigify is the better choice" is kept, as page-write.md requires, with the qualifier
+  "(while you still have it)" and real items (multi-platform listening, workflow nodes, job-change
+  signals, credit-based pricing).
+- Intentsly limits stated: LinkedIn only, 2 sender accounts, 30/30 daily caps with 15 recommended, four
+  languages, HubSpot as the only CRM, no email sending, no job-change signals, no node editor, phone data
+  not listed. "Export exists; format not promised" per product.md. No API claim either way.
+- Verified numbers used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate (labelled "one
+  team and one campaign, not a benchmark"); around 1,000 leads a month per agent and 2 to 4 meetings a
+  week, attributed "across Intentsly customers" and "typical, on average and not guaranteed"; 7-day trial;
+  12 signals / 8 to ignore. The 21% reply rate was left out: the gate only whitelists proof rows whose
+  status cell is exactly "verified", and that row's cell carries phrasing guidance, so a 21% figure would
+  have needed a workaround to pass. Same for the "Mike Ruiz" quote: not used.
+- "Can I import my Trigify data into Intentsly?" is answered as "plan to recreate rather than upload",
+  without asserting that no import exists, because product.md does not say either way.
 
 ## For the founder
-- Add posts to brain/posts/ and run brain-ingest: voice.md is still "untrained".
-- The "12,400+ buyers detected weekly" figure and the GrowthLab quote are still unverified in proof.md;
-  a verified weekly-detection number would strengthen every lesson in this cluster.
-- A short first-hand story about one intent signal that turned into a deal (what the person posted, what
-  we replied, what happened) would give the lessons on buying signals and triggers a real example instead
-  of a labelled hypothetical.
-- The Trigify past-tense edit from 23 October (see the previous last-run) is still pending.
+- Confirm whether Intentsly has a CSV import and a public API; both questions come up on every "vs" page
+  and the compare section has 10 more of them queued.
+- Confirm the export formats (CSV? HubSpot only?) so compare pages can name them.
+- proof.md: if the 21% reply rate and the GrowthLab quote are to be usable, their status cell needs to
+  read exactly `verified` (move the phrasing guidance into the claim column or a note); the gate script
+  only reads rows whose status cell is exactly that word.
+- The next compare keywords are "intentsly vs gojiberry", "intentsly vs valley", "intentsly vs common
+  room", "intentsly vs phantombuster". A short list of which competitors you have actually been evaluated
+  against by prospects, and any real switching story, would make those pages stronger than the Trigify
+  one, which had no first-hand switching material.
+- From 23 October: this page, trigify-alternatives and trigify-shutting-down all need the past-tense edit.

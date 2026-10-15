@@ -536,8 +536,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "trigify-vs-intentsly",
    "monthly_volume": null,
    "section": "compare"
   },
