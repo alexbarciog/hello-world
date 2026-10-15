@@ -92,6 +92,78 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          article_type: string | null
+          author_name: string | null
+          author_title: string | null
+          cluster: string | null
+          content_md: string
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string
+          faq: Json
+          id: string
+          meta_description: string
+          meta_title: string
+          primary_keyword: string | null
+          published_at: string | null
+          reading_minutes: number | null
+          secondary_keywords: string[]
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          word_count: number | null
+        }
+        Insert: {
+          article_type?: string | null
+          author_name?: string | null
+          author_title?: string | null
+          cluster?: string | null
+          content_md: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt: string
+          faq?: Json
+          id?: string
+          meta_description: string
+          meta_title: string
+          primary_keyword?: string | null
+          published_at?: string | null
+          reading_minutes?: number | null
+          secondary_keywords?: string[]
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+          word_count?: number | null
+        }
+        Update: {
+          article_type?: string | null
+          author_name?: string | null
+          author_title?: string | null
+          cluster?: string | null
+          content_md?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string
+          faq?: Json
+          id?: string
+          meta_description?: string
+          meta_title?: string
+          primary_keyword?: string | null
+          published_at?: string | null
+          reading_minutes?: number | null
+          secondary_keywords?: string[]
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           attendee_email: string | null
@@ -211,11 +283,15 @@ export type Database = {
           conversation_stopped: boolean
           created_at: string
           current_step: number
+          error_reason: string | null
           id: string
+          last_acceptance_check_at: string | null
           last_ai_reply_at: string | null
           last_incoming_message_at: string | null
+          last_reply_excerpt: string | null
           lead_status: string
           next_followup_at: string | null
+          reply_sentiment: string | null
           sent_at: string
           status: string
           step_completed_at: string | null
@@ -231,11 +307,15 @@ export type Database = {
           conversation_stopped?: boolean
           created_at?: string
           current_step?: number
+          error_reason?: string | null
           id?: string
+          last_acceptance_check_at?: string | null
           last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
+          last_reply_excerpt?: string | null
           lead_status?: string
           next_followup_at?: string | null
+          reply_sentiment?: string | null
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -251,11 +331,15 @@ export type Database = {
           conversation_stopped?: boolean
           created_at?: string
           current_step?: number
+          error_reason?: string | null
           id?: string
+          last_acceptance_check_at?: string | null
           last_ai_reply_at?: string | null
           last_incoming_message_at?: string | null
+          last_reply_excerpt?: string | null
           lead_status?: string
           next_followup_at?: string | null
+          reply_sentiment?: string | null
           sent_at?: string
           status?: string
           step_completed_at?: string | null
@@ -540,6 +624,7 @@ export type Database = {
           linkedin_profile_id: string | null
           linkedin_url: string | null
           list_name: string | null
+          network_distance: string | null
           organization_id: string | null
           personality_generated_at: string | null
           personality_prediction: Json | null
@@ -583,6 +668,7 @@ export type Database = {
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
+          network_distance?: string | null
           organization_id?: string | null
           personality_generated_at?: string | null
           personality_prediction?: Json | null
@@ -626,6 +712,7 @@ export type Database = {
           linkedin_profile_id?: string | null
           linkedin_url?: string | null
           list_name?: string | null
+          network_distance?: string | null
           organization_id?: string | null
           personality_generated_at?: string | null
           personality_prediction?: Json | null
@@ -705,6 +792,7 @@ export type Database = {
           campaign_id: string
           contact_id: string
           created_at: string
+          error_reason: string | null
           id: string
           scheduled_date: string
           sent_at: string | null
@@ -717,6 +805,7 @@ export type Database = {
           campaign_id: string
           contact_id: string
           created_at?: string
+          error_reason?: string | null
           id?: string
           scheduled_date?: string
           sent_at?: string | null
@@ -729,6 +818,7 @@ export type Database = {
           campaign_id?: string
           contact_id?: string
           created_at?: string
+          error_reason?: string | null
           id?: string
           scheduled_date?: string
           sent_at?: string | null
@@ -1053,6 +1143,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      linkedin_actions: {
+        Row: {
+          account_id: string | null
+          action_type: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          action_type: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          action_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       linkedin_posts: {
         Row: {
@@ -1603,10 +1717,13 @@ export type Database = {
           account_type: string
           ai_chat_criteria: Json | null
           ai_chat_lead_status: Json | null
+          business_context: Json | null
+          business_context_updated_at: string | null
           created_at: string
           credits: number
           current_organization_id: string | null
           daily_connections_limit: number
+          daily_engagement_limit: number | null
           daily_messages_limit: number
           default_spike_keywords: string[]
           engagement_spikes_enabled: boolean
@@ -1614,7 +1731,9 @@ export type Database = {
           free_trial_limit: number
           id: string
           last_seen_at: string | null
+          linkedin_cooldown_until: string | null
           linkedin_display_name: string | null
+          linkedin_ramp_started_at: string | null
           onboarding_complete: boolean
           referral_balance: number
           referral_code: string | null
@@ -1624,15 +1743,19 @@ export type Database = {
           unipile_account_id: string | null
           updated_at: string
           user_id: string
+          weekly_invites_limit: number | null
         }
         Insert: {
           account_type?: string
           ai_chat_criteria?: Json | null
           ai_chat_lead_status?: Json | null
+          business_context?: Json | null
+          business_context_updated_at?: string | null
           created_at?: string
           credits?: number
           current_organization_id?: string | null
           daily_connections_limit?: number
+          daily_engagement_limit?: number | null
           daily_messages_limit?: number
           default_spike_keywords?: string[]
           engagement_spikes_enabled?: boolean
@@ -1640,7 +1763,9 @@ export type Database = {
           free_trial_limit?: number
           id?: string
           last_seen_at?: string | null
+          linkedin_cooldown_until?: string | null
           linkedin_display_name?: string | null
+          linkedin_ramp_started_at?: string | null
           onboarding_complete?: boolean
           referral_balance?: number
           referral_code?: string | null
@@ -1650,15 +1775,19 @@ export type Database = {
           unipile_account_id?: string | null
           updated_at?: string
           user_id: string
+          weekly_invites_limit?: number | null
         }
         Update: {
           account_type?: string
           ai_chat_criteria?: Json | null
           ai_chat_lead_status?: Json | null
+          business_context?: Json | null
+          business_context_updated_at?: string | null
           created_at?: string
           credits?: number
           current_organization_id?: string | null
           daily_connections_limit?: number
+          daily_engagement_limit?: number | null
           daily_messages_limit?: number
           default_spike_keywords?: string[]
           engagement_spikes_enabled?: boolean
@@ -1666,7 +1795,9 @@ export type Database = {
           free_trial_limit?: number
           id?: string
           last_seen_at?: string | null
+          linkedin_cooldown_until?: string | null
           linkedin_display_name?: string | null
+          linkedin_ramp_started_at?: string | null
           onboarding_complete?: boolean
           referral_balance?: number
           referral_code?: string | null
@@ -1676,6 +1807,7 @@ export type Database = {
           unipile_account_id?: string | null
           updated_at?: string
           user_id?: string
+          weekly_invites_limit?: number | null
         }
         Relationships: [
           {
@@ -2606,12 +2738,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2635,11 +2767,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2660,11 +2792,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2685,11 +2817,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2702,11 +2834,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
