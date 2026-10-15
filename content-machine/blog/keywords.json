@@ -10,7 +10,8 @@
    "priority": 1,
    "status": "published",
    "slug": "trigify-alternatives",
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "gojiberry alternatives",
@@ -21,7 +22,8 @@
    "priority": 1,
    "status": "published",
    "slug": "gojiberry-alternatives",
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "joinvalley alternatives",
@@ -32,7 +34,8 @@
    "priority": 1,
    "status": "published",
    "slug": "joinvalley-alternatives",
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify vs gojiberry",
@@ -43,7 +46,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "phantombuster alternatives for linkedin",
@@ -54,7 +58,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "common room alternatives for startups",
@@ -65,7 +70,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "track competitor linkedin post engagers",
@@ -76,7 +82,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "scrape linkedin post likers and commenters",
@@ -87,7 +94,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "export competitor linkedin company page followers",
@@ -98,7 +106,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin buying signals",
@@ -109,7 +118,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin intent signals",
@@ -120,7 +130,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin keyword monitoring for leads",
@@ -131,7 +142,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin hashtag engagement leads",
@@ -142,7 +154,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "who viewed my competitor's linkedin post",
@@ -153,7 +166,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "how to find b2b leads on reddit",
@@ -164,7 +178,8 @@
    "priority": 1,
    "status": "published",
    "slug": "find-b2b-leads-on-reddit",
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "reddit keyword monitoring for leads",
@@ -175,7 +190,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "reddit search queries to find customers",
@@ -186,7 +202,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "best subreddits for b2b lead generation",
@@ -197,7 +214,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "x twitter buying signals for b2b",
@@ -208,7 +226,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "find customers on twitter x search operators",
@@ -219,7 +238,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "social listening for lead generation",
@@ -230,7 +250,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "buying signals examples",
@@ -241,7 +262,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "signal-based selling",
@@ -252,7 +274,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "signal-based outbound for small teams",
@@ -263,7 +286,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "intent signals vs intent data",
@@ -274,7 +298,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "what is a buying signal in sales",
@@ -285,7 +310,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "first-party vs third-party intent signals",
@@ -296,7 +322,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "intent data tools for small business",
@@ -307,7 +334,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "bombora alternatives for startups",
@@ -318,7 +346,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin intent data tools",
@@ -329,7 +358,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "ai sdr for linkedin",
@@ -340,7 +370,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "ai sdr for founders and small teams",
@@ -351,7 +382,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "ai sdr vs human sdr cost",
@@ -362,7 +394,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "best ai sdr tools",
@@ -373,7 +406,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin message templates for buying signals",
@@ -384,7 +418,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "what to say when a prospect likes a competitor's post",
@@ -395,7 +430,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin outreach reply rate benchmarks",
@@ -406,7 +442,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "signal-based outreach statistics",
@@ -417,7 +454,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "cold outreach alternatives",
@@ -428,7 +466,8 @@
    "priority": 3,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "we booked 14 demos in 14 days with our own product",
@@ -439,7 +478,8 @@
    "priority": 2,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify shutting down",
@@ -450,7 +490,8 @@
    "priority": 0,
    "status": "published",
    "slug": "trigify-shutting-down",
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify export data before shutdown",
@@ -461,7 +502,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify hubspot acquisition",
@@ -472,7 +514,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "migrate from trigify to intentsly",
@@ -483,7 +526,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify vs intentsly",
@@ -494,7 +538,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "compare"
   },
   {
    "keyword": "trigify replacement for linkedin engagement tracking",
@@ -505,7 +550,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify alternative for social listening",
@@ -516,7 +562,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "rebuild trigify workflows in clay",
@@ -527,7 +574,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify alternative for smartlead and heyreach",
@@ -538,7 +586,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify api alternative",
@@ -549,7 +598,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "what happens to my trigify data",
@@ -560,7 +610,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "free trigify alternatives",
@@ -571,7 +622,8 @@
    "priority": 0,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify pricing and what replacements cost",
@@ -582,7 +634,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "linkedin profile monitoring tool",
@@ -593,7 +646,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify vs valley",
@@ -604,7 +658,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "trigify vs teamfluence",
@@ -615,7 +670,8 @@
    "priority": 1,
    "status": "queued",
    "slug": null,
-   "monthly_volume": null
+   "monthly_volume": null,
+   "section": "blog"
   },
   {
    "keyword": "life after trigify: signal-based selling playbook",
@@ -624,6 +680,559 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "blog"
+  },
+  {
+   "keyword": "how to find customers for b2b saas",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find b2b clients online",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find clients for a marketing agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a recruitment agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "lead generation for consultants",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find customers on linkedin",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find leads for a software company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find customers for a startup",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "b2b lead generation for small business",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find clients for a web design agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a saas company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find b2b customers on reddit",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "linkedin lead generation guide",
+   "section": "guides",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find decision makers on linkedin",
+   "section": "guides",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to build a b2b prospect list",
+   "section": "guides",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to write a linkedin outreach message",
+   "section": "guides",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to set up signal-based outbound",
+   "section": "guides",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to monitor competitors on linkedin",
+   "section": "guides",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to qualify leads before outreach",
+   "section": "guides",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to track hiring signals for sales",
+   "section": "guides",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to use linkedin search operators for prospecting",
+   "section": "guides",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "outbound sales process for startups",
+   "section": "guides",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find companies that just raised funding",
+   "section": "guides",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to personalize cold outreach at scale",
+   "section": "guides",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is intent data",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a buying signal",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is an ideal customer profile",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is an ai sdr",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is lead enrichment",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is social selling",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a trigger event in sales",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is lead scoring",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is outbound sales",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is signal-based selling",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a sales trigger",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is account-based prospecting",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs gojiberry",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs valley",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs common room",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs phantombuster",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs apollo",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs linkedin sales navigator",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs teamfluence",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs clay",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs 11x",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs heyreach",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
    "status": "queued",
    "slug": null,
    "monthly_volume": null

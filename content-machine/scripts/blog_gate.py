@@ -60,6 +60,9 @@ def check(path):
         return {"article": str(path), "pass": False, "fails": ["missing front matter: " + ", ".join(missing)], "warnings": []}
 
     kw, typ, slug = meta["primary_keyword"], meta["type"], meta["slug"]
+    section = meta.get("section", "blog")
+    if section not in c.get("sections", {"blog": "/blog"}):
+        fails.append(f"unknown section '{section}' (one of {', '.join(c.get('sections', {}))})")
     text = plain(body)
     n = len(words(text))
 
@@ -98,7 +101,7 @@ def check(path):
     density = 100.0 * exact * len(words(kw)) / max(n, 1)
     if density > c["max_keyword_density_pct"]:
         fails.append(f"keyword stuffing: exact phrase used {exact} times ({density:.1f}% of words)")
-    if typ in ("alternatives", "listicle", "comparison") and not re.search(r"^\|.+\|\s*\n\|[ :|-]+\|", body, re.M):
+    if typ in ("alternatives", "listicle", "comparison", "landing") and not re.search(r"^\|.+\|\s*\n\|[ :|-]+\|", body, re.M):
         fails.append(f"a {typ} article needs a comparison table")
 
     # --- FAQ
@@ -111,7 +114,8 @@ def check(path):
     links = re.findall(r"(?<!!)\[[^\]]+\]\(([^)\s]+)\)", body)
     site = c["site"].rstrip("/")
     allowed = set(json.loads((ROOT / "blog" / "site-pages.json").read_text())["pages"])
-    allowed |= {c["blog_path"]} | {f"{c['blog_path']}/{m.get('slug')}" for _, m in published()}
+    secs = c.get("sections", {"blog": c["blog_path"]})
+    allowed |= set(secs.values()) | {f"{secs.get(m.get('section', 'blog'), c['blog_path'])}/{m.get('slug')}" for _, m in published()}
     internal, external = [], []
     for u in links:
         if u.startswith("/") or u.startswith(site):

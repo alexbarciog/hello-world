@@ -5,7 +5,7 @@ import { StaticRouter } from "react-router-dom/server";
 import { AppProviders, AppContent } from "./App";
 
 export { caseStudies } from "./data/caseStudies";
-export { setBlogPrerenderData, buildPostJsonLd, toSummary } from "./lib/blog";
+export { setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } from "./lib/blog";
 export { BLOG_TITLE, BLOG_DESCRIPTION } from "./pages/Blog";
 
 export function render(url: string) {

@@ -14,8 +14,102 @@ export interface BlogFaq {
   answer: string;
 }
 
+export type Section = "blog" | "guides" | "learn" | "solutions" | "compare";
+
+export interface SectionMeta {
+  path: string;
+  label: string;
+  eyebrow: string;
+  heading: string;
+  intro: string;
+  title: string;
+  description: string;
+  schemaType: "BlogPosting" | "Article" | "TechArticle" | "WebPage";
+  priority: string;
+  notFound: string;
+}
+
+/** Public content sections. URL = /{section}/{slug}. Keep in sync with scripts/prerender.mjs. */
+export const SECTIONS: Record<Section, SectionMeta> = {
+  blog: {
+    path: "/blog",
+    label: "Blog",
+    eyebrow: "The Intentsly blog",
+    heading: "Find the buyers who are already looking.",
+    intro:
+      "Search queries, comparisons and templates for signal-based outbound on LinkedIn, Reddit and X, plus what we learn running Intentsly on ourselves.",
+    title: "Blog — Buying signals, outbound and AI SDR guides | Intentsly",
+    description:
+      "Practical guides to finding buyers from signals on LinkedIn, Reddit and X: search queries, comparisons, templates and what we learn running Intentsly on ourselves.",
+    schemaType: "BlogPosting",
+    priority: "0.7",
+    notFound: "Article not found.",
+  },
+  guides: {
+    path: "/guides",
+    label: "Guides",
+    eyebrow: "Guides",
+    heading: "Step-by-step guides to finding B2B customers.",
+    intro:
+      "Tested procedures with the exact searches, filters, messages and checks: how to find decision makers, build a prospect list, track buying signals and run outbound that gets replies.",
+    title: "Guides — How to find B2B customers, step by step | Intentsly",
+    description:
+      "Step-by-step guides to finding B2B customers: LinkedIn prospecting, buying signals, prospect lists, outreach messages and outbound process, with exact steps and examples.",
+    schemaType: "Article",
+    priority: "0.8",
+    notFound: "Guide not found.",
+  },
+  learn: {
+    path: "/learn",
+    label: "Learn",
+    eyebrow: "Learn",
+    heading: "Signal-based selling, explained from the start.",
+    intro:
+      "Short, plain-English lessons on the ideas behind modern B2B prospecting: intent data, buying signals, ICPs, lead scoring, AI SDRs and the rest. Each lesson links to the next.",
+    title: "Learn — Intent data, buying signals and outbound basics | Intentsly",
+    description:
+      "Plain-English lessons on intent data, buying signals, ideal customer profiles, lead scoring, social selling and AI SDRs. Definitions, examples and what to do with each.",
+    schemaType: "TechArticle",
+    priority: "0.7",
+    notFound: "Lesson not found.",
+  },
+  solutions: {
+    path: "/solutions",
+    label: "Solutions",
+    eyebrow: "Solutions",
+    heading: "How to find customers for your kind of business.",
+    intro:
+      "Where your buyers show up, which signals say they are in-market, and how teams like yours turn those signals into booked meetings with Intentsly.",
+    title: "Solutions — Find customers for your B2B business | Intentsly",
+    description:
+      "How to find customers for B2B SaaS, agencies, consultants, recruiters and services businesses: where buyers appear, which signals matter and how Intentsly turns them into meetings.",
+    schemaType: "WebPage",
+    priority: "0.8",
+    notFound: "Page not found.",
+  },
+  compare: {
+    path: "/compare",
+    label: "Compare",
+    eyebrow: "Compare",
+    heading: "Intentsly compared, honestly.",
+    intro:
+      "Side-by-side comparisons of Intentsly with the tools people evaluate against it, including where each one is the better choice.",
+    title: "Compare — Intentsly vs other prospecting and signal tools",
+    description:
+      "Honest side-by-side comparisons of Intentsly with LinkedIn signal, intent data and outbound tools: features, limits, pricing sources and who each one suits.",
+    schemaType: "Article",
+    priority: "0.8",
+    notFound: "Comparison not found.",
+  },
+};
+
+export const SECTION_KEYS = Object.keys(SECTIONS) as Section[];
+
+export const isSection = (s: string | undefined): s is Section => Boolean(s) && s! in SECTIONS;
+
 export interface BlogPostSummary {
   slug: string;
+  section: Section;
   title: string;
   excerpt: string;
   cluster: string | null;
@@ -38,7 +132,7 @@ export interface BlogPost extends BlogPostSummary {
 export const SITE_URL = "https://intentsly.com";
 
 const SUMMARY_COLUMNS =
-  "slug,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name";
+  "slug,section,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name";
 const POST_COLUMNS = `${SUMMARY_COLUMNS},meta_title,meta_description,content_md,faq,author_title`;
 
 export const CLUSTER_LABELS: Record<string, string> = {
@@ -50,6 +144,12 @@ export const CLUSTER_LABELS: Record<string, string> = {
   "ai-sdr": "AI SDR",
   templates: "Templates",
   data: "Data",
+  trigify: "Trigify",
+  "find-customers": "Finding customers",
+  "linkedin-prospecting": "LinkedIn prospecting",
+  outbound: "Outbound",
+  fundamentals: "Fundamentals",
+  "intentsly-vs": "Intentsly vs",
 };
 
 export const clusterLabel = (cluster: string | null) =>
@@ -58,8 +158,14 @@ export const clusterLabel = (cluster: string | null) =>
 export const formatDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }) : "";
 
+export const postPath = (p: Pick<BlogPostSummary, "slug" | "section">) =>
+  `${SECTIONS[p.section ?? "blog"].path}/${p.slug}`;
+
+export const postUrl = (p: Pick<BlogPostSummary, "slug" | "section">) => `${SITE_URL}${postPath(p)}`;
+
 export const toSummary = (p: BlogPost): BlogPostSummary => ({
   slug: p.slug,
+  section: p.section ?? "blog",
   title: p.title,
   excerpt: p.excerpt,
   cluster: p.cluster,
@@ -95,11 +201,12 @@ export const extractHeadings = (markdown: string) => {
 };
 
 export function buildPostJsonLd(post: BlogPost) {
-  const url = `${SITE_URL}/blog/${post.slug}`;
+  const section = SECTIONS[post.section ?? "blog"];
+  const url = postUrl(post);
   const graph: Record<string, unknown>[] = [
     {
       "@context": "https://schema.org",
-      "@type": "BlogPosting",
+      "@type": section.schemaType,
       headline: post.title,
       description: post.meta_description,
       datePublished: post.published_at,
@@ -121,7 +228,7 @@ export function buildPostJsonLd(post: BlogPost) {
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
-        { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
+        { "@type": "ListItem", position: 2, name: section.label, item: `${SITE_URL}${section.path}` },
         { "@type": "ListItem", position: 3, name: post.title, item: url },
       ],
     },
@@ -155,11 +262,12 @@ declare global {
 
 let prerenderData: { posts: BlogPostSummary[]; bySlug: Record<string, BlogPost> } | null = null;
 
-/** Build-time only (scripts/prerender.mjs). */
+/** Build-time only (scripts/prerender.mjs). Rows without a section are blog posts. */
 export function setBlogPrerenderData(posts: BlogPost[]) {
+  const normalised = posts.map((p) => ({ ...p, section: p.section ?? "blog" }));
   prerenderData = {
-    posts: posts.map(toSummary),
-    bySlug: Object.fromEntries(posts.map((p) => [p.slug, p])),
+    posts: normalised.map(toSummary),
+    bySlug: Object.fromEntries(normalised.map((p) => [p.slug, p])),
   };
 }
 
@@ -176,9 +284,9 @@ async function fetchPosts(): Promise<BlogPostSummary[]> {
     .select(SUMMARY_COLUMNS)
     .eq("status", "published")
     .order("published_at", { ascending: false })
-    .limit(200);
+    .limit(1000);
   if (error) throw error;
-  return (data ?? []) as unknown as BlogPostSummary[];
+  return ((data ?? []) as unknown as BlogPostSummary[]).map((p) => ({ ...p, section: p.section ?? "blog" }));
 }
 
 async function fetchPost(slug: string): Promise<BlogPost | null> {
@@ -188,7 +296,8 @@ async function fetchPost(slug: string): Promise<BlogPost | null> {
     .eq("slug", slug)
     .maybeSingle();
   if (error) throw error;
-  return (data as unknown as BlogPost) ?? null;
+  const post = (data as unknown as BlogPost) ?? null;
+  return post ? { ...post, section: post.section ?? "blog" } : null;
 }
 
 export function useBlogPosts() {

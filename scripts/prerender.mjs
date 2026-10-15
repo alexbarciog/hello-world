@@ -170,7 +170,7 @@ async function loadBlogPosts() {
     return [];
   }
   const columns =
-    "slug,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name,meta_title,meta_description,content_md,faq,author_title";
+    "slug,section,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name,meta_title,meta_description,content_md,faq,author_title";
   try {
     const res = await fetch(
       `${url}/rest/v1/blog_posts?status=eq.published&select=${columns}&order=published_at.desc&limit=1000`,
@@ -225,14 +225,22 @@ function buildPage(template, route, appHtml) {
 }
 
 installDomGlobals();
-const { render, caseStudies, setBlogPrerenderData, buildPostJsonLd, toSummary, BLOG_TITLE, BLOG_DESCRIPTION } = await import(
+const { render, caseStudies, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
 );
 
-const blogPosts = await loadBlogPosts();
+const blogPosts = (await loadBlogPosts()).map((p) => ({ ...p, section: p.section || "blog" }));
 setBlogPrerenderData(blogPosts);
 const blogSummaries = blogPosts.map(toSummary);
-console.log(`blog: ${blogPosts.length} published article(s)`);
+for (const key of Object.keys(SECTIONS)) {
+  console.log(`${key}: ${blogPosts.filter((p) => p.section === key).length} published page(s)`);
+}
+const newestIn = (section) =>
+  blogPosts
+    .filter((p) => p.section === section)
+    .map((post) => (post.updated_at || post.published_at || "").slice(0, 10))
+    .sort()
+    .pop() || undefined;
 
 const routes = [
   ...ROUTES,
@@ -243,20 +251,17 @@ const routes = [
     image: s.ogImage?.startsWith("/") ? `${SITE}${s.ogImage}` : s.ogImage,
     priority: "0.6",
   })),
-  {
-    path: "/blog",
-    title: BLOG_TITLE,
-    description: BLOG_DESCRIPTION,
+  ...Object.entries(SECTIONS).map(([key, s]) => ({
+    path: s.path,
+    title: s.title,
+    description: s.description,
     priority: "0.8",
-    changefreq: "weekly",
+    changefreq: "daily",
     blogData: { posts: blogSummaries },
-    lastmod: blogPosts
-      .map((post) => (post.updated_at || post.published_at || "").slice(0, 10))
-      .sort()
-      .pop() || undefined,
-  },
+    lastmod: newestIn(key),
+  })),
   ...blogPosts.map((post) => ({
-    path: `/blog/${post.slug}`,
+    path: postPath(post),
     title: `${post.meta_title} | Intentsly`,
     description: post.meta_description,
     image: post.cover_image_url || undefined,
@@ -264,7 +269,7 @@ const routes = [
     jsonLd: buildPostJsonLd(post),
     blogData: { post, posts: blogSummaries },
     lastmod: (post.updated_at || post.published_at || "").slice(0, 10) || undefined,
-    priority: "0.7",
+    priority: SECTIONS[post.section].priority,
   })),
 ];
 

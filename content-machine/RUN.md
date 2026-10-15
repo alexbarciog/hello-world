@@ -1,6 +1,14 @@
-# Daily blog run
+# Content run
 
-One run = at most one published article. Work from this folder (`content-machine/`).
+One run = at most one published page. Work from this folder (`content-machine/`).
+
+## Sections
+The site has five content sections, all published through this same pipeline and the same gate:
+`blog` (/blog), `guides` (/guides), `learn` (/learn), `solutions` (/solutions), `compare`
+(/compare). Each scheduled task works ONE section: run `python3 scripts/blog_next.py --section
+<name>` (no flag = blog). For any section other than blog, read `skills/page-write.md` after
+`skills/blog-write.md`; it sets the page shape and the required `section:` and `type:` fields.
+The daily and weekly caps in `config/blog.json` are shared across all sections and all tasks.
 
 ## Rules that cannot be bent
 - Facts about Intentsly come only from `brain/wiki/proof.md` rows marked `verified` and `brain/stories/`.
@@ -20,7 +28,7 @@ follow its date logic and linking rules. That cluster is time-critical (Trigify 
 2026); it sorts first because its keywords have priority 0.
 
 ## Steps
-1. `python3 scripts/blog_next.py` gives the next keyword. If a draft without a `blocked:` line is
+1. `python3 scripts/blog_next.py --section <name>` gives the next keyword. If a draft without a `blocked:` line is
    already in `blog/drafts/`, resume that one instead.
 2. Follow `skills/blog-write.md` for that keyword, all six stages. Set `checked_on` to today.
 3. `python3 scripts/blog_cloud.py sql blog/drafts/<slug>.md`. Fix what it reports and re-run, twice at
@@ -35,5 +43,5 @@ follow its date logic and linking rules. That cluster is time-critical (Trigify 
 7. Write `blog/last-run.md`: date, keyword, title, live URL, or why nothing was published, plus
    anything the founder should supply (numbers, stories, confirmations).
 8. Commit everything under `content-machine/` to `main` with the message
-   `blog: publish <slug>` and push. The push redeploys the site, which turns the new article into
+   `<section>: publish <slug>` and push. The push redeploys the site, which turns the new article into
    static HTML and adds it to the sitemap.

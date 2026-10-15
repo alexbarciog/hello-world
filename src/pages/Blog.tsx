@@ -4,26 +4,28 @@ import { ArrowUpRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { applySeo } from "@/lib/seo";
-import { SITE_URL, clusterLabel, formatDate, useBlogPosts } from "@/lib/blog";
+import { SECTIONS, SITE_URL, clusterLabel, formatDate, postPath, useBlogPosts, type Section } from "@/lib/blog";
 
-export const BLOG_TITLE = "Blog — Buying signals, outbound and AI SDR guides | Intentsly";
-export const BLOG_DESCRIPTION =
-  "Practical guides to finding buyers from signals on LinkedIn, Reddit and X: search queries, comparisons, templates and what we learn running Intentsly on ourselves.";
+export const BLOG_TITLE = SECTIONS.blog.title;
+export const BLOG_DESCRIPTION = SECTIONS.blog.description;
 
-const Blog = () => {
-  const { data: posts, isLoading, isError } = useBlogPosts();
+/** Index page for one content section (/blog, /guides, /learn, /solutions, /compare). */
+const Blog = ({ section = "blog" }: { section?: Section }) => {
+  const meta = SECTIONS[section];
+  const { data: allPosts, isLoading, isError } = useBlogPosts();
+  const posts = useMemo(() => (allPosts ?? []).filter((p) => (p.section ?? "blog") === section), [allPosts, section]);
   const [cluster, setCluster] = useState<string | null>(null);
 
   useEffect(
-    () => applySeo({ title: BLOG_TITLE, description: BLOG_DESCRIPTION, url: `${SITE_URL}/blog` }),
-    [],
+    () => applySeo({ title: meta.title, description: meta.description, url: `${SITE_URL}${meta.path}` }),
+    [meta],
   );
 
   const clusters = useMemo(
-    () => Array.from(new Set((posts ?? []).map((p) => p.cluster).filter((c): c is string => Boolean(c)))),
+    () => Array.from(new Set(posts.map((p) => p.cluster).filter((c): c is string => Boolean(c)))),
     [posts],
   );
-  const visible = (posts ?? []).filter((p) => !cluster || p.cluster === cluster);
+  const visible = posts.filter((p) => !cluster || p.cluster === cluster);
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -31,14 +33,11 @@ const Blog = () => {
 
       <section className="px-2 md:px-4 pt-20">
         <div className="bg-[#f4f4f5] rounded-[32px] px-8 py-14 md:px-16 md:py-20">
-          <div className="text-xs uppercase tracking-[0.2em] text-foreground/50 mb-6">The Intentsly blog</div>
+          <div className="text-xs uppercase tracking-[0.2em] text-foreground/50 mb-6">{meta.eyebrow}</div>
           <h1 className="text-4xl md:text-6xl font-medium leading-[1.05] tracking-tight text-foreground max-w-3xl">
-            Find the buyers who are <span className="text-foreground/40">already looking.</span>
+            {meta.heading}
           </h1>
-          <p className="text-base md:text-lg text-foreground/60 max-w-2xl leading-relaxed mt-6">
-            Search queries, comparisons and templates for signal-based outbound on LinkedIn, Reddit and X, plus
-            what we learn running Intentsly on ourselves.
-          </p>
+          <p className="text-base md:text-lg text-foreground/60 max-w-2xl leading-relaxed mt-6">{meta.intro}</p>
         </div>
       </section>
 
@@ -76,7 +75,7 @@ const Blog = () => {
             {visible.map((post) => (
               <Link
                 key={post.slug}
-                to={`/blog/${post.slug}`}
+                to={postPath(post)}
                 className="group bg-[#f9f9fa] rounded-[24px] p-7 md:p-8 flex flex-col justify-between min-h-[240px] transition-colors hover:bg-[#f4f4f5]"
               >
                 <div>
@@ -103,7 +102,7 @@ const Blog = () => {
         {!isLoading && visible.length === 0 && (
           <div className="bg-[#f9f9fa] rounded-[24px] p-10 md:p-14 max-w-2xl">
             <h2 className="text-2xl font-medium tracking-tight text-foreground mb-3">
-              {isError ? "Articles could not be loaded." : "The first articles are being written."}
+              {isError ? "This page could not be loaded." : "The first pages are being written."}
             </h2>
             <p className="text-foreground/60 leading-relaxed mb-6">
               {isError

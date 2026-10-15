@@ -246,6 +246,14 @@ export const AppContent = () => (
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/guides" element={<Blog section="guides" />} />
+          <Route path="/guides/:slug" element={<BlogPost section="guides" />} />
+          <Route path="/learn" element={<Blog section="learn" />} />
+          <Route path="/learn/:slug" element={<BlogPost section="learn" />} />
+          <Route path="/solutions" element={<Blog section="solutions" />} />
+          <Route path="/solutions/:slug" element={<BlogPost section="solutions" />} />
+          <Route path="/compare" element={<Blog section="compare" />} />
+          <Route path="/compare/:slug" element={<BlogPost section="compare" />} />
           <Route path="/linkedin-profile-analyzer" element={<LinkedInProfileAnalyzer />} />
           <Route path="/profile-report" element={<ProfileReport />} />
           <Route path="/try-ai" element={<PublicAiChat />} />

@@ -98,6 +98,10 @@ const Footer = () => {
               <a href="/#pricing" className="text-sm text-white/60 hover:text-white transition-colors">Pricing</a>
               <a href="/#testimonials" className="text-sm text-white/60 hover:text-white transition-colors">Testimonials</a>
               <a href="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</a>
+              <a href="/guides" className="text-sm text-white/60 hover:text-white transition-colors">Guides</a>
+              <a href="/learn" className="text-sm text-white/60 hover:text-white transition-colors">Learn</a>
+              <a href="/solutions" className="text-sm text-white/60 hover:text-white transition-colors">Solutions</a>
+              <a href="/compare" className="text-sm text-white/60 hover:text-white transition-colors">Compare</a>
             </div>
             <div className="flex flex-col gap-4">
               <a href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy</a>

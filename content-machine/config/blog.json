@@ -4,7 +4,7 @@
   "author": "Alex Barciog",
   "author_title": "CEO & Founder, Intentsly",
   "autopublish": true,
-  "max_posts_per_week": 21,
+  "max_posts_per_week": 45,
   "publish_days": [
     "Mon",
     "Tue",
@@ -23,7 +23,10 @@
     "pillar": 2200,
     "data": 1000,
     "templates": 1200,
-    "explainer": 1100
+    "explainer": 1100,
+    "guide": 1500,
+    "lesson": 1000,
+    "landing": 1100
   },
   "max_words": 4000,
   "meta_title_max": 60,
@@ -36,5 +39,12 @@
   "min_external_links": 2,
   "min_faq": 3,
   "competitor_fact_max_age_days": 30,
-  "max_posts_per_day": 3
+  "max_posts_per_day": 7,
+  "sections": {
+    "blog": "/blog",
+    "guides": "/guides",
+    "learn": "/learn",
+    "solutions": "/solutions",
+    "compare": "/compare"
+  }
 }

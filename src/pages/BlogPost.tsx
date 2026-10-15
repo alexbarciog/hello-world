@@ -7,14 +7,18 @@ import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { applySeo } from "@/lib/seo";
 import {
+  SECTIONS,
   SITE_URL,
   buildPostJsonLd,
   clusterLabel,
   extractHeadings,
   formatDate,
   headingId,
+  postPath,
+  postUrl,
   useBlogPost,
   useBlogPosts,
+  type Section,
 } from "@/lib/blog";
 
 const textOf = (node: ReactNode): string =>
@@ -87,17 +91,21 @@ const Shell = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-const BlogPost = () => {
+/** One content page. `section` is the route's section; a slug published in another section 404s here. */
+const BlogPost = ({ section = "blog" }: { section?: Section }) => {
   const { slug } = useParams<{ slug: string }>();
-  const { data: post, isLoading, isError } = useBlogPost(slug);
+  const meta = SECTIONS[section];
+  const { data: found, isLoading, isError } = useBlogPost(slug);
+  const post = found && (found.section ?? "blog") === section ? found : null;
   const { data: allPosts } = useBlogPosts();
 
   const headings = useMemo(() => (post ? extractHeadings(post.content_md) : []), [post]);
   const related = useMemo(() => {
     if (!post || !allPosts) return [];
     const others = allPosts.filter((p) => p.slug !== post.slug);
-    const same = others.filter((p) => p.cluster === post.cluster);
-    return [...same, ...others.filter((p) => p.cluster !== post.cluster)].slice(0, 3);
+    const score = (p: (typeof others)[number]) =>
+      (p.section === post.section ? 2 : 0) + (p.cluster === post.cluster ? 1 : 0);
+    return [...others].sort((a, b) => score(b) - score(a)).slice(0, 3);
   }, [post, allPosts]);
 
   useEffect(() => {
@@ -105,7 +113,7 @@ const BlogPost = () => {
       return applySeo({
         title: `${post.meta_title} | Intentsly`,
         description: post.meta_description,
-        url: `${SITE_URL}/blog/${post.slug}`,
+        url: postUrl(post),
         type: "article",
         image: post.cover_image_url ?? undefined,
         jsonLd: buildPostJsonLd(post),
@@ -113,13 +121,13 @@ const BlogPost = () => {
     }
     if (!isLoading) {
       return applySeo({
-        title: "Article not found | Intentsly",
-        description: "This article does not exist or is no longer published.",
-        url: `${SITE_URL}/blog`,
+        title: `${meta.notFound} | Intentsly`,
+        description: "This page does not exist or is no longer published.",
+        url: `${SITE_URL}${meta.path}`,
         noindex: true,
       });
     }
-  }, [post, isLoading]);
+  }, [post, isLoading, meta]);
 
   if (isLoading) {
     return (
@@ -143,14 +151,14 @@ const BlogPost = () => {
       <Shell>
         <div className="max-w-3xl mx-auto px-6 pt-36 pb-32">
           <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-foreground mb-4">
-            {isError ? "This article could not be loaded." : "Article not found."}
+            {isError ? "This page could not be loaded." : meta.notFound}
           </h1>
           <p className="text-lg text-foreground/60 mb-8">
             {isError ? "Refresh the page to try again." : "It may have been moved or unpublished."}
           </p>
-          <Link to="/blog" className="btn-cta">
+          <Link to={meta.path} className="btn-cta">
             <ArrowLeft className="w-4 h-4" />
-            All articles
+            All {meta.label.toLowerCase()} pages
           </Link>
         </div>
       </Shell>
@@ -166,9 +174,9 @@ const BlogPost = () => {
           <div className="bg-[#f4f4f5] rounded-[32px] px-8 py-12 md:px-16 md:py-16">
             <div className="max-w-3xl mx-auto">
               <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-foreground/50 mb-8">
-                <Link to="/blog" className="inline-flex items-center gap-1.5 hover:text-foreground">
+                <Link to={meta.path} className="inline-flex items-center gap-1.5 hover:text-foreground">
                   <ArrowLeft className="w-4 h-4" />
-                  Blog
+                  {meta.label}
                 </Link>
                 <span aria-hidden="true">/</span>
                 <span>{clusterLabel(post.cluster)}</span>
@@ -223,7 +231,7 @@ const BlogPost = () => {
             {related.map((r) => (
               <Link
                 key={r.slug}
-                to={`/blog/${r.slug}`}
+                to={postPath(r)}
                 className="group bg-[#f9f9fa] rounded-[24px] p-7 flex flex-col justify-between min-h-[180px] transition-colors hover:bg-[#f4f4f5]"
               >
                 <div>

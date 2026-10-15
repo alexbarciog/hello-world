@@ -10,7 +10,7 @@ import sys, json, re, pathlib, secrets
 from common import ROOT, parse_draft, today
 import blog_gate
 
-COLS = ["slug", "title", "meta_title", "meta_description", "excerpt", "content_md", "primary_keyword", "cluster",
+COLS = ["slug", "section", "title", "meta_title", "meta_description", "excerpt", "content_md", "primary_keyword", "cluster",
         "article_type", "author_name", "author_title"]
 
 
@@ -40,7 +40,8 @@ def main():
             if k["keyword"].lower() == meta["primary_keyword"].lower():
                 k["status"], k["slug"] = "published", meta["slug"]
         kp.write_text(json.dumps(data, indent=1))
-        print(json.dumps({"marked": True, "url": f"{c['site']}{c['blog_path']}/{meta['slug']}"})); return
+        sec = c.get("sections", {}).get(meta.get("section", "blog"), c["blog_path"])
+        print(json.dumps({"marked": True, "url": f"{c['site']}{sec}/{meta['slug']}"})); return
 
     report = blog_gate.check(path)
     if report["pass"] and published_today() >= c.get("max_posts_per_day", 1):
@@ -53,7 +54,7 @@ def main():
     parts = re.split(r"^## +FAQ.*$", body, flags=re.M | re.I)
     faq = [{"question": q.strip(), "answer": a.strip()} for q, a in
            re.findall(r"^### +(.+?)\s*\n(.*?)(?=^### |\Z)", parts[1] if len(parts) > 1 else "", re.M | re.S)]
-    row = {"slug": meta["slug"], "title": meta["title"], "meta_title": meta["meta_title"],
+    row = {"slug": meta["slug"], "section": meta.get("section", "blog"), "title": meta["title"], "meta_title": meta["meta_title"],
            "meta_description": meta["meta_description"], "excerpt": meta["excerpt"], "content_md": body,
            "primary_keyword": meta["primary_keyword"], "cluster": meta["cluster"], "article_type": meta["type"],
            "author_name": c["author"], "author_title": c["author_title"]}
