@@ -126,9 +126,10 @@ function installDomGlobals() {
   const dom = new JSDOM("<!doctype html><html><head></head><body></body></html>", { url: `${SITE}/` });
   const w = dom.window;
   const g = globalThis;
-  for (const k of ["window", "document", "localStorage", "sessionStorage", "HTMLElement", "Element", "Node", "getComputedStyle", "MutationObserver", "DOMParser"]) {
+  for (const k of ["window", "document", "location", "history", "localStorage", "sessionStorage", "HTMLElement", "Element", "Node", "getComputedStyle", "MutationObserver", "DOMParser"]) {
     g[k] = w[k];
   }
+  g.self = w;
   Object.defineProperty(g, "navigator", { value: w.navigator, configurable: true });
   const mql = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
   g.matchMedia = w.matchMedia = mql;
