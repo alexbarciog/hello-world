@@ -3,7 +3,11 @@
 - Keyword: trigify vs intentsly (section compare, cluster trigify, comparison, priority 0)
 - Title: Trigify vs Intentsly: Which Trigify Jobs Does It Cover?
 - Live URL: https://intentsly.com/compare/trigify-vs-intentsly
-- Status: published (Supabase row returned `status = published`, published_at 2026-10-15 21:08 UTC)
+- Status: published (Supabase row returned `status = published`, published_at 2026-10-15 21:08 UTC).
+  Pushed to main at 21:10 UTC. Live check not possible this run: the page fetch tool required a
+  one-time approval for intentsly.com that nobody was present to grant, so whether the page and the
+  sitemap entry are live was not confirmed. Check https://intentsly.com/compare/trigify-vs-intentsly
+  and https://intentsly.com/sitemap.xml by hand.
 - Gate: passed on the first run, 2,351 words (comparison range 1,300 to 2,500), 8 H2s, 6 FAQ entries,
   internal links to /blog/trigify-alternatives (hub, "Trigify alternatives" anchor in the first 300 words),
   /blog/trigify-shutting-down, /features/linkedin-signals, /features/ai-sdr, /signal-playbook, /pricing,
