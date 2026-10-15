@@ -11,7 +11,7 @@ meta_description: Find B2B leads on Reddit with copy-paste search queries, a fiv
 excerpt: Copy-paste Reddit search queries, a five-question rule for deciding which posts are worth your time, and what to say once you find a buyer.
 original_angle: Unlike the pages ranking now, this one gives the exact Reddit search syntax from Reddit's own documentation, a scoring rule you can apply in a minute, and a clear line between what Reddit allows and what gets accounts banned.
 first_hand: brain/stories/dogfooding-14-demos.md
-checked_on: 2026-10-12
+checked_on: 2026-10-15
 ---
 To find B2B leads on Reddit, search for posts where someone describes a problem you solve or asks which tool to buy, check that the author fits your customer profile, then reply with a useful answer in the thread or contact them where they do business. The work is in three parts: queries that surface buying posts, a quick rule for scoring them, and outreach that does not break Reddit's rules.
 
@@ -99,13 +99,13 @@ Done by hand, the routine is about 30 minutes, three times a week: run your save
 
 The manual routine fails in one way: timing. A recommendation thread gets its useful answers in the first day, and a search run on Friday misses what was posted on Tuesday. That is the case for monitoring. A tool watches your keywords continuously and tells you when a matching post appears, so you answer while the author is still reading replies.
 
-This is what [Intentsly's Reddit and X signals](/features/reddit-x-signals) do: you give it the keywords and competitors, and it surfaces matching posts and scores the authors against your ideal customer. We built it because signal-first outreach worked for us on LinkedIn. When we ran our own product on LinkedIn, contacting only founders who had just complained about cold outreach, we booked 14 qualified demos in 14 days at 4x the reply rate of our earlier cold campaigns ([the full case study is here](/case-studies)). Those numbers are from LinkedIn, not Reddit, and we would not promise the same on Reddit. The principle carries over: someone who described the problem this week replies more often than someone on a purchased list.
+The Reddit side of this stays manual: Intentsly does not monitor Reddit, but it covers the LinkedIn side of the same signals, people posting about the problem you solve or engaging with competitor and industry-leader posts, through its [LinkedIn signals](/features/linkedin-signals).
 
 Where a tool is the wrong choice: if you sell to a niche that posts a few times a month, saved searches and a calendar reminder are enough.
 
 ## What to do next
 
-Save the five queries above with your own category and competitors, run them sorted by New, and score the first twenty results. If fewer than three score four or higher, your buyers are probably in different subreddits; change the communities before you change the queries. For the signals worth chasing on LinkedIn and X as well, [the Buying Signal Playbook](/signal-playbook) is free.
+Save the five queries above with your own category and competitors, run them sorted by New, and score the first twenty results. If fewer than three score four or higher, your buyers are probably in different subreddits; change the communities before you change the queries. For the signals worth chasing on LinkedIn and X as well, [the Buying Signal Playbook](/signal-playbook) is free, and [our lesson on what intent data is](/learn/what-is-intent-data) explains where Reddit posts sit among the other signal types.
 
 ## FAQ
 
