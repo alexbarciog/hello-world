@@ -54,8 +54,8 @@ Landing pages for "how to find customers for <business type>". Commercial intent
 must both rank and convert, in that order.
 
 Shape: the answer paragraph (where this business type's buyers show up and the fastest way to
-reach them), then "Where <business type> customers show up" with the specific LinkedIn, Reddit
-and X signals for that audience as a table (Signal | Where | What it means | What to do),
+reach them), then "Where <business type> customers show up" with the specific LinkedIn signals for that
+audience as a table (Reddit and X may appear as manual channels, never as Intentsly features) (Signal | Where | What it means | What to do),
 then "A week-one plan" as numbered steps the reader can run by hand, then "How Intentsly does
 this for you" mapping each signal to the product feature from `brain/wiki/product.md` (only
 features listed there), then "What this looks like in practice" using only `brain/stories/`

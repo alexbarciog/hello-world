@@ -42,9 +42,9 @@ keyword-listening jobs they used Trigify for.
   in the first paragraph.
 - Where Intentsly is the right replacement, say exactly which Trigify job it covers (post
   engagement on competitor and leader content, keyword posts, competitor page followers, hashtag
-  engagement, Reddit and X monitoring, outreach by the AI SDR) and which it does not (anything
-  not listed in `brain/wiki/product.md`: do not claim YouTube, podcast or Hacker News sources,
-  CRM-native nodes, or an API unless the founder has added them to product.md).
+  engagement, outreach by the AI SDR on LinkedIn) and which it does not (anything not listed in
+  `brain/wiki/product.md`: Reddit, X, YouTube, podcast or Hacker News sources are NOT covered;
+  HubSpot is the only CRM integration; export exists but name no format).
 - Name at least two other options for each job and state where each is the better choice.
 - Copy-paste assets win: an export checklist, a field-mapping table, a message template for
   re-engaging people who engaged with competitor posts, a search-query rewrite table.

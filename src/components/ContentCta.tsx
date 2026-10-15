@@ -18,7 +18,7 @@ const COPY: Record<Section, Copy> = {
   blog: {
     eyebrow: "Do this automatically",
     heading: "See who is showing buying signals for what you sell, today.",
-    body: "Intentsly watches LinkedIn, Reddit and X for people engaging with competitors, asking for recommendations or describing the problem you solve, then scores them against your ideal customer and starts the conversation.",
+    body: "Intentsly watches LinkedIn for people engaging with competitor posts, writing about the problem you solve or following your competitors' pages, then scores them against your ideal customer and starts the conversation.",
     primary: { label: "Try it free, no signup", to: "/try-ai" },
     secondary: { label: "See LinkedIn signals", to: "/features/linkedin-signals" },
   },
@@ -32,14 +32,14 @@ const COPY: Record<Section, Copy> = {
   learn: {
     eyebrow: "See it in practice",
     heading: "Watch these signals show up for your own market.",
-    body: "Tell Intentsly who you sell to and it will show you real people on LinkedIn, Reddit and X who are signalling intent right now. It takes under a minute and needs no account.",
+    body: "Tell Intentsly who you sell to and it will show you real people on LinkedIn who are signalling intent right now. It takes under a minute and needs no account.",
     primary: { label: "Find buyers in seconds", to: "/try-ai" },
     secondary: { label: "Get the Buying Signal Playbook", to: "/signal-playbook" },
   },
   solutions: {
     eyebrow: "Built for this",
     heading: "Turn these signals into booked meetings without a sales team.",
-    body: "Intentsly monitors the signals on this page for your market, scores every prospect against your ideal customer, writes the outreach and follows up until a meeting is booked. Live in five minutes, no sales call.",
+    body: "Intentsly monitors the signals on this page for your market, scores every prospect against your ideal customer, holds the LinkedIn conversation for you and sends your calendar link so the meeting gets booked. Live in five minutes, 7-day free trial.",
     primary: { label: "Start for free", to: "/register" },
     secondary: { label: "See pricing", to: "/pricing" },
   },

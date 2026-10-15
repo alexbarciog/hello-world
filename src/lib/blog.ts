@@ -37,10 +37,10 @@ export const SECTIONS: Record<Section, SectionMeta> = {
     eyebrow: "The Intentsly blog",
     heading: "Find the buyers who are already looking.",
     intro:
-      "Search queries, comparisons and templates for signal-based outbound on LinkedIn, Reddit and X, plus what we learn running Intentsly on ourselves.",
+      "Search queries, comparisons and templates for signal-based outbound on LinkedIn, plus what we learn running Intentsly on ourselves.",
     title: "Blog — Buying signals, outbound and AI SDR guides | Intentsly",
     description:
-      "Practical guides to finding buyers from signals on LinkedIn, Reddit and X: search queries, comparisons, templates and what we learn running Intentsly on ourselves.",
+      "Practical guides to finding buyers from LinkedIn buying signals: search queries, comparisons, templates and what we learn running Intentsly on ourselves.",
     schemaType: "BlogPosting",
     priority: "0.7",
     notFound: "Article not found.",
@@ -79,7 +79,7 @@ export const SECTIONS: Record<Section, SectionMeta> = {
     eyebrow: "Solutions",
     heading: "How to find customers for your kind of business.",
     intro:
-      "Where your buyers show up, which signals say they are in-market, and how teams like yours turn those signals into booked meetings with Intentsly.",
+      "Where your buyers show up on LinkedIn, which signals say they are in-market, and how teams like yours turn those signals into booked meetings with Intentsly.",
     title: "Solutions — Find customers for your B2B business | Intentsly",
     description:
       "How to find customers for B2B SaaS, agencies, consultants, recruiters and services businesses: where buyers appear, which signals matter and how Intentsly turns them into meetings.",
