@@ -448,8 +448,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "trigify-shutting-down",
    "monthly_volume": null
   },
   {
