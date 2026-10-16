@@ -1,60 +1,58 @@
-# Last run: 2026-10-16 (solutions section)
+# Last run: 2026-10-16 (Trigify campaign task, blog section)
 
-- Keyword: how to find customers for b2b saas (cluster find-customers, landing, commercial, priority 1;
-  returned by `blog_next.py --section solutions`).
-- Title: How to Find Customers for B2B SaaS: The Signal Method
-- Live URL: https://intentsly.com/solutions/find-customers-for-b2b-saas
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-16 12:53 UTC).
-  Live check: see the bottom of this file, filled in after the push.
-- Gate: first blog_gate run failed on three points (meta_description 161 chars, opening 95 words,
-  "21%" reply-rate figure flagged as unsourced); all three fixed in one pass, then `"ready": true`
-  with no warnings on the first blog_cloud.py run. 2,268 words as the gate counts them (two tables
-  and a six-entry FAQ included; body prose is around 1,600, so the page sits above the 2,000-word
-  landing range in page-write.md but inside config/blog.json's 1,100 to 4,000 for `landing`).
-  7 H2s, 6 FAQ entries, 8 internal links (/learn/what-is-intent-data, /blog/find-b2b-leads-on-reddit,
-  /guides/linkedin-lead-generation-guide, /features/linkedin-signals, /features/ai-sdr, /case-studies,
-  /try-ai, /signal-playbook), 3 external links, all opened this run. Caps: 4 pages had been
-  published today before this one (cap 7); the gate did not report the daily or weekly cap.
-- Database: the generated SQL was run twice. The first paste accidentally dropped the line
-  `article_type = excluded.article_type` from the ON CONFLICT clause (the INSERT path ran, so the
-  row was correct); the file was then run again verbatim, which upserted identical values and kept
-  the original published_at. No other statement was run.
-- 11 solutions keywords remain queued (90 queued overall), so no keywords were added.
+- Keyword: trigify alternative for social listening (cluster trigify, alternatives, commercial,
+  priority 0; returned by `blog_next.py` directly).
+- Title: Trigify Alternative for Social Listening: 5 Tools by Source
+- Live URL: https://intentsly.com/blog/trigify-alternative-for-social-listening
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-16 15:52 UTC).
+  The stored content_md was checked against the draft after the insert: same length (19,953 chars)
+  and same MD5. Live check: see the bottom of this file, filled in after the push.
+- Date logic: 16 October, so present tense, deadline first, export steps up front.
+- Gate: blog_gate failed once (opening paragraph 92 words, max 90); one sentence shortened, then
+  pass with no warnings. blog_cloud.py: `"ready": true`, 3,042 words as the gate counts them
+  (three tables and a six-entry FAQ included), 8 H2s, 7 internal links (/blog/trigify-alternatives
+  in the first 300 words with "Trigify alternatives" anchor, /blog/trigify-replacement-linkedin-
+  engagement-tracking, /blog/trigify-shutting-down, /blog/find-b2b-leads-on-reddit,
+  /blog/migrate-from-trigify-to-intentsly, /features/linkedin-signals, /try-ai), 18 external links,
+  all opened this run. The SQL file was run once, unchanged.
+- Caps: 5 pages had been published today before this one (config cap 7, set by Alex in commit
+  dd32a76 on 15 October; the task prompt still says 3/day and 21/week, which no longer matches
+  config/blog.json). The gate did not report a cap. This article is the 6th of the day.
+- Hub "Related" list: `blog/published/trigify-alternatives.md` has no "Related" list, so the
+  campaign brief's step to add a link there was skipped, as the brief says to do.
+- 11 trigify keywords remain queued (89 queued overall), so no keywords were added.
 
 ## What the research turned up
-- Page one is vendor list articles (SocialBu, Close, Expandi, SaaSworthy, inblog) and community
-  threads (Indie Hackers). All say "use LinkedIn"; none names which behaviours mark an in-market
-  SaaS buyer, none gives a daily plan, none states sending limits, and only Expandi carries
-  statistics, mostly third-party or its own report. Brief: blog/briefs/find-customers-for-b2b-saas.md.
-- External sources used: 6sense 2024 Buyer Experience Report press release on businesswire.com
-  (nearly 70% through the process before engaging sellers, 81% with a preferred vendor, buyers
-  initiate contact 80%+ of the time); Close's first-10-customers article (ask ten people in 24 hours);
-  the Indie Hackers "first 1, 10, 100 customers" thread (most-mentioned channels). A Gartner page
-  redirected to a generic insights page, so its 17% figure was not used.
-- Intentsly facts: product features from brain/wiki/product.md only; the 14 demos / 14 days / 4x
-  story from brain/stories and verified proof rows; "around 1,000 leads a month per agent" and
-  "2 to 4 meetings a week on average", attributed to Intentsly customers, October 2026, per
-  corrections.md. The 21% reply rate was cut because the gate does not read the
-  "verified: say ..." rows as verified. No price stated. Reddit and X described as manual channels.
+- Page one for the keyword is vendor-written alternatives lists: Octolens (ranks itself first,
+  the only one that splits the job), Overloop and Satellyte (no mention of the shutdown), Buska,
+  Teamfluence, ReactIn, HeyReach, OutX. None maps Trigify's eight Listening sources one by one, none
+  mentions that Trigify matched substrings with a 6/10 keyword cap, that enrichment never worked on
+  Reddit/X/YouTube posts, or that Clay's own social-listening Claybook uses Trigify as its LinkedIn
+  source. Brief: blog/briefs/trigify-alternative-for-social-listening.md.
+- trigify.io opened this run: it shows only the HubSpot notice (23 September 2026, access ends
+  11:59pm BST 22 October 2026 for most customers, no migration, export yourself, hugo@trigify.io,
+  subscriptions do not renew). No pricing or feature pages, so no Trigify price is stated as fact;
+  the $40/$199 figures are attributed to the Octolens and ReactIn pages with links.
+- Trigify help centre (trigifyio.featurebase.app, which is where help.trigify.io serves from):
+  supported platforms, Boolean queries, keyword matching, listening vs workflows, enrichment by
+  source, country/language filter, notifications, export routes. All linked in the article.
+- Vendor pages opened: octolens.com/pricing and /trigify-alternatives; buska.io, /pricing,
+  /platforms/reddit, /alternative-to/trigify; syften.com; clay.com/pricing,
+  university.clay.com/docs/plans-and-billing, the Clay social-listening Claybook.
+- Intentsly facts from brain/wiki/product.md only; the 14 demos in 14 days story labelled as one
+  campaign. No price, no reply-rate figure, no Reddit/X claims.
+- WebFetch needed a permission prompt for several URLs (trigify.io, help.trigify.io, syften.com,
+  clay.com/pricing) until the same URL appeared in a web search result; each was then opened. No
+  curl or other workaround was used.
 
 ## For the founder
-- proof.md rows 12 to 14 and 18 are marked "verified: <phrasing note>" rather than "verified", so
-  the gate rejects their percentages (21%). Changing those status cells to plain "verified" (and
-  moving the phrasing notes into the Claim column or corrections.md) would let the reply-rate figure
-  and the GrowthLab quote be used. This run did not edit proof.md.
-- A SaaS customer story (which competitor posts or keyword searches produced the leads, what the
-  first reply said, what was turned off) would make the "in practice" section specific to this
-  page rather than reusing the 14-demos story on every solutions page.
-- page-write.md sets 1,100 to 2,000 words for /solutions while config/blog.json allows up to 4,000;
-  confirm which range the solutions pages should follow. The required signal table and the
-  Intentsly mapping table alone are about 600 words as the gate counts them.
+- The task prompt's caps (3/day, 21/week) differ from config/blog.json (7/day, 45/week). If 3/21
+  is the intended limit, change config/blog.json; the gate reads config, not the prompt.
+- Six pages went out today across the blog, solutions and campaign tasks. If that is more than you
+  want, lower `max_posts_per_day`.
+- The hub article has no "Related" list; add one if you want campaign articles linked from it.
+- A real Trigify customer's export (one saved search with its AND/OR/NOT terms and the count it
+  returned) would let the rewrite table show a measured before/after instead of examples.
+- Confirm whether Intentsly's export has a named format (CSV?) so comparisons can state it.
 
-## Live check (13:01 UTC, about 5 minutes after the push)
-- https://intentsly.com/solutions/find-customers-for-b2b-saas renders the full article: H1, all 7 H2s,
-  both tables (6 and 7 rows), the 6-entry FAQ, plus the site's own "Your next step" and "Keep reading"
-  sections. Not a 404.
-- https://intentsly.com/solutions lists the page as its first (and only) card, dated 16 October 2026,
-  10-minute read.
-- https://intentsly.com/sitemap.xml could not be opened: the fetch tool requires the URL to come from
-  the user or a linked page, and nothing on the site links to the sitemap, so the permission request
-  went unanswered (same as earlier runs). Sitemap listing unconfirmed; the page itself is live.
+## Live check (after the push)
