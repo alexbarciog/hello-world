@@ -1,80 +1,90 @@
-# Last run: 2026-10-16 (guides section)
+# Last run: 2026-10-16 (Trigify campaign, blog section)
 
-- Keyword: linkedin lead generation guide (section guides, cluster linkedin-prospecting, guide, commercial, priority 1)
-- Title: LinkedIn Lead Generation Guide: Find Buyers Already Asking
-- Live URL: https://intentsly.com/guides/linkedin-lead-generation-guide
-- Status: published (Supabase row returned `status = published`, published_at 2026-10-16 07:35 UTC).
+- Keyword: trigify replacement for linkedin engagement tracking (cluster trigify, alternatives, commercial, priority 0; returned by blog_next.py)
+- Title: Trigify Replacement for LinkedIn Engagement Tracking: 7 Tools
+- Live URL: https://intentsly.com/blog/trigify-replacement-linkedin-engagement-tracking
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-16 10:39 UTC).
   Live check: see the section at the bottom, filled in after the push.
-- Gate: one fix (opening paragraph was 92 words, trimmed to under 90), then `"ready": true` with no
-  warnings. 2,655 words (guide min 1,500), 11 H2s, 6 FAQ entries, 5 internal links
-  (/learn/what-is-intent-data, /features/linkedin-signals, /blog/find-b2b-leads-on-reddit,
-  /signal-playbook, /try-ai), 4 external links (ligosocial.com Boolean search and advanced search
-  pages, overloop.com LinkedIn limits, joinvalley.co invitation limit), all opened this run.
-  Third article published today (daily cap 7).
-- Shape per skills/page-write.md "/guides": short answer, "What you need" table, Steps 1 to 6 as H2s
-  with strings, filters and templates in code blocks, worked example (Northwind Payroll, labelled
-  hypothetical, action counts only, no invented results), "Where this goes wrong" with three mistakes,
-  "What to do with the list", FAQ. Intentsly named once in the body (Step 3, where it replaces the
-  manual engager reading) and once in the closing CTA.
-- 11 guides keywords remain queued (92 queued overall), so no keywords were added.
+- Date logic: run on 16 October 2026, so present tense, deadline first ("Social Signals stop for most
+  customers at 11:59pm BST on 22 October 2026").
+- Gate: two fixes on the first blog_gate run (meta_description was 176 chars and lacked the keyword;
+  one "21%" reply-rate figure removed, see below), then `"ready": true` with no warnings on the first
+  blog_cloud.py run. 2,776 words (alternatives min 1,500), 8 H2s, 6 FAQ entries, 9 internal links
+  (/blog/trigify-alternatives in the first 300 words with "Trigify alternatives" anchor,
+  /blog/trigify-shutting-down, /blog/migrate-from-trigify-to-intentsly, /features/linkedin-signals,
+  /features/ai-sdr, /case-studies, /signal-playbook, /try-ai, /pricing), 22 external links, all opened
+  this run. Caps: daily cap 7 and weekly cap 45 in config/blog.json; the gate did not report either
+  as reached.
+- Hub "Related" list: blog/published/trigify-alternatives.md has no "Related" section, so the campaign
+  brief's step to add a one-line link there was skipped, as the brief allows. The new article links to
+  the hub instead.
+- 12 trigify keywords remain queued (91 queued overall), so no keywords were added.
 
 ## What the research turned up
-- Page one is vendor blogs (Snov, LinkedFusion, Expandi, Fuzzy, GigRadar), all shaped "optimise
-  profile, then prospect, then message, then automate". Only one of them gives a single Boolean
-  string; none gives Posts-tab search strings, none sources its statistics, none separates
-  LinkedIn-documented limits from community-reported ones, none has a worked example or a
-  "where this goes wrong" section. The brief is in blog/briefs/linkedin-lead-generation-guide.md.
-- linkedin.com/help pages are blocked to the fetch tool (robots), so LinkedIn's Boolean rules and
-  Posts-tab filters are cited through ligosocial.com, which quotes the help pages by number. The
-  copilotai.com result redirected to yokegtm.com and needed a one-time approval nobody was present
-  to grant, so it was not read.
-- Outside figures used, each with its link in the same paragraph: "around 100 invitations per
-  rolling seven days" (stated as community-reported, not LinkedIn-published), 300-character
-  connection note on desktop, 30,000 first-degree connection maximum, undisclosed monthly commercial
-  use limit, the restriction triggers list (all Overloop); people searches count toward the
-  commercial use limit while post searches are not on the list (LiGo); withdrawing invitations does
-  not restore weekly quota (Valley). No percentages from outside sources were used.
+- Page one for the keyword is vendor lists (Octolens, Clearcue, HeyReach, Valley, OutX, Teamfluence)
+  plus a Clay community thread. None isolates the engagement-tracking job, none says whether each
+  tool needs the user's LinkedIn session, none maps Trigify's own signal names to the replacement's
+  settings. The brief is in blog/briefs/trigify-replacement-linkedin-engagement-tracking.md.
+- trigify.io opened: the homepage carries the HubSpot announcement (23 September 2026; access until
+  11:59pm BST on 22 October 2026 for standard customers; no migration to HubSpot; monitoring, signal
+  collection, integrations and API stop with access; exports via existing options or hugo@trigify.io;
+  invoices, credits and refunds confirmed individually, no public refund policy). trigify.io/pricing
+  now shows the same announcement with no plan figures, so the article says the pricing page is gone
+  and attributes the conflicting price claims ($40 to $199 on Octolens and Valley, $149 to $549 on
+  Clearcue) to those pages.
+- help.trigify.io opened: What is Social Signals (16 signal types, six of them engagement), Set up
+  Social Signals monitoring (URL or CSV targets, daily/weekly/hourly cadence, 30-day lookback), limits
+  article (Starter 50 profiles and 2 signal types, Max 5,000 and 10, Enterprise unlimited), Social
+  Signals Trigger, Supported Platforms and Data, and the get-data-into-Clay/CRM guide. The help centre
+  itself shows no shutdown banner.
+- Competitor facts, each from the vendor's own site on 16 October 2026: Gojiberry (homepage and pricing
+  help article), Valley (product, pricing, and its post-engagers blog), Teamfluence (pricing and its
+  Trigify alternatives post), PhantomBuster (Post Commenters Export guide and plan-features support
+  article; phantombuster.com pages themselves need JavaScript and did not render), Clay (pricing,
+  LinkedIn Community integration page, university doc), Jungler (homepage and pricing). The Teamfluence
+  homepage and gojiberry.ai needed a second attempt (fetch tool asked for approval the first time).
+- The Reddit search for the keyword was rejected by the search proxy (HTTP 400), so no Reddit
+  questions were used; the FAQ comes from the ranking pages' FAQs and the Clay thread.
 
 ## Calls made without review
-- The guide opens with a search-first method rather than profile optimisation, on purpose, because
-  that is the gap in the ranking pages and it is how the 14-demo run worked.
-- Verified numbers used: 14 qualified demos in 14 days, 4x reply rate (labelled "our own run"),
-  12 signals to chase and 8 to ignore, 7-day trial, 30 messages and 30 connection requests a day with
-  15 recommended (phrased as "our own customers' sender accounts"). The ~1,000 leads per agent, 21%
-  reply rate and 2 to 4 meetings rows were not used because their status cell is not exactly
-  `verified`.
-- Intentsly described only per brain/wiki/product.md: competitor posts, keyword posts, hashtags,
-  company-page engagers, scoring against the customer profile, AI SDR sending LinkedIn notes and
-  messages inside the daily caps, /try-ai with no account. No price stated. No Reddit or X monitoring
-  claimed; the Reddit article is linked as a manual method.
-- "Sales Navigator adds company headcount, seniority and years in role" is stated from the ranking
-  pages' descriptions of its filters, not from LinkedIn's own page (blocked to the fetch tool).
-- Message templates use placeholders ("[a client you can name]") rather than an invented anecdote.
+- Angle: one job only (who engaged with which post), seven tools, three new comparison columns (what
+  it captures, needs your LinkedIn session, sends the message), a rebuild table from Trigify's six
+  engagement signal names, and a message template. Intentsly listed first with its own "wrong choice
+  if" (raw feed into Clay, more than 2 senders, non-HubSpot CRM, non-LinkedIn sources).
+- Verified numbers used: 14 qualified demos in 14 days, 4x reply rate (labelled one campaign, ours),
+  12 signals to chase and 8 to ignore, 7-day trial, 2 sender accounts, 30 messages and 30 connection
+  requests a day with 15 recommended. The 21% reply rate, ~1,000 leads per agent and 2 to 4 meetings
+  rows were NOT used: their status cell in proof.md is "verified: ..." rather than exactly `verified`,
+  so the gate rejects them (it flagged 21% on the first run and the sentence was removed).
+- Teamfluence's "needs your LinkedIn session" and "sends the message" cells say "not stated on the
+  pages we opened" / "not checked", because today's pages did not state them; no guess was made.
+- Jungler is described as the only tool whose site says it needs no login or cookie; that is Jungler's
+  claim, attributed, not verified by us.
+- PhantomBuster's likers export is mentioned only as "its store also lists a likers export, whose page
+  did not render for us".
+- No Intentsly price. No Reddit/X monitoring claimed. Email sending by the AI SDR not claimed.
+- Cluster for the hub article is `competitor` in its front matter, not `trigify`; the brief treats it
+  as the hub regardless and this article links to it as required.
 
 ## For the founder
-- A real example of a Posts-tab string you run for Intentsly's own prospecting, with one anonymised
-  post it surfaced and what the first message said, would replace the hypothetical Northwind example
-  with first-hand material. That is the single biggest upgrade available for this page.
-- The menu names in the app for adding competitor sources, keyword posts and hashtags would let Step 3
-  name the exact clicks instead of describing the feature.
-- proof.md: the ~1,000 leads per agent, 21% reply rate and 2 to 4 meetings rows still need their
-  status cell to read exactly `verified` to be usable; the 21% figure would strengthen the reply-rate
-  FAQ in this guide.
-- Confirm whether LinkedIn's "Sort by" label in the Posts filter is "Latest" so the guide can name the
-  exact label; it currently says "newest first".
-- Next guides keywords in the queue: how to find decision makers on linkedin, how to build a b2b
-  prospect list, how to write a linkedin outreach message, how to set up signal-based outbound,
-  how to monitor competitors on linkedin, how to qualify leads before outreach, how to track hiring
-  signals for sales (note: hiring signals are not an Intentsly feature per product.md, so that guide
-  will be manual-only), how to use linkedin search operators for prospecting, outbound sales process
-  for startups, how to find companies that just raised funding, how to personalize cold outreach at
-  scale.
+- proof.md: change the status cell of the 21% reply rate, ~1,000 leads per agent and 2 to 4 meetings
+  rows to exactly `verified` (move the phrasing guidance into the Claim column) if you want those
+  numbers usable. The 21% figure would have strengthened this article's Intentsly section.
+- The exact menu names in the app for adding a competitor profile, a company page, a keyword or a
+  hashtag as a source would let the rebuild table name the clicks instead of "add as a source".
+- Confirm whether Intentsly exposes a monitoring cadence setting (the article says to check); if it
+  monitors continuously, say so and the next campaign article can state it.
+- A real example of a message the AI SDR sent to someone who engaged with a competitor's post (anonymised)
+  would replace the hand-written template with first-hand material.
+- Approve intentsly.com, trigify.io, gojiberry.ai, teamfluence.com, phantombuster.com and clay.com for
+  the fetch tool once in a session where the request appears; each needed an approval that nobody was
+  present to grant and cost a retry via search.
+- Next trigify keywords in the queue (12): trigify alternative for social listening, rebuild trigify
+  workflows in clay, trigify alternative for smartlead and heyreach, trigify api alternative, what
+  happens to my trigify data (check overlap with /blog/trigify-shutting-down before writing), free
+  trigify alternatives, then priority 1: trigify vs gojiberry, trigify pricing and what replacements
+  cost, linkedin profile monitoring tool, trigify vs valley, trigify vs teamfluence, life after
+  trigify: signal-based selling playbook.
 
 ## Live check (after the push)
-- Pushed to main at 07:36 UTC (commit 226f394). At 07:41 UTC the fetch tool asked for a one-time
-  approval for intentsly.com (both the sitemap and the guide URL) that nobody was present to grant,
-  the same block as the previous run, so the page could not be confirmed live or in the sitemap from
-  here. The repository has no GitHub Actions deploy to inspect either. Check by hand:
-  https://intentsly.com/guides/linkedin-lead-generation-guide and https://intentsly.com/sitemap.xml.
-- Founder: approving intentsly.com once for the fetch tool, in a session where the request appears,
-  would let future runs confirm the live page themselves.
+- Filled in below after the push.
