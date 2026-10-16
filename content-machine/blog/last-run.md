@@ -56,3 +56,11 @@
 - Confirm whether Intentsly's export has a named format (CSV?) so comparisons can state it.
 
 ## Live check (after the push)
+- Push at 15:53 UTC; checked at 15:58 UTC.
+- https://intentsly.com/blog/trigify-alternative-for-social-listening is live: H1 "Trigify
+  Alternative for Social Listening: 5 Tools by Source", title tag from meta_title, all 8 H2s and the
+  FAQ render, plus the site's next-step and keep-reading blocks.
+- https://intentsly.com/blog lists it first.
+- https://intentsly.com/sitemap.xml could not be opened from this run: WebFetch raised a permission
+  prompt for that URL that nobody was present to answer (the article URL only opened after the blog
+  index linked to it). Sitemap listing is unconfirmed, as in the 16 October morning run.
