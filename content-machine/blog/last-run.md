@@ -55,4 +55,15 @@
   your scoring uses a different weighting, say so and the table can carry the real one.
 
 ## Live check (after the push)
-- Pending: filled in about 4 minutes after the push.
+- Push at 18:23 UTC. At 18:27 and 18:35 UTC the prerendered /learn index still listed only the
+  intent-data lesson (the Cloudflare build had not finished). At 18:41 UTC it listed both lessons.
+- https://intentsly.com/learn/what-is-a-buying-signal is live: H1 "What Is a Buying Signal?
+  Definition, Examples and a Test", title tag from meta_title, all 8 H2s, both tables and the 4-entry
+  FAQ render, plus the site's next-step, keep-reading and CTA blocks.
+- https://intentsly.com/learn lists it first.
+- https://intentsly.com/sitemap.xml could not be opened from this run: WebFetch raised a permission
+  prompt for that URL that nobody was present to answer, the same as the two previous runs. The
+  sitemap is written by scripts/prerender.mjs from the same route list as the prerendered pages, and
+  the prerendered /learn index includes the page, so it is very likely listed, but that is inferred,
+  not confirmed. Alex: opening the sitemap once in a chat where this task runs (or pasting the URL
+  into the task prompt verbatim without a placeholder) would let future runs confirm it.
