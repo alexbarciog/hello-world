@@ -500,7 +500,7 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
+   "status": "skipped",
    "slug": null,
    "monthly_volume": null,
    "section": "blog"
@@ -512,7 +512,7 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
+   "status": "skipped",
    "slug": null,
    "monthly_volume": null,
    "section": "blog"
@@ -524,8 +524,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "migrate-from-trigify-to-intentsly",
    "monthly_volume": null,
    "section": "blog"
   },
