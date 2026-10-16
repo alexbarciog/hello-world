@@ -49,5 +49,12 @@
   confirm which range the solutions pages should follow. The required signal table and the
   Intentsly mapping table alone are about 600 words as the gate counts them.
 
-## Live check
-(filled in below after the push)
+## Live check (13:01 UTC, about 5 minutes after the push)
+- https://intentsly.com/solutions/find-customers-for-b2b-saas renders the full article: H1, all 7 H2s,
+  both tables (6 and 7 rows), the 6-entry FAQ, plus the site's own "Your next step" and "Keep reading"
+  sections. Not a 404.
+- https://intentsly.com/solutions lists the page as its first (and only) card, dated 16 October 2026,
+  10-minute read.
+- https://intentsly.com/sitemap.xml could not be opened: the fetch tool requires the URL to come from
+  the user or a linked page, and nothing on the site links to the sitemap, so the permission request
+  went unanswered (same as earlier runs). Sitemap listing unconfirmed; the page itself is live.
