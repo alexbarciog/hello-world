@@ -70,5 +70,11 @@
   for startups, how to find companies that just raised funding, how to personalize cold outreach at
   scale.
 
-## Live check (filled in after the push)
-- Pending at the time of the commit; see the run report.
+## Live check (after the push)
+- Pushed to main at 07:36 UTC (commit 226f394). At 07:41 UTC the fetch tool asked for a one-time
+  approval for intentsly.com (both the sitemap and the guide URL) that nobody was present to grant,
+  the same block as the previous run, so the page could not be confirmed live or in the sitemap from
+  here. The repository has no GitHub Actions deploy to inspect either. Check by hand:
+  https://intentsly.com/guides/linkedin-lead-generation-guide and https://intentsly.com/sitemap.xml.
+- Founder: approving intentsly.com once for the fetch tool, in a session where the request appears,
+  would let future runs confirm the live page themselves.
