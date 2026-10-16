@@ -87,4 +87,14 @@
   trigify: signal-based selling playbook.
 
 ## Live check (after the push)
-- Filled in below after the push.
+- Pushed to main at 10:42 UTC (commit b533dd6). The first two pushes were rejected as "non-fast-forward"
+  even though the remote tip was the commit's parent; `git -c push.negotiate=false push origin
+  HEAD:refs/heads/main` went through. The global gitconfig in this environment sets push.negotiate=true,
+  which seems not to work through the proxy; worth knowing for the morning task if it hits the same.
+- At 10:47 UTC the fetch tool asked for a one-time approval for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/blog/trigify-replacement-linkedin-engagement-tracking that nobody was present to
+  grant, the same block as the previous two runs. The homepage (found via search) could be read, and
+  /blog returned the homepage shell with no article list, so the page could not be confirmed live or in
+  the sitemap from here. The database row is published; check by hand:
+  https://intentsly.com/blog/trigify-replacement-linkedin-engagement-tracking and
+  https://intentsly.com/sitemap.xml.
