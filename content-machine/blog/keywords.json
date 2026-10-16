@@ -993,8 +993,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-buying-signal",
    "monthly_volume": null
   },
   {
