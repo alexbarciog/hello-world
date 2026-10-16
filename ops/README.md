@@ -11,6 +11,7 @@ three scheduled Claude tasks. Everything is deployed already; this folder docume
 | `supabase/functions/ops-support-mail` | Mirrors the info@intentsly.com SpaceMail inbox (IMAP) into `support_messages`; `send` replies from the same mailbox (SMTP, copy saved to Sent). | pg_cron `ops-support-mail-sync`, every 10 min |
 | `supabase/functions/ops-metrics` | Read-only snapshot: Stripe MRR and subscriptions, signups, agent runs, meetings, content pages, post and support counts. | called by the weekly review |
 | Task "Intentsly support desk (drafts)" | Triages new mail, ignores noise, writes reply drafts into `support_messages.draft_reply`, pushes a summary. Sends nothing. | 08:07–22:07 every 2 h |
+| Task "Intentsly LinkedIn week prep" | Every Sunday: takes next week's posts from the library (status `draft`), checks text and numbers against `proof.md`, writes image prompts, releases them to the image worker, waits until every image is made and opens, then reports the week. | Sundays 17:47 |
 | Task "Intentsly LinkedIn desk" | Checks what posted, retries temporary failures once, warns when the queue runs low. | daily 20:41 |
 | Task "Intentsly weekly CEO review" | Metrics vs last week, plan stage, budget cap vs costs, 5 researched growth opportunities; Google Doc + push. | Mondays 07:52 |
 
@@ -28,7 +29,12 @@ All times Europe/Bucharest.
 - `OPENAI_API_KEY` — images. Optional: `OPENAI_IMAGE_MODEL`, `OPENAI_IMAGE_SIZE` (default 1024x1024), `OPENAI_IMAGE_QUALITY` (default medium).
 - `SPACEMAIL_USER` (info@intentsly.com) and `SPACEMAIL_PASSWORD`.
 
-## Queue a LinkedIn post
+## LinkedIn post library
+All planned posts live in `linkedin_posts` as status `draft` with their `scheduled_for` slot. Nothing
+happens to drafts until the Sunday week-prep task releases that week's posts. Image look is set in
+`ops_config.image_style`.
+
+## Queue a LinkedIn post by hand
 ```sql
 insert into public.linkedin_posts (user_id, content, generated_image_prompt, status, scheduled_for)
 values ((select value::uuid from public.ops_config where key = 'owner_user_id'),
