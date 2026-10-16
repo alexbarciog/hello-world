@@ -837,8 +837,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "linkedin-lead-generation-guide",
    "monthly_volume": null
   },
   {
