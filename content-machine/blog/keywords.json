@@ -693,8 +693,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-customers-for-b2b-saas",
    "monthly_volume": null
   },
   {
