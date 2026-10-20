@@ -66,4 +66,16 @@
   heyreach" next; both need a confirmed answer on Intentsly export formats and any API.
 
 ## Live check (after the push)
-- Filled in below after the push.
+- Push at 10:34 UTC (commit a7a7128; the first push went to a stale local `main` because the clone was
+  on a detached HEAD, so the commit was pushed as `HEAD:main` and the local branch moved onto it).
+  Checked at 10:39 UTC.
+- https://intentsly.com/blog/rebuild-trigify-workflows-in-clay is live: H1 "Rebuild Trigify Workflows
+  in Clay Before 22 October: 6 Steps", title tag from meta_title, byline Alex Barciog with 13-minute
+  read time, both named H2s present, both tables in the source, 5 FAQ entries.
+- https://intentsly.com/blog lists it first, above the social listening article.
+- https://intentsly.com/sitemap.xml could not be opened from this run: as in the previous runs, WebFetch
+  asked for approval for that URL (no page or search result links to it) and nobody was present to
+  answer. The prerendered /blog index includes the page and the sitemap is built from the same route
+  list, so it is very likely listed, but that is inferred, not confirmed. Alex: a footer or robots.txt
+  link to /sitemap.xml, or opening the sitemap once in a chat where this task runs, would let future
+  runs confirm it.
