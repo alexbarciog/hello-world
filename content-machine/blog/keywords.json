@@ -1125,8 +1125,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-gojiberry",
    "monthly_volume": null
   },
   {

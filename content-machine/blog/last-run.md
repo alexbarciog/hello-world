@@ -1,66 +1,62 @@
-# Last run: 2026-10-20 (Learn task, learn section)
+# Last run: 2026-10-21 (Compare task, compare section)
 
-- Keyword: what is an ideal customer profile (cluster fundamentals, lesson, informational, priority 1,
-  medium; returned by `blog_next.py --section learn`, no draft was waiting). No PAUSE file.
-- Title: What Is an Ideal Customer Profile? Definition and Worksheet
-- Live URL: https://intentsly.com/learn/what-is-an-ideal-customer-profile
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-20 18:26 UTC).
-  The SQL file was run once, unchanged. Live check: bottom of this file, filled in after the push.
-- Gate: first run failed on two items (meta_description 171 chars; opening paragraph 92 words). Fixed
-  by shortening both; second run passed. Trimmed further to stay near the lesson range: final 1,802
-  words (lesson min 1,000; the skill's 1,800 target is met within rounding, table cells included),
-  8 H2s, 5 FAQ entries, 6 internal links (/learn, /learn/what-is-a-buying-signal,
-  /learn/what-is-intent-data, /guides/find-decision-makers-on-linkedin, /features/linkedin-signals,
-  /signal-playbook), 4 external links, all opened this run. blog_cloud.py: `"ready": true`, no warnings.
-- Caps: 4 articles were published earlier today (config max_posts_per_day 7, max_posts_per_week 45); no
-  cap reported.
-- Queue: 9 learn keywords remain queued (83 overall), so no new keywords were added (threshold is
-  fewer than 5). Next learn keyword: "what is an ai sdr" (priority 1), then the priority-2 set
-  (sales trigger, trigger event, account-based prospecting, lead enrichment, lead scoring, outbound
-  sales, signal-based selling, social selling).
+- Keyword: intentsly vs gojiberry (cluster intentsly-vs, comparison, commercial, priority 1, medium;
+  returned by `blog_next.py --section compare`, no draft was waiting). No PAUSE file.
+- Title: Intentsly vs Gojiberry: Which Signal Tool Should You Pick?
+- Live URL: https://intentsly.com/compare/intentsly-vs-gojiberry
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-20 21:06 UTC,
+  which is 00:06 on 21 October in Europe/Bucharest). The SQL file was run once, unchanged. Live check
+  at the bottom of this file, filled in after the push.
+- Gate: first run failed on two items (meta_description 166 chars; opening paragraph 91 words). Fixed by
+  shortening both; second run passed. Final 2,301 words (comparison range 1,300 to 2,500; min 1,300),
+  8 H2s, 6 FAQ entries, 6 internal links (/blog/gojiberry-alternatives, /try-ai, /features/ai-sdr,
+  /features/linkedin-signals, /pricing, /compare), 11 external links, all to gojiberry.ai or
+  help.gojiberry.ai and all opened this run. blog_cloud.py: `"ready": true`, no warnings.
+- Caps: 5 articles were published on 20 October (Bucharest); this one counts for 21 October. No cap reported.
+- Queue: 9 compare keywords remain queued (next: intentsly vs valley, then common room, phantombuster,
+  apollo, linkedin sales navigator, teamfluence, clay, 11x, heyreach). Above the threshold of 5, so no
+  new keywords were added.
+- Note on the Supabase connector: the session reported it as failed to connect at startup
+  (ERR_PROXY_TUNNEL), but `execute_sql` worked when called. Recorded in case it recurs.
 
 ## What the research turned up
-- Page one is vendor glossaries and blogs (Hunter, Cognism, Clearbit, Close, Shopify, Miro, Adobe).
-  All open with a definition, then why it matters, ICP vs buyer persona, 4 to 5 build steps, a
-  template or FAQ. None separates fit (ICP) from timing (signals), none has a disqualifier column,
-  and their statistics are mostly uncited vendor figures. Brief: blog/briefs/what-is-an-ideal-customer-profile.md.
-- Outside numbers used, all from primary sources opened today: Ehrenberg-Bass Institute page on the
-  95:5 rule (5% of B2B buyers in market at any time); Gartner 7 May 2025 release (632 buyers, Aug to
-  Sep 2024, buying groups five to 16 people across up to four functions); Forrester 21 January 2026
-  release (13 internal stakeholders, nine external influencers). Clearbit linked for the one-sentence
-  ICP format. The Gartner 9 March 2026 release used in the buying-signal lesson could not be reopened
-  (WebFetch asked for approval with nobody present), so it was not cited.
-- Angle taken: ICP as the fit filter, buying signals as the timing filter; a five-row worksheet with a
-  disqualifier row and a labelled hypothetical agency example; a three-way table (ICP vs persona vs
-  signal); four ways a profile misleads; a rule for one profile vs two.
-- Intentsly facts used: scoring against the ICP and LinkedIn signal types from brain/wiki/product.md;
-  the 14-demos launch story (narrow profile: founders complaining about cold-outreach burnout); the
-  playbook's "twelve signals, eight to ignore". No price, no reply-rate percentages.
+- The exact phrase "intentsly vs gojiberry" has no competing page; the results are goji berry fruit
+  pages. Page one for "<tool> vs Gojiberry" is vendor comparison pages (BeReach 6 Oct 2026, ReactIn
+  24 Sep 2026, Sbl.so 24 Aug 2026, plus Factors, Vendo, ConnectSafely, Reachy, Salesforge, Scrap.io by
+  title). All rank their own tool first; none is a LinkedIn signal tool comparing like for like.
+  Brief: blog/briefs/intentsly-vs-gojiberry.md.
+- Gojiberry facts come only from its own site opened this run: gojiberry.ai/#pricing (Pro $99/month,
+  Custom for teams of 3+, integrations HubSpot/Pipedrive/Attio/API/MCP, free trial "Live in 5
+  minutes"), gojiberry.ai blog (two agents, two LinkedIn seats, 200 credits, 1,800 contacted
+  prospects, no credit card), and help centre articles on pricing (add-ons $59/$29/$99/$25), agents,
+  campaigns, replies ("Nothing is ever sent automatically"), inbox, LinkedIn safety (no numeric
+  limits in text), API and HubSpot. The founder's earlier run could not open gojiberry.ai; this run
+  reached it through a link on a gojiberry.ai blog page.
+- Left out: gojiberry.ai/integrations describes call summaries and Google Meet, which contradicts the
+  help centre and looks like an older product page. Gojiberry languages and trial length are not
+  stated on its pages, and the page says so instead of guessing.
+- Angle taken: like-for-like map of the same five jobs; the real difference is reply handling
+  (Gojiberry's AI drafts and the user sends; Intentsly's AI SDR holds the conversation and sends the
+  calendar link). Six listed cases where Gojiberry is the better choice (email, Pipedrive/Attio, more
+  senders, approval control, lookalikes/visitors/voice, API). Decision rule and /try-ai as the test.
+- Intentsly facts used: product.md (LinkedIn-only signals, scoring, verified emails, export, HubSpot/
+  Cal.com/Google Calendar/LinkedIn, AI SDR LinkedIn-only, 2 senders, 30/30/15, four languages, 7-day
+  trial, self-serve). Numbers only from proof.md verified rows and the 14-demos story. No price.
+  The 21% reply rate and 2 to 4 meetings figures were not used (the gate reads only rows whose status
+  is exactly `verified`).
 
 ## What the founder should supply
-- A sentence or two on how Intentsly's own ICP is defined inside the product (which fields the scoring
-  uses), so the lesson's worksheet can mirror the product's fields exactly in a future revision.
-- A real customer example of a profile that was wrong and got rewritten (what changed, what happened to
-  reply rates); the lesson currently uses only a labelled hypothetical and our own launch story.
-- Same as the previous run: decide whether proof.md rows marked `verified: say ...` should be split
-  so the gate accepts the 21% reply rate and 2 to 4 meetings figures.
-- For the next keyword ("what is an ai sdr"): confirm which AI SDR limits may be stated (product.md
-  already lists LinkedIn-only sending, 2 accounts, 30/30/15), and whether a customer conversation
-  excerpt can be quoted.
+- Whether Intentsly offers a public API or CSV import; the page says "an API is not among its listed
+  integrations" and that lists are not imported. If either exists, the "How to switch" section and the
+  at-a-glance table should be updated.
+- Whether Intentsly has a stated position on running other LinkedIn automation on the same account
+  (the page only quotes Gojiberry's warning and Intentsly's caps).
+- Any customer who moved from Gojiberry to Intentsly, with what changed, so the page can carry a real
+  switching example instead of only the launch story.
+- Same as earlier runs: decide whether proof.md rows marked `verified: say ...` should be split so the
+  gate accepts the 21% reply rate and 2 to 4 meetings figures.
+- For the next keyword ("intentsly vs valley"): nothing specific, joinvalley.co/pricing was reachable in
+  the 14 October run.
 
 ## Live check (after push)
-- Push at 18:27 UTC (commit db8280f to main). Checked at 18:32 UTC, about four and a half minutes later.
-- LIVE: https://intentsly.com/learn/what-is-an-ideal-customer-profile renders as an article with the
-  right H1, all 8 H2s, the five-question FAQ, and the links to /learn/what-is-a-buying-signal and
-  /signal-playbook. https://intentsly.com/learn lists it first, above the two earlier lessons.
-- Sitemap: NOT CONFIRMED. https://intentsly.com/sitemap.xml could not be opened from this run (WebFetch
-  requires the URL to appear on a page opened first, and no page on the site links to the sitemap;
-  the homepage footer has no sitemap or robots link). Same limitation as the previous run. A footer
-  link to /sitemap.xml would let future runs confirm sitemap entries.
-- Side observation for the previous (blog) run: the database row for
-  trigify-alternative-for-smartlead-and-heyreach is `published` (15:30 UTC), but at 18:33 UTC
-  https://intentsly.com/blog still shows "Rebuild Trigify Workflows in Clay" (10:33 UTC) as the newest
-  post and does not list the Smartlead/HeyReach article, three hours after its push. The learn page
-  from this run appeared within five minutes, so the deploy pipeline works; the blog index may be cached
-  or built from a limited query. Alex: worth opening /blog/trigify-alternative-for-smartlead-and-heyreach
-  directly and checking the blog index cache.
+- Filled in below after the push.
