@@ -60,4 +60,20 @@
   not, that article has to say so and point elsewhere.
 
 ## Live check (after push)
-- Filled in below once the deploy finished.
+- Push at 15:32 UTC (commit 7ff4a6a, pushed as `HEAD:main`; the first `git push origin main` was rejected
+  because the shallow clone is on a detached HEAD, same as the previous run). No GitHub Actions workflow
+  runs exist on the repo, so the deploy is external and its status is not visible from here.
+- The database row is confirmed: `select` on public.blog_posts returns status published, section blog,
+  published_at 2026-10-20 15:30:57 UTC, word_count 2658.
+- Checked https://intentsly.com/blog at 15:37, 15:45, 15:52 and 15:58 UTC (the last two with a cache-busting
+  query string): the index still shows "Rebuild Trigify Workflows in Clay" (10:33 UTC) as the newest post
+  and does not list trigify-alternative-for-smartlead-and-heyreach. The previous runs saw their pages
+  within five minutes of the push, so 26 minutes without the page suggests the redeploy did not start, is
+  queued, or failed. NOT CONFIRMED LIVE at the time of writing.
+- https://intentsly.com/blog/trigify-alternative-for-smartlead-and-heyreach and
+  https://intentsly.com/sitemap.xml could not be opened directly: WebFetch asked for approval for both URLs
+  (no page or search result links to them yet) and nobody was present to answer. Once the blog index
+  lists the article, the next run can open it from there.
+- Alex: please check the hosting dashboard for a failed or stuck build on commit 7ff4a6a. If the build is
+  fine and only the cache is stale, the page will appear on its own; nothing in the database or the repo
+  needs redoing. A footer or robots.txt link to /sitemap.xml would let future runs confirm sitemap entries.
