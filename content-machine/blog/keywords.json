@@ -572,8 +572,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "rebuild-trigify-workflows-in-clay",
    "monthly_volume": null,
    "section": "blog"
   },
