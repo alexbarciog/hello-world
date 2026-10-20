@@ -58,4 +58,15 @@
   (permission prompt or empty response); the 6sense report page itself opened and is what the article cites.
 
 ## Live check (after the push)
-(filled in below once the site has redeployed)
+- Push at 12:59 UTC (commit 1a428ac, pushed as `HEAD:main`). Checked at 13:04 UTC.
+- https://intentsly.com/solutions/find-b2b-clients-online is live: H1 "How to Find B2B Clients Online:
+  Signals Before Lists", title tag from meta_title, byline Alex Barciog with 11-minute read time, all
+  six named H2s present plus the site's own "Your next step" section, three tables in the source,
+  5 FAQ entries.
+- https://intentsly.com/solutions lists it first, above the B2B SaaS page.
+- https://intentsly.com/sitemap.xml could not be opened from this run: as in the previous runs, WebFetch
+  asked for approval for that URL (no page or search result links to it, and the homepage footer has no
+  sitemap link) and nobody was present to answer. The prerendered /solutions index includes the page and
+  the sitemap is built from the same route list, so it is very likely listed, but that is inferred, not
+  confirmed. Alex: a footer or robots.txt link to /sitemap.xml, or opening the sitemap once in a chat
+  where this task runs, would let future runs confirm it.
