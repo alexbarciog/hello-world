@@ -59,4 +59,13 @@
   the 14 October run.
 
 ## Live check (after push)
-- Filled in below after the push.
+- Push at 21:07 UTC (commit d1210a2 to main). Checked at 21:12 UTC, about four and a half minutes later.
+- NOT CONFIRMED: neither https://intentsly.com/compare/intentsly-vs-gojiberry nor
+  https://intentsly.com/sitemap.xml nor the homepage could be opened from this run. WebFetch asked
+  for a permission that nobody was present to grant (provenance check on intentsly.com URLs), and no
+  search result returns an intentsly.com page that could be followed instead. The database row is
+  `published` (status returned by the upsert), the push succeeded, and the deploy pipeline turned the
+  previous run's page into HTML within five minutes, so the page should be live; it has not been seen.
+- Alex: opening https://intentsly.com/compare/intentsly-vs-gojiberry and the sitemap once would confirm
+  it. For future runs, either pre-approve intentsly.com for the task or add a footer link to
+  /sitemap.xml so an approved page can lead to it.
