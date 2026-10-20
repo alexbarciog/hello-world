@@ -1005,8 +1005,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-an-ideal-customer-profile",
    "monthly_volume": null
   },
   {
