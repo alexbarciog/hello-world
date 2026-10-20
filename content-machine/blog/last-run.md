@@ -49,4 +49,18 @@
   excerpt can be quoted.
 
 ## Live check (after push)
-- Filled in about four minutes after the push.
+- Push at 18:27 UTC (commit db8280f to main). Checked at 18:32 UTC, about four and a half minutes later.
+- LIVE: https://intentsly.com/learn/what-is-an-ideal-customer-profile renders as an article with the
+  right H1, all 8 H2s, the five-question FAQ, and the links to /learn/what-is-a-buying-signal and
+  /signal-playbook. https://intentsly.com/learn lists it first, above the two earlier lessons.
+- Sitemap: NOT CONFIRMED. https://intentsly.com/sitemap.xml could not be opened from this run (WebFetch
+  requires the URL to appear on a page opened first, and no page on the site links to the sitemap;
+  the homepage footer has no sitemap or robots link). Same limitation as the previous run. A footer
+  link to /sitemap.xml would let future runs confirm sitemap entries.
+- Side observation for the previous (blog) run: the database row for
+  trigify-alternative-for-smartlead-and-heyreach is `published` (15:30 UTC), but at 18:33 UTC
+  https://intentsly.com/blog still shows "Rebuild Trigify Workflows in Clay" (10:33 UTC) as the newest
+  post and does not list the Smartlead/HeyReach article, three hours after its push. The learn page
+  from this run appeared within five minutes, so the deploy pipeline works; the blog index may be cached
+  or built from a limited query. Alex: worth opening /blog/trigify-alternative-for-smartlead-and-heyreach
+  directly and checking the blog index cache.
