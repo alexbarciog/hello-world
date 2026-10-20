@@ -584,8 +584,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 0,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "trigify-alternative-for-smartlead-and-heyreach",
    "monthly_volume": null,
    "section": "blog"
   },
