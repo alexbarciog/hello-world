@@ -54,4 +54,14 @@
   leads, personalize at scale) that would benefit from one real message you sent and the reply it got.
 
 ## Live check (after the push)
-- Filled in below once the deploy was checked.
+- Push at 07:32 UTC (commit 395a34c). Checked at 07:37 UTC.
+- https://intentsly.com/guides/find-decision-makers-on-linkedin is live: H1 "How to Find Decision
+  Makers on LinkedIn: A 6-Step Method", title tag from meta_title, byline and 12-minute read time, all
+  11 H2s, the three tables and the 5-entry FAQ render, plus the site's "Your next step" block.
+- https://intentsly.com/guides lists it first, above the lead generation guide.
+- https://intentsly.com/sitemap.xml could not be opened from this run: as in the three previous runs,
+  WebFetch raised a permission prompt for that URL (it does not appear in any search result or page
+  link, so the tool asks for approval) and nobody was present to answer it. The prerendered /guides
+  index includes the page and the sitemap is built from the same route list, so it is very likely
+  listed, but that is inferred, not confirmed. Alex: a footer or robots.txt link to /sitemap.xml on the
+  site, or opening the sitemap once in a chat where this task runs, would let future runs confirm it.
