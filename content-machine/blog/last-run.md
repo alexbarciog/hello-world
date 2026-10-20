@@ -1,81 +1,61 @@
-# Last run: 2026-10-20 (Trigify campaign task, blog section)
+# Last run: 2026-10-20 (Solutions task, solutions section)
 
-- Keyword: rebuild trigify workflows in clay (cluster trigify, how-to, commercial, priority 0;
-  returned by `blog_next.py` directly, no draft was waiting). Date logic: before 22 October, so
-  present tense, deadline first.
-- Title: Rebuild Trigify Workflows in Clay Before 22 October: 6 Steps
-- Live URL: https://intentsly.com/blog/rebuild-trigify-workflows-in-clay
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-20 10:33 UTC).
+- Keyword: how to find b2b clients online (cluster find-customers, landing, commercial, priority 1,
+  medium; returned by `blog_next.py --section solutions` directly, no draft was waiting).
+- Title: How to Find B2B Clients Online: Signals Before Lists
+- Live URL: https://intentsly.com/solutions/find-b2b-clients-online
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-20 12:58 UTC).
   The SQL file was run once, unchanged. Live check: see the bottom of this file, filled in after the push.
-- Gate: blog_gate failed once (meta_description 166 chars; no H2 with the keyword; opening 104 words),
-  fixed in one pass, then one more trim of the opening (91 to 90 words). Pass with no warnings.
-  2,763 words as the gate counts them (how-to range 1,200 to 4,000), 11 H2s, 5 FAQ entries, 6 internal
-  links (/blog/trigify-alternatives in the first 300 words with "Trigify alternatives" anchor,
-  /blog/migrate-from-trigify-to-intentsly, /blog/trigify-replacement-linkedin-engagement-tracking,
-  /features/linkedin-signals, /signal-playbook, /try-ai), 11 external links, all opened this run.
-  blog_cloud.py: `"ready": true`.
-- Caps: one page had been published today before this one (the guides task at 07:30 UTC), so two
-  today after this one. The gate did not report a daily or weekly cap.
-- Hub "Related" list: `blog/published/trigify-alternatives.md` has no "Related" section, so the
-  campaign brief's step to add a link there was skipped. The hub already links Clay in its text.
-- 10 trigify keywords remain queued (86 queued overall), so no keywords were added. Next trigify
-  keyword by the run's rule: "trigify alternative for smartlead and heyreach" (priority 0, low).
-  Note for the owner: "trigify export data before shutdown" and "trigify hubspot acquisition" are
-  marked skipped from earlier runs.
+- Gate: blog_gate failed once (meta_description 166 chars; the phrase "research shows" tripped the
+  vague-attribution check), fixed in one pass. Then trimmed for length (2,551 to 2,368 words as the gate
+  counts them; the /solutions range in page-write.md is 1,100 to 2,000, the config max is 4,000, and
+  the previous solutions page shipped at 2,268, so this is in line with it but still above the skill's
+  range). 7 H2s, 5 FAQ entries, 9 internal links (/learn/what-is-a-buying-signal,
+  /blog/find-b2b-leads-on-reddit, /guides/linkedin-lead-generation-guide, /features/linkedin-signals,
+  /case-studies, /solutions/find-customers-for-b2b-saas, /solutions, /try-ai, /signal-playbook),
+  3 external links, all opened this run. Both required tables present. blog_cloud.py: `"ready": true`.
+- Caps: the gate did not report a daily or weekly cap.
+- Queue: 10 solutions keywords remain queued (85 queued overall), so no keywords were added. Next by the
+  run's rule: "how to find clients for a marketing agency" (priority 1, medium).
 
 ## What the research turned up
-- Page one for the keyword: Octolens (vendor list, says Clay's post-audience action and Growth-plan
-  webhooks, no rebuild steps), BuzzLead (DIY stack, conflicting Clay prices, Clay Elite Partner),
-  Satellyte (Trigify vs Clay comparison, pricing "verified July 2026", no steps), HeyReach's playbook
-  (Trigify to Clay to HeyReach, still uses Trigify as the source), a Clay community thread from
-  November 2025, two generic Clay workflow guides, and our own
-  /blog/trigify-replacement-linkedin-engagement-tracking. Brief: blog/briefs/rebuild-trigify-workflows-in-clay.md.
-- Angle taken: a node-by-node mapping table from Trigify workflow nodes (from Trigify's own help
-  centre) to Clay features (from Clay's Claybook and plan FAQ), three documented trigger replacements
-  with the limit each carries (Clay's getReactions/getComments return at most ten per post; PhantomBuster
-  exports launch per post from your own account; a signal tool into a Clay webhook needs the Growth plan),
-  a "when not to rebuild" section, a ten-line checklist and a field map.
-- Trigify facts: trigify.io homepage (joining HubSpot announced 23 September 2026; access for most
-  customers ends 11:59pm BST 22 October 2026; accounts not migrated; existing export options;
-  hugo@trigify.io; integrations, API, monitoring and signal collection stop; no price shown) and the
-  help centre (Clay HTTP Request node, If Condition before integrations, workflow editor triggers and
-  actions, Listening vs Workflows, Social Signals wizard with 16 signal types, daily default cadence,
-  30-day first look-back). All opened 2026-10-20. No Trigify price is stated anywhere in the article.
-- Outside figures, each linked in the same paragraph: Clay Growth "starting at $495/mo" and webhooks,
-  HTTP API and CRM auto-sync on Growth (Clay's plan FAQ); ten reactions and ten comments per post
-  (Clay Claybook); HeyReach playbook's 159 messages, 86 replies, 49 qualified leads (their page);
-  PhantomBuster's 15 to 25 a day outreach cap advice (their blog). Clay's pricing page itself could not
-  be opened (WebFetch asked for approval), so the FAQ page figures are used instead.
-- Intentsly facts used: the feature list from brain/wiki/product.md (competitor and leader post
-  engagers, keyword posts, competitor page followers, hashtag engagement, ICP scoring, AI SDR sends
-  LinkedIn messages, HubSpot native), the explicit limit that Intentsly does not post into a Clay
-  webhook, the 14 demos / 14 days / 4x story labelled as one campaign, and the 12-versus-8 playbook
-  split. No price, no Reddit/X claims, no customer names.
+- Page one for the keyword is all vendor blogs: Plezi (2022, ten channels), Assembly (Aug 2025, eight
+  tactics), Tomba (Jun 2026, ICP plus data accuracy plus 90-day plan), Reply.io (updated Jan 2026, tool
+  roundup), Instantly (updated May 2026, eight strategies pointing at its own features), Callbox (updated
+  Apr 2026, planning framework plus outsourcing pitch). None sorts channels by whether they reach buyers
+  deciding now, none gives message templates or exact searches, and their statistics are unsourced or
+  second-hand. Brief: blog/briefs/find-b2b-clients-online.md.
+- Angle taken: a channel table sorted by "people deciding now" versus "people who might decide someday",
+  a seven-row LinkedIn signal table (Signal | Where | What it means | What to do) with a labelled
+  hypothetical bookkeeping firm, a seven-step week-one plan with exact Posts-tab searches, two copy-paste
+  message templates, the Intentsly limits stated plainly, and a section on when referrals, communities or
+  paid ads beat signals.
+- Outside figures, each linked in the same paragraph: 6sense 2025 B2B Buyer Experience Report
+  (6sense.com/report/buyer-experience/: first contact at about 61% of the journey, 94% ranked their
+  shortlist before engaging sellers, buyers initiated 79% of engagements, 5.1 vendors evaluated, nearly
+  4,000 responses); Close's customer acquisition blueprint by Steli Efti (first ten by any means, the
+  "just raised" list that produced seven customers in two weeks); the Indie Hackers first-customers
+  thread (Reddit most mentioned, then Product Hunt, X, LinkedIn, personal network). All opened 2026-10-20.
+- Intentsly facts used: the feature list from brain/wiki/product.md, the 2-account / 30-and-30 / 15
+  recommended limits, the four languages, LinkedIn-only AI SDR, 7-day trial, self-serve setup, export of
+  leads and signals, the 14 demos / 14 days / 4x story labelled as our own run, ~1,000 leads a month per
+  agent and 2 to 4 meetings a week attributed to "across Intentsly customers in October 2026", and the
+  12-versus-8 playbook split. No price, no Reddit/X monitoring claim, no customer names. The 21% reply
+  rate was not used: its proof row's status cell reads "verified: say ..." rather than "verified", so the
+  gate would treat it as unsourced.
 
 ## For the founder
-- Does Intentsly offer a webhook or API out, or a CSV export of signals? The article says it "does not
-  post into a Clay webhook" because product.md lists only HubSpot, Cal.com, Google Calendar and
-  LinkedIn. If an outbound webhook exists, this article and the Clay row in /blog/trigify-alternatives
-  should say so; it would make Intentsly an option C source for Clay users.
-- A real Trigify customer who moved their Clay pipeline (what they exported, which trigger they picked)
-  would replace the hypothetical "typical workflow" description.
-- Clay's pricing page (clay.com/pricing) and PhantomBuster's automation pages need JavaScript or a
-  permission prompt to open from this task; the article cites Clay's plan FAQ and PhantomBuster's blog
-  instead. Opening those two pages once in a chat where this task runs would let later runs quote them.
-- The remaining trigify queue has "trigify api alternative" and "trigify alternative for smartlead and
-  heyreach" next; both need a confirmed answer on Intentsly export formats and any API.
+- The proof.md rows with a status like `verified: phrase as ...` are not read as verified by the gate
+  (gate.py compares the status cell to the exact word "verified"). The 21% reply rate therefore cannot be
+  used in any article. If you want it usable, change those status cells to plain `verified` and move the
+  phrasing instruction into the Claim cell or corrections.md. (This run did not edit proof.md.)
+- A real service-business customer story (agency, consultancy, bookkeeping or similar) would let the
+  /solutions pages for non-SaaS business types show something other than our own SaaS dogfooding run.
+  The next ten solutions keywords are mostly agencies, consultants and small businesses.
+- Confirming whether the free LinkedIn Posts-tab date filter and "past week" option still exist as
+  described would let later pages name the exact click path; this page describes it in general terms.
+- Gartner's B2B buying-journey page and the 6sense press release could not be opened from this task
+  (permission prompt or empty response); the 6sense report page itself opened and is what the article cites.
 
 ## Live check (after the push)
-- Push at 10:34 UTC (commit a7a7128; the first push went to a stale local `main` because the clone was
-  on a detached HEAD, so the commit was pushed as `HEAD:main` and the local branch moved onto it).
-  Checked at 10:39 UTC.
-- https://intentsly.com/blog/rebuild-trigify-workflows-in-clay is live: H1 "Rebuild Trigify Workflows
-  in Clay Before 22 October: 6 Steps", title tag from meta_title, byline Alex Barciog with 13-minute
-  read time, both named H2s present, both tables in the source, 5 FAQ entries.
-- https://intentsly.com/blog lists it first, above the social listening article.
-- https://intentsly.com/sitemap.xml could not be opened from this run: as in the previous runs, WebFetch
-  asked for approval for that URL (no page or search result links to it) and nobody was present to
-  answer. The prerendered /blog index includes the page and the sitemap is built from the same route
-  list, so it is very likely listed, but that is inferred, not confirmed. Alex: a footer or robots.txt
-  link to /sitemap.xml, or opening the sitemap once in a chat where this task runs, would let future
-  runs confirm it.
+(filled in below once the site has redeployed)

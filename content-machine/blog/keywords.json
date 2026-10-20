@@ -705,8 +705,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-b2b-clients-online",
    "monthly_volume": null
   },
   {
