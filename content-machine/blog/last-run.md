@@ -1,71 +1,61 @@
-# Last run: 2026-10-21 (Learn task, learn section)
+# Last run: 2026-10-22 (Compare task, compare section; started 23:51 Bucharest on 21 October)
 
-- Keyword: what is an ai sdr (cluster fundamentals, lesson, informational, priority 1, medium). No PAUSE
-  file. First keyword returned by `blog_next.py --section learn`; no draft was waiting in `blog/drafts/`.
-- Title: What Is an AI SDR? Definition, Limits and a Checklist
-- Live URL: https://intentsly.com/learn/what-is-an-ai-sdr
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 18:32 UTC).
-  The SQL file `blog/out/what-is-an-ai-sdr.sql` was run once, unchanged, through the `Supabase`
-  connector's execute_sql on project uwwajlezgeurnvvrvdvb. No other database statement was run.
-- Gate: run 1 failed on two items (meta_description 172 chars, opening paragraph 91 words). Fix 1
-  shortened both. Run 2 passed. The draft was then trimmed for length (no gate failure involved) and
-  the gate re-run: `"ready": true`, no warnings. 2,136 gate-words (includes table cells; about 1,885
-  words of prose), 7 H2s, 6 FAQ entries, two tables (five-way terms table and a vendor checklist),
-  8 internal links (/learn/what-is-a-buying-signal, /learn/what-is-intent-data,
-  /learn/what-is-an-ideal-customer-profile, /learn, /guides/linkedin-lead-generation-guide,
-  /features/ai-sdr, /signal-playbook, /try-ai), 3 external links to primary sources opened this run
-  (Bridge Group 2025 SDR tenure page, Gartner press releases 2026-05-20 and 2025-06-25).
-- Intentsly facts used: AI SDR is LinkedIn only, no email; up to 2 sender accounts per workspace;
-  30 messages and 30 connection requests per account per day, 15 recommended (product.md); 14 demos
-  in 14 days, zero manual outreach, 4x reply rate (dogfooding story, verified). No price stated.
-- Caps: config/blog.json max_posts_per_day 7, max_posts_per_week 45. This is the seventh article dated
-  21 October (Bucharest), so the daily cap is now reached for the rest of 21 October; any other task
-  that runs before midnight Bucharest will be refused by the gate, which is correct.
-- Queue: 8 learn keywords still queued (what is lead enrichment, what is social selling, what is a
-  trigger event in sales, what is lead scoring, what is outbound sales, what is signal-based selling,
-  what is a sales trigger, what is account-based prospecting). 75 keywords queued overall, so no
-  keywords were added.
+- Keyword: intentsly vs valley (cluster intentsly-vs, comparison, commercial, priority 1, medium). No PAUSE
+  file. First keyword returned by `blog_next.py --section compare`; no draft was waiting in `blog/drafts/`.
+- Title: Intentsly vs Valley: Autonomous AI SDR or Reviewed Drafts?
+- Live URL: https://intentsly.com/compare/intentsly-vs-valley
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 21:01 UTC,
+  which is 00:01 on 22 October Bucharest). The SQL file `blog/out/intentsly-vs-valley.sql` was run once,
+  unchanged, through the `Supabase` connector's execute_sql on project uwwajlezgeurnvvrvdvb. No other
+  database statement was run.
+- Daily cap: the run started at 23:51 Bucharest on 21 October, when the seventh article of that day had
+  already been published (cap 7). Research and drafting took the run past midnight; `blog_cloud.py sql`
+  was run at 00:00 Bucharest on 22 October and passed with the cap for the new day free. Nothing was
+  changed in config or scripts. This is the first article dated 22 October.
+- Gate: `blog_gate.py` run 1 failed on one item (opening paragraph 98 words). Two trims brought it to 88
+  words; run 3 passed with no warnings. `blog_cloud.py sql` then printed `"ready": true`. 2,443 gate-words
+  (table cells included; about 2,050 words of prose), 8 H2s, 6 FAQ entries, one 12-row table, 6 internal
+  links (/blog/joinvalley-alternatives, /try-ai, /features/ai-sdr, /features/linkedin-signals, /pricing,
+  /compare), 6 external links, all to joinvalley.co pages opened this run.
+- Competitor facts: Valley pricing page (prices updated 19 Oct 2026), product page, API and MCP page,
+  "Valley AI pricing explained" (updated 6 Oct 2026), "joinvalley alternatives" (31 Aug 2026), per-seat
+  pricing post (24 Aug 2026), "Valley vs 11x" (6 Oct 2026). The ZoomInfo review (12 Aug 2026) was read
+  as a ranking page but not used for Valley facts: it quotes an older tier list and says Valley has no
+  email, which Valley's own pricing page now contradicts.
+- Intentsly facts used: LinkedIn-only signals and the four signal types, ICP scoring, verified emails,
+  export, HubSpot/Cal.com/Google Calendar/LinkedIn, AI SDR on LinkedIn only, 2 accounts, 30/30/15, four
+  languages, 7-day trial, /try-ai (product.md); 14 qualified demos in 14 days and 4x reply rate
+  (dogfooding story, verified). No price stated.
+- Queue: 8 compare keywords still queued (intentsly vs common room, phantombuster, apollo, linkedin sales
+  navigator, teamfluence, clay, 11x, heyreach). 74 keywords queued overall, so no keywords were added.
 - Connectors: lowercase `supabase` server failed (ERR_PROXY_TUNNEL); the separate `Supabase` server's
-  execute_sql worked. No `add_repo` tool existed in the session; the repository was already in scope
-  and `git pull origin main` was run on the existing clone (dbc7257). Cloud-only run, no computer linked.
+  execute_sql worked. No `add_repo` tool existed in the session; the repository was already in scope and
+  `git pull origin main` was run on the existing clone (d595fa7). Cloud-only run, no computer linked.
 
 ## What the research turned up
-- Page one for "what is an ai sdr" is entirely vendors: Salesforce, IBM (Apr 2026), Artisan (Aug 2024),
-  Qualified (Mar 2025), AiSDR (Aug 2026, reviewed Oct 2026), Autobound glossary. All define the term as
-  software doing a human SDR's top-of-funnel work and describe it as working a list. None explains
-  where the list comes from, none states channel limits, and only AiSDR separates AI SDR from AI BDR,
-  AI sales agent and AI sales assistant.
-- Most statistics on those pages cite other vendors or the vendor's own report. Primary sources that
-  held up when opened: Bridge Group 2025 (351 companies, SDR tenure 1.9 years, ramp 3.0 months),
-  Gartner 20 May 2026 (645 buyers; 69% prefer to validate AI insights with a rep; 51% expect misleading
-  information from GenAI vs 49% from a rep), Gartner 25 June 2025 (over 40% of agentic AI projects to be
-  cancelled by end of 2027; about 130 real vendors; "agent washing"). The SaaStr "14 months" tenure
-  figure is an informal community poll from 2023 and was not used.
+- No page targets "intentsly vs valley". The results are Valley's own "vs" pages (19 pairings on
+  joinvalley.co/compare; Intentsly is not one of them), a ZoomInfo review and dictionary noise.
+- Valley's own pages never say who answers a reply. The product page says the sequence stops "so you can
+  pick up the conversation" and the pricing FAQ says you review, edit and approve drafts. The article
+  makes that the deciding row and attributes it to those two pages.
+- Valley prints no LinkedIn daily limit ("inside LinkedIn's recommended limits"); its alternatives post
+  caps email at about 30 a day per seat. Intentsly's 30/30/15 is stated next to it.
+- Valley's pricing moved again: the pricing page now carries "prices updated 19 Oct 2026" (Starter $199
+  or $149 quarterly, Plus $299, Growth $499, Scale custom from five seats, Done-For-You $1,499). The
+  joinvalley-alternatives article published 15 October quotes an older Plus quarterly price and a
+  "Valley Studios" name; worth a re-check when that article is next updated.
 
 ## For the founder
-- The proof.md rows for 21% reply rate, ~1,000 leads/month per agent and 2 to 4 meetings a week carry
-  "verified: <phrasing note>" in the status cell, so the gate does not accept them. The 21% figure
-  would have strengthened this lesson's "signal-fed vs list-fed" section. Either move the phrasing
-  notes to their own column or accept that these numbers stay out of articles.
-- A first-hand AI SDR anecdote (one real conversation the AI held, what it answered, what it handed
-  off) would let the "How to reply" step show a transcript instead of a description. Nothing like it
-  exists in brain/stories/.
-- Does the Intentsly AI SDR have an approval mode (review messages before they go out) and does it
-  disclose that it is automated when asked? Both appear in the vendor checklist as good answers; the
-  article does not claim either for Intentsly because product.md does not list them. Confirming them
-  would allow a stronger /features/ai-sdr mention next time.
-- Native CRM: product.md lists HubSpot only. The article says "if it integrates with yours" and does
-  not name Intentsly's CRM list; confirm whether more are planned before a lesson on CRM handoff.
+- Valley shows a per-prospect research step with sources, a review-before-send mode and an API. The
+  article says Intentsly has none of these because product.md does not list them. If Intentsly has any
+  form of message preview or approval before the AI SDR sends, say so in product.md; it would remove
+  Valley's strongest row.
+- A first-hand transcript of an AI SDR conversation (one real reply and what the AI answered) would let
+  the "who answers the reply" section show instead of tell. Nothing like it exists in brain/stories/.
+- Export formats: product.md says "export" without naming CSV or API. Confirming the format would let
+  the "How to switch" section be specific on the Intentsly side.
+- proof.md rows for 21% reply rate, ~1,000 leads/month per agent and 2 to 4 meetings a week still carry
+  phrasing notes in the status cell, so the gate does not accept them. Same request as the last runs.
 
 ## Live check (after push)
-- Pushed at 18:33:46 UTC (d62cebd). The first `git push origin main` was rejected because the clone
-  was on a detached HEAD; `git push origin HEAD:main` fast-forwarded main from dbc7257 to d62cebd.
-  No other changes were on the remote.
-- At 18:38 UTC (four minutes after the push) https://intentsly.com/sitemap.xml and
-  https://intentsly.com/learn/what-is-an-ai-sdr could not be fetched from this run: the fetch tool
-  asks for a permission that nobody is present to grant for URLs that did not come from a search
-  result, and no search returned an intentsly.com URL. Same limitation as the 21 October blog run.
-  The database row is published (status = published, 18:32 UTC), so the page should resolve once the
-  Cloudflare deploy for d62cebd completes. Not confirmed by this run.
-- Alex: open https://intentsly.com/learn/what-is-an-ai-sdr and the sitemap once; if the page is
-  missing an hour after the push, check the deploy for commit d62cebd.
+- Filled in below after the push.
