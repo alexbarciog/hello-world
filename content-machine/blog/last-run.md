@@ -69,4 +69,11 @@
   help.trigify.io's plans article if it still opens, or attributed to ranking pages.
 
 ## Live check (after push)
-- Filled in below after the push.
+- First push attempt with `git push origin main` was rejected (the clone is a detached HEAD, so the local
+  `main` ref was stale); `git push origin HEAD:main` succeeded at 06:13 UTC (commit 0e0735a).
+- CONFIRMED at 06:18 UTC: https://intentsly.com/blog/trigify-api-alternative renders the H1 "Trigify API
+  Alternative: What Replaces Each Endpoint", author line "Alex Barciog, CEO & Founder, Intentsly",
+  21 October 2026, 14-minute read, 10 H2s in the body and the six FAQ entries. The existing page
+  /blog/trigify-replacement-linkedin-engagement-tracking already lists the new article under "Keep
+  reading". The direct fetch of the new URL needed a search result to lead to it first (same provenance
+  prompt as earlier runs); reaching it through a linked page worked.
