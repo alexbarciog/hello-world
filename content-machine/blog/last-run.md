@@ -1,71 +1,72 @@
-# Last run: 2026-10-21 (Compare task, compare section)
+# Last run: 2026-10-21 (Blog task, blog section)
 
-- Keyword: intentsly vs gojiberry (cluster intentsly-vs, comparison, commercial, priority 1, medium;
-  returned by `blog_next.py --section compare`, no draft was waiting). No PAUSE file.
-- Title: Intentsly vs Gojiberry: Which Signal Tool Should You Pick?
-- Live URL: https://intentsly.com/compare/intentsly-vs-gojiberry
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-20 21:06 UTC,
-  which is 00:06 on 21 October in Europe/Bucharest). The SQL file was run once, unchanged. Live check
-  at the bottom of this file, filled in after the push.
-- Gate: first run failed on two items (meta_description 166 chars; opening paragraph 91 words). Fixed by
-  shortening both; second run passed. Final 2,301 words (comparison range 1,300 to 2,500; min 1,300),
-  8 H2s, 6 FAQ entries, 6 internal links (/blog/gojiberry-alternatives, /try-ai, /features/ai-sdr,
-  /features/linkedin-signals, /pricing, /compare), 11 external links, all to gojiberry.ai or
-  help.gojiberry.ai and all opened this run. blog_cloud.py: `"ready": true`, no warnings.
-- Caps: 5 articles were published on 20 October (Bucharest); this one counts for 21 October. No cap reported.
-- Queue: 9 compare keywords remain queued (next: intentsly vs valley, then common room, phantombuster,
-  apollo, linkedin sales navigator, teamfluence, clay, 11x, heyreach). Above the threshold of 5, so no
-  new keywords were added.
-- Note on the Supabase connector: the session reported it as failed to connect at startup
-  (ERR_PROXY_TUNNEL), but `execute_sql` worked when called. Recorded in case it recurs.
+- Keyword: trigify api alternative (cluster trigify, how-to, commercial, priority 0, low; returned by
+  `blog_next.py --section blog`, no draft was waiting). No PAUSE file. Date logic: 21 October, so present
+  tense and the 22 October deadline first.
+- Title: Trigify API Alternative: What Replaces Each Endpoint
+- Live URL: https://intentsly.com/blog/trigify-api-alternative
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 06:12 UTC,
+  09:12 Europe/Bucharest). The SQL file was run once, unchanged. Live check at the bottom.
+- Gate: first run failed on four items (meta_description 169 chars; a `# ` comment line inside a code
+  block read as an H1; "$199" in a paragraph without a link; title similarity above 0.75 with the hub
+  "Trigify Alternatives: 7 Tools to Replace It by 22 October"). Fixed by shortening the description,
+  indenting the comment, adding the Octolens link to that paragraph, and retitling from "Replace Each
+  Endpoint by 22 October" to "What Replaces Each Endpoint". Second run passed. Final 2,994 words (how-to
+  min 1,200), 10 H2s, 6 FAQ entries, 8 internal links (/blog/trigify-alternatives in the first 300 words
+  with "Trigify alternatives" anchor, /blog/trigify-shutting-down, /blog/trigify-alternative-for-social-
+  listening, /blog/rebuild-trigify-workflows-in-clay, /blog/migrate-from-trigify-to-intentsly,
+  /features/linkedin-signals, /try-ai, /case-studies), 18 external links, all opened this run.
+  blog_cloud.py: `"ready": true`, no warnings.
+- Caps: this is the second article dated 21 October (Bucharest); the daily cap is 7. No cap reported.
+- Queue: 43 blog keywords still queued, so no new keywords were added. Trigify cluster still queued:
+  trigify vs gojiberry, what happens to my trigify data, free trigify alternatives, trigify pricing and
+  what replacements cost, linkedin profile monitoring tool, trigify vs valley, trigify vs teamfluence,
+  life after trigify. From 23 October the campaign brief switches to past tense.
+- Hub "Related" list: `blog/published/trigify-alternatives.md` has no Related list, so the hub was not
+  edited and no second SQL was run, as the campaign brief allows.
+- Supabase connector: the session listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL) and
+  a separate `Supabase` server that connected; `execute_sql` on the latter worked. Same pattern as the
+  previous run.
 
 ## What the research turned up
-- The exact phrase "intentsly vs gojiberry" has no competing page; the results are goji berry fruit
-  pages. Page one for "<tool> vs Gojiberry" is vendor comparison pages (BeReach 6 Oct 2026, ReactIn
-  24 Sep 2026, Sbl.so 24 Aug 2026, plus Factors, Vendo, ConnectSafely, Reachy, Salesforge, Scrap.io by
-  title). All rank their own tool first; none is a LinkedIn signal tool comparing like for like.
-  Brief: blog/briefs/intentsly-vs-gojiberry.md.
-- Gojiberry facts come only from its own site opened this run: gojiberry.ai/#pricing (Pro $99/month,
-  Custom for teams of 3+, integrations HubSpot/Pipedrive/Attio/API/MCP, free trial "Live in 5
-  minutes"), gojiberry.ai blog (two agents, two LinkedIn seats, 200 credits, 1,800 contacted
-  prospects, no credit card), and help centre articles on pricing (add-ons $59/$29/$99/$25), agents,
-  campaigns, replies ("Nothing is ever sent automatically"), inbox, LinkedIn safety (no numeric
-  limits in text), API and HubSpot. The founder's earlier run could not open gojiberry.ai; this run
-  reached it through a link on a gojiberry.ai blog page.
-- Left out: gojiberry.ai/integrations describes call summaries and Google Meet, which contradicts the
-  help centre and looks like an older product page. Gojiberry languages and trial length are not
-  stated on its pages, and the page says so instead of guessing.
-- Angle taken: like-for-like map of the same five jobs; the real difference is reply handling
-  (Gojiberry's AI drafts and the user sends; Intentsly's AI SDR holds the conversation and sends the
-  calendar link). Six listed cases where Gojiberry is the better choice (email, Pipedrive/Attio, more
-  senders, approval control, lookalikes/visitors/voice, API). Decision rule and /try-ai as the test.
-- Intentsly facts used: product.md (LinkedIn-only signals, scoring, verified emails, export, HubSpot/
-  Cal.com/Google Calendar/LinkedIn, AI SDR LinkedIn-only, 2 senders, 30/30/15, four languages, 7-day
-  trial, self-serve). Numbers only from proof.md verified rows and the 14-demos story. No price.
-  The 21% reply rate and 2 to 4 meetings figures were not used (the gate reads only rows whose status
-  is exactly `verified`).
+- Page one for "trigify api alternative" is vendor alternatives lists (Overloop 14 Sep, Octolens
+  updated Oct, HeyReach 30 Sep, Signado 3 Oct, Satellyte 29 Jul, ReactIn 24 Sep, Buska, Teamfluence),
+  one Apify actor page and a BuzzLead DIY-stack article (10 Jun). None describes what the Trigify API
+  actually exposed or shows a replacement call. Brief: blog/briefs/trigify-api-alternative.md.
+- Trigify facts only from trigify.io (the pricing URL now serves the announcement: API and integrations
+  stop with access at 11:59pm BST on 22 October 2026; no prices shown) and help.trigify.io articles on
+  the API (x-api-key, same credits, four endpoint areas, OpenAPI), CLI (npm, TRIGIFY_API_KEY, searches,
+  results, workflows, custom signals) and MCP (seven search tools at api.trigify.io/mcp), plus the CLI
+  launch post for the install commands. The Trigify root URL could not be fetched directly (provenance
+  prompt); the /pricing URL came up in search and carries the same notice.
+- Competitor facts from their own pages today: Apify actor pages (HarvestAPI reactions from $1.50/1k,
+  Scraping Solutions engagers from $1.10/1k) and Apify pricing; PhantomBuster API docs and support
+  (API on all paid plans, connected LinkedIn account needed for the scraper); Octolens Trigify page
+  (API, webhooks, MCP on every plan, no engager export); Buska pricing (API on Growth 500 req/mo,
+  Scale 2,500 req/mo); Clay pricing (webhooks and HTTP API on Growth $446, FAQ shows $495); Gojiberry
+  MCP docs (tools, OAuth, active plan); Clearcue FAQ (Feb 2026, CSV and API export, MCP, Starter €99).
+  Gojiberry and PhantomBuster prices were not restated because their pricing pages were not opened
+  this run; the table says so.
+- Angle taken: map the four Trigify API areas to a replacement each, with auth and plan, a sample curl,
+  where each is the wrong choice, a copy-paste endpoint map, and an honest section saying Intentsly has
+  no API and is only the right choice when the API was a means to get LinkedIn engagers into HubSpot.
+- Intentsly facts used: product.md (LinkedIn-only, scoring, verified emails, HubSpot/Cal.com/Google
+  Calendar, AI SDR LinkedIn-only, 2 accounts, 30/30/15, four languages, 7-day trial, /try-ai, export
+  with no format named, no API listed) and the 14-demos story. No price. The 21% and 2 to 4 figures
+  were not used (gate reads only rows whose status is exactly `verified`).
 
 ## What the founder should supply
-- Whether Intentsly offers a public API or CSV import; the page says "an API is not among its listed
-  integrations" and that lists are not imported. If either exists, the "How to switch" section and the
-  at-a-glance table should be updated.
-- Whether Intentsly has a stated position on running other LinkedIn automation on the same account
-  (the page only quotes Gojiberry's warning and Intentsly's caps).
-- Any customer who moved from Gojiberry to Intentsly, with what changed, so the page can carry a real
-  switching example instead of only the launch story.
+- Whether Intentsly has, or plans, a public API or webhook out. The article states "lists no public
+  API"; if that changes, this page, the migration guide and the Gojiberry comparison need updating.
+- The export format(s) Intentsly offers (CSV? JSON?), so the article can stop saying "the product does
+  not name a format".
+- A short note on what the founder would tell a developer who asks for an API today (roadmap or not),
+  so the "wrong choice" paragraph can be more specific.
 - Same as earlier runs: decide whether proof.md rows marked `verified: say ...` should be split so the
   gate accepts the 21% reply rate and 2 to 4 meetings figures.
-- For the next keyword ("intentsly vs valley"): nothing specific, joinvalley.co/pricing was reachable in
-  the 14 October run.
+- For the next trigify keyword ("trigify vs gojiberry", comparison): gojiberry.ai/#pricing was reachable
+  on 20 October; Trigify prices are gone from trigify.io, so the comparison must quote them only from
+  help.trigify.io's plans article if it still opens, or attributed to ranking pages.
 
 ## Live check (after push)
-- Push at 21:07 UTC (commit d1210a2 to main). Checked at 21:12 UTC, about four and a half minutes later.
-- NOT CONFIRMED: neither https://intentsly.com/compare/intentsly-vs-gojiberry nor
-  https://intentsly.com/sitemap.xml nor the homepage could be opened from this run. WebFetch asked
-  for a permission that nobody was present to grant (provenance check on intentsly.com URLs), and no
-  search result returns an intentsly.com page that could be followed instead. The database row is
-  `published` (status returned by the upsert), the push succeeded, and the deploy pipeline turned the
-  previous run's page into HTML within five minutes, so the page should be live; it has not been seen.
-- Alex: opening https://intentsly.com/compare/intentsly-vs-gojiberry and the sitemap once would confirm
-  it. For future runs, either pre-approve intentsly.com for the task or add a footer link to
-  /sitemap.xml so an approved page can lead to it.
+- Filled in below after the push.
