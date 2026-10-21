@@ -861,8 +861,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "build-b2b-prospect-list",
    "monthly_volume": null
   },
   {

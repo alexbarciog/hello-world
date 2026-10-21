@@ -1,79 +1,70 @@
-# Last run: 2026-10-21 (Blog task, blog section)
+# Last run: 2026-10-21 (Guides task, guides section)
 
-- Keyword: trigify api alternative (cluster trigify, how-to, commercial, priority 0, low; returned by
-  `blog_next.py --section blog`, no draft was waiting). No PAUSE file. Date logic: 21 October, so present
-  tense and the 22 October deadline first.
-- Title: Trigify API Alternative: What Replaces Each Endpoint
-- Live URL: https://intentsly.com/blog/trigify-api-alternative
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 06:12 UTC,
-  09:12 Europe/Bucharest). The SQL file was run once, unchanged. Live check at the bottom.
-- Gate: first run failed on four items (meta_description 169 chars; a `# ` comment line inside a code
-  block read as an H1; "$199" in a paragraph without a link; title similarity above 0.75 with the hub
-  "Trigify Alternatives: 7 Tools to Replace It by 22 October"). Fixed by shortening the description,
-  indenting the comment, adding the Octolens link to that paragraph, and retitling from "Replace Each
-  Endpoint by 22 October" to "What Replaces Each Endpoint". Second run passed. Final 2,994 words (how-to
-  min 1,200), 10 H2s, 6 FAQ entries, 8 internal links (/blog/trigify-alternatives in the first 300 words
-  with "Trigify alternatives" anchor, /blog/trigify-shutting-down, /blog/trigify-alternative-for-social-
-  listening, /blog/rebuild-trigify-workflows-in-clay, /blog/migrate-from-trigify-to-intentsly,
-  /features/linkedin-signals, /try-ai, /case-studies), 18 external links, all opened this run.
-  blog_cloud.py: `"ready": true`, no warnings.
-- Caps: this is the second article dated 21 October (Bucharest); the daily cap is 7. No cap reported.
-- Queue: 43 blog keywords still queued, so no new keywords were added. Trigify cluster still queued:
-  trigify vs gojiberry, what happens to my trigify data, free trigify alternatives, trigify pricing and
-  what replacements cost, linkedin profile monitoring tool, trigify vs valley, trigify vs teamfluence,
-  life after trigify. From 23 October the campaign brief switches to past tense.
-- Hub "Related" list: `blog/published/trigify-alternatives.md` has no Related list, so the hub was not
-  edited and no second SQL was run, as the campaign brief allows.
-- Supabase connector: the session listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL) and
-  a separate `Supabase` server that connected; `execute_sql` on the latter worked. Same pattern as the
-  previous run.
+- Keyword: how to build a b2b prospect list (cluster outbound, guide, commercial, priority 1, medium;
+  returned by `blog_next.py --section guides`, no draft was waiting). No PAUSE file.
+- Title: How to Build a B2B Prospect List: 7 Steps and a Template
+- Live URL: https://intentsly.com/guides/build-b2b-prospect-list
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 07:48 UTC,
+  10:48 Europe/Bucharest). The SQL file was run once, unchanged. Live check at the bottom.
+- Gate: first run failed on two items (meta_description 163 chars; opening paragraph 99 words). Fixed by
+  shortening the description to 155 chars and trimming the opening to 89 words (two attempts: 96 words
+  after the first trim). Third run passed. After passing, four truth-pass edits were made (dropped the
+  Sales Navigator "Industry" filter name because LinkedIn's page opened this run does not list it,
+  softened the Intentsly sentence so it does not imply the product fills the reader's spreadsheet,
+  removed a pointer to guides that are not published yet, "other vendors" -> "other buyers") and the
+  gate was re-run: still `"ready": true`, no warnings. Final 2,782 words (guide min 1,500), 11 H2s,
+  6 FAQ entries, 7 internal links (/learn/what-is-an-ideal-customer-profile,
+  /guides/linkedin-lead-generation-guide, /features/linkedin-signals,
+  /guides/find-decision-makers-on-linkedin, /case-studies, /try-ai, /guides), 5 external links, all
+  opened this run.
+- Caps: third article dated 21 October (Bucharest) after trigify-api-alternative and
+  intentsly-vs-gojiberry; the daily cap is 7. No cap reported.
+- Queue: 9 guides keywords still queued (next: how to write a linkedin outreach message), so no new
+  keywords were added.
+- Supabase connector: the session listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL)
+  and a separate `Supabase` server whose `execute_sql` worked after a `select 1` check. Same pattern
+  as the previous two runs. No `add_repo` tool existed in the session; the repository was already in
+  scope and `git pull origin main` was used on the existing clone.
 
 ## What the research turned up
-- Page one for "trigify api alternative" is vendor alternatives lists (Overloop 14 Sep, Octolens
-  updated Oct, HeyReach 30 Sep, Signado 3 Oct, Satellyte 29 Jul, ReactIn 24 Sep, Buska, Teamfluence),
-  one Apify actor page and a BuzzLead DIY-stack article (10 Jun). None describes what the Trigify API
-  actually exposed or shows a replacement call. Brief: blog/briefs/trigify-api-alternative.md.
-- Trigify facts only from trigify.io (the pricing URL now serves the announcement: API and integrations
-  stop with access at 11:59pm BST on 22 October 2026; no prices shown) and help.trigify.io articles on
-  the API (x-api-key, same credits, four endpoint areas, OpenAPI), CLI (npm, TRIGIFY_API_KEY, searches,
-  results, workflows, custom signals) and MCP (seven search tools at api.trigify.io/mcp), plus the CLI
-  launch post for the install commands. The Trigify root URL could not be fetched directly (provenance
-  prompt); the /pricing URL came up in search and carries the same notice.
-- Competitor facts from their own pages today: Apify actor pages (HarvestAPI reactions from $1.50/1k,
-  Scraping Solutions engagers from $1.10/1k) and Apify pricing; PhantomBuster API docs and support
-  (API on all paid plans, connected LinkedIn account needed for the scraper); Octolens Trigify page
-  (API, webhooks, MCP on every plan, no engager export); Buska pricing (API on Growth 500 req/mo,
-  Scale 2,500 req/mo); Clay pricing (webhooks and HTTP API on Growth $446, FAQ shows $495); Gojiberry
-  MCP docs (tools, OAuth, active plan); Clearcue FAQ (Feb 2026, CSV and API export, MCP, Starter €99).
-  Gojiberry and PhantomBuster prices were not restated because their pricing pages were not opened
-  this run; the table says so.
-- Angle taken: map the four Trigify API areas to a replacement each, with auth and plan, a sample curl,
-  where each is the wrong choice, a copy-paste endpoint map, and an honest section saying Intentsly has
-  no API and is only the right choice when the API was a means to get LinkedIn engagers into HubSpot.
-- Intentsly facts used: product.md (LinkedIn-only, scoring, verified emails, HubSpot/Cal.com/Google
-  Calendar, AI SDR LinkedIn-only, 2 accounts, 30/30/15, four languages, 7-day trial, /try-ai, export
-  with no format named, no API listed) and the 14-demos story. No price. The 21% and 2 to 4 figures
-  were not used (gate reads only rows whose status is exactly `verified`).
+- Page one for "how to build a b2b prospect list" is all vendor blogs: Zapier (Mar 2024), Sopro
+  (2 Sep 2026), Cognism (upd. 13 May 2026), Cleanlist AI (Apr 2026), Lead Scrape (upd. Oct 2026),
+  Danish Lead Co (Apr 2026), Leadin (Jun 2025). Every one starts from a database export and filters
+  down; none gives a pasteable LinkedIn search string, none applies a scoring rule to a row, none says
+  which rows to delete. Statistics are the vendor's own or routed through other blogs.
+  Brief: blog/briefs/build-b2b-prospect-list.md.
+- Outside facts used, each linked in its paragraph: Google sender guidelines (spam rate below 0.10%,
+  never 0.30%, stricter rules above 5,000 messages a day to Gmail); Forrester press release
+  21 Jan 2026 (13 internal stakeholders, nine external influencers, procurement decides in 53% of
+  cycles); ZeroBounce Email List Decay Report (at least 23% of a list decays within a year, data
+  Jan to Dec 2025); LinkedIn's Sales Navigator how-to page (filter names, Job Changes spotlight,
+  "40+ filters"); Apollo pricing page (plan names only; no figures rendered, so none stated).
+- Could not open: LinkedIn help page on the commercial use limit (robots), the businesswire copy of
+  the Forrester release and the Sales Navigator filter page (provenance prompt). The commercial use
+  limit is stated qualitatively, with no number.
+- Angle taken: build the list from LinkedIn activity first (post search strings, competitor-post
+  commenters, Job Changes), firmographics second; a 19-column paste-in header row; a fit + signal
+  scoring table applied to a labelled hypothetical company (Lantern Compliance); a cut rule (under 50
+  points); a weekly routine; a message template that quotes the signal.
+- Intentsly facts used: LinkedIn signals (competitor posts, keyword posts, page followers) and ICP
+  scoring from product.md; 30/30/15 limits and 2 accounts; 14 demos in 14 days, zero manual outreach,
+  4x reply rate (story + /case-studies); /try-ai with no account. No price. No Reddit/X. The 21% and
+  2 to 4 figures were not used (gate reads only rows whose status is exactly `verified`).
 
 ## What the founder should supply
-- Whether Intentsly has, or plans, a public API or webhook out. The article states "lists no public
-  API"; if that changes, this page, the migration guide and the Gojiberry comparison need updating.
-- The export format(s) Intentsly offers (CSV? JSON?), so the article can stop saying "the product does
-  not name a format".
-- A short note on what the founder would tell a developer who asks for an API today (roadmap or not),
-  so the "wrong choice" paragraph can be more specific.
+- The export format(s) Intentsly offers (CSV? HubSpot only?), so a guide can say "export the scored
+  list to your sheet" instead of staying vague about how a reader gets Intentsly rows into the
+  template above.
+- A real list-building number from the product: how many signal rows a typical agent finds in a week
+  for a defined ICP, and what share passes scoring. That would replace the invented Lantern numbers
+  with a measured example on the next guide ("how to set up signal-based outbound").
+- One short story from the 14-demos launch: the first search string you used, the post that led to
+  the first demo, what you turned off. The story file still has the founder placeholder.
 - Same as earlier runs: decide whether proof.md rows marked `verified: say ...` should be split so the
   gate accepts the 21% reply rate and 2 to 4 meetings figures.
-- For the next trigify keyword ("trigify vs gojiberry", comparison): gojiberry.ai/#pricing was reachable
-  on 20 October; Trigify prices are gone from trigify.io, so the comparison must quote them only from
-  help.trigify.io's plans article if it still opens, or attributed to ranking pages.
+- Confirmation of the Sales Navigator filter names the site should use (the public how-to page lists
+  Function, Seniority, Titles, Current Company, Account Lists, Company Headcount, Region; the help
+  pages that list the rest are blocked to this run).
 
 ## Live check (after push)
-- First push attempt with `git push origin main` was rejected (the clone is a detached HEAD, so the local
-  `main` ref was stale); `git push origin HEAD:main` succeeded at 06:13 UTC (commit 0e0735a).
-- CONFIRMED at 06:18 UTC: https://intentsly.com/blog/trigify-api-alternative renders the H1 "Trigify API
-  Alternative: What Replaces Each Endpoint", author line "Alex Barciog, CEO & Founder, Intentsly",
-  21 October 2026, 14-minute read, 10 H2s in the body and the six FAQ entries. The existing page
-  /blog/trigify-replacement-linkedin-engagement-tracking already lists the new article under "Keep
-  reading". The direct fetch of the new URL needed a search result to lead to it first (same provenance
-  prompt as earlier runs); reaching it through a linked page worked.
+- Filled in below after the push and the sitemap fetch.
