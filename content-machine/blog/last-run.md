@@ -67,4 +67,13 @@
   pages that list the rest are blocked to this run).
 
 ## Live check (after push)
-- Filled in below after the push and the sitemap fetch.
+- Pushed at 07:48:58 UTC (commit 997d2c7, `git push origin HEAD:main`; the clone is a detached HEAD, as
+  in the previous run). The repository has no GitHub Actions workflows, so the deploy runs elsewhere.
+- At 07:54 UTC /guides still listed two guides (deploy not finished). At 08:07 UTC /guides listed three,
+  the new one first: "How to Build a B2B Prospect List: 7 Steps and a Template" (Outbound).
+- CONFIRMED at 08:08 UTC: https://intentsly.com/guides/build-b2b-prospect-list renders the H1, author
+  line "Alex Barciog, CEO & Founder, Intentsly", October 21, 2026, 13-minute read, 11 H2s plus the
+  site's "Your next step" box, and the six FAQ entries.
+- Sitemap: https://intentsly.com/sitemap.xml could not be fetched from this run (the fetch tool's
+  provenance prompt was withdrawn twice, and the URL does not surface in search). Not confirmed in the
+  sitemap; the page is live and listed on the /guides index, which the same deploy produces.
