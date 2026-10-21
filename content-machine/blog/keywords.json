@@ -1017,8 +1017,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-an-ai-sdr",
    "monthly_volume": null
   },
   {

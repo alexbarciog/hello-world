@@ -1,73 +1,61 @@
-# Last run: 2026-10-21 (Trigify campaign task, blog section)
+# Last run: 2026-10-21 (Learn task, learn section)
 
-- Keyword: trigify vs gojiberry (cluster trigify, comparison, commercial, priority 1, low). No PAUSE
-  file. First keyword returned by `blog_next.py`; it was already in cluster trigify, so no override
-  was needed. No draft was waiting in `blog/drafts/`.
-- Title: Trigify vs Gojiberry: What Gojiberry Replaces and What It Does Not
-- Live URL: https://intentsly.com/blog/trigify-vs-gojiberry
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 15:59 UTC).
-  The SQL file `blog/out/trigify-vs-gojiberry.sql` was run once, unchanged, through the `Supabase`
-  connector's execute_sql on project uwwajlezgeurnvvrvdvb. No other database statement was run
-  (one `select 1` was run earlier only to confirm the connector worked).
-- Date logic: run on 21 October 2026, so present tense ("Trigify closes on 22 October 2026"). From
-  23 October this article's opening, the "before 22 October" H2 and the export steps should be
-  switched to past tense per the campaign brief; that is a future edit, not done here.
-- Gate: run 1 failed on one item (opening paragraph 95 words). Fix 1 shortened the opening. Run 2
-  passed; `blog_cloud.py sql` printed `"ready": true` with no warnings. 2,921 gate-words (includes
-  every table cell), 9 H2s, 6 FAQ entries, two tables (module-by-module and a settings-mapping
-  worksheet), a five-step export checklist, 9 internal links (/blog/trigify-alternatives in the
-  first 300 words with "Trigify alternatives" anchor, /blog/trigify-alternative-for-social-listening,
-  /blog/rebuild-trigify-workflows-in-clay, /blog/trigify-api-alternative, /features/ai-sdr,
-  /features/linkedin-signals, /compare/intentsly-vs-gojiberry, /compare/trigify-vs-intentsly,
-  /pricing, /try-ai), 11 external links, all opened this run.
-- Hub "Related" list: `blog/published/trigify-alternatives.md` has no "Related" list, and the run is
-  allowed one database write, so the hub was not edited. Skipped and noted, as the brief allows.
-- Caps: config/blog.json reads max_posts_per_day 7 and max_posts_per_week 45 (the task prompt
-  describes them as 3 and 21; the config file is what the gate enforces). The gate reported no cap.
-  This is the sixth article dated 21 October (Bucharest): intentsly-vs-gojiberry 00:07,
-  trigify-api-alternative 09:12, build-b2b-prospect-list 10:48, free-trigify-alternatives 13:39,
-  find-clients-for-a-marketing-agency 15:58, this one 18:59. The run did not touch config.
-- Queue: 5 trigify keywords still queued (trigify pricing and what replacements cost, linkedin
-  profile monitoring tool, trigify vs valley, trigify vs teamfluence, life after trigify:
-  signal-based selling playbook). 76 keywords queued overall, so no keywords were added.
-- Connectors: a lowercase `supabase` server showed as failed (ERR_PROXY_TUNNEL) and the separate
-  `Supabase` server's execute_sql worked. No `add_repo` tool existed in the session; the repository
-  was already in scope and `git pull origin main` was run on the existing clone (82cd590). WebFetch
-  refused URLs typed from memory (trigify.io, help.trigify.io, gojiberry.ai/#pricing) with a
-  provenance error; the same pages opened once they came back from a web search, so every vendor
-  fact is from a page opened this run. Cloud-only run, no computer linked.
+- Keyword: what is an ai sdr (cluster fundamentals, lesson, informational, priority 1, medium). No PAUSE
+  file. First keyword returned by `blog_next.py --section learn`; no draft was waiting in `blog/drafts/`.
+- Title: What Is an AI SDR? Definition, Limits and a Checklist
+- Live URL: https://intentsly.com/learn/what-is-an-ai-sdr
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 18:32 UTC).
+  The SQL file `blog/out/what-is-an-ai-sdr.sql` was run once, unchanged, through the `Supabase`
+  connector's execute_sql on project uwwajlezgeurnvvrvdvb. No other database statement was run.
+- Gate: run 1 failed on two items (meta_description 172 chars, opening paragraph 91 words). Fix 1
+  shortened both. Run 2 passed. The draft was then trimmed for length (no gate failure involved) and
+  the gate re-run: `"ready": true`, no warnings. 2,136 gate-words (includes table cells; about 1,885
+  words of prose), 7 H2s, 6 FAQ entries, two tables (five-way terms table and a vendor checklist),
+  8 internal links (/learn/what-is-a-buying-signal, /learn/what-is-intent-data,
+  /learn/what-is-an-ideal-customer-profile, /learn, /guides/linkedin-lead-generation-guide,
+  /features/ai-sdr, /signal-playbook, /try-ai), 3 external links to primary sources opened this run
+  (Bridge Group 2025 SDR tenure page, Gartner press releases 2026-05-20 and 2025-06-25).
+- Intentsly facts used: AI SDR is LinkedIn only, no email; up to 2 sender accounts per workspace;
+  30 messages and 30 connection requests per account per day, 15 recommended (product.md); 14 demos
+  in 14 days, zero manual outreach, 4x reply rate (dogfooding story, verified). No price stated.
+- Caps: config/blog.json max_posts_per_day 7, max_posts_per_week 45. This is the seventh article dated
+  21 October (Bucharest), so the daily cap is now reached for the rest of 21 October; any other task
+  that runs before midnight Bucharest will be refused by the gate, which is correct.
+- Queue: 8 learn keywords still queued (what is lead enrichment, what is social selling, what is a
+  trigger event in sales, what is lead scoring, what is outbound sales, what is signal-based selling,
+  what is a sales trigger, what is account-based prospecting). 75 keywords queued overall, so no
+  keywords were added.
+- Connectors: lowercase `supabase` server failed (ERR_PROXY_TUNNEL); the separate `Supabase` server's
+  execute_sql worked. No `add_repo` tool existed in the session; the repository was already in scope
+  and `git pull origin main` was run on the existing clone (dbc7257). Cloud-only run, no computer linked.
 
 ## What the research turned up
-- The exact phrase "trigify vs gojiberry" returns goji-berry fruit pages. The neighbouring queries
-  are owned by vendor listicles (Octolens, Getcleed, Reactin, Signado) in which Gojiberry is one
-  row. No page compares the two directly or says which Trigify module Gojiberry does not cover.
-- Trigify's help centre still lists Starter $40 and Max $199 (plus legacy Essential, Growth,
-  Scale); the homepage shows only the retirement notice. Trigify's help centre is at
-  trigifyio.featurebase.app with help.trigify.io as the public host.
-- Gojiberry's /llm page is the richest single source: full signal list, LinkedIn + email outreach,
-  "AI reply drafts are never sent without you", a longer integrations list than the pricing section
-  (adds Salesforce, Zoho, Folk, Breakcold, Instantly, Smartlead, SmartReach, HeyReach, Clay, Zapier,
-  webhooks, Slack), app languages English and French.
+- Page one for "what is an ai sdr" is entirely vendors: Salesforce, IBM (Apr 2026), Artisan (Aug 2024),
+  Qualified (Mar 2025), AiSDR (Aug 2026, reviewed Oct 2026), Autobound glossary. All define the term as
+  software doing a human SDR's top-of-funnel work and describe it as working a list. None explains
+  where the list comes from, none states channel limits, and only AiSDR separates AI SDR from AI BDR,
+  AI sales agent and AI sales assistant.
+- Most statistics on those pages cite other vendors or the vendor's own report. Primary sources that
+  held up when opened: Bridge Group 2025 (351 companies, SDR tenure 1.9 years, ramp 3.0 months),
+  Gartner 20 May 2026 (645 buyers; 69% prefer to validate AI insights with a rep; 51% expect misleading
+  information from GenAI vs 49% from a rep), Gartner 25 June 2025 (over 40% of agentic AI projects to be
+  cancelled by end of 2027; about 130 real vendors; "agent washing"). The SaaStr "14 months" tenure
+  figure is an informal community poll from 2023 and was not used.
 
 ## For the founder
-- The gate only accepts proof.md rows whose status cell is exactly `verified`. The 21% reply rate,
-  ~1,000 leads/month and 2 to 4 meetings rows carry "verified: ..." with a phrasing note, so the
-  21% figure trips the statistics check and was left out of this article. Either split the phrasing
-  note into another column or accept that those numbers cannot be used in blog articles.
-- A first-hand Trigify-to-Intentsly story (one customer who moved, with permission, and what they
-  set up first) would lift every remaining campaign article; none exists in brain/stories/.
-- The two remaining "vs" keywords (Valley, Teamfluence) need those vendors' sites opened on the
-  day; nothing else is blocking them.
-- From 23 October the trigify-cluster articles should move to past tense; a small pass over the
-  openings of the published campaign articles would keep them accurate.
+- The proof.md rows for 21% reply rate, ~1,000 leads/month per agent and 2 to 4 meetings a week carry
+  "verified: <phrasing note>" in the status cell, so the gate does not accept them. The 21% figure
+  would have strengthened this lesson's "signal-fed vs list-fed" section. Either move the phrasing
+  notes to their own column or accept that these numbers stay out of articles.
+- A first-hand AI SDR anecdote (one real conversation the AI held, what it answered, what it handed
+  off) would let the "How to reply" step show a transcript instead of a description. Nothing like it
+  exists in brain/stories/.
+- Does the Intentsly AI SDR have an approval mode (review messages before they go out) and does it
+  disclose that it is automated when asked? Both appear in the vendor checklist as good answers; the
+  article does not claim either for Intentsly because product.md does not list them. Confirming them
+  would allow a stronger /features/ai-sdr mention next time.
+- Native CRM: product.md lists HubSpot only. The article says "if it integrates with yours" and does
+  not name Intentsly's CRM list; confirm whether more are planned before a lesson on CRM handoff.
 
 ## Live check (after push)
-- Pushed at 15:59:53 UTC (ef62197). The prerendered blog index at https://intentsly.com/blog was
-  fetched at 16:05, 16:12, 16:21, 16:27 and 16:37 UTC and still listed the same 12 articles with
-  free-trigify-alternatives first, so the redeploy had not landed 37 minutes after the push, or the
-  index is edge-cached. The database row is published, so the client-rendered page should resolve
-  once the deploy completes; this run could not confirm it.
-- https://intentsly.com/sitemap.xml and the article URL itself could not be fetched from this run
-  (the fetch tool asks for a permission that nobody is present to grant for URLs that did not come
-  from a search result). Alex: open https://intentsly.com/blog/trigify-vs-gojiberry and the sitemap
-  once, and check the Cloudflare deploy for commit ef62197 if the article is still missing.
+- Filled in below after the push.
