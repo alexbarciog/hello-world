@@ -71,4 +71,15 @@
   the tasks.
 
 ## Live check (after push)
-- See the end of this file (filled in after the four-minute wait).
+- Pushed at 12:59:09 UTC (commit f2e4ebe, `git push origin HEAD:main`; detached-HEAD clone as in previous
+  runs). At 13:04 UTC (5 minutes) https://intentsly.com/solutions still listed only the two older pages.
+- CONFIRMED at 13:14 UTC: https://intentsly.com/solutions lists the new page first (October 21, 2026,
+  10 min read), and https://intentsly.com/solutions/find-clients-for-a-marketing-agency renders the H1,
+  the author line "Alex Barciog, CEO & Founder, Intentsly", the date, all seven H2s plus the site's
+  "Your next step" and "Keep reading" boxes, both tables and the five FAQ entries. The deploy took
+  between 5 and 15 minutes; a future run should wait longer than 4 minutes before checking.
+- Sitemap: https://intentsly.com/sitemap.xml could not be fetched from this run (the fetch tool's
+  permission prompt was withdrawn in the unattended session), same as previous runs. Not confirmed in
+  the sitemap; the page is live and on the /solutions index, which the same deploy produces.
+- The repository has no GitHub Actions workflows (actions list returned 0 runs), so the deploy could
+  not be watched from GitHub.
