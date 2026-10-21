@@ -58,4 +58,14 @@
   phrasing notes in the status cell, so the gate does not accept them. Same request as the last runs.
 
 ## Live check (after push)
-- Filled in below after the push.
+- Pushed at 21:02:18 UTC (15432bf), `git push origin HEAD:main` from the detached clone, fast-forward
+  from d595fa7. No other changes were on the remote.
+- At 21:06 UTC (four minutes after the push) https://intentsly.com/sitemap.xml and
+  https://intentsly.com/compare/intentsly-vs-valley could not be fetched from this run: the fetch tool
+  asks for a permission that nobody is present to grant for URLs that did not come from a search
+  result, and no search returned an intentsly.com URL. The repository has no GitHub Actions workflow,
+  so the Cloudflare deploy is not visible from here either. Same limitation as the 21 October runs.
+  The database row is published (status = published, 21:01 UTC), so the page should resolve once the
+  deploy for 15432bf completes. Not confirmed by this run.
+- Alex: open https://intentsly.com/compare/intentsly-vs-valley and the sitemap once; if the page is
+  missing an hour after the push, check the deploy for commit 15432bf.
