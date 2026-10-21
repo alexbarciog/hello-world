@@ -58,4 +58,14 @@
   not name Intentsly's CRM list; confirm whether more are planned before a lesson on CRM handoff.
 
 ## Live check (after push)
-- Filled in below after the push.
+- Pushed at 18:33:46 UTC (d62cebd). The first `git push origin main` was rejected because the clone
+  was on a detached HEAD; `git push origin HEAD:main` fast-forwarded main from dbc7257 to d62cebd.
+  No other changes were on the remote.
+- At 18:38 UTC (four minutes after the push) https://intentsly.com/sitemap.xml and
+  https://intentsly.com/learn/what-is-an-ai-sdr could not be fetched from this run: the fetch tool
+  asks for a permission that nobody is present to grant for URLs that did not come from a search
+  result, and no search returned an intentsly.com URL. Same limitation as the 21 October blog run.
+  The database row is published (status = published, 18:32 UTC), so the page should resolve once the
+  Cloudflare deploy for d62cebd completes. Not confirmed by this run.
+- Alex: open https://intentsly.com/learn/what-is-an-ai-sdr and the sitemap once; if the page is
+  missing an hour after the push, check the deploy for commit d62cebd.
