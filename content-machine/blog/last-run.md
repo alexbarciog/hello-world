@@ -60,3 +60,14 @@
   day; nothing else is blocking them.
 - From 23 October the trigify-cluster articles should move to past tense; a small pass over the
   openings of the published campaign articles would keep them accurate.
+
+## Live check (after push)
+- Pushed at 15:59:53 UTC (ef62197). The prerendered blog index at https://intentsly.com/blog was
+  fetched at 16:05, 16:12, 16:21, 16:27 and 16:37 UTC and still listed the same 12 articles with
+  free-trigify-alternatives first, so the redeploy had not landed 37 minutes after the push, or the
+  index is edge-cached. The database row is published, so the client-rendered page should resolve
+  once the deploy completes; this run could not confirm it.
+- https://intentsly.com/sitemap.xml and the article URL itself could not be fetched from this run
+  (the fetch tool asks for a permission that nobody is present to grant for URLs that did not come
+  from a search result). Alex: open https://intentsly.com/blog/trigify-vs-gojiberry and the sitemap
+  once, and check the Cloudflare deploy for commit ef62197 if the article is still missing.
