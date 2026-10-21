@@ -717,8 +717,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-a-marketing-agency",
    "monthly_volume": null
   },
   {
