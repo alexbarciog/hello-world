@@ -1,79 +1,79 @@
-# Last run: 2026-10-21 (Guides task, guides section)
+# Last run: 2026-10-21 (Trigify campaign task, blog section)
 
-- Keyword: how to build a b2b prospect list (cluster outbound, guide, commercial, priority 1, medium;
-  returned by `blog_next.py --section guides`, no draft was waiting). No PAUSE file.
-- Title: How to Build a B2B Prospect List: 7 Steps and a Template
-- Live URL: https://intentsly.com/guides/build-b2b-prospect-list
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 07:48 UTC,
-  10:48 Europe/Bucharest). The SQL file was run once, unchanged. Live check at the bottom.
-- Gate: first run failed on two items (meta_description 163 chars; opening paragraph 99 words). Fixed by
-  shortening the description to 155 chars and trimming the opening to 89 words (two attempts: 96 words
-  after the first trim). Third run passed. After passing, four truth-pass edits were made (dropped the
-  Sales Navigator "Industry" filter name because LinkedIn's page opened this run does not list it,
-  softened the Intentsly sentence so it does not imply the product fills the reader's spreadsheet,
-  removed a pointer to guides that are not published yet, "other vendors" -> "other buyers") and the
-  gate was re-run: still `"ready": true`, no warnings. Final 2,782 words (guide min 1,500), 11 H2s,
-  6 FAQ entries, 7 internal links (/learn/what-is-an-ideal-customer-profile,
-  /guides/linkedin-lead-generation-guide, /features/linkedin-signals,
-  /guides/find-decision-makers-on-linkedin, /case-studies, /try-ai, /guides), 5 external links, all
-  opened this run.
-- Caps: third article dated 21 October (Bucharest) after trigify-api-alternative and
-  intentsly-vs-gojiberry; the daily cap is 7. No cap reported.
-- Queue: 9 guides keywords still queued (next: how to write a linkedin outreach message), so no new
-  keywords were added.
-- Supabase connector: the session listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL)
-  and a separate `Supabase` server whose `execute_sql` worked after a `select 1` check. Same pattern
-  as the previous two runs. No `add_repo` tool existed in the session; the repository was already in
-  scope and `git pull origin main` was used on the existing clone.
+- Keyword: free trigify alternatives (cluster trigify, listicle, commercial, priority 0, low). No PAUSE file.
+  `blog_next.py` first returned "what happens to my trigify data"; it was marked `skipped` because the
+  published `trigify-shutting-down` article already lists it as a secondary keyword and answers it in the
+  H2 "What stops on 22 October, and what do you keep?" and the FAQ "What happens to my Trigify data after
+  22 October?" (campaign brief: do not write two articles that answer the same question). The next queued
+  trigify keyword, "free trigify alternatives", was written instead.
+- Title: Free Trigify Alternatives: 7 Options Sorted by the Job They Cover
+- Live URL: https://intentsly.com/blog/free-trigify-alternatives
+- Date logic: run on 21 October 2026, so present tense ("Trigify closes ... 22 October 2026"), deadline
+  first, export steps included. No "this week" or "tomorrow".
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 10:39 UTC).
+  The SQL file was run once, unchanged, through the `Supabase` connector's execute_sql.
+- Gate: run 1 failed on two items (opening paragraph 94 words; "$56, $69" without a source link in the
+  paragraph). Fix 1 trimmed the opening and linked the PhantomBuster pricing page in that paragraph; run 2
+  still reported 91 words (the gate's tokenizer counts "7-day" and "11:59pm" differently from a plain
+  count). Fix 2 trimmed three more words; run 3 passed. One truth-pass edit after passing ("the job most
+  Trigify customers used Social Signals for" was an unverifiable claim about customers; now "the one
+  Trigify's Social Signals covered"); gate re-run, still `"ready": true`, no warnings. Final 3,254 words
+  (listicle min 1,500), 13 H2s, 6 FAQ entries, two tables, 7 internal links (/blog/trigify-alternatives
+  hub with "Trigify alternatives" anchor in the first 300 words, /blog/trigify-shutting-down,
+  /blog/rebuild-trigify-workflows-in-clay, /blog/trigify-replacement-linkedin-engagement-tracking,
+  /features/linkedin-signals, /try-ai, /signal-playbook), 9 external links, all opened this run.
+- Hub "Related" list: `blog/published/trigify-alternatives.md` has no Related section, so the step in the
+  campaign brief was skipped as instructed.
+- Caps: config/blog.json currently reads max_posts_per_day 7 and max_posts_per_week 45 (the task prompt
+  describes 3 and 21). The gate reported no cap. This is the fourth article dated 21 October (Bucharest):
+  intentsly-vs-gojiberry 00:07, trigify-api-alternative 09:12, build-b2b-prospect-list 10:48, this one
+  13:39. If the intended cap is 3 a day, config/blog.json should be changed by the founder; the run did
+  not touch it.
+- Queue: 6 trigify keywords still queued (trigify vs gojiberry, trigify pricing and what replacements
+  cost, linkedin profile monitoring tool, trigify vs valley, trigify vs teamfluence, life after trigify:
+  signal-based selling playbook). No new keywords added.
+- Connectors: the session listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL) and a separate
+  `Supabase` server whose execute_sql worked; same pattern as the previous runs. No `add_repo` tool existed
+  in the session; the repository was already in scope and `git pull origin main` was run on the existing
+  clone. No computer was linked (cloud-only run).
 
 ## What the research turned up
-- Page one for "how to build a b2b prospect list" is all vendor blogs: Zapier (Mar 2024), Sopro
-  (2 Sep 2026), Cognism (upd. 13 May 2026), Cleanlist AI (Apr 2026), Lead Scrape (upd. Oct 2026),
-  Danish Lead Co (Apr 2026), Leadin (Jun 2025). Every one starts from a database export and filters
-  down; none gives a pasteable LinkedIn search string, none applies a scoring rule to a row, none says
-  which rows to delete. Statistics are the vendor's own or routed through other blogs.
-  Brief: blog/briefs/build-b2b-prospect-list.md.
-- Outside facts used, each linked in its paragraph: Google sender guidelines (spam rate below 0.10%,
-  never 0.30%, stricter rules above 5,000 messages a day to Gmail); Forrester press release
-  21 Jan 2026 (13 internal stakeholders, nine external influencers, procurement decides in 53% of
-  cycles); ZeroBounce Email List Decay Report (at least 23% of a list decays within a year, data
-  Jan to Dec 2025); LinkedIn's Sales Navigator how-to page (filter names, Job Changes spotlight,
-  "40+ filters"); Apollo pricing page (plan names only; no figures rendered, so none stated).
-- Could not open: LinkedIn help page on the commercial use limit (robots), the businesswire copy of
-  the Forrester release and the Sales Navigator filter page (provenance prompt). The commercial use
-  limit is stated qualitatively, with no number.
-- Angle taken: build the list from LinkedIn activity first (post search strings, competitor-post
-  commenters, Job Changes), firmographics second; a 19-column paste-in header row; a fit + signal
-  scoring table applied to a labelled hypothetical company (Lantern Compliance); a cut rule (under 50
-  points); a weekly routine; a message template that quotes the signal.
-- Intentsly facts used: LinkedIn signals (competitor posts, keyword posts, page followers) and ICP
-  scoring from product.md; 30/30/15 limits and 2 accounts; 14 demos in 14 days, zero manual outreach,
-  4x reply rate (story + /case-studies); /try-ai with no account. No price. No Reddit/X. The 21% and
-  2 to 4 figures were not used (gate reads only rows whose status is exactly `verified`).
+- Page one for "free trigify alternatives" is vendor alternatives lists that rank their own product first
+  (Overloop 14 Sep 2026, Octolens upd. Oct 2026, Embers upd. 1 Oct 2026, BuzzLead DIY stack, Gojiberry,
+  Teamfluence, Satellyte, Cleed, MagicPost). None separates free plans from free trials, none states the
+  limit of each free tier for the specific Trigify job, none offers a manual free method or a routine.
+  Brief: blog/briefs/free-trigify-alternatives.md.
+- Vendor pages opened on 2026-10-21 and used: trigify.io homepage (retirement notice: no pricing shown, so
+  no Trigify price stated; help.trigify.io plans page could not be opened); help.trigify.io "What is
+  Social Signals?", "Create Social Listening Search" node, "Social Listening & Monitoring" collection
+  (sources: LinkedIn, X, Reddit, YouTube, podcasts, Hacker News); clay.com/pricing (free plan 500 actions,
+  100 credits, 200 rows; webhooks, HTTP API, CRM integrations on Growth; job change signals on Launch);
+  phantombuster.com pricing explainer dated July 2026 (free plan 30 min, 1 slot, 10 rows per export;
+  Start $69/$56); f5bot.com (free, Reddit/HN/Lobsters; Silver $9.99, Gold $49.99); google.com/alerts
+  (options only); octolens.com/pricing (no free plan; 7-day trial; Pro $159 annual, Scale $499);
+  gojiberry.ai/#pricing (free trial wording; Pro $99).
+- Could not open: LinkedIn help pages on post search and Boolean search (robots), Clay's plan FAQ entry
+  and help.trigify.io plans page (fetch permission prompt withdrawn). The LinkedIn search steps are written
+  as a procedure with no claim attributed to LinkedIn's help. Lynx Signal was dropped: its Product Hunt
+  page mixes two products and the site did not surface a pricing page.
+- Intentsly facts used: no free plan, 7-day free trial (verified), /try-ai with no account, signal types,
+  scoring, verified email, AI SDR flow with Cal.com or Google Calendar, 2 accounts, 30/30/15, HubSpot only,
+  export without a format, four languages, 14 demos in 14 days (labelled as one campaign). No price.
+  The 21% and 2 to 4 figures were not used (the gate reads only rows whose status is exactly `verified`).
 
 ## What the founder should supply
-- The export format(s) Intentsly offers (CSV? HubSpot only?), so a guide can say "export the scored
-  list to your sheet" instead of staying vague about how a reader gets Intentsly rows into the
-  template above.
-- A real list-building number from the product: how many signal rows a typical agent finds in a week
-  for a defined ICP, and what share passes scoring. That would replace the invented Lantern numbers
-  with a measured example on the next guide ("how to set up signal-based outbound").
-- One short story from the 14-demos launch: the first search string you used, the post that led to
-  the first demo, what you turned off. The story file still has the founder placeholder.
-- Same as earlier runs: decide whether proof.md rows marked `verified: say ...` should be split so the
-  gate accepts the 21% reply rate and 2 to 4 meetings figures.
-- Confirmation of the Sales Navigator filter names the site should use (the public how-to page lists
-  Function, Seniority, Titles, Current Company, Account Lists, Company Headcount, Region; the help
-  pages that list the rest are blocked to this run).
+- A decision on the daily cap: config/blog.json says 7 a day and 45 a week; the campaign task text says 3
+  and 21. Today four articles were published across the three tasks.
+- Whether the Trigify plans article (help.trigify.io/articles/5648707-plans-and-pricing) still shows
+  prices; the "trigify pricing and what replacements cost" keyword needs that page or a decision to quote
+  only ranking pages, attributed.
+- A one-line statement of what /try-ai shows for a named competitor (names only? scored list?), so the
+  closing "two-minute check" paragraph can be made exact on the next campaign article.
+- Same as earlier runs: the export format(s) Intentsly offers, and whether proof.md rows marked
+  `verified: say ...` should be split so the gate accepts the 21% and 2 to 4 figures.
+- Date logic reminder: from 23 October 2026 the remaining trigify keywords switch to past tense; the
+  published campaign articles written in present tense (including this one) are not rewritten by this task.
 
 ## Live check (after push)
-- Pushed at 07:48:58 UTC (commit 997d2c7, `git push origin HEAD:main`; the clone is a detached HEAD, as
-  in the previous run). The repository has no GitHub Actions workflows, so the deploy runs elsewhere.
-- At 07:54 UTC /guides still listed two guides (deploy not finished). At 08:07 UTC /guides listed three,
-  the new one first: "How to Build a B2B Prospect List: 7 Steps and a Template" (Outbound).
-- CONFIRMED at 08:08 UTC: https://intentsly.com/guides/build-b2b-prospect-list renders the H1, author
-  line "Alex Barciog, CEO & Founder, Intentsly", October 21, 2026, 13-minute read, 11 H2s plus the
-  site's "Your next step" box, and the six FAQ entries.
-- Sitemap: https://intentsly.com/sitemap.xml could not be fetched from this run (the fetch tool's
-  provenance prompt was withdrawn twice, and the URL does not surface in search). Not confirmed in the
-  sitemap; the page is live and listed on the /guides index, which the same deploy produces.
+- Filled in after the push and a ~4 minute wait; see the bottom of this file in the follow-up commit if
+  the first check was too early.
