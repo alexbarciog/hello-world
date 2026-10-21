@@ -75,5 +75,13 @@
   published campaign articles written in present tense (including this one) are not rewritten by this task.
 
 ## Live check (after push)
-- Filled in after the push and a ~4 minute wait; see the bottom of this file in the follow-up commit if
-  the first check was too early.
+- Pushed at 10:40:19 UTC (commit e4e7319, `git push origin HEAD:main`; the clone is a detached HEAD, as in
+  the previous runs). Waited four minutes.
+- CONFIRMED at 10:45 UTC: https://intentsly.com/blog lists the new article first, and
+  https://intentsly.com/blog/free-trigify-alternatives renders the H1, the author line "Alex Barciog, CEO &
+  Founder, Intentsly", October 21, 2026, 15-minute read, the 13 H2s plus the site's "Your next step" and
+  "Keep reading" boxes, and the six FAQ entries.
+- Sitemap: https://intentsly.com/sitemap.xml could not be fetched from this run (the fetch tool's permission
+  prompt was withdrawn, unattended run, and the URL does not surface in search), same as the previous runs.
+  Not confirmed in the sitemap; the page is live and listed on the /blog index, which the same deploy
+  produces.
