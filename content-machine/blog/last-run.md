@@ -1,38 +1,36 @@
-# Last run: 2026-10-22 (Trigify campaign task, blog section; started 15:18 UTC, 18:18 Bucharest)
+# Last run: 2026-10-22 (Learn task, learn section; started 18:20 UTC, 21:20 Bucharest)
 
-- Keyword: trigify vs valley (cluster trigify, comparison, commercial, priority 1, low). `blog_next.py` returned
-  "reddit keyword monitoring for leads" (cluster reddit-x), so per the campaign task rule the first queued
-  trigify keyword by priority then difficulty was taken instead. No PAUSE file, no draft waiting.
-- Date logic: run on the closing day itself. Standard access ends 11:59pm BST on 22 October 2026, still in the
-  future at run time, so the article uses present tense with the date spelled out, and frames export as
-  "while you still have access", which also reads correctly after the cutoff.
-- Title: Trigify vs Valley: Which Trigify Jobs Valley Takes Over
-- Live URL: https://intentsly.com/blog/trigify-vs-valley
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-22 15:32 UTC). The SQL
-  file `blog/out/trigify-vs-valley.sql` was run once, unchanged, through the `Supabase` connector's execute_sql on
-  project uwwajlezgeurnvvrvdvb. The only other statement run was a `select 1` at the start to confirm the
-  connector worked (the session again listed a lowercase `supabase` server as failed with ERR_PROXY_TUNNEL; the
-  capitalised `Supabase` connector answered). Sixth page dated 22 October against the config daily cap of 7.
-- Gate: run 1 failed on two items (meta_description 175 chars; $40/$149/$199 in the cost summary paragraph had
-  no link). Fixed by shortening the description and adding the Valley pricing link to that paragraph. Run 2
-  passed; a third run after three wording edits (own-profile note in the settings table, "shows no prices",
-  a Trigify vs Gojiberry link) also passed with no warnings. 2,960 gate-words, 10 H2s, 6 FAQ entries, two
-  tables, 7 internal links, 13 external links.
-- Sources: trigify.io homepage (HubSpot notice; no prices shown), help.trigify.io Plans & Pricing (Starter $40,
-  Max $199, Enterprise custom, $0.012 overage), Set up Social Signals monitoring (16 signal types, plan profile
-  caps, none on Max/Enterprise, cadence), What is Social Signals, Quick Start, Listening vs Workflows, How do I
-  get my data into Clay / my CRM; joinvalley.co homepage (stack list naming Trigify under "Post engagement"),
-  pricing (updated 19 Oct 2026), product, signals/linkedin-post-engagers (competitors' posts on up to five
-  monitored profiles), api-and-mcp, per-seat pricing post, and Valley's own "Valley vs Trigify" post (the only
-  page that ranks for the query; written before the retirement notice). Full list in
-  `blog/briefs/trigify-vs-valley.md`.
-- Intentsly facts used: LinkedIn-only signal list, ICP scoring, verified emails, export (no format named), AI SDR
-  on LinkedIn only with Cal.com/Google Calendar booking, HubSpot as the only CRM, 2 accounts, 30/30 cap with 15
-  recommended, 7-day trial, /try-ai, 14 demos in 14 days and 4x reply rate (story). No price. Reddit, X,
-  YouTube, podcasts and Hacker News explicitly stated as not covered.
-- Hub "Related" list: `blog/published/trigify-alternatives.md` has no Related section, so no edit was made.
-- Queue: 3 trigify keywords still queued (linkedin profile monitoring tool, trigify vs teamfluence, life after
-  trigify: signal-based selling playbook); 37 blog keywords queued overall, so none were added.
-- For the founder: the campaign articles still lean on one story (14 demos). A short note on one Trigify
-  customer who moved to Intentsly (what they tracked, what they switched on, first reply) would let the next
-  articles carry a first-hand migration example; none is claimed until it exists in `brain/stories/`.
+- Keyword: what is lead enrichment (cluster fundamentals, lesson, informational, priority 2, medium). Returned by
+  `blog_next.py --section learn`. No PAUSE file, no draft waiting.
+- Title: What Is Lead Enrichment? Definition, Data Types and Limits
+- Live URL: https://intentsly.com/learn/what-is-lead-enrichment
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-22 18:25 UTC). The SQL file
+  `blog/out/what-is-lead-enrichment.sql` was run once, unchanged, through the `Supabase` connector's execute_sql on
+  project uwwajlezgeurnvvrvdvb. The only other statement run was a `select 1` at the start to confirm the connector
+  worked (the session listed a lowercase `supabase` server as failed with ERR_PROXY_TUNNEL; the capitalised
+  `Supabase` connector answered). Seventh page dated 22 October: the config daily cap of 7 is now reached, so any
+  other task running later today should publish nothing.
+- Gate: run 1 failed on one item (meta_description 174 chars). Shortened it; run 2 passed. Then trimmed about 200
+  words to sit closer to the lesson range (gate-words 2,262 to 2,070, in line with the other published lessons at
+  1,776 to 2,136); run 3 passed with no warnings. 9 H2s, 6 FAQ entries, two tables, 6 internal links, 5 external.
+- Shape (page-write /learn): bold one-sentence definition, why it matters with a labelled hypothetical, data-types
+  table, how it works (four steps, real-time/batch/waterfall), enrichment vs data enrichment vs lead scoring table,
+  "when it is the wrong spend" (the angle no vendor page has), legal section, three actions this week, related
+  lessons (buying signal, intent data, ICP, Learn index), FAQ. CTA is the Signal Playbook; one contextual Intentsly
+  sentence links /features/linkedin-signals (scoring against ICP + verified emails, both in product.md).
+- Sources opened and linked: Salesforce State of Sales (28% of time selling, 7,775 respondents, Aug to Sep 2022),
+  Gartner data-quality topic page ($12.9M a year average, 2020 research), ICO legitimate-interests guide (three-part
+  test, right to object), FullEnrich B2B lead enrichment guide (waterfall worked example), Clay glossary (refresh
+  cadence). Also read, not linked: Clearbit (2022), Leadfeeder (Sep 2026), ZoomInfo (updated Jul 2026). Full brief
+  in `blog/briefs/what-is-lead-enrichment.md`.
+- Intentsly facts used: LinkedIn signals, ICP scoring, verified emails, 14 demos in 14 days story. No price, no
+  Reddit/X, no email sending.
+- Queue: 7 learn keywords still queued (social selling, trigger event in sales, lead scoring, outbound sales,
+  signal-based selling, sales trigger, account-based prospecting), so none were added.
+- Live check: see the run report (sitemap and page fetched about 4 minutes after the push).
+- For the founder: (1) the lessons all lean on the one launch story; a sentence or two on what enrichment Intentsly
+  actually returns per lead (which fields beyond verified email, and the export format) would let the next lesson
+  on lead scoring describe the product precisely instead of generically. (2) The published intent-data lesson from
+  15 October links /features/reddit-x-signals as a working feature; corrections.md now forbids that, so that page
+  may want a one-line edit. (3) The voice file is still `untrained`; lessons are written in the house style from
+  blog-write.md rather than the founder's own voice.
