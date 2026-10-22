@@ -729,8 +729,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-recruitment-agency",
    "monthly_volume": null
   },
   {
