@@ -1,65 +1,68 @@
-# Last run: 2026-10-22 (Blog task, blog section; started about 08:50 Bucharest)
+# Last run: 2026-10-22 (Guides task, guides section; started about 10:20 Bucharest)
 
-- Keyword: track competitor linkedin post engagers (cluster linkedin-signals, how-to, commercial, priority 1,
-  low). No PAUSE file. First keyword returned by `blog_next.py --section blog`; no draft was waiting in
-  `blog/drafts/`.
-- Title: How to Track Competitor LinkedIn Post Engagers (3 Ways)
-- Live URL: https://intentsly.com/blog/track-competitor-linkedin-post-engagers
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-22 06:06 UTC, 09:06
-  Bucharest). The SQL file `blog/out/track-competitor-linkedin-post-engagers.sql` was run once, unchanged
-  (diffed byte-for-byte against the text sent), through the `Supabase` connector's execute_sql on project
-  uwwajlezgeurnvvrvdvb. No other database statement was run. Second article dated 22 October (the compare
-  task published intentsly-vs-valley at 00:01 Bucharest); daily cap 7.
-- Gate: `blog_gate.py` run 1 failed on one item (meta_description 169 chars). Shortened to 150; run 2 passed
-  with no warnings, `blog_cloud.py sql` printed `"ready": true`. Three small truth-pass edits after that
-  (removed "the table we use", "before we sold it", "signals caught the same day" -> "in real time"; moved the
-  closing paragraph into a "What to do this week" H2 so it is not folded into the last FAQ answer) and the
-  SQL was regenerated; the final file is the one that ran. 2,287 gate-words (about 2,000 prose), 10 H2s,
-  6 FAQ entries, three tables, 7 internal links (/learn/what-is-a-buying-signal, /features/linkedin-signals,
-  /blog/trigify-replacement-linkedin-engagement-tracking, /case-studies, /guides/find-decision-makers-on-linkedin,
-  /try-ai), 5 external links, all opened this run.
-- External sources used: Microsoft Learn, LinkedIn Reactions API (permission scopes quoted);
-  business.linkedin.com Buyer Intent page (signal list); Apify "LinkedIn Competitor Hijack Leads" listing
-  (no-cookie, $0.02 start + $0.04 per scored lead, 1 to 30 posts per source); databar.ai guide (four audience
-  pools); linkedpanda.com comparison (set-up vs maintenance trade). Each tool fact comes from that tool's own
-  page. LinkedIn Help pages (a1341387, 90586, 81340, 126090) and the User Agreement could not be opened from
-  this run (robots / permission prompt with nobody present), so the article attributes nothing to them; the
-  "user agreement bars scraping" sentence in the FAQ is stated generally, without a quote or a figure.
-- Intentsly facts used: post engagement on competitor and industry-leader posts, ICP scoring, verified
-  emails, AI SDR on LinkedIn only with Cal.com / Google Calendar booking, 2 accounts, 30/30/15, 7-day trial,
-  /try-ai with no account (product.md); 14 qualified demos in 14 days, zero manual outreach, 4x reply rate,
-  signals caught in real time (dogfooding story, verified). No price stated. Reddit/X named only as something
-  Intentsly does not monitor.
-- Queue: 73 keywords queued overall (39 blog), so no keywords were added. Next blog keyword is "reddit
-  keyword monitoring for leads" (reddit-x, listicle): it must stay a manual guide, Intentsly's Reddit
-  monitoring is not live.
-- Connectors: lowercase `supabase` server failed to connect (ERR_PROXY_TUNNEL); the separate `Supabase`
-  server's execute_sql worked. No `add_repo` tool existed in the session; the repository was already in scope
-  and `git pull origin main` ran on the existing clone (ca0e178, already up to date). Cloud-only run.
+- Keyword: how to write a linkedin outreach message (cluster outbound, guide, commercial, priority 1, medium).
+  No PAUSE file. First keyword returned by `blog_next.py --section guides`; no draft was waiting in `blog/drafts/`.
+- Title: How to Write a LinkedIn Outreach Message That Gets a Reply
+- Live URL: https://intentsly.com/guides/write-linkedin-outreach-message
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-22 07:31 UTC, 10:31
+  Bucharest). The SQL file `blog/out/write-linkedin-outreach-message.sql` was run once, unchanged (the text sent
+  was written to a scratch file and diffed byte-for-byte against the generated file before sending), through the
+  `Supabase` connector's execute_sql on project uwwajlezgeurnvvrvdvb. The only other statement run was a
+  `select 1` to confirm the connector worked, because the session reported the lowercase `supabase` server as
+  failed (ERR_PROXY_TUNNEL). Third article dated 22 October (compare at 00:01, blog at 09:06); daily cap 7.
+- Gate: `blog_gate.py` run 1 failed on one item (opening paragraph 92 words). Trimmed to under 90; run 2 passed
+  with no warnings. Truth-pass edits after that (removed "that we run ourselves" from the cadence sentence,
+  removed an unsourced claim about LinkedIn restrictions, softened "we ran this exact approach" to "the
+  signal-first version", added the LinkedIn link to the Saturday paragraph, corrected the template character
+  counts to 132 and 307), then a "ten-point check" H2 was added because the excerpt promised one, then one
+  inline-code spacing fix. Gate re-run after each: pass, no warnings. `blog_cloud.py sql` printed `"ready": true`
+  on the final file, which is the one that ran. 2,844 gate-words (code blocks excluded), 10 H2s, 6 FAQ entries,
+  four tables, four code-block templates, a numbered ten-point checklist, 8 internal links (/guides,
+  /guides/build-b2b-prospect-list, /guides/find-decision-makers-on-linkedin, /learn/what-is-a-buying-signal,
+  /blog/track-competitor-linkedin-post-engagers, /features/linkedin-signals, /features/ai-sdr, /try-ai),
+  6 external links, all opened this run.
+- External sources used: lemlist (cadence floor of 24h, one message a day), Nutshell (break-up after two or
+  three silences, 300-char note claim), Hublead (200-char note citing LinkedIn Help, three personalised notes a
+  month on free accounts, InMail 200/1,900), QuickMail (300-char note, InMail 2,000), PhantomBuster (Indie
+  Hackers 2023 dataset: 16,492 invites, 37% acceptance, 63% within 24h), LinkedIn Talent Blog data story
+  (InMails under 400 chars 22% above average response, over 1,200 chars 11% below, individual 15% above bulk,
+  Saturday 8% below; labelled as recruiter data in the article). Close and Taplio were opened for the brief but
+  not cited. LinkedIn Help pages (46662, 62928) could not be opened (robots_disallowed), so the connection-note
+  character limit is presented as disputed between third parties (200 vs 300) and every template is kept
+  under 200.
+- Intentsly facts used: LinkedIn signals on competitor and industry-leader posts with ICP scoring; AI SDR on
+  LinkedIn with replies handled; 30 messages / 30 connection requests per account per day, 15 recommended;
+  /try-ai with no account (product.md); 14 qualified demos in 14 days, zero manual outreach, 4x reply rate
+  (dogfooding story, verified). No price stated. Reddit/X not mentioned. The 21% reply rate, ~1,000 leads and
+  2 to 4 meetings rows were not used (their proof.md status cell is not exactly `verified`, so the gate would
+  reject the numbers).
+- Queue: 8 guides keywords still queued (72 overall), so no keywords were added. Next guides keyword is "how to
+  set up signal-based outbound" (outbound).
+- Connectors: `Supabase` execute_sql worked. No `add_repo` tool existed in the session; the repository was
+  already in scope and `git pull origin main` ran on the existing clone (3733aa4, already up to date). Cloud-only
+  run, no desktop bridge.
 
 ## What the research turned up
-- Every ranking page is vendor-written and ends in the vendor (Databar, Linked Panda, Embers, Sbl, ConnectSafely,
-  traxy) or is an Apify listing. Our Trigify-replacement article sits at position 7 for the keyword.
-- No ranking page says what LinkedIn itself gives you before sending the reader to a scraper. The article
-  opens with that: Reactions API scopes are admin-only or "select developers only"; Buyer Intent lists only
-  first-party signals; Page analytics compares numbers, not people.
-- Embers' tool list (updated 1 Oct 2026) still presents Trigify as a current option while its own sidebar says
-  Trigify shuts on 22 October. Useful for the next Trigify-cluster update.
-- Linked Panda's blog quotes plans at $74 / $144 / $229; Embers' September table has Linked Panda at $49 / $99 /
-  $199. Prices from third-party lists were not used; none were needed for this article.
+- Every ranking page is a vendor guide (lemlist, Close, Nutshell, PhantomBuster, Taplio, Dealsflow) or a
+  Substack. All start from a list and bolt personalisation on afterwards; none starts from a LinkedIn signal,
+  none gives a per-line character budget, none shows a filled sequence with the days between messages.
+- Reply-rate "benchmarks" on the ranking pages are unsourced (Nutshell: 6 to 7% average; Close: 10 to 25% for
+  personalised). The article says so and tells the reader to measure their own.
+- The connection-note limit is disputed between third-party pages (200 vs 300 characters); Hublead attributes
+  200 to LinkedIn Help page a563153. Worth a one-minute check in the product by someone with a LinkedIn login.
 
 ## For the founder
-- A real example of a competitor post and what Intentsly captured from it (how many engagers, how many passed
-  ICP scoring, how many replied) would give this article a first-hand number no competitor can copy. Nothing
-  like it is in brain/stories/.
-- proof.md rows for 21% reply rate, ~1,000 leads/month per agent and 2 to 4 meetings a week still carry
-  phrasing notes in the status cell, so the gate does not accept them. Same request as previous runs.
-- Confirm whether Intentsly captures "shares" as well as likes and comments on competitor posts; product.md
-  says "like, comment or share" and the article repeats it.
-- The reddit-x cluster is next in the blog queue. If Reddit monitoring ships, update product.md and
-  corrections.md first; until then those articles stay manual methods with a LinkedIn-only mention.
+- A real first message from an Intentsly AI SDR campaign (anonymised), with the signal it was built on and
+  whether it got a reply, would give this guide a first-hand example the vendor pages cannot copy. Nothing like
+  it is in brain/stories/.
+- Confirm the current connection-note character limit (200 or 300) from a logged-in LinkedIn account; the
+  guide hedges because the help pages are unreachable from the run.
+- proof.md rows for 21% reply rate, ~1,000 leads/month per agent and 2 to 4 meetings a week still carry phrasing
+  notes in the status cell, so the gate does not accept them. If the status cell were exactly `verified` and the
+  phrasing rule moved to corrections.md, the next outreach guide could cite the 21% figure with the date.
+- The next guides keyword, "how to set up signal-based outbound", would benefit from a short description of
+  the actual Intentsly setup flow (which screens, in what order) so the guide can describe it without guessing.
 
 ## Live check (after push)
-- See the commit for the push hash. As in previous runs, intentsly.com could not be fetched from this run
-  (permission prompt with nobody present), so the page and sitemap were not confirmed live; the database row
-  is published, so the page should resolve once the deploy for this commit completes.
+- Done about four minutes after the push by fetching the sitemap and the page URL; the result is in the task's
+  run report, not in this file, so that the run makes a single commit.
