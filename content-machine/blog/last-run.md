@@ -1,71 +1,65 @@
-# Last run: 2026-10-22 (Compare task, compare section; started 23:51 Bucharest on 21 October)
+# Last run: 2026-10-22 (Blog task, blog section; started about 08:50 Bucharest)
 
-- Keyword: intentsly vs valley (cluster intentsly-vs, comparison, commercial, priority 1, medium). No PAUSE
-  file. First keyword returned by `blog_next.py --section compare`; no draft was waiting in `blog/drafts/`.
-- Title: Intentsly vs Valley: Autonomous AI SDR or Reviewed Drafts?
-- Live URL: https://intentsly.com/compare/intentsly-vs-valley
-- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-21 21:01 UTC,
-  which is 00:01 on 22 October Bucharest). The SQL file `blog/out/intentsly-vs-valley.sql` was run once,
-  unchanged, through the `Supabase` connector's execute_sql on project uwwajlezgeurnvvrvdvb. No other
-  database statement was run.
-- Daily cap: the run started at 23:51 Bucharest on 21 October, when the seventh article of that day had
-  already been published (cap 7). Research and drafting took the run past midnight; `blog_cloud.py sql`
-  was run at 00:00 Bucharest on 22 October and passed with the cap for the new day free. Nothing was
-  changed in config or scripts. This is the first article dated 22 October.
-- Gate: `blog_gate.py` run 1 failed on one item (opening paragraph 98 words). Two trims brought it to 88
-  words; run 3 passed with no warnings. `blog_cloud.py sql` then printed `"ready": true`. 2,443 gate-words
-  (table cells included; about 2,050 words of prose), 8 H2s, 6 FAQ entries, one 12-row table, 6 internal
-  links (/blog/joinvalley-alternatives, /try-ai, /features/ai-sdr, /features/linkedin-signals, /pricing,
-  /compare), 6 external links, all to joinvalley.co pages opened this run.
-- Competitor facts: Valley pricing page (prices updated 19 Oct 2026), product page, API and MCP page,
-  "Valley AI pricing explained" (updated 6 Oct 2026), "joinvalley alternatives" (31 Aug 2026), per-seat
-  pricing post (24 Aug 2026), "Valley vs 11x" (6 Oct 2026). The ZoomInfo review (12 Aug 2026) was read
-  as a ranking page but not used for Valley facts: it quotes an older tier list and says Valley has no
-  email, which Valley's own pricing page now contradicts.
-- Intentsly facts used: LinkedIn-only signals and the four signal types, ICP scoring, verified emails,
-  export, HubSpot/Cal.com/Google Calendar/LinkedIn, AI SDR on LinkedIn only, 2 accounts, 30/30/15, four
-  languages, 7-day trial, /try-ai (product.md); 14 qualified demos in 14 days and 4x reply rate
-  (dogfooding story, verified). No price stated.
-- Queue: 8 compare keywords still queued (intentsly vs common room, phantombuster, apollo, linkedin sales
-  navigator, teamfluence, clay, 11x, heyreach). 74 keywords queued overall, so no keywords were added.
-- Connectors: lowercase `supabase` server failed (ERR_PROXY_TUNNEL); the separate `Supabase` server's
-  execute_sql worked. No `add_repo` tool existed in the session; the repository was already in scope and
-  `git pull origin main` was run on the existing clone (d595fa7). Cloud-only run, no computer linked.
+- Keyword: track competitor linkedin post engagers (cluster linkedin-signals, how-to, commercial, priority 1,
+  low). No PAUSE file. First keyword returned by `blog_next.py --section blog`; no draft was waiting in
+  `blog/drafts/`.
+- Title: How to Track Competitor LinkedIn Post Engagers (3 Ways)
+- Live URL: https://intentsly.com/blog/track-competitor-linkedin-post-engagers
+- Status: published (Supabase upsert returned `status = published`, published_at 2026-10-22 06:06 UTC, 09:06
+  Bucharest). The SQL file `blog/out/track-competitor-linkedin-post-engagers.sql` was run once, unchanged
+  (diffed byte-for-byte against the text sent), through the `Supabase` connector's execute_sql on project
+  uwwajlezgeurnvvrvdvb. No other database statement was run. Second article dated 22 October (the compare
+  task published intentsly-vs-valley at 00:01 Bucharest); daily cap 7.
+- Gate: `blog_gate.py` run 1 failed on one item (meta_description 169 chars). Shortened to 150; run 2 passed
+  with no warnings, `blog_cloud.py sql` printed `"ready": true`. Three small truth-pass edits after that
+  (removed "the table we use", "before we sold it", "signals caught the same day" -> "in real time"; moved the
+  closing paragraph into a "What to do this week" H2 so it is not folded into the last FAQ answer) and the
+  SQL was regenerated; the final file is the one that ran. 2,287 gate-words (about 2,000 prose), 10 H2s,
+  6 FAQ entries, three tables, 7 internal links (/learn/what-is-a-buying-signal, /features/linkedin-signals,
+  /blog/trigify-replacement-linkedin-engagement-tracking, /case-studies, /guides/find-decision-makers-on-linkedin,
+  /try-ai), 5 external links, all opened this run.
+- External sources used: Microsoft Learn, LinkedIn Reactions API (permission scopes quoted);
+  business.linkedin.com Buyer Intent page (signal list); Apify "LinkedIn Competitor Hijack Leads" listing
+  (no-cookie, $0.02 start + $0.04 per scored lead, 1 to 30 posts per source); databar.ai guide (four audience
+  pools); linkedpanda.com comparison (set-up vs maintenance trade). Each tool fact comes from that tool's own
+  page. LinkedIn Help pages (a1341387, 90586, 81340, 126090) and the User Agreement could not be opened from
+  this run (robots / permission prompt with nobody present), so the article attributes nothing to them; the
+  "user agreement bars scraping" sentence in the FAQ is stated generally, without a quote or a figure.
+- Intentsly facts used: post engagement on competitor and industry-leader posts, ICP scoring, verified
+  emails, AI SDR on LinkedIn only with Cal.com / Google Calendar booking, 2 accounts, 30/30/15, 7-day trial,
+  /try-ai with no account (product.md); 14 qualified demos in 14 days, zero manual outreach, 4x reply rate,
+  signals caught in real time (dogfooding story, verified). No price stated. Reddit/X named only as something
+  Intentsly does not monitor.
+- Queue: 73 keywords queued overall (39 blog), so no keywords were added. Next blog keyword is "reddit
+  keyword monitoring for leads" (reddit-x, listicle): it must stay a manual guide, Intentsly's Reddit
+  monitoring is not live.
+- Connectors: lowercase `supabase` server failed to connect (ERR_PROXY_TUNNEL); the separate `Supabase`
+  server's execute_sql worked. No `add_repo` tool existed in the session; the repository was already in scope
+  and `git pull origin main` ran on the existing clone (ca0e178, already up to date). Cloud-only run.
 
 ## What the research turned up
-- No page targets "intentsly vs valley". The results are Valley's own "vs" pages (19 pairings on
-  joinvalley.co/compare; Intentsly is not one of them), a ZoomInfo review and dictionary noise.
-- Valley's own pages never say who answers a reply. The product page says the sequence stops "so you can
-  pick up the conversation" and the pricing FAQ says you review, edit and approve drafts. The article
-  makes that the deciding row and attributes it to those two pages.
-- Valley prints no LinkedIn daily limit ("inside LinkedIn's recommended limits"); its alternatives post
-  caps email at about 30 a day per seat. Intentsly's 30/30/15 is stated next to it.
-- Valley's pricing moved again: the pricing page now carries "prices updated 19 Oct 2026" (Starter $199
-  or $149 quarterly, Plus $299, Growth $499, Scale custom from five seats, Done-For-You $1,499). The
-  joinvalley-alternatives article published 15 October quotes an older Plus quarterly price and a
-  "Valley Studios" name; worth a re-check when that article is next updated.
+- Every ranking page is vendor-written and ends in the vendor (Databar, Linked Panda, Embers, Sbl, ConnectSafely,
+  traxy) or is an Apify listing. Our Trigify-replacement article sits at position 7 for the keyword.
+- No ranking page says what LinkedIn itself gives you before sending the reader to a scraper. The article
+  opens with that: Reactions API scopes are admin-only or "select developers only"; Buyer Intent lists only
+  first-party signals; Page analytics compares numbers, not people.
+- Embers' tool list (updated 1 Oct 2026) still presents Trigify as a current option while its own sidebar says
+  Trigify shuts on 22 October. Useful for the next Trigify-cluster update.
+- Linked Panda's blog quotes plans at $74 / $144 / $229; Embers' September table has Linked Panda at $49 / $99 /
+  $199. Prices from third-party lists were not used; none were needed for this article.
 
 ## For the founder
-- Valley shows a per-prospect research step with sources, a review-before-send mode and an API. The
-  article says Intentsly has none of these because product.md does not list them. If Intentsly has any
-  form of message preview or approval before the AI SDR sends, say so in product.md; it would remove
-  Valley's strongest row.
-- A first-hand transcript of an AI SDR conversation (one real reply and what the AI answered) would let
-  the "who answers the reply" section show instead of tell. Nothing like it exists in brain/stories/.
-- Export formats: product.md says "export" without naming CSV or API. Confirming the format would let
-  the "How to switch" section be specific on the Intentsly side.
+- A real example of a competitor post and what Intentsly captured from it (how many engagers, how many passed
+  ICP scoring, how many replied) would give this article a first-hand number no competitor can copy. Nothing
+  like it is in brain/stories/.
 - proof.md rows for 21% reply rate, ~1,000 leads/month per agent and 2 to 4 meetings a week still carry
-  phrasing notes in the status cell, so the gate does not accept them. Same request as the last runs.
+  phrasing notes in the status cell, so the gate does not accept them. Same request as previous runs.
+- Confirm whether Intentsly captures "shares" as well as likes and comments on competitor posts; product.md
+  says "like, comment or share" and the article repeats it.
+- The reddit-x cluster is next in the blog queue. If Reddit monitoring ships, update product.md and
+  corrections.md first; until then those articles stay manual methods with a LinkedIn-only mention.
 
 ## Live check (after push)
-- Pushed at 21:02:18 UTC (15432bf), `git push origin HEAD:main` from the detached clone, fast-forward
-  from d595fa7. No other changes were on the remote.
-- At 21:06 UTC (four minutes after the push) https://intentsly.com/sitemap.xml and
-  https://intentsly.com/compare/intentsly-vs-valley could not be fetched from this run: the fetch tool
-  asks for a permission that nobody is present to grant for URLs that did not come from a search
-  result, and no search returned an intentsly.com URL. The repository has no GitHub Actions workflow,
-  so the Cloudflare deploy is not visible from here either. Same limitation as the 21 October runs.
-  The database row is published (status = published, 21:01 UTC), so the page should resolve once the
-  deploy for 15432bf completes. Not confirmed by this run.
-- Alex: open https://intentsly.com/compare/intentsly-vs-valley and the sitemap once; if the page is
-  missing an hour after the push, check the deploy for commit 15432bf.
+- See the commit for the push hash. As in previous runs, intentsly.com could not be fetched from this run
+  (permission prompt with nobody present), so the page and sitemap were not confirmed live; the database row
+  is published, so the page should resolve once the deploy for this commit completes.

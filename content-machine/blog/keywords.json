@@ -80,8 +80,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "track-competitor-linkedin-post-engagers",
    "monthly_volume": null,
    "section": "blog"
   },
