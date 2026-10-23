@@ -1149,8 +1149,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-common-room",
    "monthly_volume": null
   },
   {
