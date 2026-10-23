@@ -1041,8 +1041,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-social-selling",
    "monthly_volume": null
   },
   {
