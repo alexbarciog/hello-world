@@ -885,8 +885,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "set-up-signal-based-outbound",
    "monthly_volume": null
   },
   {
