@@ -668,8 +668,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "trigify-vs-teamfluence",
    "monthly_volume": null,
    "section": "blog"
   },
