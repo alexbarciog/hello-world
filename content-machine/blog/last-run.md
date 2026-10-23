@@ -1,24 +1,28 @@
-# Last run: 2026-10-22 (Compare task, compare section; started 20:51 UTC, 23:51 Bucharest)
+# Last run: 2026-10-23 (Blog task, blog section; started 05:52 UTC, 08:52 Bucharest)
 
-- Keyword: intentsly vs common room (cluster intentsly-vs, comparison, commercial, priority 1, medium). Returned by
-  `blog_next.py --section compare`. No PAUSE file, no draft waiting. Keyword left `queued`, not blocked.
-- Published: nothing. The daily cap in `config/blog.json` (`max_posts_per_day: 7`) is already reached for
-  22 October (Bucharest time). `blog_cloud.published_today()` counts 7: intentsly-vs-valley (00:01),
-  track-competitor-linkedin-post-engagers, write-linkedin-outreach-message, trigify-pricing-and-replacement-costs,
-  get-clients-for-a-recruitment-agency, trigify-vs-valley, what-is-lead-enrichment (21:25). The `sql` gate would
-  have refused with "daily cap reached", so no research, draft, SQL or database statement was produced this run.
-  The only database statement run was a `select 1` to confirm the Supabase connector answered (the session listed
-  a lowercase `supabase` server as failed with ERR_PROXY_TUNNEL; the capitalised `Supabase` connector worked).
-- Weekly count: 26 pages published in the last 7 days, under the cap of 45.
-- Queue: 8 compare keywords still queued (intentsly vs common room, phantombuster, apollo, linkedin sales
-  navigator, teamfluence, clay, 11x, heyreach), 3 published (gojiberry, valley, plus trigify-vs-intentsly in blog).
-  No keywords added.
-- Scheduling note for the founder: this compare task fires at about 23:50 Bucharest, after the other six section
-  tasks have used the day's quota. Moving it earlier in the day (or raising `max_posts_per_day` in
-  `config/blog.json`, which this task may not edit) would let it publish. The next compare keyword will be
-  "intentsly vs common room" unless the order changes.
-- For the founder, carried over: (1) the compare pages all lean on the one launch story and the October numbers;
-  a second customer story would let the "Where Intentsly is the better choice" section vary between pages.
-  (2) Export format (CSV? API?) is still unstated in `brain/wiki/product.md`, so compare pages must say "export"
-  without detail; Common Room, Clay and Apollo all publish export and API docs, so that row will read thin until
-  it is confirmed. (3) The price is still not citable; "See pricing page" stays the Intentsly pricing line.
+- Keyword: reddit keyword monitoring for leads (cluster reddit-x, listicle, commercial, priority 1, low). Returned by
+  `blog_next.py --section blog`. No PAUSE file, no draft waiting.
+- Published: "Reddit Keyword Monitoring for Leads: 5 Tools, 1 Free Method"
+  https://intentsly.com/blog/reddit-keyword-monitoring-for-leads
+  Gate passed on the third run (two fixes, both to the opening paragraph length: 98 and 94 words, max 90).
+  2,699 words, 12 H2, 6 FAQ, 5 internal links, 13 external. The generated SQL ran unchanged on Supabase project
+  uwwajlezgeurnvvrvdvb and returned status = published at 06:11:50 UTC. First article of the day (cap 7).
+- Facts: every price and feature claim is from the vendor's own page opened today (f5bot.com, syften.com,
+  awario.com/pricing, octolens.com/pricing, brand24.com/prices, gummysearch.com/closing-time); the RSS method cites
+  feeder.co and pagecrawl.io guides and Reddit's own search-operator page. Intentsly facts: 14 demos in 14 days
+  story and the 12/8 playbook figures, both verified in proof.md. Intentsly is stated plainly as not monitoring
+  Reddit (corrections.md, 2026-10-15). No price for Intentsly.
+- Left out: Reddit Pro (redditforbusiness.com/pro failed to load twice; press coverage would not meet the
+  "competitor's own site" rule). Worth a sentence in a future update if the page loads.
+- Note: Awario's own pages disagree on the Starter monthly price ($49 on the pricing page, $39 in a blog post);
+  the article uses the pricing page.
+- Queue: 36 blog keywords still queued, none added. Next in the reddit-x cluster: "reddit search queries to find
+  customers" (templates, priority 2).
+- Blocked keywords: none.
+- Connector note: the session listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL); the capitalised
+  `Supabase` connector worked. `add_repo` was not available as a tool; the repository was already attached and
+  `git pull` succeeded.
+- For the founder, carried over: (1) a second customer story would let Reddit/X articles vary the first-hand
+  section, which currently always points at the launch story; (2) export formats (CSV? API?) are still unstated in
+  `brain/wiki/product.md`; (3) the Intentsly price is still not citable; (4) if Reddit or X monitoring ever ships,
+  update `brain/corrections.md` so the reddit-x cluster can mention it.

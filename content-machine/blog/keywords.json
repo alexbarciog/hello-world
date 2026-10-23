@@ -188,8 +188,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "reddit-keyword-monitoring-for-leads",
    "monthly_volume": null,
    "section": "blog"
   },
