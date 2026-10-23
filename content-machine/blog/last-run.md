@@ -41,4 +41,10 @@
   Intentsly" in the compliance row, and the next pairings (Apollo, Clay, Sales Navigator) will raise it again;
   (5) a first-hand story from a customer who left a bigger platform for Intentsly would strengthen every
   "vs enterprise tool" page; (6) "intentsly vs phantombuster" is next in the compare queue.
-- Live check: see the run report (sitemap and page fetched about 4 minutes after the push).
+- Live check: NOT possible from this run. Four minutes after the push, WebFetch refused both
+  https://intentsly.com/sitemap.xml and the article URL (provenance / robots_disallowed on intentsly.com), and the
+  repository has no GitHub Actions workflow to read a deploy status from. The database row returned
+  status = published and the push landed on main (e5430c5..a7db498), so the page should appear once the site
+  redeploys; Alex should open the URL to confirm.
+- Git note: the push was rejected as non-fast-forward until the shallow clone was deepened
+  (`git fetch --deepen=20 origin main`), after which it went through. Future runs should deepen before pushing.
