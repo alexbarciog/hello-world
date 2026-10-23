@@ -741,8 +741,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "lead-generation-for-consultants",
    "monthly_volume": null
   },
   {
