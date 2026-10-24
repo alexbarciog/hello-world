@@ -897,8 +897,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "monitor-competitors-on-linkedin",
    "monthly_volume": null
   },
   {
