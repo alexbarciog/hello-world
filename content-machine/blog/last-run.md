@@ -1,50 +1,52 @@
-# Last run: 2026-10-23 (Compare task, compare section; started 20:52 UTC, 23:52 Bucharest)
+# Last run: 2026-10-24 (Blog task, blog section; started 05:50 UTC, 08:50 Bucharest)
 
-- Keyword: intentsly vs common room (section compare, cluster intentsly-vs, type comparison, commercial,
-  priority 1, difficulty medium), returned by `blog_next.py --section compare`. No PAUSE file, no draft waiting.
-- Published: "Intentsly vs Common Room: Signal Tool or Revenue OS?"
-  https://intentsly.com/compare/intentsly-vs-common-room
-  Gate passed on the fourth blog_gate run (fix 1: meta description trimmed from 161 to 159 characters; fixes 2
-  and 3: opening paragraph cut from 106 to 88 words). `blog_cloud.py sql` printed ready on its first run.
-  2,573 words by the gate's count (table and link anchors included; body prose about 2,000), 8 H2, 6 FAQ,
-  7 internal links, 12 external. The generated SQL ran unchanged on Supabase project uwwajlezgeurnvvrvdvb and
-  returned status = published at 21:05:08 UTC. Seventh article of 23 October by UTC; the mark step filed it
-  under 24 October Bucharest time because the run crossed midnight, so the 24 October daily count starts at 1.
-- Angle: no page ranks for the exact query. The neighbouring pages (Valley's "Valley vs Common Room",
-  marketbetter.ai and factors.ai "Common Room alternatives") are all vendor-written and quote Common Room prices
-  ($625, "$1,000+", tier names) that Common Room's own pricing page no longer shows (Essential $2,500/month
-  billed annually, 5 seats, last modified 29 September 2026). None reads Common Room's LinkedIn integration docs,
-  which say: company page only, no personal profiles, no followers "due to API limitations", and the Chrome
-  extension stopped capturing engagement from any LinkedIn post on 6 December 2024. The page prints those next
-  to Intentsly's own limits, gives Common Room six honest wins (website/product/community signals, account
-  layer, sequencer integrations, research agents, SOC 2/GDPR, team size) and ends with a decision rule.
-  Brief in blog/briefs/intentsly-vs-common-room.md.
-- Facts: Common Room facts only from commonroom.io pages opened today (pricing, /pricing/zra/, LinkedIn
-  integration guide, Chrome extension docs and July 2024 post, native signals, signals index, Zapier/API doc,
-  S3 export doc, RoomieAI page, homepage, "turn LinkedIn signals into pipeline" post). Their claimed reply-rate
-  numbers (21.3%, 9.5%) were NOT used. Intentsly facts from proof.md verified rows (14 demos in 14 days, 4x reply
-  rate, 2 accounts, 30/30 caps with 15 recommended, 7-day trial) and product.md. No Intentsly price, no 21%
-  figure, no ~1,000 leads figure, no Reddit/X features, no API claim. No em dashes, no banned phrases.
-- Note on Common Room's site: commonroom.io now carries a "Zoom" product group (Revenue Accelerator, Engage,
-  Dialer) with its own pricing page. The article says only that Engage sequencing "is sold on the same site" and
-  makes no claim about the corporate relationship, because no page opened today states it.
-- Queue: 7 compare keywords still queued (phantombuster, apollo, linkedin sales navigator, teamfluence, clay,
-  11x, heyreach); 61 queued overall, so none added. Blocked keywords: none.
-- Connector note: the session again listed a lowercase `supabase` server as failed (ERR_PROXY_TUNNEL); the
-  capitalised `Supabase` connector worked after a `select 1` check. `add_repo` was not available as a tool; the
-  repository was already in scope and `git pull` succeeded. WebFetch refused commonroom.io URLs typed from
-  memory; every page had to be reached through a search result first, which worked.
-- For the founder, carried over and new: (1) the 21% reply-rate, ~1,000 leads/month and 2 to 4 meetings rows in
-  proof.md still cannot be used until their status cell reads exactly `verified`; (2) export formats are still
-  unstated in product.md, so comparisons say "export" without naming CSV or API; (3) the Intentsly price is
-  still not citable; (4) confirm whether Intentsly has SOC 2 or a GDPR statement: this page had to say "ask
-  Intentsly" in the compliance row, and the next pairings (Apollo, Clay, Sales Navigator) will raise it again;
-  (5) a first-hand story from a customer who left a bigger platform for Intentsly would strengthen every
-  "vs enterprise tool" page; (6) "intentsly vs phantombuster" is next in the compare queue.
-- Live check: NOT possible from this run. Four minutes after the push, WebFetch refused both
-  https://intentsly.com/sitemap.xml and the article URL (provenance / robots_disallowed on intentsly.com), and the
-  repository has no GitHub Actions workflow to read a deploy status from. The database row returned
-  status = published and the push landed on main (e5430c5..a7db498), so the page should appear once the site
-  redeploys; Alex should open the URL to confirm.
-- Git note: the push was rejected as non-fast-forward until the shallow clone was deepened
-  (`git fetch --deepen=20 origin main`), after which it went through. Future runs should deepen before pushing.
+- Keyword: linkedin message templates for buying signals (section blog, cluster templates, type templates,
+  informational, priority 1, difficulty low), returned by `blog_next.py`. No PAUSE file, no draft waiting.
+- Published: "LinkedIn Message Templates for Buying Signals: 7 Sequences"
+  https://intentsly.com/blog/linkedin-message-templates-for-buying-signals
+  Gate passed on the second blog_gate run (fix 1: meta description trimmed from 171 to 158 characters).
+  `blog_cloud.py sql` printed ready on its first run. 3,234 words by the gate's count (table, bold labels and
+  blockquote templates included; body prose about 2,200), 13 H2, 6 FAQ, 9 internal links, 2 external. The
+  generated SQL ran unchanged on Supabase project uwwajlezgeurnvvrvdvb and returned status = published at
+  06:02:24 UTC. A read-only check afterwards confirmed the stored content_md matches the local body
+  (md5 7581540fc5065cd2ed8b9d17e6b91688, 18,799 characters). First article of 24 October in both UTC and
+  Bucharest time, so the daily count is at 1 of 7.
+- Angle: the ranking pages (Valley "10 templates", Coffee "25 templates" which are actually 14, Hublead 4
+  openers, Salesforge 5 openers, Expandi and RevBoss trigger guides) sort templates by stage or by intent and
+  stop at the opener. This page gives one complete sequence per signal (connection note, first message,
+  follow-up) for seven LinkedIn signals, prints the character count next to each template (counted by script
+  and corrected before publishing), adds a do-not-send rule and a timing window per signal, names the signals
+  too weak to message at all (page follows, unrelated funding, profile views), and sources its two numbers to
+  LinkedIn's own InMail data and Expandi's 13.2-million-request benchmark instead of vendor reply-rate claims.
+  Brief in blog/briefs/linkedin-message-templates-for-buying-signals.md.
+- Facts: outside statistics only from two pages opened today: Expandi "LinkedIn Outreach Benchmarks 2026"
+  (13,218,869 requests, 6,730,447 messages, 13,302 accounts, May 2025 to April 2026: 28.5% acceptance, 3.0%
+  note reply, 10.4% message reply) and LinkedIn Talent Blog InMail data (May 2021 to April 2022, recruiter
+  InMails: under 400 characters 22% above average, over 1,200 11% below, individual 15% above bulk), labelled
+  as recruiting data. Vendor claims (Valley 15-45% vs 2%, RevBoss "7x"/"400%", Tyler Willis 18%) were NOT
+  used. Intentsly facts from proof.md rows marked exactly `verified` (14 demos in 14 days, 4x reply rate,
+  12 signals / 8 to ignore, 7-day trial, 2 accounts, 30/30 caps with 15 recommended) and product.md (signal
+  types: post engagement, keyword posts, competitor page followers and engagers; scoring; /try-ai with no
+  account). No Intentsly price, no 21% figure, no ~1,000 leads figure, no Reddit/X claim, no email claim.
+  Job-change and hiring signals are described as manual LinkedIn searches, not as Intentsly features.
+  All templates are labelled as hypothetical examples. No em dashes, no banned phrases.
+- LinkedIn Help (answer/46662, connection-note character limit) is still robots-blocked for WebFetch, so the
+  article again tells the reader to trust the counter in the invite box and keeps every note under 200
+  characters. Note: the published guide set-up-signal-based-outbound says the note is "limited to 300
+  characters" while write-linkedin-outreach-message says under 200; this article avoids stating a limit.
+- Queue: 60 keywords still queued (33 blog, 7 guides, 7 solutions, 7 compare, 6 learn), so none added.
+  Blocked keywords: none. Skipped: 3 (pre-existing).
+- Connector note: as on the previous runs, the session listed a lowercase `supabase` server as failed
+  (ERR_PROXY_TUNNEL) while the capitalised `Supabase` connector worked after a `select 1` check. `add_repo` was
+  not available as a tool; the repository was already in scope and cloned, and `git pull` succeeded.
+- For the founder, carried over and new: (1) the 21% reply-rate, ~1,000 leads/month and 2 to 4 meetings rows
+  in proof.md still cannot be used until their status cell reads exactly `verified` (the gate matches the
+  word exactly; the "verified: phrase as ..." notes make the rows unusable); (2) a per-signal reply-rate
+  number from Intentsly's own data (even "pain-point posts reply at N times the rate of competitor-post likes")
+  would make this templates page and the signal guides far stronger; this page had to say "we have not run a
+  controlled test"; (3) if Intentsly ever tracks job changes or hiring posts, say so and two sets in this
+  article can be linked to the feature; (4) confirm the connection-note limit the product sees (200 on free,
+  300 on paid?) so the three articles stop disagreeing; (5) the Intentsly price is still not citable.
+- Live check: not possible from this run (intentsly.com is robots-disallowed for WebFetch and there is no
+  GitHub Actions workflow to read). The database row returned status = published and the push landed on
+  main, so the page should appear once the site redeploys; Alex should open the URL to confirm.
