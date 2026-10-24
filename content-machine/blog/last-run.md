@@ -32,6 +32,11 @@
   verified email, LinkedIn-only sending, /try-ai with no account). No price, no 21% or ~1,000-leads figures,
   no Reddit/X or email claim. Hiring and job-change signals are described as manual LinkedIn steps, not as
   Intentsly features. No em dashes, no banned phrases.
+- Live check: pushed to main at 07:36:54 UTC (6d05e52). About four minutes later WebFetch could not open
+  https://intentsly.com/sitemap.xml or the guide URL (the tool asked for a permission nobody was there to
+  grant, as on the previous runs), so the page and sitemap were not confirmed live from this run. A read-only
+  select on the database row confirmed status = published and that the stored content_md matches the local
+  body exactly (md5 ceb5ff1b2c9e174dae94253ad54e015f, 19,705 characters). Alex should open the URL to confirm.
 - LinkedIn Help pages (answer/126090 competitor analytics, learning/answer/69626 Premium insights) and
   linkedin.com/ad-library are robots-blocked or need approval for WebFetch, so the page cites Social Media
   Examiner and Lunio for those features instead of LinkedIn's own help text.
