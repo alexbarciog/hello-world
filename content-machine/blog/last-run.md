@@ -46,7 +46,14 @@
   not available.
 - Hub "Related" list: blog/published/trigify-alternatives.md has no Related section, so the step in the
   campaign brief was skipped (as on earlier campaign runs).
-- Live check: see the note appended below after the push.
+- Live check: pushed to main at 10:33:xx UTC (e3c21f4; the first `git push origin main` was rejected because
+  the clone was on a detached HEAD, `git push origin HEAD:main` succeeded). About four minutes later WebFetch
+  could not open https://intentsly.com/sitemap.xml or the article URL: direct fetches asked for a permission
+  nobody was there to grant, and intentsly.com pages found through search are robots-blocked for the tool,
+  as on previous runs. The repository has no GitHub Actions workflows, so the deploy could not be checked
+  there either. `scripts/prerender.mjs` renders every `status = published` row of blog_posts into static HTML
+  and the sitemap at build time, and the row is published, so the page should be live once the host finished
+  the build triggered by the push. Not confirmed from this run; Alex should open the URL.
 - Queue: trigify cluster now has 0 queued keywords (14 published, 3 skipped, 1 published this run). The
   campaign is complete unless new trigify keywords are added. 58 keywords still queued in other clusters
   (32 blog, 7 solutions, 7 compare, 6 guides, 6 learn), so none added. Blocked keywords: none.
