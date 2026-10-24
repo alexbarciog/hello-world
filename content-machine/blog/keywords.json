@@ -644,8 +644,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "linkedin-profile-monitoring-tools",
    "monthly_volume": null,
    "section": "blog"
   },
