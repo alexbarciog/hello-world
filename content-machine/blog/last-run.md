@@ -37,7 +37,15 @@
 - Links: /blog/scrape-linkedin-post-likers-and-commenters, /guides/set-up-signal-based-outbound, /compare,
   /features/ai-sdr, /features/linkedin-signals (contextual sentence at the "launch the post-engager automation every
   morning" step), /signal-playbook, /pricing, /try-ai (closing next action).
-- Live check: see the note appended below after the push.
+- Live check: not completed from this run, as on previous runs. First push attempt at 22:04 UTC was rejected
+  because main moved under it (Alex's own commits "Disabled payments", "Removed Reddit/X from Admin" and others,
+  none touching content-machine/); the commit was rebased onto the new main and pushed at 22:04:46 UTC
+  (e339c6c..287a4c9). At 22:09 UTC the fetch tool asked for a permission to open intentsly.com/sitemap.xml and the
+  /compare URL, nobody was there to grant it, and the request was withdrawn. No curl or browser fallback was used.
+  The row is `status = published`, so the page goes live when the host finishes the build triggered by the push.
+  Alex should open https://intentsly.com/compare/intentsly-vs-phantombuster and the sitemap once. Adding
+  intentsly.com to the fetch tool's allowed domains for this task, or a small GitHub Actions workflow that curls the
+  new URL after deploy, would let runs confirm it.
 - Queue: 6 compare keywords still queued (intentsly vs apollo next, then linkedin sales navigator, teamfluence, clay,
   11x, heyreach), so none added (RUN.md adds only below 5). Blocked keywords: none.
 - Connector note: as on previous runs, a lowercase `supabase` server was listed as failed (ERR_PROXY_TUNNEL) and
