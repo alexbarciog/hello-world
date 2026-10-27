@@ -67,11 +67,6 @@ const baseNavItems = [
 const engagementSpikesItem = { label: "Engagement Spikes", icon: Flame,  path: "/engagement-spikes", badge: "New" };
 const superscaleItem       = { label: "SuperScale",        icon: Rocket, path: "/superscale",        badge: "New" };
 
-const adminOnlyNavItems = [
-  { label: "Reddit Signals", icon: RedditIcon,      path: "/reddit-signals", badge: "Beta" },
-  { label: "X Signals",      icon: XIcon,           path: "/x-signals", badge: "Beta" },
-];
-
 // Bottom nav shows only the 5 most important items on mobile
 const mobileNavItems = [
   { label: "Home",      icon: LayoutDashboard, path: "/dashboard" },
@@ -138,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : navWithFeatures;
 
   const navItems = isAdmin
-    ? [...baseWithAgency, ...adminOnlyNavItems, { label: "Admin", icon: Shield, path: "/admin" }]
+    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }]
     : baseWithAgency;
 
   const allNavItems = navItems;
