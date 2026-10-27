@@ -36,7 +36,14 @@
   /learn, /guides/find-decision-makers-on-linkedin, /guides/set-up-signal-based-outbound,
   /features/linkedin-signals (contextual sentence at the "which triggers can you see" step), /signal-playbook (CTA in
   the this-week section and the closing).
-- Live check: see the addendum below, written after the push.
+- Live check: not completed from this run, as on previous runs. Pushed at 19:29:39 UTC (4f5eed9..66f9797). At
+  19:34 UTC the fetch tool asked for a permission to open intentsly.com/sitemap.xml and the /learn URL, nobody was
+  there to grant it, and the request was withdrawn; a fetch of the homepage (found through web search) was refused by
+  the site's robots rules for the fetcher. The repository has no GitHub Actions workflow, so the deploy could not be
+  checked from the API either. The row is `status = published`, so the page goes live when the host finishes the build
+  triggered by the push. Alex should open https://intentsly.com/learn/what-is-a-trigger-event-in-sales and the
+  sitemap once. If live checks matter, a small GitHub Actions workflow in the site repo that curls the new URL after
+  deploy, or adding intentsly.com to the fetch tool's allowed domains for this task, would let runs confirm it.
 - Queue: 5 learn keywords still queued (54 across all sections), so none added (RUN.md adds only below 5). Blocked
   keywords: none. Note: "what is a sales trigger" is still queued and this page already defines that term in its vs
   table and FAQ; the next learn run should either skip it (`blog_next.py set "what is a sales trigger" skipped`) or
