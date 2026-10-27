@@ -110,6 +110,7 @@ export type Database = {
           published_at: string | null
           reading_minutes: number | null
           secondary_keywords: string[]
+          section: string
           slug: string
           status: string
           title: string
@@ -133,6 +134,7 @@ export type Database = {
           published_at?: string | null
           reading_minutes?: number | null
           secondary_keywords?: string[]
+          section?: string
           slug: string
           status?: string
           title: string
@@ -156,6 +158,7 @@ export type Database = {
           published_at?: string | null
           reading_minutes?: number | null
           secondary_keywords?: string[]
+          section?: string
           slug?: string
           status?: string
           title?: string
@@ -1484,6 +1487,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ops_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       organization_invitations: {
         Row: {
           created_at: string
@@ -2563,6 +2584,83 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      support_messages: {
+        Row: {
+          answer_to: string | null
+          body_text: string | null
+          category: string | null
+          created_at: string
+          direction: string
+          draft_reply: string | null
+          from_email: string | null
+          from_name: string | null
+          handled_at: string | null
+          handled_note: string | null
+          id: string
+          imap_uid: number | null
+          in_reply_to: string | null
+          message_id: string | null
+          received_at: string | null
+          references_header: string | null
+          reply_to_email: string | null
+          status: string
+          subject: string | null
+          to_email: string | null
+        }
+        Insert: {
+          answer_to?: string | null
+          body_text?: string | null
+          category?: string | null
+          created_at?: string
+          direction: string
+          draft_reply?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          handled_at?: string | null
+          handled_note?: string | null
+          id?: string
+          imap_uid?: number | null
+          in_reply_to?: string | null
+          message_id?: string | null
+          received_at?: string | null
+          references_header?: string | null
+          reply_to_email?: string | null
+          status?: string
+          subject?: string | null
+          to_email?: string | null
+        }
+        Update: {
+          answer_to?: string | null
+          body_text?: string | null
+          category?: string | null
+          created_at?: string
+          direction?: string
+          draft_reply?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          handled_at?: string | null
+          handled_note?: string | null
+          id?: string
+          imap_uid?: number | null
+          in_reply_to?: string | null
+          message_id?: string | null
+          received_at?: string | null
+          references_header?: string | null
+          reply_to_email?: string | null
+          status?: string
+          subject?: string | null
+          to_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_answer_to_fkey"
+            columns: ["answer_to"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
