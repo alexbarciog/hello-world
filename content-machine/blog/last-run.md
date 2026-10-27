@@ -35,7 +35,16 @@
   14 days, zero manual outreach, 4x reply rate; 2 accounts, 30/30 caps, 15 recommended; languages) and product.md.
   No price, no 21% or ~1,000-leads figures, no Reddit/X claim, no email-sending claim. The page says job postings
   are not a monitored source, which follows from product.md's list of signal types.
-- Live check: see the note appended below after the push.
+- Live check: not completed from this run. Pushed at 14:06:27 UTC (a2a84a1..0b319b7). At 14:10 UTC the fetch tool
+  asked for a permission to open intentsly.com/sitemap.xml and the /solutions URL, nobody was there to grant it, and
+  the request was withdrawn, as on previous runs. The repository has no GitHub Actions workflow, so the deploy could
+  not be checked from the API either. The row is `status = published` (and was already live under the same URL since
+  24 October if the host built it then), so the new text goes live when the host finishes the build triggered by the
+  push. Alex should open the URL and the sitemap once.
+- Git note: `git push` from the long-lived clone in the session workspace was rejected client-side as
+  non-fast-forward even though the commit sat directly on the remote tip (unshallowing did not help); the same
+  commit applied with `git am` in a fresh shallow clone pushed cleanly. The workspace clone was then reset to
+  origin/main. If this repeats, a fresh clone each run is the simplest fix.
 - Queue: 6 solutions keywords still queued (55 across all sections), so none added (RUN.md adds only below 5).
   Blocked keywords: none.
 - Connector note: as on previous runs, a lowercase `supabase` server was listed as failed (ERR_PROXY_TUNNEL)
