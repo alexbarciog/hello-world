@@ -29,9 +29,11 @@
   receptive after a job change). Intentsly facts only from proof rows the gate accepts (14 qualified demos in
   14 days, zero manual outreach; 30/30 daily caps with 15 recommended; 12 signals / 8 to ignore in the Playbook)
   and product.md. No price, no 21% or ~1,000-leads figures, no Reddit/X claim, no email-sending claim.
-- Live check: see the commit that follows this one, or the task report. The row is `status = published`, so the
-  page goes live when the host finishes the build triggered by this push. Earlier runs found intentsly.com
-  robots-blocked for the fetch tool, so the check may not be possible from the task.
+- Live check: not completed from this run. Pushed at 08:34:56 UTC (b0cde34..7e56e24); at 08:39 UTC the fetch
+  tool asked for a permission to open intentsly.com/sitemap.xml and the /guides URL, nobody was there to grant
+  it, and the request was withdrawn (earlier runs hit a robots block on the same host). The row is
+  `status = published`, so the page goes live when the host finishes the build triggered by the push. Alex
+  should open the URL and the sitemap once.
 - Queue: 5 guides keywords still queued (56 across all sections), so none added (RUN.md adds only below 5).
   Blocked keywords: none.
 - Connector note: as on previous runs, a lowercase `supabase` server was listed as failed (ERR_PROXY_TUNNEL)
