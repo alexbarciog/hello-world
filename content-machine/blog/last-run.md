@@ -1,48 +1,52 @@
-# Last run: 2026-10-27 (guides task, guides section; started 08:15 UTC, 11:15 Bucharest)
+# Last run: 2026-10-27 (solutions task, solutions section; started 13:44 UTC, 15:44 Bucharest)
 
-- Keyword: how to qualify leads before outreach (cluster outbound, type guide, intent commercial, priority 2,
-  difficulty medium). `blog_next.py --section guides` returned it directly. No PAUSE file, no draft waiting.
-  Repository already cloned and in scope; `git pull origin main` reported up to date at b0cde34. `add_repo` was
-  not available as a tool; the repository was already in scope with push access.
-- Published: "How to Qualify Leads Before Outreach: A 5-Minute Check"
-  https://intentsly.com/guides/qualify-leads-before-outreach
-  `blog_gate.py` failed on the first run (meta_description 164 chars, opening paragraph 101 words), then on
-  word trims (94, 91 words) and passed on the fourth run; `blog_cloud.py sql` printed ready on its first run and
-  again after one wording fix in the worked example ("associated members"). 3,066 words by the gate's count,
-  10 H2, 6 FAQ, 10 internal links, 3 external. The generated SQL ran unchanged on Supabase project
-  uwwajlezgeurnvvrvdvb and returned status = published at 08:33:30 UTC; a read-only select confirmed the stored
-  content_md matches the local body (md5 64a6d3d7a7e0afc4c59d46faced90d67, 19,132 characters). Second page of
-  27 October (daily count 2 of 7; 30 published in the previous 7 days before this one, cap 45).
-- Angle: the ranking pages (Nimble, Highspot, Leadfeeder, FullEnrich, Instantly, Cleverly) are framework and
-  CRM-scoring guides built for inbound or for a paid data stack. This page is the per-lead, five-minute check
-  with a free LinkedIn account: a kill list first, the exact company-page, profile and post-search clicks for
-  company fit, person fit and one timing signal, a table separating what is knowable before contact from what
-  only a call reveals (mapped to BANT/CHAMP/MEDDIC letters), an A/B/C grade tied to the next touch, a paste-in
-  qualification note, a labelled hypothetical example (Brightwater Reports / Kestrel & Lowe) and a mistakes
-  section. Brief in blog/briefs/qualify-leads-before-outreach.md. Kept distinct from
-  guides/build-b2b-prospect-list (which owns list building and the fit+signal points table) and links to it,
-  to the ICP and buying-signal lessons, the decision-makers and outreach-message guides, the guides index,
-  /features/linkedin-signals (contextual sentence at Step 4), /case-studies, /try-ai and /signal-playbook.
-- Outside statistics, all from primary pages opened today and linked in the same paragraph: Salesforce State of
-  Sales 5th edition (7,775 respondents, reps spend 28% of the week selling), Gartner press release 9 March 2026
-  (646 buyers, 67% prefer a rep-free experience), LinkedIn Sales Solutions page (decision-makers 62% more
-  receptive after a job change). Intentsly facts only from proof rows the gate accepts (14 qualified demos in
-  14 days, zero manual outreach; 30/30 daily caps with 15 recommended; 12 signals / 8 to ignore in the Playbook)
-  and product.md. No price, no 21% or ~1,000-leads figures, no Reddit/X claim, no email-sending claim.
-- Live check: not completed from this run. Pushed at 08:34:56 UTC (b0cde34..7e56e24); at 08:39 UTC the fetch
-  tool asked for a permission to open intentsly.com/sitemap.xml and the /guides URL, nobody was there to grant
-  it, and the request was withdrawn (earlier runs hit a robots block on the same host). The row is
-  `status = published`, so the page goes live when the host finishes the build triggered by the push. Alex
-  should open the URL and the sitemap once.
-- Queue: 5 guides keywords still queued (56 across all sections), so none added (RUN.md adds only below 5).
+- Keyword: how to find customers on linkedin (cluster find-customers, type landing, intent commercial, priority 2,
+  difficulty medium). `blog_next.py --section solutions` returned it directly. No PAUSE file, no draft waiting.
+  Repository already cloned and in scope with push access; `git pull origin main` was up to date at a2a84a1.
+  `add_repo` was not available as a tool, as on previous runs.
+- Published: "How to Find Customers on LinkedIn Without a Cold List"
+  https://intentsly.com/solutions/find-customers-on-linkedin
+  `blog_gate.py` passed on the first run; the draft was then trimmed twice for length (2,568 to 2,256 words by the
+  gate's count, of which roughly 500 sit in the three tables; the prose is inside the 1,100 to 2,000 range in
+  page-write.md). `blog_cloud.py sql` printed ready on its first run. 8 H2, 5 FAQ, 13 internal links, 2 external.
+  Third page of 27 October (daily count 3 of 7); weekly cap not reached.
+- Database: before the upsert, `public.blog_posts` already held a row for this slug (status published,
+  published_at 2026-10-24 12:52 UTC, title "How to Find Customers on LinkedIn: Watch Signals, Not Lists", 2,356
+  words) that no commit, published file, log entry or keyword status recorded: a run on 24 October wrote the
+  database and then did not finish, so the keyword was still queued. The generated SQL ran unchanged on project
+  uwwajlezgeurnvvrvdvb and, as an upsert on slug, replaced that row's content with today's gate-passing version
+  and kept the 24 October published_at. A read-only select confirmed the stored content_md matches the local body
+  (md5 b16f59a84d059e8b320316624ada6506, 14,292 characters). The earlier version is summarised in
+  blog/briefs/find-customers-on-linkedin.md; it used the ~1,000 leads/agent and 2 to 4 meetings/week figures the
+  gate now rejects and a third-party source for LinkedIn's invitation cap, both gone from the new version.
+- Angle: the ranking pages (Dripify, SalesRobot, Octopus CRM, ClientVenue, SalesBread; LinkedIn's own guide ranks
+  but blocks fetching) are 13 to 24 profile and posting tips that end in a tool or agency pitch, with reply rates
+  that are unsourced vendor claims. This page is organised around what the buyer does: six public LinkedIn
+  behaviours with the exact Posts-tab search strings, a table comparing LinkedIn methods on time to first
+  conversation and cost, a week-one plan with the sending caps stated, a labelled hypothetical example
+  (Harbourline Bookkeeping), a route to the business-type pages, and honest alternatives. Brief in
+  blog/briefs/find-customers-on-linkedin.md. Links to the buying-signal lesson, the decision-makers and prospect
+  list guides, the Reddit article, the four business-type solution pages, the solutions index,
+  /features/linkedin-signals (contextual sentence after the plan), /features/ai-sdr, /case-studies and /try-ai.
+- Outside statistics, both from primary pages opened today and linked in the same paragraph: 6sense 2024 Buyer
+  Experience Report via BusinessWire (nearly 70% through the purchase before engaging sellers, 81% with a preferred
+  vendor at first contact, buyers initiate contact more than 80% of the time) and Gartner press release 9 March 2026
+  (646 buyers, 67% prefer a rep-free experience). Intentsly facts only from proof rows the gate accepts (14 demos in
+  14 days, zero manual outreach, 4x reply rate; 2 accounts, 30/30 caps, 15 recommended; languages) and product.md.
+  No price, no 21% or ~1,000-leads figures, no Reddit/X claim, no email-sending claim. The page says job postings
+  are not a monitored source, which follows from product.md's list of signal types.
+- Live check: see the note appended below after the push.
+- Queue: 6 solutions keywords still queued (55 across all sections), so none added (RUN.md adds only below 5).
   Blocked keywords: none.
 - Connector note: as on previous runs, a lowercase `supabase` server was listed as failed (ERR_PROXY_TUNNEL)
   while the capitalised `Supabase` connector worked (a read-only count confirmed it before any write).
-- For Alex: (1) the gate rejects the 21% reply rate and ~1,000 leads/agent figures because their proof.md status
-  is "verified: ..." rather than exactly "verified"; if those numbers may be used, change the status cell to
-  `verified` and move the phrasing note to the Claim column (that file is off-limits to this task); (2) a real
-  before/after from a customer who added a pre-outreach check (list size before and after, reply rate change)
-  would replace the hypothetical example with a story; (3) confirm whether Intentsly's ICP scoring is shown
-  in /try-ai results, so the closing line can say "already scored" instead of "matching your profile";
-  (4) the next guides keyword is "how to track hiring signals for sales"; a note on whether Intentsly reads
-  LinkedIn job posts or company "Jobs" tabs as a signal would decide how the product is mentioned there.
+- For Alex: (1) the 24 October run left the database ahead of the repository; if another orphan row appears, a
+  read-only `select slug from public.blog_posts` compared with blog/published/ would show it, and a short note in
+  RUN.md telling runs to check for an existing row before writing would avoid surprises; (2) the gate rejects the
+  21% reply rate and ~1,000 leads/agent figures because their proof.md status is "verified: ..." rather than exactly
+  "verified"; change the status cell to `verified` and move the phrasing note into the Claim column if they may be
+  used; (3) a real customer story for a service business (agency or consultancy) found through a recommendation
+  request would replace the hypothetical example; (4) confirm whether LinkedIn job postings or company "Jobs" tabs
+  are, or will be, a monitored signal, since this page and the SaaS page currently tell readers to run that search
+  by hand; (5) the next solutions keyword is "how to find leads for a software company", which overlaps the B2B SaaS
+  page; a note on whether to treat it as a separate page or an update would help.
