@@ -1,5 +1,6 @@
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { disabledPaymentsResponse } from "../_shared/payments-policy.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const disabled = disabledPaymentsResponse(corsHeaders);
+  if (disabled) return disabled;
 
   try {
     if (!stripe) throw new Error("STRIPE_SECRET_KEY is not set");
