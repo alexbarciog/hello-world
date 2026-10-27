@@ -1161,8 +1161,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-phantombuster",
    "monthly_volume": null
   },
   {
