@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ttqInitiateCheckout, ttqAddToCart } from "@/lib/tiktok-pixel";
+import { PAYMENTS_ENABLED } from "../../supabase/functions/_shared/payments-policy";
+import { Button } from "@/components/ui/button";
 
 const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
 const PRO_PRICE_ID = "price_1TRekzFsgTpFMX56qcKFrGKS";
@@ -37,6 +39,7 @@ const Pricing = () => {
   const ref = useReveal();
 
   const handleCheckout = async () => {
+    if (!PAYMENTS_ENABLED) return;
     setLoading(true);
     ttqAddToCart("Intentsly", 97);
     ttqInitiateCheckout("Intentsly", 97);
@@ -114,10 +117,10 @@ const Pricing = () => {
                 <Check className="w-4 h-4 mr-2" /> Active
               </div>
             ) : (
-              <button onClick={handleCheckout} disabled={loading} className="btn-cta btn-shimmer w-full justify-center">
-                {loading ? "Redirecting..." : "Start for $97"}
+              <Button onClick={handleCheckout} disabled={!PAYMENTS_ENABLED || loading} className="btn-cta btn-shimmer w-full justify-center">
+                {!PAYMENTS_ENABLED ? "Payments unavailable" : loading ? "Redirecting..." : "Start for $97"}
                 <ArrowUpRight className="w-4 h-4" />
-              </button>
+              </Button>
             )}
 
             {/* Trust row */}
