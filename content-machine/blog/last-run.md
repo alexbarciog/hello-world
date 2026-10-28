@@ -50,8 +50,11 @@
   (low), how to set up linkedin sales navigator alerts (low), how to find companies using a competitor's
   product (medium), how to build a linkedin follow-up sequence (medium), how to research a prospect before
   outreach (high, priority 3). 13 guides keywords now queued. Blocked keywords: none.
-- Live check: see the report for this run; the fetch of intentsly.com has needed a permission on previous
-  runs that nobody is there to grant.
+- Live check: not possible from this run, as before. Four minutes after the push (08:45 UTC) the fetches of
+  intentsly.com/sitemap.xml and the guide URL both asked for a permission on intentsly.com that nobody was
+  there to grant. The row is `status = published` and the push landed on main at 1f208c0, so the page goes
+  live when the host finishes the build. Push note: the first push was rejected as non-fast-forward from
+  the depth-1 clone; `git fetch --unshallow` fixed it and the push went through at 08:41 UTC.
 - Connector note: a lowercase `supabase` server was listed as failed (ERR_PROXY_TUNNEL) while the capitalised
   `Supabase` connector worked, as on previous runs.
 - For Alex: (1) a real hiring-signal win (which posting you saw, what you sent, how long to the meeting) would
