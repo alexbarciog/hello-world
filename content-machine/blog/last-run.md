@@ -41,8 +41,11 @@
 - Keywords: 5 solutions keywords remain queued (how to find customers for a startup, b2b lead generation for
   small business, how to find clients for a web design agency, how to get clients for a saas company, how to
   find b2b customers on reddit), so none were added (RUN.md step 6 triggers below 5). Blocked keywords: none.
-- Live check: see the report for this run; the fetch of the sitemap and page URL is made about four minutes
-  after the push. On previous runs intentsly.com asked for a permission nobody was there to grant.
+- Live check: not possible from this run, as before. Four minutes after the push (14:14 UTC) the fetches of
+  intentsly.com/sitemap.xml and the page URL both asked for a permission on intentsly.com that nobody was
+  there to grant. The row is `status = published` and the push landed on main at 0d98f2d, so the page goes
+  live when the host finishes the build. Push note: the first push was rejected as non-fast-forward from the
+  depth-1 clone; `git fetch --unshallow` fixed it and the push went through at 14:10 UTC.
 - Connector note: a lowercase `supabase` server was listed as failed (ERR_PROXY_TUNNEL) while the capitalised
   `Supabase` connector worked, as on previous runs.
 - For Alex: (1) a real development-shop or product-company win from a customer (the post that was spotted, what
