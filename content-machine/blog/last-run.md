@@ -49,3 +49,12 @@
   note moves into the claim cell. (2) Confirm whether Intentsly has an API or CSV export so comparisons can
   say so instead of "export". (3) Apollo's live prices could not be read by the fetch tool; if you want
   figures on the page, paste the current plan table and the date you read it.
+- Live check (22:23 UTC, about six minutes after the push at 22:17): the page is live. Direct fetches of
+  intentsly.com/sitemap.xml and the page URL asked for a permission nobody was there to grant, as on earlier
+  runs, so the check went search result -> blog post footer -> /compare index -> page. The /compare index
+  lists the Apollo page first (6 comparisons), and the page renders with the H1, the 12-row table, 6 FAQ
+  entries and the /try-ai and /features/ai-sdr links. The sitemap itself could not be opened, so sitemap
+  listing is unverified. Site note for the founder (website code, not touched by this task): the /compare
+  index card prefixes "Intentsly vs " to titles that already start with "Intentsly vs", so cards read
+  "Intentsly vs Intentsly vs Apollo: ...". Push note: `git push origin main` was rejected because the
+  shallow clone's local `main` branch is stale; `git push origin HEAD:main` went through at 22:17 UTC.
