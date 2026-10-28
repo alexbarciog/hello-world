@@ -43,6 +43,13 @@
   sales qualified lead (high), what is firmographic data (medium), what is social listening in sales (low),
   what is cold outreach (medium), what is an sdr (high), what is a champion in sales (low), what is dark
   social in b2b (medium). Learn queue is now 12. Next up: what is outbound sales.
+- Live check (19:39 UTC, about four minutes after the push at 19:35): the page is live. Direct fetches of
+  intentsly.com/sitemap.xml and the page URL asked for a permission nobody was there to grant, as on earlier
+  runs, so the check went homepage -> /learn index -> page. The /learn index lists the lesson first (8
+  lessons), and the page renders with the H1, the ten-row table, 6 FAQ entries and the /signal-playbook and
+  /features/linkedin-signals links. The sitemap itself could not be opened, so sitemap listing is unverified.
+  Push note: the first two pushes were rejected as non-fast-forward although the remote was at the parent
+  commit; the third identical push went through at 19:35 UTC.
 - For the founder: (1) a real example of how Intentsly's ICP score is displayed or what it weighs would let
   the next lesson show the product's scoring instead of a generic table; (2) the 21% reply rate and 2 to 4
   meetings a week rows are still marked "verified: say ..." rather than plain `verified`, so the gate does
