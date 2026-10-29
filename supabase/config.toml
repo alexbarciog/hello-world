@@ -142,3 +142,16 @@ verify_jwt = false
 
 [functions.blog-publish]
 verify_jwt = false
+
+# Stripe calls this with its own signature, not a Supabase JWT.
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.billing-enforcer]
+verify_jwt = false
+
+[functions.stripe-backfill]
+verify_jwt = false
