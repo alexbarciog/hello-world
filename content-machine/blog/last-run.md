@@ -58,5 +58,11 @@
   lists or saved searches as an input (import?) would settle the "third option" paragraph. (4) Export
   formats (CSV? API?) are still unnamed in product.md. (5) One customer who moved LinkedIn outreach from
   manual InMail to the AI SDR, with permission to name them, is the proof this pairing lacks.
-- Live check: see the report for this run; the deploy took 13 to 18 minutes on the previous run, so a check
-  four minutes after the push is usually too early.
+- Live check: pushed 22:00 UTC. At 22:05, 22:19 and 22:21 UTC the /compare index still listed 6 pages. At
+  22:37 UTC the index listed 7 with the new page first, and the page itself served the H1, the "Job to be
+  done" table, the "Where is LinkedIn Sales Navigator the better choice?" section and the six-question FAQ,
+  so the page is live and prerendered. The repository has no GitHub Actions runs, so the deploy (Cloudflare,
+  per wrangler.jsonc) cannot be watched from here; it took between 16 and 37 minutes this time.
+  sitemap.xml could not be opened by the fetch tool in this run (it refuses URLs not surfaced by a search or
+  a page link, and no page links to the sitemap); scripts/prerender.mjs writes sitemap.xml from the same
+  route list it prerenders, so the URL should be in it. Worth a manual look once.
