@@ -1,59 +1,90 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// The only gateway to Resend for app email. Callers must prove they are
+// server-side: either the x-send-secret header (SEND_EMAIL_SECRET) or the
+// service-role key as the bearer token. Everything else gets 401.
+// Only allowlisted @intentsly.com senders; every attempt is logged to email_log.
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { checkSendAuth, normalizeFrom } from "../_shared/send-email-policy.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
+  const auth = checkSendAuth(req.headers, {
+    sendSecret: Deno.env.get("SEND_EMAIL_SECRET") ?? "",
+    serviceRoleKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  });
+  if (!auth.ok) return json({ error: "unauthorized" }, 401);
+
+  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+  if (!RESEND_API_KEY) return json({ error: "RESEND_API_KEY is not configured" }, 500);
+
+  let body: Record<string, unknown>;
   try {
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is not configured');
-    }
+    body = await req.json();
+  } catch {
+    return json({ error: "invalid JSON" }, 400);
+  }
+  const { to, subject, html, text, reply_to, template, headers } = body as {
+    to?: string | string[];
+    subject?: string;
+    html?: string;
+    text?: string;
+    reply_to?: string;
+    template?: string;
+    headers?: Record<string, string>;
+  };
+  if (!to || !subject || (!html && !text)) {
+    return json({ error: "Missing required fields: to, subject, html or text" }, 400);
+  }
+  const from = normalizeFrom(body.from as string | undefined);
+  if (!from) return json({ error: "from address not allowed" }, 400);
 
-    const { to, subject, html, from } = await req.json();
-
-    if (!to || !subject || !html) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, html' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: from || 'onboarding@resend.dev',
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-      }),
+  const recipients = Array.isArray(to) ? to : [to];
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+  const log = (status: "sent" | "failed", resendId: string | null, error: string | null) =>
+    db.from("email_log").insert({
+      to: recipients.join(", "),
+      from,
+      template: template ?? null,
+      subject,
+      resend_id: resendId,
+      status,
+      error,
+      caller: auth.via,
+    }).then(({ error: logErr }) => {
+      if (logErr) console.error("[send-email] email_log insert failed:", logErr.message);
     });
 
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: recipients,
+        subject,
+        ...(html ? { html } : {}),
+        ...(text ? { text } : {}),
+        ...(reply_to ? { reply_to } : {}),
+        ...(headers ? { headers } : {}),
+      }),
+    });
     const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(`Resend API error [${response.status}]: ${JSON.stringify(data)}`);
+      const message = `Resend API error [${response.status}]: ${JSON.stringify(data)}`;
+      await log("failed", null, message);
+      return json({ success: false, error: message }, 502);
     }
-
-    return new Response(
-      JSON.stringify({ success: true, id: data.id }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    await log("sent", data.id ?? null, null);
+    return json({ success: true, id: data.id });
   } catch (error) {
-    console.error('Error sending email:', error);
-    return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const message = error instanceof Error ? error.message : "Unknown error";
+    await log("failed", null, message);
+    console.error("[send-email]", message);
+    return json({ success: false, error: message }, 500);
   }
 });

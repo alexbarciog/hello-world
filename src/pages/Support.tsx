@@ -31,26 +31,9 @@ export default function Support() {
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userEmail = user?.email || "Unknown";
-      const categoryLabel = CATEGORIES.find(c => c.value === category)?.label || category;
-
-      const html = `
-        <h2>New Support Ticket</h2>
-        <p><strong>From:</strong> ${userEmail}</p>
-        <p><strong>Category:</strong> ${categoryLabel}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <hr />
-        <p>${message.replace(/\n/g, "<br />")}</p>
-      `;
-
-      const { error } = await supabase.functions.invoke("send-email", {
-        body: {
-          to: "info@intentsly.com",
-          from: "noreply@intentsly.com",
-          subject: `[Support - ${categoryLabel}] ${subject}`,
-          html,
-        },
+      // Sent server-side: the ticket's sender is taken from the session.
+      const { error } = await supabase.functions.invoke("notify-team", {
+        body: { kind: "support", category, subject, message },
       });
 
       if (error) throw error;
