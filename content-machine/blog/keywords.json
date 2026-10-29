@@ -260,8 +260,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "buying-signals-examples",
    "monthly_volume": null,
    "section": "blog"
   },
