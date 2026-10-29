@@ -1389,8 +1389,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-social-listening-in-sales",
    "monthly_volume": null
   },
   {
