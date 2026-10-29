@@ -777,8 +777,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-customers-for-a-startup",
    "monthly_volume": null
   },
   {
@@ -1437,6 +1437,66 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find clients for a lead generation agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for an msp",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find customers for a cybersecurity company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find clients as a fractional cfo",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for an hr consulting firm",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
    "status": "queued",
    "slug": null,
    "monthly_volume": null
