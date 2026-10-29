@@ -50,4 +50,7 @@
   numbers stay unusable until the status cell reads "verified" and the note moves into the claim cell.
   (4) If you want LinkedIn's own help-centre wording on invitation limits quoted, paste the sentence and
   the date you read it; the pages cannot be fetched from this environment.
-- Live check: performed about four minutes after the push; result recorded in the run report.
+- Live check: attempted four minutes after the push (08:37 UTC). Fetching intentsly.com/sitemap.xml and the
+  page URL from this environment needs a permission prompt nobody was there to answer, as on earlier runs,
+  so live status and sitemap listing are unconfirmed. The push (182cc58) triggers the redeploy that renders
+  the page; the database row is confirmed published.
