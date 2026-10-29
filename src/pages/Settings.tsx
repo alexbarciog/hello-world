@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useSubscription } from "@/hooks/useSubscription";
+import { SwitchTemplate } from "@/components/templates/SwitchTemplate";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -986,7 +987,7 @@ export default function Settings() {
   const renderContent = () => {
     switch (activeTab) {
       case "organization": return <OrganizationTab userEmail={userEmail} userName={userName} />;
-      case "company":      return <CompanyTab campaignData={campaignData} onSave={saveCampaignFields} />;
+      case "company":      return <><CompanyTab campaignData={campaignData} onSave={saveCampaignFields} /><SwitchTemplate /></>;
       case "account":      return <AccountTab userEmail={userEmail} campaignData={campaignData} onSave={saveCampaignFields} />;
       case "linkedin":     return <LinkedInTab onConnected={async () => {
         const { data: { user } } = await supabase.auth.getUser();

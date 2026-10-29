@@ -17,6 +17,10 @@
   Intentsly recommends 15. State these honestly in comparisons.
 - Languages (monitoring and outreach): English, Romanian, German, Dutch.
 - Free trial: 7 days. `/try-ai` shows matching buyers with no account.
+- Agent templates per business type (Epic 2, built 2026-10-29; NOT LIVE until the founder publishes
+  templates — do not write about this until this line says "live"): in onboarding a new customer
+  picks "What kind of business are you?" and gets a ready-made signal agent and LinkedIn sequence;
+  "Switch template" in Settings replaces the current setup.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
 - Free tools and lead magnets: LinkedIn Profile Analyzer; "The Buying Signal Playbook"
   (12 buying signals worth chasing and 8 to ignore, LinkedIn triggers, scripts per signal).

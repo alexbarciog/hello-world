@@ -9,11 +9,17 @@ import {
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import type { AgentTemplateConfig } from "../../supabase/functions/_shared/agent-template-schema";
 
 interface CreateAgentWizardProps {
   onClose: () => void;
   onCreated: () => void;
   editAgentId?: string | null;
+  /**
+   * Admin template editor: start from `initial` and hand the result to
+   * `onSave` instead of writing a signal agent.
+   */
+  templateMode?: { initial?: AgentTemplateConfig["agent"]; onSave: (agent: AgentTemplateConfig["agent"]) => void };
 }
 
 const INDUSTRIES = [
@@ -98,7 +104,7 @@ const SIGNAL_CATEGORIES = [
 // ── Shared input class ──────────────────────────────────────────────────────
 const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50";
 
-export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: CreateAgentWizardProps) {
+export default function CreateAgentWizard({ onClose, onCreated, editAgentId, templateMode }: CreateAgentWizardProps) {
   const { currentOrg } = useOrganization();
   const [step, setStep] = useState(1);
   const [agentName, setAgentName] = useState("");
@@ -145,36 +151,47 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Fill the form from a saved agent or a template's agent config.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function loadIntoForm(data: any) {
+    setAgentName(data.name || "");
+    setJobTitles(data.icp_job_titles || []);
+    setSelectedLocations(data.icp_locations && data.icp_locations.length > 0 ? data.icp_locations : ["Any Country"]);
+    setSelectedIndustries(data.icp_industries || []);
+    setSelectedCompanyTypes(data.icp_company_types || []);
+    setSelectedCompanySizes(data.icp_company_sizes || []);
+    setExcludeKeywords(data.icp_exclude_keywords || []);
+    setRestrictedCountries((data as any).icp_restricted_countries || []);
+    setRestrictedRoles((data as any).icp_restricted_roles || []);
+    setIdealLeadDescription((data as any).ideal_lead_description || "");
+    setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
+    setLeadsListName(data.leads_list_name || "");
+    setManualApproval((data as any).manual_approval || false);
+    const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
+    if (config?.enabled) {
+      const map: Record<string, boolean> = {};
+      config.enabled.forEach((s: string) => { map[s] = true; });
+      setEnabledSignals(map);
+    }
+    if (config?.keywords) setSignalKeywords(config.keywords);
+  }
+
   // Load existing agent data when editing
   useEffect(() => {
     if (!editAgentId) return;
     async function loadAgent() {
       const { data } = await supabase.from("signal_agents").select("*").eq("id", editAgentId!).single();
-      if (data) {
-        setAgentName(data.name || "");
-        setJobTitles(data.icp_job_titles || []);
-        setSelectedLocations(data.icp_locations && data.icp_locations.length > 0 ? data.icp_locations : ["Any Country"]);
-        setSelectedIndustries(data.icp_industries || []);
-        setSelectedCompanyTypes(data.icp_company_types || []);
-        setSelectedCompanySizes(data.icp_company_sizes || []);
-        setExcludeKeywords(data.icp_exclude_keywords || []);
-        setRestrictedCountries((data as any).icp_restricted_countries || []);
-        setRestrictedRoles((data as any).icp_restricted_roles || []);
-        setIdealLeadDescription((data as any).ideal_lead_description || "");
-        setPrecisionMode((data.precision_mode as "discovery" | "high_precision") || "discovery");
-        setLeadsListName(data.leads_list_name || "");
-        setManualApproval((data as any).manual_approval || false);
-        const config = data.signals_config as { enabled?: string[]; keywords?: Record<string, string[]> } | null;
-        if (config?.enabled) {
-          const map: Record<string, boolean> = {};
-          config.enabled.forEach((s: string) => { map[s] = true; });
-          setEnabledSignals(map);
-        }
-        if (config?.keywords) setSignalKeywords(config.keywords);
-      }
+      if (data) loadIntoForm(data);
     }
     loadAgent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editAgentId]);
+
+  useEffect(() => {
+    if (templateMode?.initial) loadIntoForm(templateMode.initial);
+    // Only on open: later edits live in the form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load existing lists from contacts
   useEffect(() => {
@@ -439,6 +456,16 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
       leads_list_name: (leadsListName || agentName || "My Agent").trim(),
       manual_approval: manualApproval,
     };
+
+    if (templateMode) {
+      // A template carries configuration only; the list name, owner and
+      // status are set when a customer applies it.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { agent_type, keywords, leads_list_name, ...config } = agentData;
+      setSaving(false);
+      templateMode.onSave(config as AgentTemplateConfig["agent"]);
+      return;
+    }
 
     let error;
     let newAgentId: string | null = null;
@@ -1246,7 +1273,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId }: C
           ) : step === 2 ? (
             <>Leads Management <ChevronRight className="w-4 h-4" /></>
           ) : (
-            <>{editAgentId ? "Update Agent" : "Create Agent"} <ChevronRight className="w-4 h-4" /></>
+            <>{templateMode ? "Save to template" : editAgentId ? "Update Agent" : "Create Agent"} <ChevronRight className="w-4 h-4" /></>
           )}
         </button>
       </motion.div>
