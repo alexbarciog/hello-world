@@ -101,6 +101,11 @@ export const NextStepCta = ({ section }: { section: Section }) => {
             <ArrowUpRight className="w-4 h-4" />
           </Link>
         </div>
+        <p className="mt-5 text-sm text-foreground/60">
+          Questions? Email{" "}
+          <a href="mailto:alex@intentsly.com" className="underline underline-offset-2 hover:text-foreground">alex@intentsly.com</a>
+          , I answer within a day.
+        </p>
       </div>
     </section>
   );

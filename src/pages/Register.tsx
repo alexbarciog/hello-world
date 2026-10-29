@@ -168,8 +168,15 @@ export default function Register() {
       return;
     }
 
-    toast.success("Account created! Let's set up your first campaign.");
-    navigate("/onboarding");
+    // Invited teammates join a workspace that already pays; everyone else
+    // starts the 7-day trial in Stripe Checkout, then continues to onboarding.
+    if (inviteToken && inviteData) {
+      toast.success("Account created! Let's set up your first campaign.");
+      navigate("/onboarding");
+      return;
+    }
+    toast.success("Account created! Next: start your 7-day free trial.");
+    navigate("/start-trial");
   };
 
   const handleGoogle = async () => {
