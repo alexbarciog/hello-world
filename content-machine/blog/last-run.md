@@ -49,4 +49,11 @@
   save a keyword search with a date window or an exclusion term? If so, add it to product.md; the "broad
   terms flood the list" section could then say how Intentsly handles it. (4) A sentence from a customer
   who found a deal through a keyword post, with permission to name them, is the proof this lesson lacks.
-- Live check: see the end of this run's report; attempted about four minutes after the push.
+- Live check: pushed 19:29 UTC. At 19:33 and 19:42 UTC the /learn index still listed 8 lessons (deploy not
+  finished). At 19:47 UTC the index listed 9 with the new lesson, and the page itself served the H1, the
+  six-question FAQ and the Related lessons section as static HTML, so the page is live and prerendered.
+  sitemap.xml could not be opened by the fetch tool in this run (it refuses URLs that were not surfaced by
+  a search or a page link, and no page links to the sitemap); scripts/prerender.mjs writes sitemap.xml from
+  the same route list it prerenders, so the URL should be in it. Worth a manual look once.
+  Note for future runs: the deploy took between 13 and 18 minutes after the push this time, so a check
+  four minutes after pushing will usually be too early.
