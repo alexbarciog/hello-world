@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
+import { resolvePlaceholders, unresolvedMessage } from '../_shared/agent-template-schema.ts';
 
 /**
  * Compute the workflow_steps array index for the next step to process.
@@ -41,7 +42,7 @@ Deno.serve(async (req) => {
 
     let query = supabase
       .from('campaigns')
-      .select('id, user_id, workflow_steps, source_list_id, source_agent_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training')
+      .select('id, user_id, workflow_steps, source_list_id, source_agent_id, company_name, value_proposition, pain_points, campaign_goal, message_tone, industry, language, custom_training, demo_link')
       .eq('status', 'active');
     if (filterCampaignId) query = query.eq('id', filterCampaignId);
 
@@ -438,15 +439,7 @@ async function processCampaign(
           console.log(`[followup] Using pre-generated message for contact ${req.contact_id} (${scheduledMsg.status})`);
 
         } else if (!nextStep.ai_icebreaker && nextStep.message) {
-          message = nextStep.message;
-          if (contact) {
-            message = message
-              .replace(/\{\{first_name\}\}/gi, contact?.first_name || '')
-              .replace(/\{\{last_name\}\}/gi, contact?.last_name || '')
-              .replace(/\{\{company\}\}/gi, contact?.company || '')
-              .replace(/\{\{title\}\}/gi, contact?.title || '')
-              .replace(/\{\{signal\}\}/gi, contact?.signal || '');
-          }
+          message = fillPlaceholders(nextStep.message, contact, campaign);
         } else {
           // AI step with no stored draft (e.g. drafts were invalidated after the
           // user changed the step's custom instructions). Generate now with the
@@ -477,6 +470,9 @@ async function processCampaign(
         }
 
         if (!message.trim()) continue;
+
+        // Unfilled {{placeholders}} (e.g. no demo link set) never go out.
+        if (await holdForPlaceholders(supabase, campaign, message)) continue;
 
         // ── Send message ──
         let sendOk = false;
@@ -1098,16 +1094,11 @@ async function generateNextStepMessage(
 
     await delay(700);
   } else {
-    message = nextStep.message || '';
-    message = message
-      .replace(/\{\{first_name\}\}/gi, contact.first_name || '')
-      .replace(/\{\{last_name\}\}/gi, contact.last_name || '')
-      .replace(/\{\{company\}\}/gi, contact.company || '')
-      .replace(/\{\{title\}\}/gi, contact.title || '')
-      .replace(/\{\{signal\}\}/gi, contact.signal || '');
+    message = fillPlaceholders(nextStep.message || '', contact, campaign);
   }
 
   if (!message.trim()) return false;
+  if (await holdForPlaceholders(supabase, campaign, message)) return false;
 
   const today = new Date().toISOString().split('T')[0];
   const { error: insertErr } = await supabase
@@ -1429,4 +1420,53 @@ function jsonRes(payload: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+
+// ── Template placeholders ──────────────────────────────────────────────────
+// Lead fields may be empty (the word is dropped, as before). {{my_company}}
+// and {{demo_link}} come from the campaign and must be set.
+interface PlaceholderLead { first_name?: string | null; last_name?: string | null; company?: string | null; title?: string | null; signal?: string | null }
+interface PlaceholderCampaign { id: string; user_id: string; company_name?: string | null; demo_link?: string | null }
+
+function fillPlaceholders(text: string, contact: PlaceholderLead | null | undefined, campaign: PlaceholderCampaign): string {
+  return resolvePlaceholders(text, {
+    first_name: contact?.first_name,
+    last_name: contact?.last_name,
+    company: contact?.company,
+    title: contact?.title,
+    signal: contact?.signal,
+    my_company: campaign?.company_name,
+    demo_link: campaign?.demo_link,
+  }).text;
+}
+
+/**
+ * True (and the owner is told, once a day per campaign) when the message still
+ * contains a {{placeholder}}. The lead stays on this step until it's fixed.
+ */
+// Untyped client, like the rest of this file (no generated DB types in edge functions).
+// deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function holdForPlaceholders(supabase: any, campaign: PlaceholderCampaign, message: string): Promise<boolean> {
+  const left = [...message.matchAll(/\{\{\s*([A-Za-z_]+)\s*\}\}/g)].map((m) => m[1].toLowerCase());
+  if (left.length === 0) return false;
+  const unique = [...new Set(left)];
+  console.warn(`[followup] campaign ${campaign.id}: message held, unfilled ${unique.map((p) => `{{${p}}}`).join(', ')}`);
+  const link = `/campaigns/${campaign.id}`;
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  const { data: already } = await supabase.from('notifications').select('id')
+    .eq('user_id', campaign.user_id).eq('type', 'campaign_on_hold').eq('link', link)
+    .gte('created_at', since.toISOString()).limit(1);
+  if (!already?.length) {
+    await supabase.from('notifications').insert({
+      user_id: campaign.user_id,
+      type: 'campaign_on_hold',
+      title: 'Campaign messages are on hold',
+      body: unresolvedMessage(unique),
+      link,
+    });
+  }
+  return true;
 }

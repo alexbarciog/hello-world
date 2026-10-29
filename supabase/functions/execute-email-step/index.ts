@@ -14,15 +14,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decryptPassword } from '../_shared/email-account-crypto.ts';
 import { sendSmtp } from '../_shared/smtp-send.ts';
 
-function replaceVars(tpl: string, c: any): string {
+function replaceVars(tpl: string, c: any, campaign?: { company_name?: string | null; demo_link?: string | null } | null): string {
   if (!tpl) return '';
-  return tpl
-    .replace(/\{\{?\s*first_name\s*\}?\}/gi, c?.first_name || '')
-    .replace(/\{\{?\s*last_name\s*\}?\}/gi, c?.last_name || '')
+  // {{my_company}} / {{demo_link}} first, so "{company}" below can't eat "{{my_company}}".
+  let out = tpl;
+  if (campaign?.company_name) out = out.replace(/\{\{?\s*my_company\s*\}?\}/gi, campaign.company_name);
+  if (campaign?.demo_link) out = out.replace(/\{\{?\s*demo_link\s*\}?\}/gi, campaign.demo_link);
+  return out
+    .replace(/\{\{?\s*(first_?name)\s*\}?\}/gi, c?.first_name || '')
+    .replace(/\{\{?\s*(last_?name)\s*\}?\}/gi, c?.last_name || '')
     .replace(/\{\{?\s*company\s*\}?\}/gi, c?.company || '')
     .replace(/\{\{?\s*title\s*\}?\}/gi, c?.title || '')
     .replace(/\{\{?\s*signal\s*\}?\}/gi, c?.signal || '');
 }
+
+const UNFILLED = /\{\{\s*[A-Za-z_]+\s*\}\}/;
 
 async function generateEmailWithAI(opts: {
   apiKey: string;
@@ -161,7 +167,7 @@ Deno.serve(async (req) => {
 
     const { data: campaign, error: cErr } = await supabase
       .from('campaigns')
-      .select('id, user_id, company_name, value_proposition, campaign_goal, message_tone, workflow_steps')
+      .select('id, user_id, company_name, value_proposition, campaign_goal, message_tone, workflow_steps, demo_link')
       .eq('id', reqRow.campaign_id)
       .single();
     if (cErr || !campaign) throw new Error('campaign not found');
@@ -262,11 +268,25 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      subject = replaceVars(gen.subject, contact);
-      body = replaceVars(gen.body, contact);
+      subject = replaceVars(gen.subject, contact, campaign);
+      body = replaceVars(gen.body, contact, campaign);
     } else {
-      subject = replaceVars(step.subject || '', contact);
-      body = replaceVars(step.message || '', contact);
+      subject = replaceVars(step.subject || '', contact, campaign);
+      body = replaceVars(step.message || '', contact, campaign);
+    }
+
+    // Unfilled {{placeholders}} (e.g. no demo link in campaign settings) never go out.
+    if (UNFILLED.test(subject) || UNFILLED.test(body)) {
+      if (schedId) {
+        await supabase
+          .from('scheduled_messages')
+          .update({ status: 'failed', skip_reason: 'unresolved_placeholders' })
+          .eq('id', schedId);
+      }
+      return new Response(JSON.stringify({ error: 'unresolved placeholders: set the demo link / company name in campaign settings' }), {
+        status: 422,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     if (!subject.trim() || !body.trim()) {
