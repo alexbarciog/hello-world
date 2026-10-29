@@ -142,3 +142,10 @@ verify_jwt = false
 
 [functions.blog-publish]
 verify_jwt = false
+
+# Both check the caller themselves (admin role / signed-in user).
+[functions.agent-templates]
+verify_jwt = false
+
+[functions.apply-agent-template]
+verify_jwt = false
