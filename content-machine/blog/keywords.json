@@ -1293,8 +1293,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "warm-up-linkedin-account-for-outreach",
    "monthly_volume": null
   },
   {
