@@ -166,4 +166,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.apply-agent-template]
+
+# Public free tools: no account, rate-limited by IP inside the function.
+[functions.free-tool]
 verify_jwt = false

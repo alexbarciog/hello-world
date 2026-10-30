@@ -19,6 +19,7 @@ import Navbar from "@/components/Navbar";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { Footer } from "@/components/CTAFooter";
 import ogImageAsset from "@/assets/linkedin-profile-analyzer-og.png.asset.json";
+import { RelatedTools, ToolCta, ToolEmailCapture } from "@/components/FreeTool";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const PENDING_KEY = "pending_profile_analysis";
@@ -93,17 +94,6 @@ function useSeoHead() {
           { "@type": "ListItem", position: 2, name: "LinkedIn Profile Review", item: url },
         ],
       },
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: [
-          { "@type": "Question", name: "Is the LinkedIn profile audit really free?", acceptedAnswer: { "@type": "Answer", text: "Yes. It's 100% free. No credit card. No trial. You get the full report the moment you create your free account." } },
-          { "@type": "Question", name: "How long does the audit take?", acceptedAnswer: { "@type": "Answer", text: "About 45 seconds. Our AI scrapes your public LinkedIn profile, scores 27 conversion signals, and writes a rewritten headline and About hook for you." } },
-          { "@type": "Question", name: "Do I need to give you my LinkedIn password?", acceptedAnswer: { "@type": "Answer", text: "Never. We only read your public profile — the same version anyone can see when they open your link in an incognito window." } },
-          { "@type": "Question", name: "What will I actually get in the report?", acceptedAnswer: { "@type": "Answer", text: "A conversion score out of 100, sub-scores for your headline, About, banner and social proof, a rewritten headline and About hook in your voice, your top 3 conversion killers, missing keywords buyers search for, and a checklist of quick wins." } },
-          { "@type": "Question", name: "Will you post or message from my account?", acceptedAnswer: { "@type": "Answer", text: "No. The audit is read-only. Nothing is posted, messaged, or automated on your behalf." } },
-        ],
-      },
     ]);
     document.head.appendChild(ld);
     return () => {
@@ -142,7 +132,8 @@ const testimonials = [
   { name: "Priya D.", role: "B2B Consultant", quote: "Brutal but fair. Every point was specific to my profile — no generic advice. This is the audit I've been paying $400 for from LinkedIn 'experts'." },
 ];
 
-const faqs = [
+// Also rendered as FAQPage JSON-LD in the static HTML (scripts/prerender.mjs).
+export const ANALYZER_FAQS = [
   { q: "Is the LinkedIn profile audit really free?", a: "Yes. 100% free. No credit card. No trial. You get the full report the moment you create your free account." },
   { q: "How long does the audit take?", a: "About 45 seconds. Our AI reads your public profile, scores 27 conversion signals, and writes a rewritten headline and About hook for you." },
   { q: "Do I need to give you my LinkedIn password?", a: "Never. We only read your public profile — the same version anyone can see when they open your link in an incognito window." },
@@ -552,7 +543,7 @@ export default function LinkedInProfileAnalyzer() {
             </h2>
           </motion.div>
           <div className="space-y-3">
-            {faqs.map((f, i) => (
+            {ANALYZER_FAQS.map((f, i) => (
               <div key={i} className="rounded-2xl bg-neutral-50 border border-neutral-100 overflow-hidden">
                 <button
                   onClick={() => setExpanded(expanded === i ? null : i)}
@@ -571,6 +562,14 @@ export default function LinkedInProfileAnalyzer() {
           </div>
         </div>
       </section>
+
+      <section className="px-5 md:px-8 pb-16 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <ToolEmailCapture tool="profile_analyzer" heading="Not ready for the audit? Get LinkedIn profile tips by email" />
+        </div>
+      </section>
+      <div className="pb-16"><ToolCta /></div>
+      <div className="pt-4"><RelatedTools current="profile_analyzer" /></div>
 
       <Footer />
     </div>

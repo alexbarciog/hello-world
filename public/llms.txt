@@ -21,6 +21,9 @@
 ## Free tools and guides
 
 - [LinkedIn Profile Analyzer](https://intentsly.com/linkedin-profile-analyzer): Free AI review of a LinkedIn profile
+- [LinkedIn Hook Analyzer](https://intentsly.com/linkedin-hook-analyzer): Score a post's first line and get rewritten hooks
+- [Buying Signal Finder](https://intentsly.com/buying-signals): How people asking for a service talk on LinkedIn
+- [Cold Message Grader](https://intentsly.com/cold-message-grader): Grade a LinkedIn DM or cold email and get a rewrite
 - [Try Intentsly AI](https://intentsly.com/try-ai): Describe who you sell to and get matching buyers
 - [B2B playbook](https://intentsly.com/playbook): 0 to 100 customers in 90 days
 - [Buying Signal Playbook](https://intentsly.com/signal-playbook): Spotting and acting on buying signals
