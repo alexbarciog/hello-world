@@ -15,9 +15,8 @@ AS $$
   SELECT EXISTS (SELECT 1 FROM public.organizations WHERE id = _org_id AND owner_id = _user_id);
 $$;
 
-DROP POLICY IF EXISTS "Admins can manage members" ON public.organization_members;
-CREATE POLICY "Admins can manage members"
-  ON public.organization_members FOR INSERT TO authenticated
+ALTER POLICY "Admins can manage members"
+  ON public.organization_members
   WITH CHECK (
     public.is_org_admin(auth.uid(), organization_id)
     OR (user_id = auth.uid() AND public.is_org_owner(auth.uid(), organization_id))
@@ -60,8 +59,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-DROP TRIGGER IF EXISTS guard_profile_privileged_columns ON public.profiles;
-CREATE TRIGGER guard_profile_privileged_columns
+CREATE OR REPLACE TRIGGER guard_profile_privileged_columns
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.guard_profile_privileged_columns();
 
