@@ -148,6 +148,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.notify-team]
+verify_jwt = false
 
 # Stripe calls this with its own signature, not a Supabase JWT.
 [functions.stripe-webhook]
