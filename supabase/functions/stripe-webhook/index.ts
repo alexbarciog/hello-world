@@ -14,6 +14,7 @@ const HANDLED = new Set([
   "customer.subscription.deleted",
   "invoice.payment_failed",
   "invoice.paid",
+  "charge.refunded",
 ]);
 
 Deno.serve(async (req) => {
@@ -69,9 +70,22 @@ async function handle(stripe: Stripe, db: Db, event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
+      if (session.mode === "payment" && session.metadata?.kind === "setup_order") {
+        await recordSetupOrder(db, session);
+        return;
+      }
       if (session.mode !== "subscription" || !session.subscription) return;
       const sub = await stripe.subscriptions.retrieve(String(session.subscription));
       await syncSubscription(db, sub, session.client_reference_id || session.metadata?.user_id || null);
+      return;
+    }
+    case "charge.refunded": {
+      // A full refund (from the Stripe dashboard) cancels the setup order.
+      const charge = event.data.object as Stripe.Charge;
+      if (!charge.refunded || !charge.payment_intent) return;
+      const pi = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent.id;
+      const { error } = await db.from("setup_orders").update({ status: "cancelled" }).eq("stripe_payment_intent_id", pi);
+      if (error) throw new Error(`setup order cancel failed: ${error.message}`);
       return;
     }
     case "customer.subscription.created":
@@ -171,4 +185,18 @@ async function maybeMakeFounding(stripe: Stripe, db: Db, sub: Stripe.Subscriptio
   if (coupon && !hasCoupon) {
     await stripe.subscriptions.update(sub.id, { discounts: [{ coupon }], metadata: { ...sub.metadata, founding: "true" } });
   }
+}
+
+/** Paid done-for-you setup. The unique payment-intent index makes replays harmless. */
+async function recordSetupOrder(db: Db, session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.user_id;
+  const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+  if (!userId || !pi || session.payment_status !== "paid") return;
+  const { error } = await db.from("setup_orders").insert({
+    account_id: userId,
+    stripe_payment_intent_id: pi,
+    amount: session.amount_total ?? 0,
+    status: "ordered",
+  });
+  if (error && error.code !== "23505") throw new Error(`setup order insert failed: ${error.message}`);
 }

@@ -28,6 +28,9 @@
   picks "What kind of business are you?" and gets a ready-made signal agent and LinkedIn sequence;
   "Switch template" in Settings replaces the current setup.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
+- Done-for-you setup (Epic 3, built 2026-10-30; NOT LIVE until the founder switches checkout on —
+  do not write about this until this line says "live"): $500 one-time for a 30-minute call plus a
+  custom agent built by Alex; included for founding customers.
 - New free tools (Epic 4, built 2026-10-30; NOT LIVE until the PR is merged and the free-tool
   function is deployed — do not link them until this line says "live"): /tools,
   /linkedin-hook-analyzer, /cold-message-grader, /buying-signals (one page per service).

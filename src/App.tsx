@@ -30,6 +30,8 @@ import BuyingSignalFinder from "./pages/tools/BuyingSignalFinder.tsx";
 import SharedLeads from "./pages/SharedLeads.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminTemplates from "./pages/AdminTemplates.tsx";
+import AdminSetup from "./pages/AdminSetup.tsx";
+import SetupService from "./pages/SetupService.tsx";
 import { AdminOnly } from "./components/templates/AdminOnly";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
@@ -252,6 +254,8 @@ export const AppContent = () => (
           <Route path="/support" element={<AuthGuard><DashboardLayout><Support /></DashboardLayout></AuthGuard>} />
           <Route path="/admin" element={<AuthGuard><DashboardLayout><AdminDashboard /></DashboardLayout></AuthGuard>} />
           <Route path="/admin/templates" element={<AuthGuard><AdminOnly><DashboardLayout><AdminTemplates /></DashboardLayout></AdminOnly></AuthGuard>} />
+          <Route path="/admin/setup" element={<AuthGuard><AdminOnly><DashboardLayout><AdminSetup /></DashboardLayout></AdminOnly></AuthGuard>} />
+          <Route path="/settings/setup" element={<AuthOnlyGuard><DashboardLayout><SetupService /></DashboardLayout></AuthOnlyGuard>} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
