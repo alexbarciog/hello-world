@@ -123,20 +123,13 @@ export default function Register() {
       eq("token", inviteToken);
     }
 
-    // Notify admin of new signup (non-blocking)
-    supabase.functions.invoke("send-email", {
+    // Notify admin of new signup (non-blocking). Sent server-side; name and
+    // email come from the new session, not from this request.
+    supabase.functions.invoke("notify-team", {
       body: {
-        to: "alex@intentsly.com",
-        from: "Intentsly <noreply@intentsly.com>",
-        subject: `🎉 New signup: ${firstName}${lastName ? " " + lastName : ""} (${email})`,
-        html: `
-          <h2>New user just registered on Intentsly</h2>
-          <p><strong>Name:</strong> ${firstName}${lastName ? " " + lastName : ""}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          ${company ? `<p><strong>Company:</strong> ${company}</p>` : ""}
-          ${inviteData ? `<p><strong>Invited by:</strong> ${inviteData.inviter_name || "Unknown"} (${inviteData.organization_name || "—"})</p>` : ""}
-          <p><strong>Signed up at:</strong> ${new Date().toLocaleString()}</p>
-        `,
+        kind: "signup",
+        company: company || undefined,
+        invited_by: inviteData ? `${inviteData.inviter_name || "Unknown"} (${inviteData.organization_name || "—"})` : undefined,
       },
     }).catch((err) => console.error("Failed to send admin signup notification:", err));
 
