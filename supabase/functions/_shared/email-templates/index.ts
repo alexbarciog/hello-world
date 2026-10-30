@@ -21,6 +21,7 @@ const footer = (ctx: EmailCtx) =>
 export function safeText(input: unknown, max = 160): string {
   if (typeof input !== "string") return "";
   return input
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]+/g, " ")
     .replace(/\S+@\S+/g, "")
     .replace(/\b(?:https?:\/\/|www\.)\S+/gi, "")
