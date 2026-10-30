@@ -1,66 +1,60 @@
-# Last run: 2026-10-30 (learn task; fired about 19:15 UTC, 21:15 Bucharest)
+# Last run: 2026-10-30 (compare task; fired about 21:50 UTC, 23:50 Bucharest)
 
-- Keyword: what is a champion in sales (section learn, cluster fundamentals, type lesson, intent informational,
-  priority 2, difficulty low). `blog_next.py --section learn` returned it directly. No PAUSE file, no draft
-  waiting. Repository already cloned and in scope; `git pull origin main` was up to date at 3a9f8b8. `add_repo`
+- Keyword: intentsly vs teamfluence (section compare, cluster intentsly-vs, type comparison, intent commercial,
+  priority 2, difficulty medium). `blog_next.py --section compare` returned it directly. No PAUSE file, no draft
+  waiting. Repository already cloned and in scope; `git pull origin main` was up to date at 6d0574b. `add_repo`
   was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector reported a proxy
   tunnel error at session start; the "Supabase" connector connected and was used. Read-only count before any
-  work: 3 posts published on 30 Oct UTC, 22 in the last 7 days; caps 7 and 45 not reached; no row for the slug.
-- Published: "What Is a Champion in Sales? Definition and a Four-Part Test"
-  https://intentsly.com/learn/what-is-a-champion-in-sales
-  Gate run 1 failed on two items (meta_description 165 chars, opening paragraph 92 words); run 2 failed on
-  meta_description only (161 chars); run 3 passed with no warnings. Two factual wording fixes were made after
-  the pass (MEDDPICC has two Cs, so "a C stands for Champion"; the 14-demo sentence no longer asserts that
-  every founder who replied could sign) and the SQL was regenerated; still passing. 9 H2, 6 FAQ, 8 internal
-  links, 7 external, 2,383 words by the gate's count (two tables and the FAQ carry much of it; page-write.md
-  asks for 1,000 to 1,800 for a lesson, gate max 4,000). Decision taken without review: kept the length rather
-  than cut the role table or the test table, which are the page's two copy-paste assets.
+  work: 4 posts published on 30 Oct UTC, 22 in the last 7 days; caps 7 and 45 not reached; no row for the slug.
+- Published: "Intentsly vs Teamfluence: Whose Network, Who Replies?"
+  https://intentsly.com/compare/intentsly-vs-teamfluence
+  Gate run 1 passed with no fails and no warnings. Two wording edits after the pass (hosting-region sentence,
+  one extra source link on the ICP row), then `blog_cloud.py sql` printed ready: true. 8 H2, 6 FAQ (55 to 60
+  words each), 8 internal links, 14 external (all teamfluence.com), 2,885 words by the gate's count against
+  page-write.md's 1,300 to 2,500 for a comparison (gate max 4,000). Decision taken without review: kept the
+  length; the 14-row table and the two "where X is better" sections are the page's substance.
 - Database: the insert ran on project uwwajlezgeurnvvrvdvb and returned status published, published_at
-  2026-10-30 19:30:24 UTC. A read-only select afterwards confirmed section learn, article_type lesson,
-  word_count 2383, reading_minutes 11, 6 FAQ entries, 5 secondary keywords, content length 14,616 characters
-  and an md5 of the stored content_md identical to the draft body. The full generated SQL including the
-  ON CONFLICT clause was passed unchanged; the slug was new. No second write.
-- Outside facts, all from pages opened this run: Gong blog (published 28 Apr 2025, updated 27 May 2026;
-  1.8 million deals closed in 2024; 77% multi-threaded; closed deals have twice as many buyer contacts;
-  +130% win rate on average from multi-threading in deals over $50K); Challenger "Challenger Customer
-  profiles" page (700 stakeholders, 135 attributes, Mobilizers/Talkers/Blockers, sellers targeting Mobilizers
-  31% more likely to be high performers, attributed there to CEB now Gartner); MEDDICC "No champion, no deal"
-  (quoted definition); Force Management "Coaches vs Champions" (three characteristics); Anthony Iannarino's
-  five things; a79's four-test framework; Breakcold's glossary (the "top rep" meaning of the term). Not used:
-  Gartner's "six to 10 decision makers" figure (only second-hand copies reachable; Gartner's own page did not
-  contain it), Gartner 2026 press releases (fetch permission was not granted during this unattended run),
-  UserGems former-champion figures (vendor data, not opened at source).
-- Angle: the ranking pages (Wonderway, Breakcold, MEDDICC, Komo, Prospeo, a79, trumpet) are glossary entries or
-  enterprise AE explainers. This page separates the two meanings of "sales champion", puts champion, coach,
-  economic buyer, decision maker, sponsor and mobilizer in one table with what each can and cannot do, gives a
-  four-question test with the exact asks, and shows a small team how to spot a would-be champion on LinkedIn
-  before the first call, with two Posts-tab search strings.
-- Intentsly facts used: 14 qualified demos in two weeks from our own LinkedIn signals and AI SDR, replies from
-  founders complaining about cold outreach burnout (brain/stories/dogfooding-14-demos.md). Feature claims
-  limited to LinkedIn keyword posts, competitor and industry post engagement, and ICP scoring (product.md).
-  No price stated. Reddit/X not mentioned. CTA is /signal-playbook as page-write.md requires for /learn.
-- Queue: 10 learn keywords still queued (outbound sales, signal-based selling, sales trigger, account-based
-  prospecting, lead qualification, sales qualified lead, firmographic data, cold outreach, sdr, dark social in
-  b2b). Above the 5-keyword threshold, so no new keywords were added.
+  2026-10-30 21:59:18 UTC. A read-only select afterwards confirmed section compare, article_type comparison,
+  word_count 2885, reading_minutes 13, 6 FAQ entries, 5 secondary keywords, content length 20,162 characters and
+  an md5 of the stored content_md identical to the content in blog/out/intentsly-vs-teamfluence.sql.
+  DEVIATION TO NOTE: when the SQL was pasted into the connector, one line of the ON CONFLICT clause
+  (`article_type = excluded.article_type,`) was dropped by transcription error. The slug was new (0 rows before),
+  so only the INSERT branch executed and the stored row has article_type = comparison; the ON CONFLICT branch
+  never ran and nothing else differed. No second write was made. Future runs should read the file back
+  line-for-line before passing it; the sql file on disk is the correct reference.
+- Teamfluence facts, all from teamfluence.com opened 30 Oct 2026: pricing page "Starting October 1st, 2026",
+  Regular Unlimited Plan 449 EUR/month with 1,000 qualified leads, unlimited seats, 20,000 credits, up to 100,000
+  contacts, Small plan with no price shown, credit costs (lead 1, signal 1, job 1, AI job 1, email 4, phone 40);
+  Pulse page "Starting at $99/month", native MCP server, API sends requests and DMs, CRM sync to Salesforce,
+  HubSpot or Pipedrive; Gojiberry comparison still printing 89/129 EUR per seat and a 7-day trial; help centre:
+  60 tracked profiles and 40 tracked posts per user, six influencers per active seat, post tracking 2 months then
+  renew, keywords matched against tracked profiles only, signals "currently come from LinkedIn only", Prospect
+  Tracker CSV export; networking campaigns send connection requests plus one follow-up after acceptance;
+  homepage "Then we tell you who to reach out to. You decide how." and the five-people-125-requests example;
+  Trigify comparison: Estonia hosting, HubSpot and Salesforce native. Not reachable: /pro-home, /help/linkedin-api/,
+  /help/v2/pulse-linkedin-monitoring (client errors), so no claim rests on them. Third-party pages (getfuzzy,
+  connectsafely, salesforge) were opened for SERP context only and nothing was taken from them.
+- Angle: no page compares the two tools; the ranking pages are Teamfluence's own comparisons and competitor
+  listicles quoting older per-seat prices. This page prints the three different price figures Teamfluence's own
+  site shows today, the help-centre limits, and names the two deciding rows (whose network the signals come from,
+  and who answers the reply).
+- Intentsly facts used: product.md feature list and limits (LinkedIn only, 2 accounts, 30/30 a day, 15
+  recommended, 4 languages, HubSpot/Cal.com/Google Calendar/LinkedIn, export, 7-day trial, self-serve, no API
+  listed); 14 demos in 14 days, zero manual outreach, 4x reply rate (dogfooding-14-demos.md). No price stated.
+  Reddit/X not mentioned. CTA is /try-ai with /features/ai-sdr and /features/linkedin-signals in the body.
+- Queue: 11 compare keywords still queued (clay, 11x, heyreach, waalaxy, expandi, dripify, lemlist, la growth
+  machine, artisan, aisdr, salesrobot). Above the 5-keyword threshold, so no new keywords were added.
 - For the founder:
-  1. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md still carry "verified:" plus a
-     phrasing note, which the gate reads as not verified for any figure with a % sign. If clearable, move the
-     note into the Claim column and set Status to exactly "verified"; lessons could then cite the reply rate.
-  2. A real champion story would lift this page above its sources: one deal where a non-signing contact (an
-     SDR manager, an ops lead) carried Intentsly through to the founder or budget owner, what they asked for,
-     and what they forwarded. The current first-hand example is the 14-demo run, where champion and buyer
-     were the same founder.
-  3. The gate's `rstrip("s")` keyword bug flagged in the 30 Oct solutions run is still present in
-     scripts/blog_gate.py (not touched by this task). It did not affect this keyword.
-  4. Lessons keep landing at 2,200 to 2,400 words against page-write.md's 1,000 to 1,800 because the required
-     shape (definition, why, how, vs-table, this-week, related, 3 to 6 FAQ) plus two tables fills that. Say if
-     you would rather the FAQ be cut to three entries or the vs-table shortened.
-- Live check (19:36 UTC, about 4.5 minutes after the push landed at 19:31 UTC): NOT CONFIRMED this run. The
-  fetch tool refused both https://intentsly.com/learn/what-is-a-champion-in-sales and
-  https://intentsly.com/sitemap.xml for lack of provenance (the URLs are not linked from any page fetched this
-  run and search does not index them), and in an unattended run the permission request expires unanswered.
-  The task rules forbid fetching another way, so no other check was attempted. The database row is published
-  and the push to main succeeded (3a9f8b8..b295e34), which is the same deploy path that produced live pages on
-  every previous run, so the page is very likely live and in the sitemap, but this run did not see it.
-- Git note: the working copy was again on a detached HEAD at session start; pushed with
-  `git push origin HEAD:refs/heads/main`, then repointed local `main` to the pushed commit and checked it out.
+  1. Hosting region: the page says it cannot state Intentsly's hosting region. If you can confirm where
+     Intentsly's data is hosted (and GDPR posture), add it to brain/wiki/product.md and this page can print it
+     next to Teamfluence's Estonia line.
+  2. Keyword-post scope: the page says Intentsly matches keyword posts "across LinkedIn" rather than inside a
+     tracked list, which follows product.md's "keyword posts (pain points, tools, topics)". If the real scope is
+     narrower (for example only within followed companies or a search radius), say so and the row will be edited.
+  3. An API or Zapier/webhook option, if one exists, would remove a row that currently favours Teamfluence.
+  4. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md still carry "verified:" plus a
+     phrasing note, which the gate reads as not verified for figures with a % sign; comparisons cannot cite the
+     reply rate until the Status cell reads exactly "verified".
+  5. A customer who switched from Teamfluence (or any team-signal tool) to Intentsly, with what they kept and
+     what they lost, would be the first-hand story this page lacks.
+- Live check: see the line appended below after the fetch.
