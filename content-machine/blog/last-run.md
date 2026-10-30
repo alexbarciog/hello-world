@@ -57,4 +57,16 @@
      reply rate until the Status cell reads exactly "verified".
   5. A customer who switched from Teamfluence (or any team-signal tool) to Intentsly, with what they kept and
      what they lost, would be the first-hand story this page lacks.
-- Live check: see the line appended below after the fetch.
+- Live check (22:04 to 22:23 UTC, 4 to 23 minutes after the push landed at 22:00 UTC): NOT CONFIRMED this run.
+  The fetch tool refused https://intentsly.com/sitemap.xml and the page URL for lack of provenance (same as the
+  30 Oct learn run), so the check used https://intentsly.com/compare, which is linked from the homepage footer. At
+  22:05, 22:13, 22:18 and 22:23 UTC the prerendered compare index still listed the seven previous comparisons and
+  not intentsly-vs-teamfluence. The learn index did list the page pushed at 19:31 UTC by the previous run, so the
+  deploy path works but had not rebuilt within 23 minutes of this push, or the index is served from a CDN cache.
+  The repository has no GitHub Actions runs, so the build cannot be inspected from here. The database row is
+  published and the push to main succeeded (6d0574b..9505a3a); if the page is still missing from
+  https://intentsly.com/compare an hour after the push, the Cloudflare build needs a look. No other check was
+  attempted, as the task rules require.
+- Site note for the founder (website code, not touched by this task): the compare index renders each card's
+  link text as "Intentsly vs Intentsly vs <Tool>: ..." (the title already starts with "Intentsly vs", and the
+  index prepends it again). Seen on 30 Oct at 22:05 UTC.
