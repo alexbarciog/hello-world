@@ -21,20 +21,15 @@ describe("decideAccess", () => {
     expect(decideAccess({ subscription_status: "canceled" }, NOW)).toBe("none");
   });
 
-  it("keeps legacy accounts working until legacy_ends_at, then locks them", () => {
-    expect(decideAccess({ subscription_status: "legacy_free", legacy_ends_at: days(3) }, NOW)).toBe("legacy");
-    expect(decideAccess({ subscription_status: "legacy_free", legacy_ends_at: days(-1) }, NOW)).toBe("none");
-  });
-
-  it("locks a new account that never finished checkout", () => {
+  it("treats accounts without a plan as never subscribed: locked until they start a trial", () => {
     expect(decideAccess({ subscription_status: null }, NOW)).toBe("none");
     expect(decideAccess(null, NOW)).toBe("none");
   });
 
   it("locks nobody for not paying while checkout is switched off", () => {
     const off = { paymentsEnabled: false };
-    expect(decideAccess({ subscription_status: "legacy_free", legacy_ends_at: days(-30) }, NOW, off)).toBe("legacy");
     expect(decideAccess({ subscription_status: null }, NOW, off)).toBe("legacy");
+    expect(decideAccess(null, NOW, off)).toBe("legacy");
     // ...but a failed payment or a cancellation still locks.
     expect(decideAccess({ subscription_status: "past_due" }, NOW, off)).toBe("none");
   });
@@ -67,7 +62,6 @@ describe("profileFieldsFromSubscription", () => {
       subscription_id: "sub_1",
       subscription_status: "trialing",
       plan_price_id: "price_97",
-      legacy_ends_at: null,
     });
     expect(fields.trial_ends_at).toBe(new Date(1_790_604_800 * 1000).toISOString());
     expect(fields.current_period_end).toBe(new Date(1_790_604_800 * 1000).toISOString());
@@ -110,13 +104,10 @@ describe("bannerFor", () => {
 
   it("shows the lock reason when there is no access", () => {
     expect(bannerFor({ subscription_status: "past_due" }, { ...opts, signalsDelivered: 0 })).toEqual({ kind: "locked", status: "past_due" });
-    expect(bannerFor({ subscription_status: "legacy_free", legacy_ends_at: days(-1) }, { ...opts, signalsDelivered: 0 }))
-      .toEqual({ kind: "locked", status: "expired" });
+    expect(bannerFor({ subscription_status: null }, { ...opts, signalsDelivered: 0 })).toEqual({ kind: "locked", status: "no_subscription" });
   });
 
-  it("counts down legacy accounts only once checkout is on", () => {
-    const legacy = { subscription_status: "legacy_free" as const, legacy_ends_at: days(10) };
-    expect(bannerFor(legacy, { ...opts, signalsDelivered: 0 })).toEqual({ kind: "legacy", endsAt: days(10) });
-    expect(bannerFor(legacy, { ...opts, signalsDelivered: 0, paymentsEnabled: false })).toBeNull();
+  it("shows nothing to accounts without a plan while checkout is off", () => {
+    expect(bannerFor({ subscription_status: null }, { ...opts, signalsDelivered: 0, paymentsEnabled: false })).toBeNull();
   });
 });

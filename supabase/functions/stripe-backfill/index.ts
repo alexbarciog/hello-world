@@ -1,10 +1,11 @@
 // One-off (re-runnable): link existing Stripe customers to profiles and copy
-// their subscription state, so the 4 paying customers move from legacy_free
-// to active. Admins only. POST {"dry_run": true} to preview.
+// their live subscriptions, so the 4 paying customers become active. Run it
+// BEFORE switching payments on, or they'd be locked as never-subscribed. Admins only. POST {"dry_run": true} to preview.
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { profileFieldsFromSubscription, type StripeSubscriptionLike } from "../_shared/billing.ts";
 import { corsHeaders, json, stripeClient } from "../_shared/stripe.ts";
 
+const LIVE_STATUSES = new Set(["active", "trialing", "past_due", "unpaid"]);
 const RANK: Record<string, number> = { active: 0, trialing: 1, past_due: 2, unpaid: 3, paused: 4, incomplete: 5, canceled: 6, incomplete_expired: 7 };
 
 Deno.serve(async (req) => {
@@ -47,6 +48,9 @@ Deno.serve(async (req) => {
   for await (const sub of stripe.subscriptions.list({ status: "all", limit: 100 })) {
     const product = sub.items.data[0]?.price?.product;
     if (!products.has(typeof product === "string" ? product : product?.id ?? "")) continue;
+    // Founder decision: non-paying accounts are treated as if they never had a plan,
+    // so old cancelled subscriptions aren't imported.
+    if (!LIVE_STATUSES.has(sub.status)) continue;
     const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
     const current = best.get(customerId);
     const better = !current ||
