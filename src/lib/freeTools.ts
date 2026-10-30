@@ -30,6 +30,8 @@ export async function saveToolLead(lead: {
   tool: string;
   input_summary?: string;
   result_summary?: string;
+  /** The text the tool ran on; the server looks up its own result for the report. */
+  input_text?: string;
   consent_marketing: boolean;
 }): Promise<{ ok: boolean; error?: string }> {
   const r = await call<{ success: boolean }>({ action: "save_lead", ...lead });

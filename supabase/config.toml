@@ -170,3 +170,14 @@ verify_jwt = false
 # Public free tools: no account, rate-limited by IP inside the function.
 [functions.free-tool]
 verify_jwt = false
+
+# Called by pg_cron; idempotent, and off until its secrets are set.
+[functions.email-scheduler]
+verify_jwt = false
+
+# Reached from email links and mail clients; checks a signed token.
+[functions.email-unsubscribe]
+verify_jwt = false
+
+[functions.email-digest-preview]
+verify_jwt = false

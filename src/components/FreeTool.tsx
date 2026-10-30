@@ -124,10 +124,12 @@ export function ToolCta({
 
 /** "Save results, get the full report by email". Optional; consent is explicit. */
 export function ToolEmailCapture({
-  tool, inputSummary, resultSummary, heading = "Save results, get the full report by email",
+  tool, inputSummary, inputText, resultSummary, heading = "Save results, get the full report by email",
 }: {
   tool: FreeToolInfo["id"];
   inputSummary?: string;
+  /** The text the tool ran on, so the server can attach its own result. */
+  inputText?: string;
   resultSummary?: string;
   heading?: string;
 }) {
@@ -143,7 +145,7 @@ export function ToolEmailCapture({
       return;
     }
     setBusy(true);
-    const result = await saveToolLead({ email, tool, input_summary: inputSummary, result_summary: resultSummary, consent_marketing: true });
+    const result = await saveToolLead({ email, tool, input_summary: inputSummary, input_text: inputText, result_summary: resultSummary, consent_marketing: true });
     setBusy(false);
     if (result.ok) setDone(true);
     else toast.error(result.error);

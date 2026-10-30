@@ -66,7 +66,7 @@ export default function ColdMessageGrader() {
             <p className="rounded-xl border border-neutral-200 p-4 text-[15px] leading-relaxed whitespace-pre-line">{result.rewrite}</p>
           </div>
           <ShareResult text={`My cold message scored ${result.score}/100. Check yours:`} path={T.path} />
-          <ToolEmailCapture tool={T.id} inputSummary={text.slice(0, 200)} resultSummary={`Score ${result.score}/100. ${result.verdict}`} />
+          <ToolEmailCapture tool={T.id} inputSummary={text.slice(0, 200)} inputText={text} resultSummary={`Score ${result.score}/100. ${result.verdict}`} />
         </div>
       )}
     </FreeToolLayout>
