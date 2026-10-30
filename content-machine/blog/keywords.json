@@ -1305,8 +1305,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "set-up-linkedin-sales-navigator-alerts",
    "monthly_volume": null
   },
   {
