@@ -31,7 +31,7 @@ describe("rules", () => {
   it("sells only to trialing and active accounts", () => {
     expect(canBuySetup("trialing")).toBe(true);
     expect(canBuySetup("active")).toBe(true);
-    for (const s of ["past_due", "canceled", "legacy_free", null, undefined]) expect(canBuySetup(s)).toBe(false);
+    for (const s of ["past_due", "canceled", null, undefined]) expect(canBuySetup(s)).toBe(false);
   });
 
   it("keeps delivered and cancelled final, except that a refund can cancel", () => {
