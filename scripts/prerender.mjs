@@ -225,7 +225,7 @@ function buildPage(template, route, appHtml) {
 }
 
 installDomGlobals();
-const { render, caseStudies, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } = await import(
+const { render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
 );
 
@@ -243,7 +243,8 @@ const newestIn = (section) =>
     .pop() || undefined;
 
 const routes = [
-  ...ROUTES,
+  ...ROUTES.map((r) => (r.path === "/linkedin-profile-analyzer" ? { ...r, jsonLd: faqJsonLd(ANALYZER_FAQS) } : r)),
+  ...toolRoutes(SITE),
   ...caseStudies.map((s) => ({
     path: `/case-studies/${s.slug}`,
     title: s.metaTitle,
