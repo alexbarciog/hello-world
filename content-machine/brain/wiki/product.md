@@ -23,6 +23,10 @@
   the trial ends after 7 days or once the account has received its first 20 signals, whichever
   comes first; cancel in one click from Settings; no refunds (the trial is the refund window);
   founding deal: the first 10 paying customers keep $97/month for life.
+- Agent templates per business type (Epic 2, built 2026-10-29; NOT LIVE until the founder publishes
+  templates — do not write about this until this line says "live"): in onboarding a new customer
+  picks "What kind of business are you?" and gets a ready-made signal agent and LinkedIn sequence;
+  "Switch template" in Settings replaces the current setup.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
 - Free tools and lead magnets: LinkedIn Profile Analyzer; "The Buying Signal Playbook"
   (12 buying signals worth chasing and 8 to ignore, LinkedIn triggers, scripts per signal).

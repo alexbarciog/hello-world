@@ -59,6 +59,7 @@ type CampaignFull = {
   conversational_ai: boolean;
   max_ai_replies: number;
   exclude_first_degree: boolean;
+  demo_link?: string | null;
 };
 
 type Tab = "workflow" | "scheduled" | "contacts" | "insights" | "settings";
@@ -289,6 +290,7 @@ export default function CampaignDetail() {
   const [settingsLanguage, setSettingsLanguage] = useState("English");
   const [settingsExcludeFirst, setSettingsExcludeFirst] = useState(true);
   const [settingsTimezone, setSettingsTimezone] = useState<string>("UTC");
+  const [settingsDemoLink, setSettingsDemoLink] = useState("");
   const [settingsReviewMode, setSettingsReviewMode] = useState(false);
   const [settingsConversationalAi, setSettingsConversationalAi] = useState(false);
   const [settingsMaxAiReplies, setSettingsMaxAiReplies] = useState(5);
@@ -408,6 +410,7 @@ export default function CampaignDetail() {
       setSettingsMaxAiReplies((c as any).max_ai_replies || 5);
       setSettingsExcludeFirst((c as any).exclude_first_degree ?? true);
       setSettingsTimezone((c as any).timezone || "UTC");
+      setSettingsDemoLink(c.demo_link || "");
 
       // Parallel batch 1: profile, agent, step1 counts, today's queue
       const { data: authData } = await supabase.auth.getUser();
@@ -1090,10 +1093,11 @@ export default function CampaignDetail() {
       max_ai_replies: settingsMaxAiReplies,
       exclude_first_degree: settingsExcludeFirst,
       timezone: settingsTimezone,
+      demo_link: settingsDemoLink.trim() || null,
     } as any).eq("id", campaign.id);
     if (error) toast.error("Failed to save");
     else {
-      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies, exclude_first_degree: settingsExcludeFirst, timezone: settingsTimezone });
+      setCampaign({ ...campaign, campaign_goal: settingsGoal, message_tone: settingsTone, language: settingsLanguage, custom_training: settingsCustomTraining || null, daily_connect_limit: settingsDailyLimit, conversational_ai: settingsConversationalAi, max_ai_replies: settingsMaxAiReplies, exclude_first_degree: settingsExcludeFirst, timezone: settingsTimezone, demo_link: settingsDemoLink.trim() || null });
       setSavedAnimation(true);
       setTimeout(() => setSavedAnimation(false), 2000);
       toast.success("Settings saved!");
@@ -2475,7 +2479,8 @@ export default function CampaignDetail() {
                                 <div className="flex items-center justify-between mt-2 px-1">
                                   <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-1.5">
                                     <span className="text-xs text-muted-foreground">Insert:</span>
-                                    {["FirstName", "LastName", "Company"].map((v) => (
+                                    {/* Tokens the senders fill in ({{FirstName}} used to go out literally). */}
+                                    {["first_name", "last_name", "company", "title", "signal", "my_company", "demo_link"].map((v) => (
                                       <button
                                         key={v}
                                         onClick={() => insertVariable(v)}
@@ -3438,6 +3443,22 @@ export default function CampaignDetail() {
                   </CollapsibleContent>
                 </div>
               </Collapsible>
+
+              {/* Demo / calendar link for {{demo_link}} in messages */}
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <label className="block text-sm font-bold text-foreground mb-1" htmlFor="campaign-demo-link">Demo or calendar link</label>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  Used wherever a message contains {"{{demo_link}}"}. Messages with an empty link are held, not sent.
+                </p>
+                <input
+                  id="campaign-demo-link"
+                  type="url"
+                  value={settingsDemoLink}
+                  onChange={(e) => setSettingsDemoLink(e.target.value)}
+                  placeholder="https://cal.com/you/30min"
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
+                />
+              </div>
 
               {/* Save button */}
               <div className="flex justify-end">
