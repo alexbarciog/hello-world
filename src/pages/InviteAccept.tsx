@@ -35,18 +35,22 @@ export default function InviteAccept() {
 
       // Looked up by token through an RPC, so the table itself needn't be public.
       // Falls back to the direct query until the RPC's migration has been applied.
-      let data: any = null;
-      let error: any = null;
-      const rpc = await (supabase as any).rpc("get_org_invitation", { _token: token });
+      type Row = { id: string; organization_id: string; email: string; status: string; expires_at: string; organizations: { name: string } | null };
+      let data: Row | null = null;
+      let error: unknown = null;
+      // get_org_invitation isn't in the generated types yet.
+      const rpc = await (supabase.rpc as unknown as (fn: string, args: object) => Promise<{ data: Array<Omit<Row, "organizations"> & { organization_name: string }> | null; error: unknown }>)("get_org_invitation", { _token: token });
       if (!rpc.error) {
-        const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
+        const row = rpc.data?.[0];
         data = row ? { ...row, organizations: { name: row.organization_name } } : null;
       } else {
-        ({ data, error } = await supabase
+        const direct = await supabase
           .from("organization_invitations")
           .select("id, organization_id, email, status, expires_at, organizations(name)")
           .eq("token", token)
-          .maybeSingle());
+          .maybeSingle();
+        data = direct.data as unknown as Row | null;
+        error = direct.error;
       }
 
       if (error || !data) {
