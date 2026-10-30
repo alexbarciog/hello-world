@@ -59,4 +59,14 @@
      solutions pages, which all lean on the same 14-demos story.
   4. Confirm whether Intentsly's own team size may be stated; "we are a small business ourselves" was
      cut because company.md leaves team size blank.
-- Sitemap and live check: see the run report (checked about 4 minutes after the push).
+- Live check (14:15 to 14:17 UTC, about 5 minutes after the push landed at 14:11 UTC): the page is live at
+  https://intentsly.com/solutions/b2b-lead-generation-for-small-business (title, first sentence, all 7 H2s and
+  both tables present, publish date 30 October 2026, no 404) and is the first entry on the live /solutions
+  index, which now lists nine pages. The sitemap.xml could not be checked: the fetch tool refused the URL
+  for lack of provenance (it is not linked from any fetched page and search does not index it), and the
+  task rules forbid fetching another way. Previous runs' sitemap checks passed after the same deploy path,
+  so it is likely listed, but this run did not confirm it.
+- Git note: `git push origin main` was rejected as non-fast-forward because the working copy was on a
+  detached HEAD and the local `main` branch was 33 commits behind; `git push origin HEAD:refs/heads/main`
+  succeeded (acb43d0..134de33). Local `main` was repointed to the pushed commit so the next run's
+  `git pull origin main` works.
