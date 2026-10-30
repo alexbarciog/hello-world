@@ -789,8 +789,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "b2b-lead-generation-for-small-business",
    "monthly_volume": null
   },
   {
