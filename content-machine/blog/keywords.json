@@ -1425,8 +1425,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-champion-in-sales",
    "monthly_volume": null
   },
   {

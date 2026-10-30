@@ -1,72 +1,58 @@
-# Last run: 2026-10-30 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
+# Last run: 2026-10-30 (learn task; fired about 19:15 UTC, 21:15 Bucharest)
 
-- Keyword: b2b lead generation for small business (section solutions, cluster find-customers, type landing,
-  intent commercial, priority 2, difficulty medium). `blog_next.py --section solutions` returned it directly.
-  No PAUSE file, no draft waiting. Repository already cloned and in scope; `git pull origin main` was up to date
-  at acb43d0. `add_repo` was not available as a tool, as on previous runs. Supabase: the lowercase "supabase"
-  connector reported a proxy tunnel error at session start, the "Supabase" connector connected and was used.
-  Read-only count before any work: 2 posts published on 30 Oct UTC, 23 in the last 7 days; caps 7 and 45 not
-  reached; no row for the slug.
-- Published: "B2B Lead Generation for Small Businesses: Signals, Not Lists"
-  https://intentsly.com/solutions/b2b-lead-generation-for-small-business
-  Gate run 1 failed on eight items. Seven were one root cause: the gate's keyword matcher
-  (`kw_in` in scripts/blog_gate.py) does `word.rstrip("s")`, which turns "business" into "busine" and then
-  looks for "busine", "busines" or "businees", so a title, meta or H2 containing the singular word
-  "business" can never match. The plural "businesses" does match. Decision taken without review: the
-  draft's primary_keyword, title, meta_title, meta_description and keyword H2 use the plural
-  "b2b lead generation for small businesses"; the singular phrase is the first secondary keyword and
-  appears in the body and FAQ. The queue entry (singular) was then set to published with the slug via
-  `blog_next.py set`. The gate itself was not touched. The eighth fail was the 21% reply-rate figure:
-  its proof.md status is "verified: say ..." rather than exactly "verified", so the gate does not accept
-  it (same for the ~1,000 leads and 2 to 4 meetings rows, which pass only because they carry no % sign);
-  the 21% figure was removed. Run 2 failed only on the opening paragraph (91 words, trimmed to 88). Run 3
-  passed with no warnings. 7 H2, 6 FAQ, 13 internal links, 4 external, 2,618 words by the gate's count
-  (two wide tables and the FAQ carry much of it; page-write.md asks for 1,100 to 2,000, gate max 4,000).
+- Keyword: what is a champion in sales (section learn, cluster fundamentals, type lesson, intent informational,
+  priority 2, difficulty low). `blog_next.py --section learn` returned it directly. No PAUSE file, no draft
+  waiting. Repository already cloned and in scope; `git pull origin main` was up to date at 3a9f8b8. `add_repo`
+  was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector reported a proxy
+  tunnel error at session start; the "Supabase" connector connected and was used. Read-only count before any
+  work: 3 posts published on 30 Oct UTC, 22 in the last 7 days; caps 7 and 45 not reached; no row for the slug.
+- Published: "What Is a Champion in Sales? Definition and a Four-Part Test"
+  https://intentsly.com/learn/what-is-a-champion-in-sales
+  Gate run 1 failed on two items (meta_description 165 chars, opening paragraph 92 words); run 2 failed on
+  meta_description only (161 chars); run 3 passed with no warnings. Two factual wording fixes were made after
+  the pass (MEDDPICC has two Cs, so "a C stands for Champion"; the 14-demo sentence no longer asserts that
+  every founder who replied could sign) and the SQL was regenerated; still passing. 9 H2, 6 FAQ, 8 internal
+  links, 7 external, 2,383 words by the gate's count (two tables and the FAQ carry much of it; page-write.md
+  asks for 1,000 to 1,800 for a lesson, gate max 4,000). Decision taken without review: kept the length rather
+  than cut the role table or the test table, which are the page's two copy-paste assets.
 - Database: the insert ran on project uwwajlezgeurnvvrvdvb and returned status published, published_at
-  2026-10-30 14:08:45 UTC. A read-only select afterwards confirmed section solutions, article_type landing,
-  word_count 2618, reading_minutes 12, 6 FAQ entries, 5 secondary keywords, content length 16,276 characters
+  2026-10-30 19:30:24 UTC. A read-only select afterwards confirmed section learn, article_type lesson,
+  word_count 2383, reading_minutes 11, 6 FAQ entries, 5 secondary keywords, content length 14,616 characters
   and an md5 of the stored content_md identical to the draft body. The full generated SQL including the
   ON CONFLICT clause was passed unchanged; the slug was new. No second write.
-- Outside facts, all from pages opened this run: Fiverr small business survey press release (9 May 2025;
-  nearly 6,000 owners, 25 countries, Jul 2024 to Mar 2025; 70% spend under five hours a week on marketing);
-  SBA Office of Advocacy FAQ 2026 (36,207,130 small businesses, 99.9% of US businesses, 45.9% of
-  private-sector workers); LinkedIn Sales Navigator compare-plans page (Core US$119.99/month, Advanced
-  US$159.99/month, 50 InMails/month on Core, "50+ advanced search filters"); Belkins' own page (packages
-  from US$5,000). Gartner's 2025 buyer survey press release refused the fetch (client error) and was not
-  used. about.linkedin.com was not fetchable either.
-- Angle: the ranking pages (Salesforce guide, Fit Small Business "12 ideas" from 2022 with an empty
-  Sources section, Belkins agency list, EasyMapLeads, Mails.ai, Zendesk "15 strategies") are channel lists
-  that assume a marketing person. This page gives a one-person team six LinkedIn signals with the
-  Posts-tab search and the message for each, a week-one plan that fits in five hours, our 14-day numbers,
-  and the honest cases where referrals, partners, Sales Navigator or an agency win, with costs linked.
-- Intentsly facts used: 14 demos in 14 days, 4x reply rate, ~1,000 leads/month per agent, 2 to 4
-  meetings/week, 7-day trial, 2 accounts / 30+30 cap / 15 recommended, languages, native integrations,
-  Mike Ruiz quote. No price stated. Reddit/X mentioned only as manual channels. Hiring signal flagged as
-  not monitored.
-- Queue: 8 solutions keywords still queued (web design agency, saas company, b2b customers on reddit,
-  lead generation agency, msp, cybersecurity company, fractional cfo, hr consulting firm). Above the
-  5-keyword threshold, so no new keywords were added.
+- Outside facts, all from pages opened this run: Gong blog (published 28 Apr 2025, updated 27 May 2026;
+  1.8 million deals closed in 2024; 77% multi-threaded; closed deals have twice as many buyer contacts;
+  +130% win rate on average from multi-threading in deals over $50K); Challenger "Challenger Customer
+  profiles" page (700 stakeholders, 135 attributes, Mobilizers/Talkers/Blockers, sellers targeting Mobilizers
+  31% more likely to be high performers, attributed there to CEB now Gartner); MEDDICC "No champion, no deal"
+  (quoted definition); Force Management "Coaches vs Champions" (three characteristics); Anthony Iannarino's
+  five things; a79's four-test framework; Breakcold's glossary (the "top rep" meaning of the term). Not used:
+  Gartner's "six to 10 decision makers" figure (only second-hand copies reachable; Gartner's own page did not
+  contain it), Gartner 2026 press releases (fetch permission was not granted during this unattended run),
+  UserGems former-champion figures (vendor data, not opened at source).
+- Angle: the ranking pages (Wonderway, Breakcold, MEDDICC, Komo, Prospeo, a79, trumpet) are glossary entries or
+  enterprise AE explainers. This page separates the two meanings of "sales champion", puts champion, coach,
+  economic buyer, decision maker, sponsor and mobilizer in one table with what each can and cannot do, gives a
+  four-question test with the exact asks, and shows a small team how to spot a would-be champion on LinkedIn
+  before the first call, with two Posts-tab search strings.
+- Intentsly facts used: 14 qualified demos in two weeks from our own LinkedIn signals and AI SDR, replies from
+  founders complaining about cold outreach burnout (brain/stories/dogfooding-14-demos.md). Feature claims
+  limited to LinkedIn keyword posts, competitor and industry post engagement, and ICP scoring (product.md).
+  No price stated. Reddit/X not mentioned. CTA is /signal-playbook as page-write.md requires for /learn.
+- Queue: 10 learn keywords still queued (outbound sales, signal-based selling, sales trigger, account-based
+  prospecting, lead qualification, sales qualified lead, firmographic data, cold outreach, sdr, dark social in
+  b2b). Above the 5-keyword threshold, so no new keywords were added.
 - For the founder:
-  1. The gate bug above will also block any future keyword whose matched words end in a double "s"
-     (business, process, access, success). A one-character fix in blog_gate.py (`rstrip("s")` ->
-     `re.sub(r"s$", "", w)` or similar) is outside what this task may edit; please apply it or confirm
-     the plural workaround is acceptable going forward.
-  2. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md have statuses starting
-     "verified:" with a phrasing note, which the gate reads as not verified. If the numbers are
-     clearable, move the phrasing note into the Claim column and set Status to exactly "verified".
-  3. A real small-business customer story (business type, what signal found the buyer, what was said,
-     what it became) would replace the generic "in practice" section on this and the other eight
-     solutions pages, which all lean on the same 14-demos story.
-  4. Confirm whether Intentsly's own team size may be stated; "we are a small business ourselves" was
-     cut because company.md leaves team size blank.
-- Live check (14:15 to 14:17 UTC, about 5 minutes after the push landed at 14:11 UTC): the page is live at
-  https://intentsly.com/solutions/b2b-lead-generation-for-small-business (title, first sentence, all 7 H2s and
-  both tables present, publish date 30 October 2026, no 404) and is the first entry on the live /solutions
-  index, which now lists nine pages. The sitemap.xml could not be checked: the fetch tool refused the URL
-  for lack of provenance (it is not linked from any fetched page and search does not index it), and the
-  task rules forbid fetching another way. Previous runs' sitemap checks passed after the same deploy path,
-  so it is likely listed, but this run did not confirm it.
-- Git note: `git push origin main` was rejected as non-fast-forward because the working copy was on a
-  detached HEAD and the local `main` branch was 33 commits behind; `git push origin HEAD:refs/heads/main`
-  succeeded (acb43d0..134de33). Local `main` was repointed to the pushed commit so the next run's
-  `git pull origin main` works.
+  1. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md still carry "verified:" plus a
+     phrasing note, which the gate reads as not verified for any figure with a % sign. If clearable, move the
+     note into the Claim column and set Status to exactly "verified"; lessons could then cite the reply rate.
+  2. A real champion story would lift this page above its sources: one deal where a non-signing contact (an
+     SDR manager, an ops lead) carried Intentsly through to the founder or budget owner, what they asked for,
+     and what they forwarded. The current first-hand example is the 14-demo run, where champion and buyer
+     were the same founder.
+  3. The gate's `rstrip("s")` keyword bug flagged in the 30 Oct solutions run is still present in
+     scripts/blog_gate.py (not touched by this task). It did not affect this keyword.
+  4. Lessons keep landing at 2,200 to 2,400 words against page-write.md's 1,000 to 1,800 because the required
+     shape (definition, why, how, vs-table, this-week, related, 3 to 6 FAQ) plus two tables fills that. Say if
+     you would rather the FAQ be cut to three entries or the vs-table shortened.
+- Live check: see the appended note below (written after the push).
