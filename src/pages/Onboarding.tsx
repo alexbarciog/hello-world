@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarCheck, Radar } from "lucide-react";
@@ -13,6 +13,7 @@ import { StepAccountType, type AccountType } from "@/components/onboarding/StepA
 import { ONBOARDING_EASE } from "@/components/onboarding/ui";
 import { Float } from "@/lib/motion";
 import { toast } from "sonner";
+import { DemoVideo } from "@/components/billing/DemoVideo";
 
 type Phase = "account_type" | "scan" | "preview";
 
@@ -101,6 +102,16 @@ function BrandPanel() {
 }
 
 function OnboardingInner() {
+  // Back from Stripe Checkout: confirm the trial once, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      toast.success("Your 7-day free trial has started. Let's set up your first agent.");
+      params.delete("checkout");
+      const qs = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    }
+  }, []);
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("account_type");
   const [accountType, setAccountType] = useState<AccountType | null>(null);
@@ -354,6 +365,16 @@ function OnboardingInner() {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Product demo (placeholder until the recording exists) */}
+        <details className="w-full max-w-xl mx-auto mb-5 shrink-0 group">
+          <summary className="cursor-pointer list-none text-sm font-medium text-neutral-600 hover:text-neutral-900">
+            ▶ Watch the 3-minute product demo
+          </summary>
+          <div className="mt-3">
+            <DemoVideo />
+          </div>
+        </details>
 
         {/* Footer micro-copy — landing style */}
         <p className="w-full max-w-xl mx-auto text-[11px] uppercase tracking-[0.14em] text-neutral-400 shrink-0 text-center lg:text-left">

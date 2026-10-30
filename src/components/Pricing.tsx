@@ -1,21 +1,22 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, ArrowUpRight, Lock, RotateCcw, Zap, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Check, ArrowUpRight, Lock, RotateCcw, Zap, Star, Mail } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useFoundingSlotsLeft } from "@/hooks/useFoundingSlotsLeft";
 import { ttqInitiateCheckout, ttqAddToCart } from "@/lib/tiktok-pixel";
-import { PAYMENTS_ENABLED } from "../../supabase/functions/_shared/payments-policy";
+import { CONTACT_EMAIL, PLAN_PRICE_USD, openBillingPortal, startCheckout } from "@/lib/billing";
 import { Button } from "@/components/ui/button";
 
-const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
-const PRO_PRICE_ID = "price_1TRekzFsgTpFMX56qcKFrGKS";
-
+// Only facts confirmed in content-machine/brain/wiki/product.md and proof.md.
 const features = [
-  "LinkedIn intent discovery",
-  "Buyer & company targeting workflows",
-  "Signal-based prospect identification",
-  "Fast setup, no sales call required",
-  "Cancel anytime",
+  "LinkedIn buying signals: competitor and industry post engagement, keyword posts, competitor followers",
+  "Every prospect scored against your ideal customer",
+  "Verified emails and export",
+  "AI SDR: connection requests and LinkedIn conversations that send your calendar link",
+  "Up to 2 LinkedIn accounts, with safe daily limits",
+  "HubSpot, Cal.com and Google Calendar",
 ];
 
 const useReveal = () => {
@@ -33,33 +34,34 @@ const useReveal = () => {
 };
 
 const Pricing = () => {
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const sub = useSubscription();
+  const foundingLeft = useFoundingSlotsLeft();
   const ref = useReveal();
 
+  const isActive = sub.status === "active" || sub.status === "trialing" || (sub.access === "legacy" && sub.subscribed);
+
   const handleCheckout = async () => {
-    if (!PAYMENTS_ENABLED) return;
     setLoading(true);
-    ttqAddToCart("Intentsly", 97);
-    ttqInitiateCheckout("Intentsly", 97);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { window.location.href = "/register"; return; }
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId: PRO_PRICE_ID, returnUrl: window.location.origin },
-      });
-      if (error) throw error;
-      if (data?.url) window.location.href = data.url;
-    } catch (err: any) {
-      console.error("Checkout error:", err);
-      toast({ title: "Checkout failed", description: err.message || "Something went wrong", variant: "destructive" });
-    } finally {
-      setLoading(false);
+    ttqAddToCart("Intentsly", PLAN_PRICE_USD);
+    ttqInitiateCheckout("Intentsly", PLAN_PRICE_USD);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/register");
+      return;
     }
+    const result = await startCheckout();
+    if (!result.ok) toast.error(result.message);
+    setLoading(false);
   };
 
-  const isActive = sub.subscribed && sub.productId === PRO_PRODUCT_ID;
+  const handleManage = async () => {
+    setLoading(true);
+    const result = await openBillingPortal();
+    if (!result.ok) toast.error(result.message);
+    setLoading(false);
+  };
 
   return (
     <section id="pricing" className="py-20 md:py-32 px-6 bg-background">
@@ -67,21 +69,19 @@ const Pricing = () => {
         <div className="text-center max-w-2xl mx-auto mb-10">
           <span className="section-label mb-6 block justify-center">Pricing</span>
           <h2 className="text-4xl md:text-5xl font-medium tracking-tight leading-[1.1] mb-4" style={{ color: "hsl(var(--aeline-dark))" }}>
-            Simple pricing
+            One plan. Try it free for 7 days.
           </h2>
           <p className="text-base text-muted-foreground leading-relaxed">
-            One plan. Everything you need to find buyers showing intent on LinkedIn.
+            Everything Intentsly does, for ${PLAN_PRICE_USD}/month. Card required, cancel in one click.
           </p>
         </div>
 
-        {/* Scarcity bar */}
         <div className="max-w-md mx-auto">
           <div className="relative rounded-3xl bg-[#f5f5f5] p-6 md:p-10 flex flex-col">
-            {/* Most popular ribbon */}
-            {!isActive && (
+            {!isActive && foundingLeft !== null && foundingLeft > 0 && (
               <div className="absolute -top-2.5 right-4 md:-top-3 md:right-6 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8FF00] text-[10px] font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(200,255,0,0.6)]" style={{ color: "hsl(var(--aeline-dark))" }}>
                 <Star className="w-3 h-3 fill-current" />
-                Most popular
+                {foundingLeft} founding spot{foundingLeft === 1 ? "" : "s"} left
               </div>
             )}
 
@@ -89,50 +89,61 @@ const Pricing = () => {
               <h3 className="text-lg font-semibold" style={{ color: "hsl(var(--aeline-dark))" }}>Intentsly</h3>
               {isActive && (
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white bg-green-500">
-                  Your Plan
+                  {sub.status === "trialing" ? "Your trial" : "Your plan"}
+                </span>
+              )}
+              {sub.founding && (
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#C8FF00]" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  Founding customer
                 </span>
               )}
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              For B2B teams that want better timing and sharper targeting.
+              Find the people on LinkedIn who are already looking for what you sell, and start the conversation.
             </p>
 
-            <div className="flex items-baseline gap-1 mb-8">
-              <span className="text-5xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>
-                $97
-              </span>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="text-5xl font-bold" style={{ color: "hsl(var(--aeline-dark))" }}>${PLAN_PRICE_USD}</span>
               <span className="text-sm text-muted-foreground">/month</span>
             </div>
+            <p className="text-[13px] text-muted-foreground mb-8">
+              7-day free trial, card required, cancel in one click.
+            </p>
 
             <ul className="space-y-3 mb-8">
-              {features.map((feat, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
-                  <Check className="w-4 h-4 text-[#1A8FE3] shrink-0" /> {feat}
+              {features.map((feat) => (
+                <li key={feat} className="flex items-start gap-3 text-sm" style={{ color: "hsl(var(--aeline-dark))" }}>
+                  <Check className="w-4 h-4 text-[#1A8FE3] shrink-0 mt-0.5" /> {feat}
                 </li>
               ))}
             </ul>
 
             {isActive ? (
-              <div className="flex items-center justify-center w-full text-sm font-semibold py-3.5 rounded-full text-white bg-green-500">
-                <Check className="w-4 h-4 mr-2" /> Active
-              </div>
+              <Button onClick={handleManage} disabled={loading || !sub.isBillingOwner} variant="outline" className="w-full justify-center rounded-full py-3.5">
+                {loading ? "Opening…" : sub.isBillingOwner ? "Manage billing" : "Managed by your workspace owner"}
+              </Button>
             ) : (
-              <Button onClick={handleCheckout} disabled={!PAYMENTS_ENABLED || loading} className="btn-cta btn-shimmer w-full justify-center">
-                {!PAYMENTS_ENABLED ? "Payments unavailable" : loading ? "Redirecting..." : "Start for $97"}
+              <Button onClick={handleCheckout} disabled={loading} className="btn-cta btn-shimmer w-full justify-center">
+                {loading ? "Redirecting…" : sub.hadSubscription ? `Subscribe for $${PLAN_PRICE_USD}/month` : "Start your 7-day free trial"}
                 <ArrowUpRight className="w-4 h-4" />
               </Button>
             )}
 
-            {/* Trust row */}
+            {foundingLeft !== null && foundingLeft > 0 && (
+              <p className="mt-4 text-[12.5px] leading-relaxed text-center" style={{ color: "hsl(var(--aeline-dark))" }}>
+                <strong>Founding deal:</strong> the first 10 paying customers keep ${PLAN_PRICE_USD}/month for life, even if the price goes up.
+              </p>
+            )}
+
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-4 mt-5 pt-5 border-t border-border/50">
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Lock className="w-3 h-3" />
-                Secure checkout
+                Secure checkout by Stripe
               </div>
               <span className="hidden sm:inline text-muted-foreground/30">·</span>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <RotateCcw className="w-3 h-3" />
-                Cancel anytime
+                Cancel in one click
               </div>
               <span className="hidden sm:inline text-muted-foreground/30">·</span>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -142,8 +153,13 @@ const Pricing = () => {
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground text-center mt-6 leading-relaxed">
-            A simple monthly subscription. Cancel anytime — no contract, no sales call required.
+          <p className="text-sm text-muted-foreground text-center mt-6 leading-relaxed inline-flex w-full items-center justify-center gap-1.5">
+            <Mail className="w-4 h-4" />
+            Questions? Email{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium underline underline-offset-2" style={{ color: "hsl(var(--aeline-dark))" }}>
+              {CONTACT_EMAIL}
+            </a>
+            , I answer within a day.
           </p>
         </div>
       </div>
