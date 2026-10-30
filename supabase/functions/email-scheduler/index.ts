@@ -114,7 +114,7 @@ Deno.serve(async () => {
   // ── Weekly digest ──
   if (digestOn) {
     const { data: accounts } = await db.from("profiles")
-      .select("user_id").in("subscription_status", ["trialing", "active", "legacy_free"]).eq("email_opt_out", false);
+      .select("user_id").in("subscription_status", ["trialing", "active"]).eq("email_opt_out", false);
     const week = weekStartOf(now);
     const weekIndex = Math.floor(new Date(week).getTime() / (7 * 86_400_000));
 

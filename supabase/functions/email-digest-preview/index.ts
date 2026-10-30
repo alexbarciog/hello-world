@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
   if (!isAdmin) return json({ error: "Not found" }, 404);
 
   const body = await req.json().catch(() => ({}));
-  const statuses = ["trialing", "active", "legacy_free"];
+  const statuses = ["trialing", "active"];
 
   if (body.action === "accounts") {
     const { data: rows } = await db.from("profiles").select("user_id, subscription_status, email_opt_out").in("subscription_status", statuses);
