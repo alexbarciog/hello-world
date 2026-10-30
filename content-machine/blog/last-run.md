@@ -55,4 +55,12 @@
   4. Lessons keep landing at 2,200 to 2,400 words against page-write.md's 1,000 to 1,800 because the required
      shape (definition, why, how, vs-table, this-week, related, 3 to 6 FAQ) plus two tables fills that. Say if
      you would rather the FAQ be cut to three entries or the vs-table shortened.
-- Live check: see the appended note below (written after the push).
+- Live check (19:36 UTC, about 4.5 minutes after the push landed at 19:31 UTC): NOT CONFIRMED this run. The
+  fetch tool refused both https://intentsly.com/learn/what-is-a-champion-in-sales and
+  https://intentsly.com/sitemap.xml for lack of provenance (the URLs are not linked from any page fetched this
+  run and search does not index them), and in an unattended run the permission request expires unanswered.
+  The task rules forbid fetching another way, so no other check was attempted. The database row is published
+  and the push to main succeeded (3a9f8b8..b295e34), which is the same deploy path that produced live pages on
+  every previous run, so the page is very likely live and in the sitemap, but this run did not see it.
+- Git note: the working copy was again on a detached HEAD at session start; pushed with
+  `git push origin HEAD:refs/heads/main`, then repointed local `main` to the pushed commit and checked it out.
