@@ -101,7 +101,7 @@ async function legacyStripeState(email: string | null) {
   const customer = customers.data[0];
   if (!customer) return empty;
   const subs = await stripe.subscriptions.list({ customer: customer.id, status: "all", limit: 5 });
-  const live = subs.data.find((s) => s.status === "active" || s.status === "trialing");
+  const live = subs.data.find((s: Stripe.Subscription) => s.status === "active" || s.status === "trialing");
   const end = live?.items?.data?.[0]?.current_period_end;
   let hasCard = Boolean(customer.invoice_settings?.default_payment_method);
   if (!hasCard) hasCard = (await stripe.paymentMethods.list({ customer: customer.id, type: "card", limit: 1 })).data.length > 0;
