@@ -6,7 +6,7 @@ import { decideAccess, type Access, type BillingRow } from "./billing.ts";
 import { PAYMENTS_ENABLED } from "./payments-policy.ts";
 
 const BILLING_COLUMNS =
-  "user_id, current_organization_id, subscription_status, trial_started_at, trial_ends_at, current_period_end, legacy_ends_at, founding";
+  "user_id, current_organization_id, subscription_status, trial_started_at, trial_ends_at, current_period_end, founding";
 
 // Supabase client (untyped: the generated DB types live in the web app).
 // deno-lint-ignore no-explicit-any
