@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, Clock, Loader2, Lock } from "lucide-react";
+import { Clock, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import type { SubscriptionState } from "@/hooks/useSubscription";
 import { openBillingPortal, startCheckout } from "@/lib/billing";
@@ -10,11 +10,10 @@ const fmtDate = (iso: string) =>
 const LOCK_COPY: Record<string, string> = {
   past_due: "Your last payment didn't go through, so your account is read-only: signals and LinkedIn outreach are paused.",
   canceled: "Your subscription has ended, so your account is read-only: signals and LinkedIn outreach are paused.",
-  expired: "Your free access has ended, so your account is read-only: signals and LinkedIn outreach are paused.",
   no_subscription: "Start your 7-day free trial to turn on signals and LinkedIn outreach.",
 };
 
-/** Billing banner at the top of the app (trial ending, legacy countdown, read-only). */
+/** Billing banner at the top of the app (trial ending, read-only). */
 export function BillingBanner({ sub }: { sub: SubscriptionState }) {
   const [busy, setBusy] = useState(false);
   const banner = sub.banner;
@@ -24,7 +23,7 @@ export function BillingBanner({ sub }: { sub: SubscriptionState }) {
     setBusy(true);
     const result = action === "portal" ? await openBillingPortal() : await startCheckout();
     if (!result.ok) {
-      // Accounts from before self-serve billing have no Stripe customer yet.
+      // No Stripe customer yet (never subscribed).
       if (action === "portal" && result.reason === "no_customer") {
         const retry = await startCheckout();
         if (!retry.ok) toast.error(retry.message);
@@ -49,18 +48,6 @@ export function BillingBanner({ sub }: { sub: SubscriptionState }) {
     );
   }
 
-  if (banner.kind === "legacy") {
-    const founding = sub.foundingSlotsLeft > 0
-      ? ` ${sub.foundingSlotsLeft} founding spot${sub.foundingSlotsLeft === 1 ? "" : "s"} left: founding customers keep $97/month for life.`
-      : "";
-    const text = `Intentsly is moving to paid plans. Your account keeps working until ${fmtDate(banner.endsAt)}. Start your 7-day trial to keep it running.${founding}`;
-    return (
-      <Bar tone="warn" icon={<AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />} text={text + ownerNote}>
-        {sub.isBillingOwner && <Action busy={busy} onClick={() => go("checkout")} label="Start trial" />}
-      </Bar>
-    );
-  }
-
   const status = banner.status;
   const reactivate = status === "past_due" || status === "canceled" ? "portal" : "checkout";
   return (
@@ -74,7 +61,6 @@ export function BillingBanner({ sub }: { sub: SubscriptionState }) {
 
 const TONES = {
   info: { background: "hsl(204 100% 97%)", borderColor: "hsl(204 80% 88%)", color: "hsl(204 60% 25%)" },
-  warn: { background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)", color: "hsl(28 60% 25%)" },
   lock: { background: "hsl(350 100% 97%)", borderColor: "hsl(350 80% 88%)", color: "hsl(350 50% 28%)" },
 };
 

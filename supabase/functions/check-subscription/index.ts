@@ -1,7 +1,7 @@
 // Billing state for the signed-in user's account, read by useSubscription.
 // Subscription status comes from the database (kept in sync by stripe-webhook).
-// Legacy accounts (and every account while checkout is switched off) still get
-// the pre-Epic-1 Stripe lookup for subscribed / has_card, so they behave as before.
+// While checkout is switched off, accounts without a status still get the
+// pre-Epic-1 Stripe lookup for subscribed / has_card, so they behave as before.
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { bannerFor, decideAccess } from "../_shared/billing.ts";
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const ownerId = await billingOwnerOf(db, user.id);
     const { data: owner } = await db
       .from("profiles")
-      .select("credits, free_trial_enabled, free_trial_limit, current_organization_id, subscription_status, trial_started_at, trial_ends_at, current_period_end, legacy_ends_at, founding, plan_price_id")
+      .select("credits, free_trial_enabled, free_trial_limit, current_organization_id, subscription_status, trial_started_at, trial_ends_at, current_period_end, founding, plan_price_id")
       .eq("user_id", ownerId)
       .maybeSingle();
 
@@ -56,7 +56,6 @@ Deno.serve(async (req) => {
       trial_started_at: owner?.trial_started_at ?? null,
       trial_ends_at: owner?.trial_ends_at ?? null,
       current_period_end: owner?.current_period_end ?? null,
-      legacy_ends_at: owner?.legacy_ends_at ?? null,
       founding: owner?.founding ?? false,
       founding_slots_left: typeof foundingLeft === "number" ? foundingLeft : 0,
       signals_used: signalsUsed,
@@ -79,7 +78,13 @@ Deno.serve(async (req) => {
       return json({ ...base, subscribed: false, had_subscription: true, has_card: false, subscription_end: null, product_id: null });
     }
 
-    // Legacy behaviour: look the payer up in Stripe as before.
+    // Never subscribed, with checkout on: old Stripe history is ignored, so an
+    // earlier cancelled plan doesn't stop them from getting the trial.
+    if (access === "none") {
+      return json({ ...base, subscribed: false, had_subscription: false, has_card: false, subscription_end: null, product_id: null });
+    }
+
+    // Checkout is off: look the payer up in Stripe as before.
     const legacy = await legacyStripeState(ownerId === user.id ? user.email : await emailOf(ownerId));
     return json({ ...base, ...legacy });
   } catch (error) {
