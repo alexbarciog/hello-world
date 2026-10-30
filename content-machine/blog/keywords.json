@@ -332,8 +332,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 1,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intent-data-tools-for-small-business",
    "monthly_volume": null,
    "section": "blog"
   },
