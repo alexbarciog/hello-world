@@ -33,11 +33,21 @@ export default function InviteAccept() {
       const { data: { session } } = await supabase.auth.getSession();
       setAuthed(!!session);
 
-      const { data, error } = await supabase
-        .from("organization_invitations")
-        .select("id, organization_id, email, status, expires_at, organizations(name)")
-        .eq("token", token)
-        .maybeSingle();
+      // Looked up by token through an RPC, so the table itself needn't be public.
+      // Falls back to the direct query until the RPC's migration has been applied.
+      let data: any = null;
+      let error: any = null;
+      const rpc = await (supabase as any).rpc("get_org_invitation", { _token: token });
+      if (!rpc.error) {
+        const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
+        data = row ? { ...row, organizations: { name: row.organization_name } } : null;
+      } else {
+        ({ data, error } = await supabase
+          .from("organization_invitations")
+          .select("id, organization_id, email, status, expires_at, organizations(name)")
+          .eq("token", token)
+          .maybeSingle());
+      }
 
       if (error || !data) {
         setError("This invitation link is invalid.");
