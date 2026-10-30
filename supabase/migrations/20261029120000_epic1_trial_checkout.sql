@@ -15,7 +15,6 @@ ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS plan_price_id text,
   ADD COLUMN IF NOT EXISTS founding boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS founding_rank integer,
-  ADD COLUMN IF NOT EXISTS legacy_ends_at timestamptz,
   ADD COLUMN IF NOT EXISTS billing_updated_at timestamptz;
 
 DO $$
@@ -23,7 +22,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_subscription_status_check') THEN
     ALTER TABLE public.profiles ADD CONSTRAINT profiles_subscription_status_check
       CHECK (subscription_status IS NULL OR subscription_status IN
-        ('legacy_free', 'trialing', 'active', 'past_due', 'canceled'));
+        ('trialing', 'active', 'past_due', 'canceled'));
   END IF;
 END $$;
 
@@ -52,7 +51,7 @@ BEGIN
   FOREACH col IN ARRAY ARRAY[
     'stripe_customer_id', 'subscription_id', 'subscription_status',
     'trial_started_at', 'trial_ends_at', 'current_period_end', 'plan_price_id',
-    'founding', 'founding_rank', 'legacy_ends_at', 'billing_updated_at'
+    'founding', 'founding_rank', 'billing_updated_at'
   ] LOOP
     IF (new_row -> col) IS DISTINCT FROM (old_row -> col) THEN
       RAISE EXCEPTION 'Column "%" cannot be changed directly', col USING ERRCODE = '42501';
@@ -89,8 +88,7 @@ INSERT INTO public.plan_limits (key, value, description) VALUES
   ('trial_days', 7, 'Length of the free trial in days'),
   ('trial_signal_cap', 20, 'Trial ends early once this many signals (contacts) have been delivered'),
   ('trial_banner_day', 5, 'Trial day from which the "trial ends" banner is shown'),
-  ('founding_slots', 10, 'Number of founding customers (first paid subscriptions after launch)'),
-  ('legacy_grace_days', 14, 'Days existing free accounts keep working after the Epic 1 deploy')
+  ('founding_slots', 10, 'Number of founding customers (first paid subscriptions after launch)')
 ON CONFLICT (key) DO NOTHING;
 
 -- ── 3. Stripe webhook idempotency ───────────────────────────────────────────
@@ -152,16 +150,10 @@ $$;
 REVOKE ALL ON FUNCTION public.founding_slots_remaining() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.founding_slots_remaining() TO anon, authenticated;
 
--- ── 5. Existing accounts become legacy_free for 14 days ─────────────────────
--- Paying customers are moved to 'active' by the stripe-backfill function
--- (Stripe is the source of truth for who pays); until then legacy_free keeps
--- their account working exactly as before.
-UPDATE public.profiles
-SET subscription_status = 'legacy_free',
-    legacy_ends_at = now() + make_interval(days =>
-      coalesce((SELECT value FROM public.plan_limits WHERE key = 'legacy_grace_days'), 14)),
-    billing_updated_at = now()
-WHERE subscription_status IS NULL;
+-- ── 5. Existing accounts ────────────────────────────────────────────────────
+-- Founder decision: non-paying accounts are treated as if they never had a plan.
+-- subscription_status stays NULL, so they get the normal 7-day trial when they
+-- check out. Paying customers are set to 'active' by the stripe-backfill function.
 
 -- ── 6. Billing enforcer every 15 minutes ────────────────────────────────────
 -- Ends trials that hit the signal cap and pauses agents/campaigns of accounts

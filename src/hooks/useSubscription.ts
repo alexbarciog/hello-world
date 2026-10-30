@@ -12,15 +12,14 @@ export interface SubscriptionState {
   freeTrialEnabled: boolean;
   freeTrialLimit: number;
   loading: boolean;
-  /** Can use the product: trialing/active, or a legacy account passing the old checks. */
+  /** Can use the product: trialing/active, or (checkout off) passing the old checks. */
   hasAccess: boolean;
-  /** past_due, canceled, expired legacy or never checked out: the app is read-only. */
+  /** past_due, canceled or never checked out: the app is read-only. */
   readOnly: boolean;
   status: SubscriptionStatus | null;
   access: Access | null;
   banner: BillingBanner;
   trialEndsAt: string | null;
-  legacyEndsAt: string | null;
   signalsUsed: number;
   signalCap: number;
   founding: boolean;
@@ -45,7 +44,6 @@ const INITIAL: SubscriptionState = {
   access: null,
   banner: null,
   trialEndsAt: null,
-  legacyEndsAt: null,
   signalsUsed: 0,
   signalCap: 0,
   founding: false,
@@ -73,7 +71,7 @@ export function useSubscription() {
       const hasCard = data?.has_card ?? false;
       const freeTrialEnabled = data?.free_trial_enabled ?? false;
       const access: Access | null = data?.access ?? null;
-      // Legacy accounts keep the pre-trial rule: paid, or invite-only trial with a card.
+      // With checkout off, the pre-trial rule still applies: paid, or invite-only trial with a card.
       const legacyAccess = subscribed || (freeTrialEnabled && hasCard);
       setState({
         subscribed,
@@ -91,7 +89,6 @@ export function useSubscription() {
         access,
         banner: data?.banner ?? null,
         trialEndsAt: data?.trial_ends_at ?? null,
-        legacyEndsAt: data?.legacy_ends_at ?? null,
         signalsUsed: data?.signals_used ?? 0,
         signalCap: data?.signal_cap ?? 0,
         founding: data?.founding ?? false,
