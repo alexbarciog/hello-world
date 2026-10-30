@@ -105,14 +105,15 @@ async function legacyStripeState(email: string | null) {
   const customers = await stripe.customers.list({ email, limit: 1 });
   const customer = customers.data[0];
   if (!customer) return empty;
-  const subs = await stripe.subscriptions.list({ customer: customer.id, status: "all", limit: 5 });
+  const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 5 });
   const live = subs.data.find((s: Stripe.Subscription) => s.status === "active" || s.status === "trialing");
   const end = live?.items?.data?.[0]?.current_period_end;
   let hasCard = Boolean(customer.invoice_settings?.default_payment_method);
   if (!hasCard) hasCard = (await stripe.paymentMethods.list({ customer: customer.id, type: "card", limit: 1 })).data.length > 0;
   return {
     subscribed: Boolean(live),
-    had_subscription: subs.data.length > 0,
+    // An old cancelled plan counts as never having had one (founder decision).
+    had_subscription: false,
     has_card: hasCard,
     subscription_end: typeof end === "number" ? new Date(end * 1000).toISOString() : null,
     product_id: (live?.items?.data?.[0]?.price?.product as string | undefined) ?? null,

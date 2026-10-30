@@ -153,5 +153,3 @@ verify_jwt = false
 [functions.billing-enforcer]
 verify_jwt = false
 
-[functions.stripe-backfill]
-verify_jwt = false

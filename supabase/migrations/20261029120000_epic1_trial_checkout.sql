@@ -151,9 +151,10 @@ REVOKE ALL ON FUNCTION public.founding_slots_remaining() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.founding_slots_remaining() TO anon, authenticated;
 
 -- ── 5. Existing accounts ────────────────────────────────────────────────────
--- Founder decision: non-paying accounts are treated as if they never had a plan.
+-- Founder decision: there are no paying customers, and every existing account is
+-- treated as if it never had a plan (including the manually granted ones).
 -- subscription_status stays NULL, so they get the normal 7-day trial when they
--- check out. Paying customers are set to 'active' by the stripe-backfill function.
+-- check out.
 
 -- ── 6. Billing enforcer every 15 minutes ────────────────────────────────────
 -- Ends trials that hit the signal cap and pauses agents/campaigns of accounts
