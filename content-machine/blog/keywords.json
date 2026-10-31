@@ -1401,8 +1401,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-cold-outreach",
    "monthly_volume": null
   },
   {
