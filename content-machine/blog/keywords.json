@@ -140,8 +140,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "linkedin-keyword-monitoring-for-leads",
    "monthly_volume": null,
    "section": "blog"
   },
