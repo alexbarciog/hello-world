@@ -801,8 +801,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-a-web-design-agency",
    "monthly_volume": null
   },
   {
