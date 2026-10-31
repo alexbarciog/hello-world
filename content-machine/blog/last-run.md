@@ -1,64 +1,55 @@
-# Last run: 2026-10-31 (blog task; fired about 06:50 UTC, 08:50 Bucharest)
+# Last run: 2026-10-31 (guides task; fired about 08:20 UTC, 10:20 Bucharest)
 
-- Keyword: linkedin keyword monitoring for leads (section blog, cluster linkedin-signals, type how-to, intent
-  commercial, priority 2, difficulty low). `blog_next.py --section blog` returned it directly. No PAUSE file, no
-  draft waiting. Repository already cloned and in scope; `git pull origin main` was up to date at 300beed. `add_repo`
-  was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector reported a proxy
-  tunnel error at session start; the "Supabase" connector connected and was used. Read-only count before any work:
-  0 posts published on 31 Oct UTC, 22 in the last 7 days; caps 7 and 45 not reached; no row for the slug.
-- Published: "LinkedIn Keyword Monitoring for Leads: 3 Routes and a Rule"
-  https://intentsly.com/blog/linkedin-keyword-monitoring-for-leads
-  Gate run 1 failed on three format points (meta description 169 chars, no H2 with the keyword, opening 113
-  words); fixed in two edits, run 3 passed with no fails and no warnings. Four truth-pass edits after the pass
-  (removed an unverified "minus sign excludes an author" tip, removed GummySearch and Trigify-date claims whose
-  sources were not opened this run, set Intentsly's refresh cell to "not stated", reworded the account-restriction
-  FAQ around our own verified caps), then `blog_cloud.py sql` printed ready: true. 9 H2, 6 FAQ, 10 internal links,
-  12 external, 2,917 words by the gate's count (how-to min 1,200, max 4,000). Decision taken without review: kept
-  the length; the tool table, the five-step routine and the volume rule are the substance.
+- Keyword: how to use linkedin search operators for prospecting (section guides, cluster linkedin-prospecting, type
+  guide, intent commercial, priority 2, difficulty medium). `blog_next.py --section guides` returned it directly. No
+  PAUSE file, no draft waiting. Repository already cloned and in scope; `git pull origin main` was up to date at
+  702179f. `add_repo` was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector
+  reported a proxy tunnel error at session start; the "Supabase" connector connected and was used. Read-only count
+  before any work: 1 post published on 31 Oct UTC, 22 in the last 7 days; caps 7 and 45 not reached; no row for the
+  slug.
+- Published: "How to Use LinkedIn Search Operators for Prospecting"
+  https://intentsly.com/guides/linkedin-search-operators-for-prospecting
+  Gate run 1 failed on two format points (meta description 167 chars, no H2 with the keyword); fixed in two edits,
+  run 2 passed with no fails and no warnings. Three truth/voice edits after the pass (attributed the operator
+  evaluation order to the cited guides, replaced a "sort by connection degree" fix that the free search does not
+  offer with the Connections filter, removed one "X is not a list, Y is" contrast), then `blog_cloud.py sql` printed
+  ready: true. 11 H2, 6 FAQ, 7 internal links, 6 external, 2,883 words by the gate's count (guide min 1,500, max
+  4,000). Decision taken without review: title kept at 51 characters without a numeric promise, because every
+  variant with "6 Steps" went over 60.
 - Database: the insert ran on project uwwajlezgeurnvvrvdvb and returned status published, published_at
-  2026-10-31 07:07:06 UTC. A read-only select afterwards confirmed section blog, article_type how-to, word_count
-  2917, reading_minutes 13, 6 FAQ entries, 3 secondary keywords, content length 18,581 characters and an md5 of the
-  stored content_md identical to the draft body (f8c564ebee56b83c8425c8f8fa9d0f1f). The SQL file was read back
-  line-for-line before being passed and the ON CONFLICT clause was complete this time.
-- Sources opened 31 Oct 2026 and used: buska.io/platforms/linkedin (li_at cookie, refresh daily/3h/hourly,
-  $49/$99/$249, notifications fire only on tags); parsestream.com/linkedin-keyword-monitoring ($24/$67/$169,
-  LinkedIn keywords 0/10/25, 3-day trial); octolens.com/linkedin-monitoring (posts and comments, no login, Pro
-  $159 annual 10 keywords hourly, Scale $499 real time); mentionkit.com article and homepage ($49 base per its
-  article, 14-day trial, Slack and webhooks); brand24.com LinkedIn monitoring article (API excludes private groups,
-  restricted posts, DMs); linkedapi.io social-listening guide and post-search docs (official APIs centre on own
-  Page; search widens narrow queries); favikon.com post-search article (literal match, no fit filters, Google x-ray
-  coverage incomplete); business.linkedin.com Buyer Intent page (signal list, nothing about keyword posts),
-  compare-plans (Core US$119.99, Advanced US$159.99 a month) and how-to-use (saved searches notify of new results);
-  findymail.com (19 May 2026) and help.skylead.io for the Posted content keywords filter and the posted-in-30-days
-  Spotlight (third-party descriptions, flagged as such in the article). Ranking pages read for SERP context only:
-  databar.ai, leadspicker.com, ddevi.com, letterdrop.com. triggify.io's ranking page 302-redirected to an unrelated
-  domain; the redirect target was not opened. LinkedIn Help pages (a526104, a523136, a102024, a112625, a528144)
-  are robots-blocked for the fetch tool, so nothing is attributed to them; the free-route click path is written
-  as a procedure with no quoted LinkedIn statistics.
-- Angle: the ranking pages are vendor how-tos with no prices and vendor listicles that rank themselves first.
-  This page states with sources what LinkedIn notifications, Buyer Intent and post search will not do, gives the
-  bookmark routine and a negative-keyword list, puts five tools and Intentsly in one table with price, refresh and
-  login requirement, and ends on a volume rule with each route's wrong-choice case.
-- Intentsly facts used: product.md feature list and limits (LinkedIn only, keyword posts, 2 accounts, 30/30 a
-  day, 15 recommended, 7-day trial, no sales call, Cal.com/Google Calendar link via the AI SDR); 14 qualified demos
-  in 14 days, zero manual outreach, leads from real-time intent signals, founders complaining about cold outreach
-  burnout (dogfooding-14-demos.md). No price stated. Reddit/X not mentioned. CTA is /try-ai with
-  /features/linkedin-signals, /features/ai-sdr and /features/conversational-ai in the body.
-- Queue: 27 blog keywords still queued, so no new keywords were added.
+  2026-10-31 08:34:36 UTC. A read-only select afterwards confirmed section guides, article_type guide, word_count
+  2883, reading_minutes 13, 6 FAQ entries, 4 secondary keywords, content length 19,643 characters and an md5 of the
+  stored content_md identical to the draft body (a98537cf346d8a95bb5cb48341ba219e).
+- Sources opened 31 Oct 2026 and used: scommunity.linkedin.com Boolean post (24 Jun 2025: five operators, uppercase,
+  Keywords/Job Title/Company fields only, not dropdown filters); scommunity.linkedin.com "4 ways" post (13 May 2020:
+  2,500 profiles per search, 15 saved searches with alerts); premium.linkedin.com/professional/faq (commercial use
+  limit counted from the 1st of the month, resets on the 1st, removed by Premium Business / Sales Navigator /
+  Recruiter Lite); developers.google.com site: operator doc ("doesn't necessarily return all the URLs");
+  linkedapi.io Boolean guide (14 Jul 2026) and 100hires.com (Jul 2026) for the list of ignored symbols and the
+  evaluation order. Ranking pages read for SERP context only, their unsourced stats not reused: amplemarket.com,
+  blog.closelyhq.com (two pages), overloop.com, expandi.io, cleverly.co, skylead.io X-ray, linkedapi.io X-ray.
+  LinkedIn Help pages (75814, a524335, a564226, 52950) are robots-blocked for the fetch tool, so nothing is
+  attributed to them.
+- Angle: the ranking pages are vendor cheat sheets with unsourced benchmarks and treat "LinkedIn search" as one
+  box. This page maps the four places operators work (People search with the Title field, company People tab,
+  Posts tab, Google X-ray), builds the string from the ICP with a three-list worksheet, gives a six-row fix table,
+  cites only LinkedIn's and Google's own pages for limits, and makes the Posts search the signal step.
+- Intentsly facts used: product.md feature list (keyword posts, competitor post engagement and page followers, ICP
+  scoring, verified emails; 30/30 a day, 15 recommended); 14 qualified demos in 14 days, zero manual outreach,
+  leads from real-time signals, founders complaining about cold outreach burnout (dogfooding-14-demos.md). No
+  price stated. Reddit/X not mentioned. CTA is /try-ai with /features/linkedin-signals in the body. Internal links
+  also to /guides, /learn/what-is-an-ideal-customer-profile, /guides/find-decision-makers-on-linkedin,
+  /guides/set-up-linkedin-sales-navigator-alerts, /guides/write-linkedin-outreach-message.
+- Queue: 10 guides keywords still queued (next: outbound sales process for startups), so no new keywords were
+  added.
 - For the founder:
-  1. Refresh rate: the table says Intentsly's refresh interval is "not stated on the feature page". If you can
-     confirm how often keyword posts are picked up (minutes, hourly), add it to brain/wiki/product.md and the
-     cell can be filled; it is the column buyers compare on.
-  2. Login model for monitoring: the page says Intentsly connects your LinkedIn account "for outreach". If signal
-     monitoring itself runs without the customer's LinkedIn session, say so; that is a selling point against Buska
-     and would be stated plainly.
-  3. Keyword-post scope and language: product.md says keyword posts across LinkedIn in EN/RO/DE/NL. A sentence on
-     whether keyword matching supports phrases, OR/NOT or exclusions would let the article's Step 1 list be mapped
-     onto the product.
-  4. A customer story about a keyword post that turned into a meeting (what the post said, how fast the AI SDR
-     replied, what was booked) would be the first-hand material this how-to lacks; the only story available is the
-     launch one.
-  5. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md still carry "verified:" plus a note,
-     which the gate reads as not verified for figures with a % sign; this article cites none of them.
-- Live check: not attempted this run beyond the database row and the push; previous runs found the fetch tool
-  refuses intentsly.com URLs for lack of provenance and that the index can lag the push by more than 20 minutes.
+  1. Keyword-post matching: the guide's Step 5 strings use OR/NOT groups. If Intentsly's keyword monitoring
+     supports phrases, OR lists or exclusions, add that to brain/wiki/product.md and the Intentsly sentence can say
+     "paste the same string"; today it says only "the keywords you set".
+  2. A real example of a keyword post that became a meeting (the sentence in the post, how fast the reply came,
+     what was booked) would replace the labelled hypothetical in Step 5 with first-hand material.
+  3. Whether Intentsly's signal monitoring runs without the customer's own LinkedIn searches (so it does not touch
+     the commercial use limit) is a selling point this page could state plainly if confirmed.
+  4. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md still carry "verified:" plus a note,
+     which the gate reads as not verified for figures with a % sign; this guide cites none of them.
+- Live check: see the run report; attempted about 4 minutes after the push against the sitemap and the guide URL.

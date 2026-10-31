@@ -933,8 +933,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "linkedin-search-operators-for-prospecting",
    "monthly_volume": null
   },
   {
