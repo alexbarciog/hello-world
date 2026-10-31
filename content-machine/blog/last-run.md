@@ -33,9 +33,18 @@
   file would have produced. Future runs: copy the file byte for byte. `blog_cloud.py mark` filed the article
   and set the keyword to published.
 - Queue: 10 `compare` keywords still queued (next: intentsly vs 11x), so no keyword refresh this run.
-- Live check: see the run report (sitemap and page fetched about 4 minutes after the push).
+- Live check (22:04 UTC, about 4 minutes after the push at 21:59:51 UTC): the page is live at
+  https://intentsly.com/compare/intentsly-vs-clay with the right H1, 13-row table, 8 H2s and 6 FAQ entries,
+  byline dated 31 October 2026, and it is listed on the /compare index. The sitemap could not be fetched this
+  run: the fetch tool refused https://intentsly.com/sitemap.xml with a permission prompt nobody was there to
+  answer, so "in the sitemap" is unconfirmed (the index listing suggests the deploy picked the row up).
+- Push note: the clone was on a detached HEAD, so `git push origin main` was rejected as non-fast-forward
+  until pushed as `HEAD:main`; local `main` was then realigned. Nothing outside content-machine/ changed.
 
 ## For the founder
+- Website rendering, not content: the /compare index and every "Keep reading" card show titles as
+  "Intentsly vs Intentsly vs Clay: ..." (the template prefixes "Intentsly vs" to titles that already start
+  with it). The article H1 itself is correct. This is website code, outside what the content tasks may edit.
 - proof.md: the rows for 21% reply rate, ~1,000 leads per agent, 2 to 4 meetings and the 2-account /
   30-a-day limits have a status cell that starts with "verified:" plus a note. The gate only accepts a cell
   that is exactly "verified", so those numbers fail the statistics check unless the paragraph also has an
