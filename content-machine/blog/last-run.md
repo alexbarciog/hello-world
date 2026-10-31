@@ -52,4 +52,12 @@
      the commercial use limit) is a selling point this page could state plainly if confirmed.
   4. The 21% reply-rate, ~1,000 leads and 2 to 4 meetings rows in proof.md still carry "verified:" plus a note,
      which the gate reads as not verified for figures with a % sign; this guide cites none of them.
-- Live check: see the run report; attempted about 4 minutes after the push against the sitemap and the guide URL.
+- Push: `git push origin main` was rejected client-side as non-fast-forward three times although `git ls-remote` and
+  the GitHub API both showed main at 702179f, the local parent; `git push origin HEAD:refs/heads/main` went through
+  at once (702179f..0d631d9). Nothing was rebased or forced. If this repeats, the shallow clone's tracking ref is the
+  likely cause and the explicit refspec is the fix.
+- Live check (08:41 UTC, 5 minutes after the push): not possible from this run. The fetch tool refuses
+  intentsly.com/sitemap.xml and the guide URL for lack of provenance (same as previous runs), the URL is not in
+  web search results yet, and the repository has no GitHub Actions workflow runs to read a deploy status from. The
+  database row is published and the commit is on main, so the page should appear with the next deploy; the founder
+  can confirm at https://intentsly.com/guides/linkedin-search-operators-for-prospecting.
