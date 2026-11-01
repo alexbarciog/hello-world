@@ -31,7 +31,12 @@
   published_at 2026-11-01 13:53:35 UTC. `blog_cloud.py mark` filed the article and set the keyword to published.
 - Queue: 6 `solutions` keywords still queued (next: how to find b2b customers on reddit), 11 published, so no keyword
   refresh this run.
-- Live check: see the run report (attempted about four minutes after the push).
+- Push: 4af7011 pushed as `HEAD:main` at 13:54 UTC (3987d8a..4af7011). Nothing outside content-machine/ changed.
+- Live check: attempted at 13:58 UTC, four minutes after the push. As on the two earlier 1 Nov runs, the fetch tool
+  asked for a permission nobody was there to grant for both https://intentsly.com/sitemap.xml and the page URL, so
+  "live" and "in sitemap" are unconfirmed this run. The database row shows status published and the push went
+  through, which is what the deploy reads from. Alex: opening the two URLs once in a live session (or allow-listing
+  intentsly.com for the fetch tool) would let future runs confirm this step.
 - For Alex: (1) the proof.md rows for the 21% reply rate, 1,000 leads/agent and 2 to 4 meetings carry the status
   "verified: say ..." which the gate reads as not verified; changing them to plain "verified" (with the phrasing
   note moved into the Claim cell) would let pages quote the 21% figure. (2) A real customer story for a SaaS company
