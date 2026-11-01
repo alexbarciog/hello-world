@@ -33,7 +33,11 @@
   published_at 2026-11-01 08:40:45 UTC. `blog_cloud.py mark` filed the article and set the keyword to published.
 - Queue: 8 `guides` keywords still queued (next: how to personalize cold outreach at scale), 1 blocked, so no
   keyword refresh this run.
-- Live check: see the commit that follows the push, or the run report.
+- Push: 21a0fc8 pushed as `HEAD:main` at 08:41 UTC (5f98254..21a0fc8). Nothing outside content-machine/ changed.
+- Live check: attempted at 08:45 UTC, four minutes after the push. The fetch tool asked for a permission nobody was
+  there to grant for both https://intentsly.com/sitemap.xml and the guide URL (same as the 1 Nov blog run), and the
+  repository has no GitHub Actions runs to read a deploy status from, so "live" and "in sitemap" are unconfirmed
+  this run. The database row shows status published and the push went through, which is what the deploy reads from.
 
 ## For the founder
 - Gate bug worth a one-line fix in `scripts/blog_gate.py` (not touched by this run, per the rules): `kw_in` uses
