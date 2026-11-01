@@ -945,7 +945,7 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
+   "status": "blocked",
    "slug": null,
    "monthly_volume": null
   },
@@ -957,8 +957,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-companies-that-just-raised-funding",
    "monthly_volume": null
   },
   {
