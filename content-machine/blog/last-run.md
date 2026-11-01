@@ -36,7 +36,13 @@
 - Daily cap: by Bucharest time this is the first page of 2 November (4 were published on 1 November, cap 7); weekly
   count is under 45.
 - Push: see the commit `compare: publish intentsly-vs-11x`. Nothing outside content-machine/ changed.
-- Live check: recorded below after the push.
+- Live check (22:21 to 22:23 UTC, four to six minutes after the 22:17 push): direct fetches of the sitemap and the
+  page URL again asked for a permission nobody was there to grant. Following links from the homepage instead, the
+  /compare index lists the new page first among 10, and the page itself renders with the right H1, the 13-row table,
+  six FAQ entries, a 1 November 2026 date and no 404. Page: live, confirmed. Sitemap: unconfirmed (no link path to
+  sitemap.xml from the site, and the direct fetch needs permission). Observation for Alex: the /compare index card
+  titles render as "Intentsly vs Intentsly vs 11x: ..." for every page on the index (the site code seems to prefix
+  "Intentsly vs" to titles that already start with it); that is website code, which this task does not touch.
 - For Alex: (1) the proof.md rows for the 21% reply rate, 1,000 leads/agent and 2 to 4 meetings still carry the
   status "verified: say ...", which the gate reads as not verified; plain "verified" with the phrasing note moved
   into the Claim cell would let compare pages quote them. (2) Allow-listing www.11x.ai (and other competitors'
