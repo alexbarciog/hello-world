@@ -813,8 +813,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-saas-company",
    "monthly_volume": null
   },
   {
