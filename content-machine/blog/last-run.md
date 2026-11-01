@@ -28,8 +28,11 @@
   match the local file exactly, word_count 1951, reading_minutes 9, 6 FAQ entries, 4 secondary keywords.
   `blog_cloud.py mark` filed the article and set the keyword to published.
 - Queue: 26 `blog` keywords still queued (next: phantombuster alternatives for linkedin), so no keyword refresh.
-- Live check: not performed in this run (the push happens at the end of the run; the previous run saw the deploy
-  take about 4 minutes). URL to check: https://intentsly.com/blog/reddit-search-queries-to-find-customers
+- Push: fe748e8 amended to 7e01623 (author set to the same identity as the 31 Oct commits), pushed as
+  `HEAD:main` at about 07:06 UTC; origin/main confirmed at 7e01623. Nothing outside content-machine/ changed.
+- Live check: attempted 4 minutes after the push, but the fetch tool asked for a permission nobody was there to
+  grant for https://intentsly.com/blog/reddit-search-queries-to-find-customers, so "live" is unconfirmed this
+  run. The database row is in place and the push went through, which is what the deploy reads from.
 
 ## For the founder
 - Another Reddit article where Intentsly can only appear as "the LinkedIn side": the reddit-x cluster still has
