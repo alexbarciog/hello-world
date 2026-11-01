@@ -200,8 +200,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "reddit-search-queries-to-find-customers",
    "monthly_volume": null,
    "section": "blog"
   },
