@@ -1437,8 +1437,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-dark-social-in-b2b",
    "monthly_volume": null
   },
   {
