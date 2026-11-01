@@ -31,9 +31,11 @@
 - Queue: 8 `learn` keywords still queued (next: what is outbound sales), 12 published, so no keyword refresh this run.
 - Daily cap: this is the 4th page published today across all sections (cap 7); weekly count is under 45.
 - Push: see the commit `learn: publish what-is-dark-social-in-b2b`. Nothing outside content-machine/ changed.
-- Live check: recorded in the run report (attempted about four minutes after the push). On the three earlier 1 Nov
-  runs the fetch tool asked for a permission nobody was there to grant for intentsly.com URLs, so the live check may
-  again be unconfirmed; the database row shows published and the push is what the deploy reads from.
+- Live check (19:43 to 19:46 UTC, four to seven minutes after the 19:39 push): direct fetches of the sitemap and the
+  page URL again asked for a permission nobody was there to grant. Following links from the homepage instead, the
+  /learn index lists the new lesson first among 12, and the page itself renders with the right H1, the bold
+  definition, a 1 November 2026 date and no 404. Page: live, confirmed. Sitemap: unconfirmed (no link path to
+  sitemap.xml from the site, and the direct fetch needs permission).
 - For Alex: (1) the proof.md rows for the 21% reply rate, 1,000 leads/agent and 2 to 4 meetings still carry the
   status "verified: say ...", which the gate reads as not verified; plain "verified" with the phrasing note moved
   into the Claim cell would let lessons quote them. (2) A real "how did you hear about us" tally from Intentsly's own
