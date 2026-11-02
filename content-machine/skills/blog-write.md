@@ -4,6 +4,12 @@ description: Research and write one search-optimized blog article for Intentsly 
 ---
 # blog-write
 
+**Gate rules first.** `RUN.md` lists rules a to e, and `scripts/blog_cloud.py sql` fails the draft if any is
+broken: check the keyword against existing pages before researching, at least 1,200 words of unique content
+with one original element, 3 to 5 links within the cluster plus the hub, two existing pages linking to the new
+one (`backlinks_from`), and nothing about Intentsly that is not in `brain/wiki/product.md`. When an existing
+page has the same intent, improve that page instead (refresh mode in `RUN.md`).
+
 Write one article for one keyword. The goal is a page a buyer would bookmark and another site
 would link to, which is also what ranks. Work through the six stages in order; do not draft
 before stage 3 is done.
@@ -54,8 +60,10 @@ from the founder. Do not publish filler.
   search ("How do you find buyers on Reddit?").
 - Put the most useful asset high: the comparison table, the steps, the template.
 - **FAQ**: 3 to 6 real questions from stage 1 with answers of 40 to 70 words each.
-- **Internal links**: 2 to 5 from `blog/site-pages.json` and published articles, placed where the
-  reader would want them. Descriptive anchor text, never "click here".
+- **Internal links**: 3 to 5 to indexable published pages in the same cluster, plus the section's hub
+  page and any from `blog/site-pages.json`, placed where the reader would want them. Descriptive anchor
+  text, never "click here". Pages in the `noindex` or `merged` lists of `../src/data/seoPolicy.json` do
+  not count and fail the gate.
 - **Conversion path (required, the gate checks it).** The reader should be able to move from
   this page to trying Intentsly without leaving the site. Every page needs:
   1. A link to at least one other published content page (`blog/published/`, any section), placed
@@ -134,6 +142,7 @@ excerpt: One or two sentences for the blog index card.
 original_angle: Unlike the pages ranking now, this one ...
 first_hand: brain/stories/dogfooding-14-demos.md
 checked_on: 2026-10-12
+backlinks_from: /blog/find-b2b-leads-on-reddit, /guides/set-up-signal-based-outbound
 ---
 Opening paragraph that answers the query...
 

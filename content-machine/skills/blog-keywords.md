@@ -16,5 +16,7 @@ description: Refresh the blog keyword queue: find new keywords, re-check who ran
    `monthly_volume` proxies from impressions, raise priority for queries at positions 8 to 30
    (an update or supporting article can lift them), and add an `update` note to those keywords.
 5. Never write a search volume you did not get from a tool or export. Leave it null.
-6. Append new entries with status `queued`; do not delete or reorder existing ones. Report what
+6. Skip anything `python3 scripts/blog_gate.py --check-keyword "<keyword>"` flags, and anything in
+   `paused_clusters` or `paused_sections` of `config/blog.json`. Do not change `paused` entries.
+7. Append new entries with status `queued`; do not delete or reorder existing ones. Report what
    was added and the new top five.

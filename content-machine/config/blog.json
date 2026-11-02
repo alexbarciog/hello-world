@@ -4,7 +4,7 @@
   "author": "Alex Barciog",
   "author_title": "CEO & Founder, Intentsly",
   "autopublish": true,
-  "max_posts_per_week": 45,
+  "max_posts_per_week": 4,
   "publish_days": [
     "Mon",
     "Tue",
@@ -21,12 +21,12 @@
     "listicle": 1500,
     "comparison": 1300,
     "pillar": 2200,
-    "data": 1000,
+    "data": 1200,
     "templates": 1200,
-    "explainer": 1100,
+    "explainer": 1200,
     "guide": 1500,
-    "lesson": 1000,
-    "landing": 1100
+    "lesson": 1200,
+    "landing": 1200
   },
   "max_words": 4000,
   "meta_title_max": 60,
@@ -39,7 +39,7 @@
   "min_external_links": 2,
   "min_faq": 3,
   "competitor_fact_max_age_days": 30,
-  "max_posts_per_day": 7,
+  "max_posts_per_day": 1,
   "sections": {
     "blog": "/blog",
     "guides": "/guides",
@@ -56,5 +56,18 @@
     "/features/conversational-ai",
     "/signal-playbook",
     "/linkedin-profile-analyzer"
-  ]
+  ],
+  "min_unique_words": 1200,
+  "max_template_overlap_pct": 25,
+  "min_cluster_links": 3,
+  "max_cluster_links": 5,
+  "min_backlinks": 2,
+  "paused_clusters": [
+    "trigify"
+  ],
+  "paused_sections": [
+    "learn",
+    "solutions"
+  ],
+  "refresh_cooldown_days": 30
 }

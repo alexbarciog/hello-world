@@ -14,9 +14,12 @@ Shared rules for all four sections:
 - First paragraph answers the query in under 90 words; a reader who stops there has the answer.
 - H2s are phrased as the questions people search. Each H2 stands alone.
 - At least one copy-paste asset: a table, a checklist, a query list, a message template.
-- 2 to 5 internal links: one to the section index, one to a related page in another section
-  (a guide links to a lesson that defines its terms; a solution page links to the guides it
-  relies on), and the rest to feature pages from `blog/site-pages.json`.
+- Internal links: 3 to 5 to indexable pages in the same cluster, one to the section index, one to a
+  related page in another section (a guide links to a lesson that defines its terms; a solution
+  page links to the guides it relies on), and feature pages from `blog/site-pages.json`.
+- `/learn` and `/solutions` are paused in `config/blog.json`: no new pages there, refresh mode only.
+  When refreshing a solutions page, rewrite "How Intentsly does this" and the week-one plan for that
+  business type; the gate fails any page that shares more than 25% of its wording with another.
 - Conversion path exactly as in blog-write.md "Conversion path": a link to another content
   page, a link to a conversion page, one contextual Intentsly sentence at the step it replaces,
   and a closing next action. The site adds its own CTA card, next-step box and sticky bar, so the

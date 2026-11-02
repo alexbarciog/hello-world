@@ -1,5 +1,9 @@
 # Trigify campaign brief
 
+**Paused (November 2026): no new Trigify pages.** Trigify closed on 22 October 2026 and the cluster already
+has more pages than the search demand needs. Use this brief only when refreshing an existing page. Merged and
+noindexed Trigify URLs are listed in `../../src/data/seoPolicy.json`.
+
 Applies to every keyword in cluster `trigify`. Read this before stage 1 of `skills/blog-write.md`
 for those keywords. The campaign exists because Trigify's customers lose access on 22 October 2026
 and are searching for what to do; Intentsly is the honest answer for the LinkedIn engagement and

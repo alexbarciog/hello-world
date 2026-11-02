@@ -38,6 +38,11 @@ def icp():
     return json.loads((ROOT / "config" / "icp.json").read_text())
 
 
+def seo_policy():
+    """Which URLs are noindexed or merged. The website reads the same file."""
+    return json.loads((ROOT.parent / "src" / "data" / "seoPolicy.json").read_text())
+
+
 def parse_draft(path):
     """Draft = front matter between --- lines (key: value), then the post body."""
     text = pathlib.Path(path).read_text()
