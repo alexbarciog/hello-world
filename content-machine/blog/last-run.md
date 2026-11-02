@@ -46,4 +46,12 @@
   previous runs; (3) the guides draft outbound-sales-process-for-startups.md is still blocked on the gate's keyword
   matcher (it strips a trailing "s" from "process"), a scripts/ change only you can make; (4) allowing intentsly.com
   for the fetch tool in this task's settings would let runs confirm the sitemap directly.
-- Live check: see the note appended below after the push.
+- Live check (19:39 to 19:50 UTC, push e97b609 at 19:35): direct fetches of the page URL and
+  https://intentsly.com/sitemap.xml asked for a permission nobody was there to grant, as on previous runs. Workaround:
+  the homepage footer led to https://intentsly.com/learn; at 19:40 that index still showed 12 cards (deploy not
+  finished), at 19:49 it showed 13 with the new lesson first, which made the page URL fetchable. The page renders:
+  H1 "What Is Outbound Sales? Definition and a One-Minute Rule", all seven H2s, the three-column table and the
+  six-question FAQ, with the bold definition opening the article. So the redeploy took between 5 and 14 minutes after
+  the push. The sitemap itself is still unconfirmed (no page links to it); the site builds it from the same published
+  rows, so it should be listed. No GitHub Actions workflows exist on the repository, so the deploy is not observable
+  from there either.
