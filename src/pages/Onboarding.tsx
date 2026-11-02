@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarCheck, Radar } from "lucide-react";
@@ -13,11 +13,15 @@ import { StepAccountType, type AccountType } from "@/components/onboarding/StepA
 import { ONBOARDING_EASE } from "@/components/onboarding/ui";
 import { Float } from "@/lib/motion";
 import { toast } from "sonner";
+import { StepTemplate, FROM_SCRATCH } from "@/components/onboarding/StepTemplate";
+import { applyTemplate, usePublicTemplates } from "@/lib/agentTemplates";
+import { DemoVideo } from "@/components/billing/DemoVideo";
 
-type Phase = "account_type" | "scan" | "preview";
+type Phase = "template" | "account_type" | "scan" | "preview";
 
-const PHASE_INDEX: Record<Phase, number> = { account_type: 0, scan: 1, preview: 2 };
-const TOTAL_STEPS = 3;
+// The template step only exists once an admin has published templates.
+const PHASES_WITH_TEMPLATES: Phase[] = ["template", "account_type", "scan", "preview"];
+const PHASES_WITHOUT: Phase[] = ["account_type", "scan", "preview"];
 
 /** Right-hand brand panel: landing hero gradient + dashboard-style preview cards. */
 function BrandPanel() {
@@ -101,8 +105,24 @@ function BrandPanel() {
 }
 
 function OnboardingInner() {
+  // Back from Stripe Checkout: confirm the trial once, then clean the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      toast.success("Your 7-day free trial has started. Let's set up your first agent.");
+      params.delete("checkout");
+      const qs = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    }
+  }, []);
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<Phase>("account_type");
+  const { data: templates, isLoading: templatesLoading } = usePublicTemplates();
+  const hasTemplates = (templates?.length ?? 0) > 0;
+  const [phase, setPhase] = useState<Phase>("template");
+  const [templateChoice, setTemplateChoice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!templatesLoading && !hasTemplates && phase === "template") setPhase("account_type");
+  }, [templatesLoading, hasTemplates, phase]);
   const [accountType, setAccountType] = useState<AccountType | null>(null);
   const [savingAccountType, setSavingAccountType] = useState(false);
 
@@ -269,6 +289,21 @@ function OnboardingInner() {
       if (profErr) console.warn("Failed to set onboarding_complete:", profErr);
 
       markOnboardingComplete();
+
+      // A chosen template becomes their agent + sequence (deep copy), then
+      // the next step is connecting LinkedIn.
+      if (templateChoice && templateChoice !== FROM_SCRATCH) {
+        try {
+          await applyTemplate(templateChoice, "create");
+          const name = templates?.find((t) => t.id === templateChoice)?.business_type;
+          toast.success(`Your agent is set up${name ? ` from the ${name} template` : ""}. Connect LinkedIn to start.`);
+          navigate("/settings?tab=linkedin", { replace: true });
+          return;
+        } catch (e) {
+          toast.error(`Couldn't apply the template: ${(e as Error).message}. You can set up your agent from the dashboard.`);
+        }
+      }
+
       const dest = accountType === "agency" ? "/dashboard?welcome=agency" : "/dashboard";
       navigate(dest, { replace: true });
     } catch (err) {
@@ -278,7 +313,9 @@ function OnboardingInner() {
     }
   }
 
-  const stepIndex = PHASE_INDEX[phase];
+  const phases = hasTemplates ? PHASES_WITH_TEMPLATES : PHASES_WITHOUT;
+  const TOTAL_STEPS = phases.length;
+  const stepIndex = Math.max(phases.indexOf(phase), 0);
 
   return (
     <div className="min-h-screen bg-white flex">
@@ -321,6 +358,14 @@ function OnboardingInner() {
               transition={{ duration: 0.45, ease: ONBOARDING_EASE }}
               className="w-full"
             >
+              {phase === "template" && hasTemplates && (
+                <StepTemplate
+                  templates={templates ?? []}
+                  value={templateChoice}
+                  onChange={setTemplateChoice}
+                  onContinue={() => setPhase("account_type")}
+                />
+              )}
               {phase === "account_type" && (
                 <StepAccountType
                   value={accountType}
@@ -354,6 +399,16 @@ function OnboardingInner() {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Product demo (placeholder until the recording exists) */}
+        <details className="w-full max-w-xl mx-auto mb-5 shrink-0 group">
+          <summary className="cursor-pointer list-none text-sm font-medium text-neutral-600 hover:text-neutral-900">
+            ▶ Watch the 3-minute product demo
+          </summary>
+          <div className="mt-3">
+            <DemoVideo />
+          </div>
+        </details>
 
         {/* Footer micro-copy — landing style */}
         <p className="w-full max-w-xl mx-auto text-[11px] uppercase tracking-[0.14em] text-neutral-400 shrink-0 text-center lg:text-left">

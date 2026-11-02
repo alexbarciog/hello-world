@@ -111,6 +111,11 @@ export const NextStepCta = ({ section }: { section: Section }) => {
         <p className="mt-5 text-sm text-foreground/60">
           <Link to={c.tool.to} className="underline underline-offset-2 hover:text-foreground">{c.tool.label}</Link>
         </p>
+        <p className="mt-2 text-sm text-foreground/60">
+          Questions? Email{" "}
+          <a href="mailto:alex@intentsly.com" className="underline underline-offset-2 hover:text-foreground">alex@intentsly.com</a>
+          , I answer within a day.
+        </p>
       </div>
     </section>
   );

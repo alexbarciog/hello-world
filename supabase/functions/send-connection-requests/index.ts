@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
+import { accessForUser } from '../_shared/account-access.ts';
 
 const SEQUENCES_PER_DAY = 20; // 20 x 30-min slots between 08:00-18:00
 
@@ -77,6 +78,12 @@ Deno.serve(async (req) => {
 
         if (!campaign) {
           console.log(`[send-conn] campaign ${campaignId} not active, skipping`);
+          continue;
+        }
+
+        // Billing: a locked account (past due, canceled, expired) sends nothing.
+        if ((await accessForUser(serviceClient, campaign.user_id)) === 'none') {
+          console.log(`[send-conn] campaign ${campaignId} account has no access, skipping`);
           continue;
         }
 

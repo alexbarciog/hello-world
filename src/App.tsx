@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
+import StartTrial from "./pages/StartTrial.tsx";
+import Book from "./pages/Book.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
@@ -27,6 +29,8 @@ import ColdMessageGrader from "./pages/tools/ColdMessageGrader.tsx";
 import BuyingSignalFinder from "./pages/tools/BuyingSignalFinder.tsx";
 import SharedLeads from "./pages/SharedLeads.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AdminTemplates from "./pages/AdminTemplates.tsx";
+import { AdminOnly } from "./components/templates/AdminOnly";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
@@ -188,6 +192,8 @@ export const AppContent = () => (
           <Route path="/features/linkedin-signals" element={<LinkedInSignals />} />
           <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
+          <Route path="/start-trial" element={<AuthOnlyGuard><StartTrial /></AuthOnlyGuard>} />
+          <Route path="/book" element={<Book />} />
           <Route
             path="/dashboard"
             element={<AuthGuard><DashboardLayout><Dashboard /></DashboardLayout></AuthGuard>}
@@ -245,6 +251,7 @@ export const AppContent = () => (
           <Route path="/billing" element={<AuthGuard><DashboardLayout><BillingPlans /></DashboardLayout></AuthGuard>} />
           <Route path="/support" element={<AuthGuard><DashboardLayout><Support /></DashboardLayout></AuthGuard>} />
           <Route path="/admin" element={<AuthGuard><DashboardLayout><AdminDashboard /></DashboardLayout></AuthGuard>} />
+          <Route path="/admin/templates" element={<AuthGuard><AdminOnly><DashboardLayout><AdminTemplates /></DashboardLayout></AdminOnly></AuthGuard>} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />

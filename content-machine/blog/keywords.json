@@ -140,8 +140,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "linkedin-keyword-monitoring-for-leads",
    "monthly_volume": null,
    "section": "blog"
   },
@@ -200,8 +200,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "reddit-search-queries-to-find-customers",
    "monthly_volume": null,
    "section": "blog"
   },
@@ -212,8 +212,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "best-subreddits-for-b2b-lead-generation",
    "monthly_volume": null,
    "section": "blog"
   },
@@ -789,8 +789,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "b2b-lead-generation-for-small-business",
    "monthly_volume": null
   },
   {
@@ -801,8 +801,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-a-web-design-agency",
    "monthly_volume": null
   },
   {
@@ -813,8 +813,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-saas-company",
    "monthly_volume": null
   },
   {
@@ -825,7 +825,7 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
+   "status": "blocked",
    "slug": null,
    "monthly_volume": null
   },
@@ -933,8 +933,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "linkedin-search-operators-for-prospecting",
    "monthly_volume": null
   },
   {
@@ -945,7 +945,7 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
+   "status": "blocked",
    "slug": null,
    "monthly_volume": null
   },
@@ -957,8 +957,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-companies-that-just-raised-funding",
    "monthly_volume": null
   },
   {
@@ -969,8 +969,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "personalize-cold-outreach-at-scale",
    "monthly_volume": null
   },
   {
@@ -1077,8 +1077,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-outbound-sales",
    "monthly_volume": null
   },
   {
@@ -1197,8 +1197,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-teamfluence",
    "monthly_volume": null
   },
   {
@@ -1209,8 +1209,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-clay",
    "monthly_volume": null
   },
   {
@@ -1221,8 +1221,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-11x",
    "monthly_volume": null
   },
   {
@@ -1233,8 +1233,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-heyreach",
    "monthly_volume": null
   },
   {
@@ -1401,8 +1401,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-cold-outreach",
    "monthly_volume": null
   },
   {
@@ -1425,8 +1425,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-champion-in-sales",
    "monthly_volume": null
   },
   {
@@ -1437,8 +1437,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-dark-social-in-b2b",
    "monthly_volume": null
   },
   {
@@ -1485,8 +1485,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-as-a-fractional-cfo",
    "monthly_volume": null
   },
   {
@@ -1593,6 +1593,102 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a staffing agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a software development company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find clients for an seo agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to find clients as a fractional cmo",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for an it consulting company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a ppc agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a video production company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients as a b2b copywriter",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
    "status": "queued",
    "slug": null,
    "monthly_volume": null

@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { accessForUsers } from '../_shared/account-access.ts';
 
 /**
  * Conversational AI — auto-replies to leads who respond.
@@ -238,7 +239,14 @@ Deno.serve(async (req) => {
     let totalStopped = 0;
     let totalMeetingsBooked = 0;
 
+    // Billing: locked accounts (past due, canceled, expired) send nothing.
+    const campaignAccess = await accessForUsers(supabase, campaigns.map((c: { user_id: string }) => c.user_id));
+
     for (const campaign of campaigns) {
+      if (campaignAccess.get(campaign.user_id) === 'none') {
+        console.log(`[ai-replies] campaign ${campaign.id} account has no access, skipping`);
+        continue;
+      }
       try {
         const result = await processCampaignReplies(
           supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN, LOVABLE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
@@ -435,7 +443,17 @@ async function processCampaignReplies(
 
             // Auto-create meeting record
             const scheduledAt = followUpDate || new Date(Date.now() + 24 * 60 * 60 * 1000); // Default: tomorrow
-            const { error: meetingErr } = await supabase
+            // If the reply below fails to send, this lead message is picked up again
+            // next run: don't book (and bill, and email) the same meeting twice.
+            const { data: alreadyBooked } = await supabase
+              .from('meetings')
+              .select('id')
+              .eq('contact_id', cr.contact_id)
+              .eq('campaign_id', campaign.id)
+              .eq('status', 'scheduled')
+              .limit(1)
+              .maybeSingle();
+            const { error: meetingErr } = alreadyBooked ? { error: null } : await supabase
               .from('meetings')
               .insert({
                 user_id: cr.user_id,
@@ -447,8 +465,9 @@ async function processCampaignReplies(
               });
 
             if (meetingErr) {
-              console.error(`[ai-replies] Failed to create meeting for ${cr.contact_id}:`, meetingErr);
-            } else {
+              // 23505: the unique index caught a booking made by an overlapping run.
+              if (meetingErr.code !== '23505') console.error(`[ai-replies] Failed to create meeting for ${cr.contact_id}:`, meetingErr);
+            } else if (!alreadyBooked) {
               console.log(`[ai-replies] ✅ Meeting auto-booked for ${contact.first_name} on ${scheduledAt.toISOString()}`);
               meetingsBooked++;
 

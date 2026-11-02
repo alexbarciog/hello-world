@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import Stripe from 'https://esm.sh/stripe@17.7.0';
+import { accessForUsers } from '../_shared/account-access.ts';
 
 // ─── Fire-and-forget orchestrator ─────────────────────────────────────────────
 // Returns immediately with job IDs, then processes in background via waitUntil.
@@ -67,47 +68,57 @@ Deno.serve(async (req) => {
     if (bypassPlanCheck) {
       console.log('⚡ bypass_plan_check=true — treating all agents as paid');
       agents.forEach((a: any) => paidUsers.add(a.user_id));
-    } else if (stripeKey) {
-      const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
-      const uniqueUserIds = [...new Set(agents.map((a: any) => a.user_id))];
-      for (const uid of uniqueUserIds) {
-        try {
-          const { data: { user } } = await supabase.auth.admin.getUserById(uid);
-          if (!user?.email) continue;
-          const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-          if (!customers.data.length) continue;
-          const customer = customers.data[0];
-          // Allow if active subscription OR card on file (but only if never had a subscription before)
-          const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 5 });
-          const hasActiveSub = subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing');
-          const hadSubscription = subs.data.length > 0;
-          if (hasActiveSub) {
-            paidUsers.add(uid);
-          } else if (!hadSubscription) {
-            // Never had a subscription — allow with card on file (free trial)
-            const defaultPm = customer.invoice_settings?.default_payment_method;
-            if (defaultPm) {
-              paidUsers.add(uid);
-            } else {
-              const pms = await stripe.paymentMethods.list({ customer: customer.id, type: 'card', limit: 1 });
-              if (pms.data.length > 0) paidUsers.add(uid);
-            }
-          } else {
-            // Had subscription but it's canceled — auto-pause their agents
-            console.log(`User ${uid} had canceled subscription — pausing their agents`);
-            const userAgentIds = agents.filter((a: any) => a.user_id === uid).map((a: any) => a.id);
-            for (const agentId of userAgentIds) {
-              await supabase.from('signal_agents').update({ status: 'paused' }).eq('id', agentId);
-            }
-            // Also pause their active campaigns
-            await supabase.from('campaigns').update({ status: 'paused' }).eq('user_id', uid).eq('status', 'active');
-          }
-        } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
-      }
-      console.log(`Eligible users (sub or card): ${paidUsers.size}/${uniqueUserIds.length}`);
     } else {
-      console.warn('STRIPE_SECRET_KEY not set — processing all agents');
-      agents.forEach((a: any) => paidUsers.add(a.user_id));
+      // Epic 1 billing: trialing/active accounts run, locked accounts don't,
+      // legacy accounts keep the Stripe check below unchanged.
+      const access = await accessForUsers(supabase, agents.map((a: any) => a.user_id));
+      const legacyUserIds: string[] = [];
+      for (const [uid, a] of access) {
+        if (a === 'full') paidUsers.add(uid);
+        else if (a === 'legacy') legacyUserIds.push(uid);
+      }
+      if (legacyUserIds.length && stripeKey) {
+        const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
+        const uniqueUserIds = legacyUserIds;
+        for (const uid of uniqueUserIds) {
+          try {
+            const { data: { user } } = await supabase.auth.admin.getUserById(uid);
+            if (!user?.email) continue;
+            const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+            if (!customers.data.length) continue;
+            const customer = customers.data[0];
+            // Allow if active subscription OR card on file (but only if never had a subscription before)
+            const subs = await stripe.subscriptions.list({ customer: customer.id, limit: 5 });
+            const hasActiveSub = subs.data.some((s: any) => s.status === 'active' || s.status === 'trialing');
+            const hadSubscription = subs.data.length > 0;
+            if (hasActiveSub) {
+              paidUsers.add(uid);
+            } else if (!hadSubscription) {
+              // Never had a subscription — allow with card on file (free trial)
+              const defaultPm = customer.invoice_settings?.default_payment_method;
+              if (defaultPm) {
+                paidUsers.add(uid);
+              } else {
+                const pms = await stripe.paymentMethods.list({ customer: customer.id, type: 'card', limit: 1 });
+                if (pms.data.length > 0) paidUsers.add(uid);
+              }
+            } else {
+              // Had subscription but it's canceled — auto-pause their agents
+              console.log(`User ${uid} had canceled subscription — pausing their agents`);
+              const userAgentIds = agents.filter((a: any) => a.user_id === uid).map((a: any) => a.id);
+              for (const agentId of userAgentIds) {
+                await supabase.from('signal_agents').update({ status: 'paused' }).eq('id', agentId);
+              }
+              // Also pause their active campaigns
+              await supabase.from('campaigns').update({ status: 'paused' }).eq('user_id', uid).eq('status', 'active');
+            }
+          } catch (e) { console.error(`Stripe check for ${uid}:`, e); }
+        }
+      } else if (legacyUserIds.length) {
+        console.warn('STRIPE_SECRET_KEY not set — processing legacy agents');
+        legacyUserIds.forEach((uid) => paidUsers.add(uid));
+      }
+      console.log(`Eligible users: ${paidUsers.size}/${access.size}`);
     }
 
     // Filter to paid agents only
