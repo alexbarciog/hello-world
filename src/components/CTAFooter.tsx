@@ -91,7 +91,7 @@ const Footer = () => {
           </div>
 
           {/* Right: Link columns */}
-          <div className="flex gap-20">
+          <div className="flex flex-wrap gap-x-20 gap-y-8">
             <div className="flex flex-col gap-4">
               <a href="/#services" className="text-sm text-white/60 hover:text-white transition-colors">Services</a>
               <a href="/#expertise" className="text-sm text-white/60 hover:text-white transition-colors">Expertise</a>
@@ -102,6 +102,13 @@ const Footer = () => {
               <a href="/learn" className="text-sm text-white/60 hover:text-white transition-colors">Learn</a>
               <a href="/solutions" className="text-sm text-white/60 hover:text-white transition-colors">Solutions</a>
               <a href="/compare" className="text-sm text-white/60 hover:text-white transition-colors">Compare</a>
+            </div>
+            <div className="flex flex-col gap-4">
+              <a href="/tools" className="text-sm text-white/60 hover:text-white transition-colors">Free tools</a>
+              <a href="/linkedin-profile-analyzer" className="text-sm text-white/60 hover:text-white transition-colors">Profile Analyzer</a>
+              <a href="/linkedin-hook-analyzer" className="text-sm text-white/60 hover:text-white transition-colors">Hook Analyzer</a>
+              <a href="/buying-signals" className="text-sm text-white/60 hover:text-white transition-colors">Buying Signal Finder</a>
+              <a href="/cold-message-grader" className="text-sm text-white/60 hover:text-white transition-colors">Cold Message Grader</a>
             </div>
             <div className="flex flex-col gap-4">
               <a href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy</a>

@@ -29,6 +29,9 @@
   comes first; cancel in one click from Settings; no refunds (the trial is the refund window);
   founding deal: the first 10 paying customers keep $97/month for life.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
+- New free tools (Epic 4, built 2026-10-30; NOT LIVE until the PR is merged and the free-tool
+  function is deployed — do not link them until this line says "live"): /tools,
+  /linkedin-hook-analyzer, /cold-message-grader, /buying-signals (one page per service).
 - Free tools and lead magnets: LinkedIn Profile Analyzer; "The Buying Signal Playbook"
   (12 buying signals worth chasing and 8 to ignore, LinkedIn triggers, scripts per signal).
 

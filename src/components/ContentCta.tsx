@@ -12,6 +12,8 @@ interface Copy {
   body: string;
   primary: { label: string; to: string };
   secondary: { label: string; to: string };
+  /** Free tool most relevant to this section; linked from every page in it. */
+  tool: { label: string; to: string };
 }
 
 const COPY: Record<Section, Copy> = {
@@ -21,6 +23,7 @@ const COPY: Record<Section, Copy> = {
     body: "Intentsly watches LinkedIn for people engaging with competitor posts, writing about the problem you solve or following your competitors' pages, then scores them against your ideal customer and starts the conversation.",
     primary: { label: "Try it free, no signup", to: "/try-ai" },
     secondary: { label: "See LinkedIn signals", to: "/features/linkedin-signals" },
+    tool: { label: "Free tool: score your LinkedIn hook", to: "/linkedin-hook-analyzer" },
   },
   guides: {
     eyebrow: "Skip the manual steps",
@@ -28,6 +31,7 @@ const COPY: Record<Section, Copy> = {
     body: "The searches, filters and follow-ups above are what Intentsly does continuously: it finds the people showing intent, enriches them with verified emails and books the meetings.",
     primary: { label: "Try it on your ICP", to: "/try-ai" },
     secondary: { label: "How the AI SDR works", to: "/features/ai-sdr" },
+    tool: { label: "Free tool: grade your cold message", to: "/cold-message-grader" },
   },
   learn: {
     eyebrow: "See it in practice",
@@ -35,6 +39,7 @@ const COPY: Record<Section, Copy> = {
     body: "Tell Intentsly who you sell to and it will show you real people on LinkedIn who are signalling intent right now. It takes under a minute and needs no account.",
     primary: { label: "Find buyers in seconds", to: "/try-ai" },
     secondary: { label: "Get the Buying Signal Playbook", to: "/signal-playbook" },
+    tool: { label: "Free tool: find buying signals for your service", to: "/buying-signals" },
   },
   solutions: {
     eyebrow: "Built for this",
@@ -42,6 +47,7 @@ const COPY: Record<Section, Copy> = {
     body: "Intentsly monitors the signals on this page for your market, scores every prospect against your ideal customer, holds the LinkedIn conversation for you and sends your calendar link so the meeting gets booked. Live in five minutes, 7-day free trial.",
     primary: { label: "Start for free", to: "/register" },
     secondary: { label: "See pricing", to: "/pricing" },
+    tool: { label: "Free tool: find buying signals for your service", to: "/buying-signals" },
   },
   compare: {
     eyebrow: "Decide with real data",
@@ -49,6 +55,7 @@ const COPY: Record<Section, Copy> = {
     body: "The fastest way to settle a comparison is to see which signals each tool finds for your buyers. Intentsly shows you matching prospects in seconds, before you create an account.",
     primary: { label: "Try it free", to: "/try-ai" },
     secondary: { label: "See pricing", to: "/pricing" },
+    tool: { label: "Free tool: analyze your LinkedIn profile", to: "/linkedin-profile-analyzer" },
   },
 };
 
@@ -102,6 +109,9 @@ export const NextStepCta = ({ section }: { section: Section }) => {
           </Link>
         </div>
         <p className="mt-5 text-sm text-foreground/60">
+          <Link to={c.tool.to} className="underline underline-offset-2 hover:text-foreground">{c.tool.label}</Link>
+        </p>
+        <p className="mt-2 text-sm text-foreground/60">
           Questions? Email{" "}
           <a href="mailto:alex@intentsly.com" className="underline underline-offset-2 hover:text-foreground">alex@intentsly.com</a>
           , I answer within a day.

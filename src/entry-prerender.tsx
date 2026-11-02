@@ -5,6 +5,8 @@ import { StaticRouter } from "react-router-dom/server";
 import { AppProviders, AppContent } from "./App";
 
 export { caseStudies } from "./data/caseStudies";
+export { toolRoutes, faqJsonLd } from "./data/freeTools";
+export { ANALYZER_FAQS } from "./pages/LinkedInProfileAnalyzer";
 export { setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } from "./lib/blog";
 export { BLOG_TITLE, BLOG_DESCRIPTION } from "./pages/Blog";
 
