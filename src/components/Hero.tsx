@@ -2,6 +2,7 @@ import { ArrowRight, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import HeroFloatingCards from "./HeroFloatingCards";
 import heroGradient from "@/assets/hero-gradient-right.png";
+import { useFoundingSlotsLeft } from "@/hooks/useFoundingSlotsLeft";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -9,6 +10,7 @@ const headline = "Find people already looking for what you offer on";
 
 const Hero = () => {
   const words = headline.split(" ");
+  const foundingLeft = useFoundingSlotsLeft();
 
   return (
     <section className="relative w-full bg-white overflow-hidden">
@@ -95,7 +97,7 @@ const Hero = () => {
                 className="inline-flex flex-col items-center justify-center gap-1 bg-[#0a0a0a] text-white rounded-xl px-6 py-3.5 md:py-4 hover:bg-neutral-800 transition-colors"
               >
                 <span className="inline-flex items-center justify-center gap-2 text-[15px] font-semibold">
-                  Start for $97
+                  Start your free trial
                   <ArrowRight className="w-4 h-4" />
                 </span>
                 <span className="flex items-center gap-1.5 text-[11px] font-semibold text-[hsl(var(--aeline-lime))]">
@@ -103,7 +105,9 @@ const Hero = () => {
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--aeline-lime))] opacity-80" />
                     <span className="relative inline-flex h-full w-full rounded-full bg-[hsl(var(--aeline-lime))]" />
                   </span>
-                  14 spots left at this price
+                  {foundingLeft
+                    ? `${foundingLeft} founding spot${foundingLeft === 1 ? "" : "s"} left at $97/mo`
+                    : "7 days free, then $97/mo"}
                 </span>
               </motion.a>
               <motion.a

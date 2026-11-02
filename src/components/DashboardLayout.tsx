@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
+import { BillingBanner } from "@/components/billing/BillingBanner";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Progress } from "@/components/ui/progress";
 import { OrgSwitcher } from "@/components/organizations/OrgSwitcher";
@@ -397,8 +398,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Crown className="w-4 h-4 text-white" />
               </div>
               <p className="text-[13.5px] font-semibold text-[#0a0a0a]">
-                Current Plan: <span className="text-goji-orange">{sub.subscribed ? "Plus" : "Basic"}</span>
+                Current Plan: <span className="text-goji-orange">{sub.status === "trialing" ? "Free trial" : sub.subscribed ? "Plus" : "Basic"}</span>
               </p>
+              {sub.founding && (
+                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#C8FF00] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[#0a0a0a]">
+                  Founding customer
+                </span>
+              )}
               <p className="text-[11.5px] text-neutral-500 mt-0.5">
                 {sub.credits ?? 0} Credits Remaining
               </p>
@@ -557,7 +563,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
 
-          {!sub.loading && !sub.hasAccess && (
+          <BillingBanner sub={sub} />
+          {!sub.loading && !sub.hasAccess && !sub.banner && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(38 92% 50%)" }} />

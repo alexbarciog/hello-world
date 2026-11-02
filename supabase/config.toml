@@ -143,6 +143,23 @@ verify_jwt = false
 [functions.blog-publish]
 verify_jwt = false
 
+# send-email checks its own auth (x-send-secret or service-role key).
+[functions.send-email]
+verify_jwt = false
+
+[functions.notify-team]
+verify_jwt = false
+
+# Stripe calls this with its own signature, not a Supabase JWT.
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.billing-enforcer]
+verify_jwt = false
+
 # Both check the caller themselves (admin role / signed-in user).
 [functions.agent-templates]
 verify_jwt = false
