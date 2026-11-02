@@ -181,3 +181,7 @@ verify_jwt = false
 
 [functions.email-digest-preview]
 verify_jwt = false
+
+# Checks the caller itself (signed-in customer / admin role).
+[functions.setup-orders]
+verify_jwt = false

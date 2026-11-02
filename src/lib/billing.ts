@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const CONTACT_EMAIL = "alex@intentsly.com";
 export const PLAN_PRICE_USD = 97;
+export const SETUP_PRICE_USD = 500;
 
 // A flat shape rather than a union: the app compiles without strictNullChecks,
 // where `if (!result.ok)` doesn't narrow a discriminated union.

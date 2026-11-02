@@ -29,6 +29,9 @@
   comes first; cancel in one click from Settings; no refunds (the trial is the refund window);
   founding deal: the first 10 paying customers keep $97/month for life.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
+- Done-for-you setup (Epic 3, built 2026-10-30; NOT LIVE until the founder switches checkout on —
+  do not write about this until this line says "live"): $500 one-time for a 30-minute call plus a
+  custom agent built by Alex; included for founding customers.
 - Emails (Epic 5b/5c, built 2026-10-30; NOT LIVE until the founder switches them on — do not
   write about these until this line says "live"): free-tool users who opt in get their report and
   two follow-ups; accounts get a weekly digest on Tuesdays.

@@ -410,6 +410,11 @@ function OnboardingInner() {
           </div>
         </details>
 
+        <p className="w-full max-w-xl mx-auto mb-5 shrink-0 text-sm text-neutral-500">
+          Rather have it done for you?{" "}
+          <a href="/settings/setup" target="_blank" rel="noopener noreferrer" className="font-medium text-neutral-800 underline underline-offset-2">See the Done-for-you setup</a>
+        </p>
+
         {/* Footer micro-copy — landing style */}
         <p className="w-full max-w-xl mx-auto text-[11px] uppercase tracking-[0.14em] text-neutral-400 shrink-0 text-center lg:text-left">
           No contract · Cancel anytime · 5-min setup

@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : navWithFeatures;
 
   const navItems = isAdmin
-    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }, { label: "Templates", icon: Shield, path: "/admin/templates" }]
+    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }, { label: "Templates", icon: Shield, path: "/admin/templates" }, { label: "Setup orders", icon: Shield, path: "/admin/setup" }]
     : baseWithAgency;
 
   const allNavItems = navItems;

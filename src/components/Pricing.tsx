@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Check, ArrowUpRight, Lock, RotateCcw, Zap, Star, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useFoundingSlotsLeft } from "@/hooks/useFoundingSlotsLeft";
 import { ttqInitiateCheckout, ttqAddToCart } from "@/lib/tiktok-pixel";
-import { CONTACT_EMAIL, PLAN_PRICE_USD, openBillingPortal, startCheckout } from "@/lib/billing";
+import { CONTACT_EMAIL, PLAN_PRICE_USD, SETUP_PRICE_USD, openBillingPortal, startCheckout } from "@/lib/billing";
 import { Button } from "@/components/ui/button";
 
 // Only facts confirmed in content-machine/brain/wiki/product.md and proof.md.
@@ -153,7 +153,15 @@ const Pricing = () => {
             </div>
           </div>
 
-          <p className="text-sm text-muted-foreground text-center mt-6 leading-relaxed inline-flex w-full items-center justify-center gap-1.5">
+          <p className="text-sm text-muted-foreground text-center mt-6 leading-relaxed">
+            Want it set up for you?{" "}
+            <Link to="/settings/setup" className="font-medium underline underline-offset-2" style={{ color: "hsl(var(--aeline-dark))" }}>
+              Add the Done-for-you setup
+            </Link>
+            : a 30-minute call and a custom agent built by Alex, ${SETUP_PRICE_USD} one-time.
+          </p>
+
+          <p className="text-sm text-muted-foreground text-center mt-3 leading-relaxed inline-flex w-full items-center justify-center gap-1.5">
             <Mail className="w-4 h-4" />
             Questions? Email{" "}
             <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium underline underline-offset-2" style={{ color: "hsl(var(--aeline-dark))" }}>
