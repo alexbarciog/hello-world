@@ -26,6 +26,7 @@
 - Agent templates per business type (Epic 2, built 2026-10-29; NOT LIVE until the founder publishes
   templates — do not write about this until this line says "live"): in onboarding a new customer
   picks "What kind of business are you?" and gets a ready-made signal agent and LinkedIn sequence;
+  existing customers can pick a template from Create agent on the Signal Agents page;
   "Switch template" in Settings replaces the current setup.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
 - Done-for-you setup (Epic 3, built 2026-10-30; NOT LIVE until the founder switches checkout on —

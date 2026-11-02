@@ -41,5 +41,5 @@ Deno.serve(async (req) => {
 
   const result = await applyTemplateToAccount(db, template, v.value, user.id, mode);
   if (!result.ok) return json({ error: result.error, code: result.code }, result.status);
-  return json({ agent_id: result.agentId, campaign_id: result.campaignId, mode });
+  return json({ agent_id: result.agentId, campaign_id: result.campaignId, mode, status: result.agentStatus });
 });

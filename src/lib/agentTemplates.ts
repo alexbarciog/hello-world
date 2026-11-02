@@ -72,8 +72,8 @@ async function invokeFn<T>(fn: string, body: Record<string, unknown>): Promise<T
   return data as T;
 }
 
-export const adminTemplates = (body: Record<string, unknown>) => invokeFn<{ template?: AgentTemplate; config?: unknown; errors?: string[]; agents?: Array<{ id: string; name: string; user_id: string; created_at: string; results_count: number | null }> }>("agent-templates", body);
+export const adminTemplates = (body: Record<string, unknown>) => invokeFn<{ template?: AgentTemplate; config?: unknown; errors?: string[]; had_campaign?: boolean; agents?: Array<{ id: string; name: string; user_id: string; created_at: string; results_count: number | null }> }>("agent-templates", body);
 
 /** Deep-copies a template into the user's own agent and campaign. */
 export const applyTemplate = (templateId: string, mode: "create" | "replace") =>
-  invokeFn<{ agent_id: string; campaign_id: string | null }>("apply-agent-template", { template_id: templateId, mode });
+  invokeFn<{ agent_id: string; campaign_id: string | null; status?: string }>("apply-agent-template", { template_id: templateId, mode });

@@ -4,7 +4,7 @@
 import type { AgentTemplateConfig } from "./agent-template-schema.ts";
 
 export type ApplyResult =
-  | { ok: true; agentId: string; campaignId: string | null }
+  | { ok: true; agentId: string; campaignId: string | null; agentStatus?: string }
   | { ok: false; error: string; status: number; code?: string };
 
 // deno-lint-ignore no-explicit-any
@@ -60,6 +60,7 @@ export async function applyTemplateToAccount(
 
   let agentId: string;
   let campaignId: string | null = null;
+  let agentStatus: string | undefined;
 
   if (mode === "replace") {
     const { data: agent } = await db.from("signal_agents").select("id").eq("user_id", userId)
@@ -77,13 +78,15 @@ export async function applyTemplateToAccount(
       campaignId = campaign.id;
     }
   } else {
+    // Agents wait for LinkedIn; connect-linkedin switches them to active.
+    agentStatus = profile?.unipile_account_id ? "active" : "pending_linkedin";
     const { data: agent, error: agentErr } = await db.from("signal_agents").insert({
       ...agentFields,
       user_id: userId,
       organization_id: orgId,
       leads_list_name: a.name,
-      // Agents wait for LinkedIn; connect-linkedin switches them to active.
-      status: profile?.unipile_account_id ? "active" : "pending_linkedin",
+      status: agentStatus,
+      last_launched_at: agentStatus === "active" ? new Date().toISOString() : null,
     }).select("id").single();
     if (agentErr) {
       if (agentErr.message?.includes("LIMIT_REACHED")) {
@@ -146,5 +149,5 @@ export async function applyTemplateToAccount(
     campaign_id: campaignId,
   });
 
-  return { ok: true, agentId, campaignId };
+  return { ok: true, agentId, campaignId, agentStatus };
 }
