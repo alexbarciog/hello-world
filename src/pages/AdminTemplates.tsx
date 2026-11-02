@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, Copy, Eye, Loader2, Pencil, Plus, Save, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -63,6 +64,8 @@ const input = "w-full rounded-lg border border-border bg-background px-3 py-2 te
 
 export default function AdminTemplates() {
   const qc = useQueryClient();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { data: templates, isLoading } = useAllTemplates(true);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -103,14 +106,27 @@ export default function AdminTemplates() {
     if (res?.agents) setPickAgent(res.agents);
   };
 
-  const fromAgent = async (agentId: string) => {
+  const fromAgent = async (agentId: string | null, overrides?: AgentTemplateConfig["agent"]) => {
     setPickAgent(null);
-    const res = await run("Copied the agent's setup. Review it, then save.", { action: "from_agent", agent_id: agentId });
+    const res = await run("Copied the agent's setup. Review it, then save.", { action: "from_agent", agent_id: agentId, overrides });
     if (!res?.config) return;
-    const config = res.config as AgentTemplateConfig;
+    const parsed = res.config as AgentTemplateConfig;
+    // No campaign to copy from: start with the default sequence.
+    const config = res.had_campaign ? parsed : { ...parsed, campaign: BLANK_CONFIG.campaign };
     setDraft({ name: config.agent.name || "New template", business_type: "", description: "", icon: "sparkles", is_public: false, sort_order: 0, config });
-    setErrors(res.errors ?? []);
+    setErrors(res.had_campaign ? res.errors ?? [] : []);
   };
+
+  // "Save as template" in the agent form lands here with the form's contents.
+  const handledHandoff = useRef(false);
+  useEffect(() => {
+    const handoff = (location.state as { templateFromAgent?: { agentId: string | null; agent: AgentTemplateConfig["agent"] } } | null)?.templateFromAgent;
+    if (!handoff || handledHandoff.current) return;
+    handledHandoff.current = true;
+    navigate(location.pathname, { replace: true, state: null });
+    fromAgent(handoff.agentId, handoff.agent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const sorted = useMemo(() => [...(templates ?? [])].sort((a, b) => Number(!!a.archived_at) - Number(!!b.archived_at)), [templates]);
 
@@ -119,7 +135,7 @@ export default function AdminTemplates() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Agent templates</h1>
-          <p className="text-sm text-muted-foreground">Public templates appear in onboarding ("What kind of business are you?") and in Settings → Switch template.</p>
+          <p className="text-sm text-muted-foreground">Public templates appear in Signal Agents → Create agent, in onboarding ("What kind of business are you?") and in Settings → Switch template.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={startFromAgent} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted">

@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   HelpCircle, Sparkles, ChevronDown, ChevronRight, X, Check, Search, Target,
   Info, Plus, ArrowLeft, Users, MessageSquare, ThumbsUp, UserPlus, Briefcase,
-  TrendingUp, Building2, Eye, Loader2,
+  TrendingUp, Building2, Eye, Loader2, Layers,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import type { AgentTemplateConfig } from "../../supabase/functions/_shared/agent-template-schema";
 
 interface CreateAgentWizardProps {
@@ -106,6 +108,8 @@ const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm b
 
 export default function CreateAgentWizard({ onClose, onCreated, editAgentId, templateMode }: CreateAgentWizardProps) {
   const { currentOrg } = useOrganization();
+  const navigate = useNavigate();
+  const { data: isAdmin } = useAdminCheck();
   const [step, setStep] = useState(1);
   const [agentName, setAgentName] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -426,16 +430,10 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
     toast.success(`List "${name}" ready`);
   }
 
-  // ── Final agent creation ──────────────────────────────────────────────────
-  async function handleCreate() {
-    setSaving(true);
-    if (!agentName.trim()) { setSaving(false); toast.error("Please enter an agent name"); return; }
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) { setSaving(false); toast.error("Not authenticated"); return; }
-
+  function buildAgentData() {
     const activeSubSignals = Object.entries(enabledSignals).filter(([, v]) => v).map(([k]) => k);
 
-    const agentData = {
+    return {
       name: agentName || "My Agent",
       agent_type: "signals",
       keywords: jobTitles,
@@ -456,16 +454,35 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
       leads_list_name: (leadsListName || agentName || "My Agent").trim(),
       manual_approval: manualApproval,
     };
+  }
+
+  // A template carries configuration only; the list name, owner and status are
+  // set when a customer applies it.
+  function buildTemplateAgent() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { agent_type, keywords, leads_list_name, ...config } = buildAgentData();
+    return config as AgentTemplateConfig["agent"];
+  }
+
+  // Admin: open the template editor with what's in this form. This agent isn't changed.
+  function saveAsTemplate() {
+    navigate("/admin/templates", { state: { templateFromAgent: { agentId: editAgentId ?? null, agent: buildTemplateAgent() } } });
+  }
+
+  // ── Final agent creation ──────────────────────────────────────────────────
+  async function handleCreate() {
+    setSaving(true);
+    if (!agentName.trim()) { setSaving(false); toast.error("Please enter an agent name"); return; }
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) { setSaving(false); toast.error("Not authenticated"); return; }
 
     if (templateMode) {
-      // A template carries configuration only; the list name, owner and
-      // status are set when a customer applies it.
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { agent_type, keywords, leads_list_name, ...config } = agentData;
       setSaving(false);
-      templateMode.onSave(config as AgentTemplateConfig["agent"]);
+      templateMode.onSave(buildTemplateAgent());
       return;
     }
+
+    const agentData = buildAgentData();
 
     let error;
     let newAgentId: string | null = null;
@@ -1250,7 +1267,7 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
         animate="visible"
         className="flex items-center justify-between mt-6 md:mt-8 pt-4 border-t border-border gap-3"
       >
-        <div>
+        <div className="flex items-center gap-2">
           {step > 1 && (
             <button
               onClick={() => { setStep(step - 1); setValidationError(""); }}
@@ -1258,6 +1275,18 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Previous</span>
+            </button>
+          )}
+          {isAdmin && !templateMode && (
+            <button
+              type="button"
+              onClick={saveAsTemplate}
+              aria-label="Save as template"
+              title="Open the template editor with this setup. This agent isn't changed."
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
+            >
+              <Layers className="w-4 h-4" />
+              <span className="hidden sm:inline">Save as template</span>
             </button>
           )}
         </div>
