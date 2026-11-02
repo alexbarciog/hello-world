@@ -13,9 +13,9 @@ import { StepAccountType, type AccountType } from "@/components/onboarding/StepA
 import { ONBOARDING_EASE } from "@/components/onboarding/ui";
 import { Float } from "@/lib/motion";
 import { toast } from "sonner";
-import { DemoVideo } from "@/components/billing/DemoVideo";
 import { StepTemplate, FROM_SCRATCH } from "@/components/onboarding/StepTemplate";
 import { applyTemplate, usePublicTemplates } from "@/lib/agentTemplates";
+import { DemoVideo } from "@/components/billing/DemoVideo";
 
 type Phase = "template" | "account_type" | "scan" | "preview";
 

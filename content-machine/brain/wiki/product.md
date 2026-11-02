@@ -17,17 +17,17 @@
   Intentsly recommends 15. State these honestly in comparisons.
 - Languages (monitoring and outreach): English, Romanian, German, Dutch.
 - Free trial: 7 days. `/try-ai` shows matching buyers with no account.
+- Agent templates per business type (Epic 2, built 2026-10-29; NOT LIVE until the founder publishes
+  templates — do not write about this until this line says "live"): in onboarding a new customer
+  picks "What kind of business are you?" and gets a ready-made signal agent and LinkedIn sequence;
+  existing customers can pick a template from Create agent on the Signal Agents page;
+  "Switch template" in Settings replaces the current setup.
 - Self-serve billing (Epic 1, built 2026-10-29; NOT LIVE until the founder switches checkout on —
   do not write about these points until this line says "live"):
   one plan at $97/month; the 7-day trial needs a card and is charged automatically when it ends;
   the trial ends after 7 days or once the account has received its first 20 signals, whichever
   comes first; cancel in one click from Settings; no refunds (the trial is the refund window);
   founding deal: the first 10 paying customers keep $97/month for life.
-- Agent templates per business type (Epic 2, built 2026-10-29; NOT LIVE until the founder publishes
-  templates — do not write about this until this line says "live"): in onboarding a new customer
-  picks "What kind of business are you?" and gets a ready-made signal agent and LinkedIn sequence;
-  existing customers can pick a template from Create agent on the Signal Agents page;
-  "Switch template" in Settings replaces the current setup.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
 - New free tools (Epic 4, built 2026-10-30; NOT LIVE until the PR is merged and the free-tool
   function is deployed — do not link them until this line says "live"): /tools,

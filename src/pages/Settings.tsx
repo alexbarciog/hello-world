@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useSubscription } from "@/hooks/useSubscription";
-import { openBillingPortal } from "@/lib/billing";
 import { SwitchTemplate } from "@/components/templates/SwitchTemplate";
+import { openBillingPortal } from "@/lib/billing";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
