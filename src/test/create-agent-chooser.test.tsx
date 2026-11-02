@@ -6,14 +6,19 @@ import { CreateAgentChooser } from "@/components/templates/CreateAgentChooser";
 
 const mocks = vi.hoisted(() => ({
   templates: [] as unknown[],
+  allTemplates: [] as unknown[],
+  adminTemplates: vi.fn(),
   isAdmin: false,
   applyTemplate: vi.fn(),
 }));
 
 vi.mock("@/lib/agentTemplates", () => ({
   usePublicTemplates: () => ({ data: mocks.templates }),
+  useAllTemplates: () => ({ data: mocks.allTemplates }),
   applyTemplate: mocks.applyTemplate,
+  adminTemplates: mocks.adminTemplates,
 }));
+vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({ invalidateQueries: vi.fn() }) }));
 vi.mock("@/hooks/useAdminCheck", () => ({ useAdminCheck: () => ({ data: mocks.isAdmin }) }));
 
 const recruiter = {
@@ -57,7 +62,9 @@ describe("CreateAgentChooser", () => {
   beforeEach(() => {
     mocks.templates = [recruiter];
     mocks.isAdmin = false;
+    mocks.allTemplates = [];
     mocks.applyTemplate.mockReset();
+    mocks.adminTemplates.mockReset();
   });
 
   afterEach(async () => {
@@ -92,12 +99,30 @@ describe("CreateAgentChooser", () => {
     expect(onApplied.mock.calls[0][1].agent_id).toBe("a1");
   });
 
-  it("points admins to the editor when nothing is published", async () => {
-    mocks.templates = [];
+  it("tells admins how to add a template when there are none", async () => {
+    mocks.allTemplates = [];
     mocks.isAdmin = true;
     await setup();
     await click(button("Use a ready template"));
-    const link = [...document.querySelectorAll("a")].find((a) => a.textContent === "Create one");
-    expect(link?.getAttribute("href")).toBe("/admin/templates");
+    expect(document.body.textContent).toContain("open an agent and click Save as template");
+  });
+
+  it("shows admins private templates and lets them change visibility", async () => {
+    mocks.allTemplates = [{ ...recruiter, is_public: false, archived_at: null }, { ...recruiter, id: "gone", business_type: "Archived one", is_public: false, archived_at: "2026-11-01" }];
+    mocks.isAdmin = true;
+    mocks.adminTemplates.mockResolvedValue({});
+    await setup();
+    await click(button("Use a ready template"));
+    expect(document.body.textContent).toContain("Private");
+    expect(document.body.textContent).not.toContain("Archived one");
+    await click(document.querySelector('[role="switch"]') as HTMLElement);
+    expect(mocks.adminTemplates).toHaveBeenCalledWith({ action: "update", id: "t1", is_public: true });
+  });
+
+  it("gives customers no admin controls", async () => {
+    await setup();
+    await click(button("Use a ready template"));
+    expect(document.querySelector('[role="switch"]')).toBeNull();
+    expect(document.body.textContent).not.toContain("Archive");
   });
 });

@@ -186,8 +186,8 @@ export default function RedditSignals() {
   // ── Start AI Agent (initial scan + enable auto-polling) ──
   const handleStartAgent = async () => {
     if (!sub.hasAccess) {
-      toast.error("Upgrade to a paid plan to run the Reddit agent", {
-        action: { label: "Upgrade", onClick: () => navigate("/billing") },
+      toast.error("Try it free to run the Reddit agent", {
+        action: { label: "Try it free", onClick: () => navigate("/billing") },
       });
       return;
     }
@@ -217,8 +217,8 @@ export default function RedditSignals() {
       return;
     }
     if (!sub.hasAccess) {
-      toast.error("Upgrade to a paid plan to scan Reddit", {
-        action: { label: "Upgrade", onClick: () => navigate("/billing") },
+      toast.error("Try it free to scan Reddit", {
+        action: { label: "Try it free", onClick: () => navigate("/billing") },
       });
       return;
     }
@@ -274,7 +274,7 @@ export default function RedditSignals() {
           <p className="text-sm text-amber-900 font-medium">
             Reddit monitoring is paused on the Free plan.{" "}
             <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
-              Upgrade now
+              Try it free
             </button>
           </p>
         </div>

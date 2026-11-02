@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -11,6 +10,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { SaveTemplateDialog } from "@/components/templates/SaveTemplateDialog";
 import type { AgentTemplateConfig } from "../../supabase/functions/_shared/agent-template-schema";
 
 interface CreateAgentWizardProps {
@@ -108,8 +108,8 @@ const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm b
 
 export default function CreateAgentWizard({ onClose, onCreated, editAgentId, templateMode }: CreateAgentWizardProps) {
   const { currentOrg } = useOrganization();
-  const navigate = useNavigate();
   const { data: isAdmin } = useAdminCheck();
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [agentName, setAgentName] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -462,11 +462,6 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { agent_type, keywords, leads_list_name, ...config } = buildAgentData();
     return config as AgentTemplateConfig["agent"];
-  }
-
-  // Admin: open the template editor with what's in this form. This agent isn't changed.
-  function saveAsTemplate() {
-    navigate("/admin/templates", { state: { templateFromAgent: { agentId: editAgentId ?? null, agent: buildTemplateAgent() } } });
   }
 
   // ── Final agent creation ──────────────────────────────────────────────────
@@ -1280,9 +1275,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
           {isAdmin && !templateMode && (
             <button
               type="button"
-              onClick={saveAsTemplate}
+              onClick={() => setSaveTemplateOpen(true)}
               aria-label="Save as template"
-              title="Open the template editor with this setup. This agent isn't changed."
               className="flex items-center gap-1.5 px-3 md:px-4 py-2.5 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-muted transition-colors"
             >
               <Layers className="w-4 h-4" />
@@ -1306,6 +1300,15 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
           )}
         </button>
       </motion.div>
+
+      {isAdmin && !templateMode && (
+        <SaveTemplateDialog
+          open={saveTemplateOpen}
+          onOpenChange={setSaveTemplateOpen}
+          agentId={editAgentId ?? null}
+          agent={buildTemplateAgent()}
+        />
+      )}
     </div>
   );
 }

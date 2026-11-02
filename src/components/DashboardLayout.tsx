@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : navWithFeatures;
 
   const navItems = isAdmin
-    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }, { label: "Templates", icon: Shield, path: "/admin/templates" }, { label: "Setup orders", icon: Shield, path: "/admin/setup" }]
+    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }, { label: "Setup orders", icon: Shield, path: "/admin/setup" }]
     : baseWithAgency;
 
   const allNavItems = navItems;
@@ -412,7 +412,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => navigate("/billing")}
                 className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-[#0a0a0a] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-neutral-800 transition-colors"
               >
-                {sub.subscribed ? "Manage Plan" : "Upgrade Pro Account"}
+                {sub.subscribed ? "Manage Plan" : "Try it free"}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -569,11 +569,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(38 92% 50%)" }} />
                 <p className="text-sm font-medium" style={{ color: "hsl(28 60% 25%)" }}>
-                  Upgrade your subscription to unlock LinkedIn outreach, campaigns, and AI SDR features.
+                  Try it free to unlock LinkedIn outreach, campaigns, and AI SDR features.
                 </p>
               </div>
               <button onClick={() => navigate("/billing")} className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "hsl(var(--goji-coral))" }}>
-                Upgrade plan
+                Try it free
               </button>
             </div>
           )}

@@ -423,13 +423,13 @@ export default function AiChat() {
                     {filteredLeads.length} high-intent {filteredLeads.length === 1 ? "lead" : "leads"} ready
                   </h3>
                   <p className="text-xs text-foreground/60 mb-4 leading-relaxed">
-                    Upgrade your plan to unlock these leads and start reaching out today.
+                    Try it free to unlock these leads and start reaching out today.
                   </p>
                   <Link
                     to="/billing"
                     className="inline-flex items-center gap-1.5 bg-foreground text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity"
                   >
-                    Upgrade to unlock
+                    Try it free
                     <ArrowUpRight className="w-4 h-4" />
                   </Link>
                 </div>

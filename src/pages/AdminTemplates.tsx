@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, Copy, Eye, Loader2, Pencil, Plus, Save, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import { CampaignTemplateForm } from "@/components/templates/CampaignTemplateForm";
 import { TEMPLATE_ICONS, TemplateCard } from "@/components/templates/TemplateCard";
-import { adminTemplates, useAllTemplates, type AgentTemplate, type AgentTemplateConfig } from "@/lib/agentTemplates";
+import { adminTemplates, DEFAULT_TEMPLATE_CAMPAIGN, useAllTemplates, type AgentTemplate, type AgentTemplateConfig } from "@/lib/agentTemplates";
 
 const BLANK_CONFIG: AgentTemplateConfig = {
   schema_version: 1,
@@ -25,23 +24,7 @@ const BLANK_CONFIG: AgentTemplateConfig = {
     signals_config: { enabled: ["keyword_posts", "job_changes"], keywords: {} },
     manual_approval: false,
   },
-  campaign: {
-    value_proposition: "",
-    pain_points: [],
-    campaign_goal: "conversations",
-    message_tone: "professional",
-    language: "English",
-    custom_training: "",
-    workflow_steps: [
-      { type: "invitation", delay_days: 0 },
-      { type: "message", delay_days: 1, ai_icebreaker: true, message: "" },
-    ],
-    daily_connect_limit: 25,
-    timezone: "UTC",
-    exclude_first_degree: true,
-    conversational_ai: false,
-    max_ai_replies: 5,
-  },
+  campaign: DEFAULT_TEMPLATE_CAMPAIGN,
 };
 
 interface Draft {
@@ -64,8 +47,6 @@ const input = "w-full rounded-lg border border-border bg-background px-3 py-2 te
 
 export default function AdminTemplates() {
   const qc = useQueryClient();
-  const location = useLocation();
-  const navigate = useNavigate();
   const { data: templates, isLoading } = useAllTemplates(true);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -106,9 +87,9 @@ export default function AdminTemplates() {
     if (res?.agents) setPickAgent(res.agents);
   };
 
-  const fromAgent = async (agentId: string | null, overrides?: AgentTemplateConfig["agent"]) => {
+  const fromAgent = async (agentId: string) => {
     setPickAgent(null);
-    const res = await run("Copied the agent's setup. Review it, then save.", { action: "from_agent", agent_id: agentId, overrides });
+    const res = await run("Copied the agent's setup. Review it, then save.", { action: "from_agent", agent_id: agentId });
     if (!res?.config) return;
     const parsed = res.config as AgentTemplateConfig;
     // No campaign to copy from: start with the default sequence.
@@ -117,16 +98,6 @@ export default function AdminTemplates() {
     setErrors(res.had_campaign ? res.errors ?? [] : []);
   };
 
-  // "Save as template" in the agent form lands here with the form's contents.
-  const handledHandoff = useRef(false);
-  useEffect(() => {
-    const handoff = (location.state as { templateFromAgent?: { agentId: string | null; agent: AgentTemplateConfig["agent"] } } | null)?.templateFromAgent;
-    if (!handoff || handledHandoff.current) return;
-    handledHandoff.current = true;
-    navigate(location.pathname, { replace: true, state: null });
-    fromAgent(handoff.agentId, handoff.agent);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
 
   const sorted = useMemo(() => [...(templates ?? [])].sort((a, b) => Number(!!a.archived_at) - Number(!!b.archived_at)), [templates]);
 

@@ -188,8 +188,8 @@ export default function XSignals() {
   const handleStartAgent = async () => {
     if (sub.loading) { toast.info("Checking subscription status, please try again in a moment."); return; }
     if (!sub.hasAccess) {
-      toast.error("Upgrade to a paid plan to run the X agent", {
-        action: { label: "Upgrade", onClick: () => navigate("/billing") },
+      toast.error("Try it free to run the X agent", {
+        action: { label: "Try it free", onClick: () => navigate("/billing") },
       });
       return;
     }
@@ -216,8 +216,8 @@ export default function XSignals() {
   const handleRescan = async () => {
     if (sub.loading) { toast.info("Checking subscription status, please try again in a moment."); return; }
     if (!sub.hasAccess) {
-      toast.error("Upgrade to a paid plan to scan X", {
-        action: { label: "Upgrade", onClick: () => navigate("/billing") },
+      toast.error("Try it free to scan X", {
+        action: { label: "Try it free", onClick: () => navigate("/billing") },
       });
       return;
     }
@@ -268,7 +268,7 @@ export default function XSignals() {
           <p className="text-sm text-amber-900 font-medium">
             X monitoring is paused on the Free plan.{" "}
             <button onClick={() => navigate("/billing")} className="underline font-semibold hover:text-amber-700 transition-colors">
-              Upgrade now
+              Try it free
             </button>
           </p>
         </div>

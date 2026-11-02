@@ -21,6 +21,25 @@ export interface AgentTemplate {
   updated_at: string;
 }
 
+/** The sequence a template starts with when there's no campaign to copy from. */
+export const DEFAULT_TEMPLATE_CAMPAIGN: AgentTemplateConfig["campaign"] = {
+  value_proposition: "",
+  pain_points: [],
+  campaign_goal: "conversations",
+  message_tone: "professional",
+  language: "English",
+  custom_training: "",
+  workflow_steps: [
+    { type: "invitation", delay_days: 0 },
+    { type: "message", delay_days: 1, ai_icebreaker: true, message: "" },
+  ],
+  daily_connect_limit: 25,
+  timezone: "UTC",
+  exclude_first_degree: true,
+  conversational_ai: false,
+  max_ai_replies: 5,
+};
+
 // agent_templates isn't in the generated Supabase types yet.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const templatesTable = () => (supabase as any).from("agent_templates");

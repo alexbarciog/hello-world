@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Layers, Loader2, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { applyTemplate, usePublicTemplates, type AgentTemplate } from "@/lib/agentTemplates";
+import { adminTemplates, applyTemplate, useAllTemplates, usePublicTemplates, type AgentTemplate } from "@/lib/agentTemplates";
 import { TemplateCard } from "./TemplateCard";
 
 type Applied = Awaited<ReturnType<typeof applyTemplate>>;
@@ -19,8 +21,12 @@ type Props = {
 
 /** Signal Agents → Create agent: configure your own, or start from a template. */
 export function CreateAgentChooser({ open, onOpenChange, onCustom, onApplied }: Props) {
-  const { data: templates } = usePublicTemplates();
+  const { data: publicTemplates } = usePublicTemplates();
   const { data: isAdmin } = useAdminCheck();
+  const { data: allTemplates } = useAllTemplates(Boolean(isAdmin));
+  // Admins also see private templates, and manage them here.
+  const templates = isAdmin ? allTemplates?.filter((t) => !t.archived_at) : publicTemplates;
+  const qc = useQueryClient();
   const [view, setView] = useState<"choose" | "templates">("choose");
   const [selected, setSelected] = useState<AgentTemplate | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,6 +43,19 @@ export function CreateAgentChooser({ open, onOpenChange, onCustom, onApplied }: 
     setBusy(true);
     try {
       onApplied(selected, await applyTemplate(selected.id, "create"));
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const manage = async (body: Record<string, unknown>) => {
+    setBusy(true);
+    try {
+      await adminTemplates(body);
+      if (body.action === "archive" && selected?.id === body.id) setSelected(null);
+      await qc.invalidateQueries({ queryKey: ["agent-templates"] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -100,7 +119,26 @@ export function CreateAgentChooser({ open, onOpenChange, onCustom, onApplied }: 
             {templates?.length ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto p-px">
                 {templates.map((t) => (
-                  <TemplateCard key={t.id} template={t} selected={selected?.id === t.id} onSelect={() => setSelected(t)} />
+                  <div key={t.id} className="flex flex-col gap-1.5">
+                    <TemplateCard template={t} selected={selected?.id === t.id} onSelect={() => setSelected(t)} />
+                    {isAdmin && (
+                      <div className="flex items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
+                        <label className="inline-flex items-center gap-1.5">
+                          <Switch
+                            checked={t.is_public}
+                            disabled={busy}
+                            onCheckedChange={(is_public) => manage({ action: "update", id: t.id, is_public })}
+                            aria-label={`Make ${t.business_type} public`}
+                          />
+                          {t.is_public ? "Public" : "Private"}
+                        </label>
+                        <span className="inline-flex items-center gap-3">
+                          <Link to="/admin/templates" className="underline">Edit sequence</Link>
+                          <button type="button" disabled={busy} onClick={() => manage({ action: "archive", id: t.id })} className="underline">Archive</button>
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -109,7 +147,7 @@ export function CreateAgentChooser({ open, onOpenChange, onCustom, onApplied }: 
                 {isAdmin && (
                   <>
                     {" "}
-                    <Link to="/admin/templates" className="underline text-foreground">Create one</Link> and mark it Public.
+                    To add one, open an agent and click Save as template.
                   </>
                 )}
               </p>

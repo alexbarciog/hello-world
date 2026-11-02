@@ -792,9 +792,9 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
                   <Sparkles className="w-5 h-5" style={{ color: "hsl(38 92% 45%)" }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-foreground">Upgrade required</h3>
+                  <h3 className="text-base font-bold text-foreground">Try it free</h3>
                   <p className="text-sm text-muted-foreground mt-1.5">
-                    Connecting LinkedIn is a paid feature. Upgrade your subscription to enable automated outreach, AI SDR, and lead discovery.
+                    Connecting LinkedIn is a paid feature. Try it free to enable automated outreach, AI SDR, and lead discovery.
                   </p>
                 </div>
               </div>
@@ -810,7 +810,7 @@ function LinkedInTab({ onConnected }: { onConnected?: () => void }) {
                   className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ background: "hsl(var(--goji-coral))" }}
                 >
-                  Upgrade plan
+                  Try it free
                 </button>
               </div>
             </motion.div>
