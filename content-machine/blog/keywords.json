@@ -212,8 +212,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "best-subreddits-for-b2b-lead-generation",
    "monthly_volume": null,
    "section": "blog"
   },
