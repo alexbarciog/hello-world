@@ -27,7 +27,7 @@ export default function BillingPlans() {
 
       // Determine plan value from subscription product
       const planName = sub.productId === STARTER_PRODUCT_ID ? "Starter" : "Pro";
-      const planValue = sub.productId === STARTER_PRODUCT_ID ? 59 : 99;
+      const planValue = sub.productId === STARTER_PRODUCT_ID ? 59 : 97;
 
       ttqPlaceAnOrder(planName, planValue);
       ttqPurchase(planName, planValue);

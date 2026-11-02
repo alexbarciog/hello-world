@@ -17,6 +17,12 @@
   Intentsly recommends 15. State these honestly in comparisons.
 - Languages (monitoring and outreach): English, Romanian, German, Dutch.
 - Free trial: 7 days. `/try-ai` shows matching buyers with no account.
+- Self-serve billing (Epic 1, built 2026-10-29; NOT LIVE until the founder switches checkout on —
+  do not write about these points until this line says "live"):
+  one plan at $97/month; the 7-day trial needs a card and is charged automatically when it ends;
+  the trial ends after 7 days or once the account has received its first 20 signals, whichever
+  comes first; cancel in one click from Settings; no refunds (the trial is the refund window);
+  founding deal: the first 10 paying customers keep $97/month for life.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
 - Free tools and lead magnets: LinkedIn Profile Analyzer; "The Buying Signal Playbook"
   (12 buying signals worth chasing and 8 to ignore, LinkedIn triggers, scripts per signal).

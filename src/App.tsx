@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
+import StartTrial from "./pages/StartTrial.tsx";
+import Book from "./pages/Book.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
@@ -184,6 +186,8 @@ export const AppContent = () => (
           <Route path="/features/linkedin-signals" element={<LinkedInSignals />} />
           <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
+          <Route path="/start-trial" element={<AuthOnlyGuard><StartTrial /></AuthOnlyGuard>} />
+          <Route path="/book" element={<Book />} />
           <Route
             path="/dashboard"
             element={<AuthGuard><DashboardLayout><Dashboard /></DashboardLayout></AuthGuard>}

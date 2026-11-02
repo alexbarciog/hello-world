@@ -71,7 +71,7 @@ const WhyIntentsly = () => {
             to="/register"
             className="group inline-flex items-center gap-2 bg-[#C8FF00] text-[#050505] px-6 py-3 md:py-3.5 rounded-full text-sm font-bold hover:bg-[#d4ff33] transition-all shadow-[0_16px_36px_-12px_rgba(200,255,0,0.5)]"
           >
-            Request Demo
+            Start free trial
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </motion.div>

@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
+import { accessForUsers } from '../_shared/account-access.ts';
 
 /**
  * Compute the workflow_steps array index for the next step to process.
@@ -90,10 +91,17 @@ Deno.serve(async (req) => {
     const RUN_DEADLINE = Date.now() + 320_000;
     const hasTime = () => Date.now() < RUN_DEADLINE;
 
+    // Billing: locked accounts (past due, canceled, expired) send nothing.
+    const campaignAccess = await accessForUsers(supabase, campaigns.map((c: { user_id: string }) => c.user_id));
+
     for (const campaign of campaigns) {
       if (!hasTime()) {
         console.log(`[followup] wall-clock budget reached — deferring remaining campaigns to next run`);
         break;
+      }
+      if (campaignAccess.get(campaign.user_id) === 'none') {
+        console.log(`[followup] campaign ${campaign.id} account has no access, skipping`);
+        continue;
       }
       try {
         const result = await processCampaign(

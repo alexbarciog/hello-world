@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useSubscription } from "@/hooks/useSubscription";
+import { openBillingPortal } from "@/lib/billing";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -868,8 +869,17 @@ function BillingTab() {
   const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
   const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
 
-  const planName = sub.productId === STARTER_PRODUCT_ID ? "Starter" : sub.productId === PRO_PRODUCT_ID ? "Growth" : "Unknown";
-  const planPrice = sub.productId === STARTER_PRODUCT_ID ? "$59" : sub.productId === PRO_PRODUCT_ID ? "$99" : "";
+  // Customers from before self-serve billing may still be on the old Starter price.
+  const planName = sub.productId === STARTER_PRODUCT_ID ? "Starter" : "Intentsly";
+  const planPrice = sub.productId === STARTER_PRODUCT_ID ? "$59" : sub.productId === PRO_PRODUCT_ID || !sub.productId ? "$97" : "";
+  const [portalBusy, setPortalBusy] = useState(false);
+  const openPortal = async () => {
+    setPortalBusy(true);
+    const result = await openBillingPortal();
+    if (!result.ok) toast.error(result.message);
+    setPortalBusy(false);
+  };
+  const locked = sub.status === "past_due" || sub.status === "canceled";
 
   if (sub.loading) {
     return (
@@ -900,9 +910,21 @@ function BillingTab() {
               <CheckCircle className="w-7 h-7 text-white" />
             </motion.div>
             <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
-              <p className="text-base font-bold text-foreground mb-1">{planName} Plan — Active</p>
+              <p className="text-base font-bold text-foreground mb-1">
+                {planName} — {sub.status === "trialing" ? "Free trial" : "Active"}
+              </p>
               <p className="text-sm text-muted-foreground">{planPrice}/month</p>
-              {sub.subscriptionEnd && (
+              {sub.founding && (
+                <span className="mt-2 inline-flex rounded-full bg-[#C8FF00] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#0a0a0a]">
+                  Founding customer · $97/month for life
+                </span>
+              )}
+              {sub.status === "trialing" && sub.trialEndsAt && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Trial ends {new Date(sub.trialEndsAt).toLocaleDateString()} or after {Math.max(sub.signalCap - sub.signalsUsed, 0)} more signals
+                </p>
+              )}
+              {sub.status !== "trialing" && sub.subscriptionEnd && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Next billing: {new Date(sub.subscriptionEnd).toLocaleDateString()}
                 </p>
@@ -911,10 +933,12 @@ function BillingTab() {
             <motion.button
               custom={3} variants={fadeUp} initial="hidden" animate="visible"
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/pricing")}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md bg-primary hover:bg-primary/90 transition-colors"
+              onClick={openPortal}
+              disabled={portalBusy || !sub.isBillingOwner}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md bg-primary hover:bg-primary/90 transition-colors disabled:opacity-60"
             >
-              <CreditCard className="w-4 h-4" /> Manage Plan
+              {portalBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+              {sub.isBillingOwner ? "Manage billing" : "Managed by your workspace owner"}
             </motion.button>
           </div>
         </SectionCard>
@@ -931,17 +955,24 @@ function BillingTab() {
               <CreditCard className="w-7 h-7 text-white" />
             </motion.div>
             <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
-              <p className="text-base font-bold text-foreground mb-1">No Active Subscription</p>
-              <p className="text-sm text-muted-foreground max-w-xs">Start your 7-day free trial and unlock unlimited leads, AI campaigns, and more.</p>
+              <p className="text-base font-bold text-foreground mb-1">
+                {sub.status === "past_due" ? "Payment failed" : sub.status === "canceled" ? "Subscription ended" : "No active subscription"}
+              </p>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                {locked
+                  ? "Your account is read-only. Reactivate to turn signals and LinkedIn outreach back on."
+                  : "Start your 7-day free trial: everything on, $97/month after, cancel in one click."}
+              </p>
             </motion.div>
             <motion.button
               custom={3} variants={fadeUp} initial="hidden" animate="visible"
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/pricing")}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md"
+              onClick={locked ? openPortal : () => navigate("/pricing")}
+              disabled={portalBusy || (locked && !sub.isBillingOwner)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
             >
-              <CreditCard className="w-4 h-4" /> View Pricing & Plans
+              <CreditCard className="w-4 h-4" /> {locked ? "Reactivate" : "Start free trial"}
             </motion.button>
           </div>
         </SectionCard>

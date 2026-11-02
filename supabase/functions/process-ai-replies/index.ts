@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { accessForUsers } from '../_shared/account-access.ts';
 
 /**
  * Conversational AI — auto-replies to leads who respond.
@@ -238,7 +239,14 @@ Deno.serve(async (req) => {
     let totalStopped = 0;
     let totalMeetingsBooked = 0;
 
+    // Billing: locked accounts (past due, canceled, expired) send nothing.
+    const campaignAccess = await accessForUsers(supabase, campaigns.map((c: { user_id: string }) => c.user_id));
+
     for (const campaign of campaigns) {
+      if (campaignAccess.get(campaign.user_id) === 'none') {
+        console.log(`[ai-replies] campaign ${campaign.id} account has no access, skipping`);
+        continue;
+      }
       try {
         const result = await processCampaignReplies(
           supabase, campaign, UNIPILE_API_KEY, UNIPILE_DSN, LOVABLE_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
