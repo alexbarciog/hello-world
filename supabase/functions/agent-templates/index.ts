@@ -108,11 +108,17 @@ Deno.serve(async (req) => {
     }
     case "from_agent": {
       // Returns a draft for the editor; nothing is stored until "create".
-      const { data: agent } = await db.from("signal_agents").select("*").eq("id", body.agent_id).maybeSingle();
-      if (!agent) return json({ error: "Agent not found" }, 404);
-      const { data: campaign } = await db.from("campaigns").select("*")
-        .eq("source_agent_id", agent.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-      const config = configFromAgent(agent, campaign);
+      // `overrides` is what's in the agent form, which may not be saved or may
+      // be a new agent with no agent_id; it gets the same clean-up as a saved agent.
+      const { data: agent } = body.agent_id
+        ? await db.from("signal_agents").select("*").eq("id", body.agent_id).maybeSingle()
+        : { data: null };
+      if (!agent && !body.overrides) return json({ error: "Agent not found" }, 404);
+      const { data: campaign } = agent
+        ? await db.from("campaigns").select("*")
+          .eq("source_agent_id", agent.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+        : { data: null };
+      const config = configFromAgent({ ...agent, ...body.overrides }, campaign);
       const v = validateTemplateConfig(config);
       return json({ config, errors: v.ok ? [] : v.errors, had_campaign: Boolean(campaign) });
     }
