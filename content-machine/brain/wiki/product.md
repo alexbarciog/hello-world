@@ -29,6 +29,9 @@
   comes first; cancel in one click from Settings; no refunds (the trial is the refund window);
   founding deal: the first 10 paying customers keep $97/month for life.
 - Setup: self-serve, "live in 5 min", no sales call, cancel anytime.
+- Emails (Epic 5b/5c, built 2026-10-30; NOT LIVE until the founder switches them on — do not
+  write about these until this line says "live"): free-tool users who opt in get their report and
+  two follow-ups; accounts get a weekly digest on Tuesdays.
 - New free tools (Epic 4, built 2026-10-30; NOT LIVE until the PR is merged and the free-tool
   function is deployed — do not link them until this line says "live"): /tools,
   /linkedin-hook-analyzer, /cold-message-grader, /buying-signals (one page per service).

@@ -87,7 +87,7 @@ export default function HookAnalyzer() {
                 </ul>
               </div>
               <ShareResult text={`My LinkedIn hook scored ${result.score}/100. Check yours:`} path={T.path} />
-              <ToolEmailCapture tool={T.id} inputSummary={metrics.firstLine} resultSummary={`Score ${result.score}/100. ${result.verdict}`} />
+              <ToolEmailCapture tool={T.id} inputSummary={metrics.firstLine} inputText={submitted} resultSummary={`Score ${result.score}/100. ${result.verdict}`} />
             </>
           )}
         </div>
