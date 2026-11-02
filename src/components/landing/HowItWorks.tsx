@@ -211,8 +211,8 @@ const blocks = [
       "Your agent detects buying & social signals, scores every prospect against your ideal customer, and prioritizes the ones most likely to convert, before reaching out.",
     Visual: FindsVisual,
     visualLeft: false,
-    stat: "12,400+",
-    statLabel: "Buyers detected weekly",
+    stat: "~1,000",
+    statLabel: "Leads a month per agent",
     isImage: true,
     // Vertical gradient bleeds on left/right sides of the visual card (like reference)
     sideGradient:
@@ -235,7 +235,7 @@ const blocks = [
     n: "3/4",
     title: "Sales Agent that books meetings on AUTOPILOT",
     body:
-      "Your AI sales agent runs outreach end-to-end without you lifting a finger. It researches every lead, writes hyper-personalized messages that match their tone and psychology, chooses the best channel and moment, follows up automatically, and books meetings straight into your calendar — while you focus on closing.",
+      "Your AI sales agent runs outreach end-to-end without you lifting a finger. It researches every lead, writes hyper-personalized messages that match their tone and psychology, picks the moment, follows up automatically, and books meetings straight into your calendar — while you focus on closing.",
     Visual: OutreachVisual,
     isImage: true,
 

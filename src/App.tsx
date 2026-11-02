@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,7 +52,6 @@ import IntegrationsPage from "./pages/Integrations.tsx";
 import AiSdrOutreach from "./pages/features/AiSdrOutreach.tsx";
 import ConversationalAi from "./pages/features/ConversationalAi.tsx";
 import LinkedInSignals from "./pages/features/LinkedInSignals.tsx";
-import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import StrawberryPitch from "./pages/pitch/Strawberry.tsx";
 import Playbook from "./pages/Playbook.tsx";
 import SignalPlaybook from "./pages/SignalPlaybook.tsx";
@@ -194,7 +193,7 @@ export const AppContent = () => (
           <Route path="/features/ai-sdr" element={<AiSdrOutreach />} />
           <Route path="/features/conversational-ai" element={<ConversationalAi />} />
           <Route path="/features/linkedin-signals" element={<LinkedInSignals />} />
-          <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
+          <Route path="/features/reddit-x-signals" element={<Navigate to="/features/linkedin-signals" replace />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
           <Route path="/start-trial" element={<AuthOnlyGuard><StartTrial /></AuthOnlyGuard>} />
           <Route path="/book" element={<Book />} />

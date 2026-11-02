@@ -188,7 +188,7 @@ export default function Partners() {
             Partner Program
           </div>
           <h1 className="text-5xl md:text-7xl font-medium text-white leading-[1.05] tracking-tight mb-6">
-            Grow your agency.
+            Grow your agency.{" "}
             <br />
             <span className="text-white/70">Earn recurring revenue.</span>
           </h1>

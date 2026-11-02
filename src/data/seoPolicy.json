@@ -1,0 +1,29 @@
+{
+  "_comment": "Which public URLs are indexable. Read by the site (src/lib/seoPolicy.ts), the prerender (scripts/prerender.mjs), scripts/verify-seo.mjs and the content gate (content-machine/scripts/blog_gate.py). Noindexing a page: add it to noindex with the reason. Merging: add it to merged; the prerender writes the 301. Deleting an entry undoes it.",
+  "pillars": {
+    "trigify": "/blog/trigify-alternatives"
+  },
+  "merged": {
+    "/blog/free-trigify-alternatives": "/blog/trigify-alternatives",
+    "/blog/trigify-replacement-linkedin-engagement-tracking": "/blog/trigify-alternatives",
+    "/blog/trigify-alternative-for-social-listening": "/blog/trigify-alternatives"
+  },
+  "redirects": {
+    "/features/reddit-x-signals": "/features/linkedin-signals"
+  },
+  "noindex": {
+    "/blog/trigify-vs-gojiberry": "Same outline as the other Trigify-vs posts about a product that closed on 22 October 2026; deadline-led title; the pillar and /compare/intentsly-vs-gojiberry cover the decision.",
+    "/blog/trigify-vs-teamfluence": "Same outline as trigify-vs-valley (19% of its wording is shared); third-party comparison of a closed product; the pillar and /compare/intentsly-vs-teamfluence cover the decision.",
+    "/blog/trigify-vs-valley": "Same outline as trigify-vs-teamfluence (23% of its wording is shared); written in the future tense about a closure that has happened; the pillar and /compare/intentsly-vs-valley cover the decision.",
+    "/blog/rebuild-trigify-workflows-in-clay": "Unique, but the title promises a rebuild before a deadline that passed on 22 October 2026. Noindexed until refreshed, not because of length.",
+    "/blog/trigify-alternative-for-smartlead-and-heyreach": "Unique, but its steps start from exporting out of Trigify before a deadline that has passed. Noindexed until refreshed, not because of length.",
+    "/blog/migrate-from-trigify-to-intentsly": "Unique steps, but the title promises a migration before 22 October 2026 and the intent overlaps /compare/trigify-vs-intentsly. Noindexed until refreshed.",
+    "/solutions/find-leads-for-a-software-company": "Template: 35% of its wording is shared with /solutions/find-customers-for-b2b-saas, which targets the same buyer.",
+    "/solutions/get-clients-for-a-saas-company": "Same search intent as /solutions/find-customers-for-b2b-saas (SaaS customers). Mostly original wording, so noindexed for cannibalisation rather than quality.",
+    "/solutions/find-b2b-clients-online": "Template: 32% of its wording is shared with /solutions/find-customers-for-b2b-saas, and the generic intent overlaps /solutions/find-customers-on-linkedin.",
+    "/case-studies/intentsly": "About 280 words of body copy. Every proof.md number is also on /case-studies and in the blog; Google crawled it and did not index it."
+  },
+  "noindexPrefixes": {
+    "/buying-signals/": "Twelve copies of one template: only the service name, five illustrative phrasings and five roles change. /buying-signals itself stays indexable."
+  }
+}

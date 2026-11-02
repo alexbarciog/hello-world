@@ -79,7 +79,7 @@ export default function Playbook() {
                 className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[4.25rem] font-medium text-white leading-[1.05] tracking-tight mb-5 animate-fade-in-up"
                 style={{ animationDelay: "80ms" }}
               >
-                0 to 100 customers
+                0 to 100 customers{" "}
                 <span className="block text-white/70">in 90 days.</span>
               </h1>
 

@@ -40,6 +40,7 @@ const PricingPage = () => {
     <div className="min-h-screen bg-background font-sans">
       <Navbar showCampaigns={showCampaigns} forceDark />
       <div className="pt-20">
+        <h1 className="sr-only">Intentsly pricing</h1>
         <Pricing />
 
         <section className="px-6 pb-16 md:pb-24">

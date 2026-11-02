@@ -59,7 +59,7 @@ const PROMPT_CHIPS = [
   "Founders of seed-stage SaaS in the US",
   "Heads of Sales at 50-200 person B2B companies",
   "Marketing leaders at fintechs in Europe",
-  "CTOs of agencies recently hiring",
+  "CTOs at software agencies in the UK",
 ];
 
 export default function PublicAiChat() {
@@ -175,7 +175,7 @@ export default function PublicAiChat() {
             <Sparkles className="w-3 h-3" /> Try Intentsly AI live · No signup
           </span>
           <h1 className="text-4xl md:text-6xl font-medium text-white leading-[1.05] tracking-tight mb-4">
-            Tell us who you sell to.
+            Tell us who you sell to.{" "}
             <br />
             <span className="text-white/70">We'll find them in seconds.</span>
           </h1>

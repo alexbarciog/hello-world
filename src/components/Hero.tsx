@@ -1,15 +1,15 @@
 import { ArrowRight, Play } from "lucide-react";
 import { motion } from "framer-motion";
+import { WordReveal } from "@/lib/motion";
 import HeroFloatingCards from "./HeroFloatingCards";
 import heroGradient from "@/assets/hero-gradient-right.png";
 import { useFoundingSlotsLeft } from "@/hooks/useFoundingSlotsLeft";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const headline = "Find people already looking for what you offer on";
+const headline = "Find people already looking for what you offer on LinkedIn";
 
 const Hero = () => {
-  const words = headline.split(" ");
   const foundingLeft = useFoundingSlotsLeft();
 
   return (
@@ -33,7 +33,7 @@ const Hero = () => {
                 🔥
               </motion.span>
               <span className="text-[12px] md:text-[13px] font-semibold text-neutral-900">
-                Live buying signals from LinkedIn, Reddit &amp; X
+                Live buying signals from LinkedIn
               </span>
             </motion.div>
 
@@ -48,30 +48,7 @@ const Hero = () => {
               className="font-medium tracking-[-0.03em] leading-[1.05] md:leading-[1.02] text-[#0a0a0a]"
               style={{ fontSize: "clamp(2rem, 5.6vw, 4.75rem)" }}
             >
-              {words.map((w, i) => (
-                <span key={i} className="inline-block overflow-hidden pb-[0.05em] mr-[0.25em]">
-                  <motion.span
-                    className="inline-block"
-                    variants={{
-                      hidden: { y: "110%", opacity: 0 },
-                      visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } },
-                    }}
-                  >
-                    {w}
-                  </motion.span>
-                </span>
-              ))}
-              <span className="inline-block overflow-hidden pb-[0.05em]">
-                <motion.span
-                  className="inline-block text-[#3B82F6]"
-                  variants={{
-                    hidden: { y: "110%", opacity: 0 },
-                    visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } },
-                  }}
-                >
-                  LinkedIn
-                </motion.span>
-              </span>
+              <WordReveal text={headline} highlight={["LinkedIn"]} />
             </motion.h1>
 
             <motion.p

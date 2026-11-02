@@ -1,20 +1,18 @@
 # Intentsly
 
-> Intentsly is a B2B sales platform that monitors LinkedIn, Reddit and X for buying signals, enriches the people behind them with verified emails, and runs AI-written LinkedIn and email outreach so teams book meetings with buyers who are already looking for what they sell.
+> Intentsly is a B2B sales platform that monitors LinkedIn for buying signals, enriches the people behind them with verified emails, and runs AI-written LinkedIn outreach so teams book meetings with buyers who are already looking for what they sell.
 
 ## Product
 
 - [Home](https://intentsly.com/): What Intentsly does and how it works
-- [LinkedIn buying signals](https://intentsly.com/features/linkedin-signals): Find leads from LinkedIn posts, comments, job changes and competitor engagement
-- [Reddit & X monitoring](https://intentsly.com/features/reddit-x-signals): Capture buying signals from Reddit and X conversations
-- [AI SDR outreach](https://intentsly.com/features/ai-sdr): AI-written, signal-based LinkedIn and email outreach with follow-ups
+- [LinkedIn buying signals](https://intentsly.com/features/linkedin-signals): Find leads from LinkedIn post engagement, keyword posts, competitor page followers and hashtag engagement
+- [AI SDR outreach](https://intentsly.com/features/ai-sdr): AI-written, signal-based LinkedIn connection requests and messages with follow-ups
 - [Conversational AI](https://intentsly.com/features/conversational-ai): AI that replies to prospects and moves them towards a booked meeting
 - [Pricing](https://intentsly.com/pricing): Plans and pricing
 
 ## Proof
 
 - [Case studies](https://intentsly.com/case-studies): Results from teams using Intentsly
-- [Intentsly case study](https://intentsly.com/case-studies/intentsly)
 - [Massoftind case study](https://intentsly.com/case-studies/massoftind)
 - [LogicMelon case study](https://intentsly.com/case-studies/logicmelon)
 
@@ -30,7 +28,7 @@
 
 ## Blog
 
-- [Blog](https://intentsly.com/blog): Guides to signal-based outbound on LinkedIn, Reddit and X
+- [Blog](https://intentsly.com/blog): Guides to signal-based outbound on LinkedIn
 
 ## Company
 

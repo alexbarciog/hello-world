@@ -129,7 +129,7 @@ const HeroFloatingCards = () => {
           iconBg: "bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg",
           label: (
             <span className="flex items-center gap-1">
-              <TrendingUp className="w-2.5 h-2.5" /> Raised $12M
+              <TrendingUp className="w-2.5 h-2.5" /> Liked a competitor post
             </span>
           ),
           title: "RevBoost",

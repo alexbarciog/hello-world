@@ -56,8 +56,8 @@ const CaseStudies = () => {
             </div>
 
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium leading-[1.05] tracking-tight text-foreground mb-6">
-              Real teams.<br />
-              Real meetings.<br />
+              Real teams.{" "}<br />
+              Real meetings.{" "}<br />
               <span className="text-foreground/40">Real fast.</span>
             </h1>
 
@@ -112,7 +112,7 @@ const CaseStudies = () => {
       <section className="max-w-6xl mx-auto px-6 py-24 md:py-32">
         <div className="text-xs uppercase tracking-[0.2em] text-foreground/50 mb-6">Case studies</div>
         <h2 className="text-4xl md:text-6xl font-medium tracking-tight leading-[1.05] text-foreground max-w-4xl">
-          A handful of teams.<br />
+          A handful of teams.{" "}<br />
           <span className="text-foreground/40">Hundreds of warm conversations.</span>
         </h2>
         <p className="mt-8 text-lg text-foreground/60 max-w-2xl leading-relaxed">

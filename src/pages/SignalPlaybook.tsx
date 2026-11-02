@@ -74,7 +74,7 @@ export default function SignalPlaybook() {
                 className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[4.25rem] font-medium text-white leading-[1.05] tracking-tight mb-5 animate-fade-in-up"
                 style={{ animationDelay: "80ms" }}
               >
-                The Buying Signal
+                The Buying Signal{" "}
                 <span className="block text-white/70">Playbook.</span>
               </h1>
 
@@ -82,7 +82,7 @@ export default function SignalPlaybook() {
                 className="text-base md:text-lg text-white/80 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed animate-fade-in-up"
                 style={{ animationDelay: "180ms" }}
               >
-                How to find warm leads on LinkedIn, Reddit and X before your competitors do. The exact signals, queries and plays we use to catch buyers in their decision window.
+                How to find warm leads on LinkedIn before your competitors do. The exact signals, triggers and scripts to catch buyers in their decision window.
               </p>
 
               <ul
@@ -91,7 +91,6 @@ export default function SignalPlaybook() {
               >
                 {[
                   "The 12 buying signals worth chasing (and 8 to ignore)",
-                  "Reddit & X queries that surface in-market buyers",
                   "LinkedIn intent triggers competitors miss",
                   "Outreach scripts tuned to each signal type",
                 ].map((item) => (

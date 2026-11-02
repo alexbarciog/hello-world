@@ -80,7 +80,7 @@ export default function ConversationalAi() {
             Conversational AI
           </div>
           <h1 className="text-5xl md:text-7xl font-medium text-white leading-[1.05] tracking-tight mb-6">
-            AI that talks like<br /><span className="text-white/70">your best SDR</span>
+            AI that talks like{" "}<br /><span className="text-white/70">your best SDR</span>
           </h1>
           <p className="text-base md:text-lg text-white/80 max-w-2xl mb-10 leading-relaxed">
             When leads reply, our Conversational AI handles the dialogue — building rapport, qualifying interest, and booking meetings automatically.

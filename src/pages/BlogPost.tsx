@@ -1,12 +1,14 @@
 import { Children, isValidElement, useEffect, useMemo, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { InlineCta, NextStepCta, StickyCta } from "@/components/ContentCta";
+import { RelatedLinks, TrigifyPillarNote } from "@/components/RelatedLinks";
 import { applySeo } from "@/lib/seo";
+import { isIndexablePath, mergedTarget } from "@/lib/seoPolicy";
 import {
   SECTIONS,
   SITE_URL,
@@ -121,14 +123,6 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
     () => (post && headings.length >= 4 ? splitAtHeading(post.content_md, 3) : [post?.content_md ?? "", ""]),
     [post, headings.length],
   );
-  const related = useMemo(() => {
-    if (!post || !allPosts) return [];
-    const others = allPosts.filter((p) => p.slug !== post.slug);
-    const score = (p: (typeof others)[number]) =>
-      (p.section === post.section ? 2 : 0) + (p.cluster === post.cluster ? 1 : 0);
-    return [...others].sort((a, b) => score(b) - score(a)).slice(0, 3);
-  }, [post, allPosts]);
-
   useEffect(() => {
     if (post) {
       return applySeo({
@@ -138,6 +132,7 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
         type: "article",
         image: post.cover_image_url ?? undefined,
         jsonLd: buildPostJsonLd(post),
+        noindex: !isIndexablePath(postPath(post)),
       });
     }
     if (!isLoading) {
@@ -149,6 +144,9 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
       });
     }
   }, [post, isLoading, meta]);
+
+  const mergedInto = mergedTarget(`${meta.path}/${slug}`);
+  if (mergedInto) return <Navigate to={mergedInto} replace />;
 
   if (isLoading) {
     return (
@@ -237,6 +235,8 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
             </nav>
           )}
 
+          <TrigifyPillarNote post={post} />
+
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {before}
           </ReactMarkdown>
@@ -251,28 +251,7 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
 
       <NextStepCta section={section} />
 
-      {related.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 pb-20" aria-labelledby="related-heading">
-          <h2 id="related-heading" className="text-xs uppercase tracking-[0.2em] text-foreground/50 mb-6">
-            Keep reading
-          </h2>
-          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
-            {related.map((r) => (
-              <Link
-                key={r.slug}
-                to={postPath(r)}
-                className="group bg-[#f9f9fa] rounded-[24px] p-7 flex flex-col justify-between min-h-[180px] transition-colors hover:bg-[#f4f4f5]"
-              >
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-foreground/50 mb-3">{clusterLabel(r.cluster)}</div>
-                  <h3 className="text-lg font-medium tracking-tight leading-snug text-foreground">{r.title}</h3>
-                </div>
-                <ArrowUpRight className="w-4 h-4 text-foreground/40 mt-5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <RelatedLinks post={post} posts={allPosts ?? []} />
 
       <CTASection />
       <StickyCta section={section} />

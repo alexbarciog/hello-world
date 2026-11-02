@@ -21,25 +21,55 @@ const SITE = "https://intentsly.com";
 const DIST = path.resolve("dist");
 const SSR_DIR = path.resolve("dist-ssr");
 
+const policy = JSON.parse(fs.readFileSync(path.resolve("src/data/seoPolicy.json"), "utf8"));
+const isNoindexed = (p) => Boolean(policy.noindex[p]) || Object.keys(policy.noindexPrefixes).some((prefix) => p.startsWith(prefix));
+
+// Brand entities, homepage only. sameAs lists only profiles the repo shows are ours.
+const HOME_JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE}/#org`,
+      name: "Intentsly",
+      url: `${SITE}/`,
+      logo: { "@type": "ImageObject", url: `${SITE}/logo.png` },
+      sameAs: ["https://www.linkedin.com/company/intentsly"],
+    },
+    { "@type": "WebSite", "@id": `${SITE}/#site`, name: "Intentsly", url: `${SITE}/`, publisher: { "@id": `${SITE}/#org` } },
+    {
+      "@type": "SoftwareApplication",
+      name: "Intentsly",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: `${SITE}/`,
+      description:
+        "Intentsly finds people on LinkedIn showing buying signals, scores them against your ideal customer, adds verified emails and lets an AI SDR book the meeting.",
+      publisher: { "@id": `${SITE}/#org` },
+    },
+  ],
+};
+
 const ROUTES = [
   {
     path: "/",
     title: "Intentsly — Find buyers already looking for what you sell",
     description:
-      "Intentsly monitors LinkedIn, Reddit and X for buying signals, enriches leads with verified emails, and runs AI outreach so you book meetings on autopilot.",
+      "Intentsly finds people on LinkedIn showing buying signals, scores them against your ideal customer, adds verified emails and lets an AI SDR book the meeting.",
     priority: "1.0",
     changefreq: "weekly",
+    jsonLd: HOME_JSON_LD,
   },
   {
     path: "/pricing",
     title: "Pricing — Intentsly",
-    description: "Intentsly plans and pricing for buying-signal monitoring, lead enrichment and AI-powered LinkedIn and email outreach.",
+    description: "Intentsly plans and pricing for buying-signal monitoring, lead enrichment and AI-powered LinkedIn outreach.",
     priority: "0.8",
   },
   {
     path: "/features/ai-sdr",
     title: "AI SDR Outreach — Your AI sales rep that never sleeps | Intentsly",
-    description: "Intentsly's AI SDR finds in-market leads, writes personalised LinkedIn and email outreach, follows up and books meetings for you.",
+    description: "Intentsly's AI SDR finds in-market leads, sends LinkedIn connection requests and messages, holds the conversation and shares your calendar link.",
     priority: "0.8",
   },
   {
@@ -51,19 +81,13 @@ const ROUTES = [
   {
     path: "/features/linkedin-signals",
     title: "LinkedIn Buying Signals — Find leads already looking for you | Intentsly",
-    description: "Track LinkedIn posts, comments, job changes and competitor engagement to surface people showing real buying intent for what you sell.",
-    priority: "0.8",
-  },
-  {
-    path: "/features/reddit-x-signals",
-    title: "Reddit & X Monitoring — Capture buying signals across the web | Intentsly",
-    description: "Monitor Reddit and X for people asking for recommendations, comparing tools or describing the problem you solve, and turn them into leads.",
+    description: "Track LinkedIn post engagement, keyword posts, competitor page followers and hashtag engagement to surface people showing real buying intent.",
     priority: "0.8",
   },
   {
     path: "/linkedin-profile-analyzer",
-    title: "Free LinkedIn Profile Analyzer — Intentsly",
-    description: "See what's silently killing your inbound leads on LinkedIn. Get a free AI review of your profile with specific fixes.",
+    title: "Free LinkedIn Profile Analyzer & Checker — Instant AI Review | Intentsly",
+    description: "Free LinkedIn profile analyzer and checker. Paste your profile URL and get an AI review: a score out of 100, specific fixes and a rewritten headline.",
     priority: "0.9",
     changefreq: "weekly",
   },
@@ -83,7 +107,7 @@ const ROUTES = [
   {
     path: "/signal-playbook",
     title: "The Buying Signal Playbook — Intentsly",
-    description: "A free guide to spotting and acting on buying signals across LinkedIn, Reddit and X.",
+    description: "A free guide to spotting and acting on buying signals: 12 worth chasing, 8 to ignore, LinkedIn triggers and a script for each signal.",
     priority: "0.7",
   },
   {
@@ -118,6 +142,9 @@ const ROUTES = [
     priority: "0.3",
     changefreq: "yearly",
   },
+  // Not worth a search result, but a crawler that lands here must see that.
+  { path: "/login", title: "Log in — Intentsly", description: "Log in to your Intentsly account.", noindex: true },
+  { path: "/register", title: "Sign up — Intentsly", description: "Create your Intentsly account.", noindex: true },
 ];
 
 // React, framer-motion, lottie and the Supabase client all touch browser
@@ -211,6 +238,7 @@ function buildPage(template, route, appHtml) {
     html = setMeta(html, "name", "twitter:image", route.image);
   }
   if (route.ogType) html = setMeta(html, "property", "og:type", route.ogType);
+  if (isNoindexed(route.path) || route.noindex) html = setMeta(html, "name", "robots", "noindex,follow");
   html = html.replace("</head>", `  <link rel="canonical" href="${url}">\n</head>`);
   if (route.jsonLd) {
     html = html.replace("</head>", `  <script type="application/ld+json" id="page-jsonld">${safeJson(route.jsonLd)}</script>\n</head>`);
@@ -229,7 +257,10 @@ const { render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPreren
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
 );
 
-const blogPosts = (await loadBlogPosts()).map((p) => ({ ...p, section: p.section || "blog" }));
+// A merged article has no page of its own: its URL is a 301 (dist/_redirects, below).
+const blogPosts = (await loadBlogPosts())
+  .map((p) => ({ ...p, section: p.section || "blog" }))
+  .filter((p) => !policy.merged[postPath(p)]);
 setBlogPrerenderData(blogPosts);
 const blogSummaries = blogPosts.map(toSummary);
 for (const key of Object.keys(SECTIONS)) {
@@ -237,7 +268,7 @@ for (const key of Object.keys(SECTIONS)) {
 }
 const newestIn = (section) =>
   blogPosts
-    .filter((p) => p.section === section)
+    .filter((p) => p.section === section && !isNoindexed(postPath(p)))
     .map((post) => (post.updated_at || post.published_at || "").slice(0, 10))
     .sort()
     .pop() || undefined;
@@ -300,6 +331,7 @@ for (const route of routes) {
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes
+  .filter((r) => !r.noindex && !isNoindexed(r.path))
   .map(
     (r) =>
       `  <url><loc>${SITE}${r.path}</loc>${r.lastmod ? `<lastmod>${r.lastmod}</lastmod>` : ""}<changefreq>${r.changefreq || "monthly"}</changefreq><priority>${r.priority}</priority></url>`,
@@ -308,8 +340,15 @@ ${routes
 </urlset>
 `;
 fs.writeFileSync(path.join(DIST, "sitemap.xml"), sitemap);
+
+// Cloudflare reads this file from the assets directory and answers before any asset lookup.
+const redirects = Object.entries({ ...policy.redirects, ...policy.merged });
+fs.writeFileSync(
+  path.join(DIST, "_redirects"),
+  redirects.map(([from, to]) => `${from} ${to} 301\n${from}/ ${to} 301`).join("\n") + "\n",
+);
 fs.rmSync(SSR_DIR, { recursive: true, force: true });
-console.log(`prerendered ${done.length}/${routes.length} routes, wrote sitemap.xml`);
+console.log(`prerendered ${done.length}/${routes.length} routes, wrote sitemap.xml and ${redirects.length} redirects`);
 
 // The Supabase client keeps refresh timers alive; don't wait on them.
 process.exit(done.length === 0 ? 1 : 0);

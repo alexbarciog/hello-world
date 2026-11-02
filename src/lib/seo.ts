@@ -12,6 +12,8 @@ interface SeoInput {
 }
 
 const JSONLD_ID = "page-jsonld";
+const ROBOTS_INDEX = "index, follow, max-image-preview:large, max-snippet:-1";
+const ROBOTS_NOINDEX = "noindex,follow";
 
 function upsertMeta(attr: "name" | "property", key: string, content: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
@@ -45,9 +47,9 @@ export function applySeo({ title, description, url, type = "website", image, jso
   }
   canonical.href = url;
 
-  const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
-  if (noindex) upsertMeta("name", "robots", "noindex");
-  else if (robots?.content === "noindex") robots.remove();
+  // A ?ref= URL stays noindexed even on an indexable page (see index.html).
+  const hideFromIndex = noindex || /[?&]ref=/.test(window.location.search);
+  upsertMeta("name", "robots", hideFromIndex ? ROBOTS_NOINDEX : ROBOTS_INDEX);
 
   document.getElementById(JSONLD_ID)?.remove();
   if (jsonLd?.length) {
@@ -60,6 +62,6 @@ export function applySeo({ title, description, url, type = "website", image, jso
 
   return () => {
     document.getElementById(JSONLD_ID)?.remove();
-    document.head.querySelector('meta[name="robots"][content="noindex"]')?.remove();
+    upsertMeta("name", "robots", ROBOTS_INDEX);
   };
 }

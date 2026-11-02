@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { applySeo } from "@/lib/seo";
 import { SECTIONS, SITE_URL, clusterLabel, formatDate, postPath, useBlogPosts, type Section } from "@/lib/blog";
+import { isIndexablePath } from "@/lib/seoPolicy";
 
 export const BLOG_TITLE = SECTIONS.blog.title;
 export const BLOG_DESCRIPTION = SECTIONS.blog.description;
@@ -13,7 +14,10 @@ export const BLOG_DESCRIPTION = SECTIONS.blog.description;
 const Blog = ({ section = "blog" }: { section?: Section }) => {
   const meta = SECTIONS[section];
   const { data: allPosts, isLoading, isError } = useBlogPosts();
-  const posts = useMemo(() => (allPosts ?? []).filter((p) => (p.section ?? "blog") === section), [allPosts, section]);
+  const posts = useMemo(
+    () => (allPosts ?? []).filter((p) => (p.section ?? "blog") === section && isIndexablePath(postPath(p))),
+    [allPosts, section],
+  );
   const [cluster, setCluster] = useState<string | null>(null);
 
   useEffect(
@@ -107,7 +111,7 @@ const Blog = ({ section = "blog" }: { section?: Section }) => {
             <p className="text-foreground/60 leading-relaxed mb-6">
               {isError
                 ? "Refresh the page to try again."
-                : "Until they land, the Buying Signal Playbook covers the signals worth chasing on LinkedIn, Reddit and X."}
+                : "Until they land, the Buying Signal Playbook covers the signals worth chasing on LinkedIn."}
             </p>
             {!isError && (
               <a href="/signal-playbook" className="btn-cta">

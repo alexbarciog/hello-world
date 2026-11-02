@@ -26,10 +26,9 @@ Instead of guessing who might be interested in your service, Intentsly **detects
 
 It scans for signals like:
 - People interacting with competitors on LinkedIn
-- LinkedIn profile visits
-- Job changes and hiring signals
+- Keyword posts about the pain points, tools or topics you choose
+- Competitor page followers and hashtag engagement
 - Content engagement on LinkedIn
-- Reddit discussions matching your keywords
 
 **2. Hot prospects appear in your Contacts**
 
@@ -119,15 +118,15 @@ It can be 3–5 per day or 100+ per day depending on your criteria.
         id: "glossary",
         title: "Intentsly Glossary (Key Terms)",
         content: `**Signal Agent**
-Your automated assistant that tracks prospects showing buying intent on LinkedIn and the web.
+Your automated assistant that tracks prospects showing buying intent on LinkedIn.
 
 **Intent Signals**
 Triggers your agent looks for:
 - Competitor engagement
-- Profile visits
-- Job changes
+- Keyword posts
 - Posts, comments, likes
-- Reddit keyword mentions
+- Competitor page followers
+- Hashtag engagement
 
 **Contacts**
 Where all detected and imported prospects are stored and managed.
@@ -143,9 +142,6 @@ A person already showing signs of interest — detected by intent signals.
 
 **Unibox**
 Your unified LinkedIn messaging inbox inside Intentsly.
-
-**Reddit AI Agent**
-Monitors Reddit for posts matching your intent keywords across specified subreddits.
 
 **Precision Mode**
 Controls how strictly leads must match your ICP criteria — from broad to exact match.`,
@@ -368,89 +364,6 @@ Select which signals the agent should monitor. More signals = more leads.
 Define your campaign goal and value proposition. This helps the AI generate better outreach messages.
 
 After completing all steps, your agent will start running automatically.`,
-      },
-    ],
-  },
-  {
-    id: "reddit-signals",
-    title: "Reddit AI Agent",
-    description: "Monitor Reddit for intent signals",
-    icon: "folder",
-    articles: [
-      {
-        id: "reddit-agent-overview",
-        title: "What is the Reddit AI Agent?",
-        content: `The Reddit AI Agent monitors Reddit posts and discussions for keywords that match your intent signals.
-
-## How it works
-
-1. You add **intent keywords** (e.g., "looking for CRM", "need automation tool")
-2. The agent scans relevant subreddits for posts matching those keywords
-3. Matching posts appear in the **Reddit Signals** page
-4. You can review each post, see the author, subreddit, and original content
-
-## Why use it?
-
-Reddit is full of people actively looking for solutions. By monitoring specific keywords, you can:
-- Find people who are actively looking for your type of product
-- Discover pain points in your market
-- Identify potential customers before your competitors do`,
-      },
-      {
-        id: "reddit-add-keywords",
-        title: "How to add and manage Reddit keywords",
-        content: `## Adding keywords
-
-1. Go to **Reddit Signals** from the sidebar
-2. Enter your keyword in the input field at the top
-3. Optionally specify subreddits (comma-separated) — if empty, defaults are used
-4. Click **Add Keyword**
-
-Default subreddits monitored: SaaS, startups, Entrepreneur, smallbusiness, marketing, sales.
-
-## Managing keywords
-
-Each keyword card shows:
-- The keyword text
-- Status (active or inactive)
-- Number of subreddits being monitored
-
-You can:
-- **Toggle active/inactive** — pause or resume monitoring
-- **Delete** — remove the keyword entirely
-
-## Tips for good keywords
-
-- Use phrases people would actually search for: "looking for a tool to..."
-- Be specific: "B2B lead generation software" works better than just "leads"
-- Add variations of the same intent: "need CRM", "CRM recommendation", "best CRM for"`,
-      },
-      {
-        id: "reddit-reviewing-mentions",
-        title: "Reviewing Reddit mentions",
-        content: `When the agent finds matching posts, they appear in the Reddit Signals page.
-
-## What you see for each mention
-
-- **Post title** — the Reddit post title
-- **Subreddit** — which subreddit it was found in
-- **Author** — the Reddit username
-- **Keyword matched** — which of your keywords triggered the match
-- **Body preview** — a snippet of the post content
-- **Posted time** — when the post was published
-- **Link** — click to open the original Reddit post
-
-## Filtering mentions
-
-Use the keyword filter at the top to see mentions for a specific keyword only.
-
-## Scanning for new mentions
-
-Click the **Scan Now** button to trigger an immediate scan. The agent also runs automatically twice a day (8:00 AM and 6:00 PM UTC).
-
-## Dismissing mentions
-
-Click the X on any mention to dismiss it — it won't appear in your feed again.`,
       },
     ],
   },
@@ -838,22 +751,6 @@ A campaign cannot send messages without contacts in its source list and an activ
 - Ensure your LinkedIn profile looks professional`,
       },
       {
-        id: "reddit-no-results",
-        title: "My Reddit AI Agent isn't finding any posts",
-        content: `If no mentions are appearing:
-
-1. Check that your **keywords are active** on the Reddit Signals page
-2. Try broader keywords — "CRM software" instead of "specific-niche CRM for dental clinics"
-3. Make sure the subreddits you're monitoring are active communities
-4. Click **Scan Now** to trigger an immediate scan
-5. The agent runs automatically twice daily (8:00 AM and 6:00 PM UTC)
-
-## Default subreddits
-
-If you don't specify subreddits, these are monitored by default:
-- r/SaaS, r/startups, r/Entrepreneur, r/smallbusiness, r/marketing, r/sales`,
-      },
-      {
         id: "unibox-empty",
         title: "My Unibox is empty",
         content: `The Unibox requires an active LinkedIn connection to display conversations.
@@ -922,7 +819,6 @@ Plans include access to:
 - Signal Agents (up to 2)
 - LinkedIn Campaigns (up to 2)
 - Contacts management with AI scoring
-- Reddit AI Agent
 - Unibox for LinkedIn messaging
 - Team invitations (up to 2)
 
@@ -968,7 +864,6 @@ const categoryIcons: Record<string, { icon: React.ElementType; color: string }> 
   "getting-started": { icon: Rocket, color: "#1A8FE3" },
   "connecting-linkedin": { icon: Link, color: "#0A66C2" },
   "signal-agents": { icon: Radio, color: "#C8FF00" },
-  "reddit-signals": { icon: Sparkles, color: "#FF4500" },
   "contacts-lists": { icon: UserPlus, color: "#1A8FE3" },
   "campaigns-outreach": { icon: BarChart3, color: "#C8FF00" },
   "unibox": { icon: MessageSquare, color: "#1A8FE3" },
@@ -1239,7 +1134,6 @@ export default function HelpCenter() {
               <span className="text-xs text-muted-foreground">Popular:</span>
               {[
                 { label: "Connecting LinkedIn", id: "connecting-linkedin" },
-                { label: "Reddit AI Agent", id: "reddit-signals" },
                 { label: "Campaigns", id: "campaigns-outreach" },
               ].map((item) => (
                 <button

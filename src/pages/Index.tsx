@@ -11,6 +11,7 @@ import UseCases from "@/components/landing/UseCases";
 import WhyIntentsly from "@/components/landing/WhyIntentsly";
 import Comparison from "@/components/landing/Comparison";
 import FAQ from "@/components/FAQ";
+import ResourceLinks from "@/components/landing/ResourceLinks";
 import FinalCTA from "@/components/landing/FinalCTA";
 import { Footer } from "@/components/CTAFooter";
 import StickyMobileCTA from "@/components/landing/StickyMobileCTA";
@@ -33,6 +34,7 @@ const Index = () => {
       <SectionReveal><WhyIntentsly /></SectionReveal>
       <SectionReveal><Comparison /></SectionReveal>
       <SectionReveal><FAQ /></SectionReveal>
+      <SectionReveal><ResourceLinks /></SectionReveal>
       <SectionReveal><FinalCTA /></SectionReveal>
       {/* Mobile spacer so sticky CTA doesn't cover footer content */}
       <div className="md:hidden h-16" aria-hidden />

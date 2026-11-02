@@ -17,7 +17,7 @@ const benefits: Benefit[] = [
   {
     icon: Command,
     title: "Finds Ready Buyers",
-    desc: "Spot companies already showing buying signals across LinkedIn, Reddit and X.",
+    desc: "Spot people already showing buying signals on LinkedIn.",
   },
   {
     icon: LayoutGrid,

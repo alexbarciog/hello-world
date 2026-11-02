@@ -1,5 +1,5 @@
 import { motion, type Variants } from "framer-motion";
-import { type ReactNode, type CSSProperties } from "react";
+import { Fragment, type ReactNode, type CSSProperties } from "react";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -79,4 +79,42 @@ export const fadeStagger: Variants = {
 export const fadeStaggerItem: Variants = {
   hidden: { opacity: 0, y: 12 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
+};
+
+const wordVariants: Variants = {
+  hidden: { y: "110%", opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } },
+};
+
+interface WordRevealProps {
+  text: string;
+  /** Words to colour, matched exactly after splitting on spaces. */
+  highlight?: string[];
+  highlightClassName?: string;
+}
+
+/**
+ * Word-by-word headline reveal. Goes inside a stagger parent such as motion.h1.
+ * The space between words is a real text node, not a margin: crawlers and the
+ * copied text need it, otherwise the headline reads as one long word.
+ */
+export const WordReveal = ({ text, highlight = [], highlightClassName = "text-[#3B82F6]" }: WordRevealProps) => {
+  const words = text.split(" ");
+  return (
+    <>
+      {words.map((word, i) => (
+        <Fragment key={i}>
+          <span className="inline-block overflow-hidden pb-[0.05em]">
+            <motion.span
+              className={highlight.includes(word) ? `inline-block ${highlightClassName}` : "inline-block"}
+              variants={wordVariants}
+            >
+              {word}
+            </motion.span>
+          </span>
+          {i < words.length - 1 ? " " : null}
+        </Fragment>
+      ))}
+    </>
+  );
 };

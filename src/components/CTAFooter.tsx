@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import ctaBg from "@/assets/cta-bg.avif";
+import { TRIGIFY_PILLAR } from "@/lib/seoPolicy";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -61,6 +62,35 @@ const CTASection = () => {
   );
 };
 
+// Privacy and terms live only in the bottom bar: they were the most-linked pages on the site.
+const FOOTER_COLUMNS = [
+  [
+    { label: "Free LinkedIn Profile Analyzer", href: "/linkedin-profile-analyzer" },
+    { label: "Free tools", href: "/tools" },
+    { label: "LinkedIn Hook Analyzer", href: "/linkedin-hook-analyzer" },
+    { label: "Buying Signal Finder", href: "/buying-signals" },
+    { label: "Cold Message Grader", href: "/cold-message-grader" },
+    { label: "Buying Signal Playbook", href: "/signal-playbook" },
+    { label: "B2B Playbook", href: "/playbook" },
+  ],
+  [
+    { label: "Blog", href: "/blog" },
+    { label: "Guides", href: "/guides" },
+    { label: "Compare", href: "/compare" },
+    { label: "Solutions", href: "/solutions" },
+    { label: "Learn", href: "/learn" },
+    { label: "Trigify alternatives", href: TRIGIFY_PILLAR },
+  ],
+  [
+    { label: "LinkedIn signals", href: "/features/linkedin-signals" },
+    { label: "AI SDR", href: "/features/ai-sdr" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Case studies", href: "/case-studies" },
+    { label: "Partners", href: "/partners" },
+    { label: "Help Center", href: "/help" },
+  ],
+];
+
 const Footer = () => {
   return (
     <footer className="bg-background px-2 md:px-4 pb-4 md:pb-8 pt-4 md:pt-8">
@@ -92,30 +122,15 @@ const Footer = () => {
 
           {/* Right: Link columns */}
           <div className="flex flex-wrap gap-x-20 gap-y-8">
-            <div className="flex flex-col gap-4">
-              <a href="/#services" className="text-sm text-white/60 hover:text-white transition-colors">Services</a>
-              <a href="/#expertise" className="text-sm text-white/60 hover:text-white transition-colors">Expertise</a>
-              <a href="/#pricing" className="text-sm text-white/60 hover:text-white transition-colors">Pricing</a>
-              <a href="/#testimonials" className="text-sm text-white/60 hover:text-white transition-colors">Testimonials</a>
-              <a href="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</a>
-              <a href="/guides" className="text-sm text-white/60 hover:text-white transition-colors">Guides</a>
-              <a href="/learn" className="text-sm text-white/60 hover:text-white transition-colors">Learn</a>
-              <a href="/solutions" className="text-sm text-white/60 hover:text-white transition-colors">Solutions</a>
-              <a href="/compare" className="text-sm text-white/60 hover:text-white transition-colors">Compare</a>
-            </div>
-            <div className="flex flex-col gap-4">
-              <a href="/tools" className="text-sm text-white/60 hover:text-white transition-colors">Free tools</a>
-              <a href="/linkedin-profile-analyzer" className="text-sm text-white/60 hover:text-white transition-colors">Profile Analyzer</a>
-              <a href="/linkedin-hook-analyzer" className="text-sm text-white/60 hover:text-white transition-colors">Hook Analyzer</a>
-              <a href="/buying-signals" className="text-sm text-white/60 hover:text-white transition-colors">Buying Signal Finder</a>
-              <a href="/cold-message-grader" className="text-sm text-white/60 hover:text-white transition-colors">Cold Message Grader</a>
-            </div>
-            <div className="flex flex-col gap-4">
-              <a href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy</a>
-              <a href="/terms" className="text-sm text-white/60 hover:text-white transition-colors">Terms</a>
-              <a href="/help" className="text-sm text-white/60 hover:text-white transition-colors">Help Center</a>
-              <a href="/support" className="text-sm text-white/60 hover:text-white transition-colors">Support</a>
-            </div>
+            {FOOTER_COLUMNS.map((links, i) => (
+              <div key={i} className="flex flex-col gap-4">
+                {links.map((link) => (
+                  <a key={link.href} href={link.href} className="text-sm text-white/60 hover:text-white transition-colors">
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
 

@@ -85,7 +85,7 @@ export default function AiSdrOutreach() {
             AI SDR & Outreach
           </div>
           <h1 className="text-5xl md:text-7xl font-medium text-white leading-[1.05] tracking-tight mb-6">
-            Your AI sales rep<br /><span className="text-white/70">that never sleeps</span>
+            Your AI sales rep{" "}<br /><span className="text-white/70">that never sleeps</span>
           </h1>
           <p className="text-base md:text-lg text-white/80 max-w-2xl mb-10 leading-relaxed">
             Intentsly's AI SDR sends personalized LinkedIn messages, manages multi-step campaigns, and handles replies — all on autopilot.

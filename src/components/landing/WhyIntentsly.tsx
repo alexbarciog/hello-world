@@ -17,7 +17,7 @@ const steps = [
     icon: Sparkles,
     title: "Your agent finds the buyers",
     body:
-      "It detects buying signals, scores your best prospects, and starts contacting them across email and socials, automatically.",
+      "It detects buying signals, scores your best prospects, and starts contacting them on LinkedIn, automatically.",
     kicker: "Outbound that used to require a full team now runs with AI.",
     gradient: "linear-gradient(180deg, #C8FF00 0%, #7ED957 60%, #1A8FE3 100%)",
   },

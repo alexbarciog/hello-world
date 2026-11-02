@@ -51,7 +51,7 @@ export const caseStudies: CaseStudy[] = [
     industry: "AI Sales Platform",
     headline: "How we used our own platform to book 14 meetings in 2 weeks",
     subheadline:
-      "Launching Intentsly with zero ad spend — only intent signals, AI SDR, and Conversational AI on LinkedIn.",
+      "Launching Intentsly with intent signals, AI SDR, and Conversational AI on LinkedIn, and no manual outreach.",
     result: "14",
     resultLabel: "meetings booked",
     timeframe: "2 weeks",
@@ -68,7 +68,7 @@ export const caseStudies: CaseStudy[] = [
     logo: intentslyIcon,
     metaTitle: "Intentsly Case Study — 14 LinkedIn meetings booked in 2 weeks | Intentsly",
     metaDescription:
-      "How Intentsly used its own AI SDR + intent signals to book 14 qualified LinkedIn demos in 14 days — zero ad spend, zero manual outreach. Read the playbook.",
+      "How Intentsly used its own AI SDR and intent signals to book 14 qualified LinkedIn demos in 14 days, with zero manual outreach. Read the playbook.",
     ogImage: ogIntentsly,
     publishedAt: "2025-03-15",
     context: [
@@ -83,7 +83,7 @@ export const caseStudies: CaseStudy[] = [
       },
       {
         title: "Personalized invites off the actual signal",
-        body: "Every connection request opened with a reference to the lead's specific post — not a templated 'I noticed you' opener. Reply rate jumped 4× immediately.",
+        body: "Every connection request opened with a reference to the lead's specific post — not a templated 'I noticed you' opener. The reply rate came in at 4× our previous cold campaigns.",
       },
       {
         title: "Conversational AI handled the back-and-forth",
@@ -92,15 +92,9 @@ export const caseStudies: CaseStudy[] = [
     ],
     results: [
       { label: "Qualified demos booked", value: "14" },
-      { label: "Days to first meeting", value: "< 48h" },
-      { label: "Reply rate vs. cold email", value: "4×" },
+      { label: "Reply rate vs. our previous cold campaigns", value: "4×" },
       { label: "Manual outreach hours", value: "0" },
     ],
-    quote: {
-      text: "We launched the platform on a Tuesday. Friday morning we had three demos on the calendar. By the end of week two we'd run out of available slots.",
-      author: "The Intentsly team",
-      role: "Founders",
-    },
     takeaways: [
       "Buyer-intent signals beat list scraping — every time.",
       "Personalization at the signal level is the unlock for reply rate.",

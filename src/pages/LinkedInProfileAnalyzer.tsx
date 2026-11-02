@@ -20,6 +20,8 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import { Footer } from "@/components/CTAFooter";
 import ogImageAsset from "@/assets/linkedin-profile-analyzer-og.png.asset.json";
 import { RelatedTools, ToolCta, ToolEmailCapture } from "@/components/FreeTool";
+import { WordReveal } from "@/lib/motion";
+import { ANALYZER_DESCRIPTION, ANALYZER_FAQS, ANALYZER_TITLE, AnalyzerGuide } from "@/components/AnalyzerGuide";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const PENDING_KEY = "pending_profile_analysis";
@@ -28,9 +30,8 @@ const LINKEDIN_RE = /^https?:\/\/(?:[a-z]{2,3}\.)?linkedin\.com\/in\/[^/?#\s]+/i
 function useSeoHead() {
   useEffect(() => {
     const url = "https://intentsly.com/linkedin-profile-analyzer";
-    const title = "Free LinkedIn Profile Review & Optimization Audit | Intentsly";
-    const desc =
-      "Free AI LinkedIn profile review. Get an instant audit, conversion score, rewritten headline & About in 45 seconds. No credit card.";
+    const title = ANALYZER_TITLE;
+    const desc = ANALYZER_DESCRIPTION;
     const imageUrl = `https://intentsly.com${ogImageAsset.url}`;
     const prevTitle = document.title;
     document.title = title;
@@ -79,19 +80,18 @@ function useSeoHead() {
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        name: "Intentsly LinkedIn Profile Audit",
+        name: "Intentsly LinkedIn Profile Analyzer",
         applicationCategory: "BusinessApplication",
         operatingSystem: "Web",
         url,
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-        aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "1284" },
       },
       {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: "https://intentsly.com/" },
-          { "@type": "ListItem", position: 2, name: "LinkedIn Profile Review", item: url },
+          { "@type": "ListItem", position: 2, name: "LinkedIn Profile Analyzer", item: url },
         ],
       },
     ]);
@@ -119,10 +119,10 @@ function useSeoHead() {
 
 const bentoTiles = [
   { icon: Award, title: "Headline conversion score", desc: "The first 220 characters buyers read. Scored, diagnosed, rewritten." },
-  { icon: MessageSquare, title: "About-section teardown", desc: "The 4 words in line 1 that make buyers scroll past — and what to write instead." },
+  { icon: MessageSquare, title: "About-section teardown", desc: "The opening lines that make buyers scroll past, and what to write instead." },
   { icon: Search, title: "Missing buyer keywords", desc: "The exact words your future clients type into search that your profile is silent on." },
   { icon: Shield, title: "Trust signal gaps", desc: "Which credibility markers are missing so buyers hesitate to DM you." },
-  { icon: Target, title: "Top 3 conversion killers", desc: "The specific things quietly costing you 3–5 inbound leads a week." },
+  { icon: Target, title: "Top 3 conversion killers", desc: "The three issues most likely to cost you inbound leads, each with the exact fix." },
   { icon: Zap, title: "Ready-to-paste rewrites", desc: "A new headline and a 3-line About hook, written in your voice. Copy, paste, done." },
 ];
 
@@ -132,16 +132,8 @@ const testimonials = [
   { name: "Priya D.", role: "B2B Consultant", quote: "Brutal but fair. Every point was specific to my profile — no generic advice. This is the audit I've been paying $400 for from LinkedIn 'experts'." },
 ];
 
-// Also rendered as FAQPage JSON-LD in the static HTML (scripts/prerender.mjs).
-export const ANALYZER_FAQS = [
-  { q: "Is the LinkedIn profile audit really free?", a: "Yes. 100% free. No credit card. No trial. You get the full report the moment you create your free account." },
-  { q: "How long does the audit take?", a: "About 45 seconds. Our AI reads your public profile, scores 27 conversion signals, and writes a rewritten headline and About hook for you." },
-  { q: "Do I need to give you my LinkedIn password?", a: "Never. We only read your public profile — the same version anyone can see when they open your link in an incognito window." },
-  { q: "What will I actually get in the report?", a: "A conversion score out of 100, sub-scores for your headline, About, banner and social proof, a rewritten headline and About hook in your voice, your top 3 conversion killers, missing keywords buyers search for, and a checklist of quick wins." },
-  { q: "Will you post or message from my account?", a: "No. The audit is read-only. Nothing is posted, messaged, or automated on your behalf." },
-];
-
-const heroHeadline = "See what's silently killing your inbound leads on";
+const heroHeadline = "Free LinkedIn Profile Analyzer: see what's costing you inbound leads";
+const heroHighlight = ["LinkedIn", "Profile", "Analyzer:"];
 
 export default function LinkedInProfileAnalyzer() {
   useSeoHead();
@@ -150,7 +142,6 @@ export default function LinkedInProfileAnalyzer() {
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [service, setService] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<number | null>(0);
 
   const validUrl = LINKEDIN_RE.test(linkedinUrl.trim());
   const validService = service.trim().length >= 3;
@@ -175,8 +166,6 @@ export default function LinkedInProfileAnalyzer() {
     }
     navigate("/register?source=analyzer&redirect=%2Fprofile-report");
   };
-
-  const words = heroHeadline.split(" ");
 
   return (
     <div className="min-h-screen bg-white font-sans text-[#0a0a0a]">
@@ -217,30 +206,7 @@ export default function LinkedInProfileAnalyzer() {
                 className="font-medium tracking-[-0.03em] leading-[1.05] md:leading-[1.02] text-[#0a0a0a]"
                 style={{ fontSize: "clamp(2rem, 5.6vw, 4.75rem)" }}
               >
-                {words.map((w, i) => (
-                  <span key={i} className="inline-block overflow-hidden pb-[0.05em] mr-[0.25em]">
-                    <motion.span
-                      className="inline-block"
-                      variants={{
-                        hidden: { y: "110%", opacity: 0 },
-                        visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } },
-                      }}
-                    >
-                      {w}
-                    </motion.span>
-                  </span>
-                ))}
-                <span className="inline-block overflow-hidden pb-[0.05em]">
-                  <motion.span
-                    className="inline-block text-[#3B82F6]"
-                    variants={{
-                      hidden: { y: "110%", opacity: 0 },
-                      visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } },
-                    }}
-                  >
-                    LinkedIn
-                  </motion.span>
-                </span>
+                <WordReveal text={heroHeadline} highlight={heroHighlight} />
               </motion.h1>
 
               <motion.p
@@ -249,7 +215,7 @@ export default function LinkedInProfileAnalyzer() {
                 transition={{ duration: 0.7, delay: 0.75, ease: EASE }}
                 className="mt-5 md:mt-7 text-base md:text-xl text-neutral-500 leading-relaxed max-w-xl"
               >
-                Paste your profile. Tell us what you sell. Get a brutal, specific, 100% free AI audit of the 27 conversion signals stopping buyers from sliding into your DMs.
+                Paste your profile. Tell us what you sell. Get a free AI review with a score out of 100, the top issues stopping buyers from messaging you, and a rewritten headline.
               </motion.p>
 
               <motion.div
@@ -263,14 +229,6 @@ export default function LinkedInProfileAnalyzer() {
                 <span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-neutral-400" /> No credit card</span>
               </motion.div>
 
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 1.2, ease: EASE }}
-                className="mt-6 text-xs uppercase tracking-[0.14em] text-neutral-400"
-              >
-                Avg. score before fix · <span className="text-neutral-700 font-semibold">42/100</span> · avg. after · <span className="text-neutral-700 font-semibold">81/100</span>
-              </motion.p>
               <h2 className="sr-only">Free LinkedIn profile review, audit, and optimization tool</h2>
             </div>
 
@@ -359,7 +317,7 @@ export default function LinkedInProfileAnalyzer() {
               What you get
             </span>
             <h2 className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a]" style={{ fontSize: "clamp(1.75rem, 3.6vw, 3rem)" }}>
-              A brutally specific LinkedIn profile review.<br />
+              A brutally specific LinkedIn profile review.{" "}<br />
               <span className="text-neutral-400">No generic advice.</span>
             </h2>
             <p className="mt-5 text-base md:text-lg text-neutral-500 leading-relaxed">
@@ -430,11 +388,11 @@ export default function LinkedInProfileAnalyzer() {
               The uncomfortable truth
             </span>
             <h2 className="font-medium tracking-[-0.03em] leading-[1.05] text-[#0a0a0a]" style={{ fontSize: "clamp(1.75rem, 3.6vw, 3rem)" }}>
-              Every week your profile leaks 3–5 inbound leads<br />
+              Your profile may be leaking inbound leads{" "}<br />
               <span className="text-neutral-400">and you never see them slip away.</span>
             </h2>
             <p className="mt-5 text-base md:text-lg text-neutral-500 leading-relaxed">
-              Buyers land on your profile. They read the first 3 lines. They decide in 4 seconds whether to DM you or keep scrolling. Most keep scrolling. This audit tells you exactly why.
+              Buyers land on your profile. They read the first 3 lines. They decide whether to DM you or keep scrolling. This review shows you what they see and what to change.
             </p>
           </motion.div>
 
@@ -501,6 +459,8 @@ export default function LinkedInProfileAnalyzer() {
         </div>
       </section>
 
+      <AnalyzerGuide />
+
       {/* ─── Secondary CTA — dark card like landing ─── */}
       <section className="px-5 md:px-8 pb-20 bg-white">
         <div className="max-w-6xl mx-auto rounded-3xl bg-[#0a0a0a] px-8 md:px-14 py-14 md:py-20 relative overflow-hidden">
@@ -544,20 +504,15 @@ export default function LinkedInProfileAnalyzer() {
           </motion.div>
           <div className="space-y-3">
             {ANALYZER_FAQS.map((f, i) => (
-              <div key={i} className="rounded-2xl bg-neutral-50 border border-neutral-100 overflow-hidden">
-                <button
-                  onClick={() => setExpanded(expanded === i ? null : i)}
-                  className="w-full text-left px-6 py-5 flex items-center justify-between gap-4"
-                >
+              <details key={f.q} open={i === 0} className="group rounded-2xl bg-neutral-50 border border-neutral-100 overflow-hidden">
+                <summary className="w-full cursor-pointer list-none px-6 py-5 flex items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
                   <span className="text-[15px] font-medium text-[#0a0a0a]">{f.q}</span>
-                  <span className="text-2xl leading-none text-neutral-400 shrink-0">{expanded === i ? "–" : "+"}</span>
-                </button>
-                {expanded === i && (
-                  <div className="px-6 pb-5 -mt-1">
-                    <p className="text-sm text-neutral-500 leading-relaxed">{f.a}</p>
-                  </div>
-                )}
-              </div>
+                  <span className="text-2xl leading-none text-neutral-400 shrink-0 group-open:rotate-45 transition-transform">+</span>
+                </summary>
+                <div className="px-6 pb-5 -mt-1">
+                  <p className="text-sm text-neutral-500 leading-relaxed">{f.a}</p>
+                </div>
+              </details>
             ))}
           </div>
         </div>
