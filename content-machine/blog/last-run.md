@@ -37,4 +37,6 @@
   HeyReach would beat reusing the 14-demos launch story; (3) the 21% reply-rate row in proof.md is still not accepted
   by the gate as a plain number; (4) allowing intentsly.com for the fetch tool in this task's settings would let runs
   confirm the sitemap directly.
-- Live check: see the run report (done after the push).
+- Live check (22:01 UTC, push 1dc726c at 21:57): direct fetches worked this run. The page URL renders with the
+  H1, all seven content H2s, the comparison table and the six-question FAQ; https://intentsly.com/sitemap.xml lists
+  https://intentsly.com/compare/intentsly-vs-heyreach (11 compare URLs in total). Redeploy took under 4 minutes.
