@@ -32,6 +32,9 @@
 - Done-for-you setup (Epic 3, built 2026-10-30; NOT LIVE until the founder switches checkout on —
   do not write about this until this line says "live"): $500 one-time for a 30-minute call plus a
   custom agent built by Alex; included for founding customers.
+- Emails (Epic 5b/5c, built 2026-10-30; NOT LIVE until the founder switches them on — do not
+  write about these until this line says "live"): free-tool users who opt in get their report and
+  two follow-ups; accounts get a weekly digest on Tuesdays.
 - New free tools (Epic 4, built 2026-10-30; NOT LIVE until the PR is merged and the free-tool
   function is deployed — do not link them until this line says "live"): /tools,
   /linkedin-hook-analyzer, /cold-message-grader, /buying-signals (one page per service).

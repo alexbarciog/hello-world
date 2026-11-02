@@ -100,7 +100,27 @@ Deno.serve(async (req) => {
         const v = validateLead(body);
         if (!v.ok) return json({ error: v.error }, 400);
         if (!(await allowed("save_lead"))) return json(LIMITED, 429);
-        const { error } = await db.from("tool_leads").insert(v.row);
+        // The emailed report is our own cached result for this input. Anything
+        // the browser claims as a result is never mailed: the form accepts any
+        // address, so it must not be able to deliver arbitrary text.
+        let report: unknown = null;
+        const input = typeof body.input_text === "string" ? body.input_text.trim().slice(0, MAX_INPUT_CHARS) : "";
+        if (input) {
+          const key = await sha256(`${v.row.tool}:${input.toLowerCase()}`);
+          const { data: hit } = await db.from("tool_cache").select("result").eq("key", key).maybeSingle();
+          report = hit?.result ?? null;
+          // Prebuilt service pages never called the AI, so produce the report now.
+          // A failure here must not lose the lead.
+          if (!report && v.row.tool === "buying_signal_finder" && input.length <= MAX_SERVICE_CHARS) {
+            try {
+              const r = await aiResult("buying_signal_finder", input, signalsPrompt(input), parseSignalsResult);
+              report = "value" in r ? r.value : null;
+            } catch (e) {
+              console.warn("[free-tool] report generation failed", e instanceof Error ? e.message : e);
+            }
+          }
+        }
+        const { error } = await db.from("tool_leads").insert({ ...v.row, report });
         return error ? json({ error: "Couldn't save that. Please try again." }, 500) : json({ success: true });
       }
       default:

@@ -112,7 +112,7 @@ export default function BuyingSignalFinder() {
             </div>
           </div>
           <ShareResult text={`How people ask for ${serviceName} on LinkedIn:`} path={page?.path ?? T.path} />
-          <ToolEmailCapture tool={T.id} inputSummary={serviceName} heading={`Get the ${serviceName} signal report by email`} />
+          <ToolEmailCapture tool={T.id} inputSummary={serviceName} inputText={serviceName} heading={`Get the ${serviceName} signal report by email`} />
         </div>
       )}
 

@@ -32,6 +32,8 @@ import NotFound from "./pages/NotFound.tsx";
 import AdminTemplates from "./pages/AdminTemplates.tsx";
 import AdminSetup from "./pages/AdminSetup.tsx";
 import SetupService from "./pages/SetupService.tsx";
+import AdminDigestPreview from "./pages/AdminDigestPreview.tsx";
+import Unsubscribe from "./pages/Unsubscribe.tsx";
 import { AdminOnly } from "./components/templates/AdminOnly";
 import Blog from "./pages/Blog.tsx";
 import BlogPost from "./pages/BlogPost.tsx";
@@ -256,6 +258,8 @@ export const AppContent = () => (
           <Route path="/admin/templates" element={<AuthGuard><AdminOnly><DashboardLayout><AdminTemplates /></DashboardLayout></AdminOnly></AuthGuard>} />
           <Route path="/admin/setup" element={<AuthGuard><AdminOnly><DashboardLayout><AdminSetup /></DashboardLayout></AdminOnly></AuthGuard>} />
           <Route path="/settings/setup" element={<AuthOnlyGuard><DashboardLayout><SetupService /></DashboardLayout></AuthOnlyGuard>} />
+          <Route path="/admin/digest-preview" element={<AuthGuard><AdminOnly><DashboardLayout><AdminDigestPreview /></DashboardLayout></AdminOnly></AuthGuard>} />
+          <Route path="/u/:token" element={<Unsubscribe />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/case-studies" element={<CaseStudies />} />
           <Route path="/case-studies/:slug" element={<CaseStudyDetail />} />
