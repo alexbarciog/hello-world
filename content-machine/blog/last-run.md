@@ -44,3 +44,8 @@
   account, or one real reply to a signal-based first line (anonymised), would let a future update of this guide
   replace the hypothetical example with a real one. (3) Confirm whether `add_repo` should exist in this
   environment; the repository is attached and pushes work without it.
+- Live check (08:44 UTC, about five minutes after the push): direct fetches of https://intentsly.com/sitemap.xml and
+  the page URL asked for a permission nobody was there to grant, and no search result surfaced an intentsly.com link
+  to follow, so the rendered page and the sitemap are unconfirmed this run, exactly as on the previous runs. The
+  database row is published and the push to main succeeded (7a2b42e..9b95e7a), which is what triggers the redeploy.
+  For Alex: allowing intentsly.com for the fetch tool in this task's settings would let future runs confirm the page.
