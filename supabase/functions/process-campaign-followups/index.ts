@@ -5,8 +5,8 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
-import { accessForUsers } from '../_shared/account-access.ts';
 import { resolvePlaceholders, unresolvedMessage } from '../_shared/agent-template-schema.ts';
+import { accessForUsers } from '../_shared/account-access.ts';
 
 /**
  * Compute the workflow_steps array index for the next step to process.
