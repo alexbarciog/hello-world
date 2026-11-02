@@ -1,53 +1,46 @@
-# Last run: 2026-11-02 (blog task; fired 06:55 UTC, 08:55 Bucharest)
+# Last run: 2026-11-02 (guides task; fired about 08:20 UTC, 10:20 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 5eba990.
+- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 7a2b42e.
   `add_repo` was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector
-  reported a proxy tunnel error at session start again; the "Supabase" connector connected (checked with
-  `select 1`) and was used. The only draft in blog/drafts/ (outbound-sales-process-for-startups.md) carries a
-  `blocked:` line, so it was not resumed.
-- Keyword (published): best subreddits for b2b lead generation (cluster reddit-x, listicle, informational, priority 2).
-  "Best Subreddits for B2B Lead Generation: 16 Sorted by Who Posts There"
-  https://intentsly.com/blog/best-subreddits-for-b2b-lead-generation
-  Gate: passed on the first run. `blog_cloud.py sql` printed ready: true at 2,815 words by the gate's count
-  (a 16-row table and four code blocks included), 9 H2, 6 FAQ, 8 internal links, 17 external source links, no warnings.
-- Angle: the ranking pages (redreach.ai, leado.co, grouglobal.com, ibeamconsulting.com; redoraai and linkeddit
-  could not be opened) list the same five big communities with one or no member counts, unsourced statistics
-  and no rules. This page sorts 16 subreddits by who posts there, gives every one a member count from a dated
-  source, says what members ask for and which product categories they review, quotes the sidebar rule where one
-  is published, marks r/LeadGeneration and r/coldemail as rooms full of sellers, and gives one Reddit search
-  string per group.
-- Research and a limitation to know about: reddit.com pages could not be opened in this unattended run (the fetch
-  tool asked for a permission nobody was there to grant, and Reddit mirror sites were blocked by the bot-check
-  rule). Every subreddit fact therefore comes from GummySearch's public subreddit pages (gummysearch.com/r/<name>),
-  19 pages opened on 2 November 2026 and dated 1 October to 1 November 2026 on the page (r/coldemail undated).
-  Those pages carry the member count, yearly growth, the sidebar description, the first rule line where the
-  sidebar has one, the most common post types and the most reviewed products. The article says so in the
-  table's introduction and links the GummySearch page for each subreddit. No sitewide Reddit policy is quoted
-  because Reddit's own help pages could not be opened; the reader is told to read each sidebar.
-  Intentsly facts used: LinkedIn signals feature description, AI SDR sends LinkedIn messages only, 14 qualified
-  demos in 14 days / zero manual outreach (linked to /case-studies), 12 signals worth chasing and 8 to ignore.
-  Stated plainly that Intentsly does not monitor Reddit. No price, no 21% / 2 to 4 meetings figures.
-- Database: the generated SQL ran on project uwwajlezgeurnvvrvdvb and returned status published, published_at
-  2026-11-02 07:18:48 UTC. A follow-up read-only select confirmed article_type listicle, 6 FAQ entries, 5
-  secondary keywords and a content_md length (18,393 chars) identical to the local draft body. One honest note:
-  when the SQL file was pasted into the connector, the `article_type = excluded.article_type` line of the
-  ON CONFLICT clause was dropped by mistake. The slug did not exist before, so the conflict branch never ran and
-  the stored row is exactly what the file would have produced (blog/out/ is git-ignored, so the generated file
-  stays local to the run). Future runs should diff the pasted statement against the file before executing.
-  `blog_cloud.py mark` filed the article and set the keyword to published.
-- Queue: 25 `blog` keywords still queued (next: x twitter buying signals for b2b), 28 published, so no keyword
-  refresh this run.
-- Daily cap: second page of 2 November by Bucharest time (intentsly-vs-11x at 00:16), cap 7; weekly count under 45.
-- Push: see the commit `blog: publish best-subreddits-for-b2b-lead-generation`. Nothing outside content-machine/ changed.
-- For Alex: (1) Allow-listing reddit.com (or old.reddit.com) for the fetch tool would let Reddit articles quote
-  each subreddit's own rules and today's member counts instead of GummySearch snapshots; the next two reddit-x
-  keywords (X/Twitter buying signals, X search operators) will hit the same wall on x.com. (2) The blocked guides
-  draft outbound-sales-process-for-startups.md is complete and waits on the gate's keyword matcher treating
-  "process" as a plural (see its blocked line); a decision on that is yours, the gate was not touched. (3) The
-  proof.md rows for 21% reply rate, 1,000 leads/agent and 2 to 4 meetings still read "verified: say ..." which
-  the gate treats as not verified. (4) A sentence from you on whether you have ever found a customer through
-  Reddit (which subreddit, what the post said) would give the reddit-x cluster its first first-hand story.
-- Live check (07:27 UTC, about five minutes after the push): direct fetches of the page URL and the site's own pages
-  asked for a permission nobody was there to grant, and no search result surfaced an intentsly.com link to follow,
-  so the rendered page and the sitemap are unconfirmed this run. The database row is published and the push to
-  main succeeded, which is what triggers the redeploy.
+  reported a proxy tunnel error at session start again; the "Supabase" connector connected and was used. The only
+  draft in blog/drafts/ (outbound-sales-process-for-startups.md) carries a `blocked:` line, so it was not resumed.
+- Keyword (published): how to personalize cold outreach at scale (section guides, cluster outbound, guide,
+  commercial, priority 2).
+  "How to Personalize Cold Outreach at Scale in 3 Tiers"
+  https://intentsly.com/guides/personalize-cold-outreach-at-scale
+  Gate: first run failed on two points (meta_description 166 chars; the 21% reply-rate figure is in proof.md but
+  its status cell reads "verified: say ..." rather than "verified", so the gate does not accept it). Fixed by
+  shortening the description and dropping the 21% sentence; second run passed. `blog_cloud.py sql` printed
+  ready: true at 3,027 words by the gate's count (two tables and six code blocks included; the prose is under
+  3,000), 11 H2, 6 FAQ, 10 internal links, 2 external source links, no warnings.
+- Angle: every ranking page (Instantly, QuickMail, Apollo, Salescadia, Woodpecker x2, Coruzant, Daily Sales Rep;
+  Sbl.so is the only one that covers LinkedIn and it is a tool pitch) is email-only, gives "levels" of
+  personalization without a time budget, shows no research sheet and no full message per level, and quotes
+  round-up statistics. This guide gives three tiers with minutes per person and weekly volume, a six-column
+  research sheet with rules for the signal cell, a signal-to-first-line rule with templates per signal, full
+  LinkedIn and email messages per tier, a worked week for a labelled hypothetical company (Harbourline Analytics;
+  Fieldstone, Brightmark and the people are stated as invented), a five-question QA check, the LinkedIn caps
+  (15 a day, 30 max) and primary-source numbers.
+- Sources opened and linked: LinkedIn's own InMail data (May 2021 to April 2022: under 400 characters +22%, over
+  1,200 characters -11%, individual sends about +15%), and Woodpecker's cold email statistics page (18% vs 9%
+  replies for advanced vs no personalization; Belkins 16.5 million emails: under 50 contacts 5.8%, 1,000+ 2.1%),
+  labelled as vendor data. Google's own sender-guidelines page could not be opened in this unattended run (the
+  fetch tool asked for a permission nobody was there to grant), so no Gmail spam-rate threshold is quoted.
+  Intentsly facts used: LinkedIn signals feature description (post engagement, keyword posts, ICP scoring), AI SDR
+  caps 30/30 with 15 recommended, 14 qualified demos in 14 days / zero manual outreach / 4x reply rate (linked
+  to /case-studies). No price. No Reddit or X claims.
+- Database: the generated SQL ran unchanged on project uwwajlezgeurnvvrvdvb and returned status published,
+  published_at 2026-11-02 08:37:50 UTC. A follow-up read-only select confirmed section guides, article_type guide,
+  6 FAQ entries, 5 secondary keywords, and content_md length (20,127 chars) and md5 identical to the local SQL
+  file's content_md. `blog_cloud.py mark` filed the article and set the keyword to published.
+- Queue: 7 `guides` keywords still queued (next: how to track job changes on linkedin for sales), 13 published,
+  1 blocked, so no keyword refresh this run.
+- Daily cap: third page of 2 November by Bucharest time (intentsly-vs-11x at 00:16, best-subreddits at 07:18 UTC),
+  cap 7; weekly count under 45.
+- For Alex: (1) proof.md rows whose status reads "verified: say ..." (21% reply rate, ~1,000 leads/month per
+  agent, 2 to 4 meetings a week) are not accepted by the gate because it matches the word "verified" exactly;
+  if those numbers should be usable, change the status cell to "verified" and move the phrasing instruction into
+  the Claim column or corrections.md. (2) A first-hand number for how long your own tier-1 research takes per
+  account, or one real reply to a signal-based first line (anonymised), would let a future update of this guide
+  replace the hypothetical example with a real one. (3) Confirm whether `add_repo` should exist in this
+  environment; the repository is attached and pushes work without it.

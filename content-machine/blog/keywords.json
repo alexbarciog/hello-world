@@ -969,8 +969,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "personalize-cold-outreach-at-scale",
    "monthly_volume": null
   },
   {
