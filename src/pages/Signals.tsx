@@ -7,6 +7,8 @@ import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { toast } from "sonner";
 import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap, Activity, Loader2, XCircle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
+import { CreateAgentChooser } from "@/components/templates/CreateAgentChooser";
+import { applyTemplate, usePublicTemplates, type AgentTemplate } from "@/lib/agentTemplates";
 import { AddCardDialog } from "@/components/AddCardDialog";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import AgentSuggestionsPanel from "@/components/signals/AgentSuggestionsPanel";
@@ -328,6 +330,8 @@ export default function Signals() {
   const [agents, setAgents] = useState<SignalAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [showChooser, setShowChooser] = useState(false);
+  const { data: publicTemplates } = usePublicTemplates();
   const [editAgentId, setEditAgentId] = useState<string | null>(null);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showPreviousLaunches, setShowPreviousLaunches] = useState(false);
@@ -667,6 +671,28 @@ export default function Signals() {
 
   const activeCount = agents.filter((a) => a.status === "active").length;
 
+  // Nothing to choose until a template is published, except for admins, who
+  // get pointed to the template editor.
+  function openCreate() {
+    setEditAgentId(null);
+    if (isAdmin || publicTemplates?.length) setShowChooser(true);
+    else setShowCreate(true);
+  }
+
+  function handleTemplateApplied(template: AgentTemplate, result: Awaited<ReturnType<typeof applyTemplate>>) {
+    setShowChooser(false);
+    fetchAgents();
+    toast.success(`${template.business_type} agent created. Its campaign stays paused until you turn it on.`, {
+      action: { label: "Review setup", onClick: () => { setEditAgentId(result.agent_id); setShowCreate(true); } },
+    });
+    if (result.status !== "active") return;
+    // First run right away, like an agent made in the form.
+    supabase.functions.invoke("process-signal-agents", { body: { agent_id: result.agent_id } }).then(({ error }) => {
+      if (error) console.error("Immediate agent processing failed:", error);
+      else fetchAgents();
+    });
+  }
+
   if (showCreate) {
     return (
       <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
@@ -754,6 +780,13 @@ export default function Signals() {
 
 
       <HowItWorksModal open={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
+      <CreateAgentChooser
+        open={showChooser}
+        onOpenChange={setShowChooser}
+        onCustom={() => { setShowChooser(false); setEditAgentId(null); setShowCreate(true); }}
+        onApplied={handleTemplateApplied}
+      />
+
       <AddCardDialog open={showAddCard} onOpenChange={setShowAddCard} onConfirm={handleSetupCard} loading={addCardLoading} freeTrialMode={sub.freeTrialEnabled} freeTrialLimit={sub.freeTrialLimit} />
 
       {/* Active Agent Card */}
@@ -845,7 +878,7 @@ export default function Signals() {
           ))
         )}
         <button
-          onClick={() => { setEditAgentId(null); setShowCreate(true); }}
+          onClick={openCreate}
           disabled={agentLimitReached}
           className="w-full flex items-center justify-center gap-2 py-3.5 text-sm font-medium text-blue-500 bg-blue-50/50 border border-dashed border-blue-200 rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -938,7 +971,7 @@ export default function Signals() {
         </table>
         <div className="border-t border-dashed border-neutral-200 bg-neutral-50/40">
           <button
-            onClick={() => { setEditAgentId(null); setShowCreate(true); }}
+            onClick={openCreate}
             disabled={agentLimitReached}
             className="w-full flex items-center justify-center gap-2 py-3.5 text-[13px] font-medium text-[#3B82F6] hover:bg-blue-50/60 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
