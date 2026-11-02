@@ -47,3 +47,7 @@
   proof.md rows for 21% reply rate, 1,000 leads/agent and 2 to 4 meetings still read "verified: say ..." which
   the gate treats as not verified. (4) A sentence from you on whether you have ever found a customer through
   Reddit (which subreddit, what the post said) would give the reddit-x cluster its first first-hand story.
+- Live check (07:27 UTC, about five minutes after the push): direct fetches of the page URL and the site's own pages
+  asked for a permission nobody was there to grant, and no search result surfaced an intentsly.com link to follow,
+  so the rendered page and the sitemap are unconfirmed this run. The database row is published and the push to
+  main succeeded, which is what triggers the redeploy.
