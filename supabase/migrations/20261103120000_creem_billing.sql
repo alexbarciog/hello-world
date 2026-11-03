@@ -2,7 +2,7 @@
 -- subscription columns on profiles from Epic 1 as the source of billing state.
 -- Workspace members still inherit access from the workspace owner; see
 -- supabase/functions/_shared/account-access.ts.
--- Written to re-run safely (no DROP statements).
+-- Written to re-run safely.
 
 -- ── 1. Subscriptions ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.subscriptions (
