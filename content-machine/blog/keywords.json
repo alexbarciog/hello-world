@@ -1497,8 +1497,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-an-hr-consulting-firm",
    "monthly_volume": null
   },
   {

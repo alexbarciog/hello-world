@@ -1,42 +1,40 @@
-# Last run: 2026-11-02 (compare task; fired about 21:50 UTC, 23:50 Bucharest)
+# Last run: 2026-11-03 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 7e82d6d
+- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 09103f6
   (detached HEAD, re-attached to main before committing). `add_repo` was not available as a tool, as on previous
   runs. Supabase: the lowercase "supabase" connector reported a proxy tunnel error at session start; the "Supabase"
-  connector connected and was used. The only draft in blog/drafts/ besides this one
-  (outbound-sales-process-for-startups.md, guides) carries a `blocked:` line, so it was not resumed.
-- Keyword (published): intentsly vs heyreach (section compare, cluster intentsly-vs, comparison, commercial,
-  priority 2, difficulty medium).
-  "Intentsly vs HeyReach: Sending Engine or AI SDR?"
-  https://intentsly.com/compare/intentsly-vs-heyreach
-  Gate: first run failed only on the opening paragraph (97 words, max 90); one clause cut, second run printed
-  ready: true at 2,158 words, 8 H2, 6 FAQ, 8 internal links, 8 external links, no warnings. Title similarity
-  checked first (0.63 against the Apollo comparison, limit 0.75).
-- Angle: nothing ranks for the pairing; page one is HeyReach reviews by competing vendors (lemlist, Valley) and
-  directories, none mentioning Intentsly. This page takes HeyReach's side only from heyreach.io and help.heyreach.io
-  opened today, names the two deciding rows (who finds the lead: HeyReach imports the list you bring; who answers the
-  reply: HeyReach's unified inbox for a person, Intentsly's AI SDR), prints both tools' LinkedIn limits, lists six
-  places HeyReach is the better buy, and gives a switch list built on HeyReach's CSV export rule.
-- HeyReach sources opened: pricing page (Growth $79/sender monthly, $72 quarterly, $64 yearly; Agency $999;
-  Unlimited $2,999, fair-use 300 senders; 14-day trial no card), plans help article of 11 Sep 2026 (10+ senders $59;
-  Agency 50 $1,399; Early Stage program), homepage, connection-request limits article of 28 Aug 2026 (200/week,
-  up to 40/day, 25 recommended), sending-limits article, n8n replies post of 14 Jul 2026 (no native auto-reply
-  described), alternatives post updated 30 Oct 2026, leads screen article of 15 Aug 2026 (CSV export, default columns
-  only). The pricing page and help article differ slightly on quarterly/yearly figures ($72/$64 vs $71/$63); the page
-  quotes the pricing page. Third-party claims (Valley's session-cookie point, lemlist's stack cost) were not used.
-  Intentsly facts used: 14 demos in 14 days, zero manual outreach, 4x reply rate, 2 accounts, 30/30 with 15
-  recommended, languages, 7-day trial, /try-ai, no price, no email sending, no Reddit/X claims.
-- Database: the generated SQL ran unchanged on project uwwajlezgeurnvvrvdvb and returned slug intentsly-vs-heyreach,
-  status published, published_at 2026-11-02 21:56:33 UTC. No other statement was run. `blog_cloud.py mark` filed the
-  article and set the keyword to published.
-- Queue: 8 `compare` keywords remain queued (waalaxy, expandi, dripify, lemlist, la growth machine, artisan, aisdr,
-  salesrobot), so blog-keywords did not run. 11 compare pages published.
-- Daily cap: sixth page of 2 November by Bucharest time (cap 7); weekly count under 45.
-- For Alex: (1) confirm a price so comparison pages can quote Intentsly's next to the competitor's (the corrections
-  log still blocks it); (2) a customer example with one number from a team that moved off a sending tool like
-  HeyReach would beat reusing the 14-demos launch story; (3) the 21% reply-rate row in proof.md is still not accepted
-  by the gate as a plain number; (4) allowing intentsly.com for the fetch tool in this task's settings would let runs
-  confirm the sitemap directly.
-- Live check (22:01 UTC, push 1dc726c at 21:57): direct fetches worked this run. The page URL renders with the
-  H1, all seven content H2s, the comparison table and the six-question FAQ; https://intentsly.com/sitemap.xml lists
-  https://intentsly.com/compare/intentsly-vs-heyreach (11 compare URLs in total). Redeploy took under 4 minutes.
+  connector connected and was used. The only other draft in blog/drafts/ (outbound-sales-process-for-startups.md,
+  guides) carries a `blocked:` line, so it was not resumed.
+- Keyword (published): how to get clients for an hr consulting firm (section solutions, cluster find-customers,
+  landing, commercial, priority 3, difficulty low).
+  "How to Get Clients for an HR Consulting Firm: Six Signals"
+  https://intentsly.com/solutions/get-clients-for-an-hr-consulting-firm
+  Gate: first run failed on meta_description length (168, max 160) and the opening paragraph (95 words, max 90);
+  both trimmed, second run printed ready: true at 2,830 words, 7 H2, 6 FAQ, 13 internal links, 3 external links,
+  no warnings. Title similarity checked first (0.67 against the SaaS-company page, limit 0.75).
+- Angle: page one is tip lists from HR-software vendors (ClickUp, Kenjo, myhrtoolkit, eGrabber) and an insurer
+  (BizInsure), plus one outbound playbook (GTM Bud) whose numbers come from its own agency. None gives the LinkedIn
+  moment that shows a company is about to buy outside HR help, the search for it, or the message. This page names
+  six (first people-ops job post, founder asking for a handbook or policy, headcount or compliance threshold, layoff
+  or restructuring post, HR leader leaving or arriving, rapid hiring after a raise), gives the Posts-tab or Jobs-tab
+  search and the message for each, a week-one plan with a daily time budget and LinkedIn's sending caps, and says
+  when payroll and legal partners, former employers and local HR communities beat outreach.
+- Outside sources opened today and linked: FrankCrum "Accidental HR Manager" study, 27 Aug 2026, 1,000 respondents
+  (39% no dedicated HR, 72% felt unqualified in a high-stakes situation, 25% brought in outside HR help in the past
+  year); EEOC private-employer coverage page (15 or more employees; 20 for age discrimination); US DOL FMLA fact
+  sheet 28D (50 or more employees in 20 or more workweeks). GTM Bud's agency figures and the Mordor market-size
+  number were not used (not primary). No competitor is named.
+  Intentsly facts used: 14 demos in 14 days, zero manual outreach, 4x reply rate, ~1,000 leads a month per agent
+  and 2 to 4 meetings a week (attributed, October 2026), 2 accounts, 30/30 with 15 recommended, four languages,
+  /try-ai, no price, no email sending, no Reddit/X claims, job-post signal stated as not monitored.
+- Database: the generated SQL ran unchanged on project uwwajlezgeurnvvrvdvb and returned slug
+  get-clients-for-an-hr-consulting-firm, status published, published_at 2026-11-03 13:46:36 UTC. No other statement
+  was run. `blog_cloud.py mark` filed the article and set the keyword to published.
+- Queue: 11 `solutions` keywords remain queued (next: how to get clients for a software development company), so
+  blog-keywords did not run. 13 solutions pages published.
+- Daily cap: first page of 3 November by Bucharest time (cap 7); weekly count under 45.
+- For Alex: (1) a customer example from a consultancy or services firm, with one number, would replace the 14-demos
+  launch story that every solutions page now reuses; (2) confirm whether the Jobs-tab / hiring signal will be
+  monitored, since every solutions page has to say it is not; (3) a price is still blocked by the corrections log;
+  (4) the 21% reply-rate row in proof.md is still not usable as a plain number.
+- Live check: see the run report (fetched about 4 minutes after the push).
