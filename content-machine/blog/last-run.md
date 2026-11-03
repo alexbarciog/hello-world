@@ -37,4 +37,10 @@
   launch story that every solutions page now reuses; (2) confirm whether the Jobs-tab / hiring signal will be
   monitored, since every solutions page has to say it is not; (3) a price is still blocked by the corrections log;
   (4) the 21% reply-rate row in proof.md is still not usable as a plain number.
-- Live check: see the run report (fetched about 4 minutes after the push).
+- Live check (push f194b6a at 13:47 UTC): NOT CONFIRMED. Direct fetches of /sitemap.xml and the new page URL were
+  refused by the fetch tool this run (a permission request that nobody was there to answer), unlike the previous
+  run. The /solutions index, which the tool could open, still listed 12 cards without the HR page at 13:52, 14:01
+  and 14:06 UTC. The repository has no GitHub Actions workflows, so the deploy status is not visible from here.
+  The database row is published, so the page appears as soon as the next successful build runs; Alex should open
+  https://intentsly.com/solutions/get-clients-for-an-hr-consulting-firm and the sitemap to confirm, and check the
+  hosting build log if it is still missing.
