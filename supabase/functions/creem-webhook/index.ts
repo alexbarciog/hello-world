@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
   const { error: insertError } = await db
     .from("billing_events")
-    .insert({ event_id: event.id, event_type: event.eventType, payload: event });
+    .insert({ event_id: event.id, event_type: event.eventType, payload: event, raw_body: raw, signature: req.headers.get("creem-signature") });
   if (insertError) {
     if (insertError.code === "23505") return json({ received: true, duplicate: true });
     console.error("[creem-webhook] could not record event", insertError.message);

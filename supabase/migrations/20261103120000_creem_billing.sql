@@ -50,6 +50,9 @@ CREATE TABLE IF NOT EXISTS public.billing_events (
   event_id text NOT NULL UNIQUE,
   event_type text NOT NULL,
   payload jsonb NOT NULL,
+  -- Exactly what Creem sent, so a delivery can be replayed to test idempotency.
+  raw_body text,
+  signature text,
   received_at timestamptz NOT NULL DEFAULT now(),
   processed_at timestamptz,
   error text
