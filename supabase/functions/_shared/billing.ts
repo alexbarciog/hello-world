@@ -1,23 +1,51 @@
-// Billing rules shared by the Stripe edge functions and the agent/sender
-// gates. Pure functions only (no Deno or network imports) so the same code is
+// Billing rules shared by the Creem edge functions and the agent/sender gates.
+// Pure functions only (no Deno or network imports) so the same code is
 // unit-tested in src/test/billing.test.ts.
 
-export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
+/** public.subscriptions.status (Creem's statuses plus `expired`). */
+export type SubscriptionStatus =
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "paused"
+  | "scheduled_cancel"
+  | "canceled"
+  | "expired"
+  | "unpaid";
+
+/** Statuses that still unlock the product, until current_period_end. */
+export const PAYING_STATUSES: SubscriptionStatus[] = ["trialing", "active", "scheduled_cancel"];
 
 /**
- * - full:   trialing or active: everything on.
- * - legacy: checkout is switched off, so nobody can pay and nobody is locked for
- *           not paying. Callers apply the pre-Epic-1 checks.
+ * - full:   paying (see isPaying): everything on.
+ * - legacy: Creem is in test mode, so nobody can pay and nobody is locked for
+ *           not paying. Callers apply the pre-Creem checks.
  * - none:   read-only. Signals stop, the SDR is paused, one button to fix it.
  */
 export type Access = "full" | "legacy" | "none";
 
+/** A public.subscriptions row (the columns access depends on). */
 export interface BillingRow {
-  subscription_status: SubscriptionStatus | null;
-  trial_started_at?: string | null;
-  trial_ends_at?: string | null;
+  status: SubscriptionStatus | null;
   current_period_end?: string | null;
+  trial_end?: string | null;
+  cancel_at_period_end?: boolean | null;
   founding?: boolean | null;
+  updated_at?: string | null;
+}
+
+/** Same rule as the SQL function public.is_paying(). */
+export function isPaying(row: BillingRow | null | undefined, now: Date = new Date()): boolean {
+  if (!row?.status || !PAYING_STATUSES.includes(row.status) || !row.current_period_end) return false;
+  return new Date(row.current_period_end).getTime() > now.getTime();
+}
+
+/** The row that decides an account's access: a paying one if any, else the most recently updated. */
+export function currentSubscription<T extends BillingRow>(rows: T[] | null | undefined, now: Date = new Date()): T | null {
+  if (!rows?.length) return null;
+  const paying = rows.find((r) => isPaying(r, now));
+  if (paying) return paying;
+  return [...rows].sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))[0];
 }
 
 export function decideAccess(
@@ -25,108 +53,47 @@ export function decideAccess(
   now: Date = new Date(),
   opts: { paymentsEnabled?: boolean } = {},
 ): Access {
-  const paymentsEnabled = opts.paymentsEnabled ?? true;
-  switch (row?.subscription_status) {
-    case "trialing":
-    case "active":
-      return "full";
-    case "past_due":
-    case "canceled":
-      return "none";
-    default:
-      // Never subscribed (existing free accounts included). While checkout is
-      // off they keep the pre-Epic-1 rules; once it's on they start a trial.
-      return paymentsEnabled ? "none" : "legacy";
-  }
-}
-
-/**
- * Stripe subscription status → our status. Returns null for states that don't
- * change access on their own (an `incomplete` first payment resolves into
- * active or incomplete_expired within minutes).
- */
-export function mapStripeStatus(status: string): SubscriptionStatus | null {
-  switch (status) {
-    case "trialing":
-      return "trialing";
-    case "active":
-      return "active";
-    case "past_due":
-    case "unpaid":
-    case "paused":
-      return "past_due";
-    case "canceled":
-    case "incomplete_expired":
-      return "canceled";
-    default:
-      return null;
-  }
-}
-
-const toIso = (unixSeconds: number | null | undefined) =>
-  typeof unixSeconds === "number" && unixSeconds > 0 ? new Date(unixSeconds * 1000).toISOString() : null;
-
-// Minimal shape of the Stripe subscription object we read. Since API version
-// 2025-03-31 current_period_end lives on the subscription item.
-export interface StripeSubscriptionLike {
-  id: string;
-  status: string;
-  customer: string | { id: string };
-  trial_start?: number | null;
-  trial_end?: number | null;
-  current_period_end?: number | null;
-  items?: { data?: Array<{ current_period_end?: number | null; price?: { id?: string } | null }> };
-}
-
-/** Profile columns to write for a subscription (null status → leave status as is). */
-export function profileFieldsFromSubscription(sub: StripeSubscriptionLike) {
-  const item = sub.items?.data?.[0];
-  const fields: Record<string, unknown> = {
-    stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
-    subscription_id: sub.id,
-    trial_started_at: toIso(sub.trial_start),
-    trial_ends_at: toIso(sub.trial_end),
-    current_period_end: toIso(item?.current_period_end ?? sub.current_period_end),
-    plan_price_id: item?.price?.id ?? null,
-    billing_updated_at: new Date().toISOString(),
-  };
-  const status = mapStripeStatus(sub.status);
-  if (status) fields.subscription_status = status;
-  return fields;
-}
-
-export function trialCapReached(signalsDelivered: number, cap: number): boolean {
-  return cap > 0 && signalsDelivered >= cap;
+  if (isPaying(row, now)) return "full";
+  // Had a subscription that no longer pays (failed payment, canceled, ended).
+  if (row?.status) return "none";
+  // Never subscribed (existing free accounts included). While Creem is in test
+  // mode they keep the pre-Creem rules; once it's live they need a plan.
+  return (opts.paymentsEnabled ?? true) ? "none" : "legacy";
 }
 
 export type BillingBanner =
-  | { kind: "trial_ending"; endsAt: string; signalsLeft: number }
-  | { kind: "locked"; status: "past_due" | "canceled" | "no_subscription" }
+  | { kind: "trial"; endsAt: string }
+  | { kind: "ending"; endsAt: string }
+  | { kind: "payment_failed" }
+  | { kind: "locked"; status: "canceled" | "expired" | "paused" | "no_subscription" }
   | null;
 
-/**
- * Which banner the app shows. Trial: from day `bannerDay` on, or once the
- * signal cap is near (≤ 25% left).
- */
+/** Which banner the app shows at the top. */
 export function bannerFor(
   row: BillingRow | null | undefined,
-  opts: { now?: Date; bannerDay: number; signalCap: number; signalsDelivered: number; paymentsEnabled?: boolean },
+  opts: { now?: Date; paymentsEnabled?: boolean } = {},
 ): BillingBanner {
   const now = opts.now ?? new Date();
   const access = decideAccess(row, now, { paymentsEnabled: opts.paymentsEnabled });
-  if (access === "none") {
-    const s = row?.subscription_status;
-    if (s === "past_due" || s === "canceled") return { kind: "locked", status: s };
-    return { kind: "locked", status: "no_subscription" };
+  if (access === "legacy") return null;
+  if (access === "full") {
+    const end = row?.trial_end ?? row?.current_period_end;
+    if (row?.status === "trialing" && end) return { kind: "trial", endsAt: end };
+    if (row?.status === "scheduled_cancel" && row.current_period_end) return { kind: "ending", endsAt: row.current_period_end };
+    return null;
   }
-  if (row?.subscription_status === "trialing" && row.trial_ends_at) {
-    const signalsLeft = Math.max(opts.signalCap - opts.signalsDelivered, 0);
-    const started = row.trial_started_at ? new Date(row.trial_started_at) : null;
-    const trialDay = started ? Math.floor((now.getTime() - started.getTime()) / 86_400_000) + 1 : 0;
-    const nearCap = opts.signalCap > 0 && signalsLeft <= Math.ceil(opts.signalCap / 4);
-    if (trialDay >= opts.bannerDay || nearCap) {
-      return { kind: "trial_ending", endsAt: row.trial_ends_at, signalsLeft };
-    }
+  switch (row?.status) {
+    case "past_due":
+    case "unpaid":
+      return { kind: "payment_failed" };
+    case "canceled":
+    case "paused":
+      return { kind: "locked", status: row.status };
+    case undefined:
+    case null:
+      return { kind: "locked", status: "no_subscription" };
+    default:
+      // trialing/active/scheduled_cancel whose period ended without a renewal, or expired.
+      return { kind: "locked", status: "expired" };
   }
-  return null;
 }

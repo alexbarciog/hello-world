@@ -8,13 +8,13 @@ export const SETUP_PRICE_USD = 500;
 // where `if (!result.ok)` doesn't narrow a discriminated union.
 export interface RedirectResult {
   ok: boolean;
-  reason?: "payments_disabled" | "not_signed_in" | "no_customer" | "error";
+  reason?: "payments_disabled" | "not_signed_in" | "no_customer" | "not_billing_owner" | "error";
   message?: string;
 }
 
 const PAUSED_MESSAGE = `Checkout is paused for a moment. Email ${CONTACT_EMAIL} and Alex will set you up today.`;
 
-async function redirectVia(fn: "create-checkout" | "customer-portal"): Promise<RedirectResult> {
+async function redirectVia(fn: "creem-checkout" | "creem-portal"): Promise<RedirectResult> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return { ok: false, reason: "not_signed_in", message: "Please sign in first." };
 
@@ -29,6 +29,7 @@ async function redirectVia(fn: "create-checkout" | "customer-portal"): Promise<R
     }
     if (body?.code === "payments_disabled") return { ok: false, reason: "payments_disabled", message: PAUSED_MESSAGE };
     if (body?.code === "no_customer") return { ok: false, reason: "no_customer", message: body.error || "No billing account yet." };
+    if (body?.code === "not_billing_owner") return { ok: false, reason: "not_billing_owner", message: body.error || "Your workspace owner manages billing." };
     return { ok: false, reason: "error", message: body?.error || error.message };
   }
   if (!data?.url) return { ok: false, reason: "error", message: data?.error || "Something went wrong." };
@@ -36,8 +37,8 @@ async function redirectVia(fn: "create-checkout" | "customer-portal"): Promise<R
   return { ok: true };
 }
 
-/** Stripe Checkout for the $97/month plan (7-day trial for first-time accounts). */
-export const startCheckout = () => redirectVia("create-checkout");
+/** Creem checkout for the $97/month plan (7-day free trial). Opens the portal if already subscribed. */
+export const startCheckout = () => redirectVia("creem-checkout");
 
-/** Stripe customer portal: cancel, change card, invoices, reactivate. */
-export const openBillingPortal = () => redirectVia("customer-portal");
+/** Creem customer portal: cancel, change card, invoices. */
+export const openBillingPortal = () => redirectVia("creem-portal");

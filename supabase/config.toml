@@ -185,3 +185,12 @@ verify_jwt = false
 # Checks the caller itself (signed-in customer / admin role).
 [functions.setup-orders]
 verify_jwt = false
+
+[functions.creem-checkout]
+verify_jwt = true
+
+[functions.creem-portal]
+verify_jwt = true
+
+[functions.creem-webhook]
+verify_jwt = false

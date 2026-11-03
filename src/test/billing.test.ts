@@ -1,113 +1,114 @@
 import { describe, it, expect } from "vitest";
-import {
-  bannerFor,
-  decideAccess,
-  mapStripeStatus,
-  profileFieldsFromSubscription,
-  trialCapReached,
-} from "../../supabase/functions/_shared/billing";
+import { bannerFor, currentSubscription, decideAccess, isPaying } from "../../supabase/functions/_shared/billing";
+import { mapStripeStatus, profileFieldsFromSubscription } from "../../supabase/functions/_shared/stripe-billing";
 
 const NOW = new Date("2026-11-10T12:00:00Z");
 const days = (n: number) => new Date(NOW.getTime() + n * 86_400_000).toISOString();
 
+describe("isPaying (same rule as SQL is_paying)", () => {
+  it("counts trialing, active and scheduled_cancel until the period ends", () => {
+    for (const status of ["trialing", "active", "scheduled_cancel"] as const) {
+      expect(isPaying({ status, current_period_end: days(3) }, NOW)).toBe(true);
+      expect(isPaying({ status, current_period_end: days(-1) }, NOW)).toBe(false);
+    }
+  });
+
+  it("never counts failed, paused or ended subscriptions", () => {
+    for (const status of ["past_due", "unpaid", "paused", "canceled", "expired"] as const) {
+      expect(isPaying({ status, current_period_end: days(3) }, NOW)).toBe(false);
+    }
+  });
+
+  it("needs a period end", () => {
+    expect(isPaying({ status: "active", current_period_end: null }, NOW)).toBe(false);
+    expect(isPaying(null, NOW)).toBe(false);
+  });
+});
+
+describe("currentSubscription", () => {
+  it("prefers a paying row over a newer ended one", () => {
+    const rows = [
+      { status: "active" as const, current_period_end: days(10), updated_at: days(-5) },
+      { status: "canceled" as const, current_period_end: days(-20), updated_at: days(-1) },
+    ];
+    expect(currentSubscription(rows, NOW)?.status).toBe("active");
+  });
+
+  it("otherwise takes the most recently updated", () => {
+    const rows = [
+      { status: "canceled" as const, current_period_end: days(-40), updated_at: days(-30) },
+      { status: "past_due" as const, current_period_end: days(-1), updated_at: days(-1) },
+    ];
+    expect(currentSubscription(rows, NOW)?.status).toBe("past_due");
+    expect(currentSubscription([], NOW)).toBeNull();
+  });
+});
+
 describe("decideAccess", () => {
-  it("gives trialing and active accounts full access", () => {
-    expect(decideAccess({ subscription_status: "trialing" }, NOW)).toBe("full");
-    expect(decideAccess({ subscription_status: "active" }, NOW)).toBe("full");
+  it("gives paying accounts full access", () => {
+    expect(decideAccess({ status: "trialing", current_period_end: days(5) }, NOW)).toBe("full");
+    expect(decideAccess({ status: "scheduled_cancel", current_period_end: days(5) }, NOW)).toBe("full");
   });
 
-  it("locks past_due and canceled accounts", () => {
-    expect(decideAccess({ subscription_status: "past_due" }, NOW)).toBe("none");
-    expect(decideAccess({ subscription_status: "canceled" }, NOW)).toBe("none");
+  it("locks accounts whose subscription stopped paying, in test and live mode", () => {
+    expect(decideAccess({ status: "past_due", current_period_end: days(5) }, NOW)).toBe("none");
+    expect(decideAccess({ status: "canceled", current_period_end: days(5) }, NOW, { paymentsEnabled: false })).toBe("none");
+    expect(decideAccess({ status: "scheduled_cancel", current_period_end: days(-1) }, NOW)).toBe("none");
   });
 
-  it("treats accounts without a plan as never subscribed: locked until they start a trial", () => {
-    expect(decideAccess({ subscription_status: null }, NOW)).toBe("none");
+  it("locks accounts that never subscribed once Creem is live", () => {
     expect(decideAccess(null, NOW)).toBe("none");
   });
 
-  it("locks nobody for not paying while checkout is switched off", () => {
-    const off = { paymentsEnabled: false };
-    expect(decideAccess({ subscription_status: null }, NOW, off)).toBe("legacy");
-    expect(decideAccess(null, NOW, off)).toBe("legacy");
-    // ...but a failed payment or a cancellation still locks.
-    expect(decideAccess({ subscription_status: "past_due" }, NOW, off)).toBe("none");
-  });
-});
-
-describe("mapStripeStatus", () => {
-  it("maps Stripe statuses onto ours", () => {
-    expect(mapStripeStatus("trialing")).toBe("trialing");
-    expect(mapStripeStatus("active")).toBe("active");
-    expect(mapStripeStatus("past_due")).toBe("past_due");
-    expect(mapStripeStatus("unpaid")).toBe("past_due");
-    expect(mapStripeStatus("canceled")).toBe("canceled");
-    expect(mapStripeStatus("incomplete_expired")).toBe("canceled");
-    expect(mapStripeStatus("incomplete")).toBeNull();
-  });
-});
-
-describe("profileFieldsFromSubscription", () => {
-  it("reads the period end from the subscription item (current Stripe API)", () => {
-    const fields = profileFieldsFromSubscription({
-      id: "sub_1",
-      status: "trialing",
-      customer: "cus_1",
-      trial_start: 1_790_000_000,
-      trial_end: 1_790_604_800,
-      items: { data: [{ current_period_end: 1_790_604_800, price: { id: "price_97" } }] },
-    });
-    expect(fields).toMatchObject({
-      stripe_customer_id: "cus_1",
-      subscription_id: "sub_1",
-      subscription_status: "trialing",
-      plan_price_id: "price_97",
-    });
-    expect(fields.trial_ends_at).toBe(new Date(1_790_604_800 * 1000).toISOString());
-    expect(fields.current_period_end).toBe(new Date(1_790_604_800 * 1000).toISOString());
-  });
-
-  it("leaves the status alone for in-between Stripe states", () => {
-    const fields = profileFieldsFromSubscription({ id: "sub_1", status: "incomplete", customer: { id: "cus_1" } });
-    expect(fields).not.toHaveProperty("subscription_status");
-    expect(fields.stripe_customer_id).toBe("cus_1");
-  });
-});
-
-describe("trial cap", () => {
-  it("ends the trial at the cap, not before", () => {
-    expect(trialCapReached(19, 20)).toBe(false);
-    expect(trialCapReached(20, 20)).toBe(true);
-    expect(trialCapReached(50, 0)).toBe(false); // cap disabled
+  it("keeps the old rules for accounts without a subscription while Creem is in test mode", () => {
+    expect(decideAccess(null, NOW, { paymentsEnabled: false })).toBe("legacy");
   });
 });
 
 describe("bannerFor", () => {
-  const trial = (startedDaysAgo: number) => ({
-    subscription_status: "trialing" as const,
-    trial_started_at: days(-startedDaysAgo),
-    trial_ends_at: days(7 - startedDaysAgo),
-  });
-  const opts = { now: NOW, bannerDay: 5, signalCap: 20 };
-
-  it("is quiet early in the trial", () => {
-    expect(bannerFor(trial(1), { ...opts, signalsDelivered: 3 })).toBeNull();
+  it("shows the trial end date during the trial", () => {
+    expect(bannerFor({ status: "trialing", current_period_end: days(5), trial_end: days(5) }, { now: NOW })).toEqual({ kind: "trial", endsAt: days(5) });
   });
 
-  it("warns from day 5", () => {
-    expect(bannerFor(trial(4), { ...opts, signalsDelivered: 3 })).toMatchObject({ kind: "trial_ending", signalsLeft: 17 });
+  it("says when a cancelled subscription stops", () => {
+    expect(bannerFor({ status: "scheduled_cancel", current_period_end: days(9) }, { now: NOW })).toEqual({ kind: "ending", endsAt: days(9) });
   });
 
-  it("warns early when the signal cap is close", () => {
-    expect(bannerFor(trial(1), { ...opts, signalsDelivered: 16 })).toMatchObject({ kind: "trial_ending", signalsLeft: 4 });
+  it("is quiet for active subscriptions", () => {
+    expect(bannerFor({ status: "active", current_period_end: days(20) }, { now: NOW })).toBeNull();
   });
 
-  it("shows the lock reason when there is no access", () => {
-    expect(bannerFor({ subscription_status: "past_due" }, { ...opts, signalsDelivered: 0 })).toEqual({ kind: "locked", status: "past_due" });
-    expect(bannerFor({ subscription_status: null }, { ...opts, signalsDelivered: 0 })).toEqual({ kind: "locked", status: "no_subscription" });
+  it("asks for a new card when a payment failed", () => {
+    expect(bannerFor({ status: "past_due", current_period_end: days(2) }, { now: NOW })).toEqual({ kind: "payment_failed" });
+    expect(bannerFor({ status: "unpaid", current_period_end: days(-2) }, { now: NOW })).toEqual({ kind: "payment_failed" });
   });
 
-  it("shows nothing to accounts without a plan while checkout is off", () => {
-    expect(bannerFor({ subscription_status: null }, { ...opts, signalsDelivered: 0, paymentsEnabled: false })).toBeNull();
+  it("shows why the account is locked", () => {
+    expect(bannerFor({ status: "canceled", current_period_end: days(-2) }, { now: NOW })).toEqual({ kind: "locked", status: "canceled" });
+    expect(bannerFor({ status: "active", current_period_end: days(-2) }, { now: NOW })).toEqual({ kind: "locked", status: "expired" });
+    expect(bannerFor(null, { now: NOW })).toEqual({ kind: "locked", status: "no_subscription" });
+  });
+
+  it("shows nothing to accounts without a subscription while Creem is in test mode", () => {
+    expect(bannerFor(null, { now: NOW, paymentsEnabled: false })).toBeNull();
+  });
+});
+
+describe("Stripe profile sync (setup orders webhook)", () => {
+  it("maps Stripe statuses", () => {
+    expect(mapStripeStatus("unpaid")).toBe("past_due");
+    expect(mapStripeStatus("incomplete_expired")).toBe("canceled");
+    expect(mapStripeStatus("incomplete")).toBeNull();
+  });
+
+  it("reads the period end from the subscription item", () => {
+    const fields = profileFieldsFromSubscription({
+      id: "sub_1",
+      status: "trialing",
+      customer: "cus_1",
+      items: { data: [{ current_period_end: 1_790_604_800, price: { id: "price_97" } }] },
+    });
+    expect(fields).toMatchObject({ stripe_customer_id: "cus_1", subscription_status: "trialing", plan_price_id: "price_97" });
+    expect(fields.current_period_end).toBe(new Date(1_790_604_800 * 1000).toISOString());
   });
 });
