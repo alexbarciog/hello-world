@@ -1,33 +1,21 @@
-import { Play } from "lucide-react";
-
-// Alex records the 3-minute product demo; set its URL here (an .mp4 in
-// public/videos or a hosted file). Until then the poster shows a placeholder.
-export const DEMO_VIDEO_URL: string | null = null;
-export const DEMO_VIDEO_POSTER: string | null = null;
+// The product demo is a Loom recording (7.5 minutes). The homepage's
+// "Watch demo" button links to the same video.
+export const DEMO_VIDEO_ID = "3dc9408fe0da4b979cb5642333f4b500";
+export const DEMO_VIDEO_URL = `https://www.loom.com/share/${DEMO_VIDEO_ID}`;
+const DEMO_EMBED_URL = `https://www.loom.com/embed/${DEMO_VIDEO_ID}?hide_owner=true&hide_share=true&hideEmbedTopBar=true`;
 
 export function DemoVideo({ className = "" }: { className?: string }) {
-  if (DEMO_VIDEO_URL) {
-    return (
-      <video
-        className={`w-full rounded-2xl border border-black/5 bg-black ${className}`}
-        src={DEMO_VIDEO_URL}
-        poster={DEMO_VIDEO_POSTER ?? undefined}
-        controls
-        preload="metadata"
-        playsInline
-      />
-    );
-  }
   return (
-    <div
-      className={`relative w-full aspect-video rounded-2xl overflow-hidden border border-black/5 bg-gradient-to-br from-[#1A1A2E] to-[#2b2b4a] flex flex-col items-center justify-center text-white ${className}`}
-      aria-label="Product demo video (coming soon)"
-    >
-      <div className="w-14 h-14 rounded-full bg-white/15 flex items-center justify-center mb-3">
-        <Play className="w-6 h-6 fill-current" />
-      </div>
-      <p className="text-sm font-semibold">3-minute product demo</p>
-      <p className="text-xs text-white/60 mt-1">Coming soon</p>
+    // Loom's player shows this recording at about 16:10.
+    <div className={`relative w-full aspect-[16/10] rounded-2xl overflow-hidden border border-black/5 bg-black ${className}`}>
+      <iframe
+        src={DEMO_EMBED_URL}
+        title="Intentsly product demo"
+        className="absolute inset-0 h-full w-full"
+        allow="fullscreen; picture-in-picture"
+        allowFullScreen
+        loading="lazy"
+      />
     </div>
   );
 }
