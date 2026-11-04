@@ -110,6 +110,12 @@ export function ttqViewContent(name: string, id?: string) {
   });
 }
 
+export function ttqSubmitForm(name: string, id: string) {
+  ttqTrack("SubmitForm", {
+    contents: [{ content_id: id, content_type: "product", content_name: name }],
+  });
+}
+
 export function ttqCompleteRegistration() {
   ttqTrack("CompleteRegistration", {
     contents: [{ content_id: "signup", content_type: "product", content_name: "Intentsly Signup" }],
