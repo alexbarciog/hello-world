@@ -3,17 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
-
-const navLinks = [
-  { label: "How it Works", href: "#how-it-works" },
-  { label: "Use Cases", href: "#use-cases" },
-  { label: "Case Studies", href: "/case-studies" },
-  { label: "Blog", href: "/blog" },
-  { label: "Compare", href: "#comparison" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "Partners", href: "/partners" },
-  { label: "FAQ", href: "#faq" },
-];
+import { DesktopMegaMenu, MobileMenuLinks } from "@/components/MegaMenu";
 
 type NavbarProps = {
   showCampaigns?: boolean;
@@ -67,17 +57,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               <span className="text-lg font-bold tracking-tight text-[#0a0a0a]">Intentsly<span className="text-[#0a0a0a]">.</span></span>
             </a>
 
-            <div className="flex items-center gap-7">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-[15px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
+            <DesktopMegaMenu
+              gapClassName="gap-7"
+              itemClassName="text-[15px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] aria-expanded:text-[#0a0a0a] transition-colors"
+            />
 
             <div className="flex items-center gap-6">
               <button
@@ -105,17 +88,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               <span className="text-base font-bold tracking-tight text-[#0a0a0a]">Intentsly.</span>
             </a>
 
-            <div className="flex items-center gap-5">
-              {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  className="text-[13px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
+            <DesktopMegaMenu
+              gapClassName="gap-5"
+              itemClassName="text-[13px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] aria-expanded:text-[#0a0a0a] transition-colors"
+            />
 
             <div className="flex items-center gap-4">
               <button
@@ -167,7 +143,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             <>
               <motion.div key="overlay" className="fixed inset-0 z-[60] lg:hidden bg-black/30 backdrop-blur-sm"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onClick={close} />
-              <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[280px] rounded-[22px] bg-white border border-border/40 shadow-xl"
+              <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[300px] max-w-[calc(100vw-40px)] max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-contain rounded-[22px] bg-white border border-border/40 shadow-xl"
                 initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
                 transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}>
                 <div className="flex justify-end px-4 pt-4">
@@ -177,13 +153,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
                     </svg>
                   </button>
                 </div>
-                <div className="px-4 pb-1 flex flex-col">
-                  {navLinks.map((link) => (
-                    <a key={link.href} href={link.href} onClick={close}
-                      className="flex items-center text-sm font-medium py-3 text-[#0a0a0a]">
-                      {link.label}
-                    </a>
-                  ))}
+                <div className="px-4 pb-1">
+                  <MobileMenuLinks onNavigate={close} />
                 </div>
                 <div className="mx-4 h-px bg-border" />
                 <div className="px-4 pt-3 pb-5 flex flex-col gap-2">
@@ -228,15 +199,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           </a>
 
           <div className="flex items-center gap-6">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
-              >
-                {link.label}
-              </a>
-            ))}
+            <DesktopMegaMenu
+              gapClassName="gap-6"
+              itemClassName={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
+            />
             <button
               onClick={() => navigate("/login")}
               className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
@@ -279,15 +245,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           </a>
 
           <div className="flex items-center gap-4">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className={`text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
-              >
-                {link.label}
-              </a>
-            ))}
+            <DesktopMegaMenu
+              gapClassName="gap-4"
+              itemClassName={`text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
+            />
             <button
               onClick={() => navigate("/login")}
               className={`text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
@@ -354,7 +315,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             <motion.div key="overlay" className="fixed inset-0 z-[60] lg:hidden bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onClick={close} />
 
-            <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[280px] rounded-[22px] bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl"
+            <motion.div key="menu" className="fixed top-4 right-5 z-[70] lg:hidden origin-top-right w-[300px] max-w-[calc(100vw-40px)] max-h-[calc(100dvh-32px)] overflow-y-auto overscroll-contain rounded-[22px] bg-white/95 backdrop-blur-xl border border-border/40 shadow-xl"
               initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
               transition={{ type: "spring", stiffness: 380, damping: 30, mass: 0.8 }}>
               <div className="flex justify-end px-4 pt-4">
@@ -365,18 +326,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
                 </button>
               </div>
 
-              <div className="px-4 pb-1 flex flex-col">
-                {navLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={close}
-                    className="flex items-center text-sm font-medium hover:text-foreground transition-colors py-3 uppercase tracking-wider text-xs"
-                    style={{ color: "hsl(var(--aeline-dark))" }}
-                  >
-                    {link.label}
-                  </a>
-                ))}
+              <div className="px-4 pb-1">
+                <MobileMenuLinks onNavigate={close} />
               </div>
 
               <div className="mx-4 h-px bg-border" />
