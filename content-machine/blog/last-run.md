@@ -46,4 +46,13 @@
   (3) a price is still blocked by the corrections log; (4) the 21% reply-rate row in proof.md is still not usable as
   a plain number; (5) yesterday's HR consulting page was never confirmed live from here; please check it and the
   sitemap once.
-- Live check: see the section below, written after the push.
+- Git: the first `git push origin main` was rejected because the clone sat on a detached HEAD and the local `main`
+  branch still pointed at the old tip (as on the previous run); `main` was re-attached to the new commit and the
+  push went through at 14:05 UTC (cb3448f). This live-check note was added in a second commit touching only this file.
+- Live check (about 4 minutes after the push, 14:09 to 14:10 UTC): LIVE. The fetch tool again refused the direct
+  URLs for the new page and for /sitemap.xml (a permission request nobody was there to answer), but the homepage
+  and the /solutions index could be opened, and the index listed 14 cards with the new page first and yesterday's HR
+  consulting page second. Following the index link, the page loaded with the right title tag, H1, first H2 and the
+  full seven-row signals table. Sitemap: NOT CONFIRMED from here; Alex should open https://intentsly.com/sitemap.xml
+  once and check that /solutions/get-clients-for-a-software-development-company and
+  /solutions/get-clients-for-an-hr-consulting-firm are listed.
