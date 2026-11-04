@@ -1,12 +1,13 @@
 // Billing state for the signed-in user's account, read by useSubscription.
-// Subscription status comes from the database (kept in sync by stripe-webhook).
-// While checkout is switched off, accounts without a status still get the
-// pre-Epic-1 Stripe lookup for subscribed / has_card, so they behave as before.
+// Subscription status comes from public.subscriptions (kept in sync by
+// creem-webhook). While Creem is in test mode, accounts without a subscription
+// still get the pre-Creem Stripe lookup for subscribed / has_card, so they
+// behave as before.
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { bannerFor, decideAccess } from "../_shared/billing.ts";
-import { billingOwnerOf, countTrialSignals } from "../_shared/account-access.ts";
-import { PAYMENTS_ENABLED } from "../_shared/payments-policy.ts";
+import { bannerFor, currentSubscription, decideAccess } from "../_shared/billing.ts";
+import { billingOwnerOf, subscriptionsOf } from "../_shared/account-access.ts";
+import { BILLING_LIVE, CREEM_MODE } from "../_shared/creem.ts";
 import { corsHeaders, json, STRIPE_API_VERSION } from "../_shared/stripe.ts";
 
 const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
@@ -27,40 +28,29 @@ Deno.serve(async (req) => {
     const ownerId = await billingOwnerOf(db, user.id);
     const { data: owner } = await db
       .from("profiles")
-      .select("credits, free_trial_enabled, free_trial_limit, current_organization_id, subscription_status, trial_started_at, trial_ends_at, current_period_end, founding, plan_price_id")
+      .select("credits, free_trial_enabled, free_trial_limit")
       .eq("user_id", ownerId)
       .maybeSingle();
 
-    const { data: limits } = await db.from("plan_limits").select("key, value");
-    const limit = (key: string, fallback: number) => limits?.find((l: { key: string }) => l.key === key)?.value ?? fallback;
-    const signalCap = limit("trial_signal_cap", 20);
-
-    const access = decideAccess(owner, new Date(), { paymentsEnabled: PAYMENTS_ENABLED });
-    const signalsUsed = owner?.subscription_status === "trialing"
-      ? await countTrialSignals(db, ownerId, owner.current_organization_id, owner.trial_started_at)
-      : 0;
-    const banner = bannerFor(owner, {
-      bannerDay: limit("trial_banner_day", 5),
-      signalCap,
-      signalsDelivered: signalsUsed,
-      paymentsEnabled: PAYMENTS_ENABLED,
-    });
+    const now = new Date();
+    const sub = currentSubscription((await subscriptionsOf(db, [ownerId])).get(ownerId), now);
+    const access = decideAccess(sub, now, { paymentsEnabled: BILLING_LIVE });
+    const banner = bannerFor(sub, { now, paymentsEnabled: BILLING_LIVE });
 
     const { data: foundingLeft } = await db.rpc("founding_slots_remaining");
 
     const base = {
-      subscription_status: owner?.subscription_status ?? null,
+      subscription_status: sub?.status ?? null,
       access,
       banner,
       is_billing_owner: ownerId === user.id,
-      trial_started_at: owner?.trial_started_at ?? null,
-      trial_ends_at: owner?.trial_ends_at ?? null,
-      current_period_end: owner?.current_period_end ?? null,
-      founding: owner?.founding ?? false,
+      trial_ends_at: sub?.status === "trialing" ? sub.trial_end ?? sub.current_period_end ?? null : null,
+      current_period_end: sub?.current_period_end ?? null,
+      cancel_at_period_end: sub?.cancel_at_period_end ?? false,
+      founding: sub?.founding ?? false,
       founding_slots_left: typeof foundingLeft === "number" ? foundingLeft : 0,
-      signals_used: signalsUsed,
-      signal_cap: signalCap,
-      payments_enabled: PAYMENTS_ENABLED,
+      payments_enabled: BILLING_LIVE,
+      creem_mode: CREEM_MODE,
       credits: owner?.credits ?? 0,
       free_trial_enabled: owner?.free_trial_enabled ?? false,
       free_trial_limit: owner?.free_trial_limit ?? 1,
@@ -74,17 +64,13 @@ Deno.serve(async (req) => {
       }
       return json({ ...base, subscribed: true, had_subscription: true, has_card: true, subscription_end: base.current_period_end, product_id: null });
     }
-    if (access === "none" && (owner?.subscription_status === "past_due" || owner?.subscription_status === "canceled")) {
-      return json({ ...base, subscribed: false, had_subscription: true, has_card: false, subscription_end: null, product_id: null });
-    }
-
-    // Never subscribed, with checkout on: old Stripe history is ignored, so an
-    // earlier cancelled plan doesn't stop them from getting the trial.
+    // Had a Creem subscription that no longer pays, or (live) never subscribed:
+    // old Stripe history is ignored either way.
     if (access === "none") {
-      return json({ ...base, subscribed: false, had_subscription: false, has_card: false, subscription_end: null, product_id: null });
+      return json({ ...base, subscribed: false, had_subscription: Boolean(sub), has_card: false, subscription_end: null, product_id: null });
     }
 
-    // Checkout is off: look the payer up in Stripe as before.
+    // Creem is in test mode and this account has no subscription: look the payer up in Stripe as before.
     const legacy = await legacyStripeState(ownerId === user.id ? user.email : await emailOf(ownerId));
     return json({ ...base, ...legacy });
   } catch (error) {

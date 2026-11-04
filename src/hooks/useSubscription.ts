@@ -12,16 +12,16 @@ export interface SubscriptionState {
   freeTrialEnabled: boolean;
   freeTrialLimit: number;
   loading: boolean;
-  /** Can use the product: trialing/active, or (checkout off) passing the old checks. */
+  /** Can use the product: paying (is_paying), or (Creem in test mode) passing the old checks. */
   hasAccess: boolean;
-  /** past_due, canceled or never checked out: the app is read-only. */
+  /** Payment failed, canceled, expired or (live) never checked out: the app is read-only. */
   readOnly: boolean;
   status: SubscriptionStatus | null;
   access: Access | null;
   banner: BillingBanner;
   trialEndsAt: string | null;
-  signalsUsed: number;
-  signalCap: number;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
   founding: boolean;
   foundingSlotsLeft: number;
   isBillingOwner: boolean;
@@ -44,8 +44,8 @@ const INITIAL: SubscriptionState = {
   access: null,
   banner: null,
   trialEndsAt: null,
-  signalsUsed: 0,
-  signalCap: 0,
+  currentPeriodEnd: null,
+  cancelAtPeriodEnd: false,
   founding: false,
   foundingSlotsLeft: 0,
   isBillingOwner: true,
@@ -71,7 +71,7 @@ export function useSubscription() {
       const hasCard = data?.has_card ?? false;
       const freeTrialEnabled = data?.free_trial_enabled ?? false;
       const access: Access | null = data?.access ?? null;
-      // With checkout off, the pre-trial rule still applies: paid, or invite-only trial with a card.
+      // While Creem is in test mode, the pre-Creem rule still applies: paid, or invite-only trial with a card.
       const legacyAccess = subscribed || (freeTrialEnabled && hasCard);
       setState({
         subscribed,
@@ -89,8 +89,8 @@ export function useSubscription() {
         access,
         banner: data?.banner ?? null,
         trialEndsAt: data?.trial_ends_at ?? null,
-        signalsUsed: data?.signals_used ?? 0,
-        signalCap: data?.signal_cap ?? 0,
+        currentPeriodEnd: data?.current_period_end ?? null,
+        cancelAtPeriodEnd: data?.cancel_at_period_end ?? false,
         founding: data?.founding ?? false,
         foundingSlotsLeft: data?.founding_slots_left ?? 0,
         isBillingOwner: data?.is_billing_owner ?? true,
