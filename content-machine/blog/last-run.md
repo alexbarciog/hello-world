@@ -1,46 +1,49 @@
-# Last run: 2026-11-03 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
+# Last run: 2026-11-04 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 09103f6
-  (detached HEAD, re-attached to main before committing). `add_repo` was not available as a tool, as on previous
-  runs. Supabase: the lowercase "supabase" connector reported a proxy tunnel error at session start; the "Supabase"
-  connector connected and was used. The only other draft in blog/drafts/ (outbound-sales-process-for-startups.md,
-  guides) carries a `blocked:` line, so it was not resumed.
-- Keyword (published): how to get clients for an hr consulting firm (section solutions, cluster find-customers,
-  landing, commercial, priority 3, difficulty low).
-  "How to Get Clients for an HR Consulting Firm: Six Signals"
-  https://intentsly.com/solutions/get-clients-for-an-hr-consulting-firm
-  Gate: first run failed on meta_description length (168, max 160) and the opening paragraph (95 words, max 90);
-  both trimmed, second run printed ready: true at 2,830 words, 7 H2, 6 FAQ, 13 internal links, 3 external links,
-  no warnings. Title similarity checked first (0.67 against the SaaS-company page, limit 0.75).
-- Angle: page one is tip lists from HR-software vendors (ClickUp, Kenjo, myhrtoolkit, eGrabber) and an insurer
-  (BizInsure), plus one outbound playbook (GTM Bud) whose numbers come from its own agency. None gives the LinkedIn
-  moment that shows a company is about to buy outside HR help, the search for it, or the message. This page names
-  six (first people-ops job post, founder asking for a handbook or policy, headcount or compliance threshold, layoff
-  or restructuring post, HR leader leaving or arriving, rapid hiring after a raise), gives the Posts-tab or Jobs-tab
-  search and the message for each, a week-one plan with a daily time budget and LinkedIn's sending caps, and says
-  when payroll and legal partners, former employers and local HR communities beat outreach.
-- Outside sources opened today and linked: FrankCrum "Accidental HR Manager" study, 27 Aug 2026, 1,000 respondents
-  (39% no dedicated HR, 72% felt unqualified in a high-stakes situation, 25% brought in outside HR help in the past
-  year); EEOC private-employer coverage page (15 or more employees; 20 for age discrimination); US DOL FMLA fact
-  sheet 28D (50 or more employees in 20 or more workweeks). GTM Bud's agency figures and the Mordor market-size
-  number were not used (not primary). No competitor is named.
+- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 2476390.
+  `add_repo` was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector reported
+  a proxy tunnel error at session start; the "Supabase" connector connected and was used. The only other draft in
+  blog/drafts/ (outbound-sales-process-for-startups.md, guides) carries a `blocked:` line, so it was not resumed.
+- Keyword (published): how to get clients for a software development company (section solutions, cluster
+  find-customers, landing, commercial, priority 3, difficulty low).
+  "Get Clients for a Software Development Company: 7 Signals"
+  https://intentsly.com/solutions/get-clients-for-a-software-development-company
+  Title note: the "How to Get Clients for a Software Development Company: 7 Signals" form scored 0.74 against the
+  SaaS-company page title (limit 0.75) and was 64 characters, so the title drops "How to" (57 characters, similarity
+  0.66). The keyword still sits in the first sentence, an H2, the meta title and the meta description.
+  Gate: first run failed on meta_description length (170, max 160) and the opening paragraph (95 words, max 90);
+  both trimmed, the meta description needed one more trim (166), third run printed ready: true at 3,092 words, 7 H2,
+  6 FAQ, 14 internal links, 3 external links, no warnings. Over the page-write guide's 2,000-word suggestion, under
+  the gate's 4,000 cap, in line with the other solutions pages.
+- Angle: page one is channel round-ups and tip lists from vendors (WhoAPI, Tomba, Prospeo, DesignRush), an agency
+  landing page (Callbox) and a Product Hunt thread. Tomba and Prospeo give funnel maths without sources; none gives
+  the LinkedIn moment at which a company decides to pay an outside team instead of hiring, the search for it, or
+  the message. This page names seven (a direct ask for a recommendation, a raise with no engineers on the team page,
+  a technical co-founder search, a non-software company announcing a customer-facing build, a CTO leaving or a first
+  CTO arriving, a platform deadline or forced rebuild, an engineering vacancy that will not fill), gives the
+  Posts-tab or Jobs-tab search and the message for each, a week-one plan with a daily time budget and LinkedIn's
+  sending caps, and says when past clients, partners and directories beat outreach, using Clutch's own figures.
+- Outside sources opened today and linked: Clutch "Invest in Tech to Meet Customer Expectations" survey (405 US SMB
+  owners, Nov 2025, updated May 2026: 55% increasing tech spend, 5% cutting; web 39%, mobile 38%, software 37%
+  priorities; 26% limited internal technical expertise; 45% internal only, 21% hybrid); ManpowerGroup Global Talent
+  Shortage release, 26 Feb 2026 (39,063 employers, 41 countries: 72% hiring difficulty, engineering 19%, AI model and
+  application development 20%, Information sector 75%); Clutch developers service guide (most projects $10,000 to
+  $49,999, most firms $25 to $49 an hour). Not used: Tomba and Prospeo funnel numbers (unsourced or secondary),
+  DesignRush market sizes (unsourced), the Deloitte outsourcing survey (its redirect could not be opened this run).
+  No competitor is named as a competitor; Clutch and Upwork are named as directories.
   Intentsly facts used: 14 demos in 14 days, zero manual outreach, 4x reply rate, ~1,000 leads a month per agent
   and 2 to 4 meetings a week (attributed, October 2026), 2 accounts, 30/30 with 15 recommended, four languages,
   /try-ai, no price, no email sending, no Reddit/X claims, job-post signal stated as not monitored.
 - Database: the generated SQL ran unchanged on project uwwajlezgeurnvvrvdvb and returned slug
-  get-clients-for-an-hr-consulting-firm, status published, published_at 2026-11-03 13:46:36 UTC. No other statement
-  was run. `blog_cloud.py mark` filed the article and set the keyword to published.
-- Queue: 11 `solutions` keywords remain queued (next: how to get clients for a software development company), so
-  blog-keywords did not run. 13 solutions pages published.
-- Daily cap: first page of 3 November by Bucharest time (cap 7); weekly count under 45.
-- For Alex: (1) a customer example from a consultancy or services firm, with one number, would replace the 14-demos
-  launch story that every solutions page now reuses; (2) confirm whether the Jobs-tab / hiring signal will be
-  monitored, since every solutions page has to say it is not; (3) a price is still blocked by the corrections log;
-  (4) the 21% reply-rate row in proof.md is still not usable as a plain number.
-- Live check (push f194b6a at 13:47 UTC): NOT CONFIRMED. Direct fetches of /sitemap.xml and the new page URL were
-  refused by the fetch tool this run (a permission request that nobody was there to answer), unlike the previous
-  run. The /solutions index, which the tool could open, still listed 12 cards without the HR page at 13:52, 14:01
-  and 14:06 UTC. The repository has no GitHub Actions workflows, so the deploy status is not visible from here.
-  The database row is published, so the page appears as soon as the next successful build runs; Alex should open
-  https://intentsly.com/solutions/get-clients-for-an-hr-consulting-firm and the sitemap to confirm, and check the
-  hosting build log if it is still missing.
+  get-clients-for-a-software-development-company, status published, published_at 2026-11-04 13:59:16 UTC. No other
+  statement was run. `blog_cloud.py mark` filed the article and set the keyword to published.
+- Queue: 10 `solutions` keywords remain queued (next: how to find clients as a fractional cmo), so blog-keywords did
+  not run. 14 solutions pages published.
+- Daily cap: first page of 4 November by Bucharest time (cap 7); weekly count under 45.
+- For Alex: (1) a customer example from a development shop or an agency, with one number, would replace the
+  14-demos launch story that every solutions page now reuses; (2) confirm whether the Jobs-tab / hiring signal will
+  be monitored, since every solutions page has to say it is not, and it is the highest-volume signal for dev shops;
+  (3) a price is still blocked by the corrections log; (4) the 21% reply-rate row in proof.md is still not usable as
+  a plain number; (5) yesterday's HR consulting page was never confirmed live from here; please check it and the
+  sitemap once.
+- Live check: see the section below, written after the push.
