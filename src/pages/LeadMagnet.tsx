@@ -173,22 +173,24 @@ export default function LeadMagnet() {
                         </p>
                       </>
                     )}
-                    <a
-                      href={done.assetUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-cta group w-full justify-center mt-6"
-                    >
-                      Open it now
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+                    <div className="mt-6">
+                      <a
+                        href={done.assetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-cta group justify-center"
+                      >
+                        Open it now
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
                     <button
                       onClick={() => {
                         setDone(null);
                         setEmail("");
                         setName("");
                       }}
-                      className="mt-6 text-sm text-[#C8FF00] hover:text-white font-semibold transition-colors"
+                      className="block mx-auto mt-6 text-sm text-[#C8FF00] hover:text-white font-semibold transition-colors"
                     >
                       Send to another email →
                     </button>
