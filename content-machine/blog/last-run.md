@@ -1,4 +1,58 @@
-# Last run: 2026-11-04 (compare task; fired about 22:00 UTC, 00:00 Bucharest on 5 November)
+# Last run: 2026-11-04 (learn task; fired about 19:10 UTC, 21:10 Bucharest)
+
+- Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 312cb16.
+  `add_repo` was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector reported
+  a proxy tunnel error at session start; the "Supabase" connector connected and was used. The only other draft in
+  blog/drafts/ (outbound-sales-process-for-startups.md, guides) carries a `blocked:` line, so it was not resumed.
+- Keyword (published): what is signal-based selling (section learn, cluster fundamentals, lesson, informational,
+  priority 2, difficulty medium).
+  "What Is Signal-Based Selling? Definition, Test and Routine"
+  https://intentsly.com/learn/what-is-signal-based-selling
+  Gate: ready: true on the first run, 2,043 words, 7 H2, 6 FAQ, 11 internal links, 4 external links, no warnings.
+  Over the page-write guide's 1,800-word suggestion for a lesson, under the gate's 4,000 cap; the extra length is
+  the four-way comparison table and the FAQ, which answer the "vs" and "examples" queries the secondary keywords
+  target. Title similarity to published titles peaks at 0.65 (limit 0.75).
+- Angle: page one is entirely vendor pages (Cognism, Abmatic, Autobound, Komo, Amplemarket, Findymail, Cleverly,
+  Dreamdata, Common Room), each with its own definition, a list of signal types, a workflow and its product. None
+  gives a test for telling a signal from activity, none separates the method from the data products sold under the
+  name, and the reply-rate and close-rate multiples they quote (2-4x, 3-5x, 5-10x, 15-25% vs 3-5%, 33-41% vs
+  18-25%) disagree with each other and trace to vendor reports, a LinkedIn post or nothing. This lesson gives the
+  one-sentence definition, a two-question test, the four-way "vs" table (intent data, trigger events, account-based
+  selling), says plainly that the quoted multiples have no primary source, gives the hand-run LinkedIn routine with
+  search strings, and reports the 14-demos story as the only first-hand number, labelled as one company, two weeks.
+- Outside sources opened today and linked: Gartner press release 9 March 2026 (646 B2B buyers, Aug to Sep 2025,
+  67% prefer a rep-free experience, "fewer early interactions"); Ehrenberg-Bass Institute summary of the LinkedIn
+  B2B Institute study by John Dawes (up to 95% of businesses not in the market at any one time, five-year switching
+  cycles); Common Room, 28 August 2026 (page view is activity, not a signal); Abmatic, 29 April 2026 (reply-rate
+  lift attributed to "practitioner reports"). MadKudu's help page now redirects to help.hginsights.com and could not
+  be opened (fetch permission), so it is not cited. No competitor is described as a competitor; vendor pages are
+  cited only for what they say about the term.
+  Intentsly facts used: 14 qualified demos in 14 days, zero manual outreach, reply rate 4x previous cold campaigns,
+  most leads from signals caught in real time (story + /case-studies); product.md signal types (keyword posts, post
+  engagement, scoring against the profile; LinkedIn only); free Buying Signal Playbook (12 to chase, 8 to ignore).
+  No price, no Reddit/X claims, no 21% reply-rate figure, nothing from the NOT LIVE epics.
+- Database: the generated SQL ran unchanged on project uwwajlezgeurnvvrvdvb and returned slug
+  what-is-signal-based-selling, status published, published_at 2026-11-03 19:28:05 UTC. That timestamp is older
+  than this run: a row with this slug already existed, so yesterday's learn run (3 November, about 19:28 UTC)
+  inserted a version of this page into the database but never marked it, committed it or wrote a last-run entry.
+  The upsert replaced that content with today's version and kept the original published_at (the SQL's coalesce).
+  No other statement was run. `blog_cloud.py mark` filed the article and set the keyword to published.
+- Queue: 6 `learn` keywords remain queued (next: what is a sales trigger), so blog-keywords did not run.
+  14 learn lessons published.
+- Daily cap: second page of 4 November by Bucharest time (cap 7); weekly count under 45.
+- For Alex: (1) yesterday's learn run left a database row without a commit; if other sections show the same
+  pattern (a live page with no file in blog/published/), the keyword will be picked again and the page rewritten,
+  which is what happened here; (2) "what is a sales trigger" is next in the queue and the trigger-event lesson
+  already defines the term in its vs table, so consider merging or dropping that keyword; (3) a customer example
+  of signal-based selling with a before/after reply rate would replace the launch story that every lesson reuses;
+  (4) a price is still blocked by the corrections log; (5) the 21% reply-rate row is still unused pending a
+  phrasing you are happy with.
+- Live check: see the note below once it has run.
+
+---
+
+# Previous run (kept because the two runs pushed within the same hour)
+
 
 - Setup: no PAUSE file. Repository already cloned and in scope; `git pull origin main` was up to date at 312cb16.
   `add_repo` was not available as a tool, as on previous runs. Supabase: the lowercase "supabase" connector reported

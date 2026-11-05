@@ -1089,8 +1089,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-signal-based-selling",
    "monthly_volume": null
   },
   {
