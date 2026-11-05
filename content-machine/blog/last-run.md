@@ -52,4 +52,10 @@
   log; (4) the 21% reply-rate row is still unused pending a phrasing you are happy with; (5) the next learn run
   will add 8 to 12 new learn keywords because the queue is at 5; if you want particular terms covered, add them
   to blog/keywords.json before it fires.
-- Live check: see the note appended below after the push.
+- Live check (19:28 UTC, four minutes after the push): NOT PERFORMED. WebFetch refused both
+  https://intentsly.com/sitemap.xml and https://intentsly.com/learn/what-is-a-sales-trigger with a permission
+  prompt that nobody was there to answer (PROVENANCE_REQUIRED), twice. No other fetch method was used, per the
+  web-fetch rules. The repository has no GitHub Actions workflow, so the deploy could not be confirmed from the
+  API either. What is confirmed: the database row is published (19:23:20 UTC) and main is at a850c22. Alex:
+  open the two URLs above once; if the lesson is live, nothing else is needed. If a future run can fetch
+  intentsly.com, it should check this URL as well as its own.
