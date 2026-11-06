@@ -1641,8 +1641,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-as-a-fractional-cmo",
    "monthly_volume": null
   },
   {
