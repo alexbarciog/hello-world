@@ -56,4 +56,11 @@
   (3) a price is still blocked by the corrections log; (4) the 21% reply-rate row is still unused pending a
   phrasing you are happy with; (5) the live check for yesterday's learn page (what-is-a-sales-trigger) was never
   performed; see below for whether this run could fetch intentsly.com.
-- Live check: see the entry appended after the push.
+- Live check (13:58 UTC, four minutes after the push at 13:53:46 UTC): NOT PERFORMED. WebFetch refused both
+  https://intentsly.com/sitemap.xml and https://intentsly.com/solutions/find-clients-as-a-fractional-cmo with a
+  permission prompt that nobody was there to answer (PROVENANCE_REQUIRED), the same as on 5 November. No other
+  fetch method was used, per the web-fetch rules. What is confirmed: the database row is published (published_at
+  2026-11-05 13:53:20 UTC, content replaced today) and main is at 2f99c1f. Alex: open the two URLs above once,
+  plus https://intentsly.com/learn/what-is-a-sales-trigger from yesterday. If a run is ever to verify the live
+  page, the scheduled task's prompt needs to allow intentsly.com fetches without a prompt, or the check needs a
+  different route (a GitHub Actions deploy workflow the run can read, say).
