@@ -47,3 +47,14 @@
   with; (5) the live checks for 5 and 6 November (what-is-a-sales-trigger, find-clients-as-a-fractional-cmo)
   were never performed; see below for today's.
 - Live check: see the "(live check)" commit that follows this one.
+- Live check (19:32 UTC, four minutes after the push at 19:28:21 UTC): NOT PERFORMED. WebFetch refused both
+  https://intentsly.com/sitemap.xml and https://intentsly.com/learn/what-is-account-based-prospecting with a
+  permission prompt nobody was there to answer (PROVENANCE_REQUIRED), as on 5 and 6 November. No other fetch
+  method was used. Confirmed: the database row is status published (published_at 2026-11-06 19:24 UTC, content
+  replaced today) and origin/main is at a174041. The repository has no GitHub Actions workflow to read (it deploys
+  through Cloudflare, wrangler.jsonc), so there is no second route to confirm the deploy from a run.
+- ROOT CAUSE of the missing commits found: the clone in this environment sits on a detached HEAD (local branch
+  `main` is still at c6d6cc4, two days behind), so `git push origin main` is rejected as non-fast-forward even
+  after a successful commit. Today the commit was pushed with `git push origin HEAD:main` and local `main` was
+  reset to the pushed commit, so the next run that does `git pull origin main` should be on the branch. If a
+  future run still reports a rejected push, run `git push origin HEAD:main`.
