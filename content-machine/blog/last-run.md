@@ -42,5 +42,10 @@
   corrections log; (3) the 21% reply-rate row is still unused pending a phrasing you are happy with; (4) the
   stray live page /solutions/find-clients-for-your-agency noted on 8 November (solutions run) still has no file
   in this repository; nothing was done to it.
-- Live check: see the follow-up commit "learn: publish what-is-firmographic-data (live check)" if present; the
-  check runs about four minutes after the push.
+- Live check (19:28 UTC, five minutes after the push at 19:23:32 UTC): PAGE LIVE. WebFetch refused the direct
+  sitemap and page URLs with the same PROVENANCE_REQUIRED prompt as on 5 to 8 November, so the check went
+  through pages WebFetch had already returned: a search returned https://intentsly.com/, the homepage linked
+  /learn, the Learn index listed the page as its first card (17 cards), and the page itself then loaded: H1
+  "What Is Firmographic Data? Definition, Examples, Limits", the attribute table with four columns, 5 FAQ
+  entries. The sitemap could not be checked by any allowed route; the index listing is the evidence that the
+  site reads the new row.
