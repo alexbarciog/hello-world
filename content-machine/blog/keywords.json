@@ -1677,8 +1677,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-video-production-company",
    "monthly_volume": null
   },
   {
