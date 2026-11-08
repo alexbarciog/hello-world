@@ -54,4 +54,19 @@
   corrections log; (3) the 21% reply-rate row is still unused pending a phrasing you are happy with; (4) the
   three earlier insert-without-commit rows (3, 5, 6 November) and yesterday's are now all reconciled or
   replaced, but if a future run ever reports a rejected push again, the fix is `git push origin HEAD:main`.
-- Live check: see the "(live check)" commit that follows this one.
+- Live check (13:55 UTC, five minutes after the push at 13:50:12 UTC): PAGE LIVE. WebFetch refused the direct
+  sitemap and page URLs with the same PROVENANCE_REQUIRED prompt as on 5, 6 and 7 November, so the check went
+  through pages WebFetch had already returned: a search returned https://intentsly.com/, the homepage linked
+  /solutions, the solutions index listed the page as its first card with today's title ("8 Signals", not
+  yesterday's "Launch Week"), and the page itself then loaded: H1 and opening sentence match this run's draft,
+  the Signal | Where | What it means | What to do table is present, 5 FAQ entries, 17 solutions cards on the
+  index. The sitemap could not be checked by any allowed route; the index listing is the evidence that the
+  site reads the updated row.
+- ALSO SEEN on the live solutions index: a card "How to Find Clients for Your Agency: 6 Channels That Work" at
+  /solutions/find-clients-for-your-agency, which has no keyword, brief, draft or published file in this
+  repository. It looks like another insert-without-commit from an earlier run (or a page from outside this
+  pipeline). Nothing was done to it; Alex should decide whether it stays.
+- Note on this commit's author: the publish commit was made as "Alex Barciog <alex@intentsly.com>", an
+  address assumed from config/blog.json's author field rather than one on record; earlier runs committed as
+  "Claude <noreply@anthropic.com>" and this live-check commit does too. If that address is wrong, the commit
+  author on 3518406 should be treated as the automation, not Alex.
