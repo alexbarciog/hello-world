@@ -57,3 +57,12 @@
   blocked by the corrections log; (5) the 21% reply-rate row is still unused pending a phrasing you are happy
   with; (6) the stray live page /solutions/find-clients-for-your-agency noted on 8 November still has no file in
   this repository.
+- Push: the first `git push origin main` was rejected as non-fast-forward because the working copy was on a
+  detached HEAD and the local `main` branch was ten commits behind; `git push origin HEAD:main` fast-forwarded
+  the remote from bfaa491 to eb88f89 at 07:13 UTC, and local main was then reset to that commit. Nothing else
+  was changed.
+- Live check (07:17 UTC, about four minutes after the push): PAGE LIVE. WebFetch refused the direct page URL with
+  the same PROVENANCE_REQUIRED prompt as on 5 to 8 November, so the check went homepage -> /blog -> page: the
+  Blog index lists the article as its first card (dated November 5, 2026, 13-minute read, because the database
+  kept the 5 November published_at), and the page itself loads with the H1 "X (Twitter) Buying Signals for B2B:
+  8 Worth a Reply", the eight-row table with the "Paste into X search" column and the six FAQ entries.
