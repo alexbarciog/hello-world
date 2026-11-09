@@ -224,8 +224,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "x-twitter-buying-signals-for-b2b",
    "monthly_volume": null,
    "section": "blog"
   },
