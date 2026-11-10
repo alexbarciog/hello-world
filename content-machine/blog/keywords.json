@@ -1689,8 +1689,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-as-a-b2b-copywriter",
    "monthly_volume": null
   },
   {
