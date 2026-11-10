@@ -55,3 +55,13 @@
   gartner.com and gong.io cannot be fetched by the content tasks, so Gartner and Gong figures can only be
   used when a fetchable Gartner-owned page (gcom.pdo.aws.gartner.com worked today) carries them.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin main` fast-forwarded the remote from 03f8c8c to f1885d2 at 19:31 UTC, committed as
+  "Claude <noreply@anthropic.com>".
+- Live check (19:36 to 19:38 UTC, about 5 minutes after the push): PAGE LIVE. WebFetch refused the direct page
+  URL and the sitemap with the same PROVENANCE_REQUIRED prompt as on 5 to 10 November, so the check went
+  homepage -> /learn -> page. The Learn index lists the article as its first card of 18 ("What Is a Buying
+  Committee in B2B Sales? Roles and Size", dated November 9, 2026, because the database kept yesterday's
+  published_at), and the page itself loads with that H1, the bold definition first, six FAQ entries, "11 min
+  read", "Published November 9, 2026" and "updated November 10, 2026". SITEMAP NOT CHECKED:
+  https://intentsly.com/sitemap.xml could not be fetched from this session (provenance block); the page is
+  reachable from the index, which is what the sitemap is built from.
