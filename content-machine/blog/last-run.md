@@ -60,3 +60,14 @@
   in this repository; (7) the "reddit.com" domain cannot be fetched by the content tasks, so Reddit threads
   can only be read through mirrors and are not linked.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin main` fast-forwarded the remote from aaf7c45 to d8a3daa at 13:55 UTC. Note: that commit was
+  authored as "Alex Barciog <noreply@intentsly.com>" by mistake (previous runs commit as "Claude
+  <noreply@anthropic.com>"); it is already pushed, so it was left as is. This live-check commit uses the usual identity.
+- Live check (14:13 to 14:15 UTC, about 18 minutes after the push; at 4 minutes the /solutions index still showed the
+  old 17 cards): PAGE LIVE. WebFetch refused the direct page URL, the sitemap and robots.txt with the same
+  PROVENANCE_REQUIRED prompt as on 5 to 9 November, so the check went homepage -> /solutions -> page: the Solutions
+  index lists the article as its first card ("How to Get Clients as a B2B Copywriter: 8 Buying Signals", dated
+  November 9, 2026, because the database kept yesterday's published_at), and the page itself loads with that H1,
+  the eight-row signal table, six FAQ entries, "14 min read", and "updated November 10, 2026". SITEMAP NOT
+  CHECKED: https://intentsly.com/sitemap.xml could not be fetched from this session (provenance block); the page is
+  reachable from the index, which is what the sitemap is built from.
