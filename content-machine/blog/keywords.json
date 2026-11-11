@@ -1773,8 +1773,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-first-party-intent-data",
    "monthly_volume": null
   },
   {
