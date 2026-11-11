@@ -53,3 +53,16 @@
   reply-rate row is still unused pending a phrasing you are happy with; (6) the stray live page
   /solutions/find-clients-for-your-agency noted on 8 November still has no file in this repository.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin main` fast-forwarded the remote from 5e39abf to c47b930 at 13:54 UTC, committed as
+  "Claude <noreply@anthropic.com>".
+- Live check: PAGE LIVE, but slower than previous runs. WebFetch refused the direct page URL, the homepage and
+  the sitemap with the PROVENANCE_REQUIRED prompt seen on 5 to 10 November; a site-restricted web search
+  surfaced the homepage, and the check went homepage -> /solutions -> page. At 13:59 and again at 14:19 UTC
+  (5 and 25 minutes after the push) the Solutions index still showed the old 18 cards. At 14:36 UTC (about
+  42 minutes after the push) it listed the new article as the first of 19 cards ("How to Find Lead
+  Generation Agency Clients: 6 Signals", November 11, 2026), and the page itself loads with that H1, the
+  answer paragraph first, "12 min read", "November 11, 2026" and six FAQ entries. SITEMAP NOT CHECKED:
+  https://intentsly.com/sitemap.xml could not be fetched from this session (provenance block); the page is
+  reachable from the index, which is what the sitemap is built from. The repository has no GitHub Actions
+  workflow runs, so the redeploy delay could not be inspected from here; worth a look at the Cloudflare
+  deploy log if it keeps taking 30+ minutes.
