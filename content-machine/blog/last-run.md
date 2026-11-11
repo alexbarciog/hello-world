@@ -52,3 +52,14 @@
   the corrections log; (5) the 21% reply-rate row is still unused pending a phrasing you are happy
   with.
 - Push and live check: see the end of this file (appended after the push).
+- Push: the first `git push origin main` was rejected because the working copy was on a detached HEAD
+  and the local `main` ref was stale (5e39abf); `git push origin HEAD:refs/heads/main` fast-forwarded
+  the remote from ee57e05 to bd0f1bf at 19:28 UTC, and local `main` was realigned to HEAD afterwards.
+- Live check: PAGE LIVE. WebFetch refused the direct page URL and the sitemap with the
+  PROVENANCE_REQUIRED prompt seen on 5 to 11 November; the check went homepage -> /learn -> page. At
+  19:32 UTC (4 minutes after the push) the Learn index still showed the old 18 cards. At 19:53 UTC
+  (about 25 minutes after the push) it listed the new lesson first of 19 cards ("What Is First-Party
+  Intent Data? Meaning, Sources, Limits", November 11, 2026), and the page loads with that H1, the
+  definition sentence first, "9 min read", "November 11, 2026" and five FAQ entries. SITEMAP NOT
+  CHECKED: https://intentsly.com/sitemap.xml could not be fetched from this session (provenance
+  block); the page is reachable from the index, which is what the sitemap is built from.
