@@ -1449,8 +1449,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-a-lead-generation-agency",
    "monthly_volume": null
   },
   {
