@@ -54,3 +54,16 @@
   (4) a price is still blocked by the corrections log; (5) the 21% reply-rate row is still unused
   pending a phrasing you are happy with.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin HEAD:refs/heads/main` fast-forwarded the remote from e9baf31 to 583ed09 at
+  22:00 UTC; local `main` realigned to HEAD afterwards.
+- Live check: PAGE LIVE. WebFetch refused the direct page URL and the sitemap with the
+  PROVENANCE_REQUIRED prompt seen on 5 to 11 November; the check went homepage -> /compare -> page.
+  At 22:05 UTC (about 5 minutes after the push) the Compare index listed the new page first of 13
+  cards ("Intentsly vs Expandi", November 11, 2026), and the page loads with that H1, "11 min read",
+  "November 11, 2026", the 12-row at-a-glance table and six FAQ entries. SITEMAP NOT CHECKED:
+  https://intentsly.com/sitemap.xml could not be fetched from this session (provenance block); the
+  page is reachable from the index, which is what the sitemap is built from.
+- Noticed on the index, not fixed (website code is out of scope for this task): the 12 "Intentsly vs"
+  cards on /compare render their titles as "Intentsly vs Intentsly vs <Competitor>", which looks
+  like the index template prefixing "Intentsly vs" to a title that already starts with it. The
+  Trigify card ("Trigify vs Intentsly") renders normally. Worth a look in the /compare index template.
