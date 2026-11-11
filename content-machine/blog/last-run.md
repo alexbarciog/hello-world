@@ -1,65 +1,56 @@
-# Last run: 2026-11-11 (learn task; fired about 19:15 UTC, 21:15 Bucharest)
+# Last run: 2026-11-11 (compare task; fired about 21:50 UTC, 23:50 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main` (`add_repo` not available as a
-  tool, as on previous runs); `git pull origin main` already up to date at ee57e05. Supabase: the
+  tool, as on previous runs); `git pull origin main` already up to date at e9baf31. Supabase: the
   lowercase "supabase" connector again reported a proxy tunnel error at session start; the "Supabase"
   connector connected and was used. Web search worked. The only draft in blog/drafts/
   (outbound-sales-process-for-startups.md, guides) carries a `blocked:` line, so it was not resumed.
-- Pre-write check: a read of public.blog_posts for the slug (and any slug containing "first-party")
-  returned no row, so nothing was overwritten.
-- Keyword (published): what is first-party intent data (section learn, cluster signal-selling, lesson,
-  informational, priority 2, difficulty low).
-  "What Is First-Party Intent Data? Meaning, Sources, Limits"
-  https://intentsly.com/learn/what-is-first-party-intent-data
-- Gate: passed on the second run (first run: meta description 163 chars). Then trimmed from 2,050 to
-  1,925 gate-counted words, which is still above the 1,800 lesson guideline but below every published
-  lesson (1,847 to 2,473 body words). 7 H2, 5 FAQ, 8 internal links, 3 external links, no warnings.
-  Title chosen as "Meaning, Sources, Limits" because "Definition and ..." variants scored 0.72 to 0.74
-  against the what-is-intent-data title (gate limit 0.75).
-- Database: the upsert returned status published, published_at 2026-11-11 19:27:13 UTC.
-- Angle: a one-question ownership test (did it happen on something you own, under your privacy
-  notice), an eight-row source table with a "what it proves / does not prove" column, the coverage gap
-  put in sourced numbers, an answer to "is a LinkedIn comment first-party data", the public-signals
-  category that the first/third-party split leaves out, and the first-hand point that our own launch
-  pipeline (14 demos in 14 days, 4x reply rate) came from public LinkedIn signals because a new
-  company has no first-party data yet.
-- Sources opened today and linked: 6sense 2025 Buyer Experience Report release on Business Wire
-  (4,000+ buyers; research-to-seller balance 60/40; 94% of buying groups ranked preferred vendors
-  before first contact; bought the preliminary favourite 77% of the time), Gartner press release
-  9 March 2026 (646 buyers, Aug to Sep 2025; 67% prefer rep-free; 45% used AI in a recent purchase),
-  gdpr-info.eu Art. 6 (points (a) and (f)). Opened, not linked: Leadinfo, UserGems, TrustRadius,
-  intentdata.io, Lusha, Rover Insights, Knowlee (their only figures were unsourced or vendor claims,
-  e.g. "10-15% of visitors", "decays 30% per year", "1.8 billion websites"); Bombora's page returned
-  generic copy only. The first Gartner fetch was refused (provenance) until the URL came back from a
-  search, then it opened.
-  Intentsly facts used: LinkedIn signals (post engagers, keyword posts, competitor followers), ICP
-  scoring, AI SDR on LinkedIn, 14 demos in 14 days, zero manual outreach, 4x reply rate, the
-  Playbook's 12 and 8. No price, no Reddit/X feature, nothing from the NOT LIVE epics; the 21% and
-  2 to 4 meetings rows unused. Did not link /features/reddit-x-signals (the older intent-data lesson
-  still does; see the note for Alex).
-- Queue: 11 `learn` keywords still queued (above the 5 threshold), so blog-keywords was not run.
-  Next up per blog_next is "what is technographic data" (lesson, priority 2).
-- Caps: second page of 11 November by Bucharest time (the solutions page at 15:53 was the first;
+- Pre-write check: a read of public.blog_posts for the slug returned no row, so nothing was overwritten.
+- Keyword (published): intentsly vs expandi (section compare, cluster intentsly-vs, comparison,
+  commercial, priority 2, difficulty medium).
+  "Intentsly vs Expandi: Both Watch Posts, One Replies"
+  https://intentsly.com/compare/intentsly-vs-expandi
+- Gate: passed on the third run (first: meta description 162 chars and opening 96 words; second:
+  opening 94 words; third: 89 words, pass). Two later wording edits (Smart Campaigns actions quoted
+  as "engaging actions" rather than a guessed list; the seat row quoted rather than inferred) and a
+  regeneration, still passing. 2,437 gate-counted words, 8 H2, 6 FAQ, 9 internal links, 10 external
+  links, no warnings. Title similarity to the closest published compare title is 0.62 (limit 0.75).
+- Database: the upsert returned status published, published_at 2026-11-11 21:59:46 UTC.
+- Angle: Expandi shipped a Signals feature (post 20 July 2026, modified 9 November 2026): profile
+  visitors, company page visitors, and engagers on up to 3 posts per campaign, synced roughly every
+  24 hours, with an ICP filter. No ranking page compares that with a signals-first tool, so the page
+  is built on two rows: how wide the signal net is, and who answers the reply (Expandi MCP: "It
+  drafts, you approve"; Intentsly's AI SDR holds the conversation). Both tools' limits side by side,
+  where Expandi wins (several seats, agency roles and white label, branching Smart Campaigns, imported
+  lists, Salesforce/Pipedrive, Smartlead email, API/webhooks/MCP, own profile visitors), a pricing
+  section from Expandi's page only, and a switch list from Expandi's export article.
+- Sources opened today and linked: expandi.io/pricing ($99 monthly, $79 annual, 20% off, 7-day trial
+  all features, Agency/Custom from 10 seats, image/GIF and video personalisation extra),
+  expandi.io/linkedin-outreach, expandi.io/smart-campaigns/, expandi.io/blog/expandi-signals/,
+  expandi.io/integrations/, expandi.io/expandi-mcp/, expandi.io/email-outreach/,
+  help.expandi.io export article (5405850), help.expandi.io warm-up article (5405001),
+  expandi.io/blog/mobile-connector-campaign/ (10 to 15 a day, 70 to 105 a week). Opened, not linked:
+  expandi.io/blog/linkedin-limits (2022 post), joinvalley.co Expandi review (competitor). Blocked by
+  robots.txt: help.expandi.io recommended-limits, daily-limits, linkedin-settings and FAQ articles,
+  so Expandi's own recommended limit table could not be quoted; the warm-up example and the 2023 post
+  were used instead and labelled as such. The gojiberry.ai Expandi review redirected to its blog index.
+  Intentsly facts used: LinkedIn signals (competitor and industry-leader posts, keyword posts,
+  competitor page followers and engagers, hashtags), ICP scoring, verified emails, export, HubSpot /
+  Cal.com / Google Calendar integrations, AI SDR on LinkedIn only, 2 accounts, 30/30/15 limits, four
+  languages, 7-day trial, /try-ai, 14 demos in 14 days, zero manual outreach, 4x reply rate. No price,
+  no Reddit/X feature, nothing from the NOT LIVE epics; the 21% and 2 to 4 meetings rows unused.
+  "No API" for Intentsly repeats the wording already published on the HeyReach page.
+- Queue: 6 `compare` keywords still queued (above the 5 threshold), so blog-keywords was not run.
+  Next up per blog_next is "intentsly vs dripify", then lemlist, la growth machine, artisan, aisdr,
+  salesrobot.
+- Caps: third page of 11 November by Bucharest time (solutions 15:53, learn 21:27, this one 23:59;
   cap 7); the weekly count stays under 45.
-- For Alex: (1) the published lesson /learn/what-is-intent-data (15 October) links
-  /features/reddit-x-signals as a working feature in its "How to use it this week" section, which
-  the 2026-10-15 correction forbids; an edit to that article would fix it (the learn task does not
-  update existing pages); (2) a first-hand line on what first-party data Intentsly itself watches
-  today (for example, which pages or trial events you treat as a buying sign) would turn the
-  hypothetical agency example into a real one; (3) the "outbound sales process for startups" guide
-  draft is still blocked by the gate's handling of the word "process" (see its blocked: line); it
-  needs a change in scripts/, which the content tasks may not touch; (4) a price is still blocked by
-  the corrections log; (5) the 21% reply-rate row is still unused pending a phrasing you are happy
-  with.
+- For Alex: (1) confirm whether Intentsly has a public API; the HeyReach and now the Expandi page say
+  "native integrations and export, no API", taken from product.md's silence rather than a stated fact;
+  (2) Expandi's Signals feature now overlaps Intentsly's post-engagement source, so a first-hand line
+  on how many posts or competitors a typical agent watches would sharpen the "wider net" argument
+  with a real number; (3) the "outbound sales process for startups" guide draft is still blocked by
+  the gate's handling of the word "process" (see its blocked: line), which needs a change in scripts/;
+  (4) a price is still blocked by the corrections log; (5) the 21% reply-rate row is still unused
+  pending a phrasing you are happy with.
 - Push and live check: see the end of this file (appended after the push).
-- Push: the first `git push origin main` was rejected because the working copy was on a detached HEAD
-  and the local `main` ref was stale (5e39abf); `git push origin HEAD:refs/heads/main` fast-forwarded
-  the remote from ee57e05 to bd0f1bf at 19:28 UTC, and local `main` was realigned to HEAD afterwards.
-- Live check: PAGE LIVE. WebFetch refused the direct page URL and the sitemap with the
-  PROVENANCE_REQUIRED prompt seen on 5 to 11 November; the check went homepage -> /learn -> page. At
-  19:32 UTC (4 minutes after the push) the Learn index still showed the old 18 cards. At 19:53 UTC
-  (about 25 minutes after the push) it listed the new lesson first of 19 cards ("What Is First-Party
-  Intent Data? Meaning, Sources, Limits", November 11, 2026), and the page loads with that H1, the
-  definition sentence first, "9 min read", "November 11, 2026" and five FAQ entries. SITEMAP NOT
-  CHECKED: https://intentsly.com/sitemap.xml could not be fetched from this session (provenance
-  block); the page is reachable from the index, which is what the sitemap is built from.
