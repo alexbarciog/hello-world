@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Mail, Phone, MapPin, Shield, ChevronRight } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Shield, ChevronRight } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 
 const sections = [
@@ -201,11 +201,8 @@ const sections = [
     content: [
       { type: "paragraph", text: "If you wish to ask us any questions about this Privacy Policy, or to exercise any of your rights described in this Privacy Policy, we can be reached in the following ways:" },
       { type: "list", items: [
-        "To exercise your rights, please email our privacy team using the contact details below.",
-        "Our toll-free phone number for privacy inquiries is (866) 241-4820.",
-        "You can also email us at privacy@intentsly.com."
-      ]},
-      { type: "address", lines: ["Intentsly", "ATTN: Privacy Team", "2 Canal Park", "Cambridge, MA 02141"] }
+        "To exercise your rights, email our privacy team at privacy@intentsly.com."
+      ]}
     ]
   }
 ];
@@ -281,7 +278,7 @@ export default function PrivacyPolicy() {
           <p className="mt-5 text-muted-foreground text-base max-w-xl mx-auto leading-relaxed">
             We believe privacy is a right, not a privilege. Here's exactly how we collect, use, and protect your information.
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">Last updated: May 30, 2025</p>
+          <p className="mt-4 text-sm text-muted-foreground">Last updated: November 11, 2026</p>
         </div>
       </div>
 
@@ -409,21 +406,6 @@ export default function PrivacyPolicy() {
                 </p>
               </div>
             </a>
-            <div
-              className="rounded-2xl border border-border p-5 flex items-start gap-4"
-              style={{ background: "hsl(0 0% 99%)" }}
-            >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: "hsl(var(--goji-bg-hero))" }}
-              >
-                <Phone className="w-4 h-4 text-goji-coral" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground mb-0.5">Call us</p>
-                <p className="text-sm text-muted-foreground">(866) 241-4820</p>
-              </div>
-            </div>
           </div>
 
           {/* Back link */}

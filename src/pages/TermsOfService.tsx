@@ -16,7 +16,7 @@ const sections = [
   id: "customer-terms",
   title: "Customer Terms",
   content: [
-  { type: "paragraph", text: "APIHub, Inc. dba Intentsly has assigned these Terms to its Affiliate, HubSpot, Inc. (\"HubSpot\"). HubSpot, Inc., under its Intentsly brand, (\"Intentsly\" or \"We\"), provides Intentsly Services (defined below) subject to these Terms." },
+  { type: "paragraph", text: "Intentsly (\"Intentsly\" or \"We\") provides the Intentsly Services (defined below) subject to these Terms." },
   { type: "paragraph", text: "By clicking or tapping any button or box marked \"Accept,\" \"Agree,\" or \"OK\" (or a similar term) in connection with these Terms, or by accessing our site or otherwise using the Intentsly Services, you acknowledge that you have read, understood, and agree to be bound by these Terms and affirm that you are over the age of 18." },
   { type: "callout", text: "PAID SUBSCRIPTION PLANS PURCHASED THROUGH SELF-SERVICE ON THE SITE OR THROUGH OUR RESELLERS WILL AUTOMATICALLY RENEW UNTIL YOU CANCEL THEM PURSUANT TO SECTION 5 OF THESE TERMS. CANCELING WILL END THE AUTOMATIC RENEWALS OF YOUR PAID SERVICES, BUT WE WILL KEEP ANY FEES WE HAVE ALREADY COLLECTED FROM YOU (UNLESS WE ARE REQUIRED BY LAW TO REFUND THEM)." }]
 
@@ -145,7 +145,7 @@ const sections = [
   { type: "paragraph", text: "11.1. Assignment: Customer will not assign these Terms without prior written consent, except in cases of merger, reorganization, sale of all or substantially all assets, or change of control." },
   { type: "paragraph", text: "11.3. Relationship of Parties: Intentsly and Customer are independent contractors. Neither party will have authority to bind the other." },
   { type: "paragraph", text: "11.4. Notices: All notices given under these Terms will be in writing via nationally recognized overnight courier, certified mail, facsimile, email with electronic confirmation, or personal delivery." },
-  { type: "paragraph", text: "11.5. Governing Law: These Terms are governed by the laws of Delaware, with exclusive jurisdiction in Delaware courts." },
+  { type: "paragraph", text: "11.5. Governing Law: These Terms are governed by the laws of the country in which Intentsly is established, and the courts of that country have exclusive jurisdiction." },
   { type: "paragraph", text: "11.7. Updates: Intentsly may make changes to these Terms from time to time. Material adverse changes will become effective with reasonable written notice." },
   { type: "paragraph", text: "11.8. Waiver & Severability: If any provision is held invalid, the remaining provisions remain in full force. Waiver of any provision is effective only if written and signed." },
   { type: "paragraph", text: "11.10. Survival: Rights and obligations that by their nature must survive termination will survive any termination of these Terms." },
@@ -180,11 +180,8 @@ const sections = [
   content: [
   { type: "paragraph", text: "If you wish to ask us any questions about these Terms, or to exercise any of your rights described herein, we can be reached in the following ways:" },
   { type: "list", items: [
-    "To contact us regarding these Terms, please use the contact details below.",
-    "Our toll-free phone number for inquiries is (866) 241-4820.",
-    "You can also email us at legal@intentsly.com."]
-  },
-  { type: "address", lines: ["Intentsly (HubSpot, Inc.)", "ATTN: Legal Department", "Two Canal Park", "Cambridge, MA 02141, U.S.A."] }]
+    "Email us at legal@intentsly.com."]
+  }]
 
 }];
 
@@ -260,7 +257,7 @@ export default function TermsOfService() {
           <p className="mt-5 text-muted-foreground text-base max-w-xl mx-auto leading-relaxed">
             Please read these terms carefully before using Intentsly. They govern your access to and use of our services, products, and platform.
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">Last updated: May 30, 2025</p>
+          <p className="mt-4 text-sm text-muted-foreground">Last updated: November 11, 2026</p>
         </div>
       </div>
 
