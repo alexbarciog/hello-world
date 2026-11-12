@@ -56,3 +56,12 @@
   is still unusable by the gate because its status cell reads "verified: ..." rather than "verified";
   (4) a price is still blocked by the corrections log.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin HEAD:refs/heads/main` fast-forwarded the remote from ff647e9 to b1239bd at
+  19:27 UTC, authored as "Claude (content run) <noreply@anthropic.com>".
+- Live check: NOT CONFIRMED. At 19:31 UTC (4 minutes after the push) WebFetch refused the page URL,
+  the sitemap and the homepage (PROVENANCE_REQUIRED, as on 5 to 12 November), and web search returns
+  no intentsly.com URLs to fetch through, so neither the page nor the sitemap could be read this run.
+  The database row is published (19:26:40 UTC) and the push went through, so the page should appear
+  once the deploy's prerender runs; the 12 November solutions page needed a second push before it
+  showed. This live-check commit triggers another deploy. Next run: confirm
+  https://intentsly.com/learn/what-is-technographic-data and its sitemap entry.
