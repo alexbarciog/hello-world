@@ -380,8 +380,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "ai-sdr-for-founders-and-small-teams",
    "monthly_volume": null,
    "section": "blog"
   },
