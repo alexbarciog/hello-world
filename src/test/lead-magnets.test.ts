@@ -13,12 +13,15 @@ const httpError = (status: number, body: unknown) =>
   new FunctionsHttpError(new Response(JSON.stringify(body), { status }));
 
 describe("signupSource", () => {
-  it("uses ?src= when present", () => expect(signupSource("?src=linkedin")).toBe("linkedin"));
+  it("prefers utm_source", () =>
+    expect(signupSource("?utm_source=linkedin", "https://www.google.com/")).toBe("linkedin"));
+  it("falls back to the referrer hostname", () =>
+    expect(signupSource("", "https://www.linkedin.com/feed/")).toBe("www.linkedin.com"));
   it("falls back to direct", () => {
-    expect(signupSource("")).toBe("direct");
-    expect(signupSource("?src=%20")).toBe("direct");
+    expect(signupSource("", "")).toBe("direct");
+    expect(signupSource("?utm_source=%20", "not a url")).toBe("direct");
   });
-  it("caps the length", () => expect(signupSource(`?src=${"x".repeat(100)}`)).toHaveLength(60));
+  it("caps the length", () => expect(signupSource(`?utm_source=${"x".repeat(100)}`, "")).toHaveLength(60));
 });
 
 describe("leadMagnetUrl", () => {
@@ -51,9 +54,12 @@ describe("requestLeadMagnet", () => {
     });
   });
 
-  it("reports other server errors", async () => {
+  it("reports other server errors with the contact fallback", async () => {
     invoke.mockResolvedValue({ data: null, error: httpError(404, { error: "Unknown guide" }) });
-    await expect(requestLeadMagnet(input)).resolves.toEqual({ status: "error", message: "Unknown guide" });
+    await expect(requestLeadMagnet(input)).resolves.toEqual({
+      status: "error",
+      message: "Something went wrong. Try again, or email alex@intentsly.com.",
+    });
   });
 
   it("reports network failures", async () => {

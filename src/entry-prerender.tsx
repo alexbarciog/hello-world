@@ -8,7 +8,7 @@ export { caseStudies } from "./data/caseStudies";
 export { toolRoutes, faqJsonLd } from "./data/freeTools";
 export { ANALYZER_FAQS } from "./pages/LinkedInProfileAnalyzer";
 export { setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } from "./lib/blog";
-export { setLeadMagnetPrerenderData, leadMagnetPath, LEAD_MAGNET_COLUMNS } from "./lib/leadMagnets";
+export { setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS } from "./lib/leadMagnets";
 export { BLOG_TITLE, BLOG_DESCRIPTION } from "./pages/Blog";
 
 export function render(url: string) {

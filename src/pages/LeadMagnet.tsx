@@ -1,40 +1,48 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { ArrowUpRight, BookOpen, CheckCircle2, ExternalLink, Mail, Zap } from "lucide-react";
+import { ArrowRight, Check, Mail } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/CTAFooter";
-import heroSkyBg from "@/assets/hero-sky-bg.webp";
-import { toast } from "sonner";
+import heroGradient from "@/assets/hero-gradient-right.png";
 import NotFound from "./NotFound";
 import { applySeo } from "@/lib/seo";
-import { leadMagnetUrl, requestLeadMagnet, signupSource, useLeadMagnet } from "@/lib/leadMagnets";
+import { leadMagnetSeo, leadMagnetUrl, requestLeadMagnet, signupSource, useLeadMagnet } from "@/lib/leadMagnets";
+import { LEAD_MAGNET_EXTRAS } from "@/data/leadMagnetExtras";
 import { ttqSubmitForm, ttqViewContent } from "@/lib/tiktok-pixel";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BLUE = "#1A8FE3";
 
-/** A free guide at /free/:slug, read from the `lead_magnets` table. Same layout as /signal-playbook. */
+// The homepage's light grid, faded out towards the edges.
+const gridStyle: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, rgba(10,10,10,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(10,10,10,0.05) 1px, transparent 1px)",
+  backgroundSize: "56px 56px",
+  maskImage: "radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%)",
+  WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%)",
+};
+
+type Done = { assetUrl: string; emailed: boolean; email: string };
+
+/** A free guide at /free/:slug, read from the `lead_magnets` table. */
 export default function LeadMagnet() {
   const { slug } = useParams<{ slug: string }>();
   const { search } = useLocation();
   const { data: magnet, isLoading } = useLeadMagnet(slug);
+  const extras = slug ? LEAD_MAGNET_EXTRAS[slug] : undefined;
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  // Set once the guide is on its way (or the email failed but the link works).
-  const [done, setDone] = useState<{ assetUrl: string; emailed: boolean } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<Done | null>(null);
 
   useEffect(() => {
     if (magnet) {
       ttqViewContent(`Lead magnet: ${magnet.title}`, `lead-magnet-${magnet.slug}`);
-      return applySeo({
-        title: `${magnet.title} | Intentsly`,
-        description: magnet.subtitle || magnet.title,
-        url: leadMagnetUrl(magnet.slug),
-      });
+      return applySeo({ ...leadMagnetSeo(magnet), url: leadMagnetUrl(magnet.slug) });
     }
     if (!isLoading && slug) {
-      // The SPA fallback answers 200 for unknown slugs, so keep them out of the index.
       return applySeo({
         title: "Guide not found | Intentsly",
         description: "This guide does not exist or is no longer available.",
@@ -46,25 +54,26 @@ export default function LeadMagnet() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!magnet) return;
+    if (!magnet || loading) return;
     const trimmed = email.trim();
     if (!EMAIL_RE.test(trimmed)) {
-      toast.error("Please enter a valid email");
+      setError("Please enter a valid work email.");
       return;
     }
+    setError(null);
     setLoading(true);
     try {
       const result = await requestLeadMagnet({
         slug: magnet.slug,
         email: trimmed,
         name: name.trim(),
-        source: signupSource(search),
+        source: signupSource(search, typeof document !== "undefined" ? document.referrer : ""),
       });
       if (result.status === "error") {
-        toast.error(result.message);
+        setError(result.message);
         return;
       }
-      setDone({ assetUrl: result.assetUrl, emailed: result.status === "sent" });
+      setDone({ assetUrl: result.assetUrl, emailed: result.status === "sent", email: trimmed });
       ttqSubmitForm(`Lead magnet: ${magnet.title}`, `lead-magnet-${magnet.slug}`);
     } finally {
       setLoading(false);
@@ -72,7 +81,6 @@ export default function LeadMagnet() {
   }
 
   if (!magnet) {
-    // Keep the hero background while the row loads; unknown slugs get the 404 page.
     return isLoading ? <div className="min-h-screen bg-white"><Navbar /></div> : <NotFound />;
   }
 
@@ -82,188 +90,176 @@ export default function LeadMagnet() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section className="relative min-h-[88vh] flex flex-col items-center justify-center overflow-hidden">
-        <img
-          src={heroSkyBg}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          aria-hidden="true"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(8,18,40,0.55) 0%, rgba(8,18,40,0.35) 40%, rgba(8,18,40,0.1) 75%, rgba(8,18,40,0) 100%)",
-          }}
-        />
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 pt-28 md:pt-36 pb-16">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-16 items-center">
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/25 px-3.5 py-1.5 mb-6 animate-fade-in-up">
-                <span className="relative flex h-2 w-2">
-                  <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C8FF00] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C8FF00]" />
-                </span>
-                <Zap className="w-3 h-3 text-[#C8FF00]" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-white">
-                  Free guide
-                </span>
-              </div>
-
+      <section className="relative overflow-hidden bg-white">
+        <div className="absolute inset-0 pointer-events-none" style={gridStyle} aria-hidden="true" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-5 md:px-8 pt-24 md:pt-32 pb-14 md:pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-12 items-center">
+            {/* Copy + form */}
+            <div>
+              <span className="inline-flex items-center rounded-full bg-[#C8FF00] px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#0a0a0a] mb-5">
+                Free guide
+              </span>
               <h1
-                className="text-[2rem] sm:text-5xl md:text-6xl lg:text-[4.25rem] font-medium text-white leading-[1.05] tracking-tight mb-5 animate-fade-in-up"
-                style={{ animationDelay: "80ms" }}
+                className="font-semibold tracking-[-0.03em] leading-[1.04] text-[#0a0a0a] mb-4"
+                style={{ fontSize: "clamp(2.1rem, 5vw, 4rem)" }}
               >
                 {magnet.title}
               </h1>
-
               {magnet.subtitle && (
-                <p
-                  className="text-base md:text-lg text-white/80 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed animate-fade-in-up"
-                  style={{ animationDelay: "180ms" }}
-                >
-                  {magnet.subtitle}
-                </p>
+                <p className="text-base md:text-lg text-neutral-500 leading-relaxed max-w-xl mb-6">{magnet.subtitle}</p>
               )}
-
               {bullets.length > 0 && (
-                <ul
-                  className="space-y-2.5 max-w-md mx-auto lg:mx-0 mb-8 animate-fade-in-up"
-                  style={{ animationDelay: "240ms" }}
-                >
+                <ul className="space-y-2.5 mb-8 max-w-xl">
                   {bullets.map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-white/90 text-sm md:text-base text-left">
-                      <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-[#C8FF00] mt-0.5 shrink-0" />
+                    <li key={item} className="flex items-start gap-2.5 text-[15px] text-neutral-800">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${BLUE}1A` }}>
+                        <Check className="h-3.5 w-3.5" style={{ color: BLUE }} strokeWidth={3} />
+                      </span>
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               )}
 
-              <p
-                className="text-[10px] sm:text-[11px] uppercase tracking-[0.18em] text-white/70 animate-fade-in-up"
-                style={{ animationDelay: "320ms" }}
-              >
-                Free · Sent instantly · No credit card
-              </p>
-            </div>
-
-            <div className="animate-fade-in-up" style={{ animationDelay: "360ms" }}>
-              <div className="rounded-3xl bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl p-7 md:p-9">
+              <div className="max-w-md rounded-2xl border border-neutral-200 bg-white/90 backdrop-blur p-5 md:p-6 shadow-sm">
                 {done ? (
-                  <div className="text-center py-6">
-                    <div className="w-14 h-14 mx-auto rounded-full bg-[#C8FF00] flex items-center justify-center mb-5">
-                      <Mail className="w-7 h-7 text-[#0B2545]" />
+                  <div aria-live="polite">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#C8FF00] mb-4">
+                      <Mail className="h-5 w-5 text-[#0a0a0a]" />
                     </div>
                     {done.emailed ? (
-                      <>
-                        <h2 className="text-2xl font-medium text-white mb-2">Check your inbox</h2>
-                        <p className="text-white/80 text-sm">
-                          We just sent the guide to <span className="font-semibold text-white">{email}</span>. It
-                          usually arrives within a minute.
-                        </p>
-                      </>
+                      <p className="text-[15px] text-neutral-800 leading-relaxed">
+                        <span className="font-semibold text-[#0a0a0a]">Check your inbox.</span> The guide is on its way to{" "}
+                        <span className="font-semibold text-[#0a0a0a] break-all">{done.email}</span>.
+                      </p>
                     ) : (
-                      <>
-                        <h2 className="text-2xl font-medium text-white mb-2">Your guide is ready</h2>
-                        <p className="text-white/80 text-sm">
-                          We couldn't send the email just now, so open the guide here.
-                        </p>
-                      </>
+                      <p className="text-[15px] text-neutral-800 leading-relaxed">
+                        We couldn't send the email, but here's your guide:
+                      </p>
                     )}
-                    <div className="mt-6">
-                      <a
-                        href={done.assetUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-cta group justify-center"
-                      >
-                        Open it now
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setDone(null);
-                        setEmail("");
-                        setName("");
-                      }}
-                      className="block mx-auto mt-6 text-sm text-[#C8FF00] hover:text-white font-semibold transition-colors"
+                    <a
+                      href={done.assetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+                      style={{ color: BLUE }}
                     >
-                      Send to another email →
-                    </button>
+                      {done.emailed ? "Or open it now" : "Open the guide"} <ArrowRight className="h-4 w-4" />
+                    </a>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="mb-2">
-                      <div className="inline-flex items-center gap-2 mb-3">
-                        <BookOpen className="w-4 h-4 text-[#C8FF00]" />
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
-                          The guide
-                        </span>
-                      </div>
-                      <h2 className="text-2xl font-medium text-white mb-1">Get it free.</h2>
-                      <p className="text-sm text-white/75">Sent to your inbox instantly.</p>
-                    </div>
-
+                  <form onSubmit={handleSubmit} noValidate className="space-y-3">
                     <div>
-                      <label htmlFor="name" className="block text-[11px] font-semibold uppercase tracking-wider text-white/80 mb-1.5">
-                        First name <span className="text-white/50 font-normal normal-case tracking-normal">(optional)</span>
+                      <label htmlFor="lm-name" className="block text-sm font-medium text-neutral-800 mb-1.5">
+                        First name <span className="font-normal text-neutral-400">(optional)</span>
                       </label>
                       <input
-                        id="name"
+                        id="lm-name"
                         type="text"
                         autoComplete="given-name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         maxLength={80}
-                        placeholder="Alex"
-                        className="w-full px-4 py-3 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white placeholder-white/50 text-sm focus:outline-none focus:border-[#C8FF00] focus:bg-white/20 transition-colors"
+                        className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[15px] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1A8FE3] focus:border-transparent"
                       />
                     </div>
-
                     <div>
-                      <label htmlFor="email" className="block text-[11px] font-semibold uppercase tracking-wider text-white/80 mb-1.5">
+                      <label htmlFor="lm-email" className="block text-sm font-medium text-neutral-800 mb-1.5">
                         Work email
                       </label>
                       <input
-                        id="email"
+                        id="lm-email"
                         type="email"
                         required
                         autoComplete="email"
+                        inputMode="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (error) setError(null);
+                        }}
                         maxLength={255}
-                        placeholder="alex@company.com"
-                        className="w-full px-4 py-3 rounded-xl bg-white/15 backdrop-blur-md border border-white/25 text-white placeholder-white/50 text-sm focus:outline-none focus:border-[#C8FF00] focus:bg-white/20 transition-colors"
+                        placeholder="you@company.com"
+                        aria-invalid={Boolean(error)}
+                        aria-describedby={error ? "lm-error" : undefined}
+                        className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-[15px] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#1A8FE3] focus:border-transparent aria-[invalid=true]:border-red-400"
                       />
                     </div>
-
+                    {error && (
+                      <p id="lm-error" role="alert" className="text-sm text-red-600">{error}</p>
+                    )}
                     <button
                       type="submit"
                       disabled={loading}
-                      className="btn-cta btn-shimmer group w-full justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#C8FF00] px-6 py-3.5 text-[15px] font-semibold text-[#0a0a0a] hover:brightness-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {loading ? "Sending..." : (
-                        <>
-                          Send it to me
-                          <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-0.5" />
-                        </>
-                      )}
+                      {loading ? "Sending…" : "Send me the guide"}
+                      {!loading && <ArrowRight className="h-4 w-4" />}
                     </button>
-
-                    <p className="text-[10px] text-white/60 text-center leading-relaxed">
-                      By submitting, you agree to receive the guide and occasional follow-ups. Unsubscribe anytime.
-                    </p>
+                    <p className="text-xs text-neutral-500 text-center">Free. We'll email you the PDF. Unsubscribe anytime.</p>
                   </form>
                 )}
               </div>
             </div>
+
+            {/* Cover on the gradient panel */}
+            <div className="relative overflow-hidden rounded-3xl min-h-[380px] sm:min-h-[480px] lg:min-h-[600px] flex items-center justify-center p-8 sm:p-12">
+              <img src={heroGradient} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+              {extras?.cover ? (
+                <img
+                  src={extras.cover}
+                  alt={`Cover of ${magnet.title}`}
+                  width={900}
+                  height={1274}
+                  className="relative w-[62%] sm:w-[55%] lg:w-[64%] max-w-[380px] h-auto rounded-lg rotate-[4deg] shadow-[0_30px_60px_-15px_rgba(10,20,40,0.45)]"
+                />
+              ) : (
+                <div className="relative w-[60%] max-w-[340px] aspect-[1/1.414] rounded-lg bg-white rotate-[4deg] shadow-[0_30px_60px_-15px_rgba(10,20,40,0.45)] p-6 flex flex-col">
+                  <span className="text-xs font-semibold" style={{ color: BLUE }}>Intentsly</span>
+                  <span className="mt-auto text-2xl font-semibold tracking-tight text-[#0a0a0a] leading-tight">{magnet.title}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
+
+      {extras?.inside && (
+        <section className="px-4 sm:px-5 md:px-8 pb-16 md:pb-24">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.02em] text-[#0a0a0a] mb-6 md:mb-8">
+              {extras.inside.heading}
+            </h2>
+            <ol className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {extras.inside.items.map((item, i) => (
+                <li key={item} className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5">
+                  <span className="block text-xs font-semibold mb-1.5" style={{ color: BLUE }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="block text-sm md:text-[15px] font-medium text-neutral-900 leading-snug">{item}</span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-10 md:mt-14 rounded-3xl bg-neutral-50 border border-neutral-200 p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-[#0a0a0a]">
+                  Intentsly watches for these signals for you
+                </h2>
+                <p className="mt-1 text-sm md:text-[15px] text-neutral-500">
+                  Ask our AI who in your market is showing these signals right now.
+                </p>
+              </div>
+              <a
+                href="/try-ai"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0a0a0a] px-5 py-3 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors shrink-0"
+              >
+                Try Intentsly AI <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>

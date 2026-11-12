@@ -262,7 +262,7 @@ function buildPage(template, route, appHtml) {
 installDomGlobals();
 const {
   render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
-  setLeadMagnetPrerenderData, leadMagnetPath, LEAD_MAGNET_COLUMNS,
+  setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS,
 } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
 );
@@ -316,8 +316,7 @@ const routes = [
   })),
   ...leadMagnets.map((m) => ({
     path: leadMagnetPath(m.slug),
-    title: `${m.title} | Intentsly`,
-    description: m.subtitle || m.title,
+    ...leadMagnetSeo(m),
     leadMagnet: m,
     priority: "0.7",
   })),
