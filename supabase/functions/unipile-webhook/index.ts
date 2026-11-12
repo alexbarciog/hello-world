@@ -190,7 +190,9 @@ Deno.serve(async (req) => {
 
       // Reply-outcome learning: classify the reply so the system can learn
       // which signals/titles produce interested replies. Best-effort.
-      const msgText = (payload.message?.text || payload.message_text || payload.text || payload.body || '')
+      // Unipile sends the message text as a plain string in `message`.
+      const msgText = ((typeof payload.message === 'string' ? payload.message : payload.message?.text)
+        || payload.message_text || payload.text || payload.body || '')
         .toString().trim().slice(0, 600);
       if (matchedIds.length > 0 && msgText) {
         try {

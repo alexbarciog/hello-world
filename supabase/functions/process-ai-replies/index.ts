@@ -6,6 +6,9 @@ const corsHeaders = {
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { accessForUsers } from '../_shared/account-access.ts';
 
+// A lead message older than this that never got a reply is left for a human.
+const MAX_REPLY_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 /**
  * Conversational AI — auto-replies to leads who respond.
  * Polls Unipile for new incoming messages on active campaigns with conversational_ai=true.
@@ -360,8 +363,16 @@ async function processCampaignReplies(
       // === CASE 1: Lead responded — reply to their message ===
       if (isFromLead) {
         const msgTimestamp = latestMsgTime.toISOString();
-        if (cr.last_incoming_message_at && new Date(cr.last_incoming_message_at) >= new Date(msgTimestamp)) {
+        // "Already answered" is judged by our own last reply. last_incoming_message_at
+        // cannot be used: unipile-webhook and process-campaign-followups stamp it with
+        // the time they noticed the reply, which is always later than the message
+        // itself, so a lead's first reply always looked processed and never got an answer.
+        if (cr.last_ai_reply_at && new Date(cr.last_ai_reply_at) >= latestMsgTime) {
           // Already processed — fall through to case 2
+        } else if (Date.now() - latestMsgTime.getTime() > MAX_REPLY_AGE_MS) {
+          // Unanswered for over a week: leave it to a human, an automated answer
+          // this late reads worse than none.
+          continue;
         } else {
           const leadMessage = (latestMessage.text || latestMessage.body || '').trim();
           if (!leadMessage) continue;
