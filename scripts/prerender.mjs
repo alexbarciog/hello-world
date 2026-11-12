@@ -64,6 +64,12 @@ const ROUTES = [
     priority: "0.8",
   },
   {
+    path: "/claude",
+    title: "Use Intentsly in Claude — Claude connector | Intentsly",
+    description: "Connect Intentsly to Claude to search buying-intent leads, review campaigns and LinkedIn conversations, and send LinkedIn messages from a chat.",
+    priority: "0.6",
+  },
+  {
     path: "/linkedin-profile-analyzer",
     title: "Free LinkedIn Profile Analyzer — Intentsly",
     description: "See what's silently killing your inbound leads on LinkedIn. Get a free AI review of your profile with specific fixes.",

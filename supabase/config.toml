@@ -26,6 +26,11 @@ verify_jwt = false
 [functions.linkedin-messaging]
 verify_jwt = false
 
+# Remote MCP server (Claude connector). Authenticates OAuth access tokens itself
+# and must answer unauthenticated discovery requests.
+[functions.mcp]
+verify_jwt = false
+
 [functions.poll-reddit-signals]
 verify_jwt = false
 
