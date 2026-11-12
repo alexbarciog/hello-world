@@ -12,7 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { SITE_URL } from "@/lib/blog";
-import { LEAD_MAGNET_EXTRAS } from "@/data/leadMagnetExtras";
+import { LEAD_MAGNET_EXTRAS, coverFor } from "@/data/leadMagnetExtras";
 
 // asset_url is deliberately not read here: the guide's link only comes back
 // from send-lead-magnet after someone submits their email, so it never sits in
@@ -27,21 +27,30 @@ export interface LeadMagnet {
 export const LEAD_MAGNET_COLUMNS = "slug,title,subtitle,bullets";
 
 export const leadMagnetPath = (slug: string) => `/free/${slug}`;
+
+/** The /free index of all guides. */
+export const LEAD_MAGNET_INDEX = {
+  path: "/free",
+  title: "Free guides | Intentsly",
+  description: "Free guides on finding B2B buyers who show intent on LinkedIn, and what to say to them.",
+};
 export const leadMagnetUrl = (slug: string) => `${SITE_URL}${leadMagnetPath(slug)}`;
 
 /** Title, description and share image for a guide page (also used by scripts/prerender.mjs). */
 export function leadMagnetSeo(m: Pick<LeadMagnet, "slug" | "title" | "subtitle">) {
-  const extras = LEAD_MAGNET_EXTRAS[m.slug];
+  const cover = coverFor(m.slug);
   return {
-    title: `${m.title} (Free ${extras?.format ?? "guide"}) | Intentsly`,
+    title: `${m.title} (Free ${LEAD_MAGNET_EXTRAS[m.slug]?.format ?? "PDF"}) | Intentsly`,
     description: m.subtitle || m.title,
-    image: extras?.cover ? `${SITE_URL}${extras.cover}` : undefined,
+    image: cover ? `${SITE_URL}${cover}` : undefined,
   };
 }
 
 declare global {
   interface Window {
     __LEAD_MAGNET__?: LeadMagnet;
+    /** All active guides, embedded on the /free index. */
+    __LEAD_MAGNETS__?: LeadMagnet[];
   }
 }
 
@@ -122,4 +131,27 @@ export async function requestLeadMagnet(input: {
     if (res.status === 400) return { status: "error", message: "Please enter a valid work email." };
   }
   return { status: "error", message: SIGNUP_ERROR };
+}
+
+async function fetchLeadMagnets(): Promise<LeadMagnet[]> {
+  const { data, error } = await table()
+    .select(LEAD_MAGNET_COLUMNS)
+    .eq("active", true)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as LeadMagnet[]) ?? [];
+}
+
+/** Every active guide, newest first (the /free index). */
+export function useLeadMagnets() {
+  const fromPrerender = prerenderData ? Object.values(prerenderData).reverse() : undefined;
+  const fromEmbed = typeof window !== "undefined" ? window.__LEAD_MAGNETS__ : undefined;
+  return useQuery({
+    queryKey: ["lead-magnets"],
+    queryFn: fetchLeadMagnets,
+    initialData: fromPrerender ?? fromEmbed,
+    initialDataUpdatedAt: 0,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 }

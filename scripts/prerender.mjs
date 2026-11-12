@@ -226,6 +226,14 @@ async function loadLeadMagnets(columns) {
   }
 }
 
+// A guide's cover follows a naming convention; only advertise it as the share
+// image when the file is actually in the build.
+function withExistingImage(seo) {
+  if (!seo.image) return seo;
+  const file = path.join(DIST, new URL(seo.image).pathname);
+  return fs.existsSync(file) ? seo : { ...seo, image: undefined };
+}
+
 // JSON placed inside a <script> must not be able to close the tag.
 const safeJson = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028|\u2029/g, "");
 
@@ -256,6 +264,9 @@ function buildPage(template, route, appHtml) {
   if (route.blogData) {
     html = html.replace("</head>", `  <script>window.__BLOG__=${safeJson(route.blogData)}</script>\n</head>`);
   }
+  if (route.leadMagnetList) {
+    html = html.replace("</head>", `  <script>window.__LEAD_MAGNETS__=${safeJson(route.leadMagnetList)}</script>\n</head>`);
+  }
   if (route.leadMagnet) {
     html = html.replace("</head>", `  <script>window.__LEAD_MAGNET__=${safeJson(route.leadMagnet)}</script>\n</head>`);
   }
@@ -268,7 +279,7 @@ function buildPage(template, route, appHtml) {
 installDomGlobals();
 const {
   render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
-  setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS,
+  setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS, LEAD_MAGNET_INDEX,
 } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
 );
@@ -320,9 +331,12 @@ const routes = [
     lastmod: (post.updated_at || post.published_at || "").slice(0, 10) || undefined,
     priority: SECTIONS[post.section].priority,
   })),
+  ...(leadMagnets.length
+    ? [{ ...LEAD_MAGNET_INDEX, leadMagnetList: [...leadMagnets].reverse(), priority: "0.6" }]
+    : []),
   ...leadMagnets.map((m) => ({
     path: leadMagnetPath(m.slug),
-    ...leadMagnetSeo(m),
+    ...withExistingImage(leadMagnetSeo(m)),
     leadMagnet: m,
     priority: "0.7",
   })),
