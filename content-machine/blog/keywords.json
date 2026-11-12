@@ -224,8 +224,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "x-twitter-buying-signals-for-b2b",
    "monthly_volume": null,
    "section": "blog"
   },
@@ -380,8 +380,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "ai-sdr-for-founders-and-small-teams",
    "monthly_volume": null,
    "section": "blog"
   },
@@ -1089,8 +1089,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-signal-based-selling",
    "monthly_volume": null
   },
   {
@@ -1101,8 +1101,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-sales-trigger",
    "monthly_volume": null
   },
   {
@@ -1113,8 +1113,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-account-based-prospecting",
    "monthly_volume": null
   },
   {
@@ -1377,8 +1377,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-firmographic-data",
    "monthly_volume": null
   },
   {
@@ -1449,8 +1449,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-a-lead-generation-agency",
    "monthly_volume": null
   },
   {
@@ -1461,8 +1461,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-an-msp",
    "monthly_volume": null
   },
   {
@@ -1509,8 +1509,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-waalaxy",
    "monthly_volume": null
   },
   {
@@ -1521,8 +1521,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-expandi",
    "monthly_volume": null
   },
   {
@@ -1617,8 +1617,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-software-development-company",
    "monthly_volume": null
   },
   {
@@ -1641,8 +1641,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-as-a-fractional-cmo",
    "monthly_volume": null
   },
   {
@@ -1677,8 +1677,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-video-production-company",
    "monthly_volume": null
   },
   {
@@ -1688,6 +1688,126 @@
    "type": "landing",
    "intent": "commercial",
    "difficulty": "low",
+   "priority": 3,
+   "status": "published",
+   "slug": "get-clients-as-a-b2b-copywriter",
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is technographic data",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a buyer persona in b2b",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is multithreading in sales",
+   "section": "learn",
+   "cluster": "outbound",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a warm lead",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a sales cadence",
+   "section": "learn",
+   "cluster": "outbound",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a buying committee in b2b sales",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "low",
+   "priority": 2,
+   "status": "published",
+   "slug": "what-is-a-buying-committee-in-b2b-sales",
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is first-party intent data",
+   "section": "learn",
+   "cluster": "signal-selling",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "low",
+   "priority": 2,
+   "status": "published",
+   "slug": "what-is-first-party-intent-data",
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a hiring signal in sales",
+   "section": "learn",
+   "cluster": "signal-selling",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is sales prospecting",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "what is a marketing qualified lead",
+   "section": "learn",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "high",
    "priority": 3,
    "status": "queued",
    "slug": null,

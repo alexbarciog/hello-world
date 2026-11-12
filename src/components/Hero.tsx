@@ -1,4 +1,5 @@
 import { ArrowRight, Play } from "lucide-react";
+import { DEMO_VIDEO_URL } from "@/components/billing/DemoVideo";
 import { motion } from "framer-motion";
 import HeroFloatingCards from "./HeroFloatingCards";
 import heroGradient from "@/assets/hero-gradient-right.png";
@@ -114,7 +115,7 @@ const Hero = () => {
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                href="https://www.loom.com/share/3dc9408fe0da4b979cb5642333f4b500"
+                href={DEMO_VIDEO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#0a0a0a] text-[15px] font-semibold rounded-xl px-6 py-3.5 md:py-4 border border-neutral-200 hover:bg-neutral-50 transition-colors"

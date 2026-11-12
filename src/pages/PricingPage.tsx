@@ -45,7 +45,7 @@ const PricingPage = () => {
         <section className="px-6 pb-16 md:pb-24">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-center mb-6" style={{ color: "hsl(var(--aeline-dark))" }}>
-              See it in 3 minutes
+              See it in action
             </h2>
             <DemoVideo />
           </div>

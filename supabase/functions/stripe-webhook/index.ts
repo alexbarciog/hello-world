@@ -3,7 +3,7 @@
 // do nothing). Deploy with verify_jwt = false (Stripe sends no Supabase JWT).
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { profileFieldsFromSubscription, type StripeSubscriptionLike } from "../_shared/billing.ts";
+import { profileFieldsFromSubscription, type StripeSubscriptionLike } from "../_shared/stripe-billing.ts";
 import { pauseAccount } from "../_shared/account-access.ts";
 import { json, stripeClient } from "../_shared/stripe.ts";
 

@@ -40,7 +40,7 @@ const Pricing = () => {
   const foundingLeft = useFoundingSlotsLeft();
   const ref = useReveal();
 
-  const isActive = sub.status === "active" || sub.status === "trialing" || (sub.access === "legacy" && sub.subscribed);
+  const isActive = sub.access === "full" || (sub.access === "legacy" && sub.subscribed);
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -48,6 +48,7 @@ const Pricing = () => {
     ttqInitiateCheckout("Intentsly", PLAN_PRICE_USD);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
+      // Register sends new accounts straight on to checkout (/start-trial).
       navigate("/register");
       return;
     }
@@ -72,7 +73,7 @@ const Pricing = () => {
             One plan. Try it free for 7 days.
           </h2>
           <p className="text-base text-muted-foreground leading-relaxed">
-            Everything Intentsly does, for ${PLAN_PRICE_USD}/month. Card required, cancel in one click.
+            Everything Intentsly does, for ${PLAN_PRICE_USD}/month. 7-day free trial, cancel anytime.
           </p>
         </div>
 
@@ -81,7 +82,7 @@ const Pricing = () => {
             {!isActive && foundingLeft !== null && foundingLeft > 0 && (
               <div className="absolute -top-2.5 right-4 md:-top-3 md:right-6 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8FF00] text-[10px] font-bold uppercase tracking-wider shadow-[0_4px_12px_-2px_rgba(200,255,0,0.6)]" style={{ color: "hsl(var(--aeline-dark))" }}>
                 <Star className="w-3 h-3 fill-current" />
-                {foundingLeft} founding spot{foundingLeft === 1 ? "" : "s"} left
+                {foundingLeft} of 10 founding spots left
               </div>
             )}
 
@@ -107,7 +108,7 @@ const Pricing = () => {
               <span className="text-sm text-muted-foreground">/month</span>
             </div>
             <p className="text-[13px] text-muted-foreground mb-8">
-              7-day free trial, card required, cancel in one click.
+              7-day free trial, cancel anytime.
             </p>
 
             <ul className="space-y-3 mb-8">
@@ -131,19 +132,19 @@ const Pricing = () => {
 
             {foundingLeft !== null && foundingLeft > 0 && (
               <p className="mt-4 text-[12.5px] leading-relaxed text-center" style={{ color: "hsl(var(--aeline-dark))" }}>
-                <strong>Founding deal:</strong> the first 10 paying customers keep ${PLAN_PRICE_USD}/month for life, even if the price goes up.
+                <strong>Founding offer:</strong> ${PLAN_PRICE_USD}/month locked for life for the first 10 customers. {foundingLeft} of 10 left.
               </p>
             )}
 
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-4 mt-5 pt-5 border-t border-border/50">
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <Lock className="w-3 h-3" />
-                Secure checkout by Stripe
+                Secure checkout by Creem
               </div>
               <span className="hidden sm:inline text-muted-foreground/30">·</span>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <RotateCcw className="w-3 h-3" />
-                Cancel in one click
+                Cancel anytime
               </div>
               <span className="hidden sm:inline text-muted-foreground/30">·</span>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">

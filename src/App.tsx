@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import StartTrial from "./pages/StartTrial.tsx";
+import CheckoutSuccess from "./pages/CheckoutSuccess.tsx";
 import Book from "./pages/Book.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
@@ -198,6 +199,7 @@ export const AppContent = () => (
           <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
           <Route path="/start-trial" element={<AuthOnlyGuard><StartTrial /></AuthOnlyGuard>} />
+          <Route path="/app" element={<AuthOnlyGuard><CheckoutSuccess /></AuthOnlyGuard>} />
           <Route path="/book" element={<Book />} />
           <Route
             path="/dashboard"

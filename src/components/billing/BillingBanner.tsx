@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clock, Loader2, Lock } from "lucide-react";
+import { AlertTriangle, Clock, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import type { SubscriptionState } from "@/hooks/useSubscription";
 import { openBillingPortal, startCheckout } from "@/lib/billing";
@@ -8,12 +8,13 @@ const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 
 const LOCK_COPY: Record<string, string> = {
-  past_due: "Your last payment didn't go through, so your account is read-only: signals and LinkedIn outreach are paused.",
   canceled: "Your subscription has ended, so your account is read-only: signals and LinkedIn outreach are paused.",
+  expired: "Your subscription has ended, so your account is read-only: signals and LinkedIn outreach are paused.",
+  paused: "Your subscription is paused, so your account is read-only: signals and LinkedIn outreach are paused.",
   no_subscription: "Start your 7-day free trial to turn on signals and LinkedIn outreach.",
 };
 
-/** Billing banner at the top of the app (trial ending, read-only). */
+/** Billing banner at the top of the app (trial, payment failed, read-only). */
 export function BillingBanner({ sub }: { sub: SubscriptionState }) {
   const [busy, setBusy] = useState(false);
   const banner = sub.banner;
@@ -23,7 +24,7 @@ export function BillingBanner({ sub }: { sub: SubscriptionState }) {
     setBusy(true);
     const result = action === "portal" ? await openBillingPortal() : await startCheckout();
     if (!result.ok) {
-      // No Stripe customer yet (never subscribed).
+      // No Creem customer yet (never subscribed).
       if (action === "portal" && result.reason === "no_customer") {
         const retry = await startCheckout();
         if (!retry.ok) toast.error(retry.message);
@@ -36,11 +37,10 @@ export function BillingBanner({ sub }: { sub: SubscriptionState }) {
 
   const ownerNote = !sub.isBillingOwner ? " Your workspace owner manages billing." : "";
 
-  if (banner.kind === "trial_ending") {
-    const ends = fmtDate(banner.endsAt);
-    const text = banner.signalsLeft > 0
-      ? `Your trial ends on ${ends} or after ${banner.signalsLeft} more signal${banner.signalsLeft === 1 ? "" : "s"}, whichever comes first. Then your card is charged $97/month.`
-      : `Your trial has used all its signals and ends now. Your card will be charged $97/month.`;
+  if (banner.kind === "trial" || banner.kind === "ending") {
+    const text = banner.kind === "trial"
+      ? `Trial ends ${fmtDate(banner.endsAt)}. Then it's $97/month, cancel anytime.`
+      : `Your subscription ends ${fmtDate(banner.endsAt)}. Signals and LinkedIn outreach stop then.`;
     return (
       <Bar tone="info" icon={<Clock className="w-4 h-4 shrink-0 mt-0.5 text-sky-600" />} text={text + ownerNote}>
         {sub.isBillingOwner && <Action busy={busy} onClick={() => go("portal")} label="Manage billing" />}
@@ -48,12 +48,24 @@ export function BillingBanner({ sub }: { sub: SubscriptionState }) {
     );
   }
 
+  if (banner.kind === "payment_failed") {
+    return (
+      <Bar
+        tone="lock"
+        icon={<AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />}
+        text={"Payment failed, update your card. Signals and LinkedIn outreach are paused until it goes through." + ownerNote}
+      >
+        {sub.isBillingOwner && <Action busy={busy} onClick={() => go("portal")} label="Update card" />}
+      </Bar>
+    );
+  }
+
   const status = banner.status;
-  const reactivate = status === "past_due" || status === "canceled" ? "portal" : "checkout";
+  const reactivate = status === "paused" ? "portal" : "checkout";
   return (
     <Bar tone="lock" icon={<Lock className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />} text={LOCK_COPY[status] + ownerNote}>
       {sub.isBillingOwner && (
-        <Action busy={busy} onClick={() => go(reactivate)} label={status === "no_subscription" ? "Start free trial" : "Reactivate"} />
+        <Action busy={busy} onClick={() => go(reactivate)} label={status === "no_subscription" ? "Start free trial" : status === "paused" ? "Resume" : "Subscribe again"} />
       )}
     </Bar>
   );

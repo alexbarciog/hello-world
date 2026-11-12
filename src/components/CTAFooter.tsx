@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import ctaBg from "@/assets/cta-bg.avif";
+import { FOOTER_COLUMNS, LEGAL_LINKS } from "@/data/siteNav";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -66,9 +67,9 @@ const Footer = () => {
     <footer className="bg-background px-2 md:px-4 pb-4 md:pb-8 pt-4 md:pt-8">
       <div className="mx-auto bg-[#111113] text-white rounded-[40px] px-8 md:px-12 pt-14 pb-8">
         {/* Top section */}
-        <div className="flex flex-col lg:flex-row justify-between gap-12 mb-14">
-          {/* Left: Logo + description + newsletter */}
-          <div className="max-w-md">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,320px)_1fr] mb-14">
+          {/* Left: logo, description, calls to action */}
+          <div>
             <a href="/" className="flex items-center gap-2.5 mb-6">
               <img alt="Intentsly" className="h-8 object-contain" src={intentslyIcon} />
               <span className="text-lg font-medium tracking-tight text-white">Intentsly</span>
@@ -76,54 +77,50 @@ const Footer = () => {
             <p className="text-sm text-white/50 leading-relaxed mb-8">
               Detect high-intent buying signals and automate personalized outreach — so you reach warm prospects before your competitors do.
             </p>
-            <p className="text-sm text-white mb-4">Subscribe our newsletter</p>
-            <div className="flex items-center bg-[#1a1a1e] rounded-full p-1.5 border border-white/10 max-w-sm">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-transparent text-sm text-white placeholder:text-white/30 px-4 py-2.5 flex-1 focus:outline-none"
-              />
-              <button className="flex items-center gap-2 bg-[#C8FF00] text-[#111113] text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-full hover:bg-[#d4ff33] transition-colors shrink-0">
-                Submit
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href="/register"
+                className="inline-flex items-center gap-2 bg-[#C8FF00] text-[#111113] text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-full hover:bg-[#d4ff33] transition-colors"
+              >
+                Start for $97
                 <ArrowUpRight className="w-4 h-4" />
-              </button>
+              </a>
+              <a
+                href="/book"
+                className="inline-flex items-center gap-2 border border-white/15 text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-full hover:bg-white/10 transition-colors"
+              >
+                Book a call
+              </a>
             </div>
           </div>
 
-          {/* Right: Link columns */}
-          <div className="flex flex-wrap gap-x-20 gap-y-8">
-            <div className="flex flex-col gap-4">
-              <a href="/#services" className="text-sm text-white/60 hover:text-white transition-colors">Services</a>
-              <a href="/#expertise" className="text-sm text-white/60 hover:text-white transition-colors">Expertise</a>
-              <a href="/#pricing" className="text-sm text-white/60 hover:text-white transition-colors">Pricing</a>
-              <a href="/#testimonials" className="text-sm text-white/60 hover:text-white transition-colors">Testimonials</a>
-              <a href="/blog" className="text-sm text-white/60 hover:text-white transition-colors">Blog</a>
-              <a href="/guides" className="text-sm text-white/60 hover:text-white transition-colors">Guides</a>
-              <a href="/learn" className="text-sm text-white/60 hover:text-white transition-colors">Learn</a>
-              <a href="/solutions" className="text-sm text-white/60 hover:text-white transition-colors">Solutions</a>
-              <a href="/compare" className="text-sm text-white/60 hover:text-white transition-colors">Compare</a>
-            </div>
-            <div className="flex flex-col gap-4">
-              <a href="/tools" className="text-sm text-white/60 hover:text-white transition-colors">Free tools</a>
-              <a href="/linkedin-profile-analyzer" className="text-sm text-white/60 hover:text-white transition-colors">Profile Analyzer</a>
-              <a href="/linkedin-hook-analyzer" className="text-sm text-white/60 hover:text-white transition-colors">Hook Analyzer</a>
-              <a href="/buying-signals" className="text-sm text-white/60 hover:text-white transition-colors">Buying Signal Finder</a>
-              <a href="/cold-message-grader" className="text-sm text-white/60 hover:text-white transition-colors">Cold Message Grader</a>
-            </div>
-            <div className="flex flex-col gap-4">
-              <a href="/privacy" className="text-sm text-white/60 hover:text-white transition-colors">Privacy</a>
-              <a href="/terms" className="text-sm text-white/60 hover:text-white transition-colors">Terms</a>
-              <a href="/help" className="text-sm text-white/60 hover:text-white transition-colors">Help Center</a>
-              <a href="/support" className="text-sm text-white/60 hover:text-white transition-colors">Support</a>
-            </div>
-          </div>
+          {/* Right: link columns */}
+          <nav aria-label="Footer" className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-x-8 gap-y-10">
+            {FOOTER_COLUMNS.map((column) => (
+              <div key={column.title}>
+                <p className="text-xs font-semibold uppercase tracking-wider text-white mb-4">{column.title}</p>
+                <ul className="flex flex-col gap-3">
+                  {column.links.map((link) => (
+                    <li key={link.href}>
+                      <a href={link.href} className="text-sm text-white/60 hover:text-white transition-colors">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
-            <a href="/privacy" className="text-xs text-white/30 hover:text-white/60 transition-colors">Privacy Policy</a>
-            <a href="/terms" className="text-xs text-white/30 hover:text-white/60 transition-colors">Terms of Service</a>
+            {LEGAL_LINKS.map((link) => (
+              <a key={link.href} href={link.href} className="text-xs text-white/30 hover:text-white/60 transition-colors">
+                {link.label}
+              </a>
+            ))}
           </div>
           <p className="text-xs text-white/30">
             © {new Date().getFullYear()} Intentsly. All rights reserved.

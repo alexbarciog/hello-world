@@ -880,7 +880,7 @@ function BillingTab() {
     if (!result.ok) toast.error(result.message);
     setPortalBusy(false);
   };
-  const locked = sub.status === "past_due" || sub.status === "canceled";
+  const locked = sub.readOnly && sub.status !== null;
 
   if (sub.loading) {
     return (
@@ -922,10 +922,15 @@ function BillingTab() {
               )}
               {sub.status === "trialing" && sub.trialEndsAt && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Trial ends {new Date(sub.trialEndsAt).toLocaleDateString()} or after {Math.max(sub.signalCap - sub.signalsUsed, 0)} more signals
+                  Trial ends {new Date(sub.trialEndsAt).toLocaleDateString()}
                 </p>
               )}
-              {sub.status !== "trialing" && sub.subscriptionEnd && (
+              {sub.cancelAtPeriodEnd && sub.currentPeriodEnd && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ends {new Date(sub.currentPeriodEnd).toLocaleDateString()}, won't renew
+                </p>
+              )}
+              {sub.status !== "trialing" && !sub.cancelAtPeriodEnd && sub.subscriptionEnd && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Next billing: {new Date(sub.subscriptionEnd).toLocaleDateString()}
                 </p>
@@ -957,23 +962,23 @@ function BillingTab() {
             </motion.div>
             <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
               <p className="text-base font-bold text-foreground mb-1">
-                {sub.status === "past_due" ? "Payment failed" : sub.status === "canceled" ? "Subscription ended" : "No active subscription"}
+                {sub.status === "past_due" || sub.status === "unpaid" ? "Payment failed" : sub.status === "paused" ? "Subscription paused" : locked ? "Subscription ended" : "No active subscription"}
               </p>
               <p className="text-sm text-muted-foreground max-w-xs">
                 {locked
                   ? "Your account is read-only. Reactivate to turn signals and LinkedIn outreach back on."
-                  : "Start your 7-day free trial: everything on, $97/month after, cancel in one click."}
+                  : "Start your 7-day free trial: everything on, $97/month after, cancel anytime."}
               </p>
             </motion.div>
             <motion.button
               custom={3} variants={fadeUp} initial="hidden" animate="visible"
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={locked ? openPortal : () => navigate("/pricing")}
+              onClick={locked && sub.status !== "canceled" && sub.status !== "expired" ? openPortal : () => navigate("/pricing")}
               disabled={portalBusy || (locked && !sub.isBillingOwner)}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md disabled:opacity-60"
               style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
             >
-              <CreditCard className="w-4 h-4" /> {locked ? "Reactivate" : "Start free trial"}
+              <CreditCard className="w-4 h-4" /> {!locked ? "Start free trial" : sub.status === "canceled" || sub.status === "expired" ? "Subscribe again" : "Update billing"}
             </motion.button>
           </div>
         </SectionCard>

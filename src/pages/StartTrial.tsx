@@ -6,7 +6,7 @@ import { startCheckout } from "@/lib/billing";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Between signup and onboarding: opens Stripe Checkout for the 7-day trial.
+ * Between signup and onboarding: opens Creem checkout for the 7-day trial.
  * If checkout is switched off or fails, the person continues to onboarding
  * (the in-app banner offers the trial again later).
  */

@@ -400,10 +400,10 @@ function OnboardingInner() {
           </AnimatePresence>
         </div>
 
-        {/* Product demo (placeholder until the recording exists) */}
+        {/* Product demo */}
         <details className="w-full max-w-xl mx-auto mb-5 shrink-0 group">
           <summary className="cursor-pointer list-none text-sm font-medium text-neutral-600 hover:text-neutral-900">
-            ▶ Watch the 3-minute product demo
+            ▶ Watch the product demo
           </summary>
           <div className="mt-3">
             <DemoVideo />
