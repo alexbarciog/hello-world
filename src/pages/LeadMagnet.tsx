@@ -6,8 +6,8 @@ import { Footer } from "@/components/CTAFooter";
 import heroGradient from "@/assets/hero-gradient-right.png";
 import NotFound from "./NotFound";
 import { applySeo } from "@/lib/seo";
-import { leadMagnetSeo, leadMagnetUrl, requestLeadMagnet, signupSource, useLeadMagnet } from "@/lib/leadMagnets";
-import { LEAD_MAGNET_EXTRAS } from "@/data/leadMagnetExtras";
+import { leadMagnetPath, leadMagnetSeo, leadMagnetUrl, requestLeadMagnet, signupSource, useLeadMagnet } from "@/lib/leadMagnets";
+import { LEAD_MAGNET_EXTRAS, coverFor } from "@/data/leadMagnetExtras";
 import { ttqSubmitForm, ttqViewContent } from "@/lib/tiktok-pixel";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +30,9 @@ export default function LeadMagnet() {
   const { search } = useLocation();
   const { data: magnet, isLoading } = useLeadMagnet(slug);
   const extras = slug ? LEAD_MAGNET_EXTRAS[slug] : undefined;
+  const cover = slug ? coverFor(slug) : null;
+  // A guide without a cover file yet falls back to the drawn card.
+  const [coverFailed, setCoverFailed] = useState(false);
 
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -200,14 +203,24 @@ export default function LeadMagnet() {
                   </form>
                 )}
               </div>
+              {extras?.crossLink && (
+                <a
+                  href={leadMagnetPath(extras.crossLink.slug)}
+                  className="mt-4 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+                  style={{ color: BLUE }}
+                >
+                  {extras.crossLink.text} <ArrowRight className="h-4 w-4" />
+                </a>
+              )}
             </div>
 
             {/* Cover on the gradient panel */}
             <div className="relative overflow-hidden rounded-3xl min-h-[380px] sm:min-h-[480px] lg:min-h-[600px] flex items-center justify-center p-8 sm:p-12">
               <img src={heroGradient} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
-              {extras?.cover ? (
+              {cover && !coverFailed ? (
                 <img
-                  src={extras.cover}
+                  src={cover}
+                  onError={() => setCoverFailed(true)}
                   alt={`Cover of ${magnet.title}`}
                   width={900}
                   height={1274}
@@ -224,22 +237,40 @@ export default function LeadMagnet() {
         </div>
       </section>
 
-      {extras?.inside && (
+      {(extras?.inside || extras?.tagline) && (
         <section className="px-4 sm:px-5 md:px-8 pb-16 md:pb-24">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.02em] text-[#0a0a0a] mb-6 md:mb-8">
-              {extras.inside.heading}
-            </h2>
-            <ol className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-              {extras.inside.items.map((item, i) => (
-                <li key={item} className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5">
-                  <span className="block text-xs font-semibold mb-1.5" style={{ color: BLUE }}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="block text-sm md:text-[15px] font-medium text-neutral-900 leading-snug">{item}</span>
-                </li>
-              ))}
-            </ol>
+            {extras.inside && (
+              <>
+              <h2 className="text-3xl md:text-4xl font-semibold tracking-[-0.02em] text-[#0a0a0a] mb-6 md:mb-8">
+                {extras.inside.heading}
+              </h2>
+              <ol className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                {extras.inside.items.map((item, i) => (
+                  <li key={item} className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5">
+                    <span className="block text-xs font-semibold mb-1.5" style={{ color: BLUE }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="block text-sm md:text-[15px] font-medium text-neutral-900 leading-snug">{item}</span>
+                  </li>
+                ))}
+              </ol>
+              </>
+            )}
+
+            {extras.tagline && (
+              <p
+                className="mt-12 md:mt-16 text-center font-semibold tracking-[-0.02em] text-[#0a0a0a]"
+                style={{ fontSize: "clamp(1.6rem, 4vw, 2.75rem)" }}
+              >
+                <span
+                  className="px-2 box-decoration-clone"
+                  style={{ backgroundImage: "linear-gradient(transparent 55%, #C8FF00 55%, #C8FF00 92%, transparent 92%)" }}
+                >
+                  {extras.tagline}
+                </span>
+              </p>
+            )}
 
             <div className="mt-10 md:mt-14 rounded-3xl bg-neutral-50 border border-neutral-200 p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
