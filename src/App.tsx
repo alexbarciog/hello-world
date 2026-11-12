@@ -10,6 +10,8 @@ import CheckoutSuccess from "./pages/CheckoutSuccess.tsx";
 import Book from "./pages/Book.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
+import OAuthConsent from "./pages/OAuthConsent.tsx";
+import ClaudeConnector from "./pages/ClaudeConnector.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import CampaignsPage from "./pages/Campaigns.tsx";
 import CreateCampaign from "./pages/CreateCampaign.tsx";
@@ -196,6 +198,7 @@ export const AppContent = () => (
           <Route path="/features/conversational-ai" element={<ConversationalAi />} />
           <Route path="/features/linkedin-signals" element={<LinkedInSignals />} />
           <Route path="/features/reddit-x-signals" element={<RedditXMonitoring />} />
+          <Route path="/claude" element={<ClaudeConnector />} />
           <Route path="/onboarding" element={<AuthOnlyGuard><Onboarding /></AuthOnlyGuard>} />
           <Route path="/start-trial" element={<AuthOnlyGuard><StartTrial /></AuthOnlyGuard>} />
           <Route path="/app" element={<AuthOnlyGuard><CheckoutSuccess /></AuthOnlyGuard>} />
@@ -249,6 +252,7 @@ export const AppContent = () => (
             element={<AuthGuard><DashboardLayout><IntegrationsPage /></DashboardLayout></AuthGuard>}
           />
           <Route path="/login" element={<Login />} />
+          <Route path="/oauth/consent" element={<OAuthConsent />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/help" element={<HelpCenter />} />
