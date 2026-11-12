@@ -53,3 +53,11 @@
   blocked by the corrections log; (5) a public API yes/no is still open from the HeyReach and Expandi
   pages.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin HEAD:refs/heads/main` fast-forwarded the remote from 1f0dd8b to 74db5d6 at
+  06:58 UTC; local `main` realigned to HEAD afterwards.
+- Live check: PAGE LIVE. WebFetch refused the direct URL on the first try (PROVENANCE_REQUIRED, as on
+  5 to 11 November); the check went homepage -> /blog -> page. At about 07:04 UTC (6 minutes after the
+  push) the blog index listed the new page first ("AI SDR for Founders and Small Teams: A 14-Day Setup",
+  November 12, 2026), and the page loads with that H1, "12 min read", the six-row decision table and
+  six FAQ entries, no raw markdown. SITEMAP NOT CHECKED (same provenance block as before); the page is
+  reachable from the index.
