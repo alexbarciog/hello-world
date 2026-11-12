@@ -295,7 +295,7 @@ async function processCampaignReplies(
     // IMPORTANT: Only engage contacts where current_step >= 2 (at least one outreach message has been sent)
     const { data: connReqs } = await supabase
       .from('campaign_connection_requests')
-      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step, created_at, sent_at, next_followup_at')
+      .select('id, contact_id, chat_id, ai_replies_count, conversation_stopped, last_incoming_message_at, last_ai_reply_at, user_id, current_step, created_at, sent_at, next_followup_at, lead_status')
       .eq('campaign_id', campaign.id)
       .in('status', ['accepted', 'completed'])
       .eq('conversation_stopped', false)
@@ -329,6 +329,15 @@ async function processCampaignReplies(
 
       if (!messagesRes.ok) {
         console.error(`[ai-replies] fetch messages failed for chat ${cr.chat_id}:`, messagesRes.status);
+        // 404 = the chat no longer exists in Unipile (e.g. it belonged to a LinkedIn
+        // account that was since reconnected). It will never come back, so stop the
+        // conversation instead of asking for it again every 5 minutes.
+        if (messagesRes.status === 404) {
+          await supabase.from('campaign_connection_requests')
+            .update({ conversation_stopped: true })
+            .eq('id', cr.id);
+          stopped++;
+        }
         continue;
       }
 
@@ -573,7 +582,10 @@ async function processCampaignReplies(
           console.log(`[ai-replies] Replied to ${contact.first_name} ${contact.last_name || ''} (reply #${cr.ai_replies_count + 1})${meetingAgreed ? ' [MEETING]' : ''}`);
 
           // Send email notification for interested leads (AI classified as interested)
-          if (aiIntent === 'interested') {
+          // Once per lead, and not when the meeting email above already went out.
+          const notifyInterested = aiIntent === 'interested' && !meetingAgreed
+            && !['interested', 'meeting_booked'].includes(cr.lead_status);
+          if (notifyInterested) {
             try {
               await supabase.functions.invoke('send-notification-email', {
                 body: {
@@ -590,6 +602,7 @@ async function processCampaignReplies(
           }
           
           const updateData: any = {
+            ...(notifyInterested ? { lead_status: 'interested' } : {}),
             ai_replies_count: cr.ai_replies_count + 1,
             last_incoming_message_at: msgTimestamp,
             last_ai_reply_at: new Date().toISOString(),
@@ -778,12 +791,12 @@ async function generateConversationalReply(
 }
 
 // ── AI-based intent classifier ──
-// Returns 'continue' (proceed with reply) or 'stop' (end conversation)
+// Returns 'stop' (end conversation), 'interested' (reply and notify the user) or 'continue' (reply)
 async function classifyLeadIntent(
   supabaseUrl: string,
   serviceRoleKey: string,
   ctx: { leadMessage: string; conversationHistory: string; companyName?: string; valueProposition?: string },
-): Promise<'continue' | 'stop'> {
+): Promise<'continue' | 'stop' | 'interested'> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   if (!LOVABLE_API_KEY) return 'continue'; // fail open
 
@@ -801,9 +814,9 @@ async function classifyLeadIntent(
         messages: [
           {
             role: 'system',
-            content: `You are a sales conversation classifier. Your ONLY job is to determine if the lead's latest message means we should STOP the conversation.
+            content: `You are a sales conversation classifier. Your ONLY job is to classify the lead's latest message.
 
-Output EXACTLY one word: "stop" or "continue"
+Output EXACTLY one word: "stop", "interested" or "continue"
 
 STOP the conversation if the lead:
 - Says they're not interested, don't need/want the service, or declines in any way
@@ -815,12 +828,15 @@ STOP the conversation if the lead:
 - Is clearly not a potential buyer for: ${ctx.companyName || 'our service'} (${ctx.valueProposition || 'B2B service'})
 - Redirects the conversation away from business (asking for free advice, mentoring, etc.)
 
-CONTINUE ONLY if the lead:
+INTERESTED if the lead (and nothing above applies):
 - Shows genuine interest in the product/service
-- Asks questions about what you offer
+- Asks questions about what you offer, its price or how it works
 - Agrees to a call or meeting
+- Shares a business challenge that the service solves
+
+CONTINUE if the lead:
 - Engages in normal professional small talk (early rapport building)
-- Shares relevant business challenges`,
+- Replies politely or vaguely without showing interest yet`,
           },
           {
             role: 'user',
@@ -832,8 +848,10 @@ CONTINUE ONLY if the lead:
 
     if (!response.ok) return 'continue'; // fail open
     const data = await response.json();
-    const result = (data.choices?.[0]?.message?.content || '').trim().toLowerCase();
-    return result === 'stop' ? 'stop' : 'continue';
+    const result = (data.choices?.[0]?.message?.content || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (result.startsWith('stop')) return 'stop';
+    if (result.startsWith('interested')) return 'interested';
+    return 'continue';
   } catch {
     return 'continue'; // fail open
   }
