@@ -65,3 +65,9 @@
   will appear as soon as a deploy runs the prerender; the morning's blog push was live within 6
   minutes, so this deploy may have failed or stalled. The repository has no GitHub Actions runs to
   inspect. This live-check commit triggers another deploy; the next run should confirm the page.
+- Live check, update: PAGE LIVE. After the live-check push (a795fe2, 14:32 UTC) the solutions index at
+  14:48 UTC listed the new page first ("How to Get Clients for an MSP: Six Switching Signals",
+  November 12, 2026, 20 cards), and the page loads with that H1, "13 min read", the six-row signals
+  table and six FAQ entries. So the first push's deploy did not publish within 43 minutes; the second
+  push did within 16. Worth a look at the Cloudflare deploy log for the 13:49 UTC build. SITEMAP NOT
+  CHECKED (direct URL blocked by the provenance rule, as before); the page is reachable from the index.
