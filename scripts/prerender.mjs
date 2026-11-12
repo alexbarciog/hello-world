@@ -9,6 +9,9 @@
 // renders client-side through the SPA fallback. Set BLOG_POSTS_FILE to a JSON
 // file to prerender from local data instead (offline builds, tests).
 //
+// Free guides (/free/:slug) come from the table `lead_magnets` (active rows)
+// the same way; LEAD_MAGNETS_FILE overrides it.
+//
 // Runs as the last step of `npm run build`; needs dist/ and dist-ssr/.
 import { JSDOM } from "jsdom";
 import fs from "node:fs";
@@ -188,6 +191,35 @@ async function loadBlogPosts() {
   }
 }
 
+// A lead-magnet outage must not fail the deploy either: build without guides.
+async function loadLeadMagnets(columns) {
+  if (process.env.LEAD_MAGNETS_FILE) {
+    return JSON.parse(fs.readFileSync(process.env.LEAD_MAGNETS_FILE, "utf8"));
+  }
+  const env = { ...readDotEnv(), ...process.env };
+  const url = env.VITE_SUPABASE_URL;
+  const key = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    console.warn("lead magnets: Supabase URL/key not found, skipping guides");
+    return [];
+  }
+  try {
+    const res = await fetch(`${url}/rest/v1/lead_magnets?active=eq.true&select=${columns}&order=created_at.asc`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      console.warn(`lead magnets: could not load guides (HTTP ${res.status}), skipping`);
+      return [];
+    }
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    console.warn("lead magnets: could not load guides, skipping:", err.message);
+    return [];
+  }
+}
+
 // JSON placed inside a <script> must not be able to close the tag.
 const safeJson = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028|\u2029/g, "");
 
@@ -218,6 +250,9 @@ function buildPage(template, route, appHtml) {
   if (route.blogData) {
     html = html.replace("</head>", `  <script>window.__BLOG__=${safeJson(route.blogData)}</script>\n</head>`);
   }
+  if (route.leadMagnet) {
+    html = html.replace("</head>", `  <script>window.__LEAD_MAGNET__=${safeJson(route.leadMagnet)}</script>\n</head>`);
+  }
   // index.html doubles as the SPA fallback for app routes (/dashboard, …);
   // drop the prerendered markup there so the homepage never flashes first.
   const guard = `<script>if(location.pathname.replace(/\\/+$/,"")!==${JSON.stringify(route.path === "/" ? "" : route.path)})document.getElementById("root").innerHTML=""</script>`;
@@ -225,7 +260,10 @@ function buildPage(template, route, appHtml) {
 }
 
 installDomGlobals();
-const { render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath } = await import(
+const {
+  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
+  setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS,
+} = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
 );
 
@@ -235,6 +273,10 @@ const blogSummaries = blogPosts.map(toSummary);
 for (const key of Object.keys(SECTIONS)) {
   console.log(`${key}: ${blogPosts.filter((p) => p.section === key).length} published page(s)`);
 }
+const leadMagnets = await loadLeadMagnets(LEAD_MAGNET_COLUMNS);
+setLeadMagnetPrerenderData(leadMagnets);
+console.log(`lead magnets: ${leadMagnets.length} active guide(s)`);
+
 const newestIn = (section) =>
   blogPosts
     .filter((p) => p.section === section)
@@ -271,6 +313,12 @@ const routes = [
     blogData: { post, posts: blogSummaries },
     lastmod: (post.updated_at || post.published_at || "").slice(0, 10) || undefined,
     priority: SECTIONS[post.section].priority,
+  })),
+  ...leadMagnets.map((m) => ({
+    path: leadMagnetPath(m.slug),
+    ...leadMagnetSeo(m),
+    leadMagnet: m,
+    priority: "0.7",
   })),
 ];
 

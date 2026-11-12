@@ -256,6 +256,7 @@ export const FOOTER_COLUMNS: NavGroup[] = [
       { label: "Learn", href: "/learn" },
       { label: "Buying Signal Playbook", href: "/signal-playbook" },
       { label: "0 to 100 customers playbook", href: "/playbook" },
+      { label: "Free guides", href: "/free/12-buying-signals" },
       { label: "FAQ", href: "/#faq" },
     ],
   },

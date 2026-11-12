@@ -7,6 +7,8 @@ import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
 import { InlineCta, NextStepCta, StickyCta } from "@/components/ContentCta";
 import { applySeo } from "@/lib/seo";
+import { guideForPost } from "@/data/leadMagnetExtras";
+import { leadMagnetPath } from "@/lib/leadMagnets";
 import {
   SECTIONS,
   SITE_URL,
@@ -106,6 +108,21 @@ const Shell = ({ children }: { children: ReactNode }) => (
     <Footer />
   </div>
 );
+
+/** Small end-of-article card for posts that have a matching free guide. */
+function GuideCard({ postSlug }: { postSlug: string }) {
+  const guide = guideForPost(postSlug);
+  if (!guide) return null;
+  return (
+    <Link
+      to={leadMagnetPath(guide.slug)}
+      className="not-prose mt-10 flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-[#C8FF00]/15 px-5 py-4 no-underline hover:border-neutral-300 transition-colors"
+    >
+      <span className="text-[15px] font-semibold text-[#0a0a0a]">{guide.text}</span>
+      <ArrowUpRight className="h-5 w-5 shrink-0 text-[#1A8FE3]" />
+    </Link>
+  );
+}
 
 /** One content page. `section` is the route's section; a slug published in another section 404s here. */
 const BlogPost = ({ section = "blog" }: { section?: Section }) => {
@@ -246,6 +263,7 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
               {after}
             </ReactMarkdown>
           )}
+          <GuideCard postSlug={post.slug} />
         </div>
       </article>
 

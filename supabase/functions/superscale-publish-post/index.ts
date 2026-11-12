@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { documentCheck, documentFileName, documentFromMetrics, isPdf, type PostDocument } from "../_shared/linkedin-document.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,14 +27,29 @@ function detectImageMime(buf: Uint8Array, fallback = "image/jpeg") {
   return fallback;
 }
 
-async function publishToLinkedIn(accountId: string, text: string, imageUrl: string | null) {
+async function publishToLinkedIn(accountId: string, text: string, imageUrl: string | null, document: PostDocument | null = null) {
   // Unipile post creation expects multipart/form-data even for text-only posts.
   const url = `https://${UNIPILE_DSN}/api/v1/posts`;
   const fd = new FormData();
   fd.append("account_id", accountId);
   fd.append("text", text);
 
-  if (imageUrl) {
+  if (document) {
+    // A carousel is a post whose only attachment is one PDF, so the image is left off.
+    try {
+      const docResp = await fetch(document.url);
+      if (!docResp.ok) {
+        return { ok: false, status: docResp.status, payload: {}, text: `Document fetch failed: ${docResp.status}` };
+      }
+      const buf = new Uint8Array(await docResp.arrayBuffer());
+      if (!isPdf(buf)) {
+        return { ok: false, status: 0, payload: {}, text: "Document is not a PDF" };
+      }
+      fd.append("attachments", new Blob([buf], { type: "application/pdf" }), documentFileName(document.title));
+    } catch (e) {
+      return { ok: false, status: 0, payload: {}, text: String(e) };
+    }
+  } else if (imageUrl) {
     try {
       const imgResp = await fetch(imageUrl);
       if (!imgResp.ok) {
@@ -64,8 +80,23 @@ async function publishToLinkedIn(accountId: string, text: string, imageUrl: stri
   const txt = await r.text();
   let payload: any = {};
   try { payload = JSON.parse(txt); } catch {}
-  if (!r.ok) console.error("Unipile post error", r.status, txt, "has_image=", Boolean(imageUrl));
+  if (!r.ok) console.error("Unipile post error", r.status, txt, "has_image=", Boolean(imageUrl), "has_document=", Boolean(document));
   return { ok: r.ok, status: r.status, payload, text: txt };
+}
+
+// Reads the post back from LinkedIn (through Unipile) to confirm it carries the
+// PDF as a document. Never throws: the post is already live either way.
+async function checkDocumentPost(accountId: string, postRef: string) {
+  try {
+    const r = await fetch(
+      `https://${UNIPILE_DSN}/api/v1/posts/${encodeURIComponent(postRef)}?account_id=${encodeURIComponent(accountId)}`,
+      { headers: { "X-API-KEY": UNIPILE_API_KEY, accept: "application/json" } },
+    );
+    if (!r.ok) return { ok: false, attachment_types: [] as string[], error: `Unipile ${r.status}` };
+    return documentCheck(await r.json());
+  } catch (e) {
+    return { ok: false, attachment_types: [] as string[], error: String(e) };
+  }
 }
 
 async function extractKeywords(text: string): Promise<string[]> {
@@ -116,7 +147,8 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const result = await publishToLinkedIn(accountId, post.content, post.image_url);
+      const document = documentFromMetrics(post.metrics);
+      const result = await publishToLinkedIn(accountId, post.content, post.image_url, document);
       if (!result.ok) {
         await admin.from("linkedin_posts").update({
           status: "failed", error: `Unipile ${result.status}: ${result.text.slice(0, 500)}`,
@@ -138,6 +170,14 @@ Deno.serve(async (req) => {
         post_url: postUrl,
         error: null,
       }).eq("id", post.id);
+
+      if (document && (numericId || postIdText)) {
+        const check = await checkDocumentPost(accountId, numericId || postIdText);
+        if (!check.ok) console.warn("document post not shown as a document", post.id, JSON.stringify(check));
+        await admin.from("linkedin_posts").update({
+          metrics: { ...(post.metrics || {}), document_check: { ...check, checked_at: new Date().toISOString() } },
+        }).eq("id", post.id);
+      }
 
       // Auto-spike
       if (post.comments_spike_enabled) {
