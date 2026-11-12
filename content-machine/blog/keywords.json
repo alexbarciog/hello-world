@@ -1461,8 +1461,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-an-msp",
    "monthly_volume": null
   },
   {

@@ -1,63 +1,56 @@
-# Last run: 2026-11-12 (blog task; fired about 06:50 UTC, 08:50 Bucharest)
+# Last run: 2026-11-12 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main` (`add_repo` is still not available
-  as a tool, as on previous runs); `git pull origin main` already up to date at 1f0dd8b. Supabase: the
+  as a tool, as on previous runs); `git pull origin main` already up to date at cdabd7c. Supabase: the
   lowercase "supabase" connector again reported a proxy tunnel error at session start; the "Supabase"
   connector connected and was used. Web search worked. The only draft in blog/drafts/
   (outbound-sales-process-for-startups.md, guides) carries a `blocked:` line, so it was not resumed.
 - Pre-write check: a read of public.blog_posts for the slug returned no row, so nothing was overwritten.
-- Keyword (published): ai sdr for founders and small teams (section blog, cluster ai-sdr, how-to,
-  commercial, priority 2, difficulty low).
-  "AI SDR for Founders and Small Teams: A 14-Day Setup"
-  https://intentsly.com/blog/ai-sdr-for-founders-and-small-teams
-- Gate: passed on the second run (first: meta description 166 chars; "$80K" in a FAQ paragraph without
-  its link; the anchor text "Intentsly vs 11x" read as an unsourced "11x" statistic; and "21%" and a
-  "5%" threshold flagged). Fixes: meta description shortened to 160; the Bridge Group link repeated in
-  the FAQ paragraph; the compare anchor reworded; the 21% row left out (its proof status reads
-  "verified: say ..." rather than plain "verified", so the gate does not accept it, same as on 11
-  November); the day-14 threshold rephrased as "fewer than one reply in twenty". Four voice edits after
-  that, still passing. 2,743 gate-counted words, 8 H2, 6 FAQ, 8 internal links, 4 external links, no
-  warnings. Opening paragraph 90 words (the limit).
-- Database: the upsert returned status published, published_at 2026-11-12 06:57:58 UTC.
-- Angle: the first page is vendor rankings (Close, Apollo, Instantly, CellCog, Sendio) plus SaaStr's
-  large-deployment playbook and one consultant post. None gives a one-person procedure sized to
-  LinkedIn's daily caps, a buy / wait / never rule, or a day-14 keep-or-stop rule. The article gives a
-  six-row decision table, the three jobs an AI SDR must do, the LinkedIn-or-email choice, a 14-day setup
-  (profile from the last ten conversations, do-not-contact list, signals, three self-written messages,
-  caps and a three-line handoff rule, calendar and CRM, a week at 15 a day, a day-14 decision), what
-  stays with the founder, the cost comparison against hiring, the 14-demos story with the product's
-  limits stated, and six FAQ entries.
-- Sources opened today and linked: saastr.com "Dear SaaStr: I want to roll out an AI SDR" (11 Mar 2026:
-  prove the human playbook, write your own templates, handoff before launch, 30 to 45 min a day tuning
-  for 60 to 90 days, replies left for hours lose deals); pravinkumar.co three-person-team post (20 Oct
-  2026: tiering, skip cases); instantly.ai AI BDR for small teams (15 Jul 2026: 4 to 6 weeks warmup, 30
-  emails per inbox per day); bridgegroupinc.com 2025 SDR report (351 companies: $80K median OTE, 3.0
-  month ramp, 1.9 year tenure, 112 activities and 4.1 quality conversations a day). Opened, not linked:
-  close.com AI SDR comparison, cellcog.ai, apollo.io insights, sendio.ai, instantly.ai qualification
-  guide, saastr.com "10 things" post, bridgegroupinc.com tenure page. Blocked by robots.txt:
-  linkedin.com/help invitation-limit page, so no LinkedIn weekly limit is quoted.
-  Intentsly facts used: LinkedIn signal sources, ICP scoring, HubSpot / Cal.com / Google Calendar, AI SDR
-  on LinkedIn only (no email), 2 accounts, 30/30/15 caps, four languages, 7-day trial, /try-ai,
-  14 demos in 14 days, zero manual outreach, 4x reply rate, "2 to 4 meetings a week on average" with
-  the October 2026 attribution. No price, no Reddit/X feature, nothing from the NOT LIVE epics. The 21%
-  row and the 1,000-leads row unused.
-- Queue: 23 `blog` keywords still queued (above the 5 threshold), so blog-keywords was not run. Next up
-  per blog_next is "what to say when a prospect likes a competitor's post".
-- Caps: first page of 12 November by Bucharest time (cap 7); the weekly count stays under 45.
-- For Alex: (1) the 21% reply-rate and ~1,000 leads rows are still unusable by the gate because their
-  status cell reads "verified: ..." rather than "verified"; either a plain "verified" status with the
-  phrasing rule moved into the claim cell, or a change in scripts/, would let them in; (2) a first-hand
-  number for how long a customer's first setup takes (days to first booked meeting) would turn the
-  "14 days" framing from a plan into a measured claim; (3) the "outbound sales process for startups"
-  guide draft is still blocked by the gate's handling of the word "process"; (4) a price is still
-  blocked by the corrections log; (5) a public API yes/no is still open from the HeyReach and Expandi
-  pages.
+- Keyword (published): how to get clients for an msp (section solutions, cluster find-customers, landing,
+  commercial, priority 3, difficulty medium).
+  "How to Get Clients for an MSP: Six Switching Signals"
+  https://intentsly.com/solutions/get-clients-for-an-msp
+- Gate: passed on the fourth run; the only fails were length limits (meta description 170 chars, then the
+  opening paragraph at 101, 95 and 91 words against the 90 cap). No fact, link or phrase fails. Final:
+  2,966 gate-counted words (tables and the template inflate the count; the HR consulting and lead-gen
+  agency solutions pages sit at 2,830 and 2,692 by the same counter), 7 H2, 6 FAQ, 14 internal links,
+  2 external links, no warnings, no em dashes. blog_cloud.py sql printed "ready": true.
+- Database: the upsert returned status published, published_at 2026-11-12 13:48:56 UTC.
+- Angle: the first page is vendor listicles (ManageEngine, Syncro, Zomentum, Cleverly, Unitrends, Apollo)
+  plus one consultant post arguing for inbound only and one Substack "first 5 clients" post. All give
+  niche / website / referrals / chamber / partners / ads; none lists the public moments that show a
+  specific company is about to hire or switch an MSP, with a LinkedIn search and message for each. The
+  page gives six signals (first IT job post, the only IT person leaving, an outage or phishing post, a
+  cyber insurance or compliance requirement, a second office or hiring surge, a public request for a
+  provider), a week-one plan with the 15-a-day caps, a leaver-handover message template, the Intentsly
+  feature mapping with limits stated, the 14-demos story, three honest alternatives and six FAQ entries.
+- Sources opened today and linked: kaseya.com press release "AI Emerges as the Key to Scaling MSP
+  Operations as Growth Gets Harder" (14 Apr 2026, 1,000+ MSPs: 71% say acquiring new customers is the
+  top challenge; share with typical customer spend above $25,000 fell to 41% from 75%; 71% grew
+  cybersecurity revenue); gov.uk Cyber Security Breaches Survey 2025/2026 (2,112 businesses, fieldwork
+  Aug to Dec 2025: 43% identified a breach or attack, 46% of small and 65% of medium; 47% hold cyber
+  insurance; 30% did a cyber risk assessment; 44% of micro businesses have an external cyber security
+  provider, up from 39%). Opened, not linked: manageengine.com, syncrosecure.com, msplaunchpad.com,
+  robleon.substack.com, cleverly.co, zomentum.com, apollo.io/insights, unitrends.com, kaseya.com blog
+  "msp-growth-challenges-2026", an r/MSSP thread via a Reddit mirror. The geocited.io result redirected
+  to an unrelated homepage and was skipped.
+  Intentsly facts used: LinkedIn-only signal sources (keyword posts, post engagement, competitor page
+  followers and engagers, hashtags), ICP scoring, verified-email enrichment, export, HubSpot / Cal.com /
+  Google Calendar, AI SDR on LinkedIn only (no email), 2 accounts, 30/30/15 caps, four languages,
+  /try-ai, 14 demos in 14 days, zero manual outreach, 4x reply rate, "around 1,000 leads a month per
+  agent" and "2 to 4 meetings a week on average" with the October 2026 attribution. No price, no
+  Reddit/X feature, nothing from the NOT LIVE epics. The 21% row unused (its status cell still reads
+  "verified: say ..." so the gate does not accept it). The page says the job-post signal is not
+  monitored by Intentsly, matching product.md.
+- Queue: 5 `solutions` keywords still queued (not fewer than 5, so blog-keywords was not run). Next up
+  per blog_next is "how to find customers for a cybersecurity company", then staffing agency, SEO
+  agency, IT consulting company, PPC agency.
+- Caps: second page of 12 November by Bucharest time (the blog task published one at 08:58); cap 7 a
+  day, and the weekly count stays under 45.
+- For Alex: (1) an MSP or IT-services customer story, even one line (what signal, what they said, what
+  it closed), would replace the "we are not an MSP" framing on this and the coming cybersecurity and IT
+  consulting pages; (2) the 21% reply-rate row is still unusable by the gate because its status cell
+  reads "verified: ..." rather than "verified"; (3) a price is still blocked by the corrections log;
+  (4) confirmation of whether keyword monitoring can be pointed at job-post language, so the job-post
+  row can move into the Intentsly table instead of staying manual.
 - Push and live check: see the end of this file (appended after the push).
-- Push: `git push origin HEAD:refs/heads/main` fast-forwarded the remote from 1f0dd8b to 74db5d6 at
-  06:58 UTC; local `main` realigned to HEAD afterwards.
-- Live check: PAGE LIVE. WebFetch refused the direct URL on the first try (PROVENANCE_REQUIRED, as on
-  5 to 11 November); the check went homepage -> /blog -> page. At about 07:04 UTC (6 minutes after the
-  push) the blog index listed the new page first ("AI SDR for Founders and Small Teams: A 14-Day Setup",
-  November 12, 2026), and the page loads with that H1, "12 min read", the six-row decision table and
-  six FAQ entries, no raw markdown. SITEMAP NOT CHECKED (same provenance block as before); the page is
-  reachable from the index.
