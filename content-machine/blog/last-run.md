@@ -54,3 +54,14 @@
   (4) confirmation of whether keyword monitoring can be pointed at job-post language, so the job-post
   row can move into the Intentsly table instead of staying manual.
 - Push and live check: see the end of this file (appended after the push).
+- Push: `git push origin HEAD:refs/heads/main` fast-forwarded the remote from cdabd7c to bdb91bd at
+  13:49 UTC. Note: this commit was authored as "Alex Barciog <moshe@mcapay.io>" instead of the usual
+  "Claude (content run) <noreply@anthropic.com>"; an attempt to amend and re-push was refused by the
+  session's permission rules, so it stands. The next run uses the content-run identity.
+- Live check: NOT CONFIRMED. WebFetch refused the direct page URL and the sitemap (PROVENANCE_REQUIRED,
+  as on 5 to 12 November), so the check went homepage -> /solutions. At 13:56, 14:11, 14:17 and
+  14:32 UTC (7 to 43 minutes after the push) the solutions index still showed 19 cards with the
+  11 November lead-gen agency page first and no MSP card. The database row is published, so the page
+  will appear as soon as a deploy runs the prerender; the morning's blog push was live within 6
+  minutes, so this deploy may have failed or stalled. The repository has no GitHub Actions runs to
+  inspect. This live-check commit triggers another deploy; the next run should confirm the page.
