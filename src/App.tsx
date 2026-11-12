@@ -59,6 +59,7 @@ import RedditXMonitoring from "./pages/features/RedditXMonitoring.tsx";
 import StrawberryPitch from "./pages/pitch/Strawberry.tsx";
 import Playbook from "./pages/Playbook.tsx";
 import SignalPlaybook from "./pages/SignalPlaybook.tsx";
+import LeadMagnet from "./pages/LeadMagnet.tsx";
 import Partners from "./pages/Partners.tsx";
 import ClientAccounts from "./pages/ClientAccounts.tsx";
 import AuthImpersonate from "./pages/AuthImpersonate.tsx";
@@ -291,6 +292,7 @@ export const AppContent = () => (
           <Route path="/pitch/strawberry" element={<StrawberryPitch />} />
           <Route path="/playbook" element={<Playbook />} />
           <Route path="/signal-playbook" element={<SignalPlaybook />} />
+          <Route path="/free/:slug" element={<LeadMagnet />} />
           <Route path="/partners" element={<Partners />} />
           <Route path="/dashboard/client-accounts" element={<AuthGuard><DashboardLayout><ClientAccounts /></DashboardLayout></AuthGuard>} />
           <Route path="/auth/impersonate" element={<AuthImpersonate />} />
