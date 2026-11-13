@@ -1245,8 +1245,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "track-job-changes-on-linkedin-for-sales",
    "monthly_volume": null
   },
   {
