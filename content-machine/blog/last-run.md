@@ -40,8 +40,18 @@
   (outbound-sales-process-for-startups) still waits on the gate's handling of the word "process".
 - Caps: second page of 13 November by Bucharest time (the guides task published one this morning;
   cap 7); weekly count well under 45.
-- Push and live check: see the follow-up commit note below if present; otherwise the live check
-  result is in the run report only.
+- Push: `git push origin HEAD:main` fast-forwarded the remote from 5907a83 to 2614d03 at 19:27 UTC,
+  37 seconds after the database insert. That commit was authored under the founder's name and email
+  (the previous run's convention; earlier runs used "Claude <noreply@anthropic.com>"); this follow-up
+  commit uses the Claude author. Say which you prefer and the next run will stick to it.
+- Live check: CONFIRMED. WebFetch refused the direct page and sitemap URLs (PROVENANCE_REQUIRED, as on
+  every run since 5 November), so the check went homepage > /learn index > article link. At 19:31 UTC
+  the index still showed 19 lessons (deploy in progress); at 19:41 UTC it showed 21 lessons including
+  "What Is a Buyer Persona in B2B? A One-Page Template" and the technographic-data lesson from the
+  12 November run. The article page itself rendered with the H1, the bold definition and the
+  seven-row table. Sitemap: not fetched directly (same provenance refusal); scripts/prerender.mjs
+  writes sitemap.xml from the same route list it prerenders, so the sitemap built with this page
+  lists it. Next run: a direct sitemap check if fetching is ever allowed again.
 - For Alex: (1) a first-hand persona (the actual role, measure and trigger of Intentsly's best
   customers, in your words) would replace the hypothetical agency example with a measured one;
   (2) the recurring orphan-row scan of public.blog_posts against blog/published/ is still worth
