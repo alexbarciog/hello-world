@@ -60,8 +60,18 @@
   blog_next is "how to find leads from linkedin events". The blocked guides draft
   (outbound-sales-process-for-startups) still waits on the gate's handling of the word "process".
 - Caps: first page of 13 November by Bucharest time (cap 7); weekly count well under 45.
-- Live check: see the follow-up commit note below this line if present; otherwise the check had not
-  yet run when this file was written.
+- Push: `git push origin HEAD:main` fast-forwarded the remote from e664f0b to 34b0192 at 08:46 UTC
+  (the first `git push origin main` was rejected because the checkout was a detached HEAD whose
+  local `main` ref was stale; nothing was force-pushed).
+- Live check: NOT CONFIRMED. At 08:51 UTC (4 minutes after the push) WebFetch refused the page URL
+  and the sitemap (PROVENANCE_REQUIRED, as on every run since 5 November), and web search returns no
+  intentsly.com URLs to fetch through. The repository has no GitHub Actions workflow runs on main, so
+  the deploy could not be observed from GitHub either. The database row is published (content md5
+  verified) and the push went through. The page was already live under this slug since 6 November
+  from the orphan row, so the URL itself should resolve; what cannot be confirmed from here is
+  whether the prerender has picked up today's text. This live-check commit triggers another deploy.
+  Next run: confirm https://intentsly.com/guides/track-job-changes-on-linkedin-for-sales shows the
+  "What each surface sees and misses" section and that the sitemap lists it.
 - For Alex: (1) decide whether to keep today's version or restore the 6 November text from
   blog/recovered/ (say so and the next run can upsert it back); (2) two orphan rows in eight days
   (5 Nov blog, 6 Nov guides) means sessions are dying between the insert and the push. Worth a
