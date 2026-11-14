@@ -58,3 +58,10 @@
   lesson word-count guideline (1,000 to 1,800) is below what every published lesson actually runs with
   tables included; confirm whether the guideline should move or tables should be excluded; (5) a price is
   still blocked by the corrections log; (6) the 21% reply-rate row still waits on a phrasing you approve.
+- Live check (19:34 to 19:36 UTC, four to six minutes after the push): NOT CONFIRMED from this run.
+  WebFetch refused both https://intentsly.com/sitemap.xml and the article URL with PROVENANCE_REQUIRED, as
+  on 14 November's solutions run; a site: web search did not surface the page yet (expected minutes after a
+  deploy). No other fetch method was used, per the rules. Evidence the page will be live once the push
+  deploys: the public.blog_posts row is status = published with content verified by md5, and the push to
+  main (c9865ea -> 5e854c3 at 19:30 UTC) is what triggers the prerender that writes the sitemap. Alex:
+  open the URL and the sitemap once to confirm, or allow intentsly.com fetches for this task.
