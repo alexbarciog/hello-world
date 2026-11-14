@@ -58,7 +58,17 @@
   Next up per blog_next is "how to get clients for an ai consulting business".
 - Caps: first page of 14 November by Bucharest time (cap 7); weekly count well under 45.
 - Push: see the commit on main; the Claude author is used, with the session attribution lines.
-- Live check: recorded in the follow-up commit after the deploy.
+- Push: `git push origin HEAD:main` fast-forwarded the remote from 2df0320 to c1f0975 at 13:59 UTC,
+  about two minutes after the database insert.
+- Live check: NOT CONFIRMED from this run. At 14:03 to 14:08 UTC WebFetch refused the sitemap, the
+  article URL and the homepage with PROVENANCE_REQUIRED (the homepage route that worked on 13 November
+  was refused today too, even via a linking page). No other fetch method was used, per the rules. The
+  repository has no GitHub Actions workflow runs on main, so the deploy could not be checked there
+  either. Evidence that the page will be live once the push deploys: the public.blog_posts row is
+  status = published, and scripts/prerender.mjs reads published rows and writes sitemap.xml from the
+  same route list it prerenders. Alex: open
+  https://intentsly.com/solutions/find-customers-for-a-cybersecurity-company and the sitemap once to
+  confirm, or allow intentsly.com fetches for this task so the next run can.
 - For Alex: (1) a real security-company customer or a measured example would replace the hypothetical
   Dutch firm; (2) a way to hand the generated SQL file to the Supabase connector without retyping
   would remove the transcription risk noted above; (3) the recurring orphan-row scan of
