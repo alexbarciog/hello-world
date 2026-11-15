@@ -71,3 +71,10 @@
   (5) a price is still blocked by the corrections log; (6) the 21% reply-rate row still waits on a phrasing
   you approve; (7) WebFetch of intentsly.com has been refused with PROVENANCE_REQUIRED on the last two
   runs; allowing it for this task would make the live check reliable.
+- Live check (14:04 UTC, four minutes after the 13:59:43 push): NOT CONFIRMED from this run. WebFetch
+  refused both https://intentsly.com/sitemap.xml and the article URL with PROVENANCE_REQUIRED, as on the
+  14 November runs; a web search for the URL did not surface the page yet (expected minutes after a
+  deploy). No other fetch method was used, per the rules. Evidence the page will be live once the push
+  deploys: the public.blog_posts row is status = published with content verified by md5, and the push to
+  main (ea8ab27 -> 7095cc6) is what triggers the prerender that writes the sitemap. Alex: open the URL and
+  the sitemap once to confirm, or allow intentsly.com fetches for this task.
