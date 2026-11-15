@@ -1821,7 +1821,7 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
+   "status": "blocked",
    "slug": null,
    "monthly_volume": null
   },
@@ -1833,8 +1833,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-as-a-fractional-cto",
    "monthly_volume": null
   },
   {
