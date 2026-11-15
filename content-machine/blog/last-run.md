@@ -58,3 +58,14 @@
   by the corrections log; (6) the 21% reply-rate row still waits on a phrasing you approve; (7) WebFetch of
   intentsly.com has been refused with PROVENANCE_REQUIRED on recent runs; allowing it for this task would
   make the live check reliable.
+- Live check (19:31 UTC, four minutes after the 19:26:51 push): NOT CONFIRMED from this run. WebFetch
+  refused both https://intentsly.com/sitemap.xml and the lesson URL with PROVENANCE_REQUIRED, as on the
+  14 and 15 November runs; a web search for the URL did not surface the page yet (expected minutes after a
+  deploy). No other fetch method was used, per the rules. Evidence the page will be live once the push
+  deploys: the public.blog_posts row is status = published with content verified by md5, and the push to
+  main (7ac569f -> 50d3bd1) is what triggers the prerender that writes the sitemap. Alex: open the URL and
+  the sitemap once to confirm, or allow intentsly.com fetches for this task.
+- Push note: the first push was rejected as non-fast-forward because the local clone was in detached HEAD
+  with a stale local `main` (5e39abf); `git push origin main` was pushing that stale branch. Fixed by moving
+  local `main` to the new commit, no history rewritten. Future runs: check `git status -sb` shows `main`
+  before pushing.
