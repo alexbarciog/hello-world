@@ -1737,8 +1737,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-warm-lead",
    "monthly_volume": null
   },
   {
