@@ -49,6 +49,17 @@
   post engagers, competitor followers/engagers, hashtags, ICP scoring, verified emails, export; /try-ai with no
   account. Stated plainly that job posts and job changes are not monitored. No price stated. Reddit mentioned
   as a manual reading list only; the 21% reply rate was not used (it needs an external link in its paragraph).
+- Push: the first push was rejected as non-fast-forward because the working copy was on a detached HEAD at
+  0d25344 (local `main` had been left at 5e39abf by an earlier run), so the commit was made off-branch;
+  `git branch -f main HEAD` and `git checkout main` fixed it and the push landed at 13:57:38 UTC as 52ed960.
+  Future runs should check `git symbolic-ref HEAD` before committing.
+- Live check (14:02 to 14:04 UTC, about 5 minutes after the push): the page at
+  https://intentsly.com/solutions/find-clients-for-a-data-analytics-consulting-firm renders as a full article
+  (H1, 7 H2s, 6 FAQ entries) and is the first card on https://intentsly.com/solutions (23 cards). The
+  sitemap.xml fetch was refused by the web-fetch tool's URL-permission prompt (nobody present to approve it),
+  so the sitemap entry is unverified by fetch; scripts/prerender.mjs writes sitemap.xml from the same route
+  list it prerenders, and the page is prerendered and live, so the entry should be there. Next run: fetch
+  the sitemap first thing and record it.
 - Keywords: 50 still queued (22 blog, 9 solutions, 7 learn, 6 guides, 6 compare), so no new keywords added.
   Nothing blocked this run.
 - For the founder:
