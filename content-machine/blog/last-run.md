@@ -36,7 +36,12 @@
   30/30/15 caps and 2 accounts per plan (proof), LinkedIn signal types and ICP scoring (product.md). The 21% reply
   rate was not used: its proof row status is "verified: say..." rather than exactly "verified", so the gate does
   not accept the number without an external link.
-- Live check: see the report for this run (sitemap and page fetched about 4 minutes after the push).
+- Live check (about 4 minutes after the push, 19:32 UTC): https://intentsly.com/learn/what-is-a-sales-cadence is live
+  (H1, byline dated 16 November 2026, 5 FAQ entries) and the /learn index lists it first among 24 lessons.
+  The sitemap could not be checked: WebFetch refused https://intentsly.com/sitemap.xml with a permission prompt
+  that nobody was there to answer (the URL has to appear in a user message or a search result first), and the
+  run was not allowed to fetch it another way. The index listing shows the redeploy ran, so the sitemap is very
+  likely updated too; next run should confirm.
 - Learn queue after this run: 6 keywords queued (what is lead qualification, what is a sales qualified lead,
   what is an sdr, what is a hiring signal in sales, what is sales prospecting, what is a marketing qualified lead),
   so no top-up was needed (threshold 5).
