@@ -1845,8 +1845,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-a-data-analytics-consulting-firm",
    "monthly_volume": null
   },
   {
