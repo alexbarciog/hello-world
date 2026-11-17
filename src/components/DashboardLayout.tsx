@@ -5,6 +5,10 @@ import intentslyIcon from "@/assets/intentsly-icon.png";
 import NotificationsPanel from "@/components/NotificationsPanel";
 import { useSubscription } from "@/hooks/useSubscription";
 import { BillingBanner } from "@/components/billing/BillingBanner";
+import { PlanPickerDialog } from "@/components/billing/PlanPickerDialog";
+import { SidebarPlanCard } from "@/components/billing/SidebarPlanCard";
+import { trackBilling } from "@/lib/billingEvents";
+import { PICK_PLAN_COPY, type PlanKey } from "@/lib/plans";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Progress } from "@/components/ui/progress";
 import { OrgSwitcher } from "@/components/organizations/OrgSwitcher";
@@ -36,7 +40,6 @@ import {
   Bell,
 
   Crown,
-  ArrowRight,
 } from "lucide-react";
 import { useAccountType } from "@/hooks/useAccountType";
 import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
@@ -89,6 +92,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const sub = useSubscription();
+  const [picker, setPicker] = useState<{ open: boolean; selected: PlanKey | null; source: string }>({ open: false, selected: null, source: "sidebar" });
+  const openPicker = (source: string, selected: PlanKey | null = null) => setPicker({ open: true, selected, source });
+  const NEXT_PLAN: Record<string, PlanKey> = { starter: "growth", growth: "pro" };
+  const upgrade = (source: string) => {
+    const from = sub.plan?.key ?? null;
+    const to = from ? NEXT_PLAN[from] ?? null : null;
+    trackBilling("upgrade_clicked", { from, to, source });
+    openPicker(source, to);
+  };
   const { data: isAdmin } = useAdminCheck();
   const { data: accountType } = useAccountType();
   const [showAgentTooltip, setShowAgentTooltip] = useState(false);
@@ -390,32 +402,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Crown className="w-4 h-4 text-goji-orange" />
             </button>
           ) : (
-            <div className="rounded-2xl bg-white border border-[#E7E7EA] p-4 flex flex-col items-center text-center">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center mb-2"
-                style={{ background: "var(--gradient-brand)" }}
-              >
-                <Crown className="w-4 h-4 text-white" />
-              </div>
-              <p className="text-[13.5px] font-semibold text-[#0a0a0a]">
-                Current Plan: <span className="text-goji-orange">{sub.status === "trialing" ? "Free trial" : sub.subscribed ? "Plus" : "Basic"}</span>
-              </p>
-              {sub.founding && (
-                <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#C8FF00] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[#0a0a0a]">
-                  Founding customer
-                </span>
-              )}
-              <p className="text-[11.5px] text-neutral-500 mt-0.5">
-                {sub.credits ?? 0} Credits Remaining
-              </p>
-              <button
-                onClick={() => navigate("/billing")}
-                className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl bg-[#0a0a0a] px-3.5 py-2 text-[12.5px] font-semibold text-white hover:bg-neutral-800 transition-colors"
-              >
-                {sub.subscribed ? "Manage Plan" : "Upgrade Pro Account"}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <SidebarPlanCard
+              sub={sub}
+              onUpgrade={() => upgrade("sidebar")}
+              onPickPlan={() => openPicker("sidebar")}
+              onManage={() => navigate("/settings?tab=billing")}
+            />
           )}
         </div>
       </aside>
@@ -460,6 +452,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 );
               })}
             </nav>
+
+            <div className="px-3 pt-2">
+              <SidebarPlanCard
+                sub={sub}
+                onUpgrade={() => { setMobileMenuOpen(false); upgrade("mobile_menu"); }}
+                onPickPlan={() => { setMobileMenuOpen(false); openPicker("mobile_menu"); }}
+                onManage={() => { setMobileMenuOpen(false); navigate("/settings?tab=billing"); }}
+              />
+            </div>
 
             {/* User row at bottom of slide menu */}
             <div className="px-3 pb-4 pt-2 border-t border-foreground/10">
@@ -563,17 +564,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
 
-          <BillingBanner sub={sub} />
+          <BillingBanner sub={sub} onPickPlan={() => (sub.plan ? upgrade("out_of_credits_banner") : openPicker("billing_banner"))} />
           {!sub.loading && !sub.hasAccess && !sub.banner && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 border-b" style={{ background: "hsl(48 100% 96%)", borderColor: "hsl(48 90% 85%)" }}>
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(38 92% 50%)" }} />
                 <p className="text-sm font-medium" style={{ color: "hsl(28 60% 25%)" }}>
-                  Upgrade your subscription to unlock LinkedIn outreach, campaigns, and AI SDR features.
+                  {PICK_PLAN_COPY}.
                 </p>
               </div>
-              <button onClick={() => navigate("/billing")} className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-white transition-opacity hover:opacity-90" style={{ background: "hsl(var(--goji-coral))" }}>
-                Upgrade plan
+              <button onClick={() => openPicker("paywall_banner")} className="shrink-0 px-3.5 py-1.5 rounded-md text-xs font-semibold text-[#0a0a0a] bg-[#C8FF00] transition-opacity hover:opacity-90">
+                Pick a plan
               </button>
             </div>
           )}
@@ -617,6 +618,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
       </div>
+      <PlanPickerDialog
+        open={picker.open}
+        onOpenChange={(open) => setPicker((p) => ({ ...p, open }))}
+        selected={picker.selected}
+        source={picker.source}
+        title={sub.plan ? "Change your plan" : "Pick a plan"}
+        description={sub.plan ? "Upgrades apply now and add the credit difference straight away. Downgrades start at your next renewal." : undefined}
+      />
     </div>
   );
 }
