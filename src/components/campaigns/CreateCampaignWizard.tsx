@@ -307,7 +307,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
       <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
         {/* Header with stepper */}
         <div className="px-6 pt-6 pb-5 border-b border-border">
-          <h2 className="text-lg font-black text-foreground">
+          <h2 className="text-lg font-bold text-foreground">
             {editCampaignId ? "Edit Campaign" : "Create AI Campaign"}
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">Step {step} of {totalSteps}</p>
@@ -352,7 +352,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             {step === 1 && (
               <motion.div key="step1" variants={contentVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
                 <div>
-                  <h3 className="text-base font-black text-foreground">Select Your Lead Source</h3>
+                  <h3 className="text-base font-bold text-foreground">Select Your Lead Source</h3>
                   <p className="text-sm text-muted-foreground mt-1">Choose an agent with predefined ICP or a list</p>
                 </div>
 
@@ -413,7 +413,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
                             <Users className="w-4 h-4 text-foreground" />
                           </div>
                           <div>
-                            <p className="text-sm font-black text-foreground">Ideal Customer Profile</p>
+                            <p className="text-sm font-bold text-foreground">Ideal Customer Profile</p>
                             <p className="text-xs text-muted-foreground">This agent targets the following profiles</p>
                           </div>
                         </div>
@@ -459,7 +459,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             {step === 2 && (
               <motion.div key="step2" variants={contentVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
                 <div>
-                  <h3 className="text-base font-black text-foreground">Campaign Details</h3>
+                  <h3 className="text-base font-bold text-foreground">Campaign Details</h3>
                   <p className="text-sm text-muted-foreground mt-1">Tell us about your company and objectives</p>
                 </div>
 
@@ -552,7 +552,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
             {step === 3 && (
               <motion.div key="step3" variants={contentVariant} initial="hidden" animate="visible" exit="exit" className="space-y-5">
                 <div>
-                  <h3 className="text-base font-black text-foreground">Select Your LinkedIn Sender</h3>
+                  <h3 className="text-base font-bold text-foreground">Select Your LinkedIn Sender</h3>
                   <p className="text-sm text-muted-foreground mt-1">Choose which LinkedIn account will send messages.</p>
                 </div>
 
@@ -599,7 +599,7 @@ export function CreateCampaignWizard({ open, onOpenChange, onCreated, editCampai
 
                 {/* Review Summary */}
                 <div className="rounded-xl border border-border bg-muted/20 p-5">
-                  <h4 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                     <Check className="w-4 h-4 text-green-600" /> Review Summary
                   </h4>
                   <div className="space-y-2.5 text-sm">
