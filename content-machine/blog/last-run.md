@@ -46,9 +46,13 @@
   and ICP scoring (product.md), with the honest note that Intentsly does not read job boards; the Buying Signal
   Playbook "12 worth chasing and 8 to ignore" (proof.md). No price stated. No first_hand story used: the
   dogfooding story's trigger was a complaint signal, not a hiring signal, so it was left out rather than forced.
-- Live check: see the commit that follows this one, or the report in the task run. The redeploy took longer
-  than 4 minutes on the previous run (index updated by about 13 minutes), so the check is scheduled at
-  roughly 4 minutes after the push with a second look if the page is not yet up.
+- Live check (about 5 minutes after the push, 19:35 UTC): https://intentsly.com/learn/what-is-a-hiring-signal-in-sales
+  is live (H1, byline dated 17 November 2026, 10 min read, 6 FAQ entries, all three tables) and the /learn
+  index lists it first among 25 lessons, so the redeploy ran inside 5 minutes this time. The sitemap could not
+  be checked: WebFetch refused https://intentsly.com/sitemap.xml with a permission prompt nobody was there to
+  answer (third run in a row), and the run was not allowed to fetch it another way. The direct page URL was
+  also refused until the /learn index had been opened first and linked to it. The index listing shows the
+  redeploy ran, so the sitemap is very likely updated.
 - Learn queue after this run: 5 keywords queued (what is lead qualification, what is a sales qualified lead,
   what is an sdr, what is sales prospecting, what is a marketing qualified lead), all priority 3. RUN.md tops
   up at fewer than 5, so no top-up this run; the next learn run will publish one and then need to add 8 to 12.
