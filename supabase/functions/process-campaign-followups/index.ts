@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
+import { type CreditAction, refundCredits, spendCredits } from '../_shared/credits.ts';
 import { resolvePlaceholders, unresolvedMessage } from '../_shared/agent-template-schema.ts';
 import { accessForUsers } from '../_shared/account-access.ts';
 
@@ -482,6 +483,18 @@ async function processCampaign(
         // Unfilled {{placeholders}} (e.g. no demo link set) never go out.
         if (await holdForPlaceholders(supabase, campaign, message)) continue;
 
+        // Credits: a template message is charged when sent; an AI message was
+        // charged when written (this is a no-op then, and re-charges only if an
+        // earlier failed send refunded it). Refunded below if the send fails.
+        const creditAction: CreditAction = nextStep.ai_icebreaker ? 'ai_message' : 'template_message';
+        const creditOwner = req.user_id || campaign.user_id;
+        const creditRef = `msg:${req.id}:${nextWfIdx}`;
+        const charge = await spendCredits(supabase, creditOwner, creditAction, 'scheduled_message', creditRef);
+        if (!charge.ok) {
+          console.log(`[followup] ${creditOwner} is out of credits — stopping campaign ${campaign.id}`);
+          break;
+        }
+
         // ── Send message ──
         let sendOk = false;
         if (chatId) {
@@ -534,6 +547,7 @@ async function processCampaign(
 
         if (!sendOk) {
           console.log(`[followup] failed to send message to contact ${req.contact_id}`);
+          await refundCredits(supabase, creditOwner, creditAction, creditRef);
           if (msgDistressCount >= 3) {
             await triggerLinkedInCooldown(supabase, campaign.user_id, 'repeated LinkedIn errors while sending messages');
             break;
@@ -1035,7 +1049,16 @@ async function generateNextStepMessage(
   const hasInvitation = workflowSteps.length > 0 && (workflowSteps[0].type === 'invitation' || workflowSteps[0].type === 'invite');
   const displayStepNumber = hasInvitation ? wfIndex + 1 : wfIndex + 2; // Step 2, 3, 4...
 
+  const owner = req.user_id || campaign.user_id;
+  const creditRef = `msg:${req.id}:${wfIndex}`;
   if (nextStep.ai_icebreaker) {
+    // Credits: an AI-written message is charged when it's written (refunded if
+    // it then fails to send). Out of credits: nothing is generated.
+    const charge = await spendCredits(supabase, owner, 'ai_message', 'scheduled_message', creditRef);
+    if (!charge.ok) {
+      console.log(`[followup] ${owner} is out of credits — not generating step ${displayStepNumber} for ${req.contact_id}`);
+      return false;
+    }
     console.log(`[followup] Generating AI message for contact ${req.contact_id}, step ${displayStepNumber}`);
 
     const { data: previousMessages } = await supabase
@@ -1097,6 +1120,7 @@ async function generateNextStepMessage(
 
     if (!message.trim()) {
       console.error(`[followup] generate-step-message returned empty for contact ${req.contact_id}`);
+      await refundCredits(supabase, owner, 'ai_message', creditRef);
       return false;
     }
 
@@ -1105,8 +1129,10 @@ async function generateNextStepMessage(
     message = fillPlaceholders(nextStep.message || '', contact, campaign);
   }
 
-  if (!message.trim()) return false;
-  if (await holdForPlaceholders(supabase, campaign, message)) return false;
+  if (!message.trim() || await holdForPlaceholders(supabase, campaign, message)) {
+    if (nextStep.ai_icebreaker) await refundCredits(supabase, owner, 'ai_message', creditRef);
+    return false;
+  }
 
   const today = new Date().toISOString().split('T')[0];
   const { error: insertErr } = await supabase
@@ -1124,6 +1150,7 @@ async function generateNextStepMessage(
 
   if (insertErr) {
     console.error(`[followup] Insert scheduled_message error:`, insertErr);
+    if (nextStep.ai_icebreaker) await refundCredits(supabase, owner, 'ai_message', creditRef);
     return false;
   }
 

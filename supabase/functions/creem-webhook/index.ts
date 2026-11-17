@@ -8,10 +8,13 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { PAYING_STATUSES } from "../_shared/billing.ts";
 import {
+  type BillingPlan,
   type CreemEvent,
   creemConfig,
   eventTime,
   json,
+  planForProduct,
+  type SubscriptionChange,
   subscriptionChange,
   SUBSCRIPTION_EVENTS,
   verifyCreemSignature,
@@ -77,7 +80,7 @@ async function handle(event: CreemEvent) {
 
   const { data: existing } = await db
     .from("subscriptions")
-    .select("id, user_id, status, founding, last_event_at")
+    .select("id, user_id, status, founding, last_event_at, product_id, current_period_end")
     .eq("creem_subscription_id", change.creemSubscriptionId)
     .maybeSingle();
 
@@ -129,6 +132,105 @@ async function handle(event: CreemEvent) {
   if (!existing && change.status && PAYING_STATUSES.includes(change.status)) {
     await notifyNewSubscription(event, change.email ?? (await emailOf(userId)), change.status, change.mode);
   }
+
+  await applyPlan(event, change, userId, existing);
+}
+
+/**
+ * Credits and plan for the account:
+ * - a paid period (subscription.active / .paid): the plan's credits, replacing
+ *   what's left (no rollover), once per period; a waiting downgrade applies now
+ * - subscription.update to a dearer plan: the difference, straight away
+ * - subscription.update to a cheaper plan: waits for the next renewal
+ * - expired: the plan ends
+ */
+async function applyPlan(
+  event: CreemEvent,
+  change: SubscriptionChange,
+  userId: string,
+  existing: { status: string | null; product_id: string | null; current_period_end: string | null } | null,
+) {
+  const { data: plansData, error: plansError } = await db
+    .from("billing_plans")
+    .select("key, name, price_cents, monthly_credits, creem_product_id_test, creem_product_id_live");
+  if (plansError) {
+    console.warn("[creem-webhook] billing_plans unavailable, credits not updated:", plansError.message);
+    return;
+  }
+  const plans = (plansData ?? []) as BillingPlan[];
+  const productId = change.productId ?? existing?.product_id ?? null;
+  const plan = planForProduct(plans, productId, change.mode);
+  const previous = planForProduct(plans, existing?.product_id ?? null, change.mode);
+  const periodEnd = change.currentPeriodEnd ?? existing?.current_period_end ?? null;
+  const status = change.status ?? existing?.status ?? null;
+  const subId = change.creemSubscriptionId;
+
+  if (status === "expired" || (status === "canceled" && (!periodEnd || new Date(periodEnd) <= new Date()))) {
+    await rpc("set_account_plan", { p_user_id: userId, p_plan: null, p_source: null, p_pending_plan: null });
+    return;
+  }
+  if (!plan) {
+    if (productId) console.warn(`[creem-webhook] product ${productId} is not linked to a plan in billing_plans`);
+    return;
+  }
+
+  const { data: profile } = await db.from("profiles").select("plan, pending_plan").eq("user_id", userId).maybeSingle();
+  const paidPeriod = (event.eventType === "subscription.active" || event.eventType === "subscription.paid") &&
+    status !== null && PAYING_STATUSES.includes(status as (typeof PAYING_STATUSES)[number]) && periodEnd;
+
+  if (paidPeriod) {
+    // New period: the subscribed product's plan applies (this is where a downgrade lands).
+    await rpc("set_account_plan", { p_user_id: userId, p_plan: plan.key, p_source: "creem", p_pending_plan: null });
+    await rpc("grant_credits", {
+      p_user_id: userId,
+      p_amount: plan.monthly_credits,
+      p_reason: "plan_grant",
+      p_ref_type: "creem_period",
+      p_ref_id: `period:${subId}:${periodEnd}`,
+      p_reset: true,
+      p_period_end: periodEnd,
+    });
+    const firstActivation = !existing || !existing.status || !PAYING_STATUSES.includes(existing.status as (typeof PAYING_STATUSES)[number]);
+    if (firstActivation) {
+      await db.from("app_events").insert({ user_id: userId, event: "subscription_active", props: { plan: plan.key, mode: change.mode } });
+    }
+    return;
+  }
+
+  if (event.eventType === "subscription.update" && previous && previous.key !== plan.key) {
+    if (plan.monthly_credits > previous.monthly_credits) {
+      await rpc("set_account_plan", { p_user_id: userId, p_plan: plan.key, p_source: "creem", p_pending_plan: null });
+      await rpc("grant_credits", {
+        p_user_id: userId,
+        p_amount: plan.monthly_credits - previous.monthly_credits,
+        p_reason: "plan_grant",
+        p_ref_type: "creem_upgrade",
+        p_ref_id: `upgrade:${subId}:${previous.key}->${plan.key}:${periodEnd ?? event.id}`,
+        p_reset: false,
+        p_period_end: periodEnd,
+      });
+      console.log(`[creem-webhook] ${userId} upgraded ${previous.key} -> ${plan.key}`);
+    } else {
+      await rpc("set_account_plan", {
+        p_user_id: userId,
+        p_plan: profile?.plan ?? previous.key,
+        p_source: "creem",
+        p_pending_plan: plan.key,
+      });
+      console.log(`[creem-webhook] ${userId} downgrades ${previous.key} -> ${plan.key} at renewal`);
+    }
+    return;
+  }
+
+  // Any other event for a paying subscription: make sure the plan is recorded.
+  if (status && PAYING_STATUSES.includes(status as (typeof PAYING_STATUSES)[number]) && !profile?.plan) {
+    await rpc("set_account_plan", { p_user_id: userId, p_plan: plan.key, p_source: "creem", p_pending_plan: null });
+  }
+}
+
+async function rpc(fn: string, args: Record<string, unknown>) {
+  const { error } = await db.rpc(fn, args);
+  if (error) throw new Error(`${fn} failed: ${error.message}`);
 }
 
 async function findUser(hint: string | null, email: string | null): Promise<string | null> {
