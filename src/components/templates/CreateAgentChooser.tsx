@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Layers, Loader2, PenLine } from "lucide-react";
+import { ArrowLeft, ArrowRight, Layers, Loader2, PenLine } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { applyTemplate, usePublicTemplates, type AgentTemplate } from "@/lib/agentTemplates";
+import { sortTemplates } from "@/lib/templateMarketplace";
 import { TemplateCard } from "./TemplateCard";
 
 type Applied = Awaited<ReturnType<typeof applyTemplate>>;
@@ -19,7 +20,9 @@ type Props = {
 
 /** Signal Agents → Create agent: configure your own, or start from a template. */
 export function CreateAgentChooser({ open, onOpenChange, onCustom, onApplied }: Props) {
-  const { data: templates } = usePublicTemplates();
+  const { data: allTemplates } = usePublicTemplates();
+  // A shortcut: the top 6 here, the full gallery at /agents/templates.
+  const templates = useMemo(() => sortTemplates(allTemplates ?? []).slice(0, 6), [allTemplates]);
   const { data: isAdmin } = useAdminCheck();
   const [view, setView] = useState<"choose" | "templates">("choose");
   const [selected, setSelected] = useState<AgentTemplate | null>(null);
@@ -97,7 +100,14 @@ export function CreateAgentChooser({ open, onOpenChange, onCustom, onApplied }: 
               <DialogDescription>Pick the closest match. You get a signal agent and a LinkedIn sequence, and the campaign stays paused until you turn it on.</DialogDescription>
             </DialogHeader>
 
-            {templates?.length ? (
+            <Link
+              to="/agents/templates"
+              className="inline-flex items-center gap-1 self-start text-[13px] font-medium text-[#1A8FE3] hover:underline underline-offset-2"
+            >
+              Browse all templates <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
+            {templates.length ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto p-px">
                 {templates.map((t) => (
                   <TemplateCard key={t.id} template={t} selected={selected?.id === t.id} onSelect={() => setSelected(t)} />

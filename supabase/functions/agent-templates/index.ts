@@ -2,7 +2,7 @@
 // shared schema (same rules as the customer forms) before it is stored.
 // POST { action: "create" | "update" | "duplicate" | "archive" | "unarchive" | "from_agent", ... }
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { configFromAgent, validateTemplateConfig } from "../_shared/agent-template-schema.ts";
+import { TEMPLATE_CATEGORIES, TEMPLATE_COLORS, configFromAgent, validateTemplateConfig } from "../_shared/agent-template-schema.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,7 +15,10 @@ const json = (body: unknown, status = 200) =>
 const slugify = (s: string) =>
   s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "template";
 
-const META_FIELDS = ["name", "business_type", "description", "icon", "is_public", "sort_order"] as const;
+const META_FIELDS = ["name", "business_type", "description", "icon", "is_public", "sort_order", "tagline", "category", "featured", "color"] as const;
+
+// Empty or unknown values clear the field (the gallery then uses its defaults).
+const oneOf = (v: unknown, allowed: readonly string[]) => (typeof v === "string" && allowed.includes(v) ? v : null);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -42,6 +45,10 @@ Deno.serve(async (req) => {
     if (typeof out.description === "string") out.description = (out.description as string).slice(0, 500);
     if (out.is_public !== undefined) out.is_public = out.is_public === true;
     if (out.sort_order !== undefined) out.sort_order = Number(out.sort_order) || 0;
+    if (out.tagline !== undefined) out.tagline = typeof out.tagline === "string" ? out.tagline.trim().slice(0, 140) || null : null;
+    if (out.category !== undefined) out.category = oneOf(out.category, TEMPLATE_CATEGORIES);
+    if (out.color !== undefined) out.color = oneOf(out.color, TEMPLATE_COLORS);
+    if (out.featured !== undefined) out.featured = out.featured === true;
     return out;
   };
 
@@ -91,6 +98,10 @@ Deno.serve(async (req) => {
         business_type: src.business_type,
         description: src.description,
         icon: src.icon,
+        tagline: src.tagline,
+        category: src.category,
+        color: src.color,
+        featured: false,
         is_public: false,
         sort_order: src.sort_order,
         config: src.config,

@@ -37,6 +37,7 @@ import {
 
   Crown,
   ArrowRight,
+  LayoutGrid,
 } from "lucide-react";
 import { useAccountType } from "@/hooks/useAccountType";
 import AgencyImpersonationBanner, { readImpersonation } from "@/components/agency/AgencyImpersonationBanner";
@@ -55,18 +56,30 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const baseNavItems = [
+type NavItem = {
+  label: string;
+  icon: typeof LayoutDashboard;
+  path: string;
+  badge?: string;
+  /** Nested under the item above it in the desktop sidebar. */
+  sub?: boolean;
+  /** Breadcrumb / mobile menu label when `label` is too short on its own. */
+  fullLabel?: string;
+};
+
+const baseNavItems: NavItem[] = [
   { label: "Dashboard",      icon: LayoutDashboard, path: "/dashboard" },
   { label: "Campaigns",      icon: Megaphone,       path: "/campaigns" },
   { label: "Contacts",       icon: Users,           path: "/contacts" },
   { label: "Signals Agents", icon: Radio,           path: "/signals" },
+  { label: "Templates",      icon: LayoutGrid,      path: "/agents/templates", sub: true, fullLabel: "Agent templates" },
   { label: "Unibox",         icon: Mail,            path: "/unibox" },
   { label: "Integrations",   icon: Plug,            path: "/integrations" },
   { label: "Settings",       icon: Settings,        path: "/settings" },
 ];
 
-const engagementSpikesItem = { label: "Engagement Spikes", icon: Flame,  path: "/engagement-spikes", badge: "New" };
-const superscaleItem       = { label: "SuperScale",        icon: Rocket, path: "/superscale",        badge: "New" };
+const engagementSpikesItem: NavItem = { label: "Engagement Spikes", icon: Flame,  path: "/engagement-spikes", badge: "New" };
+const superscaleItem: NavItem       = { label: "SuperScale",        icon: Rocket, path: "/superscale",        badge: "New" };
 
 // Bottom nav shows only the 5 most important items on mobile
 const mobileNavItems = [
@@ -114,18 +127,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => { cancelled = true; };
   }, []);
 
-  // Build base nav with conditional feature items inserted after Signals Agents (index 3)
+  // Build base nav with conditional feature items inserted after Signals Agents and its Templates sub-item
   const navWithFeatures = (() => {
     const items = [...baseNavItems];
-    const insertions: any[] = [];
+    const insertions: NavItem[] = [];
     if (isAdmin || featureFlags.spikes) insertions.push(engagementSpikesItem);
     if (isAdmin || featureFlags.superscale) insertions.push(superscaleItem);
-    if (insertions.length) items.splice(4, 0, ...insertions);
+    if (insertions.length) items.splice(items.findIndex((i) => i.path === "/agents/templates") + 1, 0, ...insertions);
     return items;
   })();
 
   // Insert Client Accounts above Settings for agency partners (hidden while impersonating)
-  const baseWithAgency = (accountType === "agency" && !isImpersonating)
+  const baseWithAgency: NavItem[] = (accountType === "agency" && !isImpersonating)
     ? [
         ...navWithFeatures.slice(0, navWithFeatures.length - 1),
         { label: "Client Accounts", icon: Briefcase, path: "/dashboard/client-accounts" },
@@ -133,8 +146,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ]
     : navWithFeatures;
 
-  const navItems = isAdmin
-    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }, { label: "Templates", icon: Shield, path: "/admin/templates" }, { label: "Setup orders", icon: Shield, path: "/admin/setup" }]
+  const navItems: NavItem[] = isAdmin
+    ? [...baseWithAgency, { label: "Admin", icon: Shield, path: "/admin" }, { label: "Template editor", icon: Shield, path: "/admin/templates" }, { label: "Setup orders", icon: Shield, path: "/admin/setup" }]
     : baseWithAgency;
 
   const allNavItems = navItems;
@@ -148,8 +161,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const settingsGroup = filteredNavItems.filter((i) => SETTINGS_PATHS.has(i.path));
 
   // Breadcrumb label from active route
-  const activeItem = allNavItems.find((i) => i.path === location.pathname) ?? allNavItems[0];
-  const crumbLabel = activeItem?.label ?? "Dashboard";
+  const isActive = (item: NavItem) =>
+    location.pathname === item.path || (item.sub === true && location.pathname.startsWith(`${item.path}/`));
+  const activeItem = allNavItems.find(isActive) ?? allNavItems[0];
+  const crumbLabel = activeItem?.fullLabel ?? activeItem?.label ?? "Dashboard";
 
   // 8-second auto-dismiss tooltip for free users
   useEffect(() => {
@@ -282,14 +297,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
           <div className="space-y-0.5">
             {menuGroup.map((item) => {
-              const active = location.pathname === item.path;
+              const active = isActive(item);
               const Icon = item.icon;
               return (
                 <div key={item.path} className="relative">
                   <button
                     onClick={() => navigate(item.path)}
-                    title={collapsed ? item.label : undefined}
-                    className={`w-full flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium border transition-colors ${
+                    title={collapsed ? item.fullLabel ?? item.label : undefined}
+                    className={`w-full flex items-center gap-2.5 rounded-lg ${item.sub && !collapsed ? "pl-8 pr-2.5" : "px-2.5"} py-1.5 text-[13px] font-medium border transition-colors ${
                       active
                         ? "bg-[#EFEFF1] text-[#0a0a0a] border-[#E7E7EA]"
                         : "text-neutral-500 border-transparent hover:bg-[#EFEFF1]/60 hover:text-neutral-900"
@@ -301,9 +316,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {!collapsed && (
                       <span className="flex-1 text-left truncate flex items-center gap-1.5">
                         {item.label}
-                        {(item as any).badge && (
+                        {item.badge && (
                           <span className="text-[9px] font-semibold uppercase tracking-wider bg-orange-50 text-goji-orange px-1.5 py-0.5 rounded-full leading-none">
-                            {(item as any).badge}
+                            {item.badge}
                           </span>
                         )}
                       </span>
@@ -444,7 +459,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <nav className="flex-1 px-2 py-1 space-y-0.5 overflow-y-auto">
               {allNavItems.map((item) => {
-                const active = location.pathname === item.path;
+                const active = isActive(item);
                 const Icon = item.icon;
                 return (
                   <button
@@ -455,7 +470,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
-                    <span>{item.label}</span>
+                    <span>{item.fullLabel ?? item.label}</span>
                   </button>
                 );
               })}

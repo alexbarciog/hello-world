@@ -1,5 +1,8 @@
-import { Sparkles, PenLine } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Sparkles, PenLine } from "lucide-react";
 import { motion } from "framer-motion";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TemplateGallery } from "@/components/templates/TemplateGallery";
 import { OnboardingBadge, StaggerTitle, PrimaryCta, ONBOARDING_EASE } from "./ui";
 import { TemplateCard } from "@/components/templates/TemplateCard";
 import type { AgentTemplate } from "@/lib/agentTemplates";
@@ -16,6 +19,11 @@ type Props = {
 
 /** Onboarding step 1: pick a ready-made agent for your business type. */
 export function StepTemplate({ templates, value, onChange, onContinue }: Props) {
+  const [browsing, setBrowsing] = useState(false);
+  const pick = (id: string) => {
+    onChange(id);
+    setBrowsing(false);
+  };
   return (
     <div className="w-full">
       <div className="mb-8">
@@ -56,9 +64,29 @@ export function StepTemplate({ templates, value, onChange, onContinue }: Props) 
         </button>
       </div>
 
+      <button
+        type="button"
+        onClick={() => setBrowsing(true)}
+        className="mt-3 inline-flex items-center gap-1 text-[13px] font-medium text-[#1A8FE3] hover:underline underline-offset-2"
+      >
+        Browse all templates <ArrowRight className="w-3.5 h-3.5" />
+      </button>
+
       <div className="mt-6">
         <PrimaryCta onClick={onContinue} disabled={!value}>Continue</PrimaryCta>
       </div>
+
+      <Dialog open={browsing} onOpenChange={setBrowsing}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-5xl max-h-[88vh] overflow-y-auto rounded-2xl sm:rounded-2xl font-sans">
+          <DialogHeader>
+            <DialogTitle>Agent templates</DialogTitle>
+            <DialogDescription>
+              Each one comes with the signals to watch, the people to target and a LinkedIn sequence. Pick one to use it for your setup.
+            </DialogDescription>
+          </DialogHeader>
+          <TemplateGallery templates={templates} onPick={(t) => pick(t.id)} onBuildOwn={() => pick(FROM_SCRATCH)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

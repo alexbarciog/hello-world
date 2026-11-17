@@ -1,5 +1,9 @@
-import { Briefcase, Check, Code, Megaphone, Palette, Sparkles, Users, Calculator, type LucideIcon } from "lucide-react";
+import {
+  Briefcase, Calculator, Check, Clapperboard, Code, Megaphone, Palette, PenLine, Server, ShieldCheck, Sparkles, Target, Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { AgentTemplate } from "@/lib/agentTemplates";
+import { COLOR_TILE, colorOf, liveSignals, pluralize, sequenceSteps } from "@/lib/templateMarketplace";
 
 // Icons an admin can pick for a template card.
 export const TEMPLATE_ICONS: Record<string, LucideIcon> = {
@@ -10,21 +14,39 @@ export const TEMPLATE_ICONS: Record<string, LucideIcon> = {
   code: Code,
   megaphone: Megaphone,
   briefcase: Briefcase,
+  server: Server,
+  video: Clapperboard,
+  pen: PenLine,
+  shield: ShieldCheck,
+  target: Target,
 };
 
-/** The card a customer sees in onboarding ("What kind of business are you?"). */
+type TileTemplate = Pick<AgentTemplate, "icon"> & Partial<Pick<AgentTemplate, "category" | "color">>;
+
+/** The coloured rounded square with the template's icon. */
+export function TemplateIconTile({ template, size = "md" }: { template: TileTemplate; size?: "sm" | "md" | "lg" }) {
+  const Icon = TEMPLATE_ICONS[template.icon] ?? Sparkles;
+  const box = size === "lg" ? "w-14 h-14 rounded-2xl" : size === "sm" ? "w-9 h-9 rounded-xl" : "w-11 h-11 rounded-xl";
+  const icon = size === "lg" ? "w-6 h-6" : size === "sm" ? "w-4 h-4" : "w-5 h-5";
+  return (
+    <div className={`${box} ${COLOR_TILE[colorOf(template)]} ring-1 flex items-center justify-center shrink-0`}>
+      <Icon className={icon} strokeWidth={1.9} />
+    </div>
+  );
+}
+
+/** Selectable card: onboarding ("What kind of business are you?"), the Create agent dialog and Switch template. */
 export function TemplateCard({
   template,
   selected,
   onSelect,
 }: {
-  template: Pick<AgentTemplate, "name" | "business_type" | "description" | "icon" | "config">;
+  template: Pick<AgentTemplate, "name" | "business_type" | "description" | "icon" | "config"> & Partial<Pick<AgentTemplate, "tagline" | "category" | "color">>;
   selected?: boolean;
   onSelect?: () => void;
 }) {
-  const Icon = TEMPLATE_ICONS[template.icon] ?? Sparkles;
-  const signals = template.config?.agent?.signals_config?.enabled?.length ?? 0;
-  const steps = template.config?.campaign?.workflow_steps?.length ?? 0;
+  const signals = liveSignals(template).length;
+  const steps = sequenceSteps(template).length;
   return (
     <button
       type="button"
@@ -39,14 +61,12 @@ export function TemplateCard({
         </span>
       )}
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#F4F4F5] flex items-center justify-center shrink-0">
-          <Icon className="w-5 h-5 text-[#0a0a0a]" />
-        </div>
-        <div className="min-w-0">
+        <TemplateIconTile template={template} size="sm" />
+        <div className="min-w-0 pr-5">
           <p className="text-[15px] font-semibold text-[#0a0a0a] leading-tight">{template.business_type}</p>
-          <p className="text-[13px] text-neutral-500 mt-1 leading-snug">{template.description}</p>
+          <p className="text-[13px] text-neutral-500 mt-1 leading-snug line-clamp-2">{template.tagline || template.description}</p>
           <p className="text-[11.5px] text-neutral-400 mt-2">
-            {signals} signal{signals === 1 ? "" : "s"} · {steps}-step LinkedIn sequence
+            {pluralize(signals, "signal")} · {steps}-step LinkedIn sequence
           </p>
         </div>
       </div>

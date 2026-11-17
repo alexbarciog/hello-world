@@ -22,6 +22,8 @@ interface CreateAgentWizardProps {
    * `onSave` instead of writing a signal agent.
    */
   templateMode?: { initial?: AgentTemplateConfig["agent"]; onSave: (agent: AgentTemplateConfig["agent"]) => void };
+  /** "Customise first" in the template gallery: a new agent that starts from a template's setup. */
+  initialAgent?: AgentTemplateConfig["agent"];
 }
 
 const INDUSTRIES = [
@@ -106,7 +108,7 @@ const SIGNAL_CATEGORIES = [
 // ── Shared input class ──────────────────────────────────────────────────────
 const inputCls = "w-full border border-border rounded-xl px-3.5 py-2.5 text-sm bg-card focus:outline-none focus:ring-2 focus:ring-ring/30 transition-shadow placeholder:text-muted-foreground/50";
 
-export default function CreateAgentWizard({ onClose, onCreated, editAgentId, templateMode }: CreateAgentWizardProps) {
+export default function CreateAgentWizard({ onClose, onCreated, editAgentId, templateMode, initialAgent }: CreateAgentWizardProps) {
   const { currentOrg } = useOrganization();
   const navigate = useNavigate();
   const { data: isAdmin } = useAdminCheck();
@@ -192,7 +194,8 @@ export default function CreateAgentWizard({ onClose, onCreated, editAgentId, tem
   }, [editAgentId]);
 
   useEffect(() => {
-    if (templateMode?.initial) loadIntoForm(templateMode.initial);
+    const initial = templateMode?.initial ?? (editAgentId ? undefined : initialAgent);
+    if (initial) loadIntoForm(initial);
     // Only on open: later edits live in the form.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

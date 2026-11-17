@@ -33,6 +33,8 @@ import BuyingSignalFinder from "./pages/tools/BuyingSignalFinder.tsx";
 import SharedLeads from "./pages/SharedLeads.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminTemplates from "./pages/AdminTemplates.tsx";
+import AgentTemplates from "./pages/AgentTemplates.tsx";
+import AgentTemplateDetail from "./pages/AgentTemplateDetail.tsx";
 import AdminSetup from "./pages/AdminSetup.tsx";
 import SetupService from "./pages/SetupService.tsx";
 import AdminDigestPreview from "./pages/AdminDigestPreview.tsx";
@@ -237,6 +239,8 @@ export const AppContent = () => (
             path="/signals"
             element={<AuthGuard><DashboardLayout><Signals /></DashboardLayout></AuthGuard>}
           />
+          <Route path="/agents/templates" element={<AuthGuard><DashboardLayout><AgentTemplates /></DashboardLayout></AuthGuard>} />
+          <Route path="/agents/templates/:slug" element={<AuthGuard><DashboardLayout><AgentTemplateDetail /></DashboardLayout></AuthGuard>} />
           <Route
             path="/contacts"
             element={<AuthGuard><DashboardLayout><Contacts /></DashboardLayout></AuthGuard>}
