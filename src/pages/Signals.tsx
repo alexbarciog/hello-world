@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Radio, Settings, HelpCircle, Plus, ChevronDown, ChevronRight, Calendar, Pencil, MoreHorizontal, X, Trash2, Play, Pause, Clock, CheckCircle2, AlertTriangle, Zap, Activity, Loader2, XCircle } from "lucide-react";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import { CreateAgentChooser } from "@/components/templates/CreateAgentChooser";
-import { applyTemplate, usePublicTemplates, type AgentTemplate } from "@/lib/agentTemplates";
+import { applyTemplate, startAppliedAgent, usePublicTemplates, useTemplateBySlug, type AgentTemplate } from "@/lib/agentTemplates";
 import { AddCardDialog } from "@/components/AddCardDialog";
 import HowItWorksModal from "@/components/HowItWorksModal";
 import AgentSuggestionsPanel from "@/components/signals/AgentSuggestionsPanel";
@@ -387,14 +387,20 @@ export default function Signals() {
     }
   }, [searchParams]);
 
-  // Auto-open the Create Agent wizard when arriving with ?create=1 (from setup wizard).
+  // Auto-open the Create Agent wizard when arriving with ?create=1 (from setup
+  // wizard or the template gallery). &template=<slug> prefills it ("Customise first").
+  const [prefillSlug, setPrefillSlug] = useState<string | null>(null);
   useEffect(() => {
     if (searchParams.get("create") === "1") {
+      setEditAgentId(null);
+      setPrefillSlug(searchParams.get("template"));
       setShowCreate(true);
       searchParams.delete("create");
+      searchParams.delete("template");
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams]);
+  const { data: prefillTemplate, isLoading: prefillLoading } = useTemplateBySlug(prefillSlug ?? undefined);
 
   async function fetchAgents() {
     if (!currentOrg?.id) { setAgents([]); setLoading(false); return; }
@@ -685,18 +691,26 @@ export default function Signals() {
     toast.success(`${template.business_type} agent created. Its campaign stays paused until you turn it on.`, {
       action: { label: "Review setup", onClick: () => { setEditAgentId(result.agent_id); setShowCreate(true); } },
     });
-    if (result.status !== "active") return;
     // First run right away, like an agent made in the form.
-    supabase.functions.invoke("process-signal-agents", { body: { agent_id: result.agent_id } }).then(({ error }) => {
-      if (error) console.error("Immediate agent processing failed:", error);
-      else fetchAgents();
-    });
+    startAppliedAgent(result, fetchAgents);
   }
 
   if (showCreate) {
+    if (prefillSlug && prefillLoading) {
+      return (
+        <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 flex items-center justify-center py-24">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
     return (
       <div className="relative min-h-full bg-card rounded-2xl m-3 md:m-4 overflow-hidden">
-        <CreateAgentWizard onClose={() => { setShowCreate(false); setEditAgentId(null); }} onCreated={fetchAgents} editAgentId={editAgentId} />
+        <CreateAgentWizard
+          onClose={() => { setShowCreate(false); setEditAgentId(null); setPrefillSlug(null); }}
+          onCreated={fetchAgents}
+          editAgentId={editAgentId}
+          initialAgent={!editAgentId && prefillSlug ? prefillTemplate?.config?.agent : undefined}
+        />
       </div>
     );
   }

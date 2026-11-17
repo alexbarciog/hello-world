@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import CreateAgentWizard from "@/components/CreateAgentWizard";
 import { CampaignTemplateForm } from "@/components/templates/CampaignTemplateForm";
 import { TEMPLATE_ICONS, TemplateCard } from "@/components/templates/TemplateCard";
+import { TemplateGalleryCard } from "@/components/templates/TemplateGalleryCard";
+import { CATEGORY_COLORS, CATEGORY_LABELS, TEMPLATE_CATEGORIES, TEMPLATE_COLORS, categoryOf } from "@/lib/templateMarketplace";
 import { adminTemplates, useAllTemplates, type AgentTemplate, type AgentTemplateConfig } from "@/lib/agentTemplates";
 
 const BLANK_CONFIG: AgentTemplateConfig = {
@@ -50,15 +52,24 @@ interface Draft {
   business_type: string;
   description: string;
   icon: string;
+  tagline: string;
+  category: string | null;
+  featured: boolean;
+  color: string | null;
   is_public: boolean;
   sort_order: number;
   config: AgentTemplateConfig;
+  /** Read-only here: kept by the apply functions. */
+  uses_count?: number | null;
 }
 
 const toDraft = (t: AgentTemplate): Draft => ({
   id: t.id, name: t.name, business_type: t.business_type, description: t.description,
-  icon: t.icon, is_public: t.is_public, sort_order: t.sort_order, config: t.config,
+  icon: t.icon, tagline: t.tagline ?? "", category: t.category, featured: !!t.featured, color: t.color,
+  is_public: t.is_public, sort_order: t.sort_order, config: t.config, uses_count: t.uses_count,
 });
+
+const NEW_META = { tagline: "", category: null, featured: false, color: null } as const;
 
 const input = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -96,7 +107,8 @@ export default function AdminTemplates() {
 
   const save = async () => {
     if (!draft) return;
-    const { id, ...fields } = draft;
+    // uses_count is not editable; the server ignores it anyway.
+    const { id, uses_count: _uses, ...fields } = draft;
     const res = await run(id ? "Template saved" : "Template created", id ? { action: "update", id, ...fields } : { action: "create", ...fields });
     if (res?.template) setDraft(toDraft(res.template));
   };
@@ -113,7 +125,7 @@ export default function AdminTemplates() {
     const parsed = res.config as AgentTemplateConfig;
     // No campaign to copy from: start with the default sequence.
     const config = res.had_campaign ? parsed : { ...parsed, campaign: BLANK_CONFIG.campaign };
-    setDraft({ name: config.agent.name || "New template", business_type: "", description: "", icon: "sparkles", is_public: false, sort_order: 0, config });
+    setDraft({ name: config.agent.name || "New template", business_type: "", description: "", icon: "sparkles", ...NEW_META, is_public: false, sort_order: 0, config });
     setErrors(res.had_campaign ? res.errors ?? [] : []);
   };
 
@@ -135,13 +147,13 @@ export default function AdminTemplates() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Agent templates</h1>
-          <p className="text-sm text-muted-foreground">Public templates appear in Signal Agents → Create agent, in onboarding ("What kind of business are you?") and in Settings → Switch template.</p>
+          <p className="text-sm text-muted-foreground">Public templates appear in the template gallery (/agents/templates), in Signal Agents → Create agent, in onboarding ("What kind of business are you?") and in Settings → Switch template.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={startFromAgent} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted">
             <Wand2 className="w-4 h-4" /> Save an agent as template
           </button>
-          <button onClick={() => { setErrors([]); setDraft({ name: "", business_type: "", description: "", icon: "sparkles", is_public: false, sort_order: 0, config: BLANK_CONFIG }); }}
+          <button onClick={() => { setErrors([]); setDraft({ name: "", business_type: "", description: "", icon: "sparkles", ...NEW_META, is_public: false, sort_order: 0, config: BLANK_CONFIG }); }}
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#0a0a0a] text-white px-3 py-2 text-sm">
             <Plus className="w-4 h-4" /> New template
           </button>
@@ -173,12 +185,18 @@ export default function AdminTemplates() {
             </label>
           </div>
 
-          {preview && (
-            <div className="rounded-xl bg-[#fafafa] p-4">
-              <p className="text-xs text-muted-foreground mb-2">Onboarding card:</p>
-              <div className="max-w-md"><TemplateCard template={draft} selected /></div>
+          <div className="rounded-xl bg-[#fafafa] p-4">
+            <p className="text-xs font-semibold mb-2">Preview card <span className="font-normal text-muted-foreground">(as it appears in the gallery{draft.featured ? ", featured row" : ""})</span></p>
+            <div className={draft.featured ? "max-w-sm rounded-3xl bg-gradient-to-br from-[#E6FF8A]/60 via-[#9BE8D8]/45 to-[#5AA9F0]/35 p-3" : "max-w-sm"}>
+              <TemplateGalleryCard template={{ ...draft, uses_count: draft.uses_count ?? 0 }} featured={draft.featured} />
             </div>
-          )}
+            {preview && (
+              <>
+                <p className="text-xs text-muted-foreground mt-4 mb-2">Onboarding card:</p>
+                <div className="max-w-md"><TemplateCard template={draft} selected /></div>
+              </>
+            )}
+          </div>
 
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -190,8 +208,26 @@ export default function AdminTemplates() {
               <input className={input} placeholder="e.g. Recruiter" value={draft.business_type} onChange={(e) => setDraft({ ...draft, business_type: e.target.value })} />
             </div>
             <div className="md:col-span-2">
-              <span className="block text-xs font-semibold mb-1">Description (card text)</span>
+              <span className="block text-xs font-semibold mb-1">Tagline (gallery card: what it finds, one line)</span>
+              <input className={input} maxLength={140} placeholder="e.g. Finds teams asking for a new website or a redesign." value={draft.tagline} onChange={(e) => setDraft({ ...draft, tagline: e.target.value })} />
+            </div>
+            <div className="md:col-span-2">
+              <span className="block text-xs font-semibold mb-1">Description (detail page and onboarding card when there's no tagline)</span>
               <textarea className={`${input} min-h-[60px]`} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
+            </div>
+            <div>
+              <span className="block text-xs font-semibold mb-1">Category (gallery chip)</span>
+              <select className={input} value={draft.category ?? ""} onChange={(e) => setDraft({ ...draft, category: e.target.value || null })}>
+                <option value="">None</option>
+                {TEMPLATE_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+              </select>
+            </div>
+            <div>
+              <span className="block text-xs font-semibold mb-1">Colour (icon tile)</span>
+              <select className={input} value={draft.color ?? ""} onChange={(e) => setDraft({ ...draft, color: e.target.value || null })}>
+                <option value="">Category default{categoryOf(draft) ? ` (${CATEGORY_COLORS[categoryOf(draft)!]})` : ""}</option>
+                {TEMPLATE_COLORS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
             <div>
               <span className="block text-xs font-semibold mb-1">Icon</span>
@@ -206,6 +242,10 @@ export default function AdminTemplates() {
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={draft.is_public} onChange={(e) => setDraft({ ...draft, is_public: e.target.checked })} />
               Public (customers can pick it)
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={draft.featured} onChange={(e) => setDraft({ ...draft, featured: e.target.checked })} />
+              Featured (top row of the gallery, up to 3 shown)
             </label>
           </section>
 
@@ -266,7 +306,10 @@ export default function AdminTemplates() {
             <div key={t.id} className={`flex flex-wrap items-center gap-3 p-4 ${t.archived_at ? "opacity-50" : ""}`}>
               <div className="flex-1 min-w-[200px]">
                 <p className="text-sm font-semibold">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.business_type} · v{t.version} · {t.archived_at ? "archived" : t.is_public ? "public" : "private"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.business_type} · v{t.version} · {t.archived_at ? "archived" : t.is_public ? "public" : "private"}
+                  {t.featured ? " · featured" : ""}{categoryOf(t) ? ` · ${CATEGORY_LABELS[categoryOf(t)!]}` : ""} · used by {t.uses_count ?? 0}
+                </p>
               </div>
               <button onClick={() => { setErrors([]); setDraft(toDraft(t)); }} className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded hover:bg-muted"><Pencil className="w-4 h-4" /> Edit</button>
               <button disabled={busy} onClick={() => run("Duplicated", { action: "duplicate", id: t.id })} className="inline-flex items-center gap-1 text-sm px-2 py-1 rounded hover:bg-muted"><Copy className="w-4 h-4" /> Duplicate</button>
