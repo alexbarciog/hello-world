@@ -127,13 +127,14 @@ export interface BlogPost extends BlogPostSummary {
   content_md: string;
   faq: BlogFaq[];
   author_title: string | null;
+  primary_keyword?: string | null;
 }
 
 export const SITE_URL = "https://intentsly.com";
 
 const SUMMARY_COLUMNS =
   "slug,section,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name";
-const POST_COLUMNS = `${SUMMARY_COLUMNS},meta_title,meta_description,content_md,faq,author_title`;
+const POST_COLUMNS = `${SUMMARY_COLUMNS},meta_title,meta_description,content_md,faq,author_title,primary_keyword`;
 
 export const CLUSTER_LABELS: Record<string, string> = {
   "linkedin-signals": "LinkedIn signals",

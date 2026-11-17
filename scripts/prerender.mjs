@@ -179,7 +179,7 @@ async function loadBlogPosts() {
     return [];
   }
   const columns =
-    "slug,section,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name,meta_title,meta_description,content_md,faq,author_title";
+    "slug,section,title,excerpt,cluster,article_type,reading_minutes,published_at,updated_at,cover_image_url,author_name,meta_title,meta_description,content_md,faq,author_title,primary_keyword";
   try {
     const res = await fetch(
       `${url}/rest/v1/blog_posts?status=eq.published&select=${columns}&order=published_at.desc&limit=1000`,

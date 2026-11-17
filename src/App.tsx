@@ -75,6 +75,7 @@ import { RefCodeCapture } from "./components/RefCodeCapture.tsx";
 import { useEffect, useRef, type ReactNode } from "react";
 import { ttqPage, ttqIdentify } from "@/lib/tiktok-pixel";
 import { supabase } from "@/integrations/supabase/client";
+import { captureFirstTouch, claimSignupAttribution } from "@/lib/analytics";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -82,7 +83,14 @@ const queryClient = new QueryClient();
 // Query keys don't carry the user id, so cached data must not outlive the
 // session: without this the next person to log in on the same tab briefly saw
 // the previous account's dashboard, and admin/agency flags stuck around.
-supabase.auth.onAuthStateChange((event) => {
+// First-party attribution: remember where this visitor first landed, and when
+// a new account signs in for the first time, save that on its profile.
+captureFirstTouch();
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user) {
+    claimSignupAttribution(session.user.id);
+  }
   if (event === "SIGNED_OUT") {
     queryClient.clear();
     try { localStorage.removeItem("intentsly_agency_impersonation"); } catch { /* ignore */ }

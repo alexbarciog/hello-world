@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import heroSkyBg from "@/assets/hero-sky-bg.webp";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import { cn } from "@/lib/utils";
+import { getFirstTouch, track } from "@/lib/analytics";
 
 const MAX_USER_MESSAGES = 5;
 
@@ -148,6 +149,7 @@ export default function PublicAiChat() {
     await new Promise((r) => setTimeout(r, 1800));
     setSearching(false);
     setShowLeads(true);
+    track("tryai_run", { landing_path: getFirstTouch()?.landing_path ?? null });
     setMessages((m) => [
       ...m,
       {

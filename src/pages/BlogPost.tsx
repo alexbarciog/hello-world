@@ -1,14 +1,14 @@
-import { Children, isValidElement, useEffect, useMemo, type ReactNode } from "react";
+import { Children, isValidElement, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { CTASection, Footer } from "@/components/CTAFooter";
-import { InlineCta, NextStepCta, StickyCta } from "@/components/ContentCta";
+import { GuideInlineCard, TryAiEndCta, TryAiStickyBar } from "@/components/content/ContentFunnel";
+import { GUIDE_SLOT, guideForContent, rehypeGuideSlot } from "@/lib/contentFunnel";
 import { applySeo } from "@/lib/seo";
-import { guideForPost } from "@/data/leadMagnetExtras";
-import { leadMagnetPath } from "@/lib/leadMagnets";
+import { track } from "@/lib/analytics";
 import {
   SECTIONS,
   SITE_URL,
@@ -86,21 +86,6 @@ const markdownComponents: Components = {
   hr: () => <hr className="my-10 border-border" />,
 };
 
-/** Split markdown before the Nth H2 (outside fenced code) so a CTA can sit between sections. */
-const splitAtHeading = (md: string, n: number): [string, string] => {
-  const lines = md.split("\n");
-  let inCode = false;
-  let seen = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].trimStart().startsWith("```")) inCode = !inCode;
-    if (!inCode && /^##\s+/.test(lines[i])) {
-      seen += 1;
-      if (seen === n) return [lines.slice(0, i).join("\n"), lines.slice(i).join("\n")];
-    }
-  }
-  return [md, ""];
-};
-
 const Shell = ({ children }: { children: ReactNode }) => (
   <div className="min-h-screen bg-background font-sans">
     <Navbar />
@@ -108,21 +93,6 @@ const Shell = ({ children }: { children: ReactNode }) => (
     <Footer />
   </div>
 );
-
-/** Small end-of-article card for posts that have a matching free guide. */
-function GuideCard({ postSlug }: { postSlug: string }) {
-  const guide = guideForPost(postSlug);
-  if (!guide) return null;
-  return (
-    <Link
-      to={leadMagnetPath(guide.slug)}
-      className="not-prose mt-10 flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-[#C8FF00]/15 px-5 py-4 no-underline hover:border-neutral-300 transition-colors"
-    >
-      <span className="text-[15px] font-semibold text-[#0a0a0a]">{guide.text}</span>
-      <ArrowUpRight className="h-5 w-5 shrink-0 text-[#1A8FE3]" />
-    </Link>
-  );
-}
 
 /** One content page. `section` is the route's section; a slug published in another section 404s here. */
 const BlogPost = ({ section = "blog" }: { section?: Section }) => {
@@ -133,11 +103,26 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
   const { data: allPosts } = useBlogPosts();
 
   const headings = useMemo(() => (post ? extractHeadings(post.content_md) : []), [post]);
-  // Inline CTA before the third H2 when the article has at least four; otherwise after the body.
-  const [before, after] = useMemo(
-    () => (post && headings.length >= 4 ? splitAtHeading(post.content_md, 3) : [post?.content_md ?? "", ""]),
-    [post, headings.length],
+  const articleRef = useRef<HTMLDivElement>(null);
+  const path = post ? postPath(post) : "";
+  const guide = useMemo(() => guideForContent(path, post?.primary_keyword), [path, post?.primary_keyword]);
+  // The guide card replaces the marker rehypeGuideSlot puts before the second H2.
+  const components = useMemo<Components>(
+    () => ({
+      ...markdownComponents,
+      aside: ({ node, children, ...props }) =>
+        node?.properties?.dataSlot === GUIDE_SLOT ? (
+          <GuideInlineCard guide={guide} path={path} />
+        ) : (
+          <aside {...props}>{children}</aside>
+        ),
+    }),
+    [guide, path],
   );
+
+  useEffect(() => {
+    if (path) track("content_view", { path });
+  }, [path]);
   const related = useMemo(() => {
     if (!post || !allPosts) return [];
     const others = allPosts.filter((p) => p.slug !== post.slug);
@@ -254,20 +239,14 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
             </nav>
           )}
 
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-            {before}
-          </ReactMarkdown>
-          <InlineCta section={section} />
-          {after && (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {after}
+          <div ref={articleRef}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeGuideSlot]} components={components}>
+              {post.content_md}
             </ReactMarkdown>
-          )}
-          <GuideCard postSlug={post.slug} />
+          </div>
+          <TryAiEndCta slug={post.slug} path={path} />
         </div>
       </article>
-
-      <NextStepCta section={section} />
 
       {related.length > 0 && (
         <section className="max-w-6xl mx-auto px-6 pb-20" aria-labelledby="related-heading">
@@ -293,7 +272,7 @@ const BlogPost = ({ section = "blog" }: { section?: Section }) => {
       )}
 
       <CTASection />
-      <StickyCta section={section} />
+      <TryAiStickyBar slug={post.slug} path={path} articleRef={articleRef} />
     </Shell>
   );
 };
