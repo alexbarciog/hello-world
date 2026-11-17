@@ -39,7 +39,14 @@
   figures. Intentsly facts used: 14 demos in 14 days, 4x reply rate, zero manual outreach (story + proof),
   around 1,000 leads a month per agent, 2 to 4 meetings a week, the 30/30/15 caps and 2 accounts per plan,
   the Mike Ruiz quote (proof), LinkedIn signal types, languages, integrations and ICP scoring (product.md).
-- Live check: see the run report (recorded after the push).
+- Push: the first `git push origin main` was rejected because the clone's local `main` ref was stale
+  (detached HEAD); `git push origin HEAD:main` succeeded (b9dc82e..5d48ba4), nothing was rebased or forced.
+- Live check (about 13 minutes after the push, 14:10 UTC): https://intentsly.com/solutions/get-clients-for-a-staffing-agency
+  is live (H1, byline dated 17 November 2026, 12 min read, 5 FAQ entries, both tables) and the /solutions index
+  lists it first among 24 pages. At the 4-minute mark the index still showed 23 pages, so the redeploy takes
+  longer than 4 minutes. The sitemap could not be checked: WebFetch refused https://intentsly.com/sitemap.xml
+  with a permission prompt nobody was there to answer (same as the previous run), and the run was not allowed
+  to fetch it another way. The index listing shows the redeploy ran, so the sitemap is very likely updated.
 - Solutions queue after this run: 8 keywords queued (seo agency, it consulting company, ppc agency, branding
   agency, pr agency, executive coaching business, cloud consulting company, fintech startup), so no top-up was
   needed (threshold 5). Note: "how to get clients for an executive coaching business" contains "business" and
