@@ -14,6 +14,14 @@ export const SIGNAL_IDS = [
 
 export const STEP_TYPES = ["invitation", "message", "email", "comment", "like", "visit_profile"] as const;
 
+// Gallery metadata (columns on agent_templates, not part of the config).
+export const TEMPLATE_CATEGORIES = [
+  "agencies", "software-it", "recruiting", "consulting", "creative-content", "sales-lead-gen",
+] as const;
+export const TEMPLATE_COLORS = ["blue", "violet", "emerald", "amber", "rose", "teal", "slate"] as const;
+export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
+export type TemplateColor = (typeof TEMPLATE_COLORS)[number];
+
 export interface TemplateStep {
   type: (typeof STEP_TYPES)[number];
   message?: string;

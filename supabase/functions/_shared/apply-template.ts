@@ -149,5 +149,10 @@ export async function applyTemplateToAccount(
     campaign_id: campaignId,
   });
 
+  // "Used by N teams" in the template gallery: recount distinct accounts from
+  // template_applications (service role only). Never blocks the apply.
+  const { error: usesErr } = await db.rpc("refresh_template_uses", { p_template_id: template.id });
+  if (usesErr) console.error("[apply-template] refresh_template_uses failed:", usesErr.message);
+
   return { ok: true, agentId, campaignId, agentStatus };
 }
