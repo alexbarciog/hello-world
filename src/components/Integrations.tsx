@@ -22,7 +22,7 @@ const Integrations = () => {
           Integrations
         </span>
         <p className="text-sm font-medium text-goji-text-muted mb-3 mt-4">Connect with your tools</p>
-        <h2 className="text-4xl md:text-5xl font-extrabold text-goji-dark tracking-tight leading-tight mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-goji-dark tracking-tight leading-tight mb-4">
           Integrate with your best tools
         </h2>
         <p className="text-goji-text-muted text-base mb-14">

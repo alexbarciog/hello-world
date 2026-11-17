@@ -14,9 +14,15 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        headline: ["Manrope", "sans-serif"],
-        body: ["Manrope", "sans-serif"],
+        sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        // Kept as aliases so existing font-headline / font-body classes still work.
+        headline: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        body: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+      },
+      // Nothing heavier than 700 anywhere.
+      fontWeight: {
+        extrabold: "700",
+        black: "700",
       },
       colors: {
         border: "hsl(var(--border))",

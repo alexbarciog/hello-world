@@ -18,12 +18,12 @@ const AnnouncementBar = () => {
       {/* Mobile: single row */}
       <span className="relative z-10 flex items-center justify-center gap-2 sm:hidden">
         {spots && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--aeline-dark))] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-[hsl(var(--aeline-lime))]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--aeline-dark))] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[hsl(var(--aeline-lime))]">
             {spots}
           </span>
         )}
-        <span className="text-[12px] font-black">{founding ? "$97/mo for life" : "7 days free · $97/mo"}</span>
-        <a href="/pricing" className="inline-flex items-center gap-0.5 font-black underline underline-offset-2 text-[11px]">
+        <span className="text-[12px] font-bold">{founding ? "$97/mo for life" : "7 days free · $97/mo"}</span>
+        <a href="/pricing" className="inline-flex items-center gap-0.5 font-bold underline underline-offset-2 text-[11px]">
           {founding ? "Claim" : "See pricing"}
           <Arrow className="h-3 w-3" />
         </a>
@@ -32,7 +32,7 @@ const AnnouncementBar = () => {
       {/* Desktop / tablet */}
       <span className="relative z-10 hidden sm:inline-flex sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--aeline-dark))] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[hsl(var(--aeline-lime))] shadow-[0_0_18px_hsl(var(--aeline-dark)/0.35)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[hsl(var(--aeline-dark))] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[hsl(var(--aeline-lime))] shadow-[0_0_18px_hsl(var(--aeline-dark)/0.35)]">
             {founding ? "Founding deal" : "7-day free trial"}
           </span>
           <span className="tracking-tight">
@@ -45,12 +45,12 @@ const AnnouncementBar = () => {
           {spots && (
             <>
               <span className="h-4 w-px bg-[hsl(var(--aeline-dark))]/20" />
-              <span className="inline-flex items-center rounded-full bg-[hsl(var(--aeline-dark))] px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-[hsl(var(--aeline-lime))]">
+              <span className="inline-flex items-center rounded-full bg-[hsl(var(--aeline-dark))] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[hsl(var(--aeline-lime))]">
                 {spots}
               </span>
             </>
           )}
-          <a href="/pricing" className="inline-flex items-center gap-1 font-black underline underline-offset-2 transition-opacity hover:opacity-70">
+          <a href="/pricing" className="inline-flex items-center gap-1 font-bold underline underline-offset-2 transition-opacity hover:opacity-70">
             {founding ? "Claim" : "See pricing"}
             <Arrow className="h-3.5 w-3.5" />
           </a>
