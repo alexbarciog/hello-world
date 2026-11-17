@@ -42,7 +42,7 @@ export default function AiChat() {
   // so each new search asks for fresh angles instead of repeating queries.
   const usedKeywordsRef = useRef<string[]>([]);
 
-  // Gate leads behind paid plan / active free trial
+  // Gate leads behind a paid plan
   const { hasAccess, loading: subLoading } = useSubscription();
   const leadsLocked = !subLoading && !hasAccess;
 
@@ -423,13 +423,13 @@ export default function AiChat() {
                     {filteredLeads.length} high-intent {filteredLeads.length === 1 ? "lead" : "leads"} ready
                   </h3>
                   <p className="text-xs text-foreground/60 mb-4 leading-relaxed">
-                    Upgrade your plan to unlock these leads and start reaching out today.
+                    Pick a plan to let Intentsly find and message these people for you.
                   </p>
                   <Link
                     to="/billing"
                     className="inline-flex items-center gap-1.5 bg-foreground text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity"
                   >
-                    Upgrade to unlock
+                    Pick a plan
                     <ArrowUpRight className="w-4 h-4" />
                   </Link>
                 </div>

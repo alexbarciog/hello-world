@@ -96,9 +96,9 @@ export default function ClaudeConnector() {
             ))}
           </ol>
           <p className="text-sm text-muted-foreground mb-16">
-            You need an Intentsly account with an active plan or free trial. The LinkedIn tools also need a LinkedIn
+            You need an Intentsly account with an active plan. The LinkedIn tools also need a LinkedIn
             account connected in Intentsly. No account yet?{" "}
-            <a href="/register" className="font-medium text-foreground underline underline-offset-2">Start a free trial</a>.
+            <a href="/pricing" className="font-medium text-foreground underline underline-offset-2">Pick a plan</a>.
           </p>
 
           <h2 className="text-2xl md:text-3xl font-medium tracking-tight mb-6" style={dark}>Things to ask</h2>

@@ -2508,7 +2508,7 @@ export default function CampaignDetail() {
                                     value={newStepInstructions}
                                     onChange={(e) => setNewStepInstructions(e.target.value)}
                                     className="w-full min-h-[80px] text-xs border border-border rounded-lg p-2.5 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-                                    placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
+                                    placeholder="e.g. Mention our case studies, avoid talking about pricing, ask about their current workflow..."
                                     maxLength={500}
                                   />
                                   <p className="text-[10px] text-muted-foreground mt-1">{newStepInstructions.length}/500 — These instructions will guide the AI for this specific step only.</p>
@@ -2809,7 +2809,7 @@ export default function CampaignDetail() {
                     value={editStepInstructionsText}
                     onChange={(e) => setEditStepInstructionsText(e.target.value)}
                     className="w-full min-h-[100px] text-sm border border-border rounded-xl p-3 bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-                    placeholder="e.g. Mention our free trial, avoid talking about pricing, ask about their current workflow..."
+                    placeholder="e.g. Mention our case studies, avoid talking about pricing, ask about their current workflow..."
                     maxLength={500}
                   />
                   <p className="text-[10px] text-muted-foreground mt-1 mb-4">{editStepInstructionsText.length}/500</p>
@@ -3398,7 +3398,7 @@ export default function CampaignDetail() {
                         <textarea
                           value={settingsCustomTraining}
                           onChange={(e) => setSettingsCustomTraining(e.target.value)}
-                          placeholder="e.g. Always mention our free trial. Don't use emojis. Reference their recent LinkedIn posts when possible..."
+                          placeholder="e.g. Always mention our onboarding call. Don't use emojis. Reference their recent LinkedIn posts when possible..."
                           rows={4}
                           className="flex w-full rounded-xl border-2 border-border bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                         />

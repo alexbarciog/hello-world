@@ -1,4 +1,4 @@
-import { CreditCard, Zap, CalendarCheck, Shield, Rocket } from "lucide-react";
+import { CreditCard, Zap, CalendarCheck, Rocket } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -12,24 +12,6 @@ interface AddCardDialogProps {
   freeTrialMode?: boolean;
   freeTrialLimit?: number;
 }
-
-const trialBenefits = [
-  {
-    icon: Zap,
-    title: "Your AI agent starts hunting for leads",
-    desc: "Monitors LinkedIn signals 24/7 and finds your ideal prospects.",
-  },
-  {
-    icon: CalendarCheck,
-    title: "You only pay when it works",
-    desc: "After your free meetings are used, you'll be auto-enrolled on the Starter plan ($59/mo).",
-  },
-  {
-    icon: Shield,
-    title: "No risk, cancel anytime",
-    desc: "If the agent doesn't book meetings, you'll never be charged.",
-  },
-];
 
 const directBenefits = [
   {
@@ -49,8 +31,9 @@ const directBenefits = [
   },
 ];
 
-export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false, freeTrialLimit = 1 }: AddCardDialogProps) {
-  const benefits = freeTrialMode ? trialBenefits : directBenefits;
+export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTrialMode = false }: AddCardDialogProps) {
+  // freeTrialMode is the invite-only free_trial_enabled flag (card on file, no charge today).
+  const benefits = directBenefits;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,13 +51,11 @@ export function AddCardDialog({ open, onOpenChange, onConfirm, loading, freeTria
             <DialogDescription className="text-sm leading-relaxed text-[#858585]">
               {freeTrialMode ? (
                 <>
-                  Intentsly is <strong className="text-black font-medium">free for your first {freeTrialLimit} {freeTrialLimit === 1 ? 'meeting' : 'meetings'}</strong>. 
-                  We just need a card on file to get started — you won't be charged today.
+                  Add a card on file to activate your agent. You won't be charged today.
                 </>
               ) : (
                 <>
-                  Subscribe to the <strong className="text-black font-medium">Starter plan ($59/mo)</strong> to 
-                  activate your AI agents and start generating leads automatically.
+                  Pick a plan to activate your AI agents and start finding leads automatically.
                 </>
               )}
             </DialogDescription>

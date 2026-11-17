@@ -53,7 +53,7 @@ const StickyMobileCTA = () => {
             </span>
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: "hsl(var(--aeline-dark))" }}>
-                $97/month
+                From $29/month
               </p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Cancel anytime</p>
             </div>

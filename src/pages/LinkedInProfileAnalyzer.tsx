@@ -134,7 +134,7 @@ const testimonials = [
 
 // Also rendered as FAQPage JSON-LD in the static HTML (scripts/prerender.mjs).
 export const ANALYZER_FAQS = [
-  { q: "Is the LinkedIn profile audit really free?", a: "Yes. 100% free. No credit card. No trial. You get the full report the moment you create your free account." },
+  { q: "Is the LinkedIn profile audit really free?", a: "Yes. 100% free. No credit card. You get the full report the moment you create your free account." },
   { q: "How long does the audit take?", a: "About 45 seconds. Our AI reads your public profile, scores 27 conversion signals, and writes a rewritten headline and About hook for you." },
   { q: "Do I need to give you my LinkedIn password?", a: "Never. We only read your public profile — the same version anyone can see when they open your link in an incognito window." },
   { q: "What will I actually get in the report?", a: "A conversion score out of 100, sub-scores for your headline, About, banner and social proof, a rewritten headline and About hook in your voice, your top 3 conversion killers, missing keywords buyers search for, and a checklist of quick wins." },

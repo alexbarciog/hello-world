@@ -119,7 +119,7 @@ export default function SetupService() {
               </button>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {canBuy ? "Your workspace owner can order this." : "Available once your trial or subscription is running."}
+                {canBuy ? "Your workspace owner can order this." : "Available once you're on a plan."}
               </p>
             )}
           </div>

@@ -53,7 +53,7 @@ const CTASection = () => {
             transition={{ type: "spring", stiffness: 400, damping: 18 }}
             className="btn-cta"
           >
-            Start for $97
+            Start from $29
             <ArrowUpRight className="w-4 h-4" />
           </motion.a>
         </div>
@@ -82,7 +82,7 @@ const Footer = () => {
                 href="/register"
                 className="inline-flex items-center gap-2 bg-[#C8FF00] text-[#111113] text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-full hover:bg-[#d4ff33] transition-colors"
               >
-                Start for $97
+                Start from $29
                 <ArrowUpRight className="w-4 h-4" />
               </a>
               <a

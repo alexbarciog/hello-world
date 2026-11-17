@@ -8,7 +8,7 @@ const rows = [
   { feature: "AI agents (auto-discovery)", intentsly: true, apollo: false, clay: "Workflow", salesnav: false, agency: false },
   { feature: "No data subscription needed", intentsly: true, apollo: false, clay: false, salesnav: false, agency: true },
   { feature: "Setup in minutes", intentsly: true, apollo: "Hours", clay: "Days", salesnav: "Hours", agency: "Weeks" },
-  { feature: "Monthly cost", intentsly: "$97", apollo: "$99+", clay: "$149+", salesnav: "$99", agency: "$2k+" },
+  { feature: "Monthly cost", intentsly: "From $29", apollo: "$99+", clay: "$149+", salesnav: "$99", agency: "$2k+" },
 ];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -311,7 +311,7 @@ const Comparison = () => {
               className="relative inline-flex items-center gap-2 bg-[hsl(var(--aeline-dark))] text-white px-6 py-3 rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] overflow-hidden group"
             >
               <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
-              <span className="relative">Start for $97</span>
+              <span className="relative">Start from $29</span>
               <ArrowRight className="w-4 h-4 relative transition-transform group-hover:translate-x-1" />
             </Link>
           </motion.div>
