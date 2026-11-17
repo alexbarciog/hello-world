@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { CONTACT_EMAIL, PLAN_PRICE_USD } from "@/lib/billing";
+import { CONTACT_EMAIL } from "@/lib/billing";
+import { FALLBACK_PLANS } from "@/lib/plans";
 import { ttqPurchase } from "@/lib/tiktok-pixel";
 
 const PAYING = ["trialing", "active", "scheduled_cancel"];
@@ -19,7 +20,7 @@ export default function CheckoutSuccess() {
   const navigate = useNavigate();
   const fromCheckout = params.get("checkout") === "success";
   const [state, setState] = useState<"waiting" | "in" | "slow">("waiting");
-  const [trialEnd, setTrialEnd] = useState<string | null>(null);
+  const [planName, setPlanName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!fromCheckout) return;
@@ -30,16 +31,19 @@ export default function CheckoutSuccess() {
       if (!user || stopped) return;
       // subscriptions isn't in the generated types yet.
       const { data } = await (supabase.from("subscriptions" as never) as unknown as ReturnType<typeof supabase.from>)
-        .select("status, trial_end")
+        .select("status")
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
-      const rows = (data ?? []) as Array<{ status: string; trial_end: string | null }>;
+      const rows = (data ?? []) as Array<{ status: string }>;
       const paying = rows.find((r) => PAYING.includes(r.status));
       if (stopped) return;
       if (paying) {
-        setTrialEnd(paying.status === "trialing" ? paying.trial_end : null);
         setState("in");
-        ttqPurchase("Intentsly", PLAN_PRICE_USD);
+        const { data: subInfo } = await supabase.functions.invoke("check-subscription").catch(() => ({ data: null }));
+        const key: string | undefined = subInfo?.plan?.key;
+        const plan = FALLBACK_PLANS.find((p) => p.key === key);
+        if (!stopped && subInfo?.plan?.name) setPlanName(subInfo.plan.name);
+        ttqPurchase(plan ? `Intentsly ${plan.name}` : "Intentsly", plan ? plan.price_cents / 100 : undefined);
         return;
       }
       if (Date.now() - started >= GIVE_UP_MS) {
@@ -69,9 +73,9 @@ export default function CheckoutSuccess() {
             <CheckCircle className="mx-auto w-10 h-10 text-green-500" />
             <h1 className="mt-4 text-xl font-semibold text-foreground">You're in.</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {trialEnd
-                ? `Your free trial runs until ${new Date(trialEnd).toLocaleDateString()}. Signals and LinkedIn outreach are on.`
-                : "Signals and LinkedIn outreach are on."}
+              {planName
+                ? `You're on ${planName}. Your credits are in, and signals and LinkedIn outreach are on.`
+                : "Your credits are in, and signals and LinkedIn outreach are on."}
             </p>
             <button
               onClick={() => navigate("/dashboard", { replace: true })}

@@ -36,7 +36,7 @@ const ROUTES = [
   {
     path: "/pricing",
     title: "Pricing — Intentsly",
-    description: "Intentsly plans and pricing for buying-signal monitoring, lead enrichment and AI-powered LinkedIn and email outreach.",
+    description: "Intentsly plans from $29/month. Each plan includes monthly credits for buying-intent leads, LinkedIn connection requests and AI-written messages. Cancel anytime.",
     priority: "0.8",
   },
   {
@@ -278,7 +278,7 @@ function buildPage(template, route, appHtml) {
 
 installDomGlobals();
 const {
-  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
+  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, PRICING_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
   setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS, LEAD_MAGNET_INDEX,
 } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
@@ -302,7 +302,11 @@ const newestIn = (section) =>
     .pop() || undefined;
 
 const routes = [
-  ...ROUTES.map((r) => (r.path === "/linkedin-profile-analyzer" ? { ...r, jsonLd: faqJsonLd(ANALYZER_FAQS) } : r)),
+  ...ROUTES.map((r) => {
+    if (r.path === "/linkedin-profile-analyzer") return { ...r, jsonLd: faqJsonLd(ANALYZER_FAQS) };
+    if (r.path === "/pricing") return { ...r, jsonLd: faqJsonLd(PRICING_FAQS) };
+    return r;
+  }),
   ...toolRoutes(SITE),
   ...caseStudies.map((s) => ({
     path: `/case-studies/${s.slug}`,

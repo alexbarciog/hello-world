@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { ttqCompleteRegistration } from "@/lib/tiktok-pixel";
+import { isPlanKey } from "@/lib/plans";
 import { PENDING_SHARE_TOKEN_KEY } from "@/components/shared/AuthPromptDialog";
 import intentslyIcon from "@/assets/intentsly-icon.png";
 import intentslyLogo from "@/assets/intentsly-logo.png";
@@ -33,6 +34,8 @@ export default function Register() {
   const redirectParam = searchParams.get("redirect");
   const claimParam = searchParams.get("claim");
   const sourceParam = searchParams.get("source");
+  // From /pricing: "Get Growth" → /register?plan=growth → plan picker with Growth preselected.
+  const planParam = searchParams.get("plan");
 
   // Step state
   const [step, setStep] = useState(1);
@@ -162,20 +165,20 @@ export default function Register() {
     }
 
     // Invited teammates join a workspace that already pays; everyone else
-    // starts the 7-day trial in Stripe Checkout, then continues to onboarding.
+    // picks a plan (Creem checkout), then continues to onboarding.
     if (inviteToken && inviteData) {
       toast.success("Account created! Let's set up your first campaign.");
       navigate("/onboarding");
       return;
     }
-    toast.success("Account created! Next: start your 7-day free trial.");
-    navigate("/start-trial");
+    toast.success("Account created! Next: pick your plan.");
+    navigate(isPlanKey(planParam) ? `/choose-plan?plan=${planParam}` : "/choose-plan");
   };
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/dashboard"
+      redirect_uri: window.location.origin + (isPlanKey(planParam) ? `/choose-plan?plan=${planParam}` : "/dashboard")
     });
     if (result?.error) {
       toast.error("Google sign-in failed. Please try again.");
