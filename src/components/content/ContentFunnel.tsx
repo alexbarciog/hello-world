@@ -13,7 +13,19 @@ import { tryAiHref, type GuideOffer } from "@/lib/contentFunnel";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Inline "free PDF" card with an email field. */
-export function GuideInlineCard({ guide, path }: { guide: GuideOffer; path: string }) {
+export function GuideInlineCard({
+  guide,
+  path,
+  variant = "inline",
+  className = "",
+}: {
+  guide: GuideOffer;
+  path: string;
+  /** inline: card in the article body; rail: narrow sticky card beside the article (≥1200px). */
+  variant?: "inline" | "rail";
+  className?: string;
+}) {
+  const rail = variant === "rail";
   const ref = useRef<HTMLElement>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -63,9 +75,11 @@ export function GuideInlineCard({ guide, path }: { guide: GuideOffer; path: stri
     <aside
       ref={ref}
       aria-label={`Free guide: ${guide.title}`}
-      className="not-prose my-10 rounded-3xl border border-neutral-200/80 bg-white p-5 md:p-6 shadow-[0_8px_30px_-12px_rgba(10,20,40,0.18)] font-sans"
+      className={`not-prose rounded-3xl border border-neutral-200/80 bg-white shadow-[0_8px_30px_-12px_rgba(10,20,40,0.18)] font-sans ${
+        rail ? "p-5" : "my-10 p-5 md:p-6"
+      } ${className}`}
     >
-      <div className="flex gap-4 md:gap-5">
+      <div className={rail ? "flex flex-col gap-4" : "flex gap-4 md:gap-5"}>
         <img
           src={guide.thumb}
           alt={`Cover of ${guide.title}`}
@@ -73,10 +87,10 @@ export function GuideInlineCard({ guide, path }: { guide: GuideOffer; path: stri
           height={340}
           loading="lazy"
           decoding="async"
-          className="hidden sm:block w-[72px] md:w-[84px] h-auto self-start rounded-md shadow-[0_10px_20px_-10px_rgba(10,20,40,0.45)] rotate-[-3deg]"
+          className={`${rail ? "block w-[96px]" : "hidden sm:block w-[72px] md:w-[84px]"} h-auto self-start rounded-md shadow-[0_10px_20px_-10px_rgba(10,20,40,0.45)] rotate-[-3deg]`}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[17px] leading-snug text-[#0a0a0a] mb-1">
+          <p className={`${rail ? "text-[15px]" : "text-[17px]"} leading-snug text-[#0a0a0a] mb-1`}>
             <span className="font-semibold">Free: {guide.title}.</span>{" "}
             <span className="text-neutral-600">{guide.blurb}</span>
           </p>
@@ -87,18 +101,18 @@ export function GuideInlineCard({ guide, path }: { guide: GuideOffer; path: stri
                 href={done.assetUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-[#1A8FE3] underline underline-offset-2"
+                className="font-semibold text-[#1172C0] underline underline-offset-2"
               >
                 Open it now
               </a>
             </p>
           ) : (
-            <form onSubmit={submit} className="mt-3 flex flex-col sm:flex-row gap-2" noValidate>
-              <label htmlFor={`guide-email-${guide.slug}`} className="sr-only">
+            <form onSubmit={submit} className={`mt-3 flex flex-col gap-2 ${rail ? "" : "sm:flex-row"}`} noValidate>
+              <label htmlFor={`guide-email-${variant}-${guide.slug}`} className="sr-only">
                 Your email
               </label>
               <input
-                id={`guide-email-${guide.slug}`}
+                id={`guide-email-${variant}-${guide.slug}`}
                 type="email"
                 inputMode="email"
                 autoComplete="email"

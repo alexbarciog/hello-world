@@ -52,8 +52,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
         {/* Desktop xl+ */}
         <nav className="w-full bg-white border-b border-neutral-100 hidden xl:block">
           <div className="max-w-7xl mx-auto px-8 h-[72px] flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
-              <img alt="Intentsly" className="h-9 object-contain" src={intentslyIcon} />
+            <a href="/" aria-label="Intentsly home" className="flex items-center gap-2">
+              <img alt="" className="h-9 object-contain" src={intentslyIcon} />
               <span className="text-lg font-bold tracking-tight text-[#0a0a0a]">Intentsly<span className="text-[#0a0a0a]">.</span></span>
             </a>
 
@@ -83,8 +83,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
         {/* Compact desktop lg-xl */}
         <nav className="w-full bg-white border-b border-neutral-100 hidden lg:block xl:hidden">
           <div className="max-w-7xl mx-auto px-5 h-[64px] flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
-              <img alt="Intentsly" className="h-8 object-contain" src={intentslyIcon} />
+            <a href="/" aria-label="Intentsly home" className="flex items-center gap-2">
+              <img alt="" className="h-8 object-contain" src={intentslyIcon} />
               <span className="text-base font-bold tracking-tight text-[#0a0a0a]">Intentsly.</span>
             </a>
 
@@ -114,8 +114,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
         {/* Mobile + tablet */}
         <nav className="lg:hidden w-full bg-white border-b border-neutral-100">
           <div className="px-5 h-14 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
-              <img alt="Intentsly" className="h-8 object-contain" src={intentslyIcon} />
+            <a href="/" aria-label="Intentsly home" className="flex items-center gap-2">
+              <img alt="" className="h-8 object-contain" src={intentslyIcon} />
               <span className="text-base font-bold tracking-tight text-[#0a0a0a]">Intentsly.</span>
             </a>
             <div className="flex items-center gap-2">
@@ -191,8 +191,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               : "max-w-[1180px] bg-white/20 backdrop-blur-md border border-white/20"
           }`}
         >
-          <a href="/" className="flex items-center gap-2">
-            <img alt="Intentsly" className="h-10 object-contain" src={intentslyIcon} />
+          <a href="/" aria-label="Intentsly home" className="flex items-center gap-2">
+            <img alt="" className="h-10 object-contain" src={intentslyIcon} />
             <span className={`text-sm font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
               Intentsly
             </span>
@@ -237,8 +237,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               : "max-w-[992px] bg-white/20 backdrop-blur-md border border-white/20"
           }`}
         >
-          <a href="/" className="flex items-center gap-2">
-            <img alt="Intentsly" className="h-9 object-contain" src={intentslyIcon} />
+          <a href="/" aria-label="Intentsly home" className="flex items-center gap-2">
+            <img alt="" className="h-9 object-contain" src={intentslyIcon} />
             <span className={`text-xs font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
               Intentsly
             </span>
@@ -280,8 +280,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               : "bg-white/15 backdrop-blur-xl border border-white/25"
           }`}
         >
-          <a href="/" className="flex items-center gap-1.5">
-            <img alt="Intentsly" className="h-7 object-contain" src={intentslyIcon} />
+          <a href="/" aria-label="Intentsly home" className="flex items-center gap-1.5">
+            <img alt="" className="h-7 object-contain" src={intentslyIcon} />
             <span className={`text-sm font-semibold tracking-tight ${scrolled ? "text-foreground" : "text-white"}`}>
               Intentsly
             </span>

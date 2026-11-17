@@ -70,8 +70,8 @@ const Footer = () => {
         <div className="grid gap-12 lg:grid-cols-[minmax(0,320px)_1fr] mb-14">
           {/* Left: logo, description, calls to action */}
           <div>
-            <a href="/" className="flex items-center gap-2.5 mb-6">
-              <img alt="Intentsly" className="h-8 object-contain" src={intentslyIcon} />
+            <a href="/" aria-label="Intentsly home" className="flex items-center gap-2.5 mb-6">
+              <img alt="" className="h-8 object-contain" src={intentslyIcon} />
               <span className="text-lg font-medium tracking-tight text-white">Intentsly</span>
             </a>
             <p className="text-sm text-white/50 leading-relaxed mb-8">
@@ -117,12 +117,12 @@ const Footer = () => {
         <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             {LEGAL_LINKS.map((link) => (
-              <a key={link.href} href={link.href} className="text-xs text-white/30 hover:text-white/60 transition-colors">
+              <a key={link.href} href={link.href} className="text-xs text-white/60 hover:text-white/80 transition-colors">
                 {link.label}
               </a>
             ))}
           </div>
-          <p className="text-xs text-white/30">
+          <p className="text-xs text-white/60">
             © {new Date().getFullYear()} Intentsly. All rights reserved.
           </p>
         </div>

@@ -90,7 +90,11 @@ def check(path):
         fails.append(f"only {len(h2)} H2 sections (min 4)")
     if not any(kw_in(kw, h) for h in h2):
         fails.append("no H2 contains the primary keyword")
-    first = body.split("\n\n")[0]
+    # The page renders "> [!SUMMARY]" as a Key takeaways box above the opening paragraph.
+    blocks = [b for b in body.strip().split("\n\n") if b.strip()]
+    if blocks and re.match(r"^>\s*\[!SUMMARY\]", blocks[0], re.I):
+        blocks = blocks[1:]
+    first = blocks[0] if blocks else ""
     if first.startswith("#"):
         fails.append("article must open with a paragraph that answers the query, not a heading")
     elif len(words(plain(first))) > 90:
@@ -192,6 +196,20 @@ def check(path):
             pass
     if recent >= c["max_posts_per_week"]:
         fails.append(f"weekly cap reached ({recent} articles in the last 7 days)")
+
+    # Article components (see skills/blog-write.md "Components")
+    for kind in re.findall(r"^>\s*\[!([A-Za-z]+)\]", body, re.M):
+        if kind.upper() not in ("SUMMARY", "TIP", "NOTE", "WARNING", "EXAMPLE"):
+            fails.append(f"unknown callout [!{kind}] (use SUMMARY, TIP, NOTE, WARNING or EXAMPLE)")
+    for block in re.findall(r"^```stats\s*\n(.*?)^```", body, re.M | re.S):
+        for line in [l for l in block.splitlines() if l.strip()]:
+            parts = [x.strip() for x in line.split("|")]
+            if len(parts) < 3 or not re.match(r"^https?://", parts[2]):
+                fails.append(f"stats line needs 'value | label | source-url': {line.strip()[:60]}")
+    if not re.match(r"^\s*>\s*\[!SUMMARY\]", body, re.I):
+        warns.append("no > [!SUMMARY] box at the top: every article should open with one")
+    if re.search(r"(^>\s*\[!(TIP|NOTE|WARNING|EXAMPLE)\][^\n]*\n(>[^\n]*\n)*\n){2}>\s*\[!(TIP|NOTE|WARNING|EXAMPLE)\]", body, re.M | re.I):
+        warns.append("more than 2 callouts in a row: put text between them")
 
     if "—" in body:
         warns.append("contains em dashes: rewrite those sentences")

@@ -47,7 +47,7 @@ from the founder. Do not publish filler.
 
 - **Title**: contains the keyword near the front, promises the specific outcome, under 60
   characters where possible. No "Ultimate Guide", no "Everything You Need to Know".
-- **Opening (under 90 words)**: answer the query immediately. A reader who stops after the first
+- **Summary, then opening (under 90 words)**: open with a `> [!SUMMARY]` box (see Components), then answer the query immediately. A reader who stops after the first
   paragraph should already have the short answer. No scene-setting, no "In today's world".
 - **H2s** follow the reader's sequence of questions, not a template. Each H2 must be useful if
   read alone, because people and AI answer engines land in the middle. Phrase H2s the way people
@@ -104,6 +104,64 @@ and is short on time.
 Mention the product where it is the honest answer, usually once in the body and once in the call
 to action. In comparisons, list Intentsly's limits alongside everyone else's. An article that
 reads as an advert earns no links and no trust.
+
+### Components (the page renders these from plain markdown)
+
+Rules for using them:
+
+- Every article opens with a `> [!SUMMARY]` box (3 to 5 bullets), then the opening paragraph.
+- Put a visual element (table, callout, steps, message card, stats or image) at least every ~300 words.
+- Paragraphs are 3 sentences at most.
+- Never more than 2 callouts in a row.
+- Every number in a `stats` block needs its own source URL, exactly like a statistic in the text.
+
+Full example of every block: `skills/examples/components-demo.md`.
+
+**Summary (Key takeaways)**
+
+```
+> [!SUMMARY]
+> - The short answer, in one line.
+> - The second thing the reader should remember.
+> - What to do next.
+```
+
+**Callouts**: `TIP` (lime), `NOTE` (blue), `WARNING` (amber), `EXAMPLE` (grey, for an example post or message).
+
+```
+> [!TIP]
+> Reply within a day of the post; after that most people have picked someone.
+```
+
+**Steps**: an ordered list where *every* item opens with bold text becomes a numbered step list with connector lines.
+
+```
+1. **Search the phrase.** Type what a buyer would write into post search.
+2. **Check the person.** Right role, right company size, posted this week.
+```
+
+**Message card**: an example opener or buyer post, shown as a LinkedIn message bubble.
+
+````
+```message
+Saw your post asking for a Webflow developer. Happy to share how we'd scope it. What's the launch date?
+```
+````
+
+**Stats strip**: 2 to 4 big numbers, `value | label | source-url` per line. Lines without a URL are dropped.
+
+````
+```stats
+<number> | <what it measures> | <URL of the page the number comes from>
+```
+````
+
+**Comparison table**: a table whose header row contains "Intentsly" highlights that column.
+
+**Images**: `![alt text](https://url "Optional caption")`. Always write real alt text.
+
+**FAQ**: keep the `## FAQ` section with `### Question?` entries; the page turns it into an accordion
+at the end and FAQPage schema.
 
 ## 5. Edit, three passes
 

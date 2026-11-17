@@ -23,6 +23,10 @@ Shared rules for all four sections:
   body links rather than pitches.
 - FAQ: 3 to 6 real questions, 40 to 70 word answers. The FAQ becomes FAQPage schema.
 - No invented numbers, customers or quotes, ever. See blog-write.md "Facts".
+- Use the article components from blog-write.md "Components": open with `> [!SUMMARY]`, a visual
+  element (table, callout, steps, `message` card, `stats` strip or image) every ~300 words,
+  paragraphs of 3 sentences at most, never more than 2 callouts in a row. Guides should use the
+  steps format for procedures; /compare pages get the Intentsly column highlight automatically.
 
 ## /guides (type: guide, 1,500 to 3,000 words)
 
