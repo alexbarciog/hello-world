@@ -76,13 +76,14 @@ export default function FakeProfileChecker() {
       setPhase((p) => (p.kind === "checking" && p.stage < STAGES.length - 2 ? { kind: "checking", stage: p.stage + 1 } : p));
     }, STAGE_MS);
 
+    // The server is the one that enforces the bot check (it rejects a missing
+    // or bad token once TURNSTILE_SECRET_KEY is set), so a widget error here
+    // just means "send no token" rather than blocking the visitor outright.
     let token: string | null = null;
     try {
       token = turnstileRef.current ? await getTurnstileToken(turnstileRef.current) : null;
     } catch {
-      window.clearInterval(timer.current);
-      setPhase({ kind: "error", message: "We couldn't confirm you're a person. Please reload the page and try again." });
-      return;
+      token = null;
     }
 
     const r = await runCheck(value, token, visitSource());
