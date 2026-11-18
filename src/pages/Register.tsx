@@ -105,7 +105,8 @@ export default function Register() {
       email,
       password,
       options: {
-        data: { first_name: firstName, last_name: lastName },
+        // signup_source: which free tool or page sent them (e.g. fake_profile_checker).
+        data: { first_name: firstName, last_name: lastName, ...(sourceParam ? { signup_source: sourceParam.slice(0, 50) } : {}) },
         emailRedirectTo: window.location.origin + "/dashboard"
       }
     });
@@ -161,6 +162,13 @@ export default function Register() {
       return;
     }
 
+    // Fake profile checker: straight to the full report for the check they ran.
+    if (sourceParam === "fake_profile_checker" && redirectParam?.startsWith("/fake-profile-report/")) {
+      toast.success("Account created! Opening your full report…");
+      navigate(redirectParam);
+      return;
+    }
+
     // Invited teammates join a workspace that already pays; everyone else
     // starts the 7-day trial in Stripe Checkout, then continues to onboarding.
     if (inviteToken && inviteData) {
@@ -174,8 +182,10 @@ export default function Register() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true);
+    // Tool sign-ups land on their report; only same-site paths (as on /login).
+    const toolRedirect = sourceParam === "fake_profile_checker" && redirectParam?.startsWith("/fake-profile-report/") ? redirectParam : null;
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/dashboard"
+      redirect_uri: window.location.origin + (toolRedirect ?? "/dashboard")
     });
     if (result?.error) {
       toast.error("Google sign-in failed. Please try again.");

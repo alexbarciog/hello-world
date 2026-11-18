@@ -199,3 +199,9 @@ verify_jwt = true
 
 [functions.creem-webhook]
 verify_jwt = false
+
+[functions.check-fake-profile]
+verify_jwt = false
+
+[functions.get-fake-profile-report]
+verify_jwt = true
