@@ -6,7 +6,7 @@
 export interface Faq { q: string; a: string }
 
 export interface FreeToolInfo {
-  id: "hook_analyzer" | "cold_message_grader" | "buying_signal_finder" | "profile_analyzer";
+  id: "hook_analyzer" | "cold_message_grader" | "buying_signal_finder" | "profile_analyzer" | "fake_profile_checker";
   path: string;
   name: string;
   blurb: string;
@@ -84,12 +84,20 @@ export const PROFILE_ANALYZER: Pick<FreeToolInfo, "id" | "path" | "name" | "blur
   blurb: "An AI review of your profile, with specific fixes.",
 };
 
-export const ALL_TOOLS = [PROFILE_ANALYZER, HOOK_ANALYZER, BUYING_SIGNAL_FINDER, COLD_MESSAGE_GRADER];
+// Card only; the page, SEO copy and JSON-LD live in src/data/fakeProfileChecker.ts.
+export const FAKE_PROFILE_CHECKER_CARD: Pick<FreeToolInfo, "id" | "path" | "name" | "blurb"> = {
+  id: "fake_profile_checker",
+  path: "/fake-linkedin-profile-checker",
+  name: "Fake LinkedIn Profile Checker",
+  blurb: "Paste a profile link and see its risk signals in about 20 seconds.",
+};
+
+export const ALL_TOOLS = [FAKE_PROFILE_CHECKER_CARD, PROFILE_ANALYZER, HOOK_ANALYZER, BUYING_SIGNAL_FINDER, COLD_MESSAGE_GRADER];
 
 export const TOOLS_INDEX = {
   path: "/tools",
   title: "Free LinkedIn & Outbound Tools | Intentsly",
-  description: "Free tools for B2B outbound: a LinkedIn profile analyzer, hook generator, buying signal finder and cold message grader.",
+  description: "Free tools for B2B outbound: a fake LinkedIn profile checker, profile analyzer, hook generator, buying signal finder and cold message grader.",
 };
 
 export interface SignalService {

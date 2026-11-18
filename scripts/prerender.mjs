@@ -278,7 +278,7 @@ function buildPage(template, route, appHtml) {
 
 installDomGlobals();
 const {
-  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
+  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, fakeProfileRoute, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
   setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS, LEAD_MAGNET_INDEX,
 } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
@@ -303,6 +303,8 @@ const newestIn = (section) =>
 
 const routes = [
   ...ROUTES.map((r) => (r.path === "/linkedin-profile-analyzer" ? { ...r, jsonLd: faqJsonLd(ANALYZER_FAQS) } : r)),
+  // Tool shell + guide + FAQ, with SoftwareApplication, FAQPage and BreadcrumbList JSON-LD.
+  fakeProfileRoute(SITE),
   ...toolRoutes(SITE),
   ...caseStudies.map((s) => ({
     path: `/case-studies/${s.slug}`,
