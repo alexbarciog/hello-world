@@ -121,7 +121,7 @@ export default function FakeProfileGuide() {
               <li key={title} className="relative rounded-3xl border border-neutral-200 bg-white p-6 md:p-7 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
                 <div className="flex items-center justify-between">
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0a0a0a] text-[hsl(var(--aeline-lime))]"><Icon className="h-5 w-5" aria-hidden /></span>
-                  <span className="text-5xl font-semibold tracking-tight text-neutral-100 tabular-nums" aria-hidden>0{i + 1}</span>
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-[12px] font-semibold text-neutral-600 tabular-nums">Step {i + 1}</span>
                 </div>
                 <h3 className="mt-5 text-lg font-semibold tracking-tight">{title}</h3>
                 <p className="mt-1.5 text-[15px] leading-relaxed text-neutral-600">{text}</p>
@@ -183,9 +183,9 @@ export default function FakeProfileGuide() {
                   <span style={{ width: "35%" }}>0</span><span style={{ width: "30%" }}>35</span><span>65 – 100</span>
                 </div>
                 <ul className="mt-5 grid grid-cols-3 gap-3 text-center">
-                  <li className="rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-semibold text-emerald-700">Low</p><p className="mt-0.5 text-xs text-emerald-700/80">0 to 34</p></li>
-                  <li className="rounded-2xl bg-amber-50 p-4"><p className="text-sm font-semibold text-amber-800">Medium</p><p className="mt-0.5 text-xs text-amber-800/80">35 to 64</p></li>
-                  <li className="rounded-2xl bg-rose-50 p-4"><p className="text-sm font-semibold text-rose-700">High</p><p className="mt-0.5 text-xs text-rose-700/80">65 or more</p></li>
+                  <li className="rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-semibold text-emerald-700">Low</p><p className="mt-0.5 text-xs text-emerald-700">0 to 34</p></li>
+                  <li className="rounded-2xl bg-amber-50 p-4"><p className="text-sm font-semibold text-amber-800">Medium</p><p className="mt-0.5 text-xs text-amber-800">35 to 64</p></li>
+                  <li className="rounded-2xl bg-rose-50 p-4"><p className="text-sm font-semibold text-rose-700">High</p><p className="mt-0.5 text-xs text-rose-700">65 or more</p></li>
                 </ul>
               </div>
             </div>
