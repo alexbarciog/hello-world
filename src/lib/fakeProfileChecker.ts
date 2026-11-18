@@ -146,14 +146,15 @@ export async function getTurnstileToken(container: HTMLElement): Promise<string 
   const ts = window.turnstile;
   if (!ts) throw new Error("turnstile unavailable");
   return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error("turnstile timeout")), 10_000);
     container.innerHTML = "";
     const id = ts.render(container, {
       sitekey: TURNSTILE_SITE_KEY,
       execution: "execute",
       appearance: "interaction-only",
-      callback: (token: string) => resolve(token),
-      "error-callback": () => reject(new Error("turnstile error")),
-      "expired-callback": () => reject(new Error("turnstile expired")),
+      callback: (token: string) => { window.clearTimeout(timeout); resolve(token); },
+      "error-callback": (code: string) => { window.clearTimeout(timeout); reject(new Error(`turnstile error ${code}`)); },
+      "expired-callback": () => { window.clearTimeout(timeout); reject(new Error("turnstile expired")); },
     });
     ts.execute(id);
   });
