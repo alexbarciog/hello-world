@@ -46,7 +46,11 @@
   playbook figures, the 2-account and 30/30/15 caps, the four languages, LinkedIn-only, no email sending.
   No price stated. Agent templates, self-serve billing, done-for-you setup and the new free tools were not
   mentioned (still marked NOT LIVE in product.md).
-- Verification: see the task report; sitemap and page fetched about 4 minutes after the push.
+- Verification: pushed at 13:50 UTC. At 13:56 the /solutions index still showed 24 pages; at 14:17 it listed
+  25 with the new page first, and https://intentsly.com/solutions/find-clients-for-an-seo-agency returned the
+  live article (H1, byline, 7 H2 + FAQ with 6 questions, canonical set). The sitemap.xml fetch was refused by
+  the web-fetch tool's URL-permission check (no human to approve it in an unattended run), so sitemap listing
+  is unverified this run; the index listing suggests the redeploy completed.
 - Queue: 7 `solutions` keywords still queued (next: "how to get clients for an it consulting company"),
   2 blocked (ai consulting business, plus the guides draft) pending the kw_in fix in scripts/blog_gate.py.
 - For Alex: (1) the kw_in bug in scripts/blog_gate.py (w.rstrip("s") strips every trailing s) blocks two
