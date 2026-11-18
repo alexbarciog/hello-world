@@ -1629,8 +1629,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-for-an-seo-agency",
    "monthly_volume": null
   },
   {

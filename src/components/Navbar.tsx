@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import intentslyIcon from "@/assets/intentsly-icon.png";
+import { supabase } from "@/integrations/supabase/client";
 import { DesktopMegaMenu, MobileMenuLinks } from "@/components/MegaMenu";
 
 type NavbarProps = {
@@ -16,6 +17,17 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  // Signed-in visitors get "Dashboard" instead of "Sign in / Sign up". Starts
+  // false so the prerendered HTML matches; the session is read after mount.
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session)).catch(() => {});
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session));
+    return () => data.subscription.unsubscribe();
+  }, []);
+  const accountPath = signedIn ? "/dashboard" : "/register";
+  const accountLabel = signedIn ? "Dashboard" : "Sign up";
+  const hideIfSignedIn = signedIn ? { display: "none" } : undefined;
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -65,15 +77,16 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             <div className="flex items-center gap-6">
               <button
                 onClick={() => navigate("/login")}
+              style={hideIfSignedIn}
                 className="text-[15px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
               >
                 Sign in
               </button>
               <button
-                onClick={() => navigate("/register")}
+                onClick={() => navigate(accountPath)}
                 className="inline-flex items-center gap-2 bg-[#0a0a0a] text-white text-[14px] font-semibold tracking-tight rounded-xl px-4 py-2.5 hover:bg-neutral-800 transition-colors"
               >
-                Sign up
+                {accountLabel}
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -96,15 +109,16 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/login")}
+              style={hideIfSignedIn}
                 className="text-[13px] font-medium tracking-tight text-neutral-700 hover:text-[#0a0a0a] transition-colors"
               >
                 Sign in
               </button>
               <button
-                onClick={() => navigate("/register")}
+                onClick={() => navigate(accountPath)}
                 className="inline-flex items-center gap-1.5 bg-[#0a0a0a] text-white text-[13px] font-semibold tracking-tight rounded-xl px-3.5 py-2 hover:bg-neutral-800 transition-colors"
               >
-                Sign up
+                {accountLabel}
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -120,10 +134,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             </a>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => navigate("/register")}
+                onClick={() => navigate(accountPath)}
                 className="inline-flex items-center gap-1.5 bg-[#0a0a0a] text-white text-[13px] font-semibold rounded-lg px-3.5 py-2"
               >
-                Sign up <ArrowRight className="w-3.5 h-3.5" />
+                {accountLabel} <ArrowRight className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setMenuOpen(true)}
@@ -158,9 +172,9 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
                 </div>
                 <div className="mx-4 h-px bg-border" />
                 <div className="px-4 pt-3 pb-5 flex flex-col gap-2">
-                  <button onClick={() => { close(); navigate("/login"); }} className="w-full text-sm font-medium rounded-xl py-3 bg-muted text-[#0a0a0a]">Sign in</button>
-                  <button onClick={() => { close(); navigate("/register"); }} className="w-full inline-flex items-center justify-center gap-2 bg-[#0a0a0a] text-white text-sm font-semibold rounded-xl py-3">
-                    Sign up <ArrowRight className="w-4 h-4" />
+                  <button style={hideIfSignedIn} onClick={() => { close(); navigate("/login"); }} className="w-full text-sm font-medium rounded-xl py-3 bg-muted text-[#0a0a0a]">Sign in</button>
+                  <button onClick={() => { close(); navigate(accountPath); }} className="w-full inline-flex items-center justify-center gap-2 bg-[#0a0a0a] text-white text-sm font-semibold rounded-xl py-3">
+                    {accountLabel} <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </motion.div>
@@ -205,6 +219,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             />
             <button
               onClick={() => navigate("/login")}
+              style={hideIfSignedIn}
               className={`text-xs font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
             >
               Login
@@ -212,8 +227,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/register")} className="btn-cta text-xs !py-2 !px-5">
-              Start from $29
+            <button onClick={() => navigate(accountPath)} className="btn-cta text-xs !py-2 !px-5">
+              {signedIn ? "Dashboard" : "Start from $29"}
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -251,6 +266,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
             />
             <button
               onClick={() => navigate("/login")}
+              style={hideIfSignedIn}
               className={`text-[11px] font-medium uppercase tracking-wider transition-opacity hover:opacity-70 ${scrolled ? "text-foreground" : "text-white"}`}
             >
               Login
@@ -258,8 +274,8 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/register")} className="btn-cta text-[11px] !py-1.5 !px-4">
-              Start from $29
+            <button onClick={() => navigate(accountPath)} className="btn-cta text-[11px] !py-1.5 !px-4">
+              {signedIn ? "Dashboard" : "Start from $29"}
               <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
@@ -288,10 +304,10 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
           </a>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => navigate("/register")}
+              onClick={() => navigate(accountPath)}
               className="text-[12px] font-semibold rounded-full px-3.5 py-2 bg-[#0a0a0a] text-white inline-flex items-center gap-1"
             >
-              Start <ArrowUpRight className="w-3 h-3" />
+              {signedIn ? "Dashboard" : "Start"} <ArrowUpRight className="w-3 h-3" />
             </button>
             <button
               onClick={() => setMenuOpen(true)}
@@ -333,9 +349,9 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               <div className="mx-4 h-px bg-border" />
 
               <div className="px-4 pt-3 pb-5 flex flex-col gap-2">
-                <button onClick={() => { close(); navigate("/login"); }} className="w-full text-sm font-medium rounded-2xl py-3 bg-muted transition-colors" style={{ color: "hsl(var(--aeline-dark))" }}>Login</button>
-                <button onClick={() => { close(); navigate("/register"); }} className="btn-cta w-full justify-center text-sm !py-3">
-                  Start from $29 <ArrowUpRight className="w-4 h-4" />
+                <button onClick={() => { close(); navigate("/login"); }} className="w-full text-sm font-medium rounded-2xl py-3 bg-muted transition-colors" style={{ color: "hsl(var(--aeline-dark))", ...hideIfSignedIn }}>Login</button>
+                <button onClick={() => { close(); navigate(accountPath); }} className="btn-cta w-full justify-center text-sm !py-3">
+                  {signedIn ? "Dashboard" : "Start from $29"} <ArrowUpRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
