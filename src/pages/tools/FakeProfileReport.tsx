@@ -90,10 +90,14 @@ export default function FakeProfileReport() {
   return (
     <div className="min-h-screen bg-white font-sans text-[#0a0a0a]">
       <Navbar variant="light" />
-      <main className="px-5 md:px-8 pt-10 md:pt-16 pb-16">
-        <div className="max-w-3xl mx-auto">
-          <Link to={FAKE_PROFILE_CHECKER.path} className="text-sm text-neutral-500 hover:text-neutral-900">← Fake LinkedIn Profile Checker</Link>
-          <h1 className="mt-3 font-medium tracking-[-0.03em] text-3xl md:text-4xl">Profile check report</h1>
+      <main className="relative overflow-hidden px-5 md:px-8 pt-10 md:pt-16 pb-16">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px]" aria-hidden>
+          <div className="absolute -top-40 -left-32 h-[460px] w-[460px] rounded-full bg-[hsl(var(--aeline-lime))]/20 blur-3xl" />
+          <div className="absolute -top-20 -right-40 h-[480px] w-[480px] rounded-full bg-[#3B82F6]/12 blur-3xl" />
+        </div>
+        <div className="relative max-w-3xl mx-auto">
+          <Link to={FAKE_PROFILE_CHECKER.path} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white/80 px-3 py-1 text-[13px] font-medium text-neutral-600 hover:text-neutral-900">← Fake LinkedIn Profile Checker</Link>
+          <h1 className="mt-4 font-medium tracking-[-0.03em] leading-[1.05]" style={{ fontSize: "clamp(2rem, 4.5vw, 3rem)" }}>Profile check report</h1>
 
           {!report && !error && (
             <p className="mt-10 flex items-center gap-2 text-neutral-500"><Loader2 className="w-4 h-4 animate-spin" aria-hidden /> Loading your report…</p>
@@ -112,45 +116,47 @@ export default function FakeProfileReport() {
                 {" · "}checked {new Date(report.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
               </p>
 
-              <section className="mt-8 rounded-2xl border border-neutral-200 p-6 sm:p-8">
+              <section className="mt-8 rounded-[28px] border border-neutral-200 bg-white p-6 sm:p-10 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.3)]">
                 <RiskGauge score={report.risk_score} level={report.risk_level} lowConfidence={report.low_confidence} />
                 {report.low_confidence && <p className="mt-3 text-center text-sm text-neutral-600">{LOW_CONFIDENCE_NOTE}</p>}
                 {report.summary && <p className="mt-4 text-center text-[15px] text-neutral-700 leading-relaxed max-w-xl mx-auto">{report.summary}</p>}
               </section>
 
               <section className="mt-10" aria-labelledby="fpc-signals">
-                <h2 id="fpc-signals" className="text-xl font-semibold tracking-tight">Every signal we checked</h2>
-                <ul className="mt-2 divide-y divide-neutral-200 border-y border-neutral-200">
+                <h2 id="fpc-signals" className="text-2xl font-medium tracking-[-0.02em]">Every signal we checked</h2>
+                <ul className="mt-4 space-y-3">
                   {checked.map((s) => <SignalRow key={s.key} signal={s} />)}
                 </ul>
                 {unknown.length > 0 && (
-                  <details className="mt-4 rounded-xl border border-neutral-200 px-4 py-3">
+                  <details className="mt-4 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/60 px-4 py-3">
                     <summary className="cursor-pointer text-sm font-medium text-neutral-700">
                       {unknown.length} signal{unknown.length === 1 ? "" : "s"} we couldn't check from the public page (not counted in the score)
                     </summary>
-                    <ul className="mt-1 divide-y divide-neutral-100">
+                    <ul className="mt-3 space-y-2">
                       {unknown.map((s) => <SignalRow key={s.key} signal={s} />)}
                     </ul>
                   </details>
                 )}
               </section>
 
-              <section className="mt-10 rounded-2xl bg-neutral-50 border border-neutral-200 p-6" aria-labelledby="fpc-todo">
-                <h2 id="fpc-todo" className="text-xl font-semibold tracking-tight">What to do: {todo.heading.toLowerCase()}</h2>
+              <section className={`mt-10 rounded-[24px] border p-6 md:p-8 ${report.risk_level === "high" ? "bg-rose-50/70 border-rose-200" : report.risk_level === "medium" ? "bg-amber-50/70 border-amber-200" : "bg-emerald-50/70 border-emerald-200"}`} aria-labelledby="fpc-todo">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-500">What to do</p>
+                <h2 id="fpc-todo" className="mt-1 text-2xl font-medium tracking-[-0.02em]">{todo.heading}</h2>
                 <ul className="mt-3 list-disc pl-5 space-y-2 text-[15px] text-neutral-700 leading-relaxed">
                   {todo.items.map((item, i) => <li key={i}>{item}</li>)}
                 </ul>
               </section>
 
-              <p className="mt-6 text-sm text-neutral-500 leading-relaxed">{DISCLAIMER}</p>
+              <p className="mt-6 rounded-2xl bg-neutral-50 px-4 py-3 text-[13px] text-neutral-500 leading-relaxed">{DISCLAIMER}</p>
 
-              <section className="mt-10 rounded-[24px] bg-[#1A1A2E] text-white p-7 md:p-9">
-                <h2 className="text-xl md:text-2xl font-medium tracking-tight leading-snug mb-3">Spend your time on real buyers</h2>
-                <p className="text-sm md:text-[15px] text-white/75 leading-relaxed mb-6 max-w-2xl">
+              <section className="relative mt-10 overflow-hidden rounded-[28px] bg-[#1A1A2E] text-white p-7 md:p-10">
+                <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-[hsl(var(--aeline-lime))]/20 blur-3xl" aria-hidden />
+                <h2 className="relative text-xl md:text-2xl font-medium tracking-tight leading-snug mb-3">Spend your time on real buyers</h2>
+                <p className="relative text-sm md:text-[15px] text-white/75 leading-relaxed mb-6 max-w-2xl">
                   Intentsly finds real people on LinkedIn who are asking for the service you sell, so you spend your time on real buyers.
                 </p>
-                <div className="flex flex-wrap gap-3">
-                  <Link to="/try-ai" onClick={() => track("fpc_tryai_click", { from: "report" })} className="btn-cta inline-flex">
+                <div className="relative flex flex-wrap gap-3">
+                  <Link to="/try-ai" onClick={() => track("fpc_tryai_click", { from: "report" })} className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--aeline-lime))] px-5 py-3 text-[15px] font-semibold text-[#0a0a0a] hover:brightness-95">
                     See who's asking for what you sell <ArrowRight className="w-4 h-4" aria-hidden />
                   </Link>
                   <Link to={FAKE_PROFILE_CHECKER.path} className="inline-flex items-center gap-1.5 rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10">
