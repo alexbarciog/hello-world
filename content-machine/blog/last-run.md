@@ -47,7 +47,14 @@
   real-time intent signals); scoring against the ICP before outreach and the monitored post/page/keyword
   sources from product.md; the 12/8 playbook figures. No price stated. No Reddit/X features, no email
   sending, no NOT-LIVE epics mentioned.
-- Verification: see the report of this run (checked about 4 minutes after the push).
+- Verification: pushed at 19:49 UTC (the first push attempt reported "Everything up-to-date" because the
+  clone's HEAD was detached from main; pushed again with `HEAD:main` and realigned local main). At 19:53 UTC
+  both https://intentsly.com/learn/what-is-lead-qualification and https://intentsly.com/sitemap.xml were
+  refused by the web-fetch tool's URL-permission check (no human to approve in an unattended run), so live
+  status and sitemap listing are unverified this run. The database row is confirmed published and the
+  commit is on origin/main (8c7f076); the repository has no GitHub Actions workflows, so the redeploy could
+  not be confirmed from the GitHub side either. Commit author for this run is "Claude <noreply@anthropic.com>"
+  rather than the founder identity used by earlier content commits.
 - Queue: after marking, 4 `learn` keywords were queued (below the 5 threshold in RUN.md step 6), so 8 were
   appended per skills/blog-keywords.md after a search each to record who ranks: what is third-party intent
   data (signal-selling, medium: Abmatic, Bombora, Leadinfo), what is competitor monitoring in sales
