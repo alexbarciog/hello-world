@@ -18,10 +18,41 @@ export const CREEM_MODE: CreemMode = env?.get("CREEM_MODE") === "live" ? "live" 
  */
 export const BILLING_LIVE = CREEM_MODE === "live";
 
-const PRODUCT_IDS: Record<CreemMode, string> = {
+/**
+ * The original single $97 product (7-day trial). Kept only so subscriptions
+ * bought on it map to Pro; new checkouts use the products in public.billing_plans.
+ */
+export const LEGACY_PRODUCT_IDS: Record<CreemMode, string> = {
   live: "prod_fwiKA9LGhkCUDvOixT18z",
   test: "prod_8DrR0dQIKFbUOxWUFFNY7",
 };
+const PRODUCT_IDS = LEGACY_PRODUCT_IDS;
+
+export type PlanKey = "starter" | "growth" | "pro";
+export const PLAN_KEYS: PlanKey[] = ["starter", "growth", "pro"];
+
+export interface BillingPlan {
+  key: PlanKey;
+  name: string;
+  price_cents: number;
+  monthly_credits: number;
+  creem_product_id_test: string | null;
+  creem_product_id_live: string | null;
+}
+
+/** The plan sold as this Creem product (legacy $97 product = Pro), or null. */
+export function planForProduct(plans: BillingPlan[], productId: string | null | undefined, mode: CreemMode): BillingPlan | null {
+  if (!productId) return null;
+  const col = mode === "live" ? "creem_product_id_live" : "creem_product_id_test";
+  const hit = plans.find((p) => p[col] === productId);
+  if (hit) return hit;
+  if (productId === LEGACY_PRODUCT_IDS.live || productId === LEGACY_PRODUCT_IDS.test) return plans.find((p) => p.key === "pro") ?? null;
+  return null;
+}
+
+export function productForPlan(plan: BillingPlan, mode: CreemMode): string | null {
+  return (mode === "live" ? plan.creem_product_id_live : plan.creem_product_id_test) || null;
+}
 
 export function creemConfig(mode: CreemMode = CREEM_MODE) {
   const suffix = mode === "live" ? "LIVE" : "TEST";

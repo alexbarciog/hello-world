@@ -105,11 +105,11 @@ function BrandPanel() {
 }
 
 function OnboardingInner() {
-  // Back from Stripe Checkout: confirm the trial once, then clean the URL.
+  // Back from checkout: confirm the plan once, then clean the URL.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
-      toast.success("Your 7-day free trial has started. Let's set up your first agent.");
+      toast.success("Your plan is active. Let's set up your first agent.");
       params.delete("checkout");
       const qs = params.toString();
       window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));

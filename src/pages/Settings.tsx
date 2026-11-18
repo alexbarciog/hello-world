@@ -11,6 +11,11 @@ import { Slider } from "@/components/ui/slider";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SwitchTemplate } from "@/components/templates/SwitchTemplate";
 import { openBillingPortal } from "@/lib/billing";
+import { usePlans } from "@/hooks/usePlans";
+import { PICK_PLAN_COPY, formatPrice } from "@/lib/plans";
+import { PlanPicker } from "@/components/billing/PlanPicker";
+import { PlanPickerDialog } from "@/components/billing/PlanPickerDialog";
+import { CreditUsage } from "@/components/billing/CreditUsage";
 
 // ─── Animation variants ────────────────────────────────────────────────────────
 const easing = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -864,15 +869,12 @@ function SecurityTab() {
 
 // ─── Billing Tab ──────────────────────────────────────────────────────────────
 function BillingTab() {
-  const navigate = useNavigate();
   const sub = useSubscription();
-
-  const STARTER_PRODUCT_ID = "prod_UGjR0WwP5rbgZX";
-  const PRO_PRODUCT_ID = "prod_UBCE3Xunx980Z6";
-
-  // Customers from before self-serve billing may still be on the old Starter price.
-  const planName = sub.productId === STARTER_PRODUCT_ID ? "Starter" : "Intentsly";
-  const planPrice = sub.productId === STARTER_PRODUCT_ID ? "$59" : sub.productId === PRO_PRODUCT_ID || !sub.productId ? "$97" : "";
+  const plans = usePlans();
+  const [view, setView] = useState<"plan" | "usage">(() =>
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "usage" ? "usage" : "plan",
+  );
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
   const openPortal = async () => {
     setPortalBusy(true);
@@ -880,12 +882,13 @@ function BillingTab() {
     if (!result.ok) toast.error(result.message);
     setPortalBusy(false);
   };
-  const locked = sub.readOnly && sub.status !== null;
+
+  const header = <SectionHeader icon={<CreditCard className="w-4.5 h-4.5" />} title="Billing & Plans" subtitle="Your plan, credits and usage" />;
 
   if (sub.loading) {
     return (
       <div className="space-y-5">
-        <SectionHeader icon={<CreditCard className="w-4.5 h-4.5" />} title="Billing & Plans" subtitle="Manage your subscription and payment information" />
+        {header}
         <SectionCard delay={1}>
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -895,94 +898,135 @@ function BillingTab() {
     );
   }
 
+  const plan = sub.plan ? plans.find((p) => p.key === sub.plan!.key) ?? null : null;
+  const planName = sub.plan?.name ?? (sub.subscribed ? "Intentsly" : null);
+  const total = sub.plan?.monthly_credits ?? 0;
+  const left = Math.max(0, sub.credits ?? 0);
+  const pct = total > 0 ? Math.min(100, Math.round((left / total) * 100)) : 0;
+  const renewal = sub.creditsPeriodEnd ?? sub.currentPeriodEnd ?? sub.subscriptionEnd;
+  const pendingName = sub.pendingPlan ? plans.find((p) => p.key === sub.pendingPlan)?.name ?? sub.pendingPlan : null;
+  const failed = sub.status === "past_due" || sub.status === "unpaid";
+  const locked = sub.readOnly && sub.status !== null;
+
   return (
     <div className="space-y-5">
-      <SectionHeader icon={<CreditCard className="w-4.5 h-4.5" />} title="Billing & Plans" subtitle="Manage your subscription and payment information" />
+      {header}
 
-      {sub.subscribed ? (
+      <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1" role="tablist" aria-label="Billing views">
+        {(["plan", "usage"] as const).map((v) => (
+          <button
+            key={v}
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${view === v ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {v === "plan" ? "Plan" : "Usage"}
+          </button>
+        ))}
+      </div>
+
+      {view === "usage" ? (
+        <CreditUsage sub={sub} />
+      ) : !sub.isBillingOwner ? (
         <SectionCard delay={1}>
-          <div className="flex flex-col items-center justify-center py-12 gap-5 text-center">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg bg-green-500"
-            >
-              <CheckCircle className="w-7 h-7 text-white" />
-            </motion.div>
-            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
-              <p className="text-base font-bold text-foreground mb-1">
-                {planName} — {sub.status === "trialing" ? "Free trial" : "Active"}
+          <div className="py-6 text-center">
+            {planName && <p className="text-base font-semibold text-foreground mb-1">{planName}</p>}
+            <p className="text-sm text-muted-foreground">Billing is managed by your workspace owner.</p>
+          </div>
+        </SectionCard>
+      ) : planName && !locked ? (
+        <SectionCard delay={1}>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Current plan</p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {planName}
+                {plan && <span className="ml-2 text-sm font-normal text-muted-foreground">{formatPrice(plan.price_cents)}/month</span>}
               </p>
-              <p className="text-sm text-muted-foreground">{planPrice}/month</p>
               {sub.founding && (
                 <span className="mt-2 inline-flex rounded-full bg-[#C8FF00] px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#0a0a0a]">
-                  Founding customer · $97/month for life
+                  Founding customer
                 </span>
               )}
-              {sub.status === "trialing" && sub.trialEndsAt && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Trial ends {new Date(sub.trialEndsAt).toLocaleDateString()}
+              {renewal && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {sub.cancelAtPeriodEnd
+                    ? `Ends ${new Date(renewal).toLocaleDateString()}, won't renew. You keep access until then.`
+                    : pendingName
+                      ? `Moves to ${pendingName} on ${new Date(renewal).toLocaleDateString()}.`
+                      : `Renews ${new Date(renewal).toLocaleDateString()}.`}
                 </p>
               )}
-              {sub.cancelAtPeriodEnd && sub.currentPeriodEnd && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Ends {new Date(sub.currentPeriodEnd).toLocaleDateString()}, won't renew
-                </p>
-              )}
-              {sub.status !== "trialing" && !sub.cancelAtPeriodEnd && sub.subscriptionEnd && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Next billing: {new Date(sub.subscriptionEnd).toLocaleDateString()}
-                </p>
-              )}
-            </motion.div>
-            <motion.button
-              custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={openPortal}
-              disabled={portalBusy || !sub.isBillingOwner}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md bg-primary hover:bg-primary/90 transition-colors disabled:opacity-60"
-            >
-              {portalBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-              {sub.isBillingOwner ? "Manage billing" : "Managed by your workspace owner"}
-            </motion.button>
+            </div>
+            <div className="flex flex-col gap-2 sm:items-end shrink-0">
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#C8FF00] text-[#0a0a0a] hover:bg-[#d4ff33] transition-colors"
+              >
+                Change plan
+              </button>
+              <button
+                onClick={openPortal}
+                disabled={portalBusy}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border border-border bg-white hover:bg-muted transition-colors disabled:opacity-60"
+              >
+                {portalBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                Manage billing
+              </button>
+            </div>
           </div>
+
+          {sub.plan && (
+            <div className="mt-6">
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-foreground"><strong className="tabular-nums">{left.toLocaleString("en-US")}</strong> of {total.toLocaleString("en-US")} credits left</span>
+                <button onClick={() => setView("usage")} className="text-xs font-medium text-[#1A8FE3] hover:underline">See usage</button>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className={`h-full rounded-full ${sub.outOfCredits ? "bg-rose-400" : "bg-[#1A8FE3]"}`} style={{ width: `${pct}%` }} />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Credits reset to your plan amount at each renewal and don't roll over. Cancel from Manage billing and you keep access until the end of the period.
+              </p>
+            </div>
+          )}
         </SectionCard>
       ) : (
         <SectionCard delay={1}>
-          <div className="flex flex-col items-center justify-center py-16 gap-5 text-center">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.15 }}
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-              style={{ background: "linear-gradient(135deg, hsl(25 95% 53%), hsl(330 85% 55%))" }}
-            >
-              <CreditCard className="w-7 h-7 text-white" />
-            </motion.div>
-            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="visible">
-              <p className="text-base font-bold text-foreground mb-1">
-                {sub.status === "past_due" || sub.status === "unpaid" ? "Payment failed" : sub.status === "paused" ? "Subscription paused" : locked ? "Subscription ended" : "No active subscription"}
-              </p>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                {locked
-                  ? "Your account is read-only. Reactivate to turn signals and LinkedIn outreach back on."
-                  : "Start your 7-day free trial: everything on, $97/month after, cancel anytime."}
-              </p>
-            </motion.div>
-            <motion.button
-              custom={3} variants={fadeUp} initial="hidden" animate="visible"
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              onClick={locked && sub.status !== "canceled" && sub.status !== "expired" ? openPortal : () => navigate("/pricing")}
-              disabled={portalBusy || (locked && !sub.isBillingOwner)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white shadow-md disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, hsl(5 90% 60%), hsl(330 80% 60%))" }}
-            >
-              <CreditCard className="w-4 h-4" /> {!locked ? "Start free trial" : sub.status === "canceled" || sub.status === "expired" ? "Subscribe again" : "Update billing"}
-            </motion.button>
+          <div className="mb-5">
+            <p className="text-base font-bold text-foreground">
+              {failed ? "Payment failed" : sub.status === "paused" ? "Subscription paused" : locked ? "Subscription ended" : "No plan yet"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {failed || sub.status === "paused"
+                ? "Your account is read-only. Update your billing to turn signals and LinkedIn outreach back on."
+                : locked
+                  ? "Your account is read-only. Pick a plan to turn signals and LinkedIn outreach back on."
+                  : `${PICK_PLAN_COPY}.`}
+            </p>
+            {(failed || sub.status === "paused") && (
+              <button
+                onClick={openPortal}
+                disabled={portalBusy}
+                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#0a0a0a] hover:bg-neutral-800 disabled:opacity-60"
+              >
+                {portalBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                Update billing
+              </button>
+            )}
           </div>
+          {!(failed || sub.status === "paused") && <PlanPicker variant="compact" source="settings_billing" />}
         </SectionCard>
       )}
+
+      <PlanPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        source="settings_billing"
+        title="Change your plan"
+        description="Upgrades apply now and add the credit difference straight away. Downgrades start at your next renewal."
+      />
     </div>
   );
 }

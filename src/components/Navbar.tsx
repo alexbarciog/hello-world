@@ -213,7 +213,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
 
           <div className="flex items-center gap-3">
             <button onClick={() => navigate("/register")} className="btn-cta text-xs !py-2 !px-5">
-              Start for $97
+              Start from $29
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -259,7 +259,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
 
           <div className="flex items-center gap-3">
             <button onClick={() => navigate("/register")} className="btn-cta text-[11px] !py-1.5 !px-4">
-              Start for $97
+              Start from $29
               <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
@@ -335,7 +335,7 @@ const Navbar = ({ showCampaigns = false, forceDark = false, variant = "default" 
               <div className="px-4 pt-3 pb-5 flex flex-col gap-2">
                 <button onClick={() => { close(); navigate("/login"); }} className="w-full text-sm font-medium rounded-2xl py-3 bg-muted transition-colors" style={{ color: "hsl(var(--aeline-dark))" }}>Login</button>
                 <button onClick={() => { close(); navigate("/register"); }} className="btn-cta w-full justify-center text-sm !py-3">
-                  Start for $97 <ArrowUpRight className="w-4 h-4" />
+                  Start from $29 <ArrowUpRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>

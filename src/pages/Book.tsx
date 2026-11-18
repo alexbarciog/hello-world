@@ -6,7 +6,7 @@ import { Footer } from "@/components/CTAFooter";
 import { CONTACT_EMAIL } from "@/lib/billing";
 
 // Hidden page (not linked or in the sitemap) for people who insist on talking
-// before they try. Everyone else goes straight to the self-serve trial.
+// before they try. Everyone else goes straight to self-serve signup.
 export default function Book() {
   useEffect(() => {
     const meta = document.createElement("meta");
@@ -32,7 +32,7 @@ export default function Book() {
             {CONTACT_EMAIL}
           </a>
           <p className="text-sm text-muted-foreground mt-8">
-            Or skip the wait: <Link to="/register" className="underline underline-offset-2">start the 7-day free trial</Link>, setup takes about 5 minutes.
+            Or skip the wait: <Link to="/pricing" className="underline underline-offset-2">pick a plan</Link>, setup takes about 5 minutes.
           </p>
         </div>
       </main>

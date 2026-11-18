@@ -5,6 +5,7 @@ const corsHeaders = {
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getLinkedInBudget, recordLinkedInAction, triggerLinkedInCooldown } from '../_shared/linkedin-budget.ts';
+import { refundCredits, spendCredits } from '../_shared/credits.ts';
 import { accessForUser } from '../_shared/account-access.ts';
 
 const SEQUENCES_PER_DAY = 20; // 20 x 30-min slots between 08:00-18:00
@@ -178,6 +179,7 @@ Deno.serve(async (req) => {
         let distressCount = 0;
 
         for (const sl of leads) {
+          let inviteAccepted = false; // LinkedIn took the invitation: never refund it
           if (sentThisBatch >= toSendNow) break;
           if (distressCount >= 3) {
             await triggerLinkedInCooldown(serviceClient, campaign.user_id, 'repeated LinkedIn errors while sending invitations');
@@ -301,6 +303,16 @@ Deno.serve(async (req) => {
 
             const providerId = resolveData.provider_id;
 
+            // Credits: one per connection request, charged before sending and
+            // refunded below if LinkedIn doesn't take it. Out of credits stops
+            // this campaign (credits_exhausted pauses the account's campaigns).
+            const creditRef = `invite:${sl.id}`;
+            const charge = await spendCredits(serviceClient, sl.user_id, 'connection', 'invite', creditRef);
+            if (!charge.ok) {
+              console.log(`[send-conn] ${sl.user_id} is out of credits — stopping campaign ${campaignId}`);
+              break;
+            }
+
 
             // ── Pre-invitation Comment/Like steps ─────────────────────────
             // Run any workflow steps marked `before_invitation: true` inline
@@ -362,6 +374,7 @@ Deno.serve(async (req) => {
               // retrying and failing daily.
               if (/already_invited_recently|already been sent recently/i.test(detail)) {
                 console.log(`[send-conn] invite already pending for ${contact.id} — recording as sent`);
+                await refundCredits(serviceClient, sl.user_id, 'connection', creditRef);
                 await updateScheduledStatus(serviceClient, sl.id, 'sent');
                 await insertConnReq(serviceClient, {
                   campaign_id: campaignId,
@@ -376,6 +389,7 @@ Deno.serve(async (req) => {
               const reason = `Invite failed (HTTP ${inviteRes.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`;
               if (inviteRes.status === 429 || inviteRes.status >= 500 || /restricted|blocked|unusual activity/i.test(detail)) distressCount++;
               console.error(`[send-conn] invite failed for ${contact.id}:`, inviteRes.status, detail);
+              await refundCredits(serviceClient, sl.user_id, 'connection', creditRef);
               await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
               await insertConnReq(serviceClient, {
                 campaign_id: campaignId,
@@ -387,6 +401,7 @@ Deno.serve(async (req) => {
               continue;
             }
 
+            inviteAccepted = true;
             // Record successful send (upsert: a previous failed attempt may have
             // left a row — a plain insert would silently collide and the sent
             // invite would never be recorded, causing daily re-sends).
@@ -409,6 +424,8 @@ Deno.serve(async (req) => {
             await new Promise(resolve => setTimeout(resolve, 15_000 + Math.random() * 25_000));
           } catch (err) {
             console.error(`[send-conn] error sending to ${sl.contact_id}:`, err);
+            // No-op when nothing was charged (the error came before the charge).
+            if (!inviteAccepted) await refundCredits(serviceClient, sl.user_id, 'connection', `invite:${sl.id}`);
             const reason = `Unexpected error: ${(err instanceof Error ? err.message : String(err)).slice(0, 180)}`;
             await updateScheduledStatus(serviceClient, sl.id, 'failed', reason);
           }

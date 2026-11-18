@@ -1,4 +1,5 @@
-// Billing state for the signed-in user's account, read by useSubscription.
+// Billing state for the signed-in user's account, read by useSubscription:
+// access, plan, credits and renewal date.
 // Subscription status comes from public.subscriptions (kept in sync by
 // creem-webhook). While Creem is in test mode, accounts without a subscription
 // still get the pre-Creem Stripe lookup for subscribed / has_card, so they
@@ -28,9 +29,10 @@ Deno.serve(async (req) => {
     const ownerId = await billingOwnerOf(db, user.id);
     const { data: owner } = await db
       .from("profiles")
-      .select("credits, free_trial_enabled, free_trial_limit")
+      .select("credits, free_trial_enabled, free_trial_limit, plan, pending_plan, credits_period_end")
       .eq("user_id", ownerId)
       .maybeSingle();
+    const credit = await creditState(owner);
 
     const now = new Date();
     const sub = currentSubscription((await subscriptionsOf(db, [ownerId])).get(ownerId), now);
@@ -52,16 +54,13 @@ Deno.serve(async (req) => {
       payments_enabled: BILLING_LIVE,
       creem_mode: CREEM_MODE,
       credits: owner?.credits ?? 0,
+      ...credit,
       free_trial_enabled: owner?.free_trial_enabled ?? false,
       free_trial_limit: owner?.free_trial_limit ?? 1,
     };
 
     if (access === "full") {
-      // Paying and trialing accounts start with 100 credits (unchanged from before).
-      if ((owner?.credits ?? 0) === 0) {
-        await db.from("profiles").update({ credits: 100 }).eq("user_id", ownerId);
-        base.credits = 100;
-      }
+      // Credits come from the plan (creem-webhook grants them each period).
       return json({ ...base, subscribed: true, had_subscription: true, has_card: true, subscription_end: base.current_period_end, product_id: null });
     }
     // Had a Creem subscription that no longer pays, or (live) never subscribed:
@@ -72,6 +71,11 @@ Deno.serve(async (req) => {
 
     // Creem is in test mode and this account has no subscription: look the payer up in Stripe as before.
     const legacy = await legacyStripeState(ownerId === user.id ? user.email : await emailOf(ownerId));
+    // Legacy Stripe customers ($97) get the Pro allowance; Stripe isn't used for billing.
+    if (legacy.subscribed && !owner?.plan) {
+      const legacyCredits = await makeLegacyPro(ownerId);
+      if (legacyCredits) Object.assign(base, legacyCredits);
+    }
     return json({ ...base, ...legacy });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -79,6 +83,40 @@ Deno.serve(async (req) => {
     return json({ error: message }, 200);
   }
 });
+
+// deno-lint-ignore no-explicit-any
+async function creditState(owner: any) {
+  const empty = { plan: null, pending_plan: null, credits_period_end: null, out_of_credits: false, credits_enforced: false };
+  if (!owner) return empty;
+  const [{ data: plan }, { data: settings }] = await Promise.all([
+    owner.plan
+      ? db.from("billing_plans").select("key, name, monthly_credits").eq("key", owner.plan).maybeSingle()
+      : Promise.resolve({ data: null }),
+    db.from("billing_settings").select("credits_enforced").maybeSingle(),
+  ]);
+  const enforced = Boolean(settings?.credits_enforced);
+  return {
+    plan: plan ?? null,
+    pending_plan: owner.pending_plan ?? null,
+    credits_period_end: owner.credits_period_end ?? null,
+    // Only accounts on credit billing can run out.
+    out_of_credits: (Boolean(owner.plan) || enforced) && (owner.credits ?? 0) <= 0,
+    credits_enforced: enforced,
+  };
+}
+
+/** Pro plan + this month's Pro credits for a legacy Stripe customer (reset monthly by reset_unbilled_credits). */
+async function makeLegacyPro(ownerId: string) {
+  const { error } = await db.rpc("set_account_plan", { p_user_id: ownerId, p_plan: "pro", p_source: "legacy", p_pending_plan: null });
+  if (error) {
+    console.warn("[check-subscription] legacy Pro mapping skipped:", error.message);
+    return null;
+  }
+  await db.rpc("reset_unbilled_credits");
+  const { data } = await db.from("profiles").select("credits, plan, pending_plan, credits_period_end").eq("user_id", ownerId).maybeSingle();
+  console.log(`[check-subscription] ${ownerId} is a legacy Stripe customer: mapped to Pro`);
+  return data ? { credits: data.credits ?? 0, ...(await creditState(data)) } : null;
+}
 
 async function emailOf(userId: string): Promise<string | null> {
   const { data } = await db.auth.admin.getUserById(userId);
