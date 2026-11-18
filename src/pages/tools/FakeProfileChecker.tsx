@@ -128,9 +128,9 @@ export default function FakeProfileChecker() {
           </div>
 
           <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-10 md:pt-20 pb-16 md:pb-24">
-            <div className="grid gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:items-center">
-              {/* Left: copy + form */}
-              <div>
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14 lg:items-start">
+              {/* Left: copy + form. Top-aligned so a tall result never moves the headline. */}
+              <div className="lg:pt-10">
                 <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/80 px-3.5 py-1.5 text-[13px] font-semibold text-neutral-900 shadow-sm backdrop-blur">
                   <ShieldCheck className="h-4 w-4 text-[#2563EB]" aria-hidden /> Free LinkedIn profile checker
                 </span>
