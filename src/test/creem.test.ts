@@ -120,12 +120,12 @@ describe("helpers", () => {
     expect(eventTime({ created_at: 1_793_700_000 })).toBe(new Date(1_793_700_000_000).toISOString());
   });
 
-  it("defaults to test mode with the test product and API", () => {
+  it("defaults to test mode with the test API, and never offers the old trial product", () => {
     const cfg = creemConfig();
     expect(cfg.mode).toBe("test");
     expect(cfg.baseUrl).toBe("https://test-api.creem.io");
-    expect(cfg.productId).toBe("prod_8DrR0dQIKFbUOxWUFFNY7");
-    expect(creemConfig("live")).toMatchObject({ baseUrl: "https://api.creem.io", productId: "prod_fwiKA9LGhkCUDvOixT18z", webhookSecretName: "CREEM_WEBHOOK_SECRET_LIVE" });
+    expect("productId" in cfg).toBe(false);
+    expect(creemConfig("live")).toMatchObject({ baseUrl: "https://api.creem.io", webhookSecretName: "CREEM_WEBHOOK_SECRET_LIVE" });
   });
 
   it("sends people back to the site, or to a local dev server", () => {
