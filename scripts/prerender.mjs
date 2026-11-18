@@ -278,7 +278,7 @@ function buildPage(template, route, appHtml) {
 
 installDomGlobals();
 const {
-  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, PRICING_FAQS, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
+  render, caseStudies, toolRoutes, faqJsonLd, ANALYZER_FAQS, PRICING_FAQS, fakeProfileRoute, setBlogPrerenderData, buildPostJsonLd, toSummary, SECTIONS, postPath,
   setLeadMagnetPrerenderData, leadMagnetPath, leadMagnetSeo, LEAD_MAGNET_COLUMNS, LEAD_MAGNET_INDEX,
 } = await import(
   pathToFileURL(path.join(SSR_DIR, "entry-prerender.js")).href
@@ -307,6 +307,8 @@ const routes = [
     if (r.path === "/pricing") return { ...r, jsonLd: faqJsonLd(PRICING_FAQS) };
     return r;
   }),
+  // Tool shell + guide + FAQ, with SoftwareApplication, FAQPage and BreadcrumbList JSON-LD.
+  fakeProfileRoute(SITE),
   ...toolRoutes(SITE),
   ...caseStudies.map((s) => ({
     path: `/case-studies/${s.slug}`,

@@ -30,6 +30,8 @@ import ToolsIndex from "./pages/tools/ToolsIndex.tsx";
 import HookAnalyzer from "./pages/tools/HookAnalyzer.tsx";
 import ColdMessageGrader from "./pages/tools/ColdMessageGrader.tsx";
 import BuyingSignalFinder from "./pages/tools/BuyingSignalFinder.tsx";
+import FakeProfileChecker from "./pages/tools/FakeProfileChecker.tsx";
+import FakeProfileReport from "./pages/tools/FakeProfileReport.tsx";
 import SharedLeads from "./pages/SharedLeads.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminTemplates from "./pages/AdminTemplates.tsx";
@@ -299,6 +301,8 @@ export const AppContent = () => (
           <Route path="/profile-report" element={<ProfileReport />} />
           <Route path="/try-ai" element={<PublicAiChat />} />
           <Route path="/tools" element={<ToolsIndex />} />
+          <Route path="/fake-linkedin-profile-checker" element={<FakeProfileChecker />} />
+          <Route path="/fake-profile-report/:id" element={<FakeProfileReport />} />
           <Route path="/linkedin-hook-analyzer" element={<HookAnalyzer />} />
           <Route path="/cold-message-grader" element={<ColdMessageGrader />} />
           <Route path="/buying-signals" element={<BuyingSignalFinder />} />

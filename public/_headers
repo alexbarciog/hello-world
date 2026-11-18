@@ -1,0 +1,3 @@
+# Cloudflare static-asset headers (wrangler.jsonc serves ./dist).
+/fake-profile-report/*
+  X-Robots-Tag: noindex, nofollow
