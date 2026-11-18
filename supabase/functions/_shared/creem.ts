@@ -20,13 +20,13 @@ export const BILLING_LIVE = CREEM_MODE === "live";
 
 /**
  * The original single $97 product (7-day trial). Kept only so subscriptions
- * bought on it map to Pro; new checkouts use the products in public.billing_plans.
+ * bought on it map to Pro. Never sold again: checkouts only use the products in
+ * public.billing_plans (creem_product_id_test / _live, picked by CREEM_MODE).
  */
 export const LEGACY_PRODUCT_IDS: Record<CreemMode, string> = {
   live: "prod_fwiKA9LGhkCUDvOixT18z",
   test: "prod_8DrR0dQIKFbUOxWUFFNY7",
 };
-const PRODUCT_IDS = LEGACY_PRODUCT_IDS;
 
 export type PlanKey = "starter" | "growth" | "pro";
 export const PLAN_KEYS: PlanKey[] = ["starter", "growth", "pro"];
@@ -61,7 +61,6 @@ export function creemConfig(mode: CreemMode = CREEM_MODE) {
     baseUrl: mode === "live" ? "https://api.creem.io" : "https://test-api.creem.io",
     apiKeyName: `CREEM_API_KEY_${suffix}`,
     apiKey: env?.get(`CREEM_API_KEY_${suffix}`) ?? "",
-    productId: PRODUCT_IDS[mode],
     webhookSecretName: `CREEM_WEBHOOK_SECRET_${suffix}`,
     webhookSecret: env?.get(`CREEM_WEBHOOK_SECRET_${suffix}`) ?? "",
   };
