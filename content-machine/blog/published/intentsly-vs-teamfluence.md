@@ -1,4 +1,5 @@
 ---
+published_at: 2026-11-18T16:10:11.697607+02:00
 published_at: 2026-10-30T23:59:39.886564+02:00
 title: Intentsly vs Teamfluence: Whose Network, Who Replies?
 slug: intentsly-vs-teamfluence
@@ -77,7 +78,7 @@ We ran this on ourselves at launch: our own signals and AI SDR, targeting founde
 
 ## What does each tool cost?
 
-Teamfluence's pricing page, headed "Pay for leads, not for seats" and marked "Starting October 1st, 2026", lists two plans, a Regular Unlimited Plan and a Small Unlimited Plan, and prints one price: 449 EUR a month for the Regular plan, billed monthly, with 1,000 qualified leads a month, unlimited seats, 20,000 credits and up to 100,000 contacts in your network. The Small plan shows no figure on the page. Extra leads and credits come as additional monthly buckets with no price shown, and a fair usage policy applies ([pricing page](https://teamfluence.com/pricing)).
+Teamfluence's pricing page, headed "Pay for leads, not for seats" and marked "Starting October 1st, 2026", lists two plans. The Regular Unlimited Plan is 449 EUR a month, billed monthly, with 1,000 qualified leads a month, unlimited seats, 20,000 credits and up to 100,000 contacts in your network. The Small Unlimited Plan, shown when you switch the plan selector, is 259 EUR a month with 500 qualified leads, unlimited seats, 10,000 credits and up to 25,000 contacts (checked 18 November 2026). Extra leads and credits come as additional monthly buckets with no price shown, and a fair usage policy applies ([pricing page](https://teamfluence.com/pricing)).
 
 Credits are how the real cost moves. The same page lists a new lead at 1 credit (repeat detections free), a signal such as a profile visit, like or follow at 1 credit, a workflow job at 1, an AI job at 1, an email at 4 and a phone number at 40, with bring-your-own API keys as an option ([pricing page](https://teamfluence.com/pricing)). If your team's accounts generate a lot of engagement, the credit budget is the number to watch rather than the plan price.
 
@@ -119,7 +120,7 @@ Still unsure? The shortest test is to see your own buyers. Open [/try-ai](/try-a
 Partly. Its networking campaigns send connection requests and one follow-up message after a request is accepted, workflow templates can route a lead to a DM step, and the Pulse page says the API can send requests and direct messages ([networking campaigns](https://teamfluence.com/help/networking-campaign)). No page opened today describes it answering replies. Intentsly's AI SDR holds the conversation and sends your calendar link.
 
 ### How much does Teamfluence cost per month?
-Its pricing page, marked as starting 1 October 2026, prints 449 EUR a month for the Regular Unlimited Plan with 1,000 qualified leads, unlimited seats and 20,000 credits, and shows no price for the Small plan ([pricing page](https://teamfluence.com/pricing)). Other Teamfluence pages still show older per-seat figures, so confirm on the demo call. Intentsly's plans are on its [pricing page](/pricing).
+Its pricing page, marked as starting 1 October 2026, prints 449 EUR a month for the Regular Unlimited Plan with 1,000 qualified leads, unlimited seats and 20,000 credits, and 259 EUR a month for the Small Unlimited Plan with 500 qualified leads and 10,000 credits ([pricing page](https://teamfluence.com/pricing)). Other Teamfluence pages still show older per-seat figures, so confirm on the demo call. Intentsly's plans are on its [pricing page](/pricing).
 
 ### Does Teamfluence work for a solo founder?
 It can, but its pricing and product pages are written for teams: unlimited seats, team-wide signal capture and a five-person example ([pricing page](https://teamfluence.com/pricing)). Its per-user caps of 60 tracked profiles and 40 tracked posts also matter more when one person does all the watching. Intentsly is built around one or two accounts and self-serve setup.

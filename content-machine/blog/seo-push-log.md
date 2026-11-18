@@ -1,0 +1,1 @@
+2026-11-18 | correction | https://intentsly.com/blog/trigify-vs-teamfluence, https://intentsly.com/compare/intentsly-vs-teamfluence | added Teamfluence Small Unlimited price (259 EUR/mo, 500 leads), verified on teamfluence.com/pricing
