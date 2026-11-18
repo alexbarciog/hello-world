@@ -45,6 +45,13 @@
 - Compare queue after this run: 5 keywords still queued (intentsly vs lemlist, la growth machine, artisan,
   aisdr, salesrobot), so step 6 (add more when fewer than 5) did not trigger. The next compare run will
   drop below 5 and should add 8 to 12 keywords per skills/blog-keywords.md.
+- Verification: commit 8f3c236 pushed to origin/main at 22:16 UTC (git first printed a non-fast-forward
+  rejection even though the parent matched the remote tip; the next push reported "Everything up-to-date"
+  and `git ls-remote` showed 8f3c236 as main). At 22:21 UTC the web-fetch tool refused
+  https://intentsly.com/compare/intentsly-vs-dripify with its URL-permission check (no human to approve in
+  an unattended run), so live status and sitemap listing are unverified this run, as on the previous run.
+  The database row is confirmed published and the commit is on origin/main. Local main was realigned to
+  track origin/main so the next run's `git pull origin main` works from a branch, not a detached HEAD.
 - For the founder: (1) whether Intentsly has a public API or webhooks, so compare pages can state it
   instead of listing integrations only; (2) whether exported formats are CSV, so the Export row can say
   so; (3) a second first-hand story (a customer switch from a sequence tool, with permission) would give
