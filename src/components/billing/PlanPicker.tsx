@@ -68,7 +68,8 @@ export function PlanPicker({ variant = "compact", selected = null, onChanged, so
               current={isCurrent}
               label={label}
               busy={pending === plan.key}
-              disabled={isCurrent || isPending || signedInMember || pending !== null}
+              // Wait for the account's plan before allowing a click, so nobody buys the plan they already have.
+              disabled={isCurrent || isPending || signedInMember || pending !== null || sub.loading}
               onChoose={() => choose(plan)}
             />
           );
