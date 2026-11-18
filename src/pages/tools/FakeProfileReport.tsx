@@ -58,6 +58,7 @@ export default function FakeProfileReport() {
   const navigate = useNavigate();
   const [report, setReport] = useState<FullReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +68,7 @@ export default function FakeProfileReport() {
         navigate(`/login?redirect=${encodeURIComponent(FAKE_PROFILE_REPORT_PATH(id))}`, { replace: true });
         return;
       }
+      setEmail(data.session.user.email ?? null);
       const r = await getReport(id);
       if (cancelled) return;
       if (r.data) {
@@ -115,6 +117,11 @@ export default function FakeProfileReport() {
                 <a href={report.linkedin_url} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2">{report.linkedin_url}</a>
                 {" · "}checked {new Date(report.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
               </p>
+              {email && (
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[13px] text-emerald-800">
+                  Signed in as <span className="font-semibold">{email}</span> · saved to your account
+                </p>
+              )}
 
               <section className="mt-8 rounded-[28px] border border-neutral-200 bg-white p-6 sm:p-10 shadow-[0_30px_80px_-30px_rgba(15,23,42,0.3)]">
                 <RiskGauge score={report.risk_score} level={report.risk_level} lowConfidence={report.low_confidence} />
