@@ -98,8 +98,9 @@ export type FpcEvent = "fpc_view" | "fpc_submit" | "fpc_result" | "fpc_unlock_cl
 export function track(event: FpcEvent, props: Record<string, unknown> = {}) {
   try {
     // log_app_event comes from the content-funnel migration; not in the generated types on every branch.
-    const rpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<unknown>;
-    Promise.resolve(rpc("log_app_event", { p_event: event, p_props: { path: window.location.pathname, ...props }, p_anon_id: anonId() })).catch(() => {});
+    // Called on the client (not detached) so `this` stays bound.
+    const client = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<unknown> };
+    Promise.resolve(client.rpc("log_app_event", { p_event: event, p_props: { path: window.location.pathname, ...props }, p_anon_id: anonId() })).catch(() => {});
   } catch {
     // ignore
   }
