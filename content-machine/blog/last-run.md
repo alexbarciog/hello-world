@@ -57,9 +57,14 @@
   all sections, so step 6 (add more when fewer than 5) did not trigger. Note for the next learn run: "what is
   a good reply rate for linkedin outreach" needs the 21% proof row to be marked plain `verified` to quote
   our own number; otherwise it must rely on outside benchmarks only.
-- Verification: database row confirmed published and content-identical to the local file; commit pushed to
-  origin/main (hash in the git log). Live page and sitemap check recorded in the run report (fetched about
-  4 minutes after the push).
+- Verification: database row confirmed published and content-identical to the local file; commit 50cdd50
+  pushed to origin/main at 19:32 UTC (the first push was rejected because the local clone sat on a detached
+  HEAD with a stale `main` ref; pushing HEAD:main succeeded with no rebase needed). The live-page and sitemap
+  fetch about 4 minutes after the push could NOT be completed: this session had no direct WebFetch tool and
+  the web-fetch agent's request for intentsly.com was blocked by a permission prompt that an unattended run
+  cannot answer. The page is therefore confirmed published in the database but not confirmed live or in the
+  sitemap by this run; the next run, or the founder, should open
+  https://intentsly.com/learn/what-is-third-party-intent-data and https://intentsly.com/sitemap.xml.
 - For the founder: (1) the 21% reply-rate row in proof.md is still marked "verified: say ..." rather than
   plain `verified`, so the gate rejects the number; the queued reply-rate lesson needs it; (2) a sentence or
   two of first-hand experience with bought intent data (did we ever trial Bombora, G2 or 6sense, and what
