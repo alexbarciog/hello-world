@@ -1,59 +1,55 @@
-# Last run: 2026-11-18 (compare task; fired about 21:50 UTC, 23:50 Bucharest)
+# Last run: 2026-11-19 (blog task; fired about 07:00 UTC, 09:00 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main` (`add_repo` still not exposed as a
-  tool, as on previous runs); `git pull origin main` reported already up to date at 0917a34. Supabase: the
+  tool, as on previous runs); `git pull origin main` reported already up to date at 9c360b0. Supabase: the
   lowercase "supabase" connector again failed with a proxy tunnel error at session start; the "Supabase"
   connector connected and was used. Web search worked. The two older drafts in blog/drafts/
   (get-clients-for-an-ai-consulting-business.md, outbound-sales-process-for-startups.md) still carry a
-  `blocked:` line, so neither was resumed. 2 articles had been published today (UTC) before this run
+  `blocked:` line, so neither was resumed. 0 articles had been published today (UTC) before this run
   (daily cap 7); the gate reported no weekly-cap problem (cap 45).
-- Keyword (published, first attempt): intentsly vs dripify (compare, intentsly-vs, comparison, commercial,
-  priority 2, difficulty medium).
-  "Intentsly vs Dripify: Evergreen Lists or Live Signals?"
-  https://intentsly.com/compare/intentsly-vs-dripify
+- Keyword (published, first attempt): intent signals vs intent data (blog, signal-selling, explainer,
+  informational, priority 2, difficulty low).
+  "Intent Signals vs Intent Data: Which Tells You Who to Call?"
+  https://intentsly.com/blog/intent-signals-vs-intent-data
 - Orphan check: a read-only select for the slug before writing returned no row. Supabase returned
-  status = published, published_at 2026-11-18 22:14:43 UTC. Writes: the one generated SQL statement, pasted
-  whole from blog/out/intentsly-vs-dripify.sql (25,074 bytes). Reads: two selects (the pre-check and a
-  post-insert comparison). The post-insert check compared length and md5 of content_md (19,502 chars,
-  ed78cf74...), word_count (2739), reading_minutes (12), 8 secondary keywords, 6 FAQ entries, section and
-  type against the local file: all matched exactly.
-- Gate: first run failed only on meta_description length (164 chars against 160); trimmed it and the gate
-  passed with no warnings. Then cut about 40 words so the body outside the table sits at about 2,480 words
-  (compare range 1,300 to 2,500); gate-counted 2,739 words including the 15-row table. 8 H2, 6 FAQ (49 to
-  69 words each), 8 internal links, 10 external links (all dripify.com / help.dripify.com), no em dashes,
-  no banned phrases. Title 54 characters, meta_title 50. Title similarity to the nearest published
-  compare title under the 0.75 limit.
-- Angle: the SERP for the exact phrase is Capterra/GetApp/Software Advice "X vs Dripify" checkbox grids
-  plus Dripify reviews and "alternatives" lists written by competing vendors (Snov.io, Skylead, La Growth
-  Machine, Expandi, Waalaxy, SalesRobot). None mention Intentsly, buying signals or AI that answers leads,
-  and the reviews still quote a Basic plan that Dripify's own October 2026 update says is closed to new
-  subscribers. This page compares job by job from Dripify's own pricing page, FAQ and help centre, credits
-  Dripify's post-engagement import and Evergreen mode as a real overlap, prints both daily limits side by
-  side (noting the pricing page says 100+ messages a day and the FAQ says 150), lists where Dripify is the
-  better buy (list in hand, LinkedIn plus email in one sequence, volume, teams, API/MCP, InMail and A/B
-  tests), and builds the switch list on Dripify's own export article. Brief: blog/briefs/intentsly-vs-dripify.md.
-- Competitor sources opened 2026-11-18: dripify.com/pricing, dripify.com/faq,
-  dripify.com/compare-dripify-with-other-linkedin-automation-tools, help.dripify.com articles 5028652
-  (add leads), 12658858 (leads from posts), 4910909 (what is Dripify), 5914465 (resume after reply),
-  5030193 (inbox overview), 4914865 (export), 18327954 (October 2026 update). dripify.io redirects to
-  dripify.com; dripify.com/features and dripify.io/pricing could not be fetched (permission withheld), so
-  features came from the compare page, FAQ and help centre instead.
-- Intentsly facts used: product.md confirmed rows (signals, scoring, AI SDR LinkedIn-only, 2 accounts,
-  30/30 caps with 15 recommended, HubSpot/Cal.com/Google Calendar/LinkedIn, export, 7-day trial, /try-ai)
-  and proof.md verified rows (14 demos in 14 days, 4x reply rate, 21% reply rate "across Intentsly
-  customers, October 2026", 2 to 4 meetings a week on average). No Intentsly price stated.
-- Compare queue after this run: 5 keywords still queued (intentsly vs lemlist, la growth machine, artisan,
-  aisdr, salesrobot), so step 6 (add more when fewer than 5) did not trigger. The next compare run will
-  drop below 5 and should add 8 to 12 keywords per skills/blog-keywords.md.
-- Verification: commit 8f3c236 pushed to origin/main at 22:16 UTC (git first printed a non-fast-forward
-  rejection even though the parent matched the remote tip; the next push reported "Everything up-to-date"
-  and `git ls-remote` showed 8f3c236 as main). At 22:21 UTC the web-fetch tool refused
-  https://intentsly.com/compare/intentsly-vs-dripify with its URL-permission check (no human to approve in
-  an unattended run), so live status and sitemap listing are unverified this run, as on the previous run.
-  The database row is confirmed published and the commit is on origin/main. Local main was realigned to
-  track origin/main so the next run's `git pull origin main` works from a branch, not a detached HEAD.
-- For the founder: (1) whether Intentsly has a public API or webhooks, so compare pages can state it
-  instead of listing integrations only; (2) whether exported formats are CSV, so the Export row can say
-  so; (3) a second first-hand story (a customer switch from a sequence tool, with permission) would give
-  the compare pages something beyond the launch case; (4) confirm the pricing figure so /compare pages can
-  print a number next to competitors' prices.
+  status = published, published_at 2026-11-19 07:05:41 UTC. Writes: the one generated SQL statement, pasted
+  whole from blog/out/intent-signals-vs-intent-data.sql (20,982 bytes). Reads: three selects (the slug
+  pre-check, a count of posts published today, and a post-insert comparison). The post-insert check compared
+  length and md5 of content_md (15,988 chars, b679521a...), word_count (2514), reading_minutes (11), 4
+  secondary keywords, 6 FAQ entries, section and type against the local file: all matched exactly.
+- Gate: first run failed only on the opening paragraph (98 words against 90); trimmed it, shortened the
+  title from 63 to 59 characters, and the gate passed with no warnings. blog_cloud.py sql printed
+  "ready": true with no warnings. 2,514 words (explainer range 1,100 to 4,000), 10 H2, 6 FAQ (50 to 70
+  words each), 10 internal links, 6 external links, no em dashes, no banned phrases. meta_title 58 chars,
+  meta_description 149.
+- Angle: every first-page result is a vendor (Landbase, B2B Data Scout, Autobound, SalesIntel,
+  DemandScience, Rodz, Common Room) defining the two terms so its own product is the answer, with lifts
+  (4x, 93%, 400%, "48% false positives") that trace to no readable source. This page gives a one-question
+  test ("can I quote the action and name the person?"), shows what Bombora and G2 actually output from their
+  own documentation (Company Surge: score 60+ = spiking, latest 3 weeks vs a 12-week baseline, account
+  level; G2: company level, Buying Stage plus Activity Level, updated daily), states where intent data,
+  signals and Intentsly's LinkedIn signals are each the wrong buy, gives a decision rule by team size and
+  deal size, and uses the 14-demos story labelled as one company. Brief: blog/briefs/intent-signals-vs-intent-data.md.
+- Outside sources opened 2026-11-19 and linked: bombora.com/intent/, customers.bombora.com/crc-brand/thresholding,
+  documentation.g2.com/docs/buyer-intent, businesswire.com (6sense 2025 Buyer Experience Report, 12 Nov 2025:
+  4,000+ buyers, 94%, 77%, 60/40, ~10 months), salesintel.io/blog/buying-signals-vs-intent-data,
+  commonroom.io/blog/intent-data-vs-buyer-intelligence. Not used: third-party price figures for Bombora and
+  6sense (not from the vendors' own sites), the "39% rate intent data highly accurate" DGR figure (seen only
+  second-hand on Autobound; the DGR landing page shows no numbers), and the Gartner 2026 press release
+  (web fetch needed a permission that an unattended run cannot grant).
+- Intentsly facts used: product.md confirmed rows (LinkedIn signals only: post engagement, keyword posts,
+  competitor page followers, hashtag engagement; ICP scoring; AI SDR sends the first LinkedIn message; no
+  email or Reddit monitoring; /try-ai with no account) and proof.md verified rows (14 demos in 14 days,
+  4x reply rate, 12 signals worth chasing and 8 to ignore). No Intentsly price stated. The one example
+  message is labelled as a hypothetical, not one we sent.
+- Blog queue after this run: 21 keywords still queued, so step 6 (add more when fewer than 5) did not trigger.
+- Verification: database row confirmed published and content-identical to the local file; commit pushed to
+  origin/main (hash in the git log). The live page at intentsly.com/blog/intent-signals-vs-intent-data was not
+  fetched this run (the web-fetch tool needs a URL permission an unattended run cannot grant), so live status
+  and sitemap listing depend on the redeploy triggered by the push.
+- For the founder: (1) a second first-hand story, ideally a customer who moved from an account-level intent
+  data contract to LinkedIn signals (with permission and a before/after reply rate), would give the
+  signal-selling cluster something beyond the launch case; (2) confirm whether the AI SDR's first message
+  quotes the triggering post, so articles can say so instead of "sends the first LinkedIn message";
+  (3) the two blocked drafts still wait on first-hand material (AI consulting clients; startup outbound
+  process); (4) confirm the pricing figure so pages can print a number.

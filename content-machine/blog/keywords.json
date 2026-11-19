@@ -296,8 +296,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intent-signals-vs-intent-data",
    "monthly_volume": null,
    "section": "blog"
   },
