@@ -14,6 +14,8 @@ interface Props {
   insights: any | null;
   insightsLoading: boolean;
   onClose: () => void;
+  /** Re-runs the intent analysis after a failure. */
+  onRetry?: () => void;
 }
 
 type Tab = "intent" | "personality";
@@ -34,7 +36,7 @@ interface Personality {
 const SKY = "#1A8FE3";
 const LIME = "#C8FF00";
 
-export function AIInsightsModal({ contact, insights, insightsLoading, onClose }: Props) {
+export function AIInsightsModal({ contact, insights, insightsLoading, onClose, onRetry }: Props) {
   const [tab, setTab] = useState<Tab>("intent");
   const [personality, setPersonality] = useState<Personality | null>(null);
   const [personalityLoading, setPersonalityLoading] = useState(false);
@@ -82,6 +84,7 @@ export function AIInsightsModal({ contact, insights, insightsLoading, onClose }:
   }, [contact.id]);
 
   const fullName = [contact.first_name, contact.last_name].filter(Boolean).join(" ");
+  const firstName = contact.first_name?.trim() || "this lead";
   const canRegenerate = generatedAt
     ? (Date.now() - new Date(generatedAt).getTime()) > 7 * 24 * 60 * 60 * 1000
     : false;
@@ -159,11 +162,12 @@ export function AIInsightsModal({ contact, insights, insightsLoading, onClose }:
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {tab === "intent" ? (
-            <IntentTab insights={insights} loading={insightsLoading} />
+            <IntentTab insights={insights} loading={insightsLoading} firstName={firstName} onRetry={onRetry} />
           ) : (
             <PersonalityTab
               personality={personality}
               loading={personalityLoading}
+              firstName={firstName}
               confidenceColor={confidenceColor}
               onCopyHook={copyHook}
               onRegenerate={() => fetchPersonality(true)}
@@ -197,15 +201,94 @@ export function AIInsightsModal({ contact, insights, insightsLoading, onClose }:
   return createPortal(modal, document.body);
 }
 
+/* ─── Loading state ─── */
+const INTENT_STEPS = [
+  "Reading the post that flagged them",
+  "Checking their role and company",
+  "Scoring buying intent",
+  "Writing the summary",
+];
+const PERSONALITY_STEPS = [
+  "Reading their headline and activity",
+  "Mapping their communication style",
+  "Drafting how to approach them",
+];
+const STEP_MS = 1800;
+
+/**
+ * Shown while the AI works. Steps advance on a timer but the last one keeps
+ * spinning until the result arrives, so it never claims to be done early.
+ */
+function AnalyzingState({ title, steps }: { title: string; steps: string[] }) {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    if (active >= steps.length - 1) return;
+    const t = window.setTimeout(() => setActive((a) => a + 1), STEP_MS);
+    return () => window.clearTimeout(t);
+  }, [active, steps.length]);
+
+  return (
+    <div className="space-y-5" role="status" aria-live="polite">
+      <div className="flex flex-col items-center text-center pt-2">
+        <div className="relative w-16 h-16 flex items-center justify-center">
+          <span
+            className="absolute inset-0 rounded-full insights-orbit"
+            style={{ background: `conic-gradient(from 0deg, transparent 0deg, ${SKY} 300deg, transparent 360deg)` }}
+            aria-hidden
+          />
+          <span className="absolute inset-[3px] rounded-full bg-white" aria-hidden />
+          <BrainCircuit className="relative w-7 h-7" style={{ color: SKY }} aria-hidden />
+        </div>
+        <p className="mt-3 text-sm font-semibold thinking-text-shimmer">{title}</p>
+        <p className="mt-0.5 text-xs text-slate-500">This usually takes a few seconds.</p>
+      </div>
+
+      <ol className="mx-auto max-w-sm space-y-2">
+        {steps.map((label, i) => {
+          if (i > active) return null;
+          const done = i < active;
+          return (
+            <li key={label} className="insights-step-in flex items-center gap-2.5 rounded-lg bg-white/70 border border-slate-200/60 px-3 py-2">
+              {done ? (
+                <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: SKY }}>
+                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} aria-hidden />
+                </span>
+              ) : (
+                <RefreshCw className="w-4 h-4 shrink-0 animate-spin" style={{ color: SKY }} aria-hidden />
+              )}
+              <span className={`text-sm ${done ? "text-slate-500" : "text-slate-900 font-medium"}`}>{label}</span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="space-y-2.5 opacity-70" aria-hidden>
+        <div className="insights-skeleton h-14 rounded-xl" />
+        <div className="insights-skeleton h-10 rounded-xl" />
+        <div className="insights-skeleton h-10 rounded-xl w-4/5" />
+      </div>
+    </div>
+  );
+}
+
 /* ─── Intent Tab ─── */
-function IntentTab({ insights, loading }: { insights: any; loading: boolean }) {
-  if (loading || !insights) {
+function IntentTab({ insights, loading, firstName, onRetry }: { insights: any; loading: boolean; firstName: string; onRetry?: () => void }) {
+  if (loading) {
+    return <AnalyzingState title={`Analyzing ${firstName}'s buying intent…`} steps={INTENT_STEPS} />;
+  }
+  if (!insights) {
     return (
-      <div className="space-y-3">
-        <div className="h-16 bg-slate-200/50 rounded-xl animate-pulse" />
-        <div className="h-12 bg-slate-200/50 rounded-xl animate-pulse" />
-        <div className="h-12 bg-slate-200/50 rounded-xl animate-pulse" />
-        <div className="h-20 bg-slate-200/50 rounded-xl animate-pulse" />
+      <div className="py-12 text-center">
+        <Sparkles className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+        <p className="text-sm text-slate-500">We couldn't generate the intent analysis.</p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Try again
+          </button>
+        )}
       </div>
     );
   }
@@ -240,31 +323,18 @@ function IntentTab({ insights, loading }: { insights: any; loading: boolean }) {
 
 /* ─── Personality Tab ─── */
 function PersonalityTab({
-  personality, loading, confidenceColor, onCopyHook, onRegenerate, canRegenerate,
+  personality, loading, firstName, confidenceColor, onCopyHook, onRegenerate, canRegenerate,
 }: {
   personality: Personality | null;
   loading: boolean;
+  firstName: string;
   confidenceColor: string;
   onCopyHook: () => void;
   onRegenerate: () => void;
   canRegenerate: boolean;
 }) {
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-32 bg-slate-200/50 rounded-2xl animate-pulse" />
-        <div className="h-20 bg-slate-200/50 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-2 gap-3">
-          <div className="h-32 bg-slate-200/50 rounded-xl animate-pulse" />
-          <div className="h-32 bg-slate-200/50 rounded-xl animate-pulse" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="h-28 bg-slate-200/50 rounded-xl animate-pulse" />
-          <div className="h-28 bg-slate-200/50 rounded-xl animate-pulse" />
-          <div className="h-28 bg-slate-200/50 rounded-xl animate-pulse" />
-        </div>
-      </div>
-    );
+    return <AnalyzingState title={`Reading ${firstName}'s personality…`} steps={PERSONALITY_STEPS} />;
   }
   if (!personality) {
     return (

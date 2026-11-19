@@ -1124,6 +1124,7 @@ export default function Contacts() {
                   insights={insightsData[openContact.id] || null}
                   insightsLoading={insightsLoading.has(openContact.id)}
                   onClose={() => setInsightsOpen(null)}
+                  onRetry={() => handleGetInsights(openContact)}
                 />
               );
             })()}

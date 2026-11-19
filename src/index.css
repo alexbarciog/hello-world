@@ -669,3 +669,33 @@
   position: relative;
   z-index: 1;
 }
+
+/* AI Insights modal: loading state (skeleton sweep + spinning ring) */
+.insights-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgb(226 232 240 / 0.6);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .insights-skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 50%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+    animation: shimmer-sweep 1.6s ease-in-out infinite;
+  }
+  @keyframes insights-orbit {
+    to { transform: rotate(360deg); }
+  }
+  .insights-orbit {
+    animation: insights-orbit 1.4s linear infinite;
+  }
+  @keyframes insights-step-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .insights-step-in {
+    animation: insights-step-in 0.3s ease-out both;
+  }
+}
