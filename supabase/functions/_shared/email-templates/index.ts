@@ -195,3 +195,28 @@ export function weeklyDigest(p: DigestPayload, ctx: EmailCtx & { weekIndex: numb
     text: `${hi}\n\nHere's your week on Intentsly:\n\n- Signals found: ${p.signals}\n- Messages sent: ${p.messages}\n- Replies: ${p.replies}\n- Meetings booked: ${p.meetings}\n\n${tip.text}\n\n${ctx.siteUrl}${tip.path}${SIGN_OFF}${footer(ctx)}`,
   };
 }
+
+// ── Daily leads ─────────────────────────────────────────────────────────────
+export interface DailyLeadsPayload {
+  firstName?: string | null;
+  /** Distinct leads found by the account's active agents in the period. */
+  total: number;
+  /** Per agent, most first. Agent names are user input. */
+  agents: Array<{ name: string; count: number }>;
+}
+
+/** Sent at the end of a day only when the agents found at least one lead. */
+export function dailyLeads(p: DailyLeadsPayload, ctx: EmailCtx): RenderedEmail {
+  const hi = `Hi${safeText(p.firstName, 40) ? ` ${safeText(p.firstName, 40)}` : ""},`;
+  const leads = (n: number) => `${n} new lead${n === 1 ? "" : "s"}`;
+  const agents = p.agents.filter((a) => a.count > 0);
+  const name = (a: { name: string }) => safeText(a.name, 60) || "Signal agent";
+  const intro = agents.length === 1
+    ? `Your signal agent "${name(agents[0])}" found ${leads(p.total)} today.`
+    : `Your signal agents found ${leads(p.total)} today:\n\n${bullets(agents.map((a) => `${name(a)}: ${a.count}`))}`;
+  return {
+    template: "daily_leads",
+    subject: `${agents.length === 1 ? "Your agent" : "Your agents"} found ${leads(p.total)} today`,
+    text: `${hi}\n\n${intro}\n\nSee who they are and what they posted:\n${ctx.siteUrl}/contacts${SIGN_OFF}${footer(ctx)}`,
+  };
+}

@@ -49,3 +49,34 @@ export function weekStartOf(now: Date): string {
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
   return d.toISOString().slice(0, 10);
 }
+
+/** The account-local calendar date (YYYY-MM-DD): the daily leads email's day id. */
+export function localDate(now: Date, timeZone: string): string {
+  const format = (tz: string) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  try {
+    return format(timeZone || "UTC");
+  } catch {
+    return format("UTC");
+  }
+}
+
+/**
+ * End of the account's day: 20:00 local, after the last agent run of the
+ * (UTC-scheduled) day has usually finished. A window, in case a tick is missed.
+ */
+export function dailyLeadsDue(now: Date, timeZone: string): boolean {
+  const { hour } = localParts(now, timeZone);
+  return hour >= 20;
+}
+
+/**
+ * The period a daily email covers: from where the previous one stopped, so a
+ * lead found after one email's cutoff is counted in the next. The first email
+ * covers the last 24 hours; a long gap is capped at 48 hours so "today" stays true-ish.
+ */
+export function dailyLeadsWindow(now: Date, previousEnd: string | null): { start: string; end: string } {
+  const end = now.getTime();
+  const floor = end - 2 * DAY;
+  const start = previousEnd ? Math.max(new Date(previousEnd).getTime(), floor) : end - DAY;
+  return { start: new Date(start).toISOString(), end: new Date(end).toISOString() };
+}

@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  DIGEST_TIPS, NURTURE_STEPS, isIdle, nurtureDay0, nurtureDay2, nurtureDay5, safeText, weeklyDigest,
+  DIGEST_TIPS, NURTURE_STEPS, dailyLeads, isIdle, nurtureDay0, nurtureDay2, nurtureDay5, safeText, weeklyDigest,
 } from "../../supabase/functions/_shared/email-templates/index";
 import { makeUnsubToken, readUnsubToken } from "../../supabase/functions/_shared/email-tokens";
-import { digestDue, nextNurtureStep, weekStartOf } from "../../supabase/functions/_shared/email-schedule";
+import { dailyLeadsDue, dailyLeadsWindow, digestDue, localDate, nextNurtureStep, weekStartOf } from "../../supabase/functions/_shared/email-schedule";
 
 const ctx = { siteUrl: "https://intentsly.com", unsubscribeUrl: "https://intentsly.com/u/abc" };
 
@@ -141,5 +141,39 @@ describe("unsubscribe tokens", () => {
     expect(await readUnsubToken(`${forged.split(".")[0]}.${m}`, "secret-1")).toBeNull();
     expect(await readUnsubToken(p, "secret-1")).toBeNull();
     expect(await readUnsubToken("junk", "secret-1")).toBeNull();
+  });
+});
+
+describe("daily leads", () => {
+  it("names the agent when there is one, with no breakdown", () => {
+    const e = dailyLeads({ firstName: "Ana", total: 1, agents: [{ name: "SaaS buyers", count: 1 }] }, ctx);
+    expect(e.subject).toBe("Your agent found 1 new lead today");
+    expect(e.text).toContain('Your signal agent "SaaS buyers" found 1 new lead today.');
+    expect(e.text).toContain("https://intentsly.com/contacts");
+    expect(e.text).toContain(ctx.unsubscribeUrl);
+  });
+  it("lists each agent with leads, and strips links from agent names", () => {
+    const e = dailyLeads({ total: 7, agents: [{ name: "A see https://evil.example", count: 5 }, { name: "B", count: 2 }, { name: "C", count: 0 }] }, ctx);
+    expect(e.subject).toBe("Your agents found 7 new leads today");
+    expect(e.text).toContain("- A see: 5\n- B: 2");
+    expect(e.text).not.toContain("evil.example");
+    expect(e.text).not.toContain("C: 0");
+  });
+});
+
+describe("daily leads schedule", () => {
+  it("is due from 20:00 local time", () => {
+    expect(dailyLeadsDue(new Date("2026-11-19T19:59:00Z"), "UTC")).toBe(false);
+    expect(dailyLeadsDue(new Date("2026-11-19T20:00:00Z"), "UTC")).toBe(true);
+    // 20:30 in New York is 01:30 UTC the next day.
+    expect(dailyLeadsDue(new Date("2026-11-20T01:30:00Z"), "America/New_York")).toBe(true);
+    expect(localDate(new Date("2026-11-20T01:30:00Z"), "America/New_York")).toBe("2026-11-19");
+    expect(localDate(new Date("2026-11-20T01:30:00Z"), "Not/AZone")).toBe("2026-11-20");
+  });
+  it("starts where the previous email stopped, capped at 48 hours", () => {
+    const now = new Date("2026-11-19T20:00:00Z");
+    expect(dailyLeadsWindow(now, null)).toEqual({ start: "2026-11-18T20:00:00.000Z", end: "2026-11-19T20:00:00.000Z" });
+    expect(dailyLeadsWindow(now, "2026-11-18T20:15:00.000Z").start).toBe("2026-11-18T20:15:00.000Z");
+    expect(dailyLeadsWindow(now, "2026-11-10T20:00:00.000Z").start).toBe("2026-11-17T20:00:00.000Z");
   });
 });

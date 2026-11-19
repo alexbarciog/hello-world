@@ -1,6 +1,6 @@
 // Builds one account's weekly digest numbers from real tables. Used by the
 // scheduler and the admin preview, so the preview is exactly what would go out.
-import type { DigestPayload } from "./email-templates/index.ts";
+import type { DailyLeadsPayload, DigestPayload } from "./email-templates/index.ts";
 
 // deno-lint-ignore no-explicit-any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,4 +48,49 @@ export async function accountTimezone(db: Db, userId: string): Promise<string> {
   const { data } = await db.from("campaigns").select("timezone").eq("user_id", userId)
     .order("created_at", { ascending: false }).limit(1).maybeSingle();
   return data?.timezone || "UTC";
+}
+
+/**
+ * Leads the account's ACTIVE signal agents added between start and end: rows
+ * added to each agent's lead list (lists.source_agent_id, or the list named
+ * after the agent for lists created before that column existed). A person in
+ * two agents' lists counts once in the total.
+ */
+export async function buildDailyLeadsPayload(
+  db: Db, userId: string, firstName: string | null, start: string, end: string,
+): Promise<DailyLeadsPayload> {
+  const { data: agents } = await db.from("signal_agents").select("id, name, leads_list_name")
+    .eq("user_id", userId).eq("status", "active");
+  if (!agents?.length) return { firstName, total: 0, agents: [] };
+
+  const { data: lists } = await db.from("lists").select("id, name, source_agent_id").eq("user_id", userId);
+  const listAgent = new Map<string, string>(); // list id → agent id
+  for (const a of agents) {
+    const listName = a.leads_list_name || a.name;
+    for (const l of lists ?? []) {
+      if (l.source_agent_id === a.id || (!l.source_agent_id && l.name === listName)) listAgent.set(l.id, a.id);
+    }
+  }
+  if (!listAgent.size) return { firstName, total: 0, agents: [] };
+
+  const { data: rows } = await db.from("contact_lists").select("contact_id, list_id")
+    .in("list_id", [...listAgent.keys()]).gte("added_at", start).lt("added_at", end).limit(10000);
+
+  const perAgent = new Map<string, Set<string>>();
+  const all = new Set<string>();
+  for (const r of rows ?? []) {
+    const agentId = listAgent.get(r.list_id);
+    if (!agentId) continue;
+    if (!perAgent.has(agentId)) perAgent.set(agentId, new Set());
+    perAgent.get(agentId)!.add(r.contact_id);
+    all.add(r.contact_id);
+  }
+  return {
+    firstName,
+    total: all.size,
+    agents: agents
+      .map((a: { id: string; name: string }) => ({ name: a.name, count: perAgent.get(a.id)?.size ?? 0 }))
+      .filter((a: { count: number }) => a.count > 0)
+      .sort((a: { count: number }, b: { count: number }) => b.count - a.count),
+  };
 }

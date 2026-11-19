@@ -2,14 +2,17 @@
 // through send-email. Both programs are off until their secret is "true":
 //   EMAIL_NURTURE_ENABLED  free-tool leads: day 0, 2, 5, then nothing
 //   EMAIL_DIGEST_ENABLED   weekly digest, Tuesday 09:00 account time
+//   EMAIL_DAILY_LEADS_ENABLED  daily leads count, 20:00 account time, paying
+//                          accounts with an active agent, skipped on 0 leads
 // Each send is claimed in the database first, so overlapping runs can't double
 // send. Idempotent, so being callable with the public key is harmless.
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { sendEmail } from "../_shared/email.ts";
 import { makeUnsubToken, type UnsubTarget } from "../_shared/email-tokens.ts";
-import { digestDue, nextNurtureStep, weekStartOf } from "../_shared/email-schedule.ts";
-import { NURTURE_STEPS, weeklyDigest, type EmailCtx, type RenderedEmail } from "../_shared/email-templates/index.ts";
-import { accountTimezone, buildDigestPayload } from "../_shared/digest-data.ts";
+import { dailyLeadsDue, dailyLeadsWindow, digestDue, localDate, nextNurtureStep, weekStartOf } from "../_shared/email-schedule.ts";
+import { NURTURE_STEPS, dailyLeads, weeklyDigest, type EmailCtx, type RenderedEmail } from "../_shared/email-templates/index.ts";
+import { accountTimezone, buildDailyLeadsPayload, buildDigestPayload } from "../_shared/digest-data.ts";
+import { isPaying } from "../_shared/billing.ts";
 
 const SITE = Deno.env.get("SITE_URL") || "https://intentsly.com";
 const MAX_PER_RUN = 200;
@@ -30,12 +33,13 @@ async function emailCtx(target: UnsubTarget): Promise<{ ctx: EmailCtx; headers: 
 Deno.serve(async () => {
   const nurtureOn = Deno.env.get("EMAIL_NURTURE_ENABLED") === "true";
   const digestOn = Deno.env.get("EMAIL_DIGEST_ENABLED") === "true";
-  if (!nurtureOn && !digestOn) return json({ skipped: "both programs are off" });
+  const dailyOn = Deno.env.get("EMAIL_DAILY_LEADS_ENABLED") === "true";
+  if (!nurtureOn && !digestOn && !dailyOn) return json({ skipped: "all programs are off" });
 
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false },
   });
-  const summary = { nurture_sent: 0, digest_sent: 0, errors: [] as string[] };
+  const summary = { nurture_sent: 0, digest_sent: 0, daily_sent: 0, daily_zero: 0, errors: [] as string[] };
 
   // Every account, to stop nurture on signup and to address digests.
   const usersByEmail = new Map<string, string>();
@@ -145,6 +149,61 @@ Deno.serve(async () => {
         summary.digest_sent++;
       } catch (e) {
         summary.errors.push(`digest ${userId}: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+  }
+
+  // ── Daily leads ──
+  if (dailyOn) {
+    const mode = Deno.env.get("CREEM_MODE") === "live" ? "live" : "test";
+    const { data: agentRows } = await db.from("signal_agents").select("user_id").eq("status", "active");
+    const owners = [...new Set((agentRows ?? []).map((r: { user_id: string }) => r.user_id))];
+    const { data: subs } = owners.length
+      ? await db.from("subscriptions").select("user_id, status, current_period_end").in("user_id", owners).eq("mode", mode)
+      : { data: [] };
+    const paying = [...new Set((subs ?? []).filter((s) => isPaying(s, now)).map((s) => s.user_id as string))];
+    const { data: optedOut } = paying.length
+      ? await db.from("profiles").select("user_id").in("user_id", paying).eq("email_opt_out", true)
+      : { data: [] };
+    const skip = new Set((optedOut ?? []).map((p: { user_id: string }) => p.user_id));
+
+    for (const userId of paying) {
+      if (summary.daily_sent >= MAX_PER_RUN) break;
+      const user = usersById.get(userId);
+      if (!user || skip.has(userId)) continue;
+      try {
+        const tz = await accountTimezone(db, userId);
+        if (!dailyLeadsDue(now, tz)) continue;
+        const day = localDate(now, tz);
+        const { data: done } = await db.from("daily_lead_emails").select("account_id").eq("account_id", userId).eq("day", day).maybeSingle();
+        if (done) continue;
+
+        const { data: prev } = await db.from("daily_lead_emails").select("period_end").eq("account_id", userId)
+          .order("period_end", { ascending: false }).limit(1).maybeSingle();
+        const window = dailyLeadsWindow(now, prev?.period_end ?? null);
+        const payload = await buildDailyLeadsPayload(db, userId, user.firstName, window.start, window.end);
+        // Claim the day first (also for 0 leads, so the next email starts from here).
+        const { error: claimErr } = await db.from("daily_lead_emails").insert({
+          account_id: userId, day, period_start: window.start, period_end: window.end, total: payload.total, payload,
+        });
+        if (claimErr) continue; // another run got it
+        if (payload.total === 0) { summary.daily_zero++; continue; }
+
+        const { ctx, headers } = await emailCtx({ kind: "u", value: userId });
+        const email = dailyLeads(payload, ctx);
+        const result = await sendEmail({
+          to: user.email, from: "Intentsly <noreply@intentsly.com>", reply_to: "alex@intentsly.com",
+          subject: email.subject, text: email.text, template: email.template, headers,
+        });
+        if (!result.ok) {
+          await db.from("daily_lead_emails").delete().eq("account_id", userId).eq("day", day);
+          summary.errors.push(`daily ${userId}: ${result.error}`);
+          continue;
+        }
+        await db.from("daily_lead_emails").update({ sent_at: new Date().toISOString() }).eq("account_id", userId).eq("day", day);
+        summary.daily_sent++;
+      } catch (e) {
+        summary.errors.push(`daily ${userId}: ${e instanceof Error ? e.message : e}`);
       }
     }
   }
