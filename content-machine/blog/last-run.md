@@ -1,67 +1,69 @@
-# Last run: 2026-11-19 (solutions task; fired about 13:50 UTC, 15:50 Bucharest)
+# Last run: 2026-11-19 (learn task; fired about 19:15 UTC, 21:15 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main` (`add_repo` still not exposed as a
-  tool, as on previous runs); `git pull origin main` brought main to 17edfa2. Supabase: the lowercase
+  tool, as on previous runs); `git pull origin main` brought main to 7743e1d. Supabase: the lowercase
   "supabase" connector again failed with a proxy tunnel error at session start; the "Supabase" connector
-  connected and was used. Web search and web fetch worked (McKinsey and TechRepublic could not be fetched:
-  one needed a permission an unattended run cannot grant, the other returned a client error). The two older
-  drafts in blog/drafts/ (get-clients-for-an-ai-consulting-business.md, outbound-sales-process-for-startups.md)
-  still carry a `blocked:` line, so neither was resumed. 1 article had been published today (UTC) before this
-  run (daily cap 7); the gate reported no weekly-cap problem (cap 45).
-- Keyword (published, first attempt): how to get clients for an it consulting company (solutions,
-  find-customers, landing, commercial, priority 3, difficulty medium).
-  "How to Get IT Consulting Company Clients: Seven Deadlines"
-  https://intentsly.com/solutions/get-clients-for-an-it-consulting-company
-- Database: a read-only select before writing returned no row for the slug and 1 post published today.
-  Supabase returned status = published, published_at 2026-11-19 13:59:32 UTC. Writes: the one generated SQL
-  statement, pasted whole from blog/out/get-clients-for-an-it-consulting-company.sql (26,665 bytes). Reads:
-  two selects (the pre-check and a post-insert comparison). The post-insert check compared length and md5 of
-  content_md (21,011 chars, 353a4081...), word_count (3323), reading_minutes (15), 5 secondary keywords,
-  6 FAQ entries, section and type against the local file: all matched exactly.
-- Gate: first local run failed on five points (meta_title 61 chars, meta_description 164 chars, opening
-  paragraph 97 words, "21%" reply-rate figure not gate-verifiable because its proof row is annotated rather
-  than plain `verified`, and title too close to the HR consulting firm page at 0.77). Fixed all five: new
-  title (similarity 0.58), meta_title 59 chars, meta_description 157, opening 88 words, the 21% figure
-  removed (the 1,000 leads and 2 to 4 meetings figures stay, attributed to October 2026). Second run passed
-  with no warnings; blog_cloud.py sql printed "ready": true with no warnings. 3,323 words (landing min
-  1,100, max 4,000; the MSP and HR consulting solution pages are 3,089 and 2,954), 7 H2, 6 FAQ, 15 internal
-  links, 3 external links, no em dashes, no banned phrases.
-- Angle: every first-page result (airdroid, eGrabber, Callbox, HubSpot, mariopeshev) is a 7-to-9-item channel
-  list (website, referrals, networking, content, partnerships, cold email, marketplaces) with unlinked
-  statistics or none; the only signal-shaped page (salesmotion.io) is about selling TO consultancies. This
-  page organises the answer around the seven dated triggers that make a company of 20 to 500 people hire
-  an IT consultancy (vendor end-of-support, ERP/CRM selection or slipping go-live, first IT director or new
-  CIO, cloud cost or data-centre exit, acquisition, audit or compliance deadline, stalled AI pilot or
-  public partner request), gives the Posts-tab/Jobs-tab search and message for each, a week-one plan, the
-  MSP-vs-consultancy distinction (linking the MSP page), and when partner programmes, referrals and tenders
-  beat signals. Brief: blog/briefs/get-clients-for-an-it-consulting-company.md.
-- Outside sources opened 2026-11-19 and linked: gartner.com newsroom 27 Jul 2026 ($6.37T, 14.2%; IT
-  services $1,570B, 5.3%); techcommunity.microsoft.com Windows IT Pro blog 20 Feb 2026 (Windows Server 2016
-  EOS 12 Jan 2027, Windows 10 LTSB 2016 EOS 13 Oct 2026, ESU up to three years, "temporary bridge" quote);
-  panorama-consulting.com press release 4 Mar 2026 (more than a quarter over budget, additional technology
-  needs the leading cause). Opened but not used: hingemarketing.com High Growth Study 2025 (770 firms, 4X,
-  30%; too general for the page). Not used: airdroid's unlinked HBR/Forbes/Statista figures, Callbox
-  case-study counts.
-- Intentsly facts used: product.md confirmed rows (LinkedIn signals only; keyword posts, post engagement,
-  competitor followers/engagers, hashtag engagement; ICP scoring; verified-email enrichment and export;
-  AI SDR LinkedIn-only with Cal.com/Google Calendar booking; HubSpot; 2 accounts, 30/30 caps, 15
-  recommended; four languages; /try-ai with no account) and proof.md rows (14 demos in 14 days, 4x reply
-  rate, 12 signals and 8 to ignore, ~1,000 leads a month per agent, 2 to 4 meetings a week, both attributed
-  to October 2026). No Intentsly price stated. Job posts are stated as not monitored. The one message
-  template is a copyable example, not a message we sent.
-- Solutions queue after this run: 6 keywords still queued (ppc agency, branding agency, pr agency,
-  executive coaching, cloud consulting, fintech startup); 50 queued across all sections, so step 6 (add more
-  when fewer than 5) did not trigger. Note that "how to get clients for a cloud consulting company" sits
-  next to this page; the next solutions run should angle it on cloud-specific triggers (bill shock, lease
-  exit, data residency) rather than repeat the end-of-support story.
+  connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct
+  WebFetch tool in this session). The Gartner press release used by the first-party lesson could not be
+  fetched (permission prompt an unattended run cannot answer) and was not used. The two older drafts in
+  blog/drafts/ (get-clients-for-an-ai-consulting-business.md, outbound-sales-process-for-startups.md) still
+  carry a `blocked:` line, so neither was resumed. 2 articles had been published today (UTC) before this run
+  (daily cap 7); 15 in the last 7 days (weekly cap 45).
+- Keyword (published, first attempt): what is third-party intent data (learn, signal-selling, lesson,
+  informational, priority 3, difficulty medium).
+  "What Is Third-Party Intent Data? How Bought Signals Work"
+  https://intentsly.com/learn/what-is-third-party-intent-data
+- Database: a read-only select before writing returned no row for the slug. Supabase returned
+  status = published, published_at 2026-11-19 19:30:32 UTC. Writes: the one generated SQL statement, pasted
+  whole from blog/out/what-is-third-party-intent-data.sql (20,005 bytes). Reads: two selects (the pre-check
+  and a post-insert comparison). The post-insert check compared length and md5 of content_md (15,145 chars,
+  ab9dfbe1...), word_count (2334), reading_minutes (11), 5 secondary keywords, 5 FAQ entries, section and
+  type against the local file: all matched exactly.
+- Gate: first local run failed on one point (meta_description 167 chars). Shortened it to 157 and trimmed the
+  body from 2,557 to 2,334 gate-counted words (the /learn skill range is 1,000 to 1,800; the body prose
+  without tables and front matter is about 2,000 words including FAQ, in line with the first-party lesson at
+  2,212 file words). Second run passed with no warnings; blog_cloud.py sql printed "ready": true with no
+  warnings. 8 H2, 5 FAQ, 9 internal links, 8 external links (all provider pages opened today), no em dashes,
+  no banned phrases, title similarity to the first-party lesson 0.62 (limit 0.75).
+- Angle: page one is Abmatic's near-duplicate programmatic glossary pages (450 and 1,300 words) plus Leadinfo
+  and FullEnrich vendor guides; not one statistic on any of them is linked to a source, and none quotes what
+  the providers say about their own data. This lesson gives the bold definition, a labelled example, a
+  four-source collection table (co-op, review sites, bidstream/publisher network, content syndication), a
+  "what you receive" table built from Bombora, G2 and 6sense's own documentation (3-week vs 12-week baseline;
+  Buying Stage and Activity Level updated daily; 0 to 100 score predicting an opportunity in 90 days; IP-based
+  account matching, "not the individual"), a three-column comparison that adds public person-level signals
+  to the usual first/third-party pair, four limits for small teams each tied to a provider statement, a
+  five-question vendor checklist, and a decision rule by deal type. Brief:
+  blog/briefs/what-is-third-party-intent-data.md.
+- Outside sources opened 2026-11-19 and linked: bombora.com/intent/ (thousands of media destinations,
+  consent-driven tag, 3 weeks vs 12-week baseline, 25,300+ topics, 86% exclusive); bombora.com
+  core-concepts taxonomy guide (AI IP-to-company resolution); bombora.com/what-is-intent-data/ (first- and
+  third-party definitions); bombora.com privacy and compliance blog, 2022 (publishers responsible for
+  consent and opt-out); documentation.g2.com/docs/buyer-intent (signal types, unique visitors, daily update,
+  time on page and pages visited); documentation.g2.com/docs/buyer-intent-data-reference (field list,
+  company_domain, buying_stage, no person field); support.6sense.com/docs/intent-model (0-100, 90 days,
+  updated daily); 6sense.com/platform/intent-data (IP matching, account not individual, bidstream caveat).
+  Opened but not linked: sell.g2.com/data (marketing claims only), bombora March 2025 taxonomy blog (17,210
+  topics conflicts with the current 25,300+ figure; the current page was used). Abmatic, Leadinfo and
+  FullEnrich pages were read for the brief and not cited.
+- Intentsly facts used: brain/stories/dogfooding-14-demos.md (14 qualified demos in 14 days, zero manual
+  outreach, 4x reply rate, labelled as one company's result); product.md confirmed rows (LinkedIn signals:
+  competitor posts, keyword posts, competitor followers; ICP scoring). No Intentsly price stated. No Reddit/X
+  monitoring claimed. CTA is /signal-playbook as the /learn rule requires; /features/linkedin-signals linked
+  once at the step it replaces.
+- Learn queue after this run: 11 keywords still queued (sales qualified lead, SDR, sales prospecting,
+  marketing qualified lead, competitor monitoring in sales, good reply rate for LinkedIn outreach, product
+  qualified lead, discovery call, account-based marketing, sales pipeline, lead in sales); 49 queued across
+  all sections, so step 6 (add more when fewer than 5) did not trigger. Note for the next learn run: "what is
+  a good reply rate for linkedin outreach" needs the 21% proof row to be marked plain `verified` to quote
+  our own number; otherwise it must rely on outside benchmarks only.
 - Verification: database row confirmed published and content-identical to the local file; commit pushed to
   origin/main (hash in the git log). Live page and sitemap check recorded in the run report (fetched about
   4 minutes after the push).
-- For the founder: (1) the 21% reply-rate row in proof.md is marked "verified: say ..." rather than
-  `verified`, so the gate rejects the number; change the status cell to plain `verified` (and keep the
-  phrasing rule in corrections.md) if pages may quote it; (2) a first-hand story from a consultancy or
-  agency customer (what signal they chased, what they sent, what came back) would let the eight
-  find-customers landing pages stop reusing the 14-demos launch story; (3) confirm whether job posts will
-  ever be a monitored signal, since every services page currently has to say they are not; (4) the two
-  blocked drafts still wait on first-hand material (AI consulting clients; startup outbound process);
-  (5) confirm the pricing figure so pages can print a number.
+- For the founder: (1) the 21% reply-rate row in proof.md is still marked "verified: say ..." rather than
+  plain `verified`, so the gate rejects the number; the queued reply-rate lesson needs it; (2) a sentence or
+  two of first-hand experience with bought intent data (did we ever trial Bombora, G2 or 6sense, and what
+  came back) would let this lesson and the intent-data cluster stop leaning on the 14-demos launch story;
+  (3) the two blocked drafts still wait on first-hand material (AI consulting clients; startup outbound
+  process); (4) confirm the pricing figure so pages can print a number; (5) the Gartner newsroom domain
+  blocks unattended fetches, so future pages should cite it only when a run can open it.

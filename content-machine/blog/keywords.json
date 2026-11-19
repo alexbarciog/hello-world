@@ -1917,8 +1917,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-third-party-intent-data",
    "monthly_volume": null
   },
   {
