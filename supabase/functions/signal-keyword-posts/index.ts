@@ -1763,9 +1763,24 @@ Deno.serve(async (req) => {
     const task_key = _task_key;
     if (run_id && task_key) {
       try {
-        await supabase.from('signal_agent_tasks')
-          .update({ status: 'done', leads_found: inserted, completed_at: new Date().toISOString(), diagnostics: pipelineStats } as any)
+        // Post/headline samples are cut with substring(), which can split an
+        // emoji and leave a lone surrogate. Postgres rejects that as invalid
+        // JSON, the write 400s, the task stays "running" and the reaper later
+        // fails it as "lease expired". Make every string well-formed first,
+        // and if the write still fails, mark the task done without diagnostics.
+        const safeDiagnostics = JSON.parse(JSON.stringify(pipelineStats, (_k, v) =>
+          typeof v === 'string' ? v.toWellFormed() : v));
+        const doneFields = { status: 'done', leads_found: inserted, completed_at: new Date().toISOString() };
+        const { error: doneErr } = await supabase.from('signal_agent_tasks')
+          .update({ ...doneFields, diagnostics: safeDiagnostics } as any)
           .eq('run_id', run_id).eq('task_key', task_key);
+        if (doneErr) {
+          console.error(`[SELF-REPORT] marking ${task_key} done failed (${doneErr.code}: ${doneErr.message}); retrying without diagnostics`);
+          const { error: retryErr } = await supabase.from('signal_agent_tasks')
+            .update(doneFields as any)
+            .eq('run_id', run_id).eq('task_key', task_key);
+          if (retryErr) console.error(`[SELF-REPORT] retry failed too: ${retryErr.code}: ${retryErr.message}`);
+        }
 
         // Check if all tasks for this run are now complete
         const { data: pendingTasks } = await supabase.from('signal_agent_tasks')
