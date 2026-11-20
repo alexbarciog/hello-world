@@ -1,71 +1,45 @@
-# Last run: 2026-11-20 (guides task; fired about 08:20 UTC, 10:20 Bucharest)
+# Last run: 2026-11-20 (solutions task; fired about 13:30 UTC, 15:30 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is still not exposed as a
-  tool in this session (as on previous runs), `git pull origin main` reported up to date at fc4b882. Supabase: the
-  lowercase "supabase" connector again failed with a proxy tunnel error at session start; the "Supabase"
-  connector connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct
-  WebFetch tool). No unblocked draft was waiting in blog/drafts/, so the queue's next keyword was taken. 0
-  articles had been published today (UTC) before this run (daily cap 7); 16 in the last 7 days (weekly cap 45).
-- Keyword (published, first attempt): how to find leads from linkedin events (guides, linkedin-prospecting,
-  guide, commercial, priority 2, difficulty medium).
-  "How to Find Leads From LinkedIn Events in 7 Steps"
-  https://intentsly.com/guides/find-leads-from-linkedin-events
-- Database: a read-only select before writing returned no row for the slug. The insert returned
-  status = published, published_at 2026-11-20 08:38:23 UTC. Writes: one statement, the generated
-  blog/out/find-leads-from-linkedin-events.sql (26,644 bytes). Honesty note: when pasting the file into the
-  connector one line of the ON CONFLICT clause (`article_type = excluded.article_type,`) was dropped by
-  mistake. The slug did not exist, so the INSERT branch ran and the UPDATE branch was never evaluated; the
-  stored row is therefore identical to what the unchanged file would have produced. Post-insert check against
-  the local file: content_md length 21,482 and md5 c6f952b1..., word_count 3369, reading_minutes 15,
-  article_type guide, section guides, 6 FAQ entries, 5 secondary keywords: all matched exactly. Reads: two
-  selects (the pre-check and the post-insert comparison).
-- Gate: first local run failed on one point (opening paragraph 96 words, max 90). Shortened it to 83 words and
-  trimmed the body; second run passed with no warnings; blog_cloud.py sql printed "ready": true, no warnings.
-  12 H2, 6 FAQ, 8 internal links, 8 external links (all opened today), no em dashes, no banned phrases. Gate
-  word count 3,369 (prose without tables and code blocks about 3,200), in line with the other published guides
-  (3,003 to 3,649).
-- Angle: page one is vendor how-tos (Linkyfy, GTM Bud, Leadin, Linkwheelie) that stop at "click Attend, filter,
-  send a connection note" and end on their own scraper or automation. This guide treats the attendee list as a
-  filter problem: a buyer-event vs peer-event test before joining, the exact list filters as a table, the event
-  feed (commenters and reactors) as a second higher-intent list, a four-question scoring sheet, the
-  message-request-before / connection-request-after split with every limit sourced, three message templates, a
-  labelled hypothetical example (Harbor Analytics) with counts, the three failure modes and the outbound step.
-  Brief: blog/briefs/find-leads-from-linkedin-events.md.
-- Outside sources opened 2026-11-20 and linked: support.phantombuster.com LinkedIn Event Guests Export (must be
-  an attendee; export capped at the first 1,000 attendees, "the maximum LinkedIn displays"); evaboot.com
-  export-linkedin-event-attendees (must join to see the full list; attendees can hide from non-attending 1st
-  degree; cannot bulk-message attendees); coldiq.com extract-people-linkedin-event-phantombuster (only
-  displayed to people who joined; pick 100+ events); getcontrast.io mini-guide (organiser-side export from
-  analytics); expandi.io state-of-li-outreach-h1-2026 (70,130+ campaigns; event campaigns 14.21% reply vs
-  10.3% average; LinkedIn caps requests at 80 to 100 a week; cannot message the entire event audience);
-  expandi.io linkedin-outreach-benchmarks-2026 (13.2M requests May 2025 to Apr 2026; 28.5% acceptance; 3.0%
-  note reply); gtmbud.com (ToS warning; message requests; 48-hour and two-week windows); linkyfy.ai (ToS
-  warning). Not opened: all six LinkedIn Help pages on events (robots-disallowed for the fetch tool), so the
-  attendee-list rule is attributed to the vendor pages and the guide says so; commentrocket.com
-  (robots-disallowed); overloop.com/blog/linkedin-limits (permission prompt an unattended run cannot answer);
-  expandi H2 2026 report opened but had no event segment and was not cited.
-- Intentsly facts used: none beyond product.md confirmed rows (LinkedIn signals: post engagement on posts of
-  industry leaders; ICP scoring) at the Step 4 sentence and the /try-ai closing. No Intentsly numbers, no
-  price, no Reddit/X claim. first_hand points at brain/stories/dogfooding-14-demos.md but the story is not
-  quoted in this page. CTA /try-ai; /features/linkedin-signals linked once at the step it replaces.
-- Guides queue after this run: 5 keywords still queued (linkedin groups, connection request that gets
-  accepted, companies using a competitor's product, linkedin follow-up sequence, research a prospect before
-  outreach); 48 queued across all sections. Step 6 (add more when fewer than 5 are queued) did not trigger;
-  it will trigger on the next guides run, which should follow skills/blog-keywords.md and add 8 to 12
-  guides keywords.
-- Verification: database row confirmed published and content-identical to the local file; commit pushed to
-  origin/main as cf9e7a1 at 08:39 UTC (message `guides: publish find-leads-from-linkedin-events`). The
-  live-page and sitemap fetch 4 minutes after the push could NOT be completed: as on the previous run, the
-  web-fetch agent's requests for https://intentsly.com/sitemap.xml and
-  https://intentsly.com/guides/find-leads-from-linkedin-events were blocked by a permission prompt that an
-  unattended run cannot answer, and the repository has no GitHub Actions workflow runs to read a deploy status
-  from. The page is confirmed published in the database but not confirmed live or in the sitemap by this run;
-  the next run, or the founder, should open both URLs. If intentsly.com could be allow-listed for the fetch
-  tool in this task's settings, future runs could close this check themselves.
-- For the founder: (1) a first-hand event story would make this guide much stronger: has Alex ever joined a
-  LinkedIn event to prospect, how many names survived the filters, what replied; (2) confirm whether the
-  attendee list on LinkedIn really stops at about 1,000 names and whether the Message button appears for
-  non-connected attendees on the current UI, since LinkedIn's help pages cannot be opened by this pipeline;
-  (3) the 21% reply-rate row in proof.md is still marked "verified: say ..." rather than plain `verified`, so
-  pages cannot quote it; (4) the two blocked drafts (AI consulting clients; startup outbound process) still
-  wait on first-hand material; (5) confirm the pricing figure so pages can print a number.
+- Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is not exposed as a tool in
+  this session (as on previous runs), `git pull origin main` reported up to date at d92cde2. Supabase: the
+  lowercase "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector
+  connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch
+  tool). The two drafts in blog/drafts/ both carry a `blocked:` line (gate kw_in bug on "business" and "process";
+  one is a guides draft anyway), so the queue's next solutions keyword was taken. 1 article had been published
+  today (Bucharest) before this run (daily cap 7); well under the weekly cap (45).
+- Keyword (published, first attempt): how to get clients for a ppc agency (solutions, find-customers, landing,
+  commercial, priority 3, difficulty medium).
+  "How to Get Clients for a PPC Agency When Ad Costs Climb"
+  https://intentsly.com/solutions/get-clients-for-a-ppc-agency
+- Database: one statement, the generated blog/out/get-clients-for-a-ppc-agency.sql (22,670 bytes), run unchanged
+  through the Supabase connector. Returned slug get-clients-for-a-ppc-agency, status = published, published_at
+  2026-11-20 13:51:33 UTC. No other reads or writes.
+- Gate: first local run failed on three points (meta_description 169 chars, opening paragraph 100 words, title
+  too close to the recruitment agency page). Fixed: new title, meta_description 157 chars, opening 89 words.
+  Fourth run passed with no warnings; blog_cloud.py sql printed "ready": true. 7 H2, 6 FAQ, 15 internal links,
+  3 external links (all opened today), no em dashes, no banned phrases. Gate word count 2,799, in line with the
+  other solutions pages (2,357 to 2,966).
+- Angle: page one is tactic listicles (WordStream 2019 and 2023, CHEQ, DashClicks, Clicks Geek) plus a ClickUp
+  product page and a DesignRush directory. None says when a company buys PPC help or how to see it in public,
+  none gives LinkedIn searches, a message template or a plan, and no statistic on them has a primary source.
+  This page gives seven LinkedIn signals with Posts-tab and Jobs searches, a week-one plan with sending caps, a
+  message template, and three primary sources opened today: WordStream's 2026 Google Ads benchmarks (CPC $5.42,
+  CPL $66.69, conversion rate 8.18%, 13,474 US campaigns), Google's own Partner requirements (70% optimization
+  score, $10,000 90-day spend, 50% certified) and SparkToro's 2025 agency survey (59% tried outbound, 9% very
+  effective, 33% not effective, 70% no full-time sales, 15% partner referrals, 73% LinkedIn).
+- Intentsly facts used: 14 demos in 14 days, 4x reply rate, ~1,000 leads a month per agent, 2 to 4 meetings a
+  week (attributed "across Intentsly customers in October 2026"), the Mike Ruiz quote, the 2-account and 30/30/15
+  caps, four languages, HubSpot, Cal.com and Google Calendar, export, verified emails. No price. Reddit named as
+  a manual channel only; the job-ad signal stated as not monitored.
+- Queue: 5 solutions keywords still queued (branding agency, PR agency, executive coaching business, cloud
+  consulting company, fintech startup). Not below 5, so no keywords were added this run.
+- Verification of the live URL and sitemap is recorded in the run report (checked about 4 minutes after push).
+
+## For the founder
+- The two blocked drafts (get-clients-for-an-ai-consulting-business, outbound-sales-process-for-startups) are
+  complete and only wait on the gate's kw_in fix (strip one trailing "s", not all). That is a scripts/ change,
+  which the content tasks are not allowed to make.
+- A PPC or agency customer story (even one line: niche, signal that found them, what the first message said)
+  would let the solutions pages stop reusing the 14-demos story for every business type.
+- Confirm whether "1,000 leads a month per agent" and "21% reply rate" are still current for November; the
+  pages attribute them to October 2026.
