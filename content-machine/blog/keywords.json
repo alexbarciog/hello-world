@@ -1941,8 +1941,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "good-reply-rate-for-linkedin-outreach",
    "monthly_volume": null
   },
   {
