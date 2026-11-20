@@ -1257,8 +1257,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-leads-from-linkedin-events",
    "monthly_volume": null
   },
   {

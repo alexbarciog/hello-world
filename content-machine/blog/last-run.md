@@ -1,74 +1,66 @@
-# Last run: 2026-11-19 (learn task; fired about 19:15 UTC, 21:15 Bucharest)
+# Last run: 2026-11-20 (guides task; fired about 08:20 UTC, 10:20 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned, in scope and on `main` (`add_repo` still not exposed as a
-  tool, as on previous runs); `git pull origin main` brought main to 7743e1d. Supabase: the lowercase
-  "supabase" connector again failed with a proxy tunnel error at session start; the "Supabase" connector
-  connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct
-  WebFetch tool in this session). The Gartner press release used by the first-party lesson could not be
-  fetched (permission prompt an unattended run cannot answer) and was not used. The two older drafts in
-  blog/drafts/ (get-clients-for-an-ai-consulting-business.md, outbound-sales-process-for-startups.md) still
-  carry a `blocked:` line, so neither was resumed. 2 articles had been published today (UTC) before this run
-  (daily cap 7); 15 in the last 7 days (weekly cap 45).
-- Keyword (published, first attempt): what is third-party intent data (learn, signal-selling, lesson,
-  informational, priority 3, difficulty medium).
-  "What Is Third-Party Intent Data? How Bought Signals Work"
-  https://intentsly.com/learn/what-is-third-party-intent-data
-- Database: a read-only select before writing returned no row for the slug. Supabase returned
-  status = published, published_at 2026-11-19 19:30:32 UTC. Writes: the one generated SQL statement, pasted
-  whole from blog/out/what-is-third-party-intent-data.sql (20,005 bytes). Reads: two selects (the pre-check
-  and a post-insert comparison). The post-insert check compared length and md5 of content_md (15,145 chars,
-  ab9dfbe1...), word_count (2334), reading_minutes (11), 5 secondary keywords, 5 FAQ entries, section and
-  type against the local file: all matched exactly.
-- Gate: first local run failed on one point (meta_description 167 chars). Shortened it to 157 and trimmed the
-  body from 2,557 to 2,334 gate-counted words (the /learn skill range is 1,000 to 1,800; the body prose
-  without tables and front matter is about 2,000 words including FAQ, in line with the first-party lesson at
-  2,212 file words). Second run passed with no warnings; blog_cloud.py sql printed "ready": true with no
-  warnings. 8 H2, 5 FAQ, 9 internal links, 8 external links (all provider pages opened today), no em dashes,
-  no banned phrases, title similarity to the first-party lesson 0.62 (limit 0.75).
-- Angle: page one is Abmatic's near-duplicate programmatic glossary pages (450 and 1,300 words) plus Leadinfo
-  and FullEnrich vendor guides; not one statistic on any of them is linked to a source, and none quotes what
-  the providers say about their own data. This lesson gives the bold definition, a labelled example, a
-  four-source collection table (co-op, review sites, bidstream/publisher network, content syndication), a
-  "what you receive" table built from Bombora, G2 and 6sense's own documentation (3-week vs 12-week baseline;
-  Buying Stage and Activity Level updated daily; 0 to 100 score predicting an opportunity in 90 days; IP-based
-  account matching, "not the individual"), a three-column comparison that adds public person-level signals
-  to the usual first/third-party pair, four limits for small teams each tied to a provider statement, a
-  five-question vendor checklist, and a decision rule by deal type. Brief:
-  blog/briefs/what-is-third-party-intent-data.md.
-- Outside sources opened 2026-11-19 and linked: bombora.com/intent/ (thousands of media destinations,
-  consent-driven tag, 3 weeks vs 12-week baseline, 25,300+ topics, 86% exclusive); bombora.com
-  core-concepts taxonomy guide (AI IP-to-company resolution); bombora.com/what-is-intent-data/ (first- and
-  third-party definitions); bombora.com privacy and compliance blog, 2022 (publishers responsible for
-  consent and opt-out); documentation.g2.com/docs/buyer-intent (signal types, unique visitors, daily update,
-  time on page and pages visited); documentation.g2.com/docs/buyer-intent-data-reference (field list,
-  company_domain, buying_stage, no person field); support.6sense.com/docs/intent-model (0-100, 90 days,
-  updated daily); 6sense.com/platform/intent-data (IP matching, account not individual, bidstream caveat).
-  Opened but not linked: sell.g2.com/data (marketing claims only), bombora March 2025 taxonomy blog (17,210
-  topics conflicts with the current 25,300+ figure; the current page was used). Abmatic, Leadinfo and
-  FullEnrich pages were read for the brief and not cited.
-- Intentsly facts used: brain/stories/dogfooding-14-demos.md (14 qualified demos in 14 days, zero manual
-  outreach, 4x reply rate, labelled as one company's result); product.md confirmed rows (LinkedIn signals:
-  competitor posts, keyword posts, competitor followers; ICP scoring). No Intentsly price stated. No Reddit/X
-  monitoring claimed. CTA is /signal-playbook as the /learn rule requires; /features/linkedin-signals linked
-  once at the step it replaces.
-- Learn queue after this run: 11 keywords still queued (sales qualified lead, SDR, sales prospecting,
-  marketing qualified lead, competitor monitoring in sales, good reply rate for LinkedIn outreach, product
-  qualified lead, discovery call, account-based marketing, sales pipeline, lead in sales); 49 queued across
-  all sections, so step 6 (add more when fewer than 5) did not trigger. Note for the next learn run: "what is
-  a good reply rate for linkedin outreach" needs the 21% proof row to be marked plain `verified` to quote
-  our own number; otherwise it must rely on outside benchmarks only.
-- Verification: database row confirmed published and content-identical to the local file; commit 50cdd50
-  pushed to origin/main at 19:32 UTC (the first push was rejected because the local clone sat on a detached
-  HEAD with a stale `main` ref; pushing HEAD:main succeeded with no rebase needed). The live-page and sitemap
-  fetch about 4 minutes after the push could NOT be completed: this session had no direct WebFetch tool and
-  the web-fetch agent's request for intentsly.com was blocked by a permission prompt that an unattended run
-  cannot answer. The page is therefore confirmed published in the database but not confirmed live or in the
-  sitemap by this run; the next run, or the founder, should open
-  https://intentsly.com/learn/what-is-third-party-intent-data and https://intentsly.com/sitemap.xml.
-- For the founder: (1) the 21% reply-rate row in proof.md is still marked "verified: say ..." rather than
-  plain `verified`, so the gate rejects the number; the queued reply-rate lesson needs it; (2) a sentence or
-  two of first-hand experience with bought intent data (did we ever trial Bombora, G2 or 6sense, and what
-  came back) would let this lesson and the intent-data cluster stop leaning on the 14-demos launch story;
-  (3) the two blocked drafts still wait on first-hand material (AI consulting clients; startup outbound
-  process); (4) confirm the pricing figure so pages can print a number; (5) the Gartner newsroom domain
-  blocks unattended fetches, so future pages should cite it only when a run can open it.
+- Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is still not exposed as a
+  tool in this session (as on previous runs), `git pull origin main` reported up to date at fc4b882. Supabase: the
+  lowercase "supabase" connector again failed with a proxy tunnel error at session start; the "Supabase"
+  connector connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct
+  WebFetch tool). No unblocked draft was waiting in blog/drafts/, so the queue's next keyword was taken. 0
+  articles had been published today (UTC) before this run (daily cap 7); 16 in the last 7 days (weekly cap 45).
+- Keyword (published, first attempt): how to find leads from linkedin events (guides, linkedin-prospecting,
+  guide, commercial, priority 2, difficulty medium).
+  "How to Find Leads From LinkedIn Events in 7 Steps"
+  https://intentsly.com/guides/find-leads-from-linkedin-events
+- Database: a read-only select before writing returned no row for the slug. The insert returned
+  status = published, published_at 2026-11-20 08:38:23 UTC. Writes: one statement, the generated
+  blog/out/find-leads-from-linkedin-events.sql (26,644 bytes). Honesty note: when pasting the file into the
+  connector one line of the ON CONFLICT clause (`article_type = excluded.article_type,`) was dropped by
+  mistake. The slug did not exist, so the INSERT branch ran and the UPDATE branch was never evaluated; the
+  stored row is therefore identical to what the unchanged file would have produced. Post-insert check against
+  the local file: content_md length 21,482 and md5 c6f952b1..., word_count 3369, reading_minutes 15,
+  article_type guide, section guides, 6 FAQ entries, 5 secondary keywords: all matched exactly. Reads: two
+  selects (the pre-check and the post-insert comparison).
+- Gate: first local run failed on one point (opening paragraph 96 words, max 90). Shortened it to 83 words and
+  trimmed the body; second run passed with no warnings; blog_cloud.py sql printed "ready": true, no warnings.
+  12 H2, 6 FAQ, 8 internal links, 8 external links (all opened today), no em dashes, no banned phrases. Gate
+  word count 3,369 (prose without tables and code blocks about 3,200), in line with the other published guides
+  (3,003 to 3,649).
+- Angle: page one is vendor how-tos (Linkyfy, GTM Bud, Leadin, Linkwheelie) that stop at "click Attend, filter,
+  send a connection note" and end on their own scraper or automation. This guide treats the attendee list as a
+  filter problem: a buyer-event vs peer-event test before joining, the exact list filters as a table, the event
+  feed (commenters and reactors) as a second higher-intent list, a four-question scoring sheet, the
+  message-request-before / connection-request-after split with every limit sourced, three message templates, a
+  labelled hypothetical example (Harbor Analytics) with counts, the three failure modes and the outbound step.
+  Brief: blog/briefs/find-leads-from-linkedin-events.md.
+- Outside sources opened 2026-11-20 and linked: support.phantombuster.com LinkedIn Event Guests Export (must be
+  an attendee; export capped at the first 1,000 attendees, "the maximum LinkedIn displays"); evaboot.com
+  export-linkedin-event-attendees (must join to see the full list; attendees can hide from non-attending 1st
+  degree; cannot bulk-message attendees); coldiq.com extract-people-linkedin-event-phantombuster (only
+  displayed to people who joined; pick 100+ events); getcontrast.io mini-guide (organiser-side export from
+  analytics); expandi.io state-of-li-outreach-h1-2026 (70,130+ campaigns; event campaigns 14.21% reply vs
+  10.3% average; LinkedIn caps requests at 80 to 100 a week; cannot message the entire event audience);
+  expandi.io linkedin-outreach-benchmarks-2026 (13.2M requests May 2025 to Apr 2026; 28.5% acceptance; 3.0%
+  note reply); gtmbud.com (ToS warning; message requests; 48-hour and two-week windows); linkyfy.ai (ToS
+  warning). Not opened: all six LinkedIn Help pages on events (robots-disallowed for the fetch tool), so the
+  attendee-list rule is attributed to the vendor pages and the guide says so; commentrocket.com
+  (robots-disallowed); overloop.com/blog/linkedin-limits (permission prompt an unattended run cannot answer);
+  expandi H2 2026 report opened but had no event segment and was not cited.
+- Intentsly facts used: none beyond product.md confirmed rows (LinkedIn signals: post engagement on posts of
+  industry leaders; ICP scoring) at the Step 4 sentence and the /try-ai closing. No Intentsly numbers, no
+  price, no Reddit/X claim. first_hand points at brain/stories/dogfooding-14-demos.md but the story is not
+  quoted in this page. CTA /try-ai; /features/linkedin-signals linked once at the step it replaces.
+- Guides queue after this run: 5 keywords still queued (linkedin groups, connection request that gets
+  accepted, companies using a competitor's product, linkedin follow-up sequence, research a prospect before
+  outreach); 48 queued across all sections. Step 6 (add more when fewer than 5 are queued) did not trigger;
+  it will trigger on the next guides run, which should follow skills/blog-keywords.md and add 8 to 12
+  guides keywords.
+- Verification: database row confirmed published and content-identical to the local file; commit pushed to
+  origin/main (hash in git log, message `guides: publish find-leads-from-linkedin-events`). The live-page and
+  sitemap check about 4 minutes after the push is recorded in the run report (intentsly.com fetches were
+  blocked by a permission prompt on the previous run, so it may again be unconfirmed by this run).
+- For the founder: (1) a first-hand event story would make this guide much stronger: has Alex ever joined a
+  LinkedIn event to prospect, how many names survived the filters, what replied; (2) confirm whether the
+  attendee list on LinkedIn really stops at about 1,000 names and whether the Message button appears for
+  non-connected attendees on the current UI, since LinkedIn's help pages cannot be opened by this pipeline;
+  (3) the 21% reply-rate row in proof.md is still marked "verified: say ..." rather than plain `verified`, so
+  pages cannot quote it; (4) the two blocked drafts (AI consulting clients; startup outbound process) still
+  wait on first-hand material; (5) confirm the pricing figure so pages can print a number.
