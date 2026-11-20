@@ -33,7 +33,13 @@
   a manual channel only; the job-ad signal stated as not monitored.
 - Queue: 5 solutions keywords still queued (branding agency, PR agency, executive coaching business, cloud
   consulting company, fintech startup). Not below 5, so no keywords were added this run.
-- Verification of the live URL and sitemap is recorded in the run report (checked about 4 minutes after push).
+- Push: origin/main moved d92cde2 -> d0f86ba at 13:53 UTC (message `solutions: publish get-clients-for-a-ppc-agency`).
+  The live-page and sitemap fetch 4 minutes after the push (13:57 UTC) could NOT be completed: as on the two
+  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/solutions/get-clients-for-a-ppc-agency were stopped by a permission prompt that an
+  unattended run cannot answer. The page is confirmed published in the database (status = published) but not
+  confirmed live or in the sitemap by this run; the next run, or the founder, should open both URLs. Allow-listing
+  intentsly.com for the fetch tool in this task's settings would let future runs close this check themselves.
 
 ## For the founder
 - The two blocked drafts (get-clients-for-an-ai-consulting-business, outbound-sales-process-for-startups) are
