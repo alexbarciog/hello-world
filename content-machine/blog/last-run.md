@@ -54,9 +54,14 @@
   it will trigger on the next guides run, which should follow skills/blog-keywords.md and add 8 to 12
   guides keywords.
 - Verification: database row confirmed published and content-identical to the local file; commit pushed to
-  origin/main (hash in git log, message `guides: publish find-leads-from-linkedin-events`). The live-page and
-  sitemap check about 4 minutes after the push is recorded in the run report (intentsly.com fetches were
-  blocked by a permission prompt on the previous run, so it may again be unconfirmed by this run).
+  origin/main as cf9e7a1 at 08:39 UTC (message `guides: publish find-leads-from-linkedin-events`). The
+  live-page and sitemap fetch 4 minutes after the push could NOT be completed: as on the previous run, the
+  web-fetch agent's requests for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/guides/find-leads-from-linkedin-events were blocked by a permission prompt that an
+  unattended run cannot answer, and the repository has no GitHub Actions workflow runs to read a deploy status
+  from. The page is confirmed published in the database but not confirmed live or in the sitemap by this run;
+  the next run, or the founder, should open both URLs. If intentsly.com could be allow-listed for the fetch
+  tool in this task's settings, future runs could close this check themselves.
 - For the founder: (1) a first-hand event story would make this guide much stronger: has Alex ever joined a
   LinkedIn event to prospect, how many names survived the filters, what replied; (2) confirm whether the
   attendee list on LinkedIn really stops at about 1,000 names and whether the Message button appears for
