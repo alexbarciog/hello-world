@@ -40,9 +40,15 @@
   /signal-playbook as page-write.md requires for /learn.
 - Queue: 10 learn keywords still queued (next: what is competitor monitoring in sales). Not below 5, so no
   keywords were added this run.
-- Push: see the commit `learn: publish good-reply-rate-for-linkedin-outreach`. Live-page and sitemap check: see
-  the run report (on the three previous runs the web-fetch agent's requests to intentsly.com were stopped by a
-  permission prompt an unattended run cannot answer).
+- Push: origin/main moved 8cd5d0a -> 1aabd9d at 19:29 UTC (message `learn: publish good-reply-rate-for-linkedin-outreach`).
+  The first push attempt was rejected because the clone was in detached-HEAD state with a stale local `main`
+  (fdc81c9); local `main` was pointed at the new commit and the push then fast-forwarded cleanly.
+  The live-page and sitemap fetch 4 minutes after the push (19:33 UTC) could NOT be completed: as on the three
+  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/learn/good-reply-rate-for-linkedin-outreach were stopped by a permission prompt
+  (PROVENANCE_REQUIRED) that an unattended run cannot answer. The page is confirmed published in the database
+  (status = published) and the deploy commit is on main, but "live" and "in the sitemap" are unverified. Alex:
+  allowing intentsly.com fetches for this task (or adding a direct WebFetch tool) would close this gap.
 - For Alex:
   1. proof.md status cells: the gate's `verified_text()` only accepts rows whose status cell is exactly
      `verified`. The rows for 21% reply rate, ~1,000 leads a month per agent and 2 to 4 meetings a week read
