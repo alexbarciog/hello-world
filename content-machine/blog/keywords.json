@@ -1857,8 +1857,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-branding-agency",
    "monthly_volume": null
   },
   {
@@ -2004,6 +2004,110 @@
    "status": "queued",
    "slug": null,
    "monthly_volume": null
+  },
+  {
+   "keyword": "how to get clients for a social media marketing agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "vendor blogs: AgencyAnalytics, Sked Social, Agorapulse, ContentStudio, HeyOrca (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to get clients for a content marketing agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "vendor blogs: AgencyAnalytics, Constant Contact, ClickUp, Smashing Magazine (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to get clients for a bookkeeping business",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "vendor blogs: FreshBooks, Copilot, FitSmallBusiness, QuickBooks, Close (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to get clients for a sales training company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "SERP mixed with personal-training pages; ClickUp template page, eLearning Industry (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to find clients for a ux design agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "Medium posts (UX Planet), Upwork resources, Smashing Magazine, Contra (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to get clients for a devops consulting company",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "ClickUp template page, omkar.cloud, HubSpot generic consulting post, dev.to, Blind threads (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to find clients as a fractional coo",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "ClickUp template page, Lilach Bullock, substacks and podcasts, Umbrex, Toptal (checked 2026-11-21)"
+  },
+  {
+   "keyword": "how to get clients for an email marketing agency",
+   "section": "solutions",
+   "cluster": "find-customers",
+   "type": "landing",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "who_ranks": "ClickUp template page, Brevo, MailerLite, EmailOctopus, Constant Contact (checked 2026-11-21)"
   }
  ]
 }
