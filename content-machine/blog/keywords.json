@@ -1929,8 +1929,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-competitor-monitoring-in-sales",
    "monthly_volume": null
   },
   {

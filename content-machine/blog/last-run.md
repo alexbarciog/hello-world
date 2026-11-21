@@ -1,70 +1,60 @@
-# Last run: 2026-11-21 (solutions task; fired about 13:30 UTC, 15:30 Bucharest)
+# Last run: 2026-11-21 (learn task; fired about 19:20 UTC, 21:20 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is not exposed as a tool in
-  this session (as on previous runs), `git pull origin main` reported up to date at 97bc864. Supabase: the
+  this session (as on previous runs), `git pull origin main` reported up to date at 2f9f50b. Supabase: the
   lowercase "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector
   connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch
-  tool). Both drafts in blog/drafts/ carry a `blocked:` line, so the queue's next solutions keyword was taken.
-  0 articles had been published today (Bucharest) before this run (daily cap 7); well under the weekly cap (45).
-- Keyword (published, first attempt): how to get clients for a branding agency (solutions, find-customers,
-  landing, commercial, priority 3, difficulty medium).
-  "How to Get Branding Agency Clients: 7 Pre-Rebrand Signals"
-  https://intentsly.com/solutions/get-clients-for-a-branding-agency
-- Database: one statement, the generated blog/out/get-clients-for-a-branding-agency.sql (24,796 bytes), run
-  unchanged through the Supabase connector (copy diffed byte-for-byte and md5-matched against the file before
-  running). Returned slug get-clients-for-a-branding-agency, status = published, published_at 2026-11-21
-  14:00:47 UTC. No other reads or writes.
-- Gate: first local run failed on two points: meta_description 161 chars (max 160) and opening paragraph 112 words
-  (max 90). Both rewritten; third run passed with no warnings; blog_cloud.py sql printed "ready": true. 8 H2,
-  6 FAQ, 15 internal links, 4 external links (all opened today), no em dashes, no banned phrases. Gate word
-  count 3,103, in line with the other solutions pages (2,106 to 3,323).
-- Angle: page one is generic "get clients for your agency" advice (Desiree Design 2023, no stats; Chatterbubble
-  May 2026, vendor page with inconsistent and partly unsourced statistics; Agency Growth Sept 2026, the best of
-  the set with a channel trade-off table but no LinkedIn, signals or templates; WordStream, Moxo, Sembly, Slam).
-  Nobody names the public moments before a company buys brand work. This page gives seven (funding post, new
-  marketing leader, merger or rename, repositioning post, "outgrown our brand" confession, recommendation
-  request, brand hire) with the Posts-tab or Jobs-tab search and the message for each, says the rebrand
-  reveal post is too late to chase, and gives the week-one plan with the 15-a-day caps.
-- Outside sources opened today: Spencer Stuart CMO Tenure 2026 (346 S&P 500 CMOs, 4.1-year average tenure, 38%
-  external hires), Clutch rebrand survey press release Nov 2025 (98% notice, 87% form assumptions, 12% suspect
-  problems, 43% read it as staying modern), Promethean Research 2026 State of Digital Services teaser (7.5%
-  average growth, 86% specialists, focused agencies grew faster), Agency Growth channel estimates.
-- Intentsly facts used: 4x reply rate and 14 demos in 14 days (case study, labelled as our own launch, not an
-  agency), around 1,000 leads a month per agent and 2 to 4 meetings a week (attributed "across Intentsly
-  customers in October 2026", labelled typical not guaranteed), 30/30/15 caps and 2 accounts, four languages,
-  LinkedIn keyword/engagement/competitor/hashtag signals, ICP scoring, enrichment, export, AI SDR on LinkedIn
-  only with Cal.com/Google Calendar booking, HubSpot. No price. No Reddit/X claims (named as manual channels
-  only). CTA is /try-ai and /signal-playbook as page-write.md requires.
-- Queue: 4 solutions keywords were left queued after this publish (fewer than 5), so per RUN.md step 6 and
-  skills/blog-keywords.md, 8 new solutions keywords were appended (each searched today, who-ranks recorded,
-  difficulty set, no volumes written): social media marketing agency, content marketing agency, bookkeeping
-  business, sales training company, UX design agency, devops consulting company, fractional COO, email
-  marketing agency. 12 solutions keywords are now queued; next up is "how to get clients for a sales training
-  company" (difficulty low).
-- Push: origin/main moved 97bc864 -> e05c0c4 at 14:03 UTC (message `solutions: publish get-clients-for-a-branding-agency`).
-  The first push attempt was rejected because the clone was in detached-HEAD state with a stale local `main`;
-  HEAD was pushed to main explicitly and local `main` re-pointed at the new commit.
-  The live-page and sitemap fetch 4 minutes after the push (14:07 UTC) could NOT be completed: as on the four
-  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
-  https://intentsly.com/solutions/get-clients-for-a-branding-agency were stopped by a permission prompt
-  (PROVENANCE_REQUIRED) that an unattended run cannot answer; a `site:intentsly.com` search returned no
-  intentsly.com URLs that would have unblocked it, and the repository has no GitHub Actions runs to check the
-  deploy against. The page is confirmed published in the database (status = published) and the deploy commit
-  is on main, but "live" and "in the sitemap" are unverified. Alex: allowing intentsly.com fetches for this
-  task (or adding a direct WebFetch tool) would close this gap.
-- Still blocked (unchanged): drafts for "how to get clients for an ai consulting business" (solutions) and
-  "outbound sales process for startups" (guides), both because of the gate's kw_in word-boundary handling of
-  "business" and "process".
+  tool). Both drafts in blog/drafts/ carry a `blocked:` line (solutions and guides, gate kw_in issue), so the
+  queue's next learn keyword was taken. 1 article had been published today (Bucharest) before this run (daily
+  cap 7); well under the weekly cap (45).
+- Keyword (published, first attempt): what is competitor monitoring in sales (learn, signal-selling, lesson,
+  informational, priority 3, difficulty medium).
+  "What Is Competitor Monitoring in Sales? Meaning and Signals"
+  https://intentsly.com/learn/what-is-competitor-monitoring-in-sales
+- Database: one statement, the generated blog/out/what-is-competitor-monitoring-in-sales.sql (20,557 bytes,
+  md5 7a4051031e3d75a681cf5b855248e55f), run unchanged through the Supabase connector. Returned slug
+  what-is-competitor-monitoring-in-sales, status = published, published_at 2026-11-21 19:28:49 UTC. No other
+  reads or writes.
+- Gate: first run failed on one point: meta_description 165 chars (max 160). Rewritten; second run passed with no
+  warnings; blog_cloud.py sql printed "ready": true. One further edit (moved the 54%/48% source-mix statistic
+  to the Crayon page it actually appears on, added the Rivalize link) and a third run, also clean. 8 H2, 6 FAQ,
+  11 internal links, 4 external links (all opened today), no em dashes, no banned phrases. Gate word count
+  2,373, in line with the other learn pages (1,798 to 2,152 by the same count).
+- Angle: page one is vendor explainers written for pricing, marketing or CI-platform buyers (Pricefy, A-Insights,
+  nRev, Stealery, Owler, Elevated Signal, 7SearchPPC; also read Contify, Crunchbase, Rivalize, Klue, ZoomInfo,
+  Aomni for the vs section). All define monitoring as tracking a rival's pages; every signal is company-level;
+  nobody treats a competitor's LinkedIn followers, post engagers or commenters as a prospecting source; no sample
+  messages; most numbers are Crayon 2026 quoted second-hand. This lesson defines the term from the seller's side
+  (output = a named person and a moment), gives a five-signal table with where to see each on LinkedIn by hand,
+  a monitoring vs CI vs analysis vs battlecard table, a "when it is the wrong tool" section, and links the two
+  primary surveys directly.
+- Outside sources opened today: Crayon 2026 State of Competitive Intelligence (blog post 8 Jul 2026 and report
+  landing page: seven in ten teams say at least half of opportunities are competitive; ~56% share CI weekly or
+  faster; revenue impact 79% vs 41%; internal data 54% vs competitor websites 48%; nearly eight in ten track 30
+  or fewer competitors), 6sense 2025 Buyer Experience Report via Business Wire (4,000+ buyers; 94% of buying
+  groups ranked preferred vendors before first contact; bought from the preliminary favourite 77% of the time),
+  Rivalize (monitoring vs intelligence framing, no numbers). Gartner press releases could not be opened (fetch
+  permission prompt), so no Gartner figures were used.
+- Intentsly facts used: 14 demos in 14 days, zero manual outreach, 4x reply rate (case study, labelled as our
+  own launch), 30/30/15 caps, LinkedIn signals feature (competitor page followers and engagers, keyword posts,
+  hashtags, ICP scoring), Buying Signal Playbook (12 worth chasing, 8 to ignore). No price. No Reddit/X claims.
+  CTA is /signal-playbook as page-write.md requires for /learn, plus /features/linkedin-signals.
+- Queue: 9 learn keywords remain queued (5 or more, so no new keywords were added this run). Next up:
+  "what is a sales qualified lead".
+- Push: see the commit `learn: publish what-is-competitor-monitoring-in-sales`. The live-page and sitemap check
+  about 4 minutes after the push is recorded in the run report (and appended below if it completed).
 
 ## For Alex
-- A branding-agency or design-studio customer story (even one line: what they monitored, what came back) would
-  let this page and the web design and marketing agency pages carry a first-hand agency example instead of our
-  own launch story.
-- proof.md still has the 21% reply rate, ~1,000 leads and 2 to 4 meetings rows with a "verified: say ..."
-  status cell. The gate only treats a row as verified when the cell is exactly `verified`, so the 21% figure
-  can never be used; if you want it on pages, change those cells to `verified` and move the phrasing note into
-  the Claim column.
-- The two blocked drafts need either a gate fix in scripts/blog_gate.py (kw_in strips a trailing "s" from
-  "business" and "process") or a keyword rephrase; the task is not allowed to edit scripts/.
+- A customer story about competitor signals (one line: which competitor they watched, what came back) would let
+  this lesson, the competitor-monitoring guide and the post-engagers article use a first-hand example other than
+  our own launch.
+- proof.md still has the 21% reply rate, ~1,000 leads and 2 to 4 meetings rows with a "verified: say ..." status
+  cell. The gate only treats a row as verified when the cell is exactly `verified`, so those figures cannot be
+  used; if you want them on pages, change the cells to `verified` and move the phrasing note into the Claim column.
+- The two blocked drafts (ai consulting business, outbound sales process for startups) still need either a gate
+  fix in scripts/blog_gate.py (kw_in strips a trailing "s" from "business" and "process") or a keyword rephrase;
+  this task is not allowed to edit scripts/.
+- Allowing intentsly.com (and gartner.com) fetches for this task, or adding a direct WebFetch tool, would let
+  runs verify the live page and the sitemap and use Gartner's buyer research as a source.
 - Agent templates, self-serve billing, done-for-you setup, the new free tools and the email digests are all
   still marked NOT LIVE in brain/wiki/product.md. Pages cannot mention them until those lines say "live".
