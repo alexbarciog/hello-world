@@ -41,8 +41,12 @@
   CTA is /signal-playbook as page-write.md requires for /learn, plus /features/linkedin-signals.
 - Queue: 9 learn keywords remain queued (5 or more, so no new keywords were added this run). Next up:
   "what is a sales qualified lead".
-- Push: see the commit `learn: publish what-is-competitor-monitoring-in-sales`. The live-page and sitemap check
-  about 4 minutes after the push is recorded in the run report (and appended below if it completed).
+- Push: origin/main moved 2f9f50b -> d0a5184 at 19:29 UTC (message `learn: publish what-is-competitor-monitoring-in-sales`).
+  The live-page and sitemap fetch 4 minutes after the push (19:34 UTC) could NOT be completed: as on the five
+  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/learn/what-is-competitor-monitoring-in-sales were stopped by a permission prompt
+  (PROVENANCE_REQUIRED) that an unattended run cannot answer. The page is confirmed published in the database
+  (status = published) and the deploy commit is on main, but "live" and "in the sitemap" are unverified.
 
 ## For Alex
 - A customer story about competitor signals (one line: which competitor they watched, what came back) would let
