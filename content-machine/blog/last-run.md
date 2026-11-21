@@ -41,6 +41,17 @@
   business, sales training company, UX design agency, devops consulting company, fractional COO, email
   marketing agency. 12 solutions keywords are now queued; next up is "how to get clients for a sales training
   company" (difficulty low).
+- Push: origin/main moved 97bc864 -> e05c0c4 at 14:03 UTC (message `solutions: publish get-clients-for-a-branding-agency`).
+  The first push attempt was rejected because the clone was in detached-HEAD state with a stale local `main`;
+  HEAD was pushed to main explicitly and local `main` re-pointed at the new commit.
+  The live-page and sitemap fetch 4 minutes after the push (14:07 UTC) could NOT be completed: as on the four
+  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/solutions/get-clients-for-a-branding-agency were stopped by a permission prompt
+  (PROVENANCE_REQUIRED) that an unattended run cannot answer; a `site:intentsly.com` search returned no
+  intentsly.com URLs that would have unblocked it, and the repository has no GitHub Actions runs to check the
+  deploy against. The page is confirmed published in the database (status = published) and the deploy commit
+  is on main, but "live" and "in the sitemap" are unverified. Alex: allowing intentsly.com fetches for this
+  task (or adding a direct WebFetch tool) would close this gap.
 - Still blocked (unchanged): drafts for "how to get clients for an ai consulting business" (solutions) and
   "outbound sales process for startups" (guides), both because of the gate's kw_in word-boundary handling of
   "business" and "process".
