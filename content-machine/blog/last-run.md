@@ -43,7 +43,14 @@
   is sales prospecting, what is a marketing qualified lead, what is a discovery call in sales, what is
   account-based marketing, what is a sales pipeline, what is a lead in sales); 30 learn published. No new
   keywords added (threshold is fewer than 5).
-- Verification: see the run report (sitemap and page fetched about 4 minutes after the push).
+- Verification: push landed on origin/main at ee8a4bc (19:30 UTC; the first `git push origin main` was rejected
+  as "behind its remote counterpart" even though remote main was the commit's parent; `git push origin
+  HEAD:refs/heads/main` went through). The live-page and sitemap fetch 4 minutes after the push (19:34 UTC)
+  could NOT be completed: as on the seven previous runs, the web-fetch agent's requests for
+  https://intentsly.com/sitemap.xml and https://intentsly.com/learn/what-is-a-product-qualified-lead were
+  refused with PROVENANCE_REQUIRED (a permission prompt nobody is present to answer; the URLs do not appear in
+  any search result, so they cannot be opened from a result). No other fetch method was used. The database row
+  shows status = published and the deploy commit is on main, but "live" and "in the sitemap" are unverified.
 
 ## For the founder
 - The two blocked drafts (get-clients-for-an-ai-consulting-business, outbound-sales-process-for-startups)
