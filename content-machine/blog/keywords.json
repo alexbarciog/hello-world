@@ -1953,8 +1953,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-product-qualified-lead",
    "monthly_volume": null
   },
   {
