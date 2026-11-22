@@ -1,64 +1,51 @@
-# Last run: 2026-11-21 (learn task; fired about 19:20 UTC, 21:20 Bucharest)
+# Last run: 2026-11-22 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is not exposed as a tool in
-  this session (as on previous runs), `git pull origin main` reported up to date at 2f9f50b. Supabase: the
+  this session (as on previous runs), `git pull origin main` reported up to date at a7426dd. Supabase: the
   lowercase "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector
   connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch
-  tool). Both drafts in blog/drafts/ carry a `blocked:` line (solutions and guides, gate kw_in issue), so the
-  queue's next learn keyword was taken. 1 article had been published today (Bucharest) before this run (daily
-  cap 7); well under the weekly cap (45).
-- Keyword (published, first attempt): what is competitor monitoring in sales (learn, signal-selling, lesson,
-  informational, priority 3, difficulty medium).
-  "What Is Competitor Monitoring in Sales? Meaning and Signals"
-  https://intentsly.com/learn/what-is-competitor-monitoring-in-sales
-- Database: one statement, the generated blog/out/what-is-competitor-monitoring-in-sales.sql (20,557 bytes,
-  md5 7a4051031e3d75a681cf5b855248e55f), run unchanged through the Supabase connector. Returned slug
-  what-is-competitor-monitoring-in-sales, status = published, published_at 2026-11-21 19:28:49 UTC. No other
+  tool). Both drafts in blog/drafts/ carry a `blocked:` line (solutions and guides, gate kw_in issue, still
+  present in scripts/blog_gate.py: `w.rstrip("s")` cannot match "business" or "process"), so the queue's next
+  solutions keyword was taken. 1 article had been published today (Bucharest) before this run (daily cap 7);
+  well under the weekly cap (45).
+- Keyword (published, first attempt): how to get clients for a sales training company (solutions,
+  find-customers, landing, commercial, priority 3, difficulty low).
+  "How to Get Clients for a Sales Training Company: 7 Moments"
+  https://intentsly.com/solutions/get-clients-for-a-sales-training-company
+- Database: one statement, the generated blog/out/get-clients-for-a-sales-training-company.sql (23,475 bytes,
+  md5 6119a4192d0cb760d4026bdb89cab512), run unchanged through the Supabase connector. Returned slug
+  get-clients-for-a-sales-training-company, status = published, published_at 2026-11-22 13:53:46 UTC. No other
   reads or writes.
-- Gate: first run failed on one point: meta_description 165 chars (max 160). Rewritten; second run passed with no
-  warnings; blog_cloud.py sql printed "ready": true. One further edit (moved the 54%/48% source-mix statistic
-  to the Crayon page it actually appears on, added the Rivalize link) and a third run, also clean. 8 H2, 6 FAQ,
-  11 internal links, 4 external links (all opened today), no em dashes, no banned phrases. Gate word count
-  2,373, in line with the other learn pages (1,798 to 2,152 by the same count).
-- Angle: page one is vendor explainers written for pricing, marketing or CI-platform buyers (Pricefy, A-Insights,
-  nRev, Stealery, Owler, Elevated Signal, 7SearchPPC; also read Contify, Crunchbase, Rivalize, Klue, ZoomInfo,
-  Aomni for the vs section). All define monitoring as tracking a rival's pages; every signal is company-level;
-  nobody treats a competitor's LinkedIn followers, post engagers or commenters as a prospecting source; no sample
-  messages; most numbers are Crayon 2026 quoted second-hand. This lesson defines the term from the seller's side
-  (output = a named person and a moment), gives a five-signal table with where to see each on LinkedIn by hand,
-  a monitoring vs CI vs analysis vs battlecard table, a "when it is the wrong tool" section, and links the two
-  primary surveys directly.
-- Outside sources opened today: Crayon 2026 State of Competitive Intelligence (blog post 8 Jul 2026 and report
-  landing page: seven in ten teams say at least half of opportunities are competitive; ~56% share CI weekly or
-  faster; revenue impact 79% vs 41%; internal data 54% vs competitor websites 48%; nearly eight in ten track 30
-  or fewer competitors), 6sense 2025 Buyer Experience Report via Business Wire (4,000+ buyers; 94% of buying
-  groups ranked preferred vendors before first contact; bought from the preliminary favourite 77% of the time),
-  Rivalize (monitoring vs intelligence framing, no numbers). Gartner press releases could not be opened (fetch
-  permission prompt), so no Gartner figures were used.
+- Gate: first run failed on two points: opening paragraph 101 words (max 90) and "21%" (the AI SDR reply rate;
+  the gate does not accept it from proof.md, so it was removed rather than argued with). Second run only the
+  opening length remained (95, then 93, then 91 words: trimmed in three small edits, all to the same sentence,
+  before passing at 90 or fewer). blog_cloud.py sql then printed "ready": true first time. 7 H2, 6 FAQ
+  (62 to 72 words each), 15 internal links, 3 external links (all opened today), no em dashes, no banned
+  phrases. Gate word count 2,966, in line with the other solutions pages (HR consulting 2,830, MSP 2,966).
+- Angle: page one is "how to start a sales training business" and "how to sell corporate training" guides
+  (LearnWorlds, LMS Portals, The Trainers Training Company, Yatharth Marketing, StartupBizHub), four of five
+  written by vendors selling to trainers. All list niche, website, social, events, referrals, free workshop,
+  partners. None names a buyer role beyond HR/L&D, none has a trigger event, job-post signal, LinkedIn search
+  string or message template; only one cites statistics, all 2020-era and second-hand. This page names seven
+  LinkedIn moments (new sales leader, three or more rep openings with no enablement title, first enablement
+  job post, quota-miss or win-rate post, founder handing off sales, methodology or tool change, public request
+  for a trainer) with the search and message for each, a week-one plan, and the honest alternatives.
+- Outside sources opened today: The Bridge Group 2025 SDR Models, Motions and Metrics report (351 B2B
+  companies; 60% of SDRs at quota, lowest on record; median attrition 40%; average ramp 3.0 months), Salesforce
+  sixth State of Sales via the Salesforce newsroom (5,500 sales professionals, 27 countries; 67% do not expect
+  to meet quota, 84% missed it the year before), Training magazine 2025 Training Industry Report (US spend
+  $102.8 billion, up 4.9%; 7% of budget on outsourcing; 61% deliver sales training at least partly online).
 - Intentsly facts used: 14 demos in 14 days, zero manual outreach, 4x reply rate (case study, labelled as our
-  own launch), 30/30/15 caps, LinkedIn signals feature (competitor page followers and engagers, keyword posts,
-  hashtags, ICP scoring), Buying Signal Playbook (12 worth chasing, 8 to ignore). No price. No Reddit/X claims.
-  CTA is /signal-playbook as page-write.md requires for /learn, plus /features/linkedin-signals.
-- Queue: 9 learn keywords remain queued (5 or more, so no new keywords were added this run). Next up:
-  "what is a sales qualified lead".
-- Push: origin/main moved 2f9f50b -> d0a5184 at 19:29 UTC (message `learn: publish what-is-competitor-monitoring-in-sales`).
-  The live-page and sitemap fetch 4 minutes after the push (19:34 UTC) could NOT be completed: as on the five
-  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
-  https://intentsly.com/learn/what-is-competitor-monitoring-in-sales were stopped by a permission prompt
-  (PROVENANCE_REQUIRED) that an unattended run cannot answer. The page is confirmed published in the database
-  (status = published) and the deploy commit is on main, but "live" and "in the sitemap" are unverified.
-
-## For Alex
-- A customer story about competitor signals (one line: which competitor they watched, what came back) would let
-  this lesson, the competitor-monitoring guide and the post-engagers article use a first-hand example other than
-  our own launch.
-- proof.md still has the 21% reply rate, ~1,000 leads and 2 to 4 meetings rows with a "verified: say ..." status
-  cell. The gate only treats a row as verified when the cell is exactly `verified`, so those figures cannot be
-  used; if you want them on pages, change the cells to `verified` and move the phrasing note into the Claim column.
-- The two blocked drafts (ai consulting business, outbound sales process for startups) still need either a gate
-  fix in scripts/blog_gate.py (kw_in strips a trailing "s" from "business" and "process") or a keyword rephrase;
-  this task is not allowed to edit scripts/.
-- Allowing intentsly.com (and gartner.com) fetches for this task, or adding a direct WebFetch tool, would let
-  runs verify the live page and the sitemap and use Gartner's buyer research as a source.
-- Agent templates, self-serve billing, done-for-you setup, the new free tools and the email digests are all
-  still marked NOT LIVE in brain/wiki/product.md. Pages cannot mention them until those lines say "live".
+  own launch), around 1,000 leads a month per agent and 2 to 4 meetings a week (attributed "across Intentsly
+  customers in October 2026"), 30/30/15 caps, 2 accounts, four languages, LinkedIn signals feature table from
+  product.md, AI SDR LinkedIn-only. No price. No Reddit/X claims. Job-post signals stated as not monitored.
+- Queue: 11 solutions keywords still queued (pr agency, executive coaching, cloud consulting, fintech startup,
+  social media marketing agency, content marketing agency, bookkeeping, ux design agency, devops consulting,
+  fractional coo, email marketing agency), 2 blocked (ai consulting business: gate kw_in bug; the guides
+  draft outbound-sales-process-for-startups is blocked for the same reason). No keyword refresh needed (>= 5).
+- For the founder: (1) the two blocked drafts are complete and only need the one-character fix in
+  scripts/blog_gate.py kw_in (strip one trailing "s", not all) that the automation is not allowed to make;
+  (2) the 21% AI SDR reply rate in proof.md is not accepted by the gate's number check, so pages keep dropping
+  it; confirm whether it should stay in proof.md or be removed; (3) a real customer story from a trainer,
+  coach or consultancy would let these solutions pages stop reusing the 14-demos launch story.
+- Verification (about 4 minutes after the push): see the appended note below.
