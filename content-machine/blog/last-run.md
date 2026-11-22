@@ -48,4 +48,12 @@
   (2) the 21% AI SDR reply rate in proof.md is not accepted by the gate's number check, so pages keep dropping
   it; confirm whether it should stay in proof.md or be removed; (3) a real customer story from a trainer,
   coach or consultancy would let these solutions pages stop reusing the 14-demos launch story.
-- Verification (about 4 minutes after the push): see the appended note below.
+- Push: origin/main moved a7426dd -> 53a12a2 at 13:55 UTC (message `solutions: publish
+  get-clients-for-a-sales-training-company`; the first push attempt failed because the clone's local `main`
+  branch was stale and HEAD was detached, so the commit was pushed with `HEAD:main`).
+  The live-page and sitemap fetch 4 minutes after the push (13:59 UTC) could NOT be completed: as on the six
+  previous runs, the web-fetch agent's requests for https://intentsly.com/sitemap.xml and
+  https://intentsly.com/solutions/get-clients-for-a-sales-training-company were stopped by a permission prompt
+  (PROVENANCE_REQUIRED) that an unattended run cannot answer. No GitHub Actions workflow runs exist on main, so
+  the deploy could not be confirmed from the repository either. The page is confirmed published in the database
+  (status = published) and the deploy commit is on main, but "live" and "in the sitemap" are unverified.
