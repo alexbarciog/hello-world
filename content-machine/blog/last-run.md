@@ -38,6 +38,14 @@
 - Intentsly facts used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate, most leads from real-time
   signals (case study, labelled as our own launch). Product claims limited to LinkedIn signal monitoring, ICP scoring
   and /try-ai showing matching buyers without an account (all in brain/wiki/product.md). No price stated.
+- Push: the first `git push origin main` was rejected as non-fast-forward because the clone sat in detached HEAD and the
+  stale local `main` ref was what got pushed; `git push origin HEAD:refs/heads/main` then fast-forwarded a369a8c..1b87341
+  at 19:33:34 UTC and the local `main` was realigned. Nothing outside content-machine/ changed.
+- Verification (19:38 UTC, about 4 minutes after the push): the database row shows status = published. The live page
+  and sitemap could NOT be checked from this session: fetches of https://intentsly.com/learn/what-is-a-sales-qualified-lead
+  and https://intentsly.com/sitemap.xml were refused twice with a fetch-permission (provenance) error that nobody was
+  present to approve, the same limit earlier runs recorded. The repository has no GitHub Actions workflow, so the deploy
+  could not be confirmed from there either. Alex: open the URL above once to confirm it rendered.
 - Queue: 7 learn keywords still queued (next: "what is an sdr"), so no keywords were added. Blog, guides, solutions and
   compare queues untouched.
 - For Alex: (1) the two blocked drafts (AI consulting solutions page, outbound sales process guide) still wait on the
