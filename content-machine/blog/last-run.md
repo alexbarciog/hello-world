@@ -1,63 +1,55 @@
-# Last run: 2026-11-22 (learn task; fired about 19:10 UTC, 21:10 Bucharest)
+# Last run: 2026-11-23 (blog task; fired about 06:50 UTC, 08:50 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is not exposed as a tool
-  in this session (as on previous runs), `git pull origin main` reported up to date at 2500166. Supabase: the
-  lowercase "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector
-  connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch
-  tool). Both drafts in blog/drafts/ carry a `blocked:` line (solutions and guides, the gate kw_in issue with
-  "business"/"process"), so the queue's next learn keyword was taken. 1 article had been published today
-  (Bucharest) before this run (daily cap 7); well under the weekly cap (45).
-- Keyword (published, first attempt): what is a product qualified lead (learn, fundamentals, lesson,
-  informational, priority 3, difficulty medium).
-  "What Is a Product Qualified Lead? PQL Meaning and a Rule"
-  https://intentsly.com/learn/what-is-a-product-qualified-lead
-- Database: one statement, the generated blog/out/what-is-a-product-qualified-lead.sql (19,967 bytes,
-  md5 f8abf59e1ca33ed2b5c236273947f6dc), run unchanged through the Supabase connector. Returned slug
-  what-is-a-product-qualified-lead, status = published, published_at 2026-11-22 19:28:51 UTC. No other reads
-  or writes.
-- Gate: first run failed on two points: meta_description 164 chars (max 160) and title too close to
-  what-is-dark-social-in-b2b.md ("... Definition and Examples"). Title changed to "PQL Meaning and a Rule",
-  meta description trimmed to 158. Second run passed; blog_cloud.py sql printed "ready": true first time.
-  7 H2, 6 FAQ (55 to 65 words each), 9 internal links, 6 external links (all opened today), no em dashes, no
-  banned phrases. Gate word count 2,326, in line with the other lessons (lead qualification 2,483, warm lead
-  2,313, lead scoring 2,540).
-- Angle: page one is glossary-style explainers (Shopify, HubSpot, TechTarget, Mailchimp, Paddle, ProductLed,
-  Navattic). All assume a SaaS product with a free trial or freemium plan; none says what a PQL is for a
-  service company or software with no self-serve tier, none puts PQLs next to buying signals, and most
-  statistics are unlinked or second-hand (Paddle's 13%, 6%, 84 days, 5 to 6x; HubSpot's 20% activation
-  example is an arithmetic slip; Navattic's Forrester 68% has no link). This page gives the definition, the
-  three parts of any PQL rule (fit, value moment, threshold), a four-row table for businesses without a free
-  plan, a PQL vs MQL vs SQL vs buying signal table, the PQL rate formula, and a three-line worksheet.
-- Outside sources opened today and cited: First Round Review Slack launch interview (Feb 2015: 2,000
-  messages, 93% still using Slack, >90% of sign-ups never invite anyone), Tomasz Tunguz PQL post (Jan 2013:
-  PQL definition, "about 25 to 30%" when sales calls PQLs, labelled as his own figure), OpenView 2023 Product
-  Benchmarks with Pendo (~1,000 respondents; tracking PQLs/PQAs +61% likelihood of fast growth, fast = 75%+
-  YoY), ProductLed beginner's guide (Facebook 7 friends, Drift 100 conversations, "10 log-ins" minimum viable
-  PQL), HubSpot PQL article (four PQL types attributed to Christopher O'Donnell), Shopify (PQL rate formula).
-  Not used: Gainsight 2.8x (gated, second-hand from "PLG Index 2022"), Paddle's unlinked figures. Userpilot
-  and two OpenView blog URLs returned no article content.
-- Intentsly facts used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate (case study,
-  labelled as our own launch); /try-ai shows matching buyers with no account (product.md). No price, no
-  Reddit/X features, no NOT-LIVE epics mentioned. CTA: /signal-playbook.
-- Queue after this run: 8 learn keywords still queued (what is a sales qualified lead, what is an sdr, what
-  is sales prospecting, what is a marketing qualified lead, what is a discovery call in sales, what is
-  account-based marketing, what is a sales pipeline, what is a lead in sales); 30 learn published. No new
-  keywords added (threshold is fewer than 5).
-- Verification: push landed on origin/main at ee8a4bc (19:30 UTC; the first `git push origin main` was rejected
-  as "behind its remote counterpart" even though remote main was the commit's parent; `git push origin
-  HEAD:refs/heads/main` went through). The live-page and sitemap fetch 4 minutes after the push (19:34 UTC)
-  could NOT be completed: as on the seven previous runs, the web-fetch agent's requests for
-  https://intentsly.com/sitemap.xml and https://intentsly.com/learn/what-is-a-product-qualified-lead were
-  refused with PROVENANCE_REQUIRED (a permission prompt nobody is present to answer; the URLs do not appear in
-  any search result, so they cannot be opened from a result). No other fetch method was used. The database row
-  shows status = published and the deploy commit is on main, but "live" and "in the sitemap" are unverified.
+- Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is not exposed as a tool in this
+  session (as on previous runs), `git pull origin main` reported up to date at 6ee2a00. Supabase: the lowercase "supabase"
+  connector failed with a proxy tunnel error at session start; the "Supabase" connector connected and was used. Web search
+  worked; pages were opened through the web-fetch agent (no direct WebFetch tool). Both drafts in blog/drafts/ carry a
+  `blocked:` line (solutions and guides, the gate kw_in issue with "business"/"process"), so the queue's next blog keyword
+  was taken. 0 articles had been published today (Bucharest) before this run (daily cap 7); well under the weekly cap (45).
+- Keyword (published, first attempt): what to say when a prospect likes a competitor's post (blog, templates cluster,
+  templates type, informational, priority 2, difficulty low).
+  "What to Say When a Prospect Likes a Competitor's Post"
+  https://intentsly.com/blog/what-to-say-when-a-prospect-likes-a-competitors-post
+- Database: one statement, the generated blog/out/what-to-say-when-a-prospect-likes-a-competitors-post.sql (22,433 bytes,
+  md5 68dbc55c527b68896426b0f997e84dd6), run unchanged through the Supabase connector. Returned slug
+  what-to-say-when-a-prospect-likes-a-competitors-post, status = published, published_at 2026-11-23 07:06:26 UTC. No other
+  reads or writes.
+- Gate: blog_gate.py first run failed on two points: meta_description 165 chars (max 160) and opening paragraph 91 words
+  (max 90). Both trimmed; three FAQ answers over 70 words were also cut to 64 to 67, and the printed character counts next to
+  the seven scripts were corrected to the real counts (113 to 238). Second gate run passed; blog_cloud.py sql printed
+  "ready": true first time. 2,607 words, 10 H2, 6 FAQ, 9 internal links, 8 external links (all opened today), no em dashes,
+  no banned phrases. Longer than the 1,200 minimum for templates, in line with the earlier templates article (7 sequences).
+- Angle: page one is vendor playbooks (Common Room, Expandi, Unify, Valley, AiSDR, Reply.io, Fuzzy) plus Koka Sexton and
+  Carta's Peter Walker. All give the same message for a like and a comment, none gives a decision rule for when a like
+  deserves a message, and one (Common Room) names the competitor in the opener. This page gives a five-point 30-second check
+  (message / connect silently / skip), four scripts by kind of post (problem post, launch post, repeat liker, like plus a
+  second signal) with character counts, a reply for "just following", the phrases that read as surveillance, a sourced
+  baseline instead of a vendor reply band, and Carta's "never works" view with where it is right.
+- Outside sources opened today and cited: Expandi LinkedIn Outreach Benchmarks 2026 (13,218,869 requests, 6,730,447 messages,
+  13,302 accounts, May 2025 to April 2026; 28.5% acceptance, 3.0% note reply, 10.4% message reply, note reply 3.5% to 2.2%),
+  LinkedIn B2B Institute 95-5 page ("95% of your potential buyers aren't ready to buy today"), Carta (Peter Walker, 12 Jan
+  2026, reaction-triggered cold outreach never works), Unify use case (a like ranks last), Koka Sexton (a like is noise), Valley
+  launch-post playbook (lead with the category, exclude staff and partners), Common Room prompt (template naming the
+  competitor handle, quoted as the example to avoid), Fuzzy AI (the "if they could see how you found them" test). Not cited:
+  the LinkedIn Talent Blog InMail-length page and a Melanie Goodman Substack dataset (fetch permission not granted this run),
+  PhantomBuster's guide (verification interstitial, no text), LinkedIn Help pages on reaction visibility (robots-disallowed),
+  and every unsourced vendor reply band (Valley 15-45%, AiSDR 24%, Fuzzy 36.4%).
+- Intentsly facts used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate, most leads from real-time signals
+  (case study, labelled as our own launch, with the note that it does not break leads down by signal type); caps 30/30 a day
+  with 15 recommended, 2 LinkedIn accounts; /try-ai shows matching buyers with no account; Intentsly tracks competitor and
+  industry post engagers and scores them against the ICP (product.md). No price, no Reddit/X features, no NOT-LIVE epics.
+  Conversion links: /features/linkedin-signals, /try-ai, /signal-playbook.
+- Queue after this run: 20 blog keywords still queued; templates cluster now fully published (2 of 2). No new keywords added
+  (threshold is fewer than 5).
+- Verification: the database row shows status = published. The push result and the live-page check are recorded in the commit
+  below; as on previous runs, intentsly.com URLs cannot be opened from this session without a permission prompt, so "live" is
+  inferred from the published row plus the deploy commit on main.
 
 ## For the founder
-- The two blocked drafts (get-clients-for-an-ai-consulting-business, outbound-sales-process-for-startups)
-  stay blocked by the gate's kw_in singular/plural rule on "business" and "process"; only a change to
-  scripts/blog_gate.py (which the tasks may not edit) or a reworded keyword will free them.
-- A first-hand PQL or trial-activation number for Intentsly (for example, what share of /try-ai visitors or
-  7-day trials reach their first signal, and whether that predicts conversion) would turn the next lessons
-  (sales qualified lead, marketing qualified lead, lead in sales) from definitions into pages with our own data.
-- brain/stories/ still has one story. One more customer story (with permission to name them) would let the
-  learn lessons stop reusing the 14-demos launch as the only first-hand case.
+- A first-hand number for like-triggered messages (reply rate for likers vs commenters from the Intentsly AI SDR, even for
+  one month) would let this article and the seven-sequence templates article replace the Expandi floor with our own figure.
+- The two blocked drafts (get-clients-for-an-ai-consulting-business, outbound-sales-process-for-startups) stay blocked by the
+  gate's kw_in singular/plural rule on "business" and "process"; only a change to scripts/blog_gate.py (which the tasks may
+  not edit) or a reworded keyword will free them.
+- brain/stories/ still has one story. One customer story about a competitor-engagement campaign (with permission to name
+  them) would give the templates cluster and the competitor-monitoring guides a case other than our own launch.

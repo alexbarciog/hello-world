@@ -428,8 +428,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-to-say-when-a-prospect-likes-a-competitors-post",
    "monthly_volume": null,
    "section": "blog"
   },
