@@ -2078,8 +2078,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-devops-consulting-company",
    "monthly_volume": null,
    "who_ranks": "ClickUp template page, omkar.cloud, HubSpot generic consulting post, dev.to, Blind threads (checked 2026-11-21)"
   },
