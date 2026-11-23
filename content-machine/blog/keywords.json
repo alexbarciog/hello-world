@@ -1365,8 +1365,8 @@
    "intent": "informational",
    "difficulty": "high",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-sales-qualified-lead",
    "monthly_volume": null
   },
   {
