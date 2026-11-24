@@ -47,9 +47,15 @@
   called typical. Product claims limited to product.md (keyword posts, post engagement, competitor followers/engagers,
   hashtags, ICP scoring, verified emails, export, AI SDR on LinkedIn only with Cal.com/Google Calendar, HubSpot,
   2 accounts, 30/30 caps with 15 recommended, four languages). Jobs-tab signals stated as not monitored. No price.
-- Push: see the commit `solutions: publish find-clients-as-a-fractional-coo` on main. Nothing outside content-machine/
-  changed. The `blog/out/` SQL file is not tracked.
-- Verification: recorded in the run report (sitemap and live URL fetched about 4 minutes after the push).
+- Push: `git push origin HEAD:refs/heads/main` fast-forwarded fdf23c1..35b6bff at 13:49:51 UTC. Nothing outside
+  content-machine/ changed. The `blog/out/` SQL file is not tracked.
+- Verification (13:54 UTC, about 4 minutes after the push, retried at 13:59): the database row shows status =
+  published. The live page and sitemap could NOT be checked from this session: fetches of
+  https://intentsly.com/sitemap.xml, https://intentsly.com/solutions/find-clients-as-a-fractional-coo and
+  https://intentsly.com/solutions were refused with a fetch-permission (provenance) error that nobody was present to
+  approve, the same limit earlier runs recorded; a web search restricted to intentsly.com did not surface the new URL
+  (not indexed yet), so the search-provenance route did not help either. Alex: open the URL above once to confirm it
+  rendered and appears in the sitemap.
 - Queue: 9 solutions keywords still queued (next: "how to get clients for a pr agency"), so none were added.
   Blog, guides, learn and compare queues untouched.
 - For Alex: (1) the "21% reply rate" and "~1,000 leads/month" proof rows are marked "verified: phrase as ..." rather
