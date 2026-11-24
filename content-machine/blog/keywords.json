@@ -2091,8 +2091,8 @@
    "intent": "commercial",
    "difficulty": "low",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-clients-as-a-fractional-coo",
    "monthly_volume": null,
    "who_ranks": "ClickUp template page, Lilach Bullock, substacks and podcasts, Umbrex, Toptal (checked 2026-11-21)"
   },
