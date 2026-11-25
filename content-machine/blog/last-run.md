@@ -50,7 +50,12 @@
   The 21% reply rate was not used. No price.
 - Push: see the commit `solutions: publish get-clients-for-a-pr-agency` on main. Nothing outside content-machine/
   changed. The `blog/out/` SQL file is not tracked.
-- Verification: recorded in the run report (the live page and sitemap are fetched about 4 minutes after the push).
+- Verification: NOT CONFIRMED from this session. Four minutes after the push (13:59 UTC) the web-fetch tool refused
+  both https://intentsly.com/solutions/get-clients-for-a-pr-agency and https://intentsly.com/sitemap.xml with a
+  permission prompt nobody was present to answer, the shell proxy returned 403 for intentsly.com, and a site-limited
+  web search had not indexed the new page yet. The database row (status = published) and the push (623e10c ->
+  56d644f on main) both succeeded, so the page should be live once the deploy finishes; Alex should open the URL
+  once to confirm. Allowing intentsly.com for unattended fetches would let future runs record this themselves.
 - Queue: 8 solutions keywords still queued (next: "how to get clients for an executive coaching business"), so none
   were added. Blog, guides, learn and compare queues untouched.
 - For Alex: (1) a real PR, comms or launch-focused agency customer (what signals they set, replies and calls in the
