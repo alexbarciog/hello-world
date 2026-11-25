@@ -1545,8 +1545,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "intentsly-vs-lemlist",
    "monthly_volume": null
   },
   {
@@ -2108,6 +2108,102 @@
    "slug": null,
    "monthly_volume": null,
    "who_ranks": "ClickUp template page, Brevo, MailerLite, EmailOctopus, Constant Contact (checked 2026-11-21)"
+  },
+  {
+   "keyword": "intentsly vs linked helper",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs zopto",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs skylead",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs meet alfred",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs octopus crm",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs we-connect",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs salesforge",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
+  },
+  {
+   "keyword": "intentsly vs reply.io",
+   "section": "compare",
+   "cluster": "intentsly-vs",
+   "type": "comparison",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null
   }
  ]
 }
