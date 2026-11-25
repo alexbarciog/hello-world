@@ -58,3 +58,8 @@
   pricing page; the page says lemlist does not describe the AI holding a conversation on its own. If you know
   otherwise from a trial, say so and the page will be corrected. (3) A real customer story of someone who moved from
   lemlist (or runs both) would make the "Can you use both" section first-hand instead of reasoned.
+- Live check (22:09 UTC, about 4 minutes after the push at 22:05 UTC): not verified. The fetch tool required a
+  permission prompt for https://intentsly.com/compare/intentsly-vs-lemlist and https://intentsly.com/sitemap.xml
+  that nobody was present to answer, and the shell has no network route to intentsly.com. The database row is
+  status = published and the push to main landed (7f6fd0e..2bc7b1e), so the page should be live and in the sitemap
+  after the deploy; please open the URL once to confirm.
