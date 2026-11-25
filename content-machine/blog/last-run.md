@@ -42,9 +42,11 @@
   no 21% reply rate, no leads-per-agent or meetings-per-week figures. Reddit and X not mentioned.
 - Push: see the commit `learn: publish what-is-sales-prospecting` on main. Nothing outside content-machine/ changed.
   The `blog/out/` SQL file is not tracked.
-- Verification: see the report in the session (the live check runs about four minutes after the push). On previous
-  runs the web-fetch tool refused intentsly.com with a permission prompt nobody could answer; if that repeats, the
-  database row (status = published) and the push are the evidence, and Alex should open the URL once.
+- Verification: NOT CONFIRMED from this session. Four minutes after the push (about 19:38 UTC) the web-fetch tool
+  refused both https://intentsly.com/learn/what-is-sales-prospecting and https://intentsly.com/sitemap.xml with a
+  permission prompt nobody was present to answer (same as previous runs), and a site-limited web search had not
+  indexed the new page yet. The database row (status = published) and the push (8d3cbbf -> dcafa6a on main) both
+  succeeded, so the page should be live once the deploy finishes; Alex should open the URL once to confirm.
 - Queue: 5 learn keywords still queued (next: "what is a marketing qualified lead", then discovery call, account-based
   marketing, sales pipeline, lead in sales), which is not fewer than 5, so none were added. Blog, guides, solutions and
   compare queues untouched.
