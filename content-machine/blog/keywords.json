@@ -1797,8 +1797,8 @@
    "intent": "informational",
    "difficulty": "high",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-sales-prospecting",
    "monthly_volume": null
   },
   {
