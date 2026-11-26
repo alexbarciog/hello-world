@@ -1881,7 +1881,7 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
+   "status": "blocked",
    "slug": null,
    "monthly_volume": null
   },
@@ -1893,8 +1893,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "get-clients-for-a-cloud-consulting-company",
    "monthly_volume": null
   },
   {
