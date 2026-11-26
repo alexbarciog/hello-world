@@ -49,8 +49,13 @@
   unreleased features. Job-post signal stated as not monitored.
 - Keywords: 6 solutions keywords still queued (cloud consulting published, executive coaching blocked), so none
   were added. One of the six ("how to get clients for a bookkeeping business") will hit the same "business" bug.
-- Live check: see the run report (the shell has no network route to intentsly.com; the fetch tool was used after a
-  wait for the deploy).
+- Live check: not verified from this session, as on previous runs. Waited 4 minutes after the push, then tried the
+  fetch tool (both URLs returned PROVENANCE_REQUIRED: the permission prompt for intentsly.com is never answered in an
+  unattended run), curl from the shell (proxy CONNECT 403) and a web search for the URL (not indexed yet). The database
+  row is status = published and the push to main landed (86a2c43), so the page should be live and in the sitemap once
+  the deploy finishes; please open https://intentsly.com/solutions/get-clients-for-a-cloud-consulting-company once to
+  confirm. First push attempt was rejected as non-fast-forward although local was ahead of origin; the identical push
+  succeeded on retry.
 - For the founder: (1) scripts/blog_gate.py `kw_in`: change `w.rstrip("s")` to strip at most one trailing "s"
   (e.g. `re.sub(r"s$", "", w)`), then re-run the gate on the three blocked drafts (ai-consulting-business,
   executive-coaching-business, outbound-sales-process-for-startups); the executive coaching one is finished and
