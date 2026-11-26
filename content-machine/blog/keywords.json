@@ -452,8 +452,8 @@
    "intent": "informational",
    "difficulty": "low",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "signal-based-outreach-statistics",
    "monthly_volume": null,
    "section": "blog"
   },
