@@ -43,9 +43,13 @@
   after searching each and grading who ranks (sales accepted lead, hot lead, cold lead, decision maker in B2B sales,
   prospect list, lead response time, funding signal, job change signal, intent scoring). 13 learn keywords are now
   queued; "what is a linkedin ssi score" was considered and skipped because LinkedIn's own help page ranks for it.
-- Live check: see the run report; as on previous runs, intentsly.com cannot be fetched from an unattended session
-  (the fetch permission prompt for intentsly.com is never answered), so the page is confirmed from the database row
-  (status = published) and the push to main. Please open
+- Live check: not verified from this session, as on previous runs. Waited 4 minutes after the push (c2a0416 to
+  9ef2fc6 on main), then tried the fetch tool on both the sitemap and the page (PROVENANCE_REQUIRED: the permission
+  prompt for intentsly.com is never answered in an unattended run) and a web search for the URL (not indexed yet).
+  The database row is status = published and the push landed, so the page should be live once the deploy finishes.
+  Note for the pipeline: this session's checkout was in detached HEAD, so `git push origin main` was rejected twice
+  as non-fast-forward; `git push origin HEAD:main` succeeded on the first try. That is probably what happened on the
+  previous run too. Please open
   https://intentsly.com/learn/what-is-a-marketing-qualified-lead once to confirm it renders and appears in
   https://intentsly.com/sitemap.xml.
 - For the founder: (1) the scripts/blog_gate.py `kw_in` bug noted in the previous run (`w.rstrip("s")` turns
