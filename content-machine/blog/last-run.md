@@ -1,65 +1,56 @@
-# Last run: 2026-11-26 (solutions task; fired about 13:30 UTC, 15:30 Bucharest)
+# Last run: 2026-11-26 (learn task; fired about 19:10 UTC, 21:10 Bucharest)
 
 - Setup: no PAUSE file. Repository already cloned, in scope and on `main`; `add_repo` is not exposed as a tool in this
-  session (as on previous runs). `git pull origin main` brought main from fdf23c1 to e389187. Supabase: the lowercase
+  session (as on previous runs). `git pull origin main` brought main from fdf23c1 to c2a0416. Supabase: the lowercase
   "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector connected and was
-  used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch tool). 2 articles had
-  been published on the 26th (Bucharest) before this one; daily cap is 7, weekly cap 45, both well clear.
-- Keyword 1 (tried first, BLOCKED): how to get clients for an executive coaching business. Research was done (eight
-  ranking pages, ICF 2025 Global Coaching Study, McKinsey on leadership transitions, DDI HR Insights 2025) and a full
-  draft written, brief at blog/briefs/get-clients-for-an-executive-coaching-business.md, draft at
-  blog/drafts/get-clients-for-an-executive-coaching-business.md. The gate fails only on the keyword checks:
-  `kw_in` in scripts/blog_gate.py does `w.rstrip("s")`, which turns "business" into "busine", and the regex
-  `\bbusine(s|es)?\b` can never match the word "business". Same bug that blocks ai-consulting-business. The draft
-  passes every other check (meta lengths, opening under 90 words, table, FAQ, links, stats); marked `blocked` with
-  the reason in its front matter and in keywords.json. Not fixable from here: scripts/ is off limits.
-- Keyword 2 (published): how to get clients for a cloud consulting company (solutions, find-customers cluster,
-  landing, commercial, priority 3, difficulty medium).
-  "Get Clients for a Cloud Consulting Company: 7 Platform Decisions"
-  https://intentsly.com/solutions/get-clients-for-a-cloud-consulting-company
-  Title dropped the leading "How to" because the gate's title-similarity check (ratio > 0.75) flagged
-  "How to Get Clients for a Cloud Consulting Company: ..." against the DevOps consulting page; the H1 still carries
-  the keyword and the first sentence opens with "The fastest way to get clients for a cloud consulting company".
-- Database: one upsert, the generated blog/out/get-clients-for-a-cloud-consulting-company.sql (25,186 bytes, md5
-  7464c5e59ad0c3e6369c41f6e6696838), run unchanged through the Supabase connector. Returned slug
-  get-clients-for-a-cloud-consulting-company, status = published, published_at 2026-11-26 13:59:39 UTC. Verified
-  afterwards with a read: section solutions, article_type landing, word_count 3025, reading_minutes 14, 6 FAQ
-  entries, content_md md5 cf0df3dff90ad18c39fa37faaee315c4, which matches the body in the SQL file exactly.
-  No other writes.
-- Gate: first run failed on three points (meta_description 161 chars, opening paragraph 91 words, title too close to
-  the DevOps page). Fixed by shortening the meta description, trimming one clause in the opening, and retitling.
-  Second run passed; blog_cloud.py sql printed "ready": true with no warnings (3,025 words, 7 H2, 6 FAQ, 17 internal
-  links, 3 external links). Truth/voice pass after that removed three unsupported claims ("all five pages on the
-  first page", "new this year", "tier requirements take a year"); gate re-run, still passes.
-- Angle: page one is DemandZEN, Callbox, Telzio, Apollo and ClickUp (two lead-gen agencies, a phone vendor, a sales
-  data platform, a PM tool). None gives a LinkedIn search or message; triggers are named but never with where to
-  see them. Our DevOps consulting page already owns the "week after something broke" angle, so this page owns the
-  platform-decision angle: new CTO/VP Eng, first platform engineer job post, funding round, migration announced,
-  cloud-bill post, data residency/sovereignty requirement, request for a partner.
-- Primary sources opened on 26 November 2026 and cited: Gartner press release 22 Apr 2026 ($6.31T IT spend, +13.5%;
-  IT services past $1.87T; data center systems +55.8%); Flexera press release 18 Mar 2026, 2026 State of the Cloud
-  (750+ respondents; 85% cloud spend a top challenge; 29% wasted spend, first rise in five years; 81% using gen AI);
-  Gartner press release 9 Feb 2026 (sovereign cloud IaaS $80B in 2026, +35.6%; Europe +83%, passes North America in
-  2027; 80% of spend from net new or legacy workloads waiting to migrate). Flexera's first fetch needed a search
-  result as provenance; it loaded once the URL came from a search.
+  used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch tool). 3 articles had
+  been published on the 26th (Bucharest) before this one and 17 in the last 7 days; daily cap is 7, weekly cap 45.
+- Keyword (published): what is a marketing qualified lead (learn, fundamentals cluster, lesson, informational,
+  priority 3, difficulty high). No draft was in progress, so this was the first keyword tried; the gate passed on the
+  second run.
+  "What Is a Marketing Qualified Lead? A 3-Line Rule and Benchmarks"
+  https://intentsly.com/learn/what-is-a-marketing-qualified-lead
+  Title avoids "Definition" and "MQL Meaning" because the gate's title-similarity check (ratio > 0.75) flagged both
+  against the SQL lesson ("... Definition and a Checklist") and the PQL lesson ("... PQL Meaning and a Rule").
+- Database: one upsert, the generated blog/out/what-is-a-marketing-qualified-lead.sql (18,883 bytes, md5
+  75e7eea0d6f3bcb61b25658865791d55), run unchanged through the Supabase connector. Returned slug
+  what-is-a-marketing-qualified-lead, status = published, published_at 2026-11-26 19:27:55 UTC. Verified afterwards
+  with a read: section learn, article_type lesson, word_count 2044, reading_minutes 9, 6 FAQ entries, content_md md5
+  d9ebe9ee43568c95d8d6b0d08574883e, which matches the body in the SQL file exactly. No other writes.
+- Gate: first run failed on two points (opening paragraph 96 words, title too close to the SQL lesson). Fixed by
+  trimming the opening and retitling. Second run passed; blog_cloud.py sql printed "ready": true with no warnings
+  (2,044 words including FAQ, about 1,670 in the body, 6 H2, 6 FAQ, 11 internal links, 5 external links).
+- Angle: page one is Tableau, Adobe, HubSpot, TechTarget, Pipedrive, ZoomInfo and CallRail, all glossary explainers
+  that assume a marketing team with gated content feeding a separate sales team. This lesson defines the MQL for a
+  company with no marketing department: a three-line rule (fit, action, threshold), the public LinkedIn evidence
+  that stands in for a form fill, MQL next to SAL, SQL and PQL, Forrester's buying-group objection stated honestly,
+  and a decision rule for skipping the stage under about 30 leads a month. Brief at
+  blog/briefs/what-is-a-marketing-qualified-lead.md.
+- Primary sources opened on 26 November 2026 and cited: First Page Sage MQL-to-SQL by industry (updated 19 Nov 2026:
+  16.1% average, 15% median, B2B SaaS and IT & managed services 13%, staffing 12%, data 2019 to Nov 2026); First Page
+  Sage lead-to-MQL benchmarks (1 Aug 2025: 31% average); Forrester "Saying goodbye to MQLs" blog (Aug 2023, Buyers'
+  Journey Survey 2023: 93% bought in a group of 2+, 71% in a group of 4+); Forrester Palo Alto Networks client story
+  (8x more likely to advance, 17% higher closed-won rate); MarketScale write-up of the Belkins 2026 B2B conversion
+  survey (1 Nov 2026: 38% do not track MQL-to-SQL, 44% at 1 to 10 employees, 54% of outbound-led teams convert under
+  10%). The Belkins report itself (belkins.io/blog/sales-pipeline-conversion) and the first fetch of First Page Sage
+  were blocked by the fetch permission prompt; First Page Sage loaded once the URL came from a search result, Belkins
+  did not, so its figures are attributed to MarketScale in the text.
 - Intentsly facts used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate (case study, labelled as
-  our own launch); around 1,000 leads a month per agent and 2 to 4 meetings a week, attributed "across Intentsly
-  customers in October 2026" and "typical"; 2 LinkedIn accounts, 30/30 caps, 15 recommended; languages; HubSpot,
-  Cal.com, Google Calendar; verified emails; export; 12 signals / 8 to ignore. No price. No Reddit/X claims. No
-  unreleased features. Job-post signal stated as not monitored.
-- Keywords: 6 solutions keywords still queued (cloud consulting published, executive coaching blocked), so none
-  were added. One of the six ("how to get clients for a bookkeeping business") will hit the same "business" bug.
-- Live check: not verified from this session, as on previous runs. Waited 4 minutes after the push, then tried the
-  fetch tool (both URLs returned PROVENANCE_REQUIRED: the permission prompt for intentsly.com is never answered in an
-  unattended run), curl from the shell (proxy CONNECT 403) and a web search for the URL (not indexed yet). The database
-  row is status = published and the push to main landed (86a2c43), so the page should be live and in the sitemap once
-  the deploy finishes; please open https://intentsly.com/solutions/get-clients-for-a-cloud-consulting-company once to
-  confirm. First push attempt was rejected as non-fast-forward although local was ahead of origin; the identical push
-  succeeded on retry.
-- For the founder: (1) scripts/blog_gate.py `kw_in`: change `w.rstrip("s")` to strip at most one trailing "s"
-  (e.g. `re.sub(r"s$", "", w)`), then re-run the gate on the three blocked drafts (ai-consulting-business,
-  executive-coaching-business, outbound-sales-process-for-startups); the executive coaching one is finished and
-  should pass as is. Until then, every keyword containing "business" is unpublishable. (2) A real cloud or
-  technical-consultancy customer story (even one sentence: niche, signal used, meetings booked) would replace the
-  "we are not a cloud consultancy" paragraph on this and the DevOps page. (3) Confirm whether the job-post signal is
-  still outside the product; every solutions page states it as not monitored.
+  our own launch); scoring against the ideal customer profile from LinkedIn pain-point posts and competitor
+  engagement (product.md); /try-ai shows matching buyers with no account; Playbook 12 signals / 8 to ignore. No
+  price, no Reddit/X claims, no unreleased features.
+- Keywords: 4 learn keywords were left queued, below the 5 in RUN.md step 6, so 9 were added per skills/blog-keywords.md
+  after searching each and grading who ranks (sales accepted lead, hot lead, cold lead, decision maker in B2B sales,
+  prospect list, lead response time, funding signal, job change signal, intent scoring). 13 learn keywords are now
+  queued; "what is a linkedin ssi score" was considered and skipped because LinkedIn's own help page ranks for it.
+- Live check: see the run report; as on previous runs, intentsly.com cannot be fetched from an unattended session
+  (the fetch permission prompt for intentsly.com is never answered), so the page is confirmed from the database row
+  (status = published) and the push to main. Please open
+  https://intentsly.com/learn/what-is-a-marketing-qualified-lead once to confirm it renders and appears in
+  https://intentsly.com/sitemap.xml.
+- For the founder: (1) the scripts/blog_gate.py `kw_in` bug noted in the previous run (`w.rstrip("s")` turns
+  "business" into "busine") still blocks every keyword containing "business"; the fix is one line. (2) A real
+  customer example of an inbound funnel feeding Intentsly signals (even one sentence: company type, leads a month,
+  how many became meetings) would replace the labelled hypothetical IT-consultancy example in this lesson and in the
+  SQL lesson. (3) Confirm whether "scores every prospect against the ideal customer profile" is still the right
+  description of the scoring feature; every fundamentals lesson now leans on it.

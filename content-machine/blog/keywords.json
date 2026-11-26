@@ -1809,8 +1809,8 @@
    "intent": "informational",
    "difficulty": "high",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-marketing-qualified-lead",
    "monthly_volume": null
   },
   {
@@ -2204,6 +2204,114 @@
    "status": "queued",
    "slug": null,
    "monthly_volume": null
+  },
+  {
+   "keyword": "what is a sales accepted lead",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is a hot lead in sales",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is a cold lead in sales",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is a decision maker in b2b sales",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is a prospect list in sales",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is lead response time",
+   "cluster": "fundamentals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is a funding signal in sales",
+   "cluster": "linkedin-signals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is a job change signal in sales",
+   "cluster": "linkedin-signals",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "medium",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
+  },
+  {
+   "keyword": "what is intent scoring in b2b sales",
+   "cluster": "signal-selling",
+   "type": "lesson",
+   "intent": "informational",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "learn"
   }
  ]
 }
