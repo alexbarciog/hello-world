@@ -50,7 +50,13 @@
   linkedin for free, target account list for outbound (high, p3). Skipped: "follow up on linkedin after no
   response" (too close to the queued follow-up sequence guide) and "sync linkedin leads to hubspot" (HubSpot's
   own ads-sync knowledge base owns the page). 13 guides keywords are now queued.
-- Live check: see the end of this file (filled in after the push).
+- Live check: not verified from this session, as on previous runs. Pushed 0ad3f8a to 4c8aa94 on main at about 08:40
+  UTC (`git push origin HEAD:main`, first try), waited 4 minutes, then tried the fetch tool on both the sitemap and
+  the page (PROVENANCE_REQUIRED: the permission prompt for intentsly.com is never answered in an unattended run) and
+  a web search for the URL (not indexed yet, which is expected minutes after a deploy). The database row is
+  status = published and the push landed, so the page should be live once the deploy finishes. Please open
+  https://intentsly.com/guides/find-prospects-in-linkedin-groups once to confirm it renders and appears in
+  https://intentsly.com/sitemap.xml.
 - For the founder: (1) the scripts/blog_gate.py `kw_in` bug (`w.rstrip("s")` turns "business" into "busine" and
   "process" into "proce") still blocks the three drafts in blog/drafts/; the fix is one line and all three drafts
   are complete. (2) If you have ever worked a LinkedIn group yourself (which group, how many names, how many
