@@ -1269,8 +1269,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 2,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-prospects-in-linkedin-groups",
    "monthly_volume": null
   },
   {
@@ -2312,6 +2312,114 @@
    "slug": null,
    "monthly_volume": null,
    "section": "learn"
+  },
+  {
+   "keyword": "how to search linkedin posts by keyword to find leads",
+   "cluster": "linkedin-signals",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "low",
+   "priority": 1,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to find a prospect's email from linkedin",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to book a meeting from a linkedin conversation",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to find leads from linkedin polls",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to a/b test linkedin outreach messages",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to re-engage cold leads on linkedin",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "medium",
+   "priority": 2,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to build a lead list from linkedin sales navigator",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to find leads on linkedin for free",
+   "cluster": "linkedin-prospecting",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
+  },
+  {
+   "keyword": "how to build a target account list for outbound",
+   "cluster": "outbound",
+   "type": "guide",
+   "intent": "commercial",
+   "difficulty": "high",
+   "priority": 3,
+   "status": "queued",
+   "slug": null,
+   "monthly_volume": null,
+   "section": "guides"
   }
  ]
 }
