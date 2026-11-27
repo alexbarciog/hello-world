@@ -1,66 +1,56 @@
-# Last run: 2026-11-27 (guides task; fired about 08:10 UTC, 10:10 Bucharest)
+# Last run: 2026-11-27 (solutions task; fired about 13:40 UTC, 15:40 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned, in scope and on `main` at 0ad3f8a; `add_repo` is not exposed as a
+- Setup: no PAUSE file. Repository already cloned, in scope and on `main` at a28a33d; `add_repo` is not exposed as a
   tool in this session (as on previous runs), `git pull origin main` reported already up to date. Supabase: the
   lowercase "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector
   connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch
-  tool). 4 articles were published on the 26th (Bucharest) and 0 on the 27th before this one; daily cap 7, weekly 45.
-- Drafts in progress: all three drafts in `blog/drafts/` carry a `blocked:` line (two solutions pages and the
-  guide "outbound sales process for startups"), all for the same `kw_in` gate bug, so none was resumed.
-- Keyword (published): how to find prospects in linkedin groups (guides, linkedin-prospecting cluster, guide,
-  commercial, priority 2, difficulty medium). First keyword tried; the gate passed on the third run.
-  "How to Find Prospects in LinkedIn Groups Without a Scraper"
-  https://intentsly.com/guides/find-prospects-in-linkedin-groups
-  Title: "A 7-Step Method" was rejected by the title-similarity check (0.743 against the decision-makers guide),
-  so the title names the angle instead.
-- Database: one upsert, the generated blog/out/find-prospects-in-linkedin-groups.sql (25,108 bytes, md5
-  4a251f55797645a7a3428ad1c917ea2c), run unchanged through the Supabase connector. Returned slug
-  find-prospects-in-linkedin-groups, status = published, published_at 2026-11-27 08:34:55 UTC. Verified with a
-  read: section guides, article_type guide, word_count 3176, reading_minutes 14, 6 FAQ entries, content_md md5
-  120e42702fcb8eed32c920d74bca1633 (19,948 chars), which matches the body in the SQL file exactly. No other writes.
-- Gate: run 1 failed on meta_description length (172) and the opening paragraph (104 words); run 2 on the opening
-  paragraph (92); run 3 passed. blog_cloud.py sql printed "ready": true with no warnings (3,176 words including
-  FAQ, 12 H2, 6 FAQ, 10 internal links, 9 external links).
-- Angle: page one is PhantomBuster (two pages), Skylead, Scrupp, Kanbox, a 2014 Social Media Examiner piece and
-  generic "LinkedIn prospecting" round-ups; every tutorial ends on its own export button. This guide gives a 30-day
-  activity test for picking groups, the member-list and Sales Navigator Group Members filter clicks on free and paid
-  accounts, the group feed as a second higher-intent list, the messaging rule stated with its 2026 caveats
-  (recipient setting, Other tab), a scoring sheet capped at 20 to 40 names a week, a labelled hypothetical example
-  (Harbor Payroll), three mistakes and the outbound step. Brief at blog/briefs/find-prospects-in-linkedin-groups.md.
-- Sources opened on 27 November 2026 and cited: PhantomBuster group-members guide (modified 8 Jul 2026: Groups
-  filter, 2,500 visible members per group); Skylead LinkedIn prospecting (updated 14 Sep 2026: most groups dead,
-  Request to Join, See all, Navigator Groups filter); Scrupp (updated 27 Nov 2026: must be a member to see the
-  list, Other inbox); Kanbox help (22 Jul 2026: member-only import); HubSpot messaging guide (updated 8 Sep 2026:
-  Show all, recipient must allow messages from group members, 200-character note, few free personalized notes a
-  month); Lilach Bullock groups guide (modified 21 Nov 2026: 100 groups cap, 20 pending requests); Taplio (Sep
-  2026: 100 groups); Neal Schaffer (revised 19 Nov 2026: free messaging to fellow group members, Other tab);
-  Simply B2B help (Group Members filter steps); LeadHunter on DEV (updated Feb 2026: filter matches groups you
-  both belong to). Not cited: Boolean Strings 2021 `&network=["A"]` trick and the 2019 Linked Helper "15 messages a
-  month" note (stale and contradictory); Social Media Examiner 2014 and Social Media Today 2016 (old UI); unsourced
-  statistics on Scrupp, Taplio and the DEV page. LinkedIn's own help pages (a544795, 119257, a553202, a554575,
-  a787436, 85772) were robots-blocked; the guide says so and sources the rules to the 2026 pages.
-- Intentsly facts used: 14 qualified demos in 14 days, zero manual outreach, 4x reply rate (case study, labelled as
-  our own launch); keyword posts and competitor-post engagement scored against the ideal customer profile
-  (product.md); /try-ai shows matching buyers with no account. No price, no Reddit/X claims, no unreleased features,
-  no claim that Intentsly monitors groups.
-- Keywords: 4 guides keywords were left queued, below the 5 in RUN.md step 6, so 9 were added per
-  skills/blog-keywords.md after searching each and grading who ranks: search linkedin posts by keyword (low, p1),
-  prospect's email from linkedin, book a meeting from a linkedin conversation, leads from linkedin polls, a/b test
-  linkedin outreach, re-engage cold leads on linkedin (medium, p2), lead list from sales navigator, leads on
-  linkedin for free, target account list for outbound (high, p3). Skipped: "follow up on linkedin after no
-  response" (too close to the queued follow-up sequence guide) and "sync linkedin leads to hubspot" (HubSpot's
-  own ads-sync knowledge base owns the page). 13 guides keywords are now queued.
-- Live check: not verified from this session, as on previous runs. Pushed 0ad3f8a to 4c8aa94 on main at about 08:40
-  UTC (`git push origin HEAD:main`, first try), waited 4 minutes, then tried the fetch tool on both the sitemap and
-  the page (PROVENANCE_REQUIRED: the permission prompt for intentsly.com is never answered in an unattended run) and
-  a web search for the URL (not indexed yet, which is expected minutes after a deploy). The database row is
-  status = published and the push landed, so the page should be live once the deploy finishes. Please open
-  https://intentsly.com/guides/find-prospects-in-linkedin-groups once to confirm it renders and appears in
-  https://intentsly.com/sitemap.xml.
-- For the founder: (1) the scripts/blog_gate.py `kw_in` bug (`w.rstrip("s")` turns "business" into "busine" and
-  "process" into "proce") still blocks the three drafts in blog/drafts/; the fix is one line and all three drafts
-  are complete. (2) If you have ever worked a LinkedIn group yourself (which group, how many names, how many
-  replies), one sentence would replace the labelled Harbor Payroll example in this guide. (3) The guide states
-  LinkedIn's group rules (100-group cap, member-only lists, messaging fellow members) from third-party pages because
-  LinkedIn Help blocks fetching; a 30-second check of those three facts in your own account would let the next run
-  cite them as confirmed.
+  tool). The guides task had published 1 article earlier today (Bucharest); daily cap 7, weekly 45, neither reached.
+- Drafts in progress: all three drafts in `blog/drafts/` still carry a `blocked:` line (two solutions pages and the
+  guide "outbound sales process for startups"), all for the same `kw_in` gate bug (trailing-s stripping breaks
+  "business" and "process"), so none was resumed. The fix is one character in scripts/blog_gate.py, which this
+  task may not edit.
+- Keyword (published): how to find customers for a fintech startup (solutions, find-customers cluster, landing,
+  commercial, priority 3, difficulty medium). First keyword tried; the gate passed on the second run.
+  "How to Find Customers for a Fintech Startup: 7 Finance Signals"
+  https://intentsly.com/solutions/find-customers-for-a-fintech-startup
+  Title: ": 7 Signals" scored 0.754 against the cybersecurity page on the title-similarity check (limit 0.75), so
+  the title names the signal type instead (0.706 against the startup page).
+- Database: one upsert, the generated blog/out/find-customers-for-a-fintech-startup.sql (27,862 bytes, md5
+  435a052d1304de44b57557045cce1626), run unchanged through the Supabase connector. Returned slug
+  find-customers-for-a-fintech-startup, status = published, published_at 2026-11-27 13:55:41 UTC. Verified with a
+  read: section solutions, article_type landing, word_count 3458, reading_minutes 16, 6 FAQ entries, content_md
+  md5 90052b17413d04b731c77b2f73161df7 (22,480 chars), which matches the body in the SQL file exactly. No other
+  writes.
+- Gate: run 1 failed on meta_description length (166) and the opening paragraph (92 words); run 2 passed.
+  blog_cloud.py sql printed "ready": true with no warnings (3,458 words including FAQ, 7 H2, 6 FAQ, 17 internal
+  links, 3 external links). The page is longer than the 1,100 to 2,000 words page-write.md suggests for
+  /solutions, in line with the other solutions pages published this month.
+- Angle: page one is Entrepreneur (consumer fintech: personalization, content, design, gamification, referrals),
+  Callbox (lead-gen agency page, unsourced "75% fail" claim), RevenueFast (B2B playbook with a buyer ladder and
+  self-labelled CAC estimates but no search strings), SJ Digital and WOLF Financial (agency pages, no data).
+  Frontlines.io returned a client error. This page names seven public buying moments (first finance hire,
+  funding round or milestone, new entity or market, provider complaint, regulatory or rail deadline, new finance
+  leader, request for a provider) with a Posts-tab or Jobs-tab search and a message for each, splits the week-one
+  plan by buyer type (finance teams, owners, banks and other fintechs), a message card, a WARNING callout on
+  compliance, a labelled hypothetical example (Dutch spend-management startup), the Intentsly feature mapping with
+  limits, and three honest alternatives. Brief at blog/briefs/find-customers-for-a-fintech-startup.md.
+- Sources opened on 27 November 2026 and cited: Federal Reserve 2026 Report on Employer Firms (published 3 Mar
+  2026; 2025 SBCS, 6,525 responses, fielded 3 Sep to 14 Nov 2025: 60% applied for financing, 56% operating
+  expenses, 46% expansion; online-lender share of applicants 17% in 2020 to 29% in 2025; 60% of online borrowers
+  found costs higher than expected vs 37% at small banks); FedNow Fed360 article (15 Jul 2026: more than 1,800
+  institutions live); Finextra Instant Payments Regulation timeline (as of 9 Oct 2025: euro-area send and VoP from
+  9 Oct 2025; EMIs and PIs receive and send by 9 Apr 2027 in the euro area; non-euro send by 9 Jul 2027). Not
+  cited: RevenueFast CAC and funnel figures (publisher's own estimates with internal inconsistencies), Callbox
+  "75%" (unsourced), Entrepreneur's Epsilon and 2012 Nielsen stats (consumer, secondhand). The ECB's own
+  instant-payments page could not be opened (fetch permission not granted), so the Finextra timeline stands in
+  for it; a future edit could swap in the ECB or EUR-Lex link.
+- Queue: 5 `solutions` keywords still queued (social media marketing agency, content marketing agency,
+  bookkeeping business, UX design agency, email marketing agency), so no new keywords were added (threshold is
+  fewer than 5). The next run that publishes will drop the queue to 4 and should add 8 to 12 keywords.
+- For Alex: (1) fix `kw_in` in scripts/blog_gate.py (strip one trailing "s", not all) so the three blocked drafts
+  can run through the gate; (2) a fintech customer story or a sentence on which fintechs use Intentsly would let
+  the "in practice" section stop borrowing the 14-demos story; (3) confirm whether the agent templates, self-serve
+  billing and new free tools are live so solutions pages can mention them; (4) a verified figure for how many
+  signals a typical agent catches per week per keyword would strengthen the "how Intentsly does this" section.
+- Post-push check: see the report in the session for the sitemap and live-page result about four minutes after
+  the push.

@@ -1905,8 +1905,8 @@
    "intent": "commercial",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "find-customers-for-a-fintech-startup",
    "monthly_volume": null
   },
   {
