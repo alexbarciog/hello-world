@@ -52,5 +52,12 @@
   the "in practice" section stop borrowing the 14-demos story; (3) confirm whether the agent templates, self-serve
   billing and new free tools are live so solutions pages can mention them; (4) a verified figure for how many
   signals a typical agent catches per week per keyword would strengthen the "how Intentsly does this" section.
-- Post-push check: see the report in the session for the sitemap and live-page result about four minutes after
-  the push.
+- Push: the first push was rejected as non-fast-forward although the remote head was still a28a33d (the parent
+  of this commit); a second push a minute later went through (a28a33d..f1edf8a). Nothing was rebased or forced.
+- Post-push check (about 4 minutes after the push, 14:01 UTC): NOT COMPLETED. The web-fetch agent's permission
+  prompt for intentsly.com/sitemap.xml and the page URL was not answered (unattended run), and curl from the
+  shell was refused by the egress proxy (HTTP 403 CONNECT, intentsly.com is not on the allowed list for this
+  session). So whether the page is live and in the sitemap is unverified from this run; the database row is
+  published and the push to main is what triggers the redeploy. The next run, or Alex, should open
+  https://intentsly.com/solutions/find-customers-for-a-fintech-startup and the sitemap to confirm. Allowing
+  intentsly.com under Settings > Capabilities would let future runs verify directly.
