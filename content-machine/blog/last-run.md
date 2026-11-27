@@ -56,3 +56,13 @@
   (2) a first-hand number on how many LinkedIn signals Intentsly customers accept vs skip per week would give the
   SAL, MQL and SQL lessons a real acceptance-rate figure instead of Forrester's; (3) confirm whether the SQL and MQL
   lessons may be updated to link to this page (they each carry an SAL FAQ entry but no link).
+- Push: the repository was checked out on a detached HEAD at origin/main, so the first `git push origin main` sent the
+  stale local `main` branch (fdf23c1) and was rejected as non-fast-forward. Local `main` was moved to the new commit
+  and the second push went through (543ee6d..c60bc5a, 19:33 UTC). Nothing was rebased or forced.
+- Live check (about 19:38 UTC, 5 minutes after the push): not possible from this run. The web-fetch permission
+  prompt for intentsly.com/sitemap.xml and the page URL was not answered (unattended run), curl from the shell was
+  refused by the egress proxy (intentsly.com is not on the allowed list for this session), and a web search does
+  not surface the new URL yet. So whether the page is live and in the sitemap is unverified from this run; the
+  database row is published and the push to main is what triggers the redeploy. The next run, or Alex, should open
+  https://intentsly.com/learn/what-is-a-sales-accepted-lead and the sitemap to confirm. Allowing intentsly.com
+  under Settings > Capabilities would let future runs verify directly.
