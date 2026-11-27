@@ -2212,8 +2212,8 @@
    "intent": "informational",
    "difficulty": "medium",
    "priority": 3,
-   "status": "queued",
-   "slug": null,
+   "status": "published",
+   "slug": "what-is-a-sales-accepted-lead",
    "monthly_volume": null,
    "section": "learn"
   },
