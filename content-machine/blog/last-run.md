@@ -1,68 +1,57 @@
-# Last run: 2026-11-27 (learn task; fired about 19:10 UTC, 21:10 Bucharest)
+# Last run: 2026-11-28 (solutions task; fired about 13:30 UTC, 15:30 Bucharest)
 
-- Setup: no PAUSE file. Repository already cloned, in scope and on `main` at 543ee6d; `add_repo` is not exposed as a
-  tool in this session (as on previous runs), `git pull origin main` reported already up to date. Supabase: the
-  lowercase "supabase" connector failed with a proxy tunnel error at session start; the "Supabase" connector
-  connected and was used. Web search worked; pages were opened through the web-fetch agent (no direct WebFetch
-  tool). Two other tasks had published 2 pages earlier today (Bucharest); with this one, 3 today, daily cap 7 and
-  weekly cap 45 not reached.
-- Drafts in progress: all three drafts in `blog/drafts/` still carry a `blocked:` line (two solutions pages and the
-  guide "outbound sales process for startups"), all for the same `kw_in` gate bug (trailing-s stripping breaks
-  "business" and "process"), so none was resumed. The fix is one character in scripts/blog_gate.py, which this
-  task may not edit.
-- Keyword (published): what is a sales accepted lead (learn, fundamentals cluster, lesson, informational,
-  priority 3, difficulty medium). First keyword tried; the gate passed on the second run (run 1 failed only on
-  meta_description length, 166 chars).
-  "What Is a Sales Accepted Lead? The Handoff Rule Explained"
-  https://intentsly.com/learn/what-is-a-sales-accepted-lead
-  Title similarity against the SQL lesson is 0.591 (limit 0.75).
-- Database: one upsert, the generated blog/out/what-is-a-sales-accepted-lead.sql (19,322 bytes, md5
-  726d0e5f40a156a24983c1dbdff55b51), run through the Supabase connector. Returned slug
-  what-is-a-sales-accepted-lead, status = published, published_at 2026-11-27 19:27:51 UTC. Verified with a read:
-  section learn, article_type lesson, word_count 2074, reading_minutes 9, 6 FAQ entries, 5 secondary keywords,
-  content_md md5 d7a5a8513a3ab9fc564b716501e152b3 (14,006 chars), title and meta_description md5s all matching the
-  SQL file exactly. No other writes.
-  Honesty note: the statement had to be retyped into the connector call (the tool takes a string, not a file) and
-  the retyped copy dropped one line of the `on conflict do update set` clause (`article_type = excluded.article_type`).
-  The slug was new, so the insert ran and the conflict clause never executed; the row's article_type is `lesson`
-  as in the file. The stored row is identical to what the file would have produced. Future runs: paste the file in
-  two halves and diff against it before running, or ask the founder to let the script print a checksum to compare.
-- Gate: blog_cloud.py sql printed "ready": true with no warnings (2,074 words including FAQ and table cells, 7 H2,
-  6 FAQ, 8 internal links, 6 external links). The page is longer than the 1,000 to 1,800 words page-write.md
-  suggests for /learn, in line with the other lessons published this month (table cells count as words).
-- Angle: page one is Forrester (both URLs redirect to a generic landing page today), Nutshell (BANT plus "readiness"
-  as the acceptance test, "24 hours", a healthy rate of 70 to 90% that contradicts its own body copy, no sources),
-  Mountain/MNTN (vendor pitch, no numbers), Pedowitz Group (clean operational definition, 24h SLA, rejection
-  taxonomy, no benchmarks), Rework (48 to 72 hour review window, R1 to R6 codes, second-hand statistics) and
-  Dreamdata (thin glossary). This page defines acceptance as a handoff commitment rather than a quality verdict,
-  cites the one primary source found (Forrester/SiriusDecisions: 72% of companies have a formal SAL stage, sales
-  accepted 42% of marketing-sourced leads, 9.3 vs 4.6 closed-won deals per 1,000 inquiries, target at or above 85%),
-  gives a three-check acceptance rule and a six-code rejection table, puts SAL next to MQL, SQL and buying signal in
-  one table, says when one-person and outbound teams should skip the stage, and uses the 14-demos launch as the
-  first-hand case. Brief at blog/briefs/what-is-a-sales-accepted-lead.md.
-- Sources opened on 27 November 2026 and cited: Forrester, "Measuring the impact of successful sales handoffs"
-  (go.forrester.com, no date shown); Pedowitz Group, "difference between MQLs, SQLs and SALs" and "how do you
-  measure sales acceptance of MQLs"; Rework, "SQL definition and acceptance" (updated 2026-05-04); Nutshell, "SALs
-  explained" (updated 2026-07-31); First Page Sage, "MQL to SQL conversion rate by industry: 2026 report"
-  (published 2026-11-19). Opened but not cited: Mountain/MNTN (no numbers), Dreamdata (no numbers), BYU
-  ScholarsArchive record of HBR 2011 "The Short Life of Online Sales Leads" (abstract only, no figures). Not
-  reachable: both Forrester URLs for the "sales accepted leads, the most overlooked step" post (redirect to
-  /revenue/); hbr.org and the First Page Sage URL needed a permission approval on the first try (fetched from a
-  search result on the second).
-- Learn queue: 12 keywords still queued (what is a funding signal in sales is next), so no new keywords were added.
-- Caps: 3 pages published today across all tasks (daily cap 7), weekly cap 45 not reached.
-- For the founder: (1) the one-character `kw_in` fix in scripts/blog_gate.py (strip a trailing "s" only when the
-  word is longer than 4 characters, or compare the singular of both sides) would unblock the three stuck drafts;
-  (2) a first-hand number on how many LinkedIn signals Intentsly customers accept vs skip per week would give the
-  SAL, MQL and SQL lessons a real acceptance-rate figure instead of Forrester's; (3) confirm whether the SQL and MQL
-  lessons may be updated to link to this page (they each carry an SAL FAQ entry but no link).
-- Push: the repository was checked out on a detached HEAD at origin/main, so the first `git push origin main` sent the
-  stale local `main` branch (fdf23c1) and was rejected as non-fast-forward. Local `main` was moved to the new commit
-  and the second push went through (543ee6d..c60bc5a, 19:33 UTC). Nothing was rebased or forced.
-- Live check (about 19:38 UTC, 5 minutes after the push): not possible from this run. The web-fetch permission
-  prompt for intentsly.com/sitemap.xml and the page URL was not answered (unattended run), curl from the shell was
-  refused by the egress proxy (intentsly.com is not on the allowed list for this session), and a web search does
-  not surface the new URL yet. So whether the page is live and in the sitemap is unverified from this run; the
-  database row is published and the push to main is what triggers the redeploy. The next run, or Alex, should open
-  https://intentsly.com/learn/what-is-a-sales-accepted-lead and the sitemap to confirm. Allowing intentsly.com
-  under Settings > Capabilities would let future runs verify directly.
+- Setup: no PAUSE file. Repository already cloned at /home/claude/hello-world, in scope and on `main` at b9e873e;
+  `add_repo` is not exposed as a tool in this session (as on previous runs), `git pull origin main` reported already
+  up to date. Supabase: the lowercase "supabase" connector failed with a proxy tunnel error at session start; the
+  "Supabase" connector connected and was used. Web search worked; pages were opened through the web-fetch agent (no
+  direct WebFetch tool). No other task had published today before this run (last log entry 2026-11-27 21:28
+  Bucharest); daily cap 7 and weekly cap 45 not reached.
+- Drafts in progress: the three drafts in `blog/drafts/` still carry a `blocked:` line (two solutions pages,
+  "ai consulting business" and "executive coaching business", and the guide "outbound sales process for
+  startups"), all for the same `kw_in` gate bug (trailing-s stripping breaks "business" and "process"), so none
+  was resumed. The one-character fix in scripts/blog_gate.py is outside what this task may edit.
+- Keyword (published): how to get clients for a social media marketing agency (solutions, find-customers cluster,
+  landing, commercial, priority 3, difficulty medium). First keyword tried. blog_gate.py failed twice on length
+  only (meta_description 167 chars; opening paragraph 106 then 96 then 91 words) and passed on the fourth run;
+  blog_cloud.py sql printed "ready": true on its first and only run, no warnings.
+  "How to Get Clients for a Social Media Marketing Agency"
+  https://intentsly.com/solutions/get-clients-for-a-social-media-marketing-agency
+  Title similarity against the closest published title (marketing agency page) is 0.685 (limit 0.75).
+- Database: one upsert, the generated blog/out/get-clients-for-a-social-media-marketing-agency.sql (22,410 bytes,
+  md5 59e678017ac6db6add2ea89f17177694), pasted whole into the Supabase connector. Returned slug
+  get-clients-for-a-social-media-marketing-agency, status = published, published_at 2026-11-28 13:54:14 UTC.
+  Verified with a read: section solutions, article_type landing, word_count 2652, reading_minutes 12, 5 FAQ
+  entries, 5 secondary keywords; md5 of the stored content_md (3816eec1d2349a1285b488408386f05a, 17,907 chars),
+  title and meta_description all equal to the values parsed from the SQL file. No other writes.
+- Gate: 2,652 words including table cells (siblings: PPC 2,799, marketing agency 2,106, branding 3,103), 7 H2,
+  5 FAQ, 12 internal links, 3 external links (2 SparkToro, 1 Sprout Social), one stats strip, one TIP callout,
+  one message card, one copy-paste audit checklist, two tables.
+- Angle: page one is AgencyAnalytics (2023), Sked Social (2024, updated 2025), Agorapulse (2024), ContentStudio
+  (2022, "updated" 2026), HeyOrca (2026), all vendor listicles of 7 to 20 tactics with no search strings, no
+  outreach templates, no sending limits and second-hand or vendor-owned statistics. This page names seven LinkedIn
+  posts that show a company is about to pay for social media help (recommendation request, social media manager
+  job post, founder promising to post more, new marketing leader, funding/launch/rebrand, complaint about results
+  or the agency, questions under tool vendors' and competitor agencies' posts), gives the Posts-tab or Jobs-tab
+  search and the message for each, a dormant-company-page qualifier, a ten-minute audit checklist to send instead
+  of a pitch, a week-one plan with the 15-a-day caps, and says when referrals, partners, speaking and paid beat it.
+  Brief at blog/briefs/get-clients-for-a-social-media-marketing-agency.md.
+- Sources opened on 28 November 2026 and cited: SparkToro, "Digital agency new business still a concern,
+  referrals still rule..." (2026-02-17) and the 2025 State of Digital Agencies launch post (2025-12-02; 376
+  respondents, fielded Sep to Oct 2025); Sprout Social press release for the 2025 Impact of Social Media Report
+  (2025-08-20; 1,200 marketing leaders, US/UK/Australia). Opened but not cited: the five ranking pages above.
+  Not reachable: prometheanresearch.com (permission prompt unanswered; the SparkToro survey replaced it).
+- Keywords: 4 solutions keywords were left queued after this publish (below the 5 in RUN.md step 6), so 8 were
+  added per skills/blog-keywords.md, each with who-ranks checked today: linkedin ghostwriter, influencer marketing
+  agency, fractional cro, webflow agency, demand generation agency, app development agency, market research firm,
+  translation agency. 12 solutions keywords now queued; blog_next.py puts "how to get clients as a linkedin
+  ghostwriter" next. Dropped after checking: hubspot agency partner (HubSpot's own pages fill page one) and
+  developer tools startup (PostHog, First Round, Amplify; buyers are not on LinkedIn enough for Intentsly to be
+  the honest answer). No keyword added contains "business" or "process" (the gate bug).
+- Caps: 1 page published today across all tasks so far (daily cap 7), weekly cap 45 not reached.
+- For the founder: (1) the one-character `kw_in` fix in scripts/blog_gate.py would unblock the three stuck drafts;
+  (2) a real agency customer story (even one line: niche, signals used, meetings in the first month) would replace
+  the "we are not an agency" framing used on all agency solution pages; (3) a first-hand figure for how many
+  keyword-post signals a typical agent surfaces per week for an agency niche would let these pages state a
+  concrete expectation instead of the per-agent monthly average; (4) allow intentsly.com under Settings >
+  Capabilities so runs can verify the live page and sitemap directly.
+- Live check: see the run report (recorded after the push).
