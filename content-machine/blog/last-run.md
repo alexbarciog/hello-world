@@ -54,4 +54,12 @@
   keyword-post signals a typical agent surfaces per week for an agency niche would let these pages state a
   concrete expectation instead of the per-agent monthly average; (4) allow intentsly.com under Settings >
   Capabilities so runs can verify the live page and sitemap directly.
-- Live check: see the run report (recorded after the push).
+- Push: as on the previous run the checkout was a detached HEAD at origin/main and local `main` was stale (fdf23c1),
+  so the first `git push origin main` was rejected as non-fast-forward; `git push origin HEAD:main` went through as a
+  fast-forward (b9e873e..0342553, 13:56 UTC) and local `main` was moved to the new commit. Nothing rebased or forced.
+- Live check (14:00 to 14:05 UTC, 4 to 9 minutes after the push): not possible from this run. The web-fetch
+  permission prompt for intentsly.com/sitemap.xml and the page URL was not answered (unattended run) and curl from
+  the shell was refused by the egress proxy (CONNECT 403). The database row is published and the push to main is
+  what triggers the redeploy, so the page should be live and in the sitemap, but that is unverified from here. The
+  next run, or Alex, should open https://intentsly.com/solutions/get-clients-for-a-social-media-marketing-agency
+  and https://intentsly.com/sitemap.xml to confirm.
